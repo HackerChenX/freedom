@@ -1,4 +1,5 @@
 # This is a sample Python script.
+from typing import Callable, Any
 
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
@@ -33,9 +34,9 @@ class StockData:
             self.turnover_rate = history['换手率'].values[-1]
 
 
-stock_code = "301110"
-start_time = "20230101"
-end_time = "20230315"
+stock_code = "300964"
+start_time = "20221101"
+end_time = "20230301"
 dayData = StockData("日")
 weekData = StockData("周")
 monthData = StockData("月")
@@ -65,9 +66,11 @@ def 弹性() -> bool:
 
 def 日均线上移() -> bool:
     close = dayData.close
+    日线10 = MA(close, 10) >= REF(MA(close, 10), 1)
+    日线20 = MA(close, 20) >= REF(MA(close, 20), 1)
     日线30 = MA(close, 30) >= REF(MA(close, 30), 1)
-    日线120 = MA(close, 120) >= REF(MA(close, 120), 1)
-    return 日线30[-1] and 日线120[-1]
+    日线60 = MA(close, 60) >= REF(MA(close, 60), 1)
+    return 日线10[-1] and 日线20[-1] and 日线30[-1] and 日线60[-1]
 
 
 def 周均线上移() -> bool:
@@ -78,7 +81,7 @@ def 周均线上移() -> bool:
     return 周线10[-1] and 周线20[-1] and 周线30[-1]
 
 
-def KDJ(level) -> (float, float, float):
+def KDJ(level) -> (list, list, list):
     data = getLevelData(level)
     close = data.close
     low = data.low
@@ -87,59 +90,75 @@ def KDJ(level) -> (float, float, float):
     K = SMA(RSV, 3, 1)
     D = SMA(K, 3, 1)
     J = 3 * K - 2 * D
-    return K[-1], D[-1], J[-1]
+    return K, D, J
 
 
-def MACD(level) -> (float, float, float):
+def MACD(level) -> (list, list, list):
     data = getLevelData(level)
     close = data.close
     diff = EMA(close, 12) - EMA(close, 26)
     dea = EMA(diff, 9)
     macd = 2 * (diff - dea)
-    return diff[-1], dea[-1], macd[-1]
+    return diff, dea, macd
 
 
 def K和D上移(level) -> bool:
-    K, D, J = KDJ(level)
-    return D >= REF(D, 1) and K >= REF(K, 1)
+    return K上移(level) and D上移(level)
 
 
 def D或K或J上移(level) -> bool:
-    K, D, J = KDJ(level)
-    return D >= REF(D, 1) or K >= REF(K, 1) or J >= REF(J, 1)
+    return D上移(level) or K上移(level) or J上移(level)
 
 
 def J或K或D或DEA上移(level) -> bool:
-    K, D, J = KDJ(level)
-    diff, dea, macd = MACD(level)
-    return J >= REF(J, 1) or K >= REF(K, 1) or D >= REF(D, 1) or dea >= REF(dea, 1)
+    return J上移(level) or K上移(level) or D上移(level) or DEA上移(level)
 
 
 def D或DEA上移(level) -> bool:
-    K, D, J = KDJ(level)
-    diff, dea, macd = MACD(level)
-    return D >= REF(D, 1) or dea >= REF(dea, 1)
+    return D上移(level) or DEA上移(level)
 
 
 def K和D和DEA上移(level) -> bool:
-    K, D, J = KDJ(level)
-    diff, dea, macd = MACD(level)
-    return D >= REF(D, 1) and K >= REF(K, 1) and dea >= REF(dea, 1)
+    return D上移(level) and K上移(level) and DEA上移(level)
 
 
 def D上移(level) -> bool:
     K, D, J = KDJ(level)
-    return D >= REF(D, 1)
+    return mergeAndGetLast(D, REF(D, 1), ge())
 
 
-def DEA和DIFF上移(level) -> bool:
+def K上移(level) -> bool:
+    K, D, J = KDJ(level)
+    return mergeAndGetLast(K, REF(K, 1), ge())
+
+
+def J上移(level) -> bool:
+    K, D, J = KDJ(level)
+    return mergeAndGetLast(J, REF(J, 1), ge())
+
+
+def DEA上移(level) -> bool:
     diff, dea, macd = MACD(level)
-    return dea >= REF(dea, 1) and diff >= REF(diff, 1)
+    return mergeAndGetLast(dea, REF(dea, 1), ge())
+
+
+def DIFF上移(level) -> bool:
+    diff, dea, macd = MACD(level)
+    return mergeAndGetLast(diff, REF(diff, 1), ge())
+
+
+def MACD上移(level) -> bool:
+    diff, dea, macd = MACD(level)
+    return mergeAndGetLast(macd, REF(macd, 1), ge())
+
+
+def ge() -> Callable[[Any, Any], bool]:
+    return lambda x, y: x >= y
 
 
 def MACD小于(level, num) -> bool:
     diff, dea, macd = MACD(level)
-    return macd < num
+    return macd[-1] < num
 
 
 def 换手率大于(num) -> bool:
@@ -148,16 +167,17 @@ def 换手率大于(num) -> bool:
 
 def 缩量() -> bool:
     volume = dayData.volume
-    return (volume / MA(volume, 2) < 0.9)[-1]
+    volumeDiff = mergeList(volume, MA(volume, 2), 5, lambda x, y: (x / y) < 0.95)
+    return countTrueList(volumeDiff, 3)
 
 
 def 回踩均线(level, n=4) -> bool:
     close = getLevelData(level).close
-    A20 = ABS((close / MA(close, 20) - 1) * 100) <= n
-    A30 = ABS((close / MA(close, 30) - 1) * 100) <= n
-    A60 = ABS((close / MA(close, 60) - 1) * 100) <= n
-    A120 = ABS((close / MA(close, 120) - 1) * 100) <= n
-    return A20[-1] or A30[-1] or A60[-1] or A120[-1]
+    A20 = ABS((close / MA(close, 20) - 1) * 100)[-1] <= n
+    A30 = ABS((close / MA(close, 30) - 1) * 100)[-1] <= n
+    A60 = ABS((close / MA(close, 60) - 1) * 100)[-1] <= n
+    A120 = ABS((close / MA(close, 120) - 1) * 100)[-1] <= n
+    return A20 or A30 or A60 or A120
 
 
 def 吸筹(level, n=6) -> bool:
@@ -183,3 +203,26 @@ def getLevelData(leve) -> StockData:
         return weekData
     elif leve == "月":
         return monthData
+
+
+def mergeList(list1, list2, n, func):
+    if len(list1) != len(list2):
+        return None
+    result = []
+    for i in range(1, n + 1):
+        result.append(func(list1[-i], list2[-i]))
+    return result
+
+
+def mergeAndGetLast(list1, list2, func):
+    if len(list1) != len(list2):
+        return None
+    result = []
+    for i in range(1, len(list1)):
+        result.append(func(list1[i], list2[i]))
+    return result[-1]
+
+
+# 判断列表中是否包含指定元素，且连续出现n次
+def countTrueList(lst, n):
+    return any([lst[i:i + n] == [True] * n for i in range(len(lst) - n + 1)])
