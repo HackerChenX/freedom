@@ -4,8 +4,8 @@ from typing import Callable, Any
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 import efinance as ef
-import numpy
 from MyTT import *
+import akshare as ak
 import numpy as np
 
 

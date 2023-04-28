@@ -2,7 +2,7 @@ import formula
 
 
 def stock_select():
-    formula.init("301138", "20020201", "20230615")
+    formula.init("881121", "20020201", "20230615")
     print("缩量", formula.缩量())
     print("日均线", formula.日均线上移())
     print("弹性", formula.弹性())
