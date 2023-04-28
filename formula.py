@@ -24,6 +24,12 @@ class StockData:
             klt = 102
         elif level == "月":
             klt = 103
+        elif level == "15":
+            klt = 15
+        elif level == "30":
+            klt = 30
+        elif level == "60":
+            klt = 60
         history = ef.stock.get_quote_history(stock_code, start_time, end_time, klt)
         self.close = history['收盘'].values
         self.open = history['开盘'].values
@@ -34,25 +40,34 @@ class StockData:
             self.turnover_rate = history['换手率'].values[-1]
 
 
-stock_code = "300964"
-start_time = "20221101"
-end_time = "20230301"
-dayData = StockData("日")
-weekData = StockData("周")
-monthData = StockData("月")
+stock_code = "605178"
+start_time = "20020101"
+end_time = "20230421"
+dataDay = StockData("日")
+dataWeek = StockData("周")
+dataMonth = StockData("月")
+data15 = StockData("15")
+data30 = StockData("30")
+data60 = StockData("60")
 
 
 def init(code, start, end):
-    global stock_code, start_time, end_time
+    global stock_code, start_time, end_time, dataDay, dataWeek, dataMonth, data15, data30, data60
     stock_code = code
     start_time = start
     end_time = end
+    dataDay = StockData("日")
+    dataWeek = StockData("周")
+    dataMonth = StockData("月")
+    data15 = StockData("15")
+    data30 = StockData("30")
+    data60 = StockData("60")
 
 
 def 弹性() -> bool:
-    low = dayData.low
-    high = dayData.high
-    close = dayData.close
+    low = dataDay.low
+    high = dataDay.high
+    close = dataDay.close
     振幅 = 100 * (high - low) / low > 8.1
     涨幅 = close / REF(close, 1) > 1.07
     if len(high) > 110:
@@ -65,7 +80,7 @@ def 弹性() -> bool:
 
 
 def 日均线上移() -> bool:
-    close = dayData.close
+    close = dataDay.close
     日线10 = MA(close, 10) >= REF(MA(close, 10), 1)
     日线20 = MA(close, 20) >= REF(MA(close, 20), 1)
     日线30 = MA(close, 30) >= REF(MA(close, 30), 1)
@@ -74,7 +89,7 @@ def 日均线上移() -> bool:
 
 
 def 周均线上移() -> bool:
-    week_close = weekData.close
+    week_close = dataWeek.close
     周线10 = MA(week_close, 10) >= REF(MA(week_close, 10), 1)
     周线20 = MA(week_close, 20) >= REF(MA(week_close, 20), 1)
     周线30 = MA(week_close, 30) >= REF(MA(week_close, 30), 1)
@@ -152,57 +167,65 @@ def MACD上移(level) -> bool:
     return mergeAndGetLast(macd, REF(macd, 1), ge())
 
 
-def ge() -> Callable[[Any, Any], bool]:
-    return lambda x, y: x >= y
-
-
 def MACD小于(level, num) -> bool:
     diff, dea, macd = MACD(level)
     return macd[-1] < num
 
 
 def 换手率大于(num) -> bool:
-    return dayData.turnover_rate > num
+    return dataDay.turnover_rate > num
 
 
 def 缩量() -> bool:
-    volume = dayData.volume
+    volume = dataDay.volume
     volumeDiff = mergeList(volume, MA(volume, 2), 5, lambda x, y: (x / y) < 0.95)
     return countTrueList(volumeDiff, 3)
 
 
 def 回踩均线(level, n=4) -> bool:
     close = getLevelData(level).close
-    A20 = ABS((close / MA(close, 20) - 1) * 100)[-1] <= n
-    A30 = ABS((close / MA(close, 30) - 1) * 100)[-1] <= n
-    A60 = ABS((close / MA(close, 60) - 1) * 100)[-1] <= n
-    A120 = ABS((close / MA(close, 120) - 1) * 100)[-1] <= n
-    return A20 or A30 or A60 or A120
-
-
-def 吸筹(level, n=6) -> bool:
-    data = getLevelData(level)
-    C = data.close
-    L = data.low
-    H = data.high
-    V11 = 3 * SMA((C - LLV(L, 55)) / (HHV(H, 55) - LLV(L, 55)) * 100, 5, 1) - 2 * SMA(
-        SMA((C - LLV(L, 55)) / (HHV(H, 55) - LLV(L, 55)) * 100, 5, 1), 3, 1)
-    V12 = (EMA(V11, 3) - REF(EMA(V11, 3), 1)) / REF(EMA(V11, 3), 1) * 100
-    AA = (EMA(V11, 3) <= 13) and FILTER((EMA(V11, 3) <= 13), 15)
-    BB = (EMA(V11, 3) <= 13 < V12) and FILTER((EMA(V11, 3) <= 13 < V12), 10)
-    for i in range(1, n + 1):
-        if COUNT(AA or BB, i)[-1]:
+    arrays = [__均线偏移量(close, 5), __均线偏移量(close, 10), __均线偏移量(close, 20), __均线偏移量(close, 30),
+              __均线偏移量(close, 60), __均线偏移量(close, 120)]
+    for i in range(0, arrays.__len__()):
+        if countList(arrays[i], 3, lt(n)):
             return True
     return False
 
 
+def __均线偏移量(close, n):
+    return ABS((close / MA(close, n) - 1) * 100)
+
+
+def 吸筹(level, n=10) -> bool:
+    data = getLevelData(level)
+    # n = 吸筹周期(level, day)
+    if data.close.__len__() == 0:
+        return False
+    C = data.close
+    L = data.low
+    H = data.high
+    周期 = 55 if len(L) > 55 else len(L)
+    llv = LLV(L, 周期)
+    hhv = HHV(H, 周期)
+    v11 = 3 * SMA((C - llv) / (hhv - llv) * 100, 5, 1) - 2 * SMA(SMA((C - llv) / (hhv - llv) * 100, 5, 1), 3, 1)
+    v12 = (EMA(v11, 3) - REF(EMA(v11, 3), 1)) / REF(EMA(v11, 3), 1) * 100
+    ema_v11 = EMA(v11, 3)
+    return countList(ema_v11, n, lt(13)) or (countList(ema_v11, n, lt(13)) and countList(v12, n, gt(13)))
+
+
 def getLevelData(leve) -> StockData:
     if leve == "日":
-        return dayData
+        return dataDay
     elif leve == "周":
-        return weekData
+        return dataWeek
     elif leve == "月":
-        return monthData
+        return dataMonth
+    elif leve == "15":
+        return data15
+    elif leve == "30":
+        return data30
+    elif leve == "60":
+        return data60
 
 
 def mergeList(list1, list2, n, func):
@@ -225,4 +248,23 @@ def mergeAndGetLast(list1, list2, func):
 
 # 判断列表中是否包含指定元素，且连续出现n次
 def countTrueList(lst, n):
+    n = n if n < len(lst) else len(lst)
     return any([lst[i:i + n] == [True] * n for i in range(len(lst) - n + 1)])
+
+
+# 判断列表中倒数N个元素是否有满足lambda表达式的
+def countList(lst, n, func):
+    n = n if n < len(lst) else len(lst)
+    return any([func(lst[i]) for i in range(len(lst) - n, len(lst))])
+
+
+def lt(n):
+    return lambda x: x < n
+
+
+def ge():
+    return lambda x, y: x >= y
+
+
+def gt(n):
+    return lambda x: x > n

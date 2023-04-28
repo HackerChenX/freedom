@@ -2,7 +2,7 @@ import formula
 
 
 def stock_select():
-    formula.init("301110", "20230201", "20230315")
+    formula.init("301138", "20020201", "20230615")
     print("缩量", formula.缩量())
     print("日均线", formula.日均线上移())
     print("弹性", formula.弹性())
@@ -21,6 +21,12 @@ def stock_select():
     print("换手率大于6", formula.换手率大于(6))
     print("macd小于0.8", formula.MACD小于("日", 0.8))
     print("回踩均线", formula.回踩均线("日"))
+    print("日吸筹", formula.吸筹("日"))
+    print("15分钟吸筹", formula.吸筹("15"))
+    print("30分钟吸筹", formula.吸筹("30"))
+    print("60分钟吸筹", formula.吸筹("60"))
+    print("周线吸筹", formula.吸筹("周"))
+    print("月线吸筹", formula.吸筹("月"))
 
 
 if __name__ == '__main__':
