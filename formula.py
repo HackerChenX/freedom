@@ -175,6 +175,10 @@ class Formula:
     def J或K或D或DEA上移(self, level) -> bool:
         return self.J上移(level) or self.K上移(level) or self.D上移(level) or self.DEA上移(level)
 
+    def macd_kdj任一指标上移(self, level) -> bool:
+        return self.D上移(level) or self.K上移(level) or self.J上移(level) or self.DEA上移(level) or self.MACD上移(
+            level) or self.DIFF上移(level)
+
     def D或DEA上移(self, level) -> bool:
         return self.D上移(level) or self.DEA上移(level)
 
@@ -247,6 +251,13 @@ class Formula:
         ema_v11 = EMA(v11, 3)
         return countListAnyMatch(ema_v11, n, ltn(13)) or (
                 countListAnyMatch(ema_v11, n, ltn(13)) and countListAnyMatch(v12, n, gt(13)))
+
+    def boll(self):
+        dataDay = self.dataDay
+        return BOLL(dataDay.close, 20, 2)
+
+    def 大于boll中轨(self):
+        return self.dataDay.close[-1] > self.boll()[1][-1]
 
     def getLevelData(self, leve) -> StockData:
         if leve == "日":
