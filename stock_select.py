@@ -4,13 +4,14 @@ import os
 import shutil
 import time
 
+import numpy as np
 import pandas as pd
 
 import db
 import formula
 import multiprocessing as mp
 
-global_date = "20240316"
+global_date = "20240510"
 
 
 def stock_select():
@@ -30,6 +31,7 @@ def stock_select_by_industry():
     start_time = time.time()
     pool = mp.Pool()  # 创建线程池
     industries = formula.主线()
+    print(industries)
     for industry in industries:
         codes = db.get_industry_stock(industry)
         # 遍历codes
@@ -62,7 +64,7 @@ def stock_select_single():
 
 
 def 回测_single():
-    lst = (("301029", "20230316", 1),)
+    lst = (("002343", "20230510", 1),)
     回测_汇总(lst)
 
 
@@ -279,10 +281,10 @@ def 同步数据():
     for index, row in stock_code_name.iterrows():
         code = row["code"]
         pool.apply_async(同步数据_task, args=(code, max_date))
-    pool.close()  # 关闭线程池
-    pool.join()  # 等待所有线程执行结束
+    pool.close()
+    pool.join()
     end_time = time.time()
-    print("耗时", end_time - start_time)
+    print("同步数据耗时：", end_time - start_time)
 
 
 def 同步数据_task(code, max_date):
