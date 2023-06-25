@@ -11,7 +11,7 @@ import db
 import formula
 import multiprocessing as mp
 
-global_date = "20240510"
+global_date = "20230316"
 
 
 def stock_select():

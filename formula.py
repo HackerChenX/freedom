@@ -14,7 +14,7 @@ class StockData:
     turnover_rate = []
     history = []
 
-    def __init__(self, stock_code, level="日", start="20170101", end="20240101", sync=False):
+    def __init__(self, stock_code="", level="日", start="20170101", end="20240101", sync=False):
         if sync:
             self.init_ef(stock_code, level, sync, start, end)
         else:
@@ -100,8 +100,8 @@ class Formula:
         self.dataWeek = StockData(code, "周", start, end, sync)
         self.dataMonth = StockData(code, "月", start, end, sync)
         self.data15 = StockData(code, "15", start, end, sync)
-        self.data30 = StockData(code, "30", start, end, sync)
-        self.data60 = StockData(code, "60", start, end, sync)
+        self.data30 = 合并K线(self.data15)
+        self.data60 = 合并K线(self.data30)
         self.name = self.dataDay.history['name'].values[0]
         self.industry = self.dataDay.history['industry'].values[0]
 
@@ -347,3 +347,30 @@ def 主线():
     # 合并df_涨跌家数比和df_排名，去除重复，输出板块列表
     df = pd.concat([df_涨跌家数比, df_排名]).drop_duplicates()
     return df['板块'].tolist()
+
+
+def 合并K线(stock_data: StockData):
+    low_level_close = stock_data.close
+    low_level_open = stock_data.open
+    low_level_high = stock_data.high
+    low_level_low = stock_data.low
+    low_level_volume = stock_data.volume
+    low_level_turnover_rate = stock_data.turnover_rate
+    close = low_level_close[1::2]
+    open = low_level_open[::2]
+    # low_level_high每两个一组，取最大的组成新的数组
+    high = np.maximum(low_level_high[::2], low_level_high[1::2])
+    # low_level_low每两个一组，取最小的组成新的数组
+    low = np.minimum(low_level_low[::2], low_level_low[1::2])
+    # low_level_volume每两个一组，取和组成新的数组
+    volume = low_level_volume[::2] + low_level_volume[1::2]
+    # low_level_turnover_rate每两个一组，取和组成新的数组，新数组的元素保留两位小数
+    turnover_rate = np.round(low_level_turnover_rate[::2] + low_level_turnover_rate[1::2], 2)
+    high_level_data = StockData()
+    high_level_data.close = close
+    high_level_data.open = open
+    high_level_data.high = high
+    high_level_data.low = low
+    high_level_data.volume = volume
+    high_level_data.turnover_rate = turnover_rate
+    return high_level_data
