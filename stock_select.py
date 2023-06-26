@@ -288,7 +288,17 @@ def 同步数据():
 
 
 def 同步数据_task(code, max_date):
-    formula.Formula(code, start=max_date, sync=True)
+    if not max_date:
+        max_date = db.get_max_date()
+        # 加一天
+        max_date = max_date + datetime.timedelta(days=1)
+        max_date = max_date.strftime("%Y%m%d")
+    # end_date是今天减一天
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y%m%d")
+    # 如果max_date大于end_date，不同步
+    if max_date > end_date:
+        return
+    formula.Formula(code, start=max_date, end=end_date, sync=True)
 
 
 if __name__ == '__main__':
@@ -300,5 +310,5 @@ if __name__ == '__main__':
     # 回测_db()
     # 回测_csv()
     # formula.主线()
-    stock_select_by_industry()
-    # 同步数据()
+    # stock_select_by_industry()
+    同步数据()

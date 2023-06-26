@@ -4,7 +4,8 @@
 import pymysql
 import pandas as pd
 
-db = pymysql.connect(host="localhost", user="root", password="cxy223826", database="stock")
+# db = pymysql.connect(host="localhost", user="root", password="cxy223826", database="stock")
+db = pymysql.connect(host="82.157.161.208", user="root", password="jpress", database="stock")
 cursor = db.cursor()
 
 
