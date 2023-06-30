@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 
 import db
-import formula
 import multiprocessing as mp
+import formula
 
 global_date = "20230316"
 
@@ -311,4 +311,6 @@ if __name__ == '__main__':
     # 回测_csv()
     # formula.主线()
     # stock_select_by_industry()
-    同步数据()
+    # 同步数据()
+    df = formula.板块()
+    # 按照name, code写入到csv文件

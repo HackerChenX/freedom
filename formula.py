@@ -1,8 +1,8 @@
 import efinance as ef
 from MyTT import *
-import akshare as ak
 import numpy as np
 import db
+import akshare as ak
 
 
 class StockData:
@@ -347,6 +347,11 @@ def 主线():
     # 合并df_涨跌家数比和df_排名，去除重复，输出板块列表
     df = pd.concat([df_涨跌家数比, df_排名]).drop_duplicates()
     return df['板块'].tolist()
+
+
+def 同步板块数据():
+    df = ak.stock_board_industry_index_ths()
+    return df
 
 
 def 合并K线(stock_data: StockData):
