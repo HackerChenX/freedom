@@ -65,18 +65,58 @@ class IndustryData:
     high = []
     low = []
     volume = []
-    turnover_rate = 0.0
     history = []
+    date = ""
+    symbol = ""
 
-    def __init__(self, symbol, level="日"):
-        history = ak.stock_board_industry_index_ths(symbol)
-        self.close = history['收盘'].values
-        self.open = history['开盘'].values
-        self.high = history['最高'].values
-        self.low = history['最低'].values
+    def __init__(self, symbol, start="20200101", end="20250101", sync=False):
+        if sync:
+            self.init_ef(symbol, start, end, sync)
+        else:
+            self.init_db(symbol, start, end)
+
+    def init_ef(self, symbol, start="20200101", end="20240101", sync=False):
+        history = ak.stock_board_industry_index_ths(symbol, start, end)
+        self.symbol = symbol
+        self.close = history['收盘价'].values
+        self.open = history['开盘价'].values
+        self.high = history['最高价'].values
+        self.low = history['最低价'].values
         self.volume = history['成交量'].values
-        if level == "日":
-            self.turnover_rate = history['换手率'].values[-1]
+        # 填充history[板块]=symbol
+        if sync:
+            for i in range(len(history)):
+                history.loc[i, '板块'] = symbol
+            db.save_industry_info(history)
+
+    def init_db(self, symbol, start="20200101", end="20240101"):
+        db_data = db.get_industry_info(symbol, start, end)
+        history = pd.DataFrame(db_data,
+                               columns=['id', 'symbol', 'date', 'open', 'close', 'high', 'low',
+                                        'volume'])
+        self.close = history['close'].values
+        self.open = history['open'].values
+        self.high = history['high'].values
+        self.low = history['low'].values
+        self.volume = history['volume'].values
+        self.date = history['date'].values
+        self.history = history
+
+    def 吸筹(self, n=10) -> bool:
+        data = self
+        # n = 吸筹周期(level, day)
+        if data.close.__len__() == 0:
+            return False
+        C = data.close
+        L = data.low
+        H = data.high
+        llv = LLV(L, 55)
+        hhv = HHV(H, 55)
+        v11 = 3 * SMA((C - llv) / (hhv - llv) * 100, 5, 1) - 2 * SMA(SMA((C - llv) / (hhv - llv) * 100, 5, 1), 3, 1)
+        v12 = (EMA(v11, 3) - REF(EMA(v11, 3), 1)) / REF(EMA(v11, 3), 1) * 100
+        ema_v11 = EMA(v11, 3)
+        return countListAnyMatch(ema_v11, n, ltn(13)) or (
+                countListAnyMatch(ema_v11, n, ltn(13)) and countListAnyMatch(v12, n, gt(13)))
 
 
 class Formula:
@@ -340,18 +380,31 @@ def 主线():
     df = ak.stock_board_industry_summary_ths()
     # 计算涨跌家数比，=上涨家数/(上涨家数+下跌家数)
     df['涨跌家数比'] = df['上涨家数'] / (df['上涨家数'] + df['下跌家数'])
-    # 按照上涨家数/(上涨家数+下跌家数)排序，取前十个
+    # 按照上涨家数/(上涨家数+下跌家数)排序，取前10个
     df_涨跌家数比 = df.sort_values(by='涨跌家数比', ascending=False).head(10)
     # 取序号排名前十的行业
     df_排名 = df.sort_values(by='序号').head(10)
     # 合并df_涨跌家数比和df_排名，去除重复，输出板块列表
     df = pd.concat([df_涨跌家数比, df_排名]).drop_duplicates()
-    return df['板块'].tolist()
+    df_板块 = df['板块'].tolist()
+    df_吸筹板块 = 吸筹板块()
+    # 合并df_板块和df_吸筹板块，取交集，输出板块列表
+    df = list(set(df_板块).intersection(set(df_吸筹板块)))
+    # df_板块与df取并集，去除重复
+    df_板块 = list(set(df_板块).union(set(df)))
+    return df_板块
 
 
-def 同步板块数据():
-    df = ak.stock_board_industry_index_ths()
-    return df
+def 吸筹板块():
+    industry = pd.read_csv("industry.csv", dtype=str)
+    results = []
+    for index, row in industry.iterrows():
+        industry_name = row["industry"]
+        industryData = IndustryData(industry_name, sync=False)
+        if industryData.吸筹():
+            results.append(industry_name)
+    print("吸筹板块：", results)
+    return results
 
 
 def 合并K线(stock_data: StockData):

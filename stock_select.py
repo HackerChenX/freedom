@@ -271,7 +271,7 @@ def 涨幅(code, start, close):
 
 
 def 同步数据():
-    max_date = db.get_max_date()
+    max_date = db.get_stock_max_date()
     # 加一天
     max_date = max_date + datetime.timedelta(days=1)
     max_date = max_date.strftime("%Y%m%d")
@@ -289,16 +289,50 @@ def 同步数据():
 
 def 同步数据_task(code, max_date):
     if not max_date:
-        max_date = db.get_max_date()
+        max_date = db.get_stock_max_date()
         # 加一天
         max_date = max_date + datetime.timedelta(days=1)
         max_date = max_date.strftime("%Y%m%d")
-    # end_date是今天减一天
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y%m%d")
+    # 如果当前时间小于15点，end_date是昨天
+    if datetime.datetime.now().hour < 15:
+        end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y%m%d")
+    else:
+        end_date = datetime.datetime.now().strftime("%Y%m%d")
     # 如果max_date大于end_date，不同步
     if max_date > end_date:
         return
     formula.Formula(code, start=max_date, end=end_date, sync=True)
+
+
+def 同步板块(max_date=None):
+    if not max_date:
+        max_date = db.get_industry_max_date()
+        # 加一天
+        max_date = max_date + datetime.timedelta(days=1)
+        max_date = max_date.strftime("%Y%m%d")
+    # 如果当前时间小于15点，end_date是昨天
+    if datetime.datetime.now().hour < 15:
+        end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y%m%d")
+    else:
+        end_date = datetime.datetime.now().strftime("%Y%m%d")
+    # 如果max_date大于end_date，不同步
+    if max_date > end_date:
+        return
+    industry = pd.read_csv("industry.csv", dtype=str)
+    start_time = time.time()
+    pool = mp.Pool()  # 创建线程池
+    for index, row in industry.iterrows():
+        industry_name = row["industry"]
+        pool.apply_async(同步板块_task, args=(industry_name, max_date, end_date))
+    pool.close()
+    pool.join()
+    end_time = time.time()
+    print("同步数据耗时：", end_time - start_time)
+
+
+def 同步板块_task(industry_name, max_date, end_date="20251231"):
+    formula.IndustryData(industry_name, start=max_date, end=end_date, sync=True)
+
 
 
 if __name__ == '__main__':
@@ -310,7 +344,6 @@ if __name__ == '__main__':
     # 回测_db()
     # 回测_csv()
     # formula.主线()
-    # stock_select_by_industry()
+    stock_select_by_industry()
     # 同步数据()
-    df = formula.板块()
-    # 按照name, code写入到csv文件
+    # 同步板块("20200101")

@@ -4,27 +4,27 @@
 import pandas as pd
 import pymysql
 
-# db = pymysql.connect(host="localhost", user="root", password="cxy223826", database="stock")
-db = pymysql.connect(host="82.157.161.208", user="root", password="jpress", database="stock")
+db = pymysql.connect(host="localhost", user="root", password="cxy223826", database="stock")
+# db = pymysql.connect(host="82.157.161.208", user="root", password="jpress", database="stock")
 cursor = db.cursor()
 
 
 def save_stock_info(stock_info: pd.DataFrame, level):
-    # 循环stock_info，插入
+    # 批量生成插入语句，一次性插入
+    insert_sql = "INSERT INTO stock_info(code, name, date, level, open, close, high, low, volume, turnover_rate, " \
+                 "price_change, price_range) VALUES"
     for index, row in stock_info.iterrows():
-        insert_sql = """
-        INSERT INTO stock_info(code, name, date, level, open, close, high, low, volume, turnover_rate, 
-        price_change, price_range) 
-        VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
-        """ % (row["股票代码"], row["股票名称"].replace(" ", ""), row["日期"], level, row["开盘"],
-               row["收盘"], row["最高"], row["最低"], row["成交量"],
-               row["换手率"], row["涨跌幅"], row["振幅"])
-        try:
-            cursor.execute(insert_sql)
-            db.commit()
-        except:
-            # 如果发生错误则回滚
-            db.rollback()
+        insert_sql += "('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')," % (
+            row["股票代码"], row["股票名称"].replace(" ", ""), row["日期"], level, row["开盘"],
+            row["收盘"], row["最高"], row["最低"], row["成交量"],
+            row["换手率"], row["涨跌幅"], row["振幅"])
+    insert_sql = insert_sql[:-1]
+    try:
+        cursor.execute(insert_sql)
+        db.commit()
+    except:
+        # 如果发生错误则回滚
+        db.rollback()
 
 
 def get_stock_info(code, level, start="20170101", end="20240101"):
@@ -73,9 +73,41 @@ def get_industry_stock(industry):
     return cursor.fetchall()
 
 
-def get_max_date():
+def get_stock_max_date():
     sql = """
     SELECT max(date) FROM stock_info
     """
     cursor.execute(sql)
     return cursor.fetchone()[0]
+
+
+def get_industry_max_date():
+    sql = """
+    SELECT max(date) FROM industry_info
+    """
+    cursor.execute(sql)
+    return cursor.fetchone()[0]
+
+
+def save_industry_info(industry_info):
+    # 批量生成插入语句，一次性插入
+    insert_sql = "INSERT INTO industry_info(symbol, date, open, close, high, low, volume) VALUES"
+    for index, row in industry_info.iterrows():
+        insert_sql += "('%s', '%s', '%s', '%s', '%s', '%s', '%s')," % (
+            row["板块"], row["日期"], row["开盘价"],
+            row["收盘价"], row["最高价"], row["最低价"], row["成交量"])
+    insert_sql = insert_sql[:-1]
+    try:
+        cursor.execute(insert_sql)
+        db.commit()
+    except:
+        # 如果发生错误则回滚
+        db.rollback()
+
+
+def get_industry_info(symbol, start, end):
+    sql = """
+    SELECT * FROM industry_info WHERE symbol = '%s' AND date BETWEEN "%s" and "%s" order by date
+    """ % (symbol, start, end)
+    cursor.execute(sql)
+    return cursor.fetchall()
