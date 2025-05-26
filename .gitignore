@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Database
+db/clickhouse
+*.db
+*.sqlite3
+
+# Output and temporary files
+data/result/
+output/
+temp/
+metadata/
+preprocessed_configs/
+uuid
+
+# Environments
+venv/
+env/
+ENV/
+
+# Mac
+.DS_Store
+
+# Large files
+*.patch 
