@@ -76,3 +76,11 @@ coverage.xml
 
 # Large files
 *.patch
+*.pdf
+*.dat
+*.bin
+*.pkl
+*.npy
+*.npz
+*.model
+*.backup
