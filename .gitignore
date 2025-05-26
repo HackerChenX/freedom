@@ -25,10 +25,15 @@ wheels/
 .vscode/
 *.swp
 *.swo
+.DS_Store
+*.sublime-project
+*.sublime-workspace
 
 # Logs
 logs/
 *.log
+!logs/.gitkeep
+!logs/archive/.gitkeep
 
 # Database
 db/clickhouse
@@ -39,17 +44,35 @@ db/clickhouse
 data/result/
 output/
 temp/
+tmp/
 metadata/
+metadata_dropped/
 preprocessed_configs/
+format_schemas/
+store/
+user_files/
 uuid
+status
+flags/
+!data/result/.gitkeep
 
 # Environments
 venv/
 env/
 ENV/
 
-# Mac
-.DS_Store
+# 测试相关
+.coverage
+htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Cursor
+.cursor/cursors.json
+.cursor/settings.json 
 
 # Large files
-*.patch 
+*.patch

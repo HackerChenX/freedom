@@ -1,0 +1,88 @@
+// ZXM体系选股公式 - 极致缩量回踩+30分钟吸筹
+// 月线指标部分
+M_MA60:=MA(CLOSE,60);             // 月线60日均线
+M_MA60Up:=REF(M_MA60,1)<M_MA60;   // 月线60日均线上移
+// 月线KDJ指标
+M_RSV:=(CLOSE-LLV(LOW,9))/(HHV(HIGH,9)-LLV(LOW,9))*100;
+M_K:=SMA(M_RSV,3,1);
+M_D:=SMA(M_K,3,1);
+M_J:=3*M_K-2*M_D;
+M_KDJUp:=M_K>=REF(M_K,1) AND M_D>=REF(M_D,1); // 月线KDJ上移
+// 月线MACD
+M_DIFF:=EMA(CLOSE,12)-EMA(CLOSE,26);
+M_DEA:=EMA(M_DIFF,9);
+M_MACDUp:=M_DIFF>=REF(M_DIFF,1) AND M_DEA>=REF(M_DEA,1); // MACD/DEA上移
+M_BaseFormed:=M_MA60Up AND M_KDJUp AND M_MACDUp; // 月线形成基底
+
+// 周线指标部分
+W_MA5:=MA(CLOSE,5);
+W_MA10:=MA(CLOSE,10);
+W_MA20:=MA(CLOSE,20);
+W_MA30:=MA(CLOSE,30);
+// 周线均线粘合度
+W_MARange:=(MAX(MAX(MAX(W_MA5,W_MA10),W_MA20),W_MA30)-MIN(MIN(MIN(W_MA5,W_MA10),W_MA20),W_MA30))/MIN(MIN(MIN(W_MA5,W_MA10),W_MA20),W_MA30)*100;
+W_MAStick:=W_MARange<=3.5; // 均线粘合度小于3.5%
+
+// 日线指标部分
+// 弹性计算 - 近20日振幅
+D_Amplitude:=100*(HHV(HIGH,20)-LLV(LOW,20))/LLV(LOW,20);
+D_HighAmplitude:=D_Amplitude>10; // 振幅大于10%为高弹性
+
+// 成交量分析
+D_VOL5:=MA(VOL,5);
+D_VOL10:=MA(VOL,10);
+D_VOL20:=MA(VOL,20);
+D_ActiveVol:=VOL>D_VOL20*0.8; // 活跃成交量判断
+
+// 缩量判断
+D_VolShrink:=VOL/REF(VOL,1)<0.7 AND VOL/D_VOL5<0.6; // 极致缩量
+D_PreVolExpand:=HHV(VOL/D_VOL5,5)>1.5; // 前期放量上涨
+
+// 多均线上移
+D_MA5:=MA(CLOSE,5);
+D_MA10:=MA(CLOSE,10);
+D_MA20:=MA(CLOSE,20);
+D_MA30:=MA(CLOSE,30);
+D_MA60:=MA(CLOSE,60);
+D_MA120:=MA(CLOSE,120);
+
+D_MAUp:=COUNT(D_MA5>REF(D_MA5,1) AND D_MA10>REF(D_MA10,1) AND D_MA20>REF(D_MA20,1),3)>=2; // 多均线上移
+
+// 支撑均线多
+D_SupportMA:=CLOSE/D_MA5<=1.02 OR CLOSE/D_MA10<=1.02 OR CLOSE/D_MA20<=1.02 OR CLOSE/D_MA30<=1.02 OR CLOSE/D_MA60<=1.02;
+
+// 非高位大阴线
+D_HighVolumeDown:=VOL>D_VOL10*1.8 AND CLOSE<OPEN AND (OPEN-CLOSE)/CLOSE>0.03;
+D_NoHighVolDown:=COUNT(D_HighVolumeDown,10)=0;
+
+// 非左侧和放量下跌
+D_VolDown:=VOL>D_VOL5*1.5 AND CLOSE<OPEN AND (OPEN-CLOSE)/CLOSE>0.02;
+D_NoVolDown:=COUNT(D_VolDown,5)=0;
+
+// 未大涨判断 - 近10日涨幅不超过15%
+D_NotBigRise:=CLOSE/REF(CLOSE,10)<=1.15;
+
+// 30分钟吸筹信号 - Williams Blau能量波动率
+M30_V11:=3*SMA((CLOSE-LLV(LOW,55))/(HHV(HIGH,55)-LLV(LOW,55))*100,5,1)-2*SMA(SMA((CLOSE-LLV(LOW,55))/(HHV(HIGH,55)-LLV(LOW,55))*100,5,1),3,1);
+M30_V12:=(EMA(M30_V11,3)-REF(EMA(M30_V11,3),1))/REF(EMA(M30_V11,3),1)*100;
+M30_AA:=(EMA(M30_V11,3)<=13) AND FILTER((EMA(M30_V11,3)<=13),15);
+M30_BB:=(EMA(M30_V11,3)<=13 AND M30_V12>13) AND FILTER((EMA(M30_V11,3)<=13 AND M30_V12>13),10);
+M30_Absorption:=COUNT(M30_AA OR M30_BB,10)>=1; // 30分钟吸筹信号
+
+// 回踩支撑判断
+D_TouchSupport:=D_SupportMA AND D_VolShrink;
+
+// 综合判断
+Good_Shape:=M_BaseFormed AND W_MAStick AND D_HighAmplitude AND D_PreVolExpand AND D_MAUp AND D_NotBigRise AND D_NoHighVolDown AND D_NoVolDown;
+
+// 最终选股结果
+PerfectStock:=Good_Shape AND D_TouchSupport AND M30_Absorption; // 完美形态+回踩支撑+30分钟吸筹
+TrackingStock:=Good_Shape AND (NOT M30_Absorption) AND D_TouchSupport; // 形态好+回踩支撑但无30分钟吸筹
+ContinueTrack:=Good_Shape AND D_VolShrink AND (NOT D_TouchSupport); // 形态好+缩量但未回踩支撑
+
+// 在图表上标记
+DRAWTEXT(PerfectStock,LOW*0.99,'完美');
+DRAWTEXT(TrackingStock,LOW*0.99,'跟踪');
+DRAWTEXT(ContinueTrack,LOW*0.99,'继续观察');
+
+RETURN PerfectStock OR TrackingStock OR ContinueTrack;

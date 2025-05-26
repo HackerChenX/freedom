@@ -1,0 +1,93 @@
+# 日线KDJ超卖回调买点选股公式
+
+## 基础参数设置
+OVERSOLD_K:=20;     // K值超卖阈值
+OVERSOLD_D:=20;     // D值超卖阈值
+OVERSOLD_J:=10;     // J值超卖阈值
+PRICE_PERIOD:=20;   // 价格参考周期
+VOLUME_DAYS:=10;    // 成交量参考天数
+
+## KDJ指标计算
+RSV:=(CLOSE-LLV(LOW,9))/(HHV(HIGH,9)-LLV(LOW,9))*100;  // RSV值
+K:=SMA(RSV,3,1);         // K值
+D:=SMA(K,3,1);           // D值
+J:=3*K-2*D;              // J值
+
+## 超卖判断
+K_OVERSOLD:=REF(K,1)<OVERSOLD_K;                // 前一日K值处于超卖
+D_OVERSOLD:=REF(D,1)<OVERSOLD_D;                // 前一日D值处于超卖
+J_OVERSOLD:=REF(J,1)<OVERSOLD_J;                // 前一日J值处于超卖
+KDJ_OVERSOLD:=K_OVERSOLD AND D_OVERSOLD;        // KDJ同时超卖
+
+## KDJ回调信号
+K_RISING:=K>REF(K,1);                           // K值上升
+D_RISING:=D>REF(D,1);                           // D值上升
+J_RISING:=J>REF(J,1);                           // J值上升
+KDJ_GOLDEN:=CROSS(K,D);                         // KDJ金叉
+KDJ_RECOVER:=(K_RISING AND D_RISING) OR KDJ_GOLDEN; // KDJ回调向上
+
+## MACD指标计算
+DIFF:=EMA(CLOSE,12)-EMA(CLOSE,26);              // DIFF线
+DEA:=EMA(DIFF,9);                               // DEA线
+MACD:=2*(DIFF-DEA);                             // MACD柱状图
+
+## MACD信号
+MACD_GOLDEN:=CROSS(DIFF,DEA);                   // MACD金叉
+DIFF_RISING:=DIFF>REF(DIFF,1);                  // DIFF向上
+MACD_BOTTOM:=MACD<0 AND MACD>REF(MACD,1);       // MACD柱状图由绿转红
+
+## 均线系统
+MA5:=MA(CLOSE,5);                               // 5日均线
+MA10:=MA(CLOSE,10);                             // 10日均线
+MA20:=MA(CLOSE,20);                             // 20日均线
+MA30:=MA(CLOSE,30);                             // 30日均线
+MA60:=MA(CLOSE,60);                             // 60日均线
+
+## 均线关系
+MA5_ABOVE_MA10:=MA5>MA10;                       // 5日均线在10日均线上方
+MA5_ABOVE_MA20:=MA5>MA20;                       // 5日均线在20日均线上方
+MA5_RISING:=MA5>REF(MA5,1);                     // 5日均线上升
+MA10_RISING:=MA10>REF(MA10,1);                  // 10日均线上升
+MA_TREND_UP:=MA5_RISING AND MA10_RISING;        // 均线系统向上发展
+
+## 量能分析
+VOL_MA5:=MA(VOL,5);                             // 5日成交量均线
+VOL_MA10:=MA(VOL,10);                           // 10日成交量均线
+VOL_RATIO:=VOL/VOL_MA5;                         // 量比
+VOL_RISING:=VOL>REF(VOL,1);                     // 成交量上升
+VOL_CONFIRM:=VOL_RISING AND VOL_RATIO>1.1;      // 成交量确认信号
+
+## 价格形态
+PRICE_LOW:=LLV(LOW,PRICE_PERIOD);               // 周期最低价
+PRICE_HIGH:=HHV(HIGH,PRICE_PERIOD);             // 周期最高价
+NEAR_LOW:=ABS(LOW-PRICE_LOW)/PRICE_LOW<0.05;    // 接近阶段低点
+PRICE_RANGE:=(PRICE_HIGH-PRICE_LOW)/PRICE_LOW*100; // 价格波动范围
+SIDEWAYS:=PRICE_RANGE<10;                       // 价格处于横盘整理
+
+## 买点条件组合
+// 基础KDJ买点：前期超卖 + 当前回调向上
+BASIC_BUY:=KDJ_OVERSOLD AND KDJ_RECOVER;
+
+// 强化买点：KDJ买点 + MACD底部回升
+STRONG_BUY:=BASIC_BUY AND (MACD_GOLDEN OR DIFF_RISING OR MACD_BOTTOM);
+
+// 趋势确认买点：KDJ买点 + 均线系统向好
+TREND_BUY:=BASIC_BUY AND (MA5_RISING OR MA_TREND_UP);
+
+// 完美买点：满足以上所有条件 + 成交量配合
+PERFECT_BUY:=STRONG_BUY AND TREND_BUY AND VOL_CONFIRM;
+
+// 超跌反弹买点：KDJ严重超卖 + 接近前期低点 + 成交量放大
+REBOUND_BUY:=J_OVERSOLD AND NEAR_LOW AND VOL_CONFIRM;
+
+## 最终买点条件
+BUY_SIGNAL:=BASIC_BUY OR STRONG_BUY OR TREND_BUY OR PERFECT_BUY OR REBOUND_BUY;
+
+## 绘图
+DRAWTEXT(BASIC_BUY,LOW*0.98,'KDJ');         // 标记基础KDJ买点
+DRAWTEXT(STRONG_BUY,LOW*0.98,'STR');         // 标记强化买点
+DRAWTEXT(TREND_BUY,LOW*0.98,'TRD');          // 标记趋势买点
+DRAWTEXT(PERFECT_BUY,LOW*0.98,'PRF');        // 标记完美买点
+DRAWTEXT(REBOUND_BUY,LOW*0.98,'RBD');        // 标记反弹买点
+
+RETURN BUY_SIGNAL; 

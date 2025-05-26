@@ -1,0 +1,49 @@
+# 横盘整理突破选股公式
+## 横盘整理特征识别
+SidewaysDays:=20;                 // 横盘天数设置
+VolatilityThreshold:=5;           // 波动率阈值（百分比）
+NDayVolatility:=100*(HHV(H,SidewaysDays)-LLV(L,SidewaysDays))/LLV(L,SidewaysDays);  // 计算N日价格波动率
+IsSideways:=NDayVolatility<=VolatilityThreshold;  // 判断是否处于横盘整理
+
+## 成交量特征
+# 检测横盘期间成交量是否温和放量
+SidewaysVolAvg:=MA(VOL,SidewaysDays);  // 横盘期间的成交量均值
+RecentVolAvg:=MA(VOL,5);              // 近期成交量均值
+VolExpansion:=RecentVolAvg/SidewaysVolAvg>=1.2 AND RecentVolAvg/SidewaysVolAvg<=2.0;  // 成交量适度放大
+
+## 价格突破特征
+# 计算横盘期上轨
+UpperBound:=HHV(H,SidewaysDays);      // 横盘期间的上轨压力位
+# 判断是否向上突破
+Breakout:=CROSS(C,UpperBound) OR (C>UpperBound AND REF(C,1)>UpperBound AND REF(C,2)<=UpperBound);  // 突破上轨判断
+
+## 均线系统
+# 检测均线多头排列
+MA5:=MA(C,5);                     // 5日均线
+MA10:=MA(C,10);                   // 10日均线
+MA20:=MA(C,20);                   // 20日均线
+MA60:=MA(C,60);                   // 60日均线
+MABullish:=MA5>MA10 AND MA10>MA20 AND MA20>MA60;  // 均线多头排列
+MARising:=MA5>REF(MA5,1) AND MA10>REF(MA10,1) AND MA20>REF(MA20,1);  // 均线向上发散
+
+## MACD指标
+DIFF:=EMA(CLOSE,12)-EMA(CLOSE,26);  // MACD快线
+DEA:=EMA(DIFF,9);                  // MACD慢线
+MACD:=2*(DIFF-DEA);                // MACD柱状图
+MACDGoldenCross:=CROSS(DIFF,DEA);   // MACD金叉
+
+## KDJ指标
+RSV:=(CLOSE-LLV(LOW,9))/(HHV(HIGH,9)-LLV(LOW,9))*100;  // KDJ的RSV值
+K:=SMA(RSV,3,1);                   // K值
+D:=SMA(K,3,1);                     // D值
+J:=3*K-2*D;                        // J值
+KDJGoldenCross:=CROSS(J,D) OR CROSS(K,D);  // KDJ金叉
+
+## 组合条件
+# 历史横盘+当前突破+量能合理+技术指标确认
+BasicPattern:=REF(IsSideways,1) AND Breakout;  // 基本形态：前期横盘+当前突破
+TechConfirm:=(MABullish OR MARising) AND (MACDGoldenCross OR KDJGoldenCross);  // 技术指标确认
+StockResult:=BasicPattern AND VolExpansion AND TechConfirm;  // 综合选股条件
+
+DRAWTEXT(StockResult,LOW*0.99,'BRK');  // 在图表上标记买点
+RETURN StockResult;                    // 返回选股结果
