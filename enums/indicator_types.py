@@ -74,6 +74,9 @@ class IndicatorType(Enum):
     MOMENTUM = "Momentum"  # 动量指标(Momentum)
     RSIMA = "RSIMA"  # RSI均线系统指标
     
+    # 第二阶段新增高级形态指标
+    ADVANCED_CANDLESTICK_PATTERNS = "ADVANCED_CANDLESTICK_PATTERNS"  # 高级K线形态识别指标
+    
     # ZXM体系指标
     # 趋势指标
     ZXM_DAILY_TREND_UP = "ZXM_DAILY_TREND_UP"  # ZXM趋势-日线上移指标

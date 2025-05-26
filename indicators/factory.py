@@ -32,6 +32,7 @@ from indicators.pvt import PVT
 from indicators.volume_ratio import VolumeRatio
 from indicators.platform_breakout import PlatformBreakout
 from indicators.pattern.candlestick_patterns import CandlestickPatterns
+from indicators.pattern.advanced_candlestick_patterns import AdvancedCandlestickPatterns
 from indicators.zxm_washplate import ZXMWashPlate
 from indicators.chip_distribution import ChipDistribution
 from indicators.fibonacci_tools import FibonacciTools
@@ -104,6 +105,7 @@ class IndicatorFactory:
         IndicatorType.VOLUME_RATIO.name: VolumeRatio,
         IndicatorType.PLATFORM_BREAKOUT.name: PlatformBreakout,
         IndicatorType.CANDLESTICK_PATTERNS.name: CandlestickPatterns,
+        IndicatorType.ADVANCED_CANDLESTICK_PATTERNS.name: AdvancedCandlestickPatterns,
         IndicatorType.ZXM_WASHPLATE.name: ZXMWashPlate,
         IndicatorType.CHIP_DISTRIBUTION.name: ChipDistribution,
         IndicatorType.FIBONACCI_TOOLS.name: FibonacciTools,

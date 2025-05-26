@@ -128,6 +128,18 @@ def get_strategies_dir() -> str:
     return strategies_dir
 
 
+def get_strategy_dir() -> str:
+    """
+    获取策略配置文件目录
+    
+    Returns:
+        str: 策略配置文件目录路径
+    """
+    strategy_dir = os.path.join(get_data_dir(), 'strategies')
+    os.makedirs(strategy_dir, exist_ok=True)
+    return strategy_dir
+
+
 def get_multi_period_dir() -> str:
     """
     获取多周期分析结果目录
