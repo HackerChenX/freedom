@@ -1,4 +1,4 @@
-CREATE TABLE stock.stock_info_new (
+CREATE TABLE stock.stock_info (
     code String,
     name String,
     date Date,
@@ -16,4 +16,4 @@ CREATE TABLE stock.stock_info_new (
     seq UInt32 DEFAULT 0
 ) ENGINE = ReplacingMergeTree()
 PRIMARY KEY (code, level, date, datetime, seq)
-ORDER BY (code, level, date, datetime, seq); 
+ORDER BY (code, level, date, datetime, seq);
