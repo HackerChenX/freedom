@@ -275,10 +275,95 @@ class MACD(BaseIndicator):
         Returns:
             Dict: 指标的字典表示
         """
-        base_dict = super().to_dict()
-        base_dict.update({
-            'fast_period': self.fast_period,
-            'slow_period': self.slow_period,
-            'signal_period': self.signal_period
-        })
-        return base_dict 
+        return {
+            'name': self.name,
+            'description': self.description,
+            'parameters': {
+                'fast_period': self.fast_period,
+                'slow_period': self.slow_period,
+                'signal_period': self.signal_period
+            },
+            'has_result': self.has_result(),
+            'has_error': self.has_error(),
+            'error': str(self._error) if self._error else None
+        }
+        
+    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        生成MACD信号
+        
+        Args:
+            data: 输入数据，包含价格数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含信号的DataFrame
+        """
+        # 计算MACD指标
+        if not self.has_result():
+            self.compute(data)
+            
+        if not self.has_result():
+            return pd.DataFrame()
+            
+        # 获取MACD值
+        dif = self._result['DIF']
+        dea = self._result['DEA']
+        macd_hist = self._result['MACD']
+        
+        # 创建信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # 添加买入信号 - MACD金叉（DIF上穿DEA）
+        signals['buy_signal'] = self.get_buy_signal(self._result)
+        
+        # 添加卖出信号 - MACD死叉（DIF下穿DEA）
+        signals['sell_signal'] = self.get_sell_signal(self._result)
+        
+        # 添加零轴穿越信号
+        signals['zero_cross_up'] = (dif > 0) & (dif.shift(1) <= 0)
+        signals['zero_cross_down'] = (dif < 0) & (dif.shift(1) >= 0)
+        
+        # 柱状图趋势
+        signals['hist_increasing'] = macd_hist > macd_hist.shift(1)
+        signals['hist_decreasing'] = macd_hist < macd_hist.shift(1)
+        
+        # 计算信号强度
+        # 范围是0-100，0表示最弱，100表示最强
+        strength = 50.0  # 默认中性
+        
+        # 如果出现金叉，信号强度增加
+        if signals['buy_signal'].iloc[-1]:
+            strength += 25.0
+            
+        # 如果DIF穿越零轴向上，信号强度增加
+        if signals['zero_cross_up'].iloc[-1]:
+            strength += 15.0
+            
+        # 如果柱状图增加，信号强度增加
+        if signals['hist_increasing'].iloc[-1]:
+            strength += 10.0
+            
+        # 如果DIF和DEA都大于0，信号强度增加
+        if dif.iloc[-1] > 0 and dea.iloc[-1] > 0:
+            strength += 10.0
+            
+        # 如果出现死叉，信号强度减少
+        if signals['sell_signal'].iloc[-1]:
+            strength -= 25.0
+            
+        # 如果DIF穿越零轴向下，信号强度减少
+        if signals['zero_cross_down'].iloc[-1]:
+            strength -= 15.0
+            
+        # 如果柱状图减少，信号强度减少
+        if signals['hist_decreasing'].iloc[-1]:
+            strength -= 10.0
+            
+        # 确保强度在0-100范围内
+        strength = max(0.0, min(100.0, strength))
+        
+        # 添加信号强度
+        signals['signal_strength'] = 0.0
+        signals.loc[signals.index[-1], 'signal_strength'] = strength
+        
+        return signals 

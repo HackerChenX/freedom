@@ -296,21 +296,31 @@ class StockData:
         try:
             db_data = db_manager.get_stock_info(stock_code, str(level), start, end)
             
-            if not db_data:
+            # 使用DataFrame.empty属性判断结果是否为空
+            if db_data.empty:
                 stock_logger.warning(f"数据库中没有股票 {stock_code} {level.value} 数据")
                 return
                 
-            # 检查数据列数以适应可能的额外字段(datetime, seq)
-            if len(db_data[0]) > 13:
-                # 如果返回了额外的列，只使用前13列
-                history = pd.DataFrame([row[:13] for row in db_data],
-                                   columns=['code', 'name', 'date', 'level', 'open', 'close', 'high', 'low',
-                                            'volume', 'turnover_rate', 'price_change', 'price_range', 'industry'])
+            # 检查是否是DataFrame格式
+            if isinstance(db_data, pd.DataFrame):
+                history = db_data
             else:
-                # 按原来的方式处理
-                history = pd.DataFrame(db_data,
-                                   columns=['code', 'name', 'date', 'level', 'open', 'close', 'high', 'low',
-                                            'volume', 'turnover_rate', 'price_change', 'price_range', 'industry'])
+                # 如果返回的不是DataFrame，尝试转换
+                try:
+                    # 检查数据列数以适应可能的额外字段(datetime, seq)
+                    if len(db_data[0]) > 13:
+                        # 如果返回了额外的列，只使用前13列
+                        history = pd.DataFrame([row[:13] for row in db_data],
+                                        columns=['code', 'name', 'date', 'level', 'open', 'close', 'high', 'low',
+                                                'volume', 'turnover_rate', 'price_change', 'price_range', 'industry'])
+                    else:
+                        # 按原来的方式处理
+                        history = pd.DataFrame(db_data,
+                                        columns=['code', 'name', 'date', 'level', 'open', 'close', 'high', 'low',
+                                                'volume', 'turnover_rate', 'price_change', 'price_range', 'industry'])
+                except Exception as e:
+                    stock_logger.error(f"转换股票数据格式失败: {e}")
+                    return
             
             self.close = history['close'].values
             self.open = history['open'].values
@@ -384,13 +394,23 @@ class IndustryData:
         try:
             db_data = db_manager.get_industry_info(symbol, start, end)
             
-            if not db_data:
+            # 使用DataFrame.empty属性判断结果是否为空
+            if db_data.empty:
                 stock_logger.warning(f"数据库中没有行业 {symbol} 数据")
                 return
                 
-            history = pd.DataFrame(db_data,
-                                   columns=['symbol', 'date', 'open', 'close', 'high', 'low',
-                                            'volume'])
+            # 检查是否是DataFrame格式
+            if isinstance(db_data, pd.DataFrame):
+                history = db_data
+            else:
+                # 如果返回的不是DataFrame，尝试转换
+                try:
+                    history = pd.DataFrame(db_data,
+                                      columns=['symbol', 'date', 'open', 'close', 'high', 'low',
+                                              'volume'])
+                except Exception as e:
+                    stock_logger.error(f"转换行业数据格式失败: {e}")
+                    return
             
             self.close = history['close'].values
             self.open = history['open'].values
@@ -596,7 +616,9 @@ class StockFormula:
     def 吸筹(self, level, n=10) -> bool:
         data = self.getLevelData(level)
         # n = 吸筹周期(level, day)
-        if not data.close or len(data.close) == 0:
+        
+        # 检查数据是否为空
+        if not hasattr(data, 'close') or not isinstance(data.close, (list, np.ndarray)) or len(data.close) == 0:
             return False
             
         C = data.close

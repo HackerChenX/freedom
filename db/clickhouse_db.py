@@ -26,7 +26,7 @@ DEFAULT_CONFIG = {
     'host': 'localhost',
     'port': 9000,
     'user': 'default',
-    'password': '',
+    'password': '123456',
     'database': 'stock'
 }
 
@@ -260,13 +260,19 @@ class ClickHouseDBConnection:
             Exception: 执行失败时抛出
         """
         try:
+            # 直接执行查询获取结果
             result = self.client.execute(query, params or {})
             if not result:
                 return pd.DataFrame()
             
-            # 获取列名
-            description = self.client.execute(f"SELECT * FROM ({query}) LIMIT 0", params or {})
-            column_names = [item[0] for item in self.client.description]
+            # 获取列名 - 执行一个只返回结构的查询
+            try:
+                # 尝试从原始查询中获取列名
+                meta_result = self.client.execute(f"SELECT * FROM ({query}) WHERE 0=1", params or {})
+                column_names = [col[0] for col in self.client.description]
+            except Exception:
+                # 如果失败，使用序号作为列名
+                column_names = [f"col_{i}" for i in range(len(result[0]))]
             
             # 创建DataFrame
             return pd.DataFrame(result, columns=column_names)
@@ -415,6 +421,118 @@ class ClickHouseDB:
         
         return self.query(query)
     
+    def get_stock_info(self, stock_code: str, level: str, start_date: Union[str, datetime.datetime], 
+                       end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
+        """
+        获取股票K线数据
+        
+        Args:
+            stock_code: 股票代码
+            level: K线周期（例如 day, week, month, 60min, 30min, 15min）
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            pd.DataFrame: 股票K线数据
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        # 转换日期格式
+        if isinstance(start_date, str):
+            try:
+                # 尝试转换为日期格式
+                if len(start_date) == 8:  # 20220101格式
+                    start_date = datetime.datetime.strptime(start_date, '%Y%m%d').date()
+                else:  # 其他格式
+                    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                logger.warning(f"无法将开始日期 {start_date} 转换为日期格式，使用原始字符串")
+        
+        if isinstance(end_date, str):
+            try:
+                # 尝试转换为日期格式
+                if len(end_date) == 8:  # 20220101格式
+                    end_date = datetime.datetime.strptime(end_date, '%Y%m%d').date()
+                else:  # 其他格式
+                    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+            except ValueError:
+                logger.warning(f"无法将结束日期 {end_date} 转换为日期格式，使用原始字符串")
+        
+        # 将周期标准化为数据库中的level值
+        level_map = {
+            'day': '日线',
+            'week': '周线',
+            'month': '月线',
+            '60min': '60分钟',
+            '30min': '30分钟',
+            '15min': '15分钟',
+            '5min': '5分钟',
+            # 支持大写格式
+            'DAILY': '日线',
+            'WEEKLY': '周线',
+            'MONTHLY': '月线',
+            'MIN60': '60分钟',
+            'MIN30': '30分钟',
+            'MIN15': '15分钟',
+            'MIN5': '5分钟'
+        }
+        
+        normalized_level = level_map.get(level, level)
+        
+        try:
+            # 构建查询
+            query = """
+            SELECT 
+                code, name, date, level, open, high, low, close, volume, turnover_rate, price_change, price_range, industry
+            FROM 
+                stock_info
+            WHERE 
+                code = %(stock_code)s AND level = %(level)s
+                AND date BETWEEN %(start_date)s AND %(end_date)s
+            ORDER BY 
+                date
+            """
+            
+            params = {
+                'stock_code': stock_code,
+                'level': normalized_level,
+                'start_date': start_date,
+                'end_date': end_date
+            }
+            
+            result = self.query(query, params)
+            
+            # 使用DataFrame.empty属性判断结果是否为空
+            if result.empty:
+                logger.warning(f"未找到股票 {stock_code} 的 {normalized_level} 周期数据")
+                return pd.DataFrame()
+            
+            # 重命名列
+            column_map = {
+                'col_0': 'code',
+                'col_1': 'name',
+                'col_2': 'date',
+                'col_3': 'level',
+                'col_4': 'open',
+                'col_5': 'high',
+                'col_6': 'low',
+                'col_7': 'close',
+                'col_8': 'volume',
+                'col_9': 'turnover_rate',
+                'col_10': 'price_change',
+                'col_11': 'price_range',
+                'col_12': 'industry'
+            }
+            
+            result.rename(columns=column_map, inplace=True)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"从数据库加载股票 {stock_code} {level} 数据失败: {e}")
+            return pd.DataFrame()
+    
     def get_industry_stocks(self, industry: str) -> pd.DataFrame:
         """
         获取指定行业的股票
@@ -440,6 +558,314 @@ class ClickHouseDB:
         
         params = {'industry': industry}
         return self.query(query, params)
+    
+    def get_industry_info(self, symbol: str, start_date: Union[str, datetime.datetime], 
+                         end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
+        """
+        获取行业指数数据
+        
+        Args:
+            symbol: 行业代码
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            pd.DataFrame: 行业指数数据
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        # 转换日期格式
+        if isinstance(start_date, str):
+            try:
+                # 尝试转换为日期格式
+                if len(start_date) == 8:  # 20220101格式
+                    start_date = datetime.datetime.strptime(start_date, '%Y%m%d').date()
+                else:  # 其他格式
+                    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                logger.warning(f"无法将开始日期 {start_date} 转换为日期格式，使用原始字符串")
+        
+        if isinstance(end_date, str):
+            try:
+                # 尝试转换为日期格式
+                if len(end_date) == 8:  # 20220101格式
+                    end_date = datetime.datetime.strptime(end_date, '%Y%m%d').date()
+                else:  # 其他格式
+                    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+            except ValueError:
+                logger.warning(f"无法将结束日期 {end_date} 转换为日期格式，使用原始字符串")
+        
+        try:
+            # 构建查询 - 查询两种情况：行业代码匹配或者industry字段匹配
+            query = """
+            SELECT 
+                date, code, name, open, high, low, close, volume, turnover_rate
+            FROM 
+                stock_info
+            WHERE 
+                (code = %(symbol)s OR industry = %(symbol)s) AND 
+                (level = '行业' OR level = '日线') AND
+                date BETWEEN %(start_date)s AND %(end_date)s
+            ORDER BY 
+                date
+            """
+            
+            params = {
+                'symbol': symbol,
+                'start_date': start_date,
+                'end_date': end_date
+            }
+            
+            result = self.query(query, params)
+            
+            # 使用DataFrame.empty属性判断结果是否为空
+            if result.empty:
+                logger.warning(f"未找到行业 {symbol} 的数据")
+                return pd.DataFrame()
+            
+            # 重命名列
+            column_map = {
+                'col_0': 'date',
+                'col_1': 'code',
+                'col_2': 'name',
+                'col_3': 'open',
+                'col_4': 'high',
+                'col_5': 'low',
+                'col_6': 'close',
+                'col_7': 'volume',
+                'col_8': 'turnover_rate'
+            }
+            
+            result.rename(columns=column_map, inplace=True)
+                
+            return result
+            
+        except Exception as e:
+            logger.error(f"从数据库加载行业 {symbol} 数据失败: {e}")
+            return pd.DataFrame()
+    
+    def get_industry_stock(self, industry: str) -> List[str]:
+        """
+        获取行业股票代码列表
+        
+        Args:
+            industry: 行业名称
+            
+        Returns:
+            List[str]: 股票代码列表
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        df = self.get_industry_stocks(industry)
+        if df.empty:
+            return []
+        return df['code'].tolist()
+    
+    def get_stock_max_date(self) -> datetime.datetime:
+        """
+        获取股票数据最新日期
+        
+        Returns:
+            datetime.datetime: 最新日期
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        query = """
+        SELECT 
+            MAX(date) as max_date
+        FROM 
+            stock_info
+        """
+        
+        result = self.query(query)
+        if result.empty or pd.isna(result.iloc[0, 0]):
+            return datetime.datetime.now()
+        return result.iloc[0, 0]
+    
+    def get_industry_max_date(self) -> datetime.datetime:
+        """
+        获取行业数据最新日期
+        
+        Returns:
+            datetime.datetime: 最新日期
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        query = """
+        SELECT 
+            MAX(date) as max_date
+        FROM 
+            stock_info
+        WHERE
+            industry != ''
+        """
+        
+        result = self.query(query)
+        if result.empty or pd.isna(result.iloc[0, 0]):
+            return datetime.datetime.now()
+        return result.iloc[0, 0]
+    
+    def get_avg_price(self, code: str, start_date: Union[str, datetime.datetime]) -> float:
+        """
+        获取股票平均价格
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            
+        Returns:
+            float: 平均价格
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        # 转换日期格式
+        if isinstance(start_date, str):
+            start_date = datetime.datetime.strptime(start_date, '%Y%m%d')
+        
+        # 构建查询
+        query = """
+        SELECT 
+            AVG(close) as avg_price
+        FROM 
+            stock_info
+        WHERE 
+            code = %(code)s AND
+            date >= %(start_date)s
+        """
+        
+        params = {
+            'code': code,
+            'start_date': start_date
+        }
+        
+        result = self.query(query, params)
+        if result.empty or pd.isna(result.iloc[0, 0]):
+            return 0.0
+        return float(result.iloc[0, 0])
+    
+    def save_stock_info(self, data: pd.DataFrame, level: str) -> None:
+        """
+        保存股票K线数据
+        
+        Args:
+            data: 股票数据DataFrame
+            level: K线周期
+            
+        Raises:
+            Exception: 保存失败时抛出
+        """
+        if data.empty:
+            logger.warning("股票数据为空，不保存")
+            return
+        
+        # 映射周期到level值
+        period_map = {
+            'day': 'day',
+            'week': 'week',
+            'month': 'month',
+            '60min': '60min',
+            '30min': '30min',
+            '15min': '15min',
+            '5min': '5min',
+            # 支持大写格式
+            'DAILY': 'day',
+            'WEEKLY': 'week',
+            'MONTHLY': 'month',
+            'MIN60': '60min',
+            'MIN30': '30min',
+            'MIN15': '15min',
+            'MIN5': '5min'
+        }
+        
+        level_value = period_map.get(level, 'day')
+        
+        # 确保列名小写
+        data.columns = [col.lower() for col in data.columns]
+        
+        # 添加level字段（如果不存在）
+        if 'level' not in data.columns:
+            data['level'] = level_value
+        
+        # 构建插入字段和值
+        fields = ", ".join(data.columns)
+        
+        # 批量插入
+        with self.manager.get_connection(self.config) as conn:
+            for _, row in data.iterrows():
+                values = ", ".join([f"%(f{i})s" for i in range(len(row))])
+                
+                query = f"""
+                INSERT INTO stock_info ({fields})
+                VALUES ({values})
+                ON DUPLICATE KEY UPDATE 
+                    open = VALUES(open),
+                    high = VALUES(high),
+                    low = VALUES(low),
+                    close = VALUES(close),
+                    volume = VALUES(volume),
+                    turnover_rate = VALUES(turnover_rate)
+                """
+                
+                params = {f"f{i}": val for i, val in enumerate(row)}
+                try:
+                    conn.execute(query, params)
+                except Exception as e:
+                    logger.error(f"保存股票数据失败: {e}")
+        
+        logger.info(f"已保存{len(data)}条{level}周期股票数据")
+    
+    def save_industry_info(self, data: pd.DataFrame) -> None:
+        """
+        保存行业指数数据
+        
+        Args:
+            data: 行业数据DataFrame
+            
+        Raises:
+            Exception: 保存失败时抛出
+        """
+        if data.empty:
+            logger.warning("行业数据为空，不保存")
+            return
+        
+        # 确保列名小写
+        data.columns = [col.lower() for col in data.columns]
+        
+        # 添加level字段（如果不存在）
+        if 'level' not in data.columns:
+            data['level'] = 'industry'
+        
+        # 构建插入字段和值
+        fields = ", ".join(data.columns)
+        
+        # 批量插入
+        with self.manager.get_connection(self.config) as conn:
+            for _, row in data.iterrows():
+                values = ", ".join([f"%(f{i})s" for i in range(len(row))])
+                
+                query = f"""
+                INSERT INTO stock_info ({fields})
+                VALUES ({values})
+                ON DUPLICATE KEY UPDATE 
+                    open = VALUES(open),
+                    high = VALUES(high),
+                    low = VALUES(low),
+                    close = VALUES(close),
+                    volume = VALUES(volume)
+                """
+                
+                params = {f"f{i}": val for i, val in enumerate(row)}
+                try:
+                    conn.execute(query, params)
+                except Exception as e:
+                    logger.error(f"保存行业数据失败: {e}")
+        
+        logger.info(f"已保存{len(data)}条行业指数数据")
     
     def save_result(self, 
                    result_type: str, 

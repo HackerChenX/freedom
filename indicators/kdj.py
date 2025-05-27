@@ -193,4 +193,84 @@ class KDJ(BaseIndicator):
             'has_result': self.has_result(),
             'has_error': self.has_error(),
             'error': str(self._error) if self._error else None
-        } 
+        }
+    
+    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        生成KDJ信号
+        
+        Args:
+            data: 输入数据，包含价格数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含信号的DataFrame
+        """
+        # 计算KDJ指标
+        if not self.has_result():
+            self.compute(data)
+            
+        if not self.has_result():
+            return pd.DataFrame()
+            
+        # 获取K、D和J值
+        k_values = self._result['K']
+        d_values = self._result['D']
+        j_values = self._result['J']
+        
+        # 创建信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # 添加买入信号
+        signals['buy_signal'] = self.get_buy_signal(self._result)
+        
+        # 添加卖出信号
+        signals['sell_signal'] = self.get_sell_signal(self._result)
+        
+        # 添加超买超卖信号
+        signals['overbought'] = (k_values > 80) & (d_values > 80)
+        signals['oversold'] = (k_values < 20) & (d_values < 20)
+        
+        # 添加J值超买超卖
+        signals['j_overbought'] = j_values > 100
+        signals['j_oversold'] = j_values < 0
+        
+        # 添加KDJ三线同向（顺势信号）
+        signals['uptrend'] = (j_values > k_values) & (k_values > d_values)
+        signals['downtrend'] = (j_values < k_values) & (k_values < d_values)
+        
+        # 计算信号强度
+        # 范围是0-100，0表示最弱，100表示最强
+        strength = 50.0  # 默认中性
+        
+        # 如果出现金叉，信号强度增加
+        if signals['buy_signal'].iloc[-1]:
+            strength += 25.0
+            
+        # 如果处于超卖区域，信号强度增加
+        if signals['oversold'].iloc[-1]:
+            strength += 15.0
+            
+        # 如果J值在超卖区域，信号强度增加
+        if signals['j_oversold'].iloc[-1]:
+            strength += 10.0
+            
+        # 如果三线同向看涨，信号强度增加
+        if signals['uptrend'].iloc[-1]:
+            strength += 10.0
+            
+        # 如果处于超买区域，信号强度减少
+        if signals['overbought'].iloc[-1]:
+            strength -= 15.0
+            
+        # 如果出现死叉，信号强度减少
+        if signals['sell_signal'].iloc[-1]:
+            strength -= 25.0
+            
+        # 确保强度在0-100范围内
+        strength = max(0.0, min(100.0, strength))
+        
+        # 添加信号强度
+        signals['signal_strength'] = 0.0
+        signals.loc[signals.index[-1], 'signal_strength'] = strength
+        
+        return signals 

@@ -84,3 +84,4 @@ coverage.xml
 *.npz
 *.model
 *.backup
+get-pip.py

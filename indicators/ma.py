@@ -221,27 +221,117 @@ class MA(BaseIndicator):
     
     def is_touching_ma(self, data: pd.DataFrame, period: int, threshold: float = 0.02) -> pd.Series:
         """
-        判断最低价是否接触或接近均线
+        判断价格是否接触移动平均线
         
         Args:
-            data: 包含low列的DataFrame
-            period: 均线周期
-            threshold: 接近阈值，如0.02表示在均线2%范围内都算接触
+            data: 包含价格数据的DataFrame
+            period: MA周期
+            threshold: 接触阈值，价格与MA的相对差异小于该阈值即认为接触
             
         Returns:
-            pd.Series: 接触信号，True表示最低价接触或接近均线
+            pd.Series: 接触信号，True表示接触
         """
         if not self.has_result():
-            self.compute(data)
+            raise ValueError("必须先调用compute方法计算指标")
             
         ma_col = f'MA{period}'
         if ma_col not in self._result.columns:
             raise ValueError(f"结果中不存在{ma_col}列")
             
-        ma_values = self._result[ma_col]
+        # 计算价格与MA的相对差异
+        rel_diff = (data['close'] - self._result[ma_col]) / self._result[ma_col]
         
-        # 检查最低价是否在均线的阈值范围内
-        lower_bound = ma_values * (1 - threshold)
-        upper_bound = ma_values * (1 + threshold)
+        # 判断是否接触
+        return rel_diff.abs() <= threshold
+    
+    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        生成MA信号
         
-        return (data['low'] >= lower_bound) & (data['low'] <= upper_bound) 
+        Args:
+            data: 输入数据，包含价格数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含信号的DataFrame
+        """
+        # 计算MA指标
+        if not self.has_result():
+            self.compute(data)
+            
+        if not self.has_result():
+            return pd.DataFrame()
+        
+        # 获取MA参数
+        periods = self._parameters['periods']
+        if not isinstance(periods, list):
+            periods = [periods]
+            
+        # 创建信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # 按从短到长排序周期
+        sorted_periods = sorted(periods)
+        
+        # 添加价格突破信号
+        price_col = 'close'
+        price = data[price_col]
+        for period in periods:
+            ma_col = f'MA{period}'
+            if ma_col in self._result.columns:
+                ma_values = self._result[ma_col]
+                # 价格上穿MA
+                signals[f'price_cross_above_ma{period}'] = self.crossover(price, ma_values)
+                # 价格下穿MA
+                signals[f'price_cross_below_ma{period}'] = self.crossunder(price, ma_values)
+                # 价格在MA上方
+                signals[f'price_above_ma{period}'] = price > ma_values
+                # 价格在MA下方
+                signals[f'price_below_ma{period}'] = price < ma_values
+        
+        # 添加买入信号
+        signals['buy_signal'] = False
+        
+        # 价格突破均线作为买入信号
+        for period in periods:
+            price_cross_col = f'price_cross_above_ma{period}'
+            if price_cross_col in signals.columns:
+                signals['buy_signal'] |= signals[price_cross_col]
+        
+        # 添加卖出信号
+        signals['sell_signal'] = False
+        
+        # 价格跌破均线作为卖出信号
+        for period in periods:
+            price_cross_col = f'price_cross_below_ma{period}'
+            if price_cross_col in signals.columns:
+                signals['sell_signal'] |= signals[price_cross_col]
+        
+        # 计算信号强度
+        strength = 50.0  # 默认中性
+        
+        # 价格在均线上方，信号强度增加
+        price_above_count = 0
+        for period in periods:
+            price_above_col = f'price_above_ma{period}'
+            if price_above_col in signals.columns and signals[price_above_col].iloc[-1]:
+                price_above_count += 1
+        
+        strength += price_above_count * (20.0 / len(periods))
+        
+        # 价格在均线下方，信号强度减少
+        price_below_count = 0
+        for period in periods:
+            price_below_col = f'price_below_ma{period}'
+            if price_below_col in signals.columns and signals[price_below_col].iloc[-1]:
+                price_below_count += 1
+        
+        strength -= price_below_count * (20.0 / len(periods))
+        
+        # 确保强度在0-100范围内
+        strength = max(0.0, min(100.0, strength))
+        
+        # 添加信号强度
+        signals['signal_strength'] = 0.0
+        signals.loc[signals.index[-1], 'signal_strength'] = strength
+        
+        return signals 

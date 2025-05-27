@@ -1,0 +1,181 @@
+strategy:
+  id: COMPLETE_BACKTEST_STRATEGY_001
+  name: 完整回测策略
+  description: 基于回测结果生成的完整策略 - 源自zxm_batch_backtest_20250525_223702
+  version: "1.0"
+  author: system
+  create_time: "2025-05-27 19:30:00"
+  update_time: "2025-05-27 19:30:00"
+
+  conditions:
+    # ZXM换手买点 - 日线
+    - indicator_id: ZXM_TURNOVER
+      period: DAILY
+      parameters:
+        threshold: 1.0
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM日MACD买点 - 日线
+    - indicator_id: ZXM_DAILY_MACD
+      period: DAILY
+      parameters:
+        threshold: 0.0
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM回踩均线买点 - 日线
+    - indicator_id: ZXM_MA_CALLBACK
+      period: DAILY
+      parameters:
+        periods: [20, 30, 60, 120]
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM涨幅弹性 - 日线
+    - indicator_id: ZXM_RISE_ELASTICITY
+      period: DAILY
+      parameters:
+        rise_threshold: 1.02
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM振幅弹性 - 日线
+    - indicator_id: ZXM_AMPLITUDE_ELASTICITY
+      period: DAILY
+      parameters:
+        amplitude_threshold: 10.0
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM弹性满足 - 日线
+    - indicator_id: ZXM_ELASTICITY_SCORE
+      period: DAILY
+      parameters:
+        threshold: 75
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM买点满足 - 日线
+    - indicator_id: ZXM_BUYPOINT_SCORE
+      period: DAILY
+      parameters:
+        threshold: 75
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM趋势满足 - 日线
+    - indicator_id: ZXM_DAILY_TREND_UP
+      period: DAILY
+      parameters:
+        periods: [60, 120]
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # MACD底背离 - 日线
+    - indicator_id: DIVERGENCE
+      period: DAILY
+      parameters:
+        type: MACD
+        divergence_type: BULLISH
+        fast_period: 12
+        slow_period: 26
+        signal_period: 9
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # ZXM吸筹 - 月线
+    - indicator_id: ZXM_ABSORB
+      period: MONTHLY
+      parameters:
+        absorb_threshold: 3
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # KDJ金叉 - 日线
+    - indicator_id: KDJ
+      period: DAILY
+      parameters:
+        n: 9
+        m1: 3
+        m2: 3
+        cross_type: GOLDEN_CROSS
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # 均线多头排列 - 日线
+    - indicator_id: MA
+      period: DAILY
+      parameters:
+        periods: [5, 10, 20]
+        is_bullish: true
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # 均线多头排列 - 15分钟
+    - indicator_id: MA
+      period: MIN_15
+      parameters:
+        periods: [5, 10, 20]
+        is_bullish: true
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # BOLL中轨突破 - 日线
+    - indicator_id: BOLL
+      period: DAILY
+      parameters:
+        period: 20
+        std_dev: 2
+        breakout_type: MIDDLE
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # VR上穿均线 - 日线
+    - indicator_id: VR
+      period: DAILY
+      parameters:
+        period: 26
+        ma_period: 6
+        cross_type: GOLDEN_CROSS
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # OBV上穿均线 - 日线
+    - indicator_id: OBV
+      period: DAILY
+      parameters:
+        ma_period: 30
+        cross_type: GOLDEN_CROSS
+      signal_type: BUY
+
+  filters:
+    market: []  # 不限制市场
+    industry: []  # 不限制行业
+    market_cap:
+      min: 0
+      max: 10000
+    price:
+      min: 0
+      max: 500
+
+  sort:
+    - field: signal_strength
+      direction: DESC
+    - field: market_cap
+      direction: ASC 

@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
 """
 选股命令行工具
 
-提供基于配置文件执行选股功能的命令行接口
+提供命令行界面执行选股策略，支持各种参数配置
 """
 
 import os
@@ -12,400 +12,365 @@ import sys
 import argparse
 import json
 import yaml
-from datetime import datetime
 import pandas as pd
+from datetime import datetime
+import time
+import threading
+from typing import Dict, List, Optional, Any
 
-# 将项目根目录添加到Python路径
+# 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from strategy.strategy_parser import StrategyParser
-from strategy.strategy_manager import StrategyManager
 from strategy.strategy_executor import StrategyExecutor
-from utils.logger import get_logger
-from utils.path_utils import get_strategy_dir, get_result_dir
+from strategy.strategy_manager import StrategyManager
+from strategy.signal_watcher import SignalWatcher
+from strategy.result_filter import ResultFilter
+from db.data_manager import DataManager
+from utils.logger import get_logger, init_logging
+from utils.path_utils import get_result_dir
+from utils.visualization import (
+    plot_selection_result_distribution,
+    plot_technical_indicators,
+    plot_condition_heatmap,
+    create_html_report
+)
+from utils.exceptions import (
+    StrategyExecutionError, 
+    StrategyValidationError, 
+    DataAccessError
+)
 
 logger = get_logger(__name__)
 
 
 def parse_args():
     """解析命令行参数"""
-    parser = argparse.ArgumentParser(description='基于配置文件执行选股')
+    parser = argparse.ArgumentParser(description="选股工具")
     
-    # 策略相关参数
-    strategy_group = parser.add_argument_group('策略参数')
-    strategy_group.add_argument('-s', '--strategy', help='策略ID')
-    strategy_group.add_argument('-f', '--file', help='策略配置文件路径')
+    # 基础参数
+    parser.add_argument("--strategy", "-s", help="策略ID或策略文件路径", required=True)
+    parser.add_argument("--output", "-o", help="输出文件路径", default=None)
+    parser.add_argument("--format", "-f", help="输出格式 (csv, excel, json, html)", default="csv")
+    parser.add_argument("--date", "-d", help="选股日期 (YYYY-MM-DD)", default=datetime.now().strftime("%Y-%m-%d"))
+    parser.add_argument("--limit", "-l", type=int, help="限制结果数量", default=0)
+    parser.add_argument("--watch", "-w", help="是否包含观察信号", action="store_true")
+    parser.add_argument("--visualize", "-v", help="生成可视化报告", action="store_true")
+    parser.add_argument("--threads", "-t", type=int, help="最大线程数", default=None)
+    parser.add_argument("--log-level", help="日志级别 (DEBUG, INFO, WARNING, ERROR)", default="INFO")
+    parser.add_argument("--config", "-c", help="配置文件路径", default=None)
     
-    # 执行参数
-    exec_group = parser.add_argument_group('执行参数')
-    exec_group.add_argument('-d', '--date', help='执行日期，格式：YYYY-MM-DD，默认为当前日期')
-    exec_group.add_argument('-p', '--pool', help='股票池文件路径，每行一个股票代码')
+    # 排序参数
+    parser.add_argument("--sort-by", help="排序字段", default="signal_strength")
+    parser.add_argument("--sort-order", help="排序顺序 (ASC, DESC)", default="DESC")
     
-    # 输出参数
-    output_group = parser.add_argument_group('输出参数')
-    output_group.add_argument('-o', '--output', help='输出文件路径，支持.csv和.xlsx格式')
-    output_group.add_argument('--save-db', action='store_true', help='是否保存结果到数据库')
-    output_group.add_argument('--pretty', action='store_true', help='是否美化输出')
+    # 过滤参数
+    filter_group = parser.add_argument_group("过滤参数")
+    filter_group.add_argument("--min-cap", type=float, help="最小市值 (亿元)", default=None)
+    filter_group.add_argument("--max-cap", type=float, help="最大市值 (亿元)", default=None)
+    filter_group.add_argument("--min-price", type=float, help="最小价格", default=None)
+    filter_group.add_argument("--max-price", type=float, help="最大价格", default=None)
+    filter_group.add_argument("--industry", help="行业名称 (逗号分隔)", default=None)
+    filter_group.add_argument("--market", help="市场名称 (逗号分隔)", default=None)
     
-    # 管理参数
-    manage_group = parser.add_argument_group('管理参数')
-    manage_group.add_argument('--list', action='store_true', help='列出所有可用的策略')
-    manage_group.add_argument('--show', help='显示指定策略的配置')
-    manage_group.add_argument('--import', dest='import_file', help='导入策略配置文件')
-    manage_group.add_argument('--export', help='导出策略配置到文件')
-    manage_group.add_argument('--delete', help='删除指定策略')
-    
-    return parser.parse_args()
+    args = parser.parse_args()
+    return args
 
 
-def load_strategy(strategy_id=None, file_path=None):
-    """
-    加载策略配置
+def print_progress(progress: float, message: str):
+    """打印进度条"""
+    bar_length = 50
+    filled_length = int(bar_length * progress)
+    bar = '█' * filled_length + '-' * (bar_length - filled_length)
+    percent = progress * 100
     
-    Args:
-        strategy_id: 策略ID
-        file_path: 策略配置文件路径
-        
-    Returns:
-        策略配置字典
-    """
-    strategy_manager = StrategyManager()
+    sys.stdout.write(f'\r进度: |{bar}| {percent:.1f}% {message}')
+    sys.stdout.flush()
     
-    if strategy_id:
-        # 从数据库或配置文件加载策略
-        strategy_config = strategy_manager.get_strategy(strategy_id)
-        if not strategy_config:
-            logger.error(f"策略 {strategy_id} 不存在")
-            sys.exit(1)
-            
-        return strategy_config
-    elif file_path:
-        # 从指定文件加载策略
-        if not os.path.exists(file_path):
-            logger.error(f"策略配置文件 {file_path} 不存在")
-            sys.exit(1)
-            
-        # 根据文件扩展名确定解析方式
-        file_ext = os.path.splitext(file_path)[1].lower()
+    if progress >= 1:
+        sys.stdout.write('\n')
+
+
+def progress_callback(progress: float, message: str):
+    """进度回调函数"""
+    print_progress(progress, message)
+
+
+def load_config(config_path: str) -> Dict[str, Any]:
+    """加载配置文件"""
+    if not config_path or not os.path.exists(config_path):
+        return {}
         
-        try:
-            if file_ext == '.json':
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            elif file_ext in ['.yml', '.yaml']:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    return yaml.safe_load(f)
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            if config_path.endswith('.json'):
+                return json.load(f)
+            elif config_path.endswith(('.yaml', '.yml')):
+                return yaml.safe_load(f)
             else:
-                logger.error(f"不支持的配置文件格式: {file_ext}")
-                sys.exit(1)
-        except Exception as e:
-            logger.error(f"解析策略配置文件失败: {e}")
-            sys.exit(1)
-    else:
-        logger.error("必须指定策略ID或配置文件路径")
-        sys.exit(1)
-
-
-def load_stock_pool(pool_file=None):
-    """
-    加载股票池
-    
-    Args:
-        pool_file: 股票池文件路径
-        
-    Returns:
-        股票代码列表
-    """
-    if not pool_file:
-        return None
-        
-    if not os.path.exists(pool_file):
-        logger.error(f"股票池文件 {pool_file} 不存在")
-        sys.exit(1)
-        
-    try:
-        with open(pool_file, 'r', encoding='utf-8') as f:
-            stock_codes = [line.strip() for line in f if line.strip()]
-            
-        if not stock_codes:
-            logger.warning("股票池为空")
-            
-        return stock_codes
+                logger.warning(f"不支持的配置文件格式: {config_path}")
+                return {}
     except Exception as e:
-        logger.error(f"加载股票池失败: {e}")
-        sys.exit(1)
+        logger.error(f"加载配置文件失败: {e}")
+        return {}
 
 
-def execute_strategy(strategy_config, date=None, stock_pool=None):
-    """
-    执行选股策略
-    
-    Args:
-        strategy_config: 策略配置
-        date: 执行日期
-        stock_pool: 股票池
+def is_strategy_file(strategy_path: str) -> bool:
+    """判断是否为策略文件路径"""
+    if not strategy_path:
+        return False
         
-    Returns:
-        选股结果DataFrame
-    """
-    executor = StrategyExecutor()
-    
+    # 检查是否为文件路径
+    if os.path.exists(strategy_path) and os.path.isfile(strategy_path):
+        # 检查文件扩展名
+        ext = os.path.splitext(strategy_path)[1].lower()
+        return ext in ['.json', '.yaml', '.yml']
+        
+    return False
+
+
+def execute_strategy(args):
+    """执行选股策略"""
     try:
-        result = executor.execute(
-            strategy_config=strategy_config,
-            date=date,
-            stock_pool=stock_pool
+        # 初始化组件
+        strategy_manager = StrategyManager()
+        strategy_executor = StrategyExecutor(max_workers=args.threads)
+        signal_watcher = SignalWatcher()
+        result_filter = ResultFilter()
+        
+        # 确定策略来源
+        if is_strategy_file(args.strategy):
+            # 从文件加载策略
+            parser = StrategyParser()
+            logger.info(f"从文件加载策略: {args.strategy}")
+            strategy_plan = parser.parse_from_file(args.strategy)
+            
+            # 输出策略计划用于调试
+            print("\n调试信息 - 策略计划:")
+            print(f"策略ID: {strategy_plan.get('strategy_id')}")
+            print(f"策略名称: {strategy_plan.get('name')}")
+            print(f"条件数量: {len(strategy_plan.get('conditions', []))}")
+            print("条件列表:")
+            for i, cond in enumerate(strategy_plan.get('conditions', [])):
+                print(f"  条件 {i+1}: {cond}")
+            print("\n")
+            
+            # 执行策略
+            result_df = strategy_executor.execute_strategy(
+                strategy_plan=strategy_plan,
+                end_date=args.date,
+                progress_callback=progress_callback
+            )
+        else:
+            # 从策略管理器获取策略
+            logger.info(f"使用策略ID: {args.strategy}")
+            
+            # 执行策略
+            result_df = strategy_executor.execute_strategy_by_id(
+                strategy_id=args.strategy,
+                strategy_manager=strategy_manager,
+                end_date=args.date,
+                progress_callback=progress_callback
+            )
+        
+        if result_df.empty:
+            logger.warning("选股结果为空")
+            print("\n未找到符合条件的股票")
+            return
+        
+        # 添加观察信号
+        if args.watch:
+            logger.info("添加观察信号")
+            result_df = signal_watcher.add_watch_signals(result_df)
+        
+        # 应用过滤器
+        filter_config = {
+            'market_cap': {},
+            'price': {},
+        }
+        
+        if args.min_cap is not None:
+            filter_config['market_cap']['min'] = args.min_cap
+        
+        if args.max_cap is not None:
+            filter_config['market_cap']['max'] = args.max_cap
+        
+        if args.min_price is not None:
+            filter_config['price']['min'] = args.min_price
+        
+        if args.max_price is not None:
+            filter_config['price']['max'] = args.max_price
+        
+        if args.industry:
+            filter_config['industry'] = args.industry.split(',')
+        
+        if args.market:
+            filter_config['market'] = args.market.split(',')
+        
+        # 应用过滤器
+        result_df = result_filter.apply_filters(result_df, filter_config)
+        
+        # 排序
+        result_df = result_filter.sort_results(
+            result_df, 
+            sort_field=args.sort_by, 
+            ascending=args.sort_order.upper() != 'DESC'
         )
         
-        return result
+        # 限制结果数量
+        if args.limit > 0 and len(result_df) > args.limit:
+            result_df = result_df.iloc[:args.limit]
+        
+        # 输出结果
+        output_result(result_df, args)
+        
+        # 生成可视化报告
+        if args.visualize:
+            generate_visualization(result_df, args)
+        
     except Exception as e:
-        logger.error(f"执行选股策略失败: {e}")
+        logger.error(f"执行策略出错: {e}")
+        print(f"\n执行策略出错: {e}")
         sys.exit(1)
 
 
-def save_result(result, output_file=None, save_db=False, pretty=False):
-    """
-    保存选股结果
+def output_result(result_df: pd.DataFrame, args):
+    """输出结果"""
+    # 确定输出文件路径
+    if args.output:
+        output_path = args.output
+    else:
+        # 生成默认输出路径
+        result_dir = get_result_dir()
+        os.makedirs(result_dir, exist_ok=True)
+        
+        date_str = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"stock_selection_{date_str}.{args.format}"
+        output_path = os.path.join(result_dir, filename)
     
-    Args:
-        result: 选股结果DataFrame
-        output_file: 输出文件路径
-        save_db: 是否保存到数据库
-        pretty: 是否美化输出
-        
-    Returns:
-        无
-    """
-    if result.empty:
-        logger.warning("选股结果为空")
-        return
-        
-    # 打印结果
-    if pretty:
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.width', None)
-        pd.set_option('display.unicode.ambiguous_as_wide', True)
-        pd.set_option('display.unicode.east_asian_width', True)
-        
-    print("\n选股结果:")
-    print(result)
-    print(f"\n共找到 {len(result)} 只符合条件的股票")
-    
-    # 保存到文件
-    if output_file:
-        try:
-            # 确保输出目录存在
-            output_dir = os.path.dirname(output_file)
-            if output_dir:
-                os.makedirs(output_dir, exist_ok=True)
-                
-            # 根据文件扩展名保存
-            file_ext = os.path.splitext(output_file)[1].lower()
+    # 输出到文件
+    try:
+        # 确保目录存在
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
             
-            if file_ext == '.csv':
-                result.to_csv(output_file, index=False, encoding='utf-8-sig')
-            elif file_ext == '.xlsx':
-                result.to_excel(output_file, index=False, engine='openpyxl')
-            else:
-                # 默认保存为CSV
-                output_file = output_file + '.csv'
-                result.to_csv(output_file, index=False, encoding='utf-8-sig')
-                
-            logger.info(f"已保存选股结果到文件: {output_file}")
-        except Exception as e:
-            logger.error(f"保存选股结果到文件失败: {e}")
-    
-    # 保存到数据库
-    if save_db:
-        from db.data_manager import DataManager
-        data_manager = DataManager()
+        # 根据格式输出
+        if args.format.lower() == 'csv':
+            result_df.to_csv(output_path, index=False, encoding='utf-8-sig')
+        elif args.format.lower() == 'excel':
+            result_df.to_excel(output_path, index=False, engine='openpyxl')
+        elif args.format.lower() == 'json':
+            # 处理非原生JSON类型
+            result_json = result_df.copy()
+            for col in result_json.columns:
+                if result_json[col].dtype == 'object':
+                    result_json[col] = result_json[col].apply(
+                        lambda x: json.dumps(x) if not isinstance(x, str) else x
+                    )
+            
+            result_json.to_json(output_path, orient='records', force_ascii=False, indent=4)
+        elif args.format.lower() == 'html':
+            result_df.to_html(output_path, index=False, encoding='utf-8')
+        else:
+            logger.warning(f"不支持的输出格式: {args.format}，使用CSV格式")
+            result_df.to_csv(output_path, index=False, encoding='utf-8-sig')
         
-        if data_manager.save_selection_result(result):
-            logger.info("已保存选股结果到数据库")
-
-
-def list_strategies():
-    """列出所有可用的策略"""
-    strategy_manager = StrategyManager()
-    strategies = strategy_manager.list_strategies()
-    
-    if not strategies:
-        print("没有可用的策略")
-        return
+        logger.info(f"结果已保存至: {output_path}")
+        print(f"\n结果已保存至: {output_path}")
         
-    # 格式化输出
-    print("\n可用的策略列表:")
-    print(f"{'ID':<20} {'名称':<30} {'版本':<10} {'作者':<15} {'更新时间':<20}")
-    print("-" * 95)
-    
-    for strategy in strategies:
-        strategy_info = strategy["strategy"]
-        print(f"{strategy_info['id']:<20} {strategy_info['name']:<30} "
-              f"{strategy_info.get('version', '1.0'):<10} "
-              f"{strategy_info.get('author', 'system'):<15} "
-              f"{strategy_info.get('update_time', ''):<20}")
-    
-    print(f"\n共 {len(strategies)} 个可用策略")
-
-
-def show_strategy(strategy_id):
-    """
-    显示指定策略的配置
-    
-    Args:
-        strategy_id: 策略ID
-    """
-    strategy_manager = StrategyManager()
-    strategy_config = strategy_manager.get_strategy(strategy_id)
-    
-    if not strategy_config:
-        logger.error(f"策略 {strategy_id} 不存在")
-        return
+        # 输出摘要
+        print(f"\n共找到 {len(result_df)} 只符合条件的股票:")
         
-    # 格式化输出
-    print(f"\n策略 {strategy_id} 的配置:")
-    print(json.dumps(strategy_config, ensure_ascii=False, indent=2))
-
-
-def import_strategy(file_path):
-    """
-    导入策略配置
-    
-    Args:
-        file_path: 策略配置文件路径
-    """
-    if not os.path.exists(file_path):
-        logger.error(f"策略配置文件 {file_path} 不存在")
-        return
+        # 显示前10只股票
+        display_count = min(10, len(result_df))
+        for i in range(display_count):
+            row = result_df.iloc[i]
+            print(f"{i+1}. {row['stock_code']} {row['stock_name']} "
+                  f"(信号强度: {row['signal_strength']:.2f})")
         
-    strategy_manager = StrategyManager()
-    
-    try:
-        strategy_id = strategy_manager.import_strategy(file_path)
-        logger.info(f"已成功导入策略: {strategy_id}")
+        if len(result_df) > 10:
+            print(f"... 及其他 {len(result_df) - 10} 只")
+            
     except Exception as e:
-        logger.error(f"导入策略失败: {e}")
+        logger.error(f"输出结果失败: {e}")
+        print(f"\n输出结果失败: {e}")
 
 
-def export_strategy(strategy_id, file_path=None):
-    """
-    导出策略配置
-    
-    Args:
-        strategy_id: 策略ID
-        file_path: 导出文件路径，如果为None则使用默认路径
-    """
-    strategy_manager = StrategyManager()
-    
-    if not file_path:
-        # 使用默认路径
-        file_path = os.path.join(get_result_dir(), f"{strategy_id}.json")
-        
-    # 确定导出格式
-    file_ext = os.path.splitext(file_path)[1].lower()
-    format_type = 'json'
-    if file_ext in ['.yml', '.yaml']:
-        format_type = 'yaml'
-        
+def generate_visualization(result_df: pd.DataFrame, args):
+    """生成可视化报告"""
     try:
-        success = strategy_manager.export_strategy(
-            strategy_id=strategy_id,
-            file_path=file_path,
-            format_type=format_type
+        print("\n生成可视化报告...")
+        
+        # 创建输出目录
+        if args.output:
+            output_dir = os.path.dirname(args.output)
+        else:
+            output_dir = get_result_dir()
+            
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 生成报告日期
+        date_str = datetime.now().strftime("%Y%m%d%H%M%S")
+        report_name = f"选股报告_{args.strategy}_{date_str}"
+        
+        # 生成结果分布图
+        print("生成结果分布图...")
+        distribution_img = plot_selection_result_distribution(
+            result_df=result_df,
+            title=f"选股结果分布 ({args.strategy})"
         )
         
-        if success:
-            logger.info(f"已成功导出策略 {strategy_id} 到文件: {file_path}")
+        # 生成条件热力图
+        print("生成条件热力图...")
+        heatmap_img = plot_condition_heatmap(
+            result_df=result_df,
+            title=f"条件满足热力图 ({args.strategy})"
+        )
+        
+        # 创建HTML报告
+        print("创建HTML报告...")
+        charts = [distribution_img, heatmap_img]
+        descriptions = [
+            f"选股日期: {args.date}, 共找到 {len(result_df)} 只符合条件的股票",
+            "条件满足热力图展示了每只股票满足的具体条件"
+        ]
+        
+        report_path = os.path.join(output_dir, f"{report_name}.html")
+        create_html_report(
+            title=f"选股策略 {args.strategy} 执行报告",
+            charts=charts,
+            descriptions=descriptions,
+            output_file=report_path
+        )
+        
+        print(f"可视化报告已生成: {report_path}")
+        
     except Exception as e:
-        logger.error(f"导出策略失败: {e}")
-
-
-def delete_strategy(strategy_id):
-    """
-    删除指定策略
-    
-    Args:
-        strategy_id: 策略ID
-    """
-    strategy_manager = StrategyManager()
-    
-    # 先显示策略信息
-    strategy_config = strategy_manager.get_strategy(strategy_id)
-    
-    if not strategy_config:
-        logger.error(f"策略 {strategy_id} 不存在")
-        return
-        
-    # 确认删除
-    strategy_name = strategy_config["strategy"]["name"]
-    confirm = input(f"确定要删除策略 {strategy_id} ({strategy_name}) 吗? [y/N] ")
-    
-    if confirm.lower() != 'y':
-        logger.info("已取消删除")
-        return
-        
-    # 执行删除
-    success = strategy_manager.delete_strategy(strategy_id)
-    
-    if success:
-        logger.info(f"已成功删除策略: {strategy_id}")
-    else:
-        logger.error(f"删除策略 {strategy_id} 失败")
+        logger.error(f"生成可视化报告失败: {e}")
+        print(f"生成可视化报告失败: {e}")
 
 
 def main():
     """主函数"""
+    # 解析命令行参数
     args = parse_args()
     
-    # 管理命令
-    if args.list:
-        list_strategies()
-        return
-        
-    if args.show:
-        show_strategy(args.show)
-        return
-        
-    if args.import_file:
-        import_strategy(args.import_file)
-        return
-        
-    if args.export:
-        export_strategy(args.export)
-        return
-        
-    if args.delete:
-        delete_strategy(args.delete)
-        return
+    # 设置日志级别
+    init_logging(level=args.log_level)
     
-    # 执行选股
-    if not args.strategy and not args.file:
-        logger.error("必须指定策略ID或配置文件路径")
-        sys.exit(1)
-        
-    # 加载策略配置
-    strategy_config = load_strategy(args.strategy, args.file)
+    # 加载配置文件
+    if args.config:
+        config = load_config(args.config)
+        # 使用配置文件中的值覆盖命令行参数
+        for key, value in config.items():
+            if not hasattr(args, key) or getattr(args, key) is None:
+                setattr(args, key, value)
     
-    # 加载股票池
-    stock_pool = load_stock_pool(args.pool)
-    
-    # 执行选股
-    result = execute_strategy(
-        strategy_config=strategy_config,
-        date=args.date,
-        stock_pool=stock_pool
-    )
-    
-    # 保存结果
-    save_result(
-        result=result,
-        output_file=args.output,
-        save_db=args.save_db,
-        pretty=args.pretty
-    )
+    # 执行策略
+    execute_strategy(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main() 

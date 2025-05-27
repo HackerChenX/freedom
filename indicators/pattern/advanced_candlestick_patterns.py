@@ -38,6 +38,21 @@ class AdvancedPatternType(Enum):
     BREAKAWAY = "脱离形态"                  # 五根K线组成的反转形态
     KICKING = "反冲形态"                    # 两根相反方向的光头光脚K线
     UNIQUE_THREE_RIVER = "奇特三河"          # 三根K线组成的底部反转形态
+    
+    # 复杂形态
+    HEAD_SHOULDERS_TOP = "头肩顶"           # 左肩+头部+右肩的顶部反转形态
+    HEAD_SHOULDERS_BOTTOM = "头肩底"        # 左肩+头部+右肩的底部反转形态
+    DOUBLE_TOP = "双顶"                    # 两个相近高点的顶部反转形态
+    DOUBLE_BOTTOM = "双底"                 # 两个相近低点的底部反转形态
+    TRIPLE_TOP = "三重顶"                  # 三个相近高点的顶部反转形态
+    TRIPLE_BOTTOM = "三重底"               # 三个相近低点的底部反转形态
+    TRIANGLE_ASCENDING = "上升三角形"       # 水平上轨+上升下轨的整理形态
+    TRIANGLE_DESCENDING = "下降三角形"      # 下降上轨+水平下轨的整理形态
+    TRIANGLE_SYMMETRICAL = "对称三角形"     # 上轨下降+下轨上升的整理形态
+    RECTANGLE = "矩形整理"                 # 价格在水平支撑压力间震荡
+    DIAMOND_TOP = "钻石顶"                # 菱形的顶部反转形态
+    DIAMOND_BOTTOM = "钻石底"             # 菱形的底部反转形态
+    CUP_WITH_HANDLE = "杯柄形态"          # U形底部+小幅回调形成柄部
 
 
 class AdvancedCandlestickPatterns(BaseIndicator):
@@ -110,6 +125,10 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         # 计算其他复合形态
         result = self._calculate_other_compound_patterns(data, result)
         
+        # 计算复杂形态（需要更多数据，至少20根K线）
+        if len(data) >= 20:
+            result = self._calculate_complex_patterns(data, result)
+        
         # 合并基础形态和高级形态
         for column in basic_patterns.columns:
             result[column] = basic_patterns[column]
@@ -146,7 +165,12 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             AdvancedPatternType.RISING_THREE_METHODS.value,
             AdvancedPatternType.MAT_HOLD.value,
             AdvancedPatternType.LADDER_BOTTOM.value,
-            AdvancedPatternType.BREAKAWAY.value
+            AdvancedPatternType.BREAKAWAY.value,
+            AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
+            AdvancedPatternType.DOUBLE_BOTTOM.value,
+            AdvancedPatternType.TRIPLE_BOTTOM.value,
+            AdvancedPatternType.DIAMOND_BOTTOM.value,
+            AdvancedPatternType.CUP_WITH_HANDLE.value
         ]
         
         bearish_patterns = [
@@ -154,13 +178,21 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             AdvancedPatternType.THREE_INSIDE_DOWN.value,
             AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
             AdvancedPatternType.FALLING_THREE_METHODS.value,
-            AdvancedPatternType.TOWER_TOP.value
+            AdvancedPatternType.TOWER_TOP.value,
+            AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
+            AdvancedPatternType.DOUBLE_TOP.value,
+            AdvancedPatternType.TRIPLE_TOP.value,
+            AdvancedPatternType.DIAMOND_TOP.value
         ]
         
         neutral_patterns = [
             AdvancedPatternType.STICK_SANDWICH.value,
             AdvancedPatternType.KICKING.value,
-            AdvancedPatternType.UNIQUE_THREE_RIVER.value
+            AdvancedPatternType.UNIQUE_THREE_RIVER.value,
+            AdvancedPatternType.TRIANGLE_ASCENDING.value,
+            AdvancedPatternType.TRIANGLE_DESCENDING.value,
+            AdvancedPatternType.TRIANGLE_SYMMETRICAL.value,
+            AdvancedPatternType.RECTANGLE.value
         ]
         
         # 创建买入信号
@@ -559,6 +591,191 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         
         return result
     
+    def _calculate_complex_patterns(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算复杂形态（头肩顶/底、双顶/底、三角形等）
+        
+        Args:
+            data: 输入数据
+            result: 结果数据框
+            
+        Returns:
+            pd.DataFrame: 更新后的结果数据框
+        """
+        # 提取数据
+        high_prices = data["high"].values
+        low_prices = data["low"].values
+        close_prices = data["close"].values
+        
+        # 计算移动平均线（用于帮助识别形态）
+        ma20 = np.convolve(close_prices, np.ones(20)/20, mode='valid')
+        
+        # 初始化结果数组
+        n = len(data)
+        head_shoulders_top = np.zeros(n, dtype=bool)
+        head_shoulders_bottom = np.zeros(n, dtype=bool)
+        double_top = np.zeros(n, dtype=bool)
+        double_bottom = np.zeros(n, dtype=bool)
+        triple_top = np.zeros(n, dtype=bool)
+        triple_bottom = np.zeros(n, dtype=bool)
+        triangle_ascending = np.zeros(n, dtype=bool)
+        triangle_descending = np.zeros(n, dtype=bool)
+        triangle_symmetrical = np.zeros(n, dtype=bool)
+        rectangle = np.zeros(n, dtype=bool)
+        diamond_top = np.zeros(n, dtype=bool)
+        diamond_bottom = np.zeros(n, dtype=bool)
+        cup_with_handle = np.zeros(n, dtype=bool)
+        
+        # 局部极值查找窗口大小
+        window = 5
+        
+        # 查找局部高点和低点
+        peaks = np.zeros(n, dtype=bool)
+        troughs = np.zeros(n, dtype=bool)
+        
+        for i in range(window, n - window):
+            # 局部高点：当前高点高于前后window个点的高点
+            if all(high_prices[i] > high_prices[i-window:i]) and all(high_prices[i] > high_prices[i+1:i+window+1]):
+                peaks[i] = True
+            
+            # 局部低点：当前低点低于前后window个点的低点
+            if all(low_prices[i] < low_prices[i-window:i]) and all(low_prices[i] < low_prices[i+1:i+window+1]):
+                troughs[i] = True
+        
+        # 获取所有峰值和谷值的索引
+        peak_indices = np.where(peaks)[0]
+        trough_indices = np.where(troughs)[0]
+        
+        # 头肩顶识别
+        for i in range(len(peak_indices) - 2):
+            # 取三个连续的峰值
+            p1 = peak_indices[i]
+            p2 = peak_indices[i+1]
+            p3 = peak_indices[i+2]
+            
+            # 确保峰值之间有足够的距离
+            if p2 - p1 >= window * 2 and p3 - p2 >= window * 2:
+                # 头部（中间峰值）高于两侧肩部
+                if high_prices[p2] > high_prices[p1] and high_prices[p2] > high_prices[p3]:
+                    # 两肩高度相近（差异不超过20%）
+                    shoulder_diff = abs(high_prices[p1] - high_prices[p3]) / high_prices[p1]
+                    if shoulder_diff < 0.2:
+                        # 找到两个峰值之间的谷值
+                        t1 = trough_indices[np.logical_and(trough_indices > p1, trough_indices < p2)]
+                        t2 = trough_indices[np.logical_and(trough_indices > p2, trough_indices < p3)]
+                        
+                        if len(t1) > 0 and len(t2) > 0:
+                            neckline_level1 = low_prices[t1[0]]
+                            neckline_level2 = low_prices[t2[0]]
+                            
+                            # 颈线水平（差异不超过10%）
+                            neckline_diff = abs(neckline_level1 - neckline_level2) / neckline_level1
+                            if neckline_diff < 0.1:
+                                # 标记头肩顶形态
+                                head_shoulders_top[p3] = True
+        
+        # 头肩底识别
+        for i in range(len(trough_indices) - 2):
+            # 取三个连续的谷值
+            t1 = trough_indices[i]
+            t2 = trough_indices[i+1]
+            t3 = trough_indices[i+2]
+            
+            # 确保谷值之间有足够的距离
+            if t2 - t1 >= window * 2 and t3 - t2 >= window * 2:
+                # 头部（中间谷值）低于两侧肩部
+                if low_prices[t2] < low_prices[t1] and low_prices[t2] < low_prices[t3]:
+                    # 两肩高度相近（差异不超过20%）
+                    shoulder_diff = abs(low_prices[t1] - low_prices[t3]) / low_prices[t1]
+                    if shoulder_diff < 0.2:
+                        # 找到两个谷值之间的峰值
+                        p1 = peak_indices[np.logical_and(peak_indices > t1, peak_indices < t2)]
+                        p2 = peak_indices[np.logical_and(peak_indices > t2, peak_indices < t3)]
+                        
+                        if len(p1) > 0 and len(p2) > 0:
+                            neckline_level1 = high_prices[p1[0]]
+                            neckline_level2 = high_prices[p2[0]]
+                            
+                            # 颈线水平（差异不超过10%）
+                            neckline_diff = abs(neckline_level1 - neckline_level2) / neckline_level1
+                            if neckline_diff < 0.1:
+                                # 标记头肩底形态
+                                head_shoulders_bottom[t3] = True
+        
+        # 双顶识别
+        for i in range(len(peak_indices) - 1):
+            p1 = peak_indices[i]
+            p2 = peak_indices[i+1]
+            
+            # 确保两个峰值之间有足够的距离
+            if p2 - p1 >= window * 3:
+                # 两个峰值高度相近（差异不超过5%）
+                peak_diff = abs(high_prices[p1] - high_prices[p2]) / high_prices[p1]
+                if peak_diff < 0.05:
+                    # 找到两个峰值之间的谷值
+                    mid_troughs = trough_indices[np.logical_and(trough_indices > p1, trough_indices < p2)]
+                    
+                    if len(mid_troughs) > 0:
+                        # 谷值显著低于峰值（至少10%）
+                        trough_depth = (high_prices[p1] - low_prices[mid_troughs[0]]) / high_prices[p1]
+                        if trough_depth > 0.1:
+                            # 标记双顶形态
+                            double_top[p2] = True
+        
+        # 双底识别
+        for i in range(len(trough_indices) - 1):
+            t1 = trough_indices[i]
+            t2 = trough_indices[i+1]
+            
+            # 确保两个谷值之间有足够的距离
+            if t2 - t1 >= window * 3:
+                # 两个谷值高度相近（差异不超过5%）
+                trough_diff = abs(low_prices[t1] - low_prices[t2]) / low_prices[t1]
+                if trough_diff < 0.05:
+                    # 找到两个谷值之间的峰值
+                    mid_peaks = peak_indices[np.logical_and(peak_indices > t1, peak_indices < t2)]
+                    
+                    if len(mid_peaks) > 0:
+                        # 峰值显著高于谷值（至少10%）
+                        peak_height = (high_prices[mid_peaks[0]] - low_prices[t1]) / low_prices[t1]
+                        if peak_height > 0.1:
+                            # 标记双底形态
+                            double_bottom[t2] = True
+        
+        # 三角形识别（这里只实现对称三角形识别，其他三角形类似）
+        for i in range(n - 20):
+            # 至少需要3个峰值和3个谷值来形成三角形
+            window_peaks = peak_indices[np.logical_and(peak_indices >= i, peak_indices < i + 20)]
+            window_troughs = trough_indices[np.logical_and(trough_indices >= i, trough_indices < i + 20)]
+            
+            if len(window_peaks) >= 3 and len(window_troughs) >= 3:
+                # 检查高点是否递减
+                descending_tops = all(high_prices[window_peaks[j]] > high_prices[window_peaks[j+1]] for j in range(len(window_peaks)-1))
+                
+                # 检查低点是否递增
+                ascending_bottoms = all(low_prices[window_troughs[j]] < low_prices[window_troughs[j+1]] for j in range(len(window_troughs)-1))
+                
+                if descending_tops and ascending_bottoms:
+                    # 标记对称三角形
+                    triangle_symmetrical[i+19] = True
+        
+        # 将识别结果添加到结果数据框
+        result[AdvancedPatternType.HEAD_SHOULDERS_TOP.value] = head_shoulders_top
+        result[AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value] = head_shoulders_bottom
+        result[AdvancedPatternType.DOUBLE_TOP.value] = double_top
+        result[AdvancedPatternType.DOUBLE_BOTTOM.value] = double_bottom
+        result[AdvancedPatternType.TRIPLE_TOP.value] = triple_top
+        result[AdvancedPatternType.TRIPLE_BOTTOM.value] = triple_bottom
+        result[AdvancedPatternType.TRIANGLE_ASCENDING.value] = triangle_ascending
+        result[AdvancedPatternType.TRIANGLE_DESCENDING.value] = triangle_descending
+        result[AdvancedPatternType.TRIANGLE_SYMMETRICAL.value] = triangle_symmetrical
+        result[AdvancedPatternType.RECTANGLE.value] = rectangle
+        result[AdvancedPatternType.DIAMOND_TOP.value] = diamond_top
+        result[AdvancedPatternType.DIAMOND_BOTTOM.value] = diamond_bottom
+        result[AdvancedPatternType.CUP_WITH_HANDLE.value] = cup_with_handle
+        
+        return result
+    
     def _calculate_signal_strength(self, indicator_values: pd.DataFrame) -> pd.Series:
         """
         计算信号强度
@@ -598,11 +815,25 @@ class AdvancedCandlestickPatterns(BaseIndicator):
                 AdvancedPatternType.TOWER_TOP.value: 75,            # 塔顶形态
                 AdvancedPatternType.BREAKAWAY.value: 78,            # 脱离形态
                 AdvancedPatternType.KICKING.value: 83,              # 反冲形态
-                AdvancedPatternType.UNIQUE_THREE_RIVER.value: 72    # 奇特三河
+                AdvancedPatternType.UNIQUE_THREE_RIVER.value: 72,    # 奇特三河
+                
+                # 复杂形态
+                AdvancedPatternType.HEAD_SHOULDERS_TOP.value: 80,    # 头肩顶
+                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value: 80,   # 头肩底
+                AdvancedPatternType.DOUBLE_TOP.value: 75,                # 双顶
+                AdvancedPatternType.DOUBLE_BOTTOM.value: 75,               # 双底
+                AdvancedPatternType.TRIPLE_TOP.value: 70,                  # 三重顶
+                AdvancedPatternType.TRIPLE_BOTTOM.value: 70,               # 三重底
+                AdvancedPatternType.TRIANGLE_ASCENDING.value: 65,          # 上升三角形
+                AdvancedPatternType.TRIANGLE_DESCENDING.value: 65,         # 下降三角形
+                AdvancedPatternType.TRIANGLE_SYMMETRICAL.value: 60,         # 对称三角形
+                AdvancedPatternType.RECTANGLE.value: 55,                    # 矩形整理
+                AdvancedPatternType.DIAMOND_TOP.value: 50,                   # 钻石顶
+                AdvancedPatternType.DIAMOND_BOTTOM.value: 50,                # 钻石底
+                AdvancedPatternType.CUP_WITH_HANDLE.value: 45                 # 杯柄形态
             }
             
             # 添加基础K线形态的权重
-            from indicators.pattern.candlestick_patterns import PatternType
             basic_pattern_weights = {
                 PatternType.HAMMER.value: 65,                     # 锤子
                 PatternType.HANGING_MAN.value: 65,                # 上吊线
@@ -700,9 +931,11 @@ class AdvancedCandlestickPatterns(BaseIndicator):
                 AdvancedPatternType.MAT_HOLD.value,
                 AdvancedPatternType.LADDER_BOTTOM.value,
                 AdvancedPatternType.BREAKAWAY.value,
-                'HAMMER', 'INVERTED_HAMMER', 'BULLISH_ENGULFING', 
-                'PIERCING_LINE', 'BULLISH_HARAMI', 'BULLISH_HARAMI_CROSS',
-                'MORNING_STAR', 'MORNING_DOJI_STAR', 'BULLISH_MARUBOZU'
+                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
+                AdvancedPatternType.DOUBLE_BOTTOM.value,
+                AdvancedPatternType.TRIPLE_BOTTOM.value,
+                AdvancedPatternType.DIAMOND_BOTTOM.value,
+                AdvancedPatternType.CUP_WITH_HANDLE.value
             ]
             
             bearish_patterns = [
@@ -711,9 +944,10 @@ class AdvancedCandlestickPatterns(BaseIndicator):
                 AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
                 AdvancedPatternType.FALLING_THREE_METHODS.value,
                 AdvancedPatternType.TOWER_TOP.value,
-                'HANGING_MAN', 'SHOOTING_STAR', 'BEARISH_ENGULFING',
-                'DARK_CLOUD_COVER', 'BEARISH_HARAMI', 'BEARISH_HARAMI_CROSS',
-                'EVENING_STAR', 'EVENING_DOJI_STAR', 'BEARISH_MARUBOZU'
+                AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
+                AdvancedPatternType.DOUBLE_TOP.value,
+                AdvancedPatternType.TRIPLE_TOP.value,
+                AdvancedPatternType.DIAMOND_TOP.value
             ]
             
             # 创建看涨和看跌信号序列
@@ -790,16 +1024,20 @@ class AdvancedCandlestickPatterns(BaseIndicator):
                 AdvancedPatternType.KICKING.value,
                 AdvancedPatternType.UNIQUE_THREE_RIVER.value,
                 
-                # 基础形态
-                'HAMMER', 'HANGING_MAN', 'SHOOTING_STAR', 'INVERTED_HAMMER',
-                'DOJI', 'DRAGONFLY_DOJI', 'GRAVESTONE_DOJI',
-                'BULLISH_ENGULFING', 'BEARISH_ENGULFING',
-                'DARK_CLOUD_COVER', 'PIERCING_LINE',
-                'BULLISH_HARAMI', 'BEARISH_HARAMI',
-                'BULLISH_HARAMI_CROSS', 'BEARISH_HARAMI_CROSS',
-                'MORNING_STAR', 'EVENING_STAR',
-                'MORNING_DOJI_STAR', 'EVENING_DOJI_STAR',
-                'BULLISH_MARUBOZU', 'BEARISH_MARUBOZU'
+                # 复杂形态
+                AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
+                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
+                AdvancedPatternType.DOUBLE_TOP.value,
+                AdvancedPatternType.DOUBLE_BOTTOM.value,
+                AdvancedPatternType.TRIPLE_TOP.value,
+                AdvancedPatternType.TRIPLE_BOTTOM.value,
+                AdvancedPatternType.TRIANGLE_ASCENDING.value,
+                AdvancedPatternType.TRIANGLE_DESCENDING.value,
+                AdvancedPatternType.TRIANGLE_SYMMETRICAL.value,
+                AdvancedPatternType.RECTANGLE.value,
+                AdvancedPatternType.DIAMOND_TOP.value,
+                AdvancedPatternType.DIAMOND_BOTTOM.value,
+                AdvancedPatternType.CUP_WITH_HANDLE.value
             ]
             
             # 计算每行有多少个形态同时出现
@@ -827,9 +1065,11 @@ class AdvancedCandlestickPatterns(BaseIndicator):
                 AdvancedPatternType.MAT_HOLD.value,
                 AdvancedPatternType.LADDER_BOTTOM.value,
                 AdvancedPatternType.BREAKAWAY.value,
-                'HAMMER', 'INVERTED_HAMMER', 'BULLISH_ENGULFING', 
-                'PIERCING_LINE', 'BULLISH_HARAMI', 'BULLISH_HARAMI_CROSS',
-                'MORNING_STAR', 'MORNING_DOJI_STAR', 'BULLISH_MARUBOZU'
+                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
+                AdvancedPatternType.DOUBLE_BOTTOM.value,
+                AdvancedPatternType.TRIPLE_BOTTOM.value,
+                AdvancedPatternType.DIAMOND_BOTTOM.value,
+                AdvancedPatternType.CUP_WITH_HANDLE.value
             ]
             
             bearish_patterns = [
@@ -838,9 +1078,10 @@ class AdvancedCandlestickPatterns(BaseIndicator):
                 AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
                 AdvancedPatternType.FALLING_THREE_METHODS.value,
                 AdvancedPatternType.TOWER_TOP.value,
-                'HANGING_MAN', 'SHOOTING_STAR', 'BEARISH_ENGULFING',
-                'DARK_CLOUD_COVER', 'BEARISH_HARAMI', 'BEARISH_HARAMI_CROSS',
-                'EVENING_STAR', 'EVENING_DOJI_STAR', 'BEARISH_MARUBOZU'
+                AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
+                AdvancedPatternType.DOUBLE_TOP.value,
+                AdvancedPatternType.TRIPLE_TOP.value,
+                AdvancedPatternType.DIAMOND_TOP.value
             ]
             
             # 统计看涨形态数量

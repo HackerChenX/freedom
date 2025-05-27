@@ -1,0 +1,54 @@
+strategy:
+  id: TREND_REVERSAL_001
+  name: 趋势反弹策略
+  description: 基于回测结果生成的趋势反弹策略
+  version: "1.0"
+  author: system
+  create_time: "2025-05-27 17:20:00"
+  update_time: "2025-05-27 17:20:00"
+
+  conditions:
+    - indicator_id: MA_CONDITION
+      period: DAILY
+      parameters:
+        ma_type: "MA"
+        ma_period: 5
+        operator: ">"
+        compare_value: "MA(CLOSE, 20)"
+      signal_type: BUY
+    
+    - logic: AND
+    
+    - indicator_id: KDJ_CONDITION
+      period: DAILY
+      parameters:
+        line: "K"
+        operator: ">"
+        value: 20
+      signal_type: BUY
+    
+    - logic: OR
+    
+    - indicator_id: MACD_CONDITION
+      period: DAILY
+      parameters:
+        line: "MACD"
+        operator: ">"
+        value: 0
+      signal_type: BUY
+
+  filters:
+    market: []
+    industry: []
+    market_cap:
+      min: 0
+      max: 10000
+    price:
+      min: 0
+      max: 500
+
+  sort:
+    - field: signal_strength
+      direction: DESC
+    - field: market_cap
+      direction: ASC 

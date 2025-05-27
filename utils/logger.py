@@ -19,7 +19,12 @@ _LOG_LEVELS = {
     'info': logging.INFO,
     'warning': logging.WARNING,
     'error': logging.ERROR,
-    'critical': logging.CRITICAL
+    'critical': logging.CRITICAL,
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL
 }
 
 # 日志格式
@@ -116,6 +121,12 @@ def init_logging(level: Optional[Union[str, int]] = None,
     global _initialized
     
     if _initialized:
+        # 如果已初始化但需要修改日志级别，则更新根日志器的级别
+        if level is not None:
+            root_logger = logging.getLogger()
+            if isinstance(level, str):
+                level = _LOG_LEVELS.get(level.lower(), logging.INFO)
+            root_logger.setLevel(level)
         return
     
     # 获取日志级别
@@ -124,6 +135,8 @@ def init_logging(level: Optional[Union[str, int]] = None,
     
     if isinstance(level, str):
         level = _LOG_LEVELS.get(level.lower(), logging.INFO)
+    
+    print(f"设置日志级别: {level}")
     
     # 配置根日志记录器
     root_logger = logging.getLogger()
@@ -136,6 +149,7 @@ def init_logging(level: Optional[Union[str, int]] = None,
     # 添加控制台处理器
     if to_console:
         console_handler = _create_console_handler()
+        console_handler.setLevel(level)  # 确保处理器级别与根日志器一致
         root_logger.addHandler(console_handler)
     
     # 添加文件处理器
@@ -145,6 +159,7 @@ def init_logging(level: Optional[Union[str, int]] = None,
         log_file = os.path.join(log_dir, f'freedom_{today}.log')
         
         file_handler = _create_file_handler(log_file)
+        file_handler.setLevel(level)  # 确保处理器级别与根日志器一致
         root_logger.addHandler(file_handler)
     
     _initialized = True

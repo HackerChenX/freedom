@@ -72,6 +72,35 @@ class BaseIndicator(abc.ABC):
         """
         pass
     
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成指标信号
+        
+        Args:
+            data: 输入数据，通常是K线数据
+            args: 位置参数
+            kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果，例如：
+                - golden_cross: 金叉信号
+                - dead_cross: 死叉信号
+                - buy_signal: 买入信号
+                - sell_signal: 卖出信号
+                - bull_trend: 多头趋势
+                - bear_trend: 空头趋势
+        """
+        # 默认实现：计算指标并返回一个空的信号DataFrame
+        if not self.has_result():
+            self.calculate(data, *args, **kwargs)
+            
+        # 创建空的信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        
+        return signals
+    
     def compute(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算技术指标并处理异常
@@ -250,9 +279,9 @@ class BaseIndicator(abc.ABC):
             pd.Series: ATR值
         """
         tr1 = high - low
-        tr2 = abs(high - close.shift(1))
-        tr3 = abs(low - close.shift(1))
-        tr = pd.DataFrame({'tr1': tr1, 'tr2': tr2, 'tr3': tr3}).max(axis=1)
+        tr2 = (high - close.shift(1)).abs()
+        tr3 = (low - close.shift(1)).abs()
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
         return tr.rolling(window=periods).mean()
     
     def to_dict(self) -> Dict[str, Any]:
@@ -263,17 +292,17 @@ class BaseIndicator(abc.ABC):
             Dict[str, Any]: 指标的字典表示
         """
         return {
-            'name': self.name,
-            'description': self.description,
-            'has_result': self.has_result(),
-            'has_error': self.has_error(),
-            'error': str(self._error) if self._error else None
+            "name": self.name,
+            "description": self.description,
+            "has_result": self.has_result(),
+            "has_error": self.has_error(),
+            "error": str(self.error) if self.has_error() else None
         }
     
     def __str__(self) -> str:
         """字符串表示"""
-        return f"{self.__class__.__name__}({self.name})"
+        return f"{self.name}: {self.description}"
     
     def __repr__(self) -> str:
-        """开发者字符串表示"""
-        return self.__str__() 
+        """对象表示"""
+        return f"<{self.__class__.__name__} name='{self.name}' has_result={self.has_result()} has_error={self.has_error()}>" 

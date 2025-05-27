@@ -48,6 +48,8 @@ from indicators.vix import VIX
 from indicators.divergence import DIVERGENCE
 from indicators.multi_period_resonance import MULTI_PERIOD_RESONANCE
 from indicators.zxm_absorb import ZXM_ABSORB
+# 导入公式指标模块
+from indicators.formula_indicators import CrossOver, KDJCondition, MACDCondition, MACondition, GenericCondition
 
 # 导入ZXM体系指标
 from indicators.zxm.trend_indicators import (
@@ -124,5 +126,11 @@ __all__ = [
     'ZXMMACallback',
     'ZXMBSAbsorb',
     'ZXMSelectionModel',
-    'IndicatorFactory'
+    'IndicatorFactory',
+    # 添加公式指标
+    'CrossOver',
+    'KDJCondition',
+    'MACDCondition',
+    'MACondition',
+    'GenericCondition'
 ] 

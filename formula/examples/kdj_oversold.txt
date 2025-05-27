@@ -1,0 +1,26 @@
+{KDJ超卖反弹选股策略
+KDJ指标从超卖区回升，寻找短线反弹机会
+适合短线交易和超跌反弹}
+
+# 参数设置
+N:=9;   # RSV周期
+M1:=3;  # K值平滑因子
+M2:=3;  # D值平滑因子
+
+# 计算KDJ指标
+RSV:=(CLOSE-LLV(LOW,N))/(HHV(HIGH,N)-LLV(LOW,N))*100;
+K:=SMA(RSV,M1,1);
+D:=SMA(K,M2,1);
+J:=3*K-2*D;
+
+# 超卖条件：K和D均在20以下
+OVERSOLD:=K<20 AND D<20;
+
+# 金叉条件：K上穿D
+GOLDEN_CROSS:=CROSS(K,D);
+
+# 反弹确认：J值回升
+J_UP:=J>REF(J,1) AND J>0;
+
+# 买入条件：超卖区间金叉且J值回升
+BUY:=OVERSOLD AND GOLDEN_CROSS AND J_UP; 

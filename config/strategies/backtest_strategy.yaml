@@ -1,0 +1,54 @@
+strategy:
+  id: BACKTEST_STRATEGY_001
+  name: 回测策略
+  description: 基于回测结果生成的策略 - 源自strategy_20250527171345.py
+  version: "1.0"
+  author: system
+  create_time: "2025-05-27 17:13:45"
+  update_time: "2025-05-27 17:20:00"
+
+  conditions:
+    # KDJ金叉条件
+    - indicator_id: KDJ
+      period: DAILY
+      parameters:
+        n: 9
+        m1: 3
+        m2: 3
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # MACD金叉条件
+    - indicator_id: MACD
+      period: DAILY
+      parameters:
+        fast_period: 12
+        slow_period: 26
+        signal_period: 9
+      signal_type: BUY
+    
+    - logic: OR
+    
+    # 均线多头排列条件
+    - indicator_id: MA
+      period: DAILY
+      parameters:
+        periods: [5]
+      signal_type: BUY
+
+  filters:
+    market: []  # 不限制市场
+    industry: []  # 不限制行业
+    market_cap:
+      min: 0
+      max: 10000
+    price:
+      min: 0
+      max: 500
+
+  sort:
+    - field: signal_strength
+      direction: DESC
+    - field: market_cap
+      direction: ASC 
