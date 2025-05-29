@@ -371,4 +371,182 @@ class DIVERGENCE(BaseIndicator):
         for i in range(1, len(series)):
             result[i] = alpha * series[i] + (1 - alpha) * result[i-1]
         
-        return result 
+        return result
+
+    def generate_signals(self, data: pd.DataFrame, indicator_name: str = 'macd', *args, **kwargs) -> pd.DataFrame:
+        """
+        生成背离指标交易信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            indicator_name: 用于对比的技术指标列名，默认为'macd'
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+        """
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True  # 默认为中性信号
+        signals['trend'] = 0  # 0表示中性
+        signals['score'] = 50.0  # 默认评分50分
+        signals['signal_type'] = None
+        signals['signal_desc'] = None
+        signals['confidence'] = 50.0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = None
+        signals['market_env'] = 'sideways_market'
+        signals['volume_confirmation'] = False
+        
+        # 设置参数
+        lookback_period = kwargs.get('lookback_period', self.lookback_period)
+        confirm_period = kwargs.get('confirm_period', self.confirm_period)
+        
+        # 计算背离指标
+        if indicator_name == 'macd':
+            # 使用MACD背离
+            if 'macd' not in data.columns:
+                # 如果没有MACD列，则计算MACD背离
+                divergence_result = self.macd_divergence(data, lookback_period, confirm_period)
+            else:
+                # 如果有MACD列，则直接使用MACD背离
+                divergence_result = self.calculate(data, 'macd', lookback_period, confirm_period)
+        elif indicator_name == 'rsi':
+            # 使用RSI背离
+            if 'rsi' not in data.columns:
+                # 如果没有RSI列，则计算RSI背离
+                divergence_result = self.rsi_divergence(data, 14, lookback_period, confirm_period)
+            else:
+                # 如果有RSI列，则直接使用RSI背离
+                divergence_result = self.calculate(data, 'rsi', lookback_period, confirm_period)
+        elif indicator_name == 'obv':
+            # 使用OBV背离
+            divergence_result = self.obv_divergence(data, lookback_period, confirm_period)
+        elif indicator_name == 'volume':
+            # 使用价格与成交量背离
+            divergence_result = self.price_volume_divergence(data, lookback_period, confirm_period)
+        else:
+            # 使用自定义指标背离
+            divergence_result = self.calculate(data, indicator_name, lookback_period, confirm_period)
+        
+        # 提取背离信号
+        if 'positive_divergence' in divergence_result.columns:
+            positive_divergence = divergence_result['positive_divergence']
+        else:
+            positive_divergence = pd.Series(False, index=data.index)
+        
+        if 'negative_divergence' in divergence_result.columns:
+            negative_divergence = divergence_result['negative_divergence']
+        else:
+            negative_divergence = pd.Series(False, index=data.index)
+        
+        if 'hidden_positive_divergence' in divergence_result.columns:
+            hidden_positive = divergence_result['hidden_positive_divergence']
+        else:
+            hidden_positive = pd.Series(False, index=data.index)
+        
+        if 'hidden_negative_divergence' in divergence_result.columns:
+            hidden_negative = divergence_result['hidden_negative_divergence']
+        else:
+            hidden_negative = pd.Series(False, index=data.index)
+        
+        # 生成买入信号（正背离和隐藏正背离）
+        buy_indices = positive_divergence | hidden_positive
+        signals.loc[buy_indices, 'buy_signal'] = True
+        signals.loc[buy_indices, 'neutral_signal'] = False
+        signals.loc[buy_indices, 'trend'] = 1
+        
+        # 生成卖出信号（负背离和隐藏负背离）
+        sell_indices = negative_divergence | hidden_negative
+        signals.loc[sell_indices, 'sell_signal'] = True
+        signals.loc[sell_indices, 'neutral_signal'] = False
+        signals.loc[sell_indices, 'trend'] = -1
+        
+        # 添加信号类型和描述
+        for i in range(len(signals)):
+            if positive_divergence.iloc[i]:
+                signals.loc[signals.index[i], 'signal_type'] = '正背离(底背离)'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标正背离：价格创新低，指标未创新低，看涨信号'
+                signals.loc[signals.index[i], 'confidence'] = 75
+                signals.loc[signals.index[i], 'market_env'] = 'reversal_market'
+                signals.loc[signals.index[i], 'score'] = 75
+            
+            elif negative_divergence.iloc[i]:
+                signals.loc[signals.index[i], 'signal_type'] = '负背离(顶背离)'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标负背离：价格创新高，指标未创新高，看跌信号'
+                signals.loc[signals.index[i], 'confidence'] = 75
+                signals.loc[signals.index[i], 'market_env'] = 'reversal_market'
+                signals.loc[signals.index[i], 'score'] = 25
+            
+            elif hidden_positive.iloc[i]:
+                signals.loc[signals.index[i], 'signal_type'] = '隐藏正背离'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏正背离：价格未创新低，指标创新低，看涨信号'
+                signals.loc[signals.index[i], 'confidence'] = 65
+                signals.loc[signals.index[i], 'market_env'] = 'trend_continuation'
+                signals.loc[signals.index[i], 'score'] = 70
+            
+            elif hidden_negative.iloc[i]:
+                signals.loc[signals.index[i], 'signal_type'] = '隐藏负背离'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏负背离：价格未创新高，指标创新高，看跌信号'
+                signals.loc[signals.index[i], 'confidence'] = 65
+                signals.loc[signals.index[i], 'market_env'] = 'trend_continuation'
+                signals.loc[signals.index[i], 'score'] = 30
+        
+        # 成交量确认
+        if 'volume' in data.columns:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            vol_ratio = volume / vol_ma5
+            
+            # 成交量放大确认
+            high_volume = vol_ratio > 1.5
+            signals.loc[high_volume, 'volume_confirmation'] = True
+            
+            # 成交量确认增强信号可靠性
+            for i in range(len(signals)):
+                if (signals['buy_signal'].iloc[i] or signals['sell_signal'].iloc[i]) and high_volume.iloc[i]:
+                    current_confidence = signals['confidence'].iloc[i]
+                    signals.loc[signals.index[i], 'confidence'] = min(90, current_confidence + 10)
+        
+        # 更新风险等级和仓位建议
+        for i in range(len(signals)):
+            confidence = signals['confidence'].iloc[i]
+            
+            # 根据信号强度和置信度设置风险等级
+            if confidence >= 80:
+                signals.loc[signals.index[i], 'risk_level'] = '低'
+            elif confidence >= 65:
+                signals.loc[signals.index[i], 'risk_level'] = '中'
+            else:
+                signals.loc[signals.index[i], 'risk_level'] = '高'
+            
+            # 设置建议仓位
+            if signals['buy_signal'].iloc[i] or signals['sell_signal'].iloc[i]:
+                if confidence >= 80:
+                    signals.loc[signals.index[i], 'position_size'] = 0.1  # 10%仓位
+                elif confidence >= 70:
+                    signals.loc[signals.index[i], 'position_size'] = 0.07  # 7%仓位
+                elif confidence >= 60:
+                    signals.loc[signals.index[i], 'position_size'] = 0.05  # 5%仓位
+        
+        # 计算动态止损
+        for i in range(len(signals)):
+            if signals['buy_signal'].iloc[i]:
+                # 买入信号的止损
+                if i >= 5 and i < len(data):
+                    # 使用前5个交易日的最低价作为止损参考
+                    stop_level = data['low'].iloc[i-5:i].min() * 0.98
+                    signals.loc[signals.index[i], 'stop_loss'] = stop_level
+            
+            elif signals['sell_signal'].iloc[i]:
+                # 卖出信号的止损
+                if i >= 5 and i < len(data):
+                    # 使用前5个交易日的最高价作为止损参考
+                    stop_level = data['high'].iloc[i-5:i].max() * 1.02
+                    signals.loc[signals.index[i], 'stop_loss'] = stop_level
+        
+        return signals 

@@ -204,3 +204,210 @@ class IntradayVolatility(BaseIndicator):
                         data.iloc[i, data.columns.get_loc("market_phase")] = "盘整"
         
         return data 
+    
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算日内波动率指标的原始评分
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含原始评分的DataFrame
+        """
+        # 计算指标值
+        indicator_data = self.calculate(data)
+        
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        # 1. 波动率水平评分（-20到+20分）
+        volatility = indicator_data['volatility']
+        volatility_ma = indicator_data['volatility_ma']
+        
+        # 高波动率减分，低波动率加分
+        high_vol_mask = volatility > volatility_ma * 1.5
+        score.loc[high_vol_mask] -= 15
+        
+        very_high_vol_mask = volatility > volatility_ma * 2.0
+        score.loc[very_high_vol_mask] -= 20
+        
+        low_vol_mask = volatility < volatility_ma * 0.7
+        score.loc[low_vol_mask] += 15
+        
+        very_low_vol_mask = volatility < volatility_ma * 0.5
+        score.loc[very_low_vol_mask] += 20
+        
+        # 2. 波动率趋势评分（-15到+15分）
+        volatility_change = indicator_data['volatility_change'].fillna(0)
+        
+        # 波动率上升减分，下降加分
+        vol_rising_mask = volatility_change > 0.1
+        score.loc[vol_rising_mask] -= 10
+        
+        vol_falling_mask = volatility_change < -0.1
+        score.loc[vol_falling_mask] += 10
+        
+        # 急剧变化额外评分
+        sharp_rise_mask = volatility_change > 0.3
+        score.loc[sharp_rise_mask] -= 15
+        
+        sharp_fall_mask = volatility_change < -0.3
+        score.loc[sharp_fall_mask] += 15
+        
+        # 3. 相对波动率评分（-15到+15分）
+        relative_volatility = indicator_data['relative_volatility'].fillna(1.0)
+        
+        # 相对历史水平的评分
+        high_rel_vol_mask = relative_volatility > 1.3
+        score.loc[high_rel_vol_mask] -= 12
+        
+        low_rel_vol_mask = relative_volatility < 0.7
+        score.loc[low_rel_vol_mask] += 12
+        
+        # 极值情况
+        extreme_high_mask = relative_volatility > 2.0
+        score.loc[extreme_high_mask] -= 15
+        
+        extreme_low_mask = relative_volatility < 0.3
+        score.loc[extreme_low_mask] += 15
+        
+        # 4. 波动率稳定性评分（-10到+10分）
+        vol_std = volatility.rolling(window=10).std().fillna(0)
+        vol_mean = volatility.rolling(window=10).mean().fillna(volatility)
+        
+        # 计算变异系数
+        cv = vol_std / vol_mean
+        cv = cv.fillna(0)
+        
+        # 稳定性好加分，不稳定减分
+        stable_mask = cv < 0.3
+        score.loc[stable_mask] += 8
+        
+        unstable_mask = cv > 0.7
+        score.loc[unstable_mask] -= 8
+        
+        very_unstable_mask = cv > 1.0
+        score.loc[very_unstable_mask] -= 10
+        
+        # 5. 市场阶段评分（-10到+10分）
+        # 获取市场阶段信息
+        try:
+            phase_data = self.get_market_phase(data.copy())
+            if 'market_phase' in phase_data.columns:
+                market_phase = phase_data['market_phase']
+                
+                # 稳步上涨阶段加分
+                stable_rise_mask = market_phase == "稳步上涨"
+                score.loc[stable_rise_mask] += 10
+                
+                # 恐慌下跌阶段减分
+                panic_fall_mask = market_phase == "恐慌下跌"
+                score.loc[panic_fall_mask] -= 10
+                
+                # 强势上涨阶段中性（波动率高但趋势好）
+                strong_rise_mask = market_phase == "强势上涨"
+                score.loc[strong_rise_mask] += 5
+        except Exception as e:
+            # 如果市场阶段计算失败，跳过这部分评分
+            pass
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return pd.DataFrame({'score': score}, index=data.index)
+    
+    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+        """
+        识别日内波动率相关的技术形态
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 计算指标值
+        indicator_data = self.calculate(data)
+        
+        if len(indicator_data) < 20:
+            return patterns
+        
+        # 获取最新数据
+        latest_vol = indicator_data['volatility'].iloc[-1]
+        latest_vol_ma = indicator_data['volatility_ma'].iloc[-1]
+        latest_rel_vol = indicator_data['relative_volatility'].iloc[-1]
+        latest_vol_change = indicator_data['volatility_change'].iloc[-1]
+        
+        # 1. 高波动形态
+        if pd.notna(latest_rel_vol) and latest_rel_vol > 1.5:
+            if latest_rel_vol > 2.0:
+                patterns.append("极高波动率")
+            else:
+                patterns.append("高波动率")
+        
+        # 2. 低波动形态
+        if pd.notna(latest_rel_vol) and latest_rel_vol < 0.7:
+            if latest_rel_vol < 0.3:
+                patterns.append("极低波动率")
+            else:
+                patterns.append("低波动率")
+        
+        # 3. 波动率趋势形态
+        if pd.notna(latest_vol_change):
+            if latest_vol_change > 0.3:
+                patterns.append("波动率急剧上升")
+            elif latest_vol_change > 0.1:
+                patterns.append("波动率上升")
+            elif latest_vol_change < -0.3:
+                patterns.append("波动率急剧下降")
+            elif latest_vol_change < -0.1:
+                patterns.append("波动率下降")
+        
+        # 4. 波动率变化形态
+        recent_vol = indicator_data['volatility'].tail(5)
+        if len(recent_vol) >= 5:
+            vol_trend = recent_vol.iloc[-1] - recent_vol.iloc[0]
+            if vol_trend > recent_vol.mean() * 0.2:
+                patterns.append("波动率持续上升")
+            elif vol_trend < -recent_vol.mean() * 0.2:
+                patterns.append("波动率持续下降")
+        
+        # 5. 市场阶段形态
+        phase_data = self.get_market_phase(data.copy())
+        if 'market_phase' in phase_data.columns:
+            latest_phase = phase_data['market_phase'].iloc[-1]
+            if pd.notna(latest_phase):
+                if latest_phase == "稳步上涨":
+                    patterns.append("稳步上涨阶段")
+                elif latest_phase == "强势上涨":
+                    patterns.append("强势上涨阶段")
+                elif latest_phase == "恐慌下跌":
+                    patterns.append("恐慌下跌阶段")
+                elif latest_phase == "缓慢下跌":
+                    patterns.append("缓慢下跌阶段")
+        
+        # 6. 波动率极值形态
+        vol_20_max = indicator_data['volatility'].tail(20).max()
+        vol_20_min = indicator_data['volatility'].tail(20).min()
+        
+        if pd.notna(latest_vol) and pd.notna(vol_20_max) and latest_vol >= vol_20_max:
+            patterns.append("20日波动率新高")
+        
+        if pd.notna(latest_vol) and pd.notna(vol_20_min) and latest_vol <= vol_20_min:
+            patterns.append("20日波动率新低")
+        
+        # 7. 波动率收敛/发散形态
+        if len(indicator_data) >= 10:
+            recent_vol_std = indicator_data['volatility'].tail(10).std()
+            prev_vol_std = indicator_data['volatility'].tail(20).head(10).std()
+            
+            if pd.notna(recent_vol_std) and pd.notna(prev_vol_std):
+                if recent_vol_std < prev_vol_std * 0.7:
+                    patterns.append("波动率收敛")
+                elif recent_vol_std > prev_vol_std * 1.3:
+                    patterns.append("波动率发散")
+        
+        return patterns 

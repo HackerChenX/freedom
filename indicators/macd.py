@@ -366,4 +366,190 @@ class MACD(BaseIndicator):
         signals['signal_strength'] = 0.0
         signals.loc[signals.index[-1], 'signal_strength'] = strength
         
-        return signals 
+        return signals
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算MACD原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算MACD
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        dif = self._result['DIF']
+        dea = self._result['DEA']
+        macd_hist = self._result['MACD']
+        
+        # 1. 金叉死叉评分
+        golden_cross = self.crossover(dif, dea)
+        death_cross = self.crossunder(dif, dea)
+        score += golden_cross * 20  # 金叉+20分
+        score -= death_cross * 20   # 死叉-20分
+        
+        # 2. 零轴位置评分
+        above_zero = (dif > 0) & (dea > 0)
+        below_zero = (dif < 0) & (dea < 0)
+        score += above_zero * 10    # 零轴上方+10分
+        score -= below_zero * 10    # 零轴下方-10分
+        
+        # 3. 零轴穿越评分
+        dif_cross_up = self.crossover(dif, 0)
+        dif_cross_down = self.crossunder(dif, 0)
+        score += dif_cross_up * 15    # DIF上穿零轴+15分
+        score -= dif_cross_down * 15  # DIF下穿零轴-15分
+        
+        # 4. MACD柱状图评分
+        hist_turn_positive = (macd_hist > 0) & (macd_hist.shift(1) <= 0)
+        hist_turn_negative = (macd_hist < 0) & (macd_hist.shift(1) >= 0)
+        score += hist_turn_positive * 12  # 柱状图由负转正+12分
+        score -= hist_turn_negative * 12  # 柱状图由正转负-12分
+        
+        # 5. 背离评分（简化版）
+        if len(data) >= 20:
+            # 检测价格和MACD的背离
+            price_peaks = self._find_peaks(data['close'], 10)
+            macd_peaks = self._find_peaks(dif, 10)
+            
+            if len(price_peaks) >= 2 and len(macd_peaks) >= 2:
+                # 简单的背离检测
+                price_trend = price_peaks[-1] - price_peaks[-2]
+                macd_trend = macd_peaks[-1] - macd_peaks[-2]
+                
+                # 正背离：价格创新低但MACD未创新低
+                if price_trend < 0 and macd_trend > 0:
+                    score.iloc[-10:] += 25  # 最近10个周期+25分
+                # 负背离：价格创新高但MACD未创新高
+                elif price_trend > 0 and macd_trend < 0:
+                    score.iloc[-10:] -= 25  # 最近10个周期-25分
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别MACD技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算MACD
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        dif = self._result['DIF']
+        dea = self._result['DEA']
+        macd_hist = self._result['MACD']
+        
+        # 检查最近的信号
+        recent_periods = min(5, len(dif))
+        if recent_periods == 0:
+            return patterns
+        
+        recent_dif = dif.tail(recent_periods)
+        recent_dea = dea.tail(recent_periods)
+        recent_hist = macd_hist.tail(recent_periods)
+        
+        # 1. 金叉死叉形态
+        if self.crossover(recent_dif, recent_dea).any():
+            if recent_dif.iloc[-1] > 0 and recent_dea.iloc[-1] > 0:
+                patterns.append("MACD零轴上方金叉")
+            else:
+                patterns.append("MACD零轴下方金叉")
+        
+        if self.crossunder(recent_dif, recent_dea).any():
+            if recent_dif.iloc[-1] > 0 and recent_dea.iloc[-1] > 0:
+                patterns.append("MACD零轴上方死叉")
+            else:
+                patterns.append("MACD零轴下方死叉")
+        
+        # 2. 零轴穿越形态
+        if self.crossover(recent_dif, 0).any():
+            patterns.append("MACD DIF上穿零轴")
+        if self.crossunder(recent_dif, 0).any():
+            patterns.append("MACD DIF下穿零轴")
+        
+        # 3. 柱状图形态
+        if (recent_hist.iloc[-1] > 0 and recent_hist.iloc[-2] <= 0):
+            patterns.append("MACD柱状图由负转正")
+        if (recent_hist.iloc[-1] < 0 and recent_hist.iloc[-2] >= 0):
+            patterns.append("MACD柱状图由正转负")
+        
+        # 4. 背离形态检测
+        if len(data) >= 20:
+            divergence_type = self._detect_divergence(data['close'], dif)
+            if divergence_type:
+                patterns.append(f"MACD{divergence_type}")
+        
+        return patterns
+    
+    def _find_peaks(self, series: pd.Series, window: int) -> List[float]:
+        """
+        寻找序列中的峰值
+        
+        Args:
+            series: 输入序列
+            window: 窗口大小
+            
+        Returns:
+            List[float]: 峰值列表
+        """
+        peaks = []
+        if len(series) < window * 2:
+            return peaks
+        
+        for i in range(window, len(series) - window):
+            if series.iloc[i] == series.iloc[i-window:i+window+1].max():
+                peaks.append(series.iloc[i])
+        
+        return peaks
+    
+    def _detect_divergence(self, price: pd.Series, indicator: pd.Series) -> Optional[str]:
+        """
+        检测背离形态
+        
+        Args:
+            price: 价格序列
+            indicator: 指标序列
+            
+        Returns:
+            Optional[str]: 背离类型或None
+        """
+        if len(price) < 20:
+            return None
+        
+        # 寻找最近的峰值和谷值
+        price_peaks = self._find_peaks(price, 5)
+        indicator_peaks = self._find_peaks(indicator, 5)
+        
+        if len(price_peaks) >= 2 and len(indicator_peaks) >= 2:
+            price_trend = price_peaks[-1] - price_peaks[-2]
+            indicator_trend = indicator_peaks[-1] - indicator_peaks[-2]
+            
+            # 正背离：价格创新低但指标未创新低
+            if price_trend < -0.01 and indicator_trend > 0.001:
+                return "正背离"
+            # 负背离：价格创新高但指标未创新高
+            elif price_trend > 0.01 and indicator_trend < -0.001:
+                return "负背离"
+        
+        return None 

@@ -273,4 +273,248 @@ class KDJ(BaseIndicator):
         signals['signal_strength'] = 0.0
         signals.loc[signals.index[-1], 'signal_strength'] = strength
         
-        return signals 
+        return signals
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算KDJ原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算KDJ
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        k = self._result['K']
+        d = self._result['D']
+        j = self._result['J']
+        
+        # 1. K和D线交叉评分
+        golden_cross = self.crossover(k, d)
+        death_cross = self.crossunder(k, d)
+        score += golden_cross * 20  # K上穿D+20分
+        score -= death_cross * 20   # K下穿D-20分
+        
+        # 2. 超买超卖区域评分
+        oversold_area = (k < 20) & (d < 20) & (j < 20)
+        overbought_area = (k > 80) & (d > 80) & (j > 80)
+        score += oversold_area * 25   # 三线超卖+25分
+        score -= overbought_area * 25 # 三线超买-25分
+        
+        # 3. K线区域变化评分
+        k_leaving_oversold = (k > 20) & (k.shift(1) <= 20)
+        k_leaving_overbought = (k < 80) & (k.shift(1) >= 80)
+        score += k_leaving_oversold * 15   # K线离开超卖区+15分
+        score -= k_leaving_overbought * 15 # K线离开超买区-15分
+        
+        # 4. J线极端区域评分
+        j_extreme_oversold = j < 0
+        j_extreme_overbought = j > 100
+        score += j_extreme_oversold * 30   # J线极端超卖+30分
+        score -= j_extreme_overbought * 30 # J线极端超买-30分
+        
+        # 5. 钝化形态评分
+        # 低位钝化（连续多个周期在超卖区）
+        low_stagnation = self._detect_stagnation(k, d, j, low_threshold=20, periods=5)
+        # 高位钝化（连续多个周期在超买区）
+        high_stagnation = self._detect_stagnation(k, d, j, high_threshold=80, periods=5)
+        
+        score += low_stagnation * 20   # 低位钝化+20分
+        score -= high_stagnation * 20  # 高位钝化-20分
+        
+        # 6. 背离评分
+        if len(data) >= 20:
+            divergence_score = self._calculate_kdj_divergence(data['close'], k, d)
+            score += divergence_score
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别KDJ技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算KDJ
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        k = self._result['K']
+        d = self._result['D']
+        j = self._result['J']
+        
+        # 检查最近的信号
+        recent_periods = min(5, len(k))
+        if recent_periods == 0:
+            return patterns
+        
+        recent_k = k.tail(recent_periods)
+        recent_d = d.tail(recent_periods)
+        recent_j = j.tail(recent_periods)
+        
+        # 1. 金叉死叉形态
+        if self.crossover(recent_k, recent_d).any():
+            if recent_k.iloc[-1] < 20 and recent_d.iloc[-1] < 20:
+                patterns.append("KDJ超卖区金叉")
+            elif recent_k.iloc[-1] > 80 and recent_d.iloc[-1] > 80:
+                patterns.append("KDJ超买区金叉")
+            else:
+                patterns.append("KDJ中位金叉")
+        
+        if self.crossunder(recent_k, recent_d).any():
+            if recent_k.iloc[-1] > 80 and recent_d.iloc[-1] > 80:
+                patterns.append("KDJ超买区死叉")
+            elif recent_k.iloc[-1] < 20 and recent_d.iloc[-1] < 20:
+                patterns.append("KDJ超卖区死叉")
+            else:
+                patterns.append("KDJ中位死叉")
+        
+        # 2. 超买超卖形态
+        if (recent_k.iloc[-1] < 20 and recent_d.iloc[-1] < 20 and recent_j.iloc[-1] < 20):
+            patterns.append("KDJ三线超卖")
+        if (recent_k.iloc[-1] > 80 and recent_d.iloc[-1] > 80 and recent_j.iloc[-1] > 80):
+            patterns.append("KDJ三线超买")
+        
+        # 3. J线极端形态
+        if recent_j.iloc[-1] < 0:
+            patterns.append("KDJ J线极端超卖")
+        if recent_j.iloc[-1] > 100:
+            patterns.append("KDJ J线极端超买")
+        
+        # 4. 钝化形态
+        if self._detect_stagnation(k, d, j, low_threshold=20, periods=5).iloc[-1]:
+            patterns.append("KDJ低位钝化")
+        if self._detect_stagnation(k, d, j, high_threshold=80, periods=5).iloc[-1]:
+            patterns.append("KDJ高位钝化")
+        
+        # 5. 背离形态
+        if len(data) >= 20:
+            divergence_type = self._detect_kdj_divergence_pattern(data['close'], k, d)
+            if divergence_type:
+                patterns.append(f"KDJ{divergence_type}")
+        
+        return patterns
+    
+    def _detect_stagnation(self, k: pd.Series, d: pd.Series, j: pd.Series, 
+                          low_threshold: float = None, high_threshold: float = None, 
+                          periods: int = 5) -> pd.Series:
+        """
+        检测钝化形态
+        
+        Args:
+            k, d, j: KDJ三线
+            low_threshold: 低位阈值
+            high_threshold: 高位阈值
+            periods: 检测周期数
+            
+        Returns:
+            pd.Series: 钝化信号
+        """
+        stagnation = pd.Series(False, index=k.index)
+        
+        if low_threshold is not None:
+            # 低位钝化：连续periods个周期都在低位
+            low_condition = (k < low_threshold) & (d < low_threshold)
+            low_stagnation = low_condition.rolling(window=periods).sum() >= periods
+            stagnation |= low_stagnation
+        
+        if high_threshold is not None:
+            # 高位钝化：连续periods个周期都在高位
+            high_condition = (k > high_threshold) & (d > high_threshold)
+            high_stagnation = high_condition.rolling(window=periods).sum() >= periods
+            stagnation |= high_stagnation
+        
+        return stagnation
+    
+    def _calculate_kdj_divergence(self, price: pd.Series, k: pd.Series, d: pd.Series) -> pd.Series:
+        """
+        计算KDJ背离评分
+        
+        Args:
+            price: 价格序列
+            k, d: KDJ的K线和D线
+            
+        Returns:
+            pd.Series: 背离评分序列
+        """
+        divergence_score = pd.Series(0.0, index=price.index)
+        
+        if len(price) < 20:
+            return divergence_score
+        
+        # 寻找价格和KDJ的峰值谷值
+        window = 5
+        for i in range(window, len(price) - window):
+            # 检查是否为价格峰值/谷值
+            price_window = price.iloc[i-window:i+window+1]
+            k_window = k.iloc[i-window:i+window+1]
+            
+            if price.iloc[i] == price_window.max():  # 价格峰值
+                if k.iloc[i] != k_window.max():  # KDJ未创新高
+                    divergence_score.iloc[i:i+10] -= 25  # 负背离
+            elif price.iloc[i] == price_window.min():  # 价格谷值
+                if k.iloc[i] != k_window.min():  # KDJ未创新低
+                    divergence_score.iloc[i:i+10] += 25  # 正背离
+        
+        return divergence_score
+    
+    def _detect_kdj_divergence_pattern(self, price: pd.Series, k: pd.Series, d: pd.Series) -> Optional[str]:
+        """
+        检测KDJ背离形态
+        
+        Args:
+            price: 价格序列
+            k, d: KDJ的K线和D线
+            
+        Returns:
+            Optional[str]: 背离类型或None
+        """
+        if len(price) < 20:
+            return None
+        
+        # 寻找最近的峰值和谷值
+        recent_data = price.tail(20)
+        recent_k = k.tail(20)
+        
+        price_peaks = []
+        k_peaks = []
+        
+        # 简化的峰值检测
+        for i in range(2, len(recent_data) - 2):
+            if (recent_data.iloc[i] > recent_data.iloc[i-1] and 
+                recent_data.iloc[i] > recent_data.iloc[i+1]):
+                price_peaks.append(recent_data.iloc[i])
+                k_peaks.append(recent_k.iloc[i])
+        
+        if len(price_peaks) >= 2:
+            price_trend = price_peaks[-1] - price_peaks[-2]
+            k_trend = k_peaks[-1] - k_peaks[-2]
+            
+            # 正背离：价格创新低但KDJ未创新低
+            if price_trend < -0.01 and k_trend > 1:
+                return "正背离"
+            # 负背离：价格创新高但KDJ未创新高
+            elif price_trend > 0.01 and k_trend < -1:
+                return "负背离"
+        
+        return None 

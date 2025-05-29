@@ -33,9 +33,8 @@ class WR(BaseIndicator):
         Args:
             period: 计算周期，默认为14
         """
-        super().__init__()
+        super().__init__(name="WR", description="威廉指标，确认超买超卖")
         self.period = period
-        self.name = "WR"
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -96,7 +95,303 @@ class WR(BaseIndicator):
         # 计算WR值
         df_copy['wr'] = -100 * (highest_high - df_copy['close']) / (highest_high - lowest_low)
         
+        # 保存结果
+        self._result = df_copy
+        
         return df_copy
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算WR原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算WR
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        wr = self._result['wr']
+        
+        # 1. 超买超卖区域评分
+        # WR < -80（超卖）+20分
+        oversold_condition = wr < -80
+        score += oversold_condition * 20
+        
+        # WR > -20（超买）-20分
+        overbought_condition = wr > -20
+        score -= overbought_condition * 20
+        
+        # 2. WR穿越关键位置评分
+        # WR从超卖区上穿-80+25分
+        wr_cross_up_oversold = self.crossover(wr, -80)
+        score += wr_cross_up_oversold * 25
+        
+        # WR从超买区下穿-20-25分
+        wr_cross_down_overbought = self.crossunder(wr, -20)
+        score -= wr_cross_down_overbought * 25
+        
+        # 3. 中线穿越评分
+        # WR上穿-50+15分
+        wr_cross_up_middle = self.crossover(wr, -50)
+        score += wr_cross_up_middle * 15
+        
+        # WR下穿-50-15分
+        wr_cross_down_middle = self.crossunder(wr, -50)
+        score -= wr_cross_down_middle * 15
+        
+        # 4. WR背离评分
+        if len(data) >= 20:
+            divergence_score = self._calculate_wr_divergence(data['close'], wr)
+            score += divergence_score
+        
+        # 5. WR极端值评分
+        # WR < -90（极度超卖）+30分
+        extreme_oversold = wr < -90
+        score += extreme_oversold * 30
+        
+        # WR > -10（极度超买）-30分
+        extreme_overbought = wr > -10
+        score -= extreme_overbought * 30
+        
+        # 6. WR趋势评分
+        wr_trend_score = self._calculate_wr_trend_score(wr)
+        score += wr_trend_score
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别WR技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算WR
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        wr = self._result['wr']
+        
+        # 检查最近的信号
+        recent_periods = min(10, len(wr))
+        if recent_periods == 0:
+            return patterns
+        
+        recent_wr = wr.tail(recent_periods)
+        current_wr = recent_wr.iloc[-1]
+        
+        # 1. 超买超卖形态
+        if current_wr <= -90:
+            patterns.append("WR极度超卖")
+        elif current_wr <= -80:
+            patterns.append("WR超卖")
+        elif current_wr >= -10:
+            patterns.append("WR极度超买")
+        elif current_wr >= -20:
+            patterns.append("WR超买")
+        
+        # 2. 穿越形态
+        if self.crossover(recent_wr, -80).any():
+            patterns.append("WR上穿超卖线")
+        if self.crossunder(recent_wr, -20).any():
+            patterns.append("WR下穿超买线")
+        if self.crossover(recent_wr, -50).any():
+            patterns.append("WR上穿中线")
+        if self.crossunder(recent_wr, -50).any():
+            patterns.append("WR下穿中线")
+        
+        # 3. 背离形态
+        if len(data) >= 20:
+            divergence_type = self._detect_wr_divergence_pattern(data['close'], wr)
+            if divergence_type:
+                patterns.append(f"WR{divergence_type}")
+        
+        # 4. 钝化形态
+        if self._detect_wr_stagnation(recent_wr, threshold=-80, periods=5, direction='low'):
+            patterns.append("WR低位钝化")
+        if self._detect_wr_stagnation(recent_wr, threshold=-20, periods=5, direction='high'):
+            patterns.append("WR高位钝化")
+        
+        # 5. 反转形态
+        if self._detect_wr_reversal_pattern(recent_wr):
+            patterns.append("WR反转形态")
+        
+        return patterns
+    
+    def _calculate_wr_divergence(self, price: pd.Series, wr: pd.Series) -> pd.Series:
+        """
+        计算WR背离评分
+        
+        Args:
+            price: 价格序列
+            wr: WR序列
+            
+        Returns:
+            pd.Series: 背离评分序列
+        """
+        divergence_score = pd.Series(0.0, index=price.index)
+        
+        if len(price) < 20:
+            return divergence_score
+        
+        # 寻找价格和WR的峰值谷值
+        window = 5
+        for i in range(window, len(price) - window):
+            price_window = price.iloc[i-window:i+window+1]
+            wr_window = wr.iloc[i-window:i+window+1]
+            
+            if price.iloc[i] == price_window.max():  # 价格峰值
+                if wr.iloc[i] != wr_window.max():  # WR未创新高
+                    divergence_score.iloc[i:i+10] -= 25  # 负背离
+            elif price.iloc[i] == price_window.min():  # 价格谷值
+                if wr.iloc[i] != wr_window.min():  # WR未创新低
+                    divergence_score.iloc[i:i+10] += 25  # 正背离
+        
+        return divergence_score
+    
+    def _calculate_wr_trend_score(self, wr: pd.Series) -> pd.Series:
+        """
+        计算WR趋势评分
+        
+        Args:
+            wr: WR序列
+            
+        Returns:
+            pd.Series: 趋势评分
+        """
+        trend_score = pd.Series(0.0, index=wr.index)
+        
+        if len(wr) < 5:
+            return trend_score
+        
+        # 计算WR斜率
+        wr_slope = wr.diff(3)
+        
+        # 趋势评分
+        trend_score += np.where(wr_slope > 5, 10, 0)   # 强烈上升+10分
+        trend_score += np.where(wr_slope > 2, 5, 0)    # 温和上升+5分
+        trend_score -= np.where(wr_slope < -5, 10, 0)  # 强烈下降-10分
+        trend_score -= np.where(wr_slope < -2, 5, 0)   # 温和下降-5分
+        
+        return trend_score
+    
+    def _detect_wr_divergence_pattern(self, price: pd.Series, wr: pd.Series) -> Optional[str]:
+        """
+        检测WR背离形态
+        
+        Args:
+            price: 价格序列
+            wr: WR序列
+            
+        Returns:
+            Optional[str]: 背离类型或None
+        """
+        if len(price) < 20:
+            return None
+        
+        # 寻找最近的峰值和谷值
+        recent_price = price.tail(20)
+        recent_wr = wr.tail(20)
+        
+        price_extremes = []
+        wr_extremes = []
+        
+        # 简化的极值检测
+        for i in range(2, len(recent_price) - 2):
+            if (recent_price.iloc[i] > recent_price.iloc[i-1] and 
+                recent_price.iloc[i] > recent_price.iloc[i+1]):
+                price_extremes.append(recent_price.iloc[i])
+                wr_extremes.append(recent_wr.iloc[i])
+            elif (recent_price.iloc[i] < recent_price.iloc[i-1] and 
+                  recent_price.iloc[i] < recent_price.iloc[i+1]):
+                price_extremes.append(recent_price.iloc[i])
+                wr_extremes.append(recent_wr.iloc[i])
+        
+        if len(price_extremes) >= 2:
+            price_trend = price_extremes[-1] - price_extremes[-2]
+            wr_trend = wr_extremes[-1] - wr_extremes[-2]
+            
+            # 正背离：价格创新低但WR未创新低
+            if price_trend < -0.01 and wr_trend > 2:
+                return "正背离"
+            # 负背离：价格创新高但WR未创新高
+            elif price_trend > 0.01 and wr_trend < -2:
+                return "负背离"
+        
+        return None
+    
+    def _detect_wr_stagnation(self, wr: pd.Series, threshold: float, 
+                             periods: int, direction: str) -> bool:
+        """
+        检测WR钝化
+        
+        Args:
+            wr: WR序列
+            threshold: 阈值
+            periods: 检测周期数
+            direction: 方向 ('low' 或 'high')
+            
+        Returns:
+            bool: 是否钝化
+        """
+        if len(wr) < periods:
+            return False
+        
+        recent_wr = wr.tail(periods)
+        
+        if direction == 'low':
+            return (recent_wr < threshold).all()
+        elif direction == 'high':
+            return (recent_wr > threshold).all()
+        
+        return False
+    
+    def _detect_wr_reversal_pattern(self, wr: pd.Series) -> bool:
+        """
+        检测WR反转形态
+        
+        Args:
+            wr: WR序列
+            
+        Returns:
+            bool: 是否为反转形态
+        """
+        if len(wr) < 5:
+            return False
+        
+        # 检测V型反转：从极端位置快速反转
+        recent_wr = wr.tail(5)
+        
+        # 从超卖区快速反转
+        if (recent_wr.iloc[0] < -80 and recent_wr.iloc[-1] > -50 and
+            (recent_wr.iloc[-1] - recent_wr.iloc[0]) > 20):
+            return True
+        
+        # 从超买区快速反转
+        if (recent_wr.iloc[0] > -20 and recent_wr.iloc[-1] < -50 and
+            (recent_wr.iloc[0] - recent_wr.iloc[-1]) > 20):
+            return True
+        
+        return False
         
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

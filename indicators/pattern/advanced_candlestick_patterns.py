@@ -1114,4 +1114,466 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             # 出错时返回零信号
             compound_signal = pd.Series(0, index=indicator_values.index)
         
-        return compound_signal 
+        return compound_signal
+    
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算高级K线形态识别指标的原始评分
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含原始评分的DataFrame
+        """
+        # 计算指标值
+        indicator_data = self.calculate(data)
+        
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        # 1. 强烈看涨形态评分（+25到+40分）
+        # 三星看涨形态
+        if AdvancedPatternType.THREE_WHITE_SOLDIERS.value in indicator_data.columns:
+            three_white_soldiers_mask = indicator_data[AdvancedPatternType.THREE_WHITE_SOLDIERS.value]
+            score.loc[three_white_soldiers_mask] += 35
+        
+        if AdvancedPatternType.THREE_INSIDE_UP.value in indicator_data.columns:
+            three_inside_up_mask = indicator_data[AdvancedPatternType.THREE_INSIDE_UP.value]
+            score.loc[three_inside_up_mask] += 30
+        
+        if AdvancedPatternType.THREE_OUTSIDE_UP.value in indicator_data.columns:
+            three_outside_up_mask = indicator_data[AdvancedPatternType.THREE_OUTSIDE_UP.value]
+            score.loc[three_outside_up_mask] += 32
+        
+        # 高级复合看涨形态
+        if AdvancedPatternType.RISING_THREE_METHODS.value in indicator_data.columns:
+            rising_three_methods_mask = indicator_data[AdvancedPatternType.RISING_THREE_METHODS.value]
+            score.loc[rising_three_methods_mask] += 28
+        
+        if AdvancedPatternType.MAT_HOLD.value in indicator_data.columns:
+            mat_hold_mask = indicator_data[AdvancedPatternType.MAT_HOLD.value]
+            score.loc[mat_hold_mask] += 25
+        
+        if AdvancedPatternType.LADDER_BOTTOM.value in indicator_data.columns:
+            ladder_bottom_mask = indicator_data[AdvancedPatternType.LADDER_BOTTOM.value]
+            score.loc[ladder_bottom_mask] += 30
+        
+        if AdvancedPatternType.BREAKAWAY.value in indicator_data.columns:
+            breakaway_mask = indicator_data[AdvancedPatternType.BREAKAWAY.value]
+            # 需要判断突破方向，这里假设是看涨突破
+            score.loc[breakaway_mask] += 25
+        
+        # 复杂看涨形态
+        if AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value in indicator_data.columns:
+            head_shoulders_bottom_mask = indicator_data[AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value]
+            score.loc[head_shoulders_bottom_mask] += 40
+        
+        if AdvancedPatternType.DOUBLE_BOTTOM.value in indicator_data.columns:
+            double_bottom_mask = indicator_data[AdvancedPatternType.DOUBLE_BOTTOM.value]
+            score.loc[double_bottom_mask] += 35
+        
+        if AdvancedPatternType.TRIPLE_BOTTOM.value in indicator_data.columns:
+            triple_bottom_mask = indicator_data[AdvancedPatternType.TRIPLE_BOTTOM.value]
+            score.loc[triple_bottom_mask] += 38
+        
+        if AdvancedPatternType.DIAMOND_BOTTOM.value in indicator_data.columns:
+            diamond_bottom_mask = indicator_data[AdvancedPatternType.DIAMOND_BOTTOM.value]
+            score.loc[diamond_bottom_mask] += 35
+        
+        if AdvancedPatternType.CUP_WITH_HANDLE.value in indicator_data.columns:
+            cup_handle_mask = indicator_data[AdvancedPatternType.CUP_WITH_HANDLE.value]
+            score.loc[cup_handle_mask] += 32
+        
+        # 2. 强烈看跌形态评分（-25到-40分）
+        # 三星看跌形态
+        if AdvancedPatternType.THREE_BLACK_CROWS.value in indicator_data.columns:
+            three_black_crows_mask = indicator_data[AdvancedPatternType.THREE_BLACK_CROWS.value]
+            score.loc[three_black_crows_mask] -= 35
+        
+        if AdvancedPatternType.THREE_INSIDE_DOWN.value in indicator_data.columns:
+            three_inside_down_mask = indicator_data[AdvancedPatternType.THREE_INSIDE_DOWN.value]
+            score.loc[three_inside_down_mask] -= 30
+        
+        if AdvancedPatternType.THREE_OUTSIDE_DOWN.value in indicator_data.columns:
+            three_outside_down_mask = indicator_data[AdvancedPatternType.THREE_OUTSIDE_DOWN.value]
+            score.loc[three_outside_down_mask] -= 32
+        
+        # 高级复合看跌形态
+        if AdvancedPatternType.FALLING_THREE_METHODS.value in indicator_data.columns:
+            falling_three_methods_mask = indicator_data[AdvancedPatternType.FALLING_THREE_METHODS.value]
+            score.loc[falling_three_methods_mask] -= 28
+        
+        if AdvancedPatternType.TOWER_TOP.value in indicator_data.columns:
+            tower_top_mask = indicator_data[AdvancedPatternType.TOWER_TOP.value]
+            score.loc[tower_top_mask] -= 30
+        
+        # 复杂看跌形态
+        if AdvancedPatternType.HEAD_SHOULDERS_TOP.value in indicator_data.columns:
+            head_shoulders_top_mask = indicator_data[AdvancedPatternType.HEAD_SHOULDERS_TOP.value]
+            score.loc[head_shoulders_top_mask] -= 40
+        
+        if AdvancedPatternType.DOUBLE_TOP.value in indicator_data.columns:
+            double_top_mask = indicator_data[AdvancedPatternType.DOUBLE_TOP.value]
+            score.loc[double_top_mask] -= 35
+        
+        if AdvancedPatternType.TRIPLE_TOP.value in indicator_data.columns:
+            triple_top_mask = indicator_data[AdvancedPatternType.TRIPLE_TOP.value]
+            score.loc[triple_top_mask] -= 38
+        
+        if AdvancedPatternType.DIAMOND_TOP.value in indicator_data.columns:
+            diamond_top_mask = indicator_data[AdvancedPatternType.DIAMOND_TOP.value]
+            score.loc[diamond_top_mask] -= 35
+        
+        # 3. 中性/整理形态评分（-10到+10分）
+        if AdvancedPatternType.STICK_SANDWICH.value in indicator_data.columns:
+            stick_sandwich_mask = indicator_data[AdvancedPatternType.STICK_SANDWICH.value]
+            score.loc[stick_sandwich_mask] += 5  # 轻微看涨倾向
+        
+        if AdvancedPatternType.KICKING.value in indicator_data.columns:
+            kicking_mask = indicator_data[AdvancedPatternType.KICKING.value]
+            # 反冲形态需要判断方向，这里给中性评分
+            score.loc[kicking_mask] += 0
+        
+        if AdvancedPatternType.UNIQUE_THREE_RIVER.value in indicator_data.columns:
+            unique_three_river_mask = indicator_data[AdvancedPatternType.UNIQUE_THREE_RIVER.value]
+            score.loc[unique_three_river_mask] += 15  # 底部反转形态
+        
+        # 三角形整理形态
+        if AdvancedPatternType.TRIANGLE_ASCENDING.value in indicator_data.columns:
+            triangle_ascending_mask = indicator_data[AdvancedPatternType.TRIANGLE_ASCENDING.value]
+            score.loc[triangle_ascending_mask] += 8  # 轻微看涨倾向
+        
+        if AdvancedPatternType.TRIANGLE_DESCENDING.value in indicator_data.columns:
+            triangle_descending_mask = indicator_data[AdvancedPatternType.TRIANGLE_DESCENDING.value]
+            score.loc[triangle_descending_mask] -= 8  # 轻微看跌倾向
+        
+        if AdvancedPatternType.TRIANGLE_SYMMETRICAL.value in indicator_data.columns:
+            triangle_symmetrical_mask = indicator_data[AdvancedPatternType.TRIANGLE_SYMMETRICAL.value]
+            score.loc[triangle_symmetrical_mask] += 0  # 中性
+        
+        if AdvancedPatternType.RECTANGLE.value in indicator_data.columns:
+            rectangle_mask = indicator_data[AdvancedPatternType.RECTANGLE.value]
+            score.loc[rectangle_mask] += 0  # 中性整理
+        
+        # 4. 形态强度调整（±15分）
+        # 根据成交量确认形态强度
+        if 'volume' in data.columns:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            vol_ratio = volume / vol_ma5
+            
+            # 任何形态如果伴随放量，增强信号强度
+            high_volume_mask = vol_ratio > 1.5
+            
+            # 看涨形态+放量
+            bullish_patterns = (
+                indicator_data.get(AdvancedPatternType.THREE_WHITE_SOLDIERS.value, False) |
+                indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value, False) |
+                indicator_data.get(AdvancedPatternType.DOUBLE_BOTTOM.value, False) |
+                indicator_data.get(AdvancedPatternType.CUP_WITH_HANDLE.value, False)
+            )
+            if isinstance(bullish_patterns, pd.Series):
+                bullish_volume_confirm = bullish_patterns & high_volume_mask
+                score.loc[bullish_volume_confirm] += 15
+            
+            # 看跌形态+放量
+            bearish_patterns = (
+                indicator_data.get(AdvancedPatternType.THREE_BLACK_CROWS.value, False) |
+                indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_TOP.value, False) |
+                indicator_data.get(AdvancedPatternType.DOUBLE_TOP.value, False) |
+                indicator_data.get(AdvancedPatternType.TOWER_TOP.value, False)
+            )
+            if isinstance(bearish_patterns, pd.Series):
+                bearish_volume_confirm = bearish_patterns & high_volume_mask
+                score.loc[bearish_volume_confirm] -= 15
+        
+        # 5. 形态完整性调整（±10分）
+        # 检查形态的完整性和质量
+        # 这里可以添加更复杂的形态质量评估逻辑
+        
+        # 6. 多重形态确认（±20分）
+        # 检查是否有多个形态同时出现
+        pattern_count = 0
+        bullish_count = 0
+        bearish_count = 0
+        neutral_count = 0  # 添加neutral_count初始化
+        
+        # 统计当前时点的形态数量
+        for pattern_type in AdvancedPatternType:
+            pattern_name = pattern_type.value
+            if pattern_name in indicator_data.columns:
+                current_pattern = indicator_data[pattern_name]
+                if isinstance(current_pattern, pd.Series):
+                    pattern_count += current_pattern.astype(int)
+                    
+                    # 分类统计
+                    if pattern_type in [AdvancedPatternType.THREE_WHITE_SOLDIERS, 
+                                      AdvancedPatternType.THREE_INSIDE_UP,
+                                      AdvancedPatternType.THREE_OUTSIDE_UP,
+                                      AdvancedPatternType.RISING_THREE_METHODS,
+                                      AdvancedPatternType.MAT_HOLD,
+                                      AdvancedPatternType.LADDER_BOTTOM,
+                                      AdvancedPatternType.HEAD_SHOULDERS_BOTTOM,
+                                      AdvancedPatternType.DOUBLE_BOTTOM,
+                                      AdvancedPatternType.TRIPLE_BOTTOM,
+                                      AdvancedPatternType.DIAMOND_BOTTOM,
+                                      AdvancedPatternType.CUP_WITH_HANDLE,
+                                      AdvancedPatternType.UNIQUE_THREE_RIVER]:
+                        bullish_count += 1
+                    elif pattern_type in [AdvancedPatternType.THREE_BLACK_CROWS,
+                                        AdvancedPatternType.THREE_INSIDE_DOWN,
+                                        AdvancedPatternType.THREE_OUTSIDE_DOWN,
+                                        AdvancedPatternType.FALLING_THREE_METHODS,
+                                        AdvancedPatternType.TOWER_TOP,
+                                        AdvancedPatternType.HEAD_SHOULDERS_TOP,
+                                        AdvancedPatternType.DOUBLE_TOP,
+                                        AdvancedPatternType.TRIPLE_TOP,
+                                        AdvancedPatternType.DIAMOND_TOP]:
+                        bearish_count += 1
+                    else:
+                        neutral_count += 1
+        
+        # 多重看涨形态确认
+        if isinstance(bullish_count, pd.Series):
+            multiple_bullish = bullish_count >= 2
+            score.loc[multiple_bullish] += 20
+        
+        # 多重看跌形态确认
+        if isinstance(bearish_count, pd.Series):
+            multiple_bearish = bearish_count >= 2
+            score.loc[multiple_bearish] -= 20
+        
+        # 形态冲突（同时出现看涨看跌形态）
+        if isinstance(bullish_count, pd.Series) and isinstance(bearish_count, pd.Series):
+            conflict_patterns = (bullish_count > 0) & (bearish_count > 0)
+            score.loc[conflict_patterns] -= 10  # 冲突信号减分
+        
+        # 7. 形态位置调整（±15分）
+        # 在关键技术位置的形态更重要
+        if 'close' in data.columns and len(data) >= 60:
+            close_price = data['close']
+            
+            # 计算支撑阻力位
+            high_60 = close_price.rolling(window=60).max()
+            low_60 = close_price.rolling(window=60).min()
+            
+            # 在阻力位附近的看跌形态
+            near_resistance = close_price > high_60 * 0.95
+            bearish_at_resistance = (
+                (indicator_data.get(AdvancedPatternType.THREE_BLACK_CROWS.value, False) |
+                 indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_TOP.value, False) |
+                 indicator_data.get(AdvancedPatternType.DOUBLE_TOP.value, False)) &
+                near_resistance
+            )
+            if isinstance(bearish_at_resistance, pd.Series):
+                score.loc[bearish_at_resistance] -= 15
+            
+            # 在支撑位附近的看涨形态
+            near_support = close_price < low_60 * 1.05
+            bullish_at_support = (
+                (indicator_data.get(AdvancedPatternType.THREE_WHITE_SOLDIERS.value, False) |
+                 indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value, False) |
+                 indicator_data.get(AdvancedPatternType.DOUBLE_BOTTOM.value, False)) &
+                near_support
+            )
+            if isinstance(bullish_at_support, pd.Series):
+                score.loc[bullish_at_support] += 15
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return pd.DataFrame({'score': score}, index=data.index)
+    
+    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+        """
+        识别高级K线形态相关的技术形态
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 计算指标值
+        indicator_data = self.calculate(data)
+        
+        if len(indicator_data) < 5:
+            return patterns
+        
+        # 检查最近5天的形态
+        recent_data = indicator_data.tail(5)
+        
+        # 1. 三星形态
+        three_star_patterns = [
+            AdvancedPatternType.THREE_WHITE_SOLDIERS,
+            AdvancedPatternType.THREE_BLACK_CROWS,
+            AdvancedPatternType.THREE_INSIDE_UP,
+            AdvancedPatternType.THREE_INSIDE_DOWN,
+            AdvancedPatternType.THREE_OUTSIDE_UP,
+            AdvancedPatternType.THREE_OUTSIDE_DOWN
+        ]
+        
+        for pattern_type in three_star_patterns:
+            pattern_name = pattern_type.value
+            if pattern_name in recent_data.columns and recent_data[pattern_name].any():
+                patterns.append(f"三星形态-{pattern_name}")
+        
+        # 2. 高级复合形态
+        advanced_compound_patterns = [
+            AdvancedPatternType.RISING_THREE_METHODS,
+            AdvancedPatternType.FALLING_THREE_METHODS,
+            AdvancedPatternType.MAT_HOLD,
+            AdvancedPatternType.STICK_SANDWICH
+        ]
+        
+        for pattern_type in advanced_compound_patterns:
+            pattern_name = pattern_type.value
+            if pattern_name in recent_data.columns and recent_data[pattern_name].any():
+                patterns.append(f"高级复合形态-{pattern_name}")
+        
+        # 3. 其他复合形态
+        other_compound_patterns = [
+            AdvancedPatternType.LADDER_BOTTOM,
+            AdvancedPatternType.TOWER_TOP,
+            AdvancedPatternType.BREAKAWAY,
+            AdvancedPatternType.KICKING,
+            AdvancedPatternType.UNIQUE_THREE_RIVER
+        ]
+        
+        for pattern_type in other_compound_patterns:
+            pattern_name = pattern_type.value
+            if pattern_name in recent_data.columns and recent_data[pattern_name].any():
+                patterns.append(f"其他复合形态-{pattern_name}")
+        
+        # 4. 复杂形态
+        complex_patterns = [
+            AdvancedPatternType.HEAD_SHOULDERS_TOP,
+            AdvancedPatternType.HEAD_SHOULDERS_BOTTOM,
+            AdvancedPatternType.DOUBLE_TOP,
+            AdvancedPatternType.DOUBLE_BOTTOM,
+            AdvancedPatternType.TRIPLE_TOP,
+            AdvancedPatternType.TRIPLE_BOTTOM,
+            AdvancedPatternType.TRIANGLE_ASCENDING,
+            AdvancedPatternType.TRIANGLE_DESCENDING,
+            AdvancedPatternType.TRIANGLE_SYMMETRICAL,
+            AdvancedPatternType.RECTANGLE,
+            AdvancedPatternType.DIAMOND_TOP,
+            AdvancedPatternType.DIAMOND_BOTTOM,
+            AdvancedPatternType.CUP_WITH_HANDLE
+        ]
+        
+        for pattern_type in complex_patterns:
+            pattern_name = pattern_type.value
+            if pattern_name in recent_data.columns and recent_data[pattern_name].any():
+                patterns.append(f"复杂形态-{pattern_name}")
+        
+        # 5. 形态强度分析
+        if 'volume' in data.columns:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            latest_vol_ratio = (volume / vol_ma5).iloc[-1]
+            
+            if pd.notna(latest_vol_ratio):
+                if latest_vol_ratio > 2.0:
+                    patterns.append("形态确认-巨量配合")
+                elif latest_vol_ratio > 1.5:
+                    patterns.append("形态确认-放量配合")
+                elif latest_vol_ratio < 0.7:
+                    patterns.append("形态确认-缩量形成")
+        
+        # 6. 形态组合分析
+        # 统计不同类型形态的数量
+        bullish_count = 0
+        bearish_count = 0
+        neutral_count = 0
+        total_patterns = 0
+        
+        for pattern_type in AdvancedPatternType:
+            pattern_name = pattern_type.value
+            if pattern_name in recent_data.columns and recent_data[pattern_name].any():
+                total_patterns += 1
+                
+                # 分类统计
+                if pattern_type in [AdvancedPatternType.THREE_WHITE_SOLDIERS, 
+                                  AdvancedPatternType.THREE_INSIDE_UP,
+                                  AdvancedPatternType.THREE_OUTSIDE_UP,
+                                  AdvancedPatternType.RISING_THREE_METHODS,
+                                  AdvancedPatternType.MAT_HOLD,
+                                  AdvancedPatternType.LADDER_BOTTOM,
+                                  AdvancedPatternType.HEAD_SHOULDERS_BOTTOM,
+                                  AdvancedPatternType.DOUBLE_BOTTOM,
+                                  AdvancedPatternType.TRIPLE_BOTTOM,
+                                  AdvancedPatternType.DIAMOND_BOTTOM,
+                                  AdvancedPatternType.CUP_WITH_HANDLE,
+                                  AdvancedPatternType.UNIQUE_THREE_RIVER]:
+                    bullish_count += 1
+                elif pattern_type in [AdvancedPatternType.THREE_BLACK_CROWS,
+                                    AdvancedPatternType.THREE_INSIDE_DOWN,
+                                    AdvancedPatternType.THREE_OUTSIDE_DOWN,
+                                    AdvancedPatternType.FALLING_THREE_METHODS,
+                                    AdvancedPatternType.TOWER_TOP,
+                                    AdvancedPatternType.HEAD_SHOULDERS_TOP,
+                                    AdvancedPatternType.DOUBLE_TOP,
+                                    AdvancedPatternType.TRIPLE_TOP,
+                                    AdvancedPatternType.DIAMOND_TOP]:
+                    bearish_count += 1
+                else:
+                    neutral_count += 1
+        
+        # 形态组合描述
+        if total_patterns > 1:
+            patterns.append(f"形态组合-{total_patterns}个高级形态同现")
+        
+        if bullish_count > bearish_count and bullish_count >= 2:
+            patterns.append("高级形态共振-多重看涨信号")
+        elif bearish_count > bullish_count and bearish_count >= 2:
+            patterns.append("高级形态共振-多重看跌信号")
+        elif bullish_count > 0 and bearish_count > 0:
+            patterns.append("高级形态冲突-多空信号混杂")
+        
+        # 7. 形态复杂度分析
+        if total_patterns >= 3:
+            patterns.append("高复杂度形态组合")
+        elif total_patterns == 2:
+            patterns.append("中等复杂度形态组合")
+        elif total_patterns == 1:
+            patterns.append("单一高级形态")
+        
+        # 8. 形态时效性分析
+        # 检查形态是否在最近1-2天内形成
+        very_recent_data = indicator_data.tail(2)
+        recent_pattern_count = 0
+        
+        for pattern_type in AdvancedPatternType:
+            pattern_name = pattern_type.value
+            if pattern_name in very_recent_data.columns and very_recent_data[pattern_name].any():
+                recent_pattern_count += 1
+        
+        if recent_pattern_count > 0:
+            patterns.append(f"新形成形态-{recent_pattern_count}个")
+        
+        # 9. 形态位置分析
+        if 'close' in data.columns and len(data) >= 60:
+            close_price = data['close']
+            high_60 = close_price.rolling(window=60).max().iloc[-1]
+            low_60 = close_price.rolling(window=60).min().iloc[-1]
+            latest_close = close_price.iloc[-1]
+            
+            if pd.notna(latest_close) and pd.notna(high_60) and pd.notna(low_60):
+                if latest_close > high_60 * 0.95:
+                    patterns.append("高级形态位置-接近阻力位")
+                elif latest_close < low_60 * 1.05:
+                    patterns.append("高级形态位置-接近支撑位")
+                else:
+                    price_position = (latest_close - low_60) / (high_60 - low_60)
+                    if price_position > 0.7:
+                        patterns.append("高级形态位置-相对高位")
+                    elif price_position < 0.3:
+                        patterns.append("高级形态位置-相对低位")
+                    else:
+                        patterns.append("高级形态位置-中性区域")
+        
+        return patterns 

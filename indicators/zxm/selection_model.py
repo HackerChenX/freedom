@@ -1,7 +1,7 @@
 """
-ZXM体系通用选股模型模块
+ZXM选股模型模块
 
-整合ZXM体系的所有指标，提供完整的选股功能
+整合多个指标的选股系统
 """
 
 import numpy as np
@@ -9,334 +9,512 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
-from indicators.zxm.trend_indicators import (
-    ZXMDailyTrendUp, ZXMWeeklyTrendUp, ZXMMonthlyKDJTrendUp, 
-    ZXMWeeklyKDJDOrDEATrendUp, ZXMWeeklyKDJDTrendUp,
-    ZXMMonthlyMACD, ZXMWeeklyMACD
-)
-from indicators.zxm.elasticity_indicators import (
-    ZXMAmplitudeElasticity, ZXMRiseElasticity
-)
-from indicators.zxm.buy_point_indicators import (
-    ZXMDailyMACD, ZXMTurnover, ZXMVolumeShrink,
-    ZXMMACallback, ZXMBSAbsorb
-)
+from indicators.zxm.trend_indicators import TrendDetector, TrendStrength
+from indicators.zxm.elasticity_indicators import ElasticityIndicator, BounceDetector
+from indicators.zxm.score_indicators import StockScoreCalculator
+from indicators.zxm.buy_point_indicators import BuyPointDetector
+from indicators.zxm_washplate import ZXMWashPlate
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class ZXMSelectionModel(BaseIndicator):
+class SelectionModel(BaseIndicator):
     """
-    ZXM体系通用选股模型
+    ZXM选股模型
     
-    整合ZXM体系的趋势、弹性和买点指标，提供完整的选股功能
+    整合多个指标的选股系统，综合评估股票买入价值
     """
     
-    def __init__(self, callback_percent: float = 4.0):
+    def __init__(self):
+        """初始化ZXM选股模型"""
+        super().__init__(name="SelectionModel", description="ZXM选股模型，整合多个指标的选股系统")
+        
+        # 初始化各子指标
+        self.trend_detector = TrendDetector()
+        self.trend_strength = TrendStrength()
+        self.elasticity_indicator = ElasticityIndicator()
+        self.bounce_detector = BounceDetector()
+        self.score_calculator = StockScoreCalculator()
+        self.buy_point_detector = BuyPointDetector()
+        self.wash_plate_detector = ZXMWashPlate()
+    
+    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
-        初始化ZXM体系通用选股模型
+        计算ZXM选股模型
         
         Args:
-            callback_percent: 回踩均线指标的回踩百分比，默认为4%
-        """
-        super().__init__(name="ZXMSelectionModel", description="ZXM体系通用选股模型，整合趋势、弹性和买点指标")
-        
-        # 初始化趋势指标
-        self.daily_trend_up = ZXMDailyTrendUp()
-        self.weekly_trend_up = ZXMWeeklyTrendUp()
-        self.monthly_kdj_trend_up = ZXMMonthlyKDJTrendUp()
-        self.weekly_kdj_dea_trend_up = ZXMWeeklyKDJDOrDEATrendUp()
-        self.weekly_kdj_d_trend_up = ZXMWeeklyKDJDTrendUp()
-        self.monthly_macd = ZXMMonthlyMACD()
-        self.weekly_macd = ZXMWeeklyMACD()
-        
-        # 初始化弹性指标
-        self.amplitude_elasticity = ZXMAmplitudeElasticity()
-        self.rise_elasticity = ZXMRiseElasticity()
-        
-        # 初始化买点指标
-        self.daily_macd = ZXMDailyMACD()
-        self.turnover = ZXMTurnover()
-        self.volume_shrink = ZXMVolumeShrink()
-        self.ma_callback = ZXMMACallback(callback_percent=callback_percent)
-        self.bs_absorb = ZXMBSAbsorb()
-        
-        # 记录各组指标权重
-        self.trend_weight = 0.4  # 趋势指标权重
-        self.elasticity_weight = 0.2  # 弹性指标权重
-        self.buy_point_weight = 0.4  # 买点指标权重
-    
-    def calculate(self, daily_data: pd.DataFrame, weekly_data: Optional[pd.DataFrame] = None, 
-                  monthly_data: Optional[pd.DataFrame] = None, 
-                  hourly_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
-        """
-        计算ZXM体系通用选股模型
-        
-        Args:
-            daily_data: 日线数据，包含OHLCV数据
-            weekly_data: 周线数据，如果未提供则尝试从日线数据聚合
-            monthly_data: 月线数据，如果未提供则尝试从日线数据聚合
-            hourly_data: 60分钟数据，用于BS吸筹指标计算，如果未提供则不计算该指标
+            data: 输入数据，包含OHLCV数据
             
         Returns:
-            pd.DataFrame: 计算结果，包含各指标结果和最终选股得分
+            pd.DataFrame: 计算结果，包含选股得分和信号
         """
         # 确保数据包含必需的列
-        self.ensure_columns(daily_data, ["open", "high", "low", "close", "volume"])
+        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=daily_data.index)
+        result = pd.DataFrame(index=data.index)
         
-        # 计算趋势指标（共7个）
-        trend_results = self._calculate_trend_indicators(daily_data, weekly_data, monthly_data)
-        for key, value in trend_results.items():
-            result[key] = value
+        try:
+            # 1. 计算趋势指标
+            trend_result = self.trend_detector.calculate(data)
+            result["TrendDirection"] = trend_result["TrendDirection"]
+            result["TrendStrength"] = trend_result["TrendStrength"]
+            
+            # 2. 计算趋势强度指标
+            strength_result = self.trend_strength.calculate(data)
+            result["TrendType"] = strength_result["TrendType"]
+            result["TrendStrengthScore"] = strength_result["TrendStrength"]
+            
+            # 3. 计算弹性指标
+            elasticity_result = self.elasticity_indicator.calculate(data)
+            result["ElasticityRatio"] = elasticity_result["ElasticityRatio"]
+            result["BounceStrength"] = elasticity_result["BounceStrength"]
+            result["ElasticityBuySignal"] = elasticity_result["BuySignal"]
+            
+            # 4. 计算反弹检测指标
+            bounce_result = self.bounce_detector.calculate(data)
+            result["BounceSignal"] = bounce_result["BounceSignal"]
+            result["PullbackBuyPoint"] = bounce_result["PullbackBuyPoint"]
+            
+            # 5. 计算综合评分
+            score_result = self.score_calculator.calculate(data)
+            result["TrendScore"] = score_result["TrendScore"]
+            result["MomentumScore"] = score_result["MomentumScore"]
+            result["VolatilityScore"] = score_result["VolatilityScore"]
+            result["VolumeScore"] = score_result["VolumeScore"]
+            result["ValueScore"] = score_result["ValueScore"]
+            result["FinalScore"] = score_result["FinalScore"]
+            
+            # 6. 计算买点信号
+            buypoint_result = self.buy_point_detector.calculate(data)
+            result["VolumeRiseBuyPoint"] = buypoint_result["VolumeRiseBuyPoint"]
+            result["PullbackStabilizeBuyPoint"] = buypoint_result["PullbackStabilizeBuyPoint"]
+            result["BreakoutBuyPoint"] = buypoint_result["BreakoutBuyPoint"]
+            result["BottomVolumeBuyPoint"] = buypoint_result["BottomVolumeBuyPoint"]
+            result["VolumeShrinkBuyPoint"] = buypoint_result["VolumeShrinkBuyPoint"]
+            result["AnyBuyPoint"] = (
+                buypoint_result["VolumeRiseBuyPoint"] | 
+                buypoint_result["PullbackStabilizeBuyPoint"] | 
+                buypoint_result["BreakoutBuyPoint"] | 
+                buypoint_result["BottomVolumeBuyPoint"] | 
+                buypoint_result["VolumeShrinkBuyPoint"]
+            )
+            
+            # 7. 计算洗盘信号
+            try:
+                washplate_result = self.wash_plate_detector.calculate(data)
+                result["ShockWash"] = washplate_result["ShockWash"]
+                result["PullbackWash"] = washplate_result["PullbackWash"]
+                result["FalseBreakWash"] = washplate_result["FalseBreakWash"]
+                result["TimeWash"] = washplate_result["TimeWash"]
+                result["ContinuousYinWash"] = washplate_result["ContinuousYinWash"]
+                result["AnyWashPlate"] = (
+                    washplate_result["ShockWash"] | 
+                    washplate_result["PullbackWash"] | 
+                    washplate_result["FalseBreakWash"] | 
+                    washplate_result["TimeWash"] | 
+                    washplate_result["ContinuousYinWash"]
+                )
+            except Exception as e:
+                logger.error(f"洗盘指标计算错误: {e}")
+                result["AnyWashPlate"] = pd.Series(False, index=data.index)
+            
+            # 8. 计算整合选股信号
+            # a. 强趋势上涨股
+            strong_uptrend = (result["TrendDirection"] == 1) & (result["TrendStrength"] >= 70)
+            
+            # b. 放量突破股
+            volume_breakout = result["BreakoutBuyPoint"] & (result["VolumeScore"] >= 70)
+            
+            # c. 回调买点股
+            pullback_buy = result["PullbackBuyPoint"] | result["PullbackStabilizeBuyPoint"]
+            
+            # d. 洗盘后启动股
+            washplate_start = result["AnyWashPlate"] & (result["TrendScore"] >= 60) & (result["VolumeScore"] >= 60)
+            
+            # e. 低吸高弹性股
+            low_buy_elastic = (result["ElasticityBuySignal"] | result["BottomVolumeBuyPoint"]) & (result["BounceStrength"] >= 50)
+            
+            # 整合选股结果
+            result["StrongUptrendSelect"] = strong_uptrend
+            result["VolumeBreakoutSelect"] = volume_breakout
+            result["PullbackBuySelect"] = pullback_buy
+            result["WashplateStartSelect"] = washplate_start
+            result["LowBuyElasticSelect"] = low_buy_elastic
+            
+            # 综合选股信号 - 任意一种选股条件满足
+            result["FinalSelect"] = (
+                strong_uptrend | 
+                volume_breakout | 
+                pullback_buy | 
+                washplate_start | 
+                low_buy_elastic
+            )
+            
+            # 9. 计算选股综合得分
+            # 将各维度得分加权平均
+            selection_score = np.zeros(len(data))
+            
+            for i in range(len(data)):
+                # 基础分值 - 使用综合评分系统的结果
+                base_score = result["FinalScore"].iloc[i]
+                
+                # 买点加分
+                if result["AnyBuyPoint"].iloc[i]:
+                    if result["BreakoutBuyPoint"].iloc[i]:
+                        buy_point_bonus = 15  # 突破买点价值最高
+                    elif result["PullbackStabilizeBuyPoint"].iloc[i]:
+                        buy_point_bonus = 12  # 回调企稳买点次之
+                    else:
+                        buy_point_bonus = 10  # 其他买点
+                else:
+                    buy_point_bonus = 0
+                
+                # 洗盘加分
+                if result["AnyWashPlate"].iloc[i]:
+                    washplate_bonus = 8
+                else:
+                    washplate_bonus = 0
+                
+                # 趋势强度加减分
+                if result["TrendDirection"].iloc[i] == 1:
+                    trend_bonus = min(15, result["TrendStrength"].iloc[i] / 5)
+                elif result["TrendDirection"].iloc[i] == -1:
+                    trend_bonus = -min(15, result["TrendStrength"].iloc[i] / 5)
+                else:
+                    trend_bonus = 0
+                
+                # 弹性因素加分
+                if result["ElasticityBuySignal"].iloc[i]:
+                    elasticity_bonus = 10
+                elif result["BounceSignal"].iloc[i]:
+                    elasticity_bonus = 7
+                else:
+                    elasticity_bonus = 0
+                
+                # 综合计算
+                selection_score[i] = min(100, base_score + buy_point_bonus + washplate_bonus + trend_bonus + elasticity_bonus)
+            
+            result["SelectionScore"] = selection_score
+            
+            # 10. 计算买入优先级
+            # 将选中的股票按优先级排序（1-5，1为最高）
+            priority = np.zeros(len(data))
+            
+            for i in range(len(data)):
+                if not result["FinalSelect"].iloc[i]:
+                    priority[i] = 0  # 未选中
+                    continue
+                
+                # 计算基础优先级
+                if result["StrongUptrendSelect"].iloc[i] and result["SelectionScore"].iloc[i] >= 85:
+                    priority[i] = 1  # 最高优先级
+                elif result["VolumeBreakoutSelect"].iloc[i] or (result["PullbackBuySelect"].iloc[i] and result["TrendScore"].iloc[i] >= 70):
+                    priority[i] = 2  # 次高优先级
+                elif result["WashplateStartSelect"].iloc[i]:
+                    priority[i] = 3  # 中等优先级
+                elif result["PullbackBuySelect"].iloc[i]:
+                    priority[i] = 4  # 次低优先级
+                elif result["LowBuyElasticSelect"].iloc[i]:
+                    priority[i] = 5  # 最低优先级
+                
+                # 调整优先级
+                # 如果综合得分特别高，提升优先级
+                if result["SelectionScore"].iloc[i] >= 90 and priority[i] > 1:
+                    priority[i] -= 1
+            
+            result["BuyPriority"] = priority
         
-        # 计算弹性指标（共2个）
-        elasticity_results = self._calculate_elasticity_indicators(daily_data)
-        for key, value in elasticity_results.items():
-            result[key] = value
-        
-        # 计算买点指标（共5个）
-        buy_point_results = self._calculate_buy_point_indicators(daily_data, hourly_data)
-        for key, value in buy_point_results.items():
-            result[key] = value
-        
-        # 计算各组指标的满足数量
-        trend_count = sum(trend_results.values())
-        elasticity_count = sum(elasticity_results.values())
-        buy_point_count = sum(buy_point_results.values())
-        
-        # 计算各组指标的满足比例
-        trend_ratio = trend_count / len(trend_results) if len(trend_results) > 0 else 0
-        elasticity_ratio = elasticity_count / len(elasticity_results) if len(elasticity_results) > 0 else 0
-        buy_point_ratio = buy_point_count / len(buy_point_results) if len(buy_point_results) > 0 else 0
-        
-        # 计算最终得分（0-100）
-        score = 100 * (
-            self.trend_weight * trend_ratio + 
-            self.elasticity_weight * elasticity_ratio + 
-            self.buy_point_weight * buy_point_ratio
-        )
-        
-        # 添加统计结果到数据框
-        result["趋势指标满足数"] = trend_count
-        result["趋势指标总数"] = len(trend_results)
-        result["趋势指标得分"] = trend_ratio * 100
-        
-        result["弹性指标满足数"] = elasticity_count
-        result["弹性指标总数"] = len(elasticity_results)
-        result["弹性指标得分"] = elasticity_ratio * 100
-        
-        result["买点指标满足数"] = buy_point_count
-        result["买点指标总数"] = len(buy_point_results)
-        result["买点指标得分"] = buy_point_ratio * 100
-        
-        result["ZXM选股总得分"] = score
+        except Exception as e:
+            logger.error(f"选股模型计算错误: {e}")
+            # 设置默认值，确保结果不为空
+            result["FinalSelect"] = pd.Series(False, index=data.index)
+            result["SelectionScore"] = pd.Series(50, index=data.index)
+            result["BuyPriority"] = pd.Series(0, index=data.index)
         
         return result
     
-    def _calculate_trend_indicators(self, daily_data: pd.DataFrame, 
-                                   weekly_data: Optional[pd.DataFrame], 
-                                   monthly_data: Optional[pd.DataFrame]) -> Dict[str, pd.Series]:
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算趋势指标
+        计算ZXM选股模型的原始评分
         
         Args:
-            daily_data: 日线数据
-            weekly_data: 周线数据
-            monthly_data: 月线数据
+            data: 输入数据
+            **kwargs: 其他参数
             
         Returns:
-            Dict[str, pd.Series]: 趋势指标结果
+            pd.Series: 评分结果，0-100分
         """
-        result = {}
+        # 计算选股模型
+        result = self.calculate(data)
         
-        # 计算日线上移趋势
-        try:
-            daily_trend = self.daily_trend_up.calculate(daily_data)
-            result["日线上移趋势"] = daily_trend["XG"]
-        except Exception as e:
-            logger.error(f"计算日线上移趋势出错: {e}")
-            result["日线上移趋势"] = pd.Series(False, index=daily_data.index)
-        
-        # 如果未提供周线数据，则跳过周线指标
-        if weekly_data is not None:
-            # 计算周线上移趋势
-            try:
-                weekly_trend = self.weekly_trend_up.calculate(weekly_data)
-                # 将周线结果扩展到日线
-                result["周线上移趋势"] = self._expand_to_daily(weekly_trend["XG"], daily_data.index)
-            except Exception as e:
-                logger.error(f"计算周线上移趋势出错: {e}")
-                result["周线上移趋势"] = pd.Series(False, index=daily_data.index)
-            
-            # 计算周KDJ·D或DEA上移趋势
-            try:
-                weekly_kdj_dea = self.weekly_kdj_dea_trend_up.calculate(weekly_data)
-                result["周KDJ·D或DEA上移趋势"] = self._expand_to_daily(weekly_kdj_dea["XG"], daily_data.index)
-            except Exception as e:
-                logger.error(f"计算周KDJ·D或DEA上移趋势出错: {e}")
-                result["周KDJ·D或DEA上移趋势"] = pd.Series(False, index=daily_data.index)
-            
-            # 计算周KDJ·D上移趋势
-            try:
-                weekly_kdj_d = self.weekly_kdj_d_trend_up.calculate(weekly_data)
-                result["周KDJ·D上移趋势"] = self._expand_to_daily(weekly_kdj_d["XG"], daily_data.index)
-            except Exception as e:
-                logger.error(f"计算周KDJ·D上移趋势出错: {e}")
-                result["周KDJ·D上移趋势"] = pd.Series(False, index=daily_data.index)
-            
-            # 计算周MACD<2趋势
-            try:
-                weekly_macd = self.weekly_macd.calculate(weekly_data)
-                result["周MACD<2趋势"] = self._expand_to_daily(weekly_macd["XG"], daily_data.index)
-            except Exception as e:
-                logger.error(f"计算周MACD<2趋势出错: {e}")
-                result["周MACD<2趋势"] = pd.Series(False, index=daily_data.index)
-        
-        # 如果未提供月线数据，则跳过月线指标
-        if monthly_data is not None:
-            # 计算月KDJ·D及K上移趋势
-            try:
-                monthly_kdj = self.monthly_kdj_trend_up.calculate(monthly_data)
-                result["月KDJ·D及K上移趋势"] = self._expand_to_daily(monthly_kdj["XG"], daily_data.index)
-            except Exception as e:
-                logger.error(f"计算月KDJ·D及K上移趋势出错: {e}")
-                result["月KDJ·D及K上移趋势"] = pd.Series(False, index=daily_data.index)
-            
-            # 计算月MACD<1.5趋势
-            try:
-                monthly_macd = self.monthly_macd.calculate(monthly_data)
-                result["月MACD<1.5趋势"] = self._expand_to_daily(monthly_macd["XG"], daily_data.index)
-            except Exception as e:
-                logger.error(f"计算月MACD<1.5趋势出错: {e}")
-                result["月MACD<1.5趋势"] = pd.Series(False, index=daily_data.index)
-        
-        return result
+        # 直接使用选股得分作为原始评分
+        return result["SelectionScore"]
     
-    def _calculate_elasticity_indicators(self, daily_data: pd.DataFrame) -> Dict[str, pd.Series]:
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
-        计算弹性指标
+        识别ZXM选股模型相关的技术形态
         
         Args:
-            daily_data: 日线数据
+            data: 输入数据
+            **kwargs: 其他参数
             
         Returns:
-            Dict[str, pd.Series]: 弹性指标结果
+            List[str]: 识别的形态列表
         """
-        result = {}
+        # 计算选股模型
+        result = self.calculate(data)
         
-        # 计算振幅弹性
-        try:
-            amplitude = self.amplitude_elasticity.calculate(daily_data)
-            result["振幅弹性"] = amplitude["XG"]
-        except Exception as e:
-            logger.error(f"计算振幅弹性出错: {e}")
-            result["振幅弹性"] = pd.Series(False, index=daily_data.index)
-        
-        # 计算涨幅弹性
-        try:
-            rise = self.rise_elasticity.calculate(daily_data)
-            result["涨幅弹性"] = rise["XG"]
-        except Exception as e:
-            logger.error(f"计算涨幅弹性出错: {e}")
-            result["涨幅弹性"] = pd.Series(False, index=daily_data.index)
-        
-        return result
-    
-    def _calculate_buy_point_indicators(self, daily_data: pd.DataFrame, 
-                                       hourly_data: Optional[pd.DataFrame]) -> Dict[str, pd.Series]:
-        """
-        计算买点指标
-        
-        Args:
-            daily_data: 日线数据
-            hourly_data: 60分钟数据
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
             
-        Returns:
-            Dict[str, pd.Series]: 买点指标结果
-        """
-        result = {}
-        
-        # 计算日MACD买点
-        try:
-            daily_macd = self.daily_macd.calculate(daily_data)
-            result["日MACD买点"] = daily_macd["XG"]
-        except Exception as e:
-            logger.error(f"计算日MACD买点出错: {e}")
-            result["日MACD买点"] = pd.Series(False, index=daily_data.index)
-        
-        # 计算换手买点
-        try:
-            # 检查是否有capital列，如果没有，尝试添加模拟值
-            if "capital" not in daily_data.columns:
-                logger.warning("数据中没有流通股本(capital)列，使用成交量的100倍作为模拟值")
-                daily_data_with_capital = daily_data.copy()
-                daily_data_with_capital["capital"] = daily_data["volume"] * 100
-                turnover = self.turnover.calculate(daily_data_with_capital)
+            # 基础选股信号
+            if last_row["FinalSelect"]:
+                patterns.append("选股系统买入信号")
+                
+                # 选股优先级
+                priority = last_row["BuyPriority"]
+                if priority == 1:
+                    patterns.append("最高优先级选股")
+                elif priority == 2:
+                    patterns.append("高优先级选股")
+                elif priority == 3:
+                    patterns.append("中等优先级选股")
+                elif priority == 4:
+                    patterns.append("低优先级选股")
+                elif priority == 5:
+                    patterns.append("最低优先级选股")
+                
+                # 选股类型
+                if last_row["StrongUptrendSelect"]:
+                    patterns.append("强趋势上涨股")
+                if last_row["VolumeBreakoutSelect"]:
+                    patterns.append("放量突破股")
+                if last_row["PullbackBuySelect"]:
+                    patterns.append("回调买点股")
+                if last_row["WashplateStartSelect"]:
+                    patterns.append("洗盘后启动股")
+                if last_row["LowBuyElasticSelect"]:
+                    patterns.append("低吸高弹性股")
+            
+            # 详细技术形态
+            # 趋势状态
+            if last_row["TrendDirection"] == 1:
+                if last_row["TrendStrength"] >= 80:
+                    patterns.append("超强上升趋势")
+                elif last_row["TrendStrength"] >= 60:
+                    patterns.append("强上升趋势")
+                else:
+                    patterns.append("温和上升趋势")
+            elif last_row["TrendDirection"] == -1:
+                patterns.append("下降趋势")
             else:
-                turnover = self.turnover.calculate(daily_data)
-            result["换手买点"] = turnover["XG"]
-        except Exception as e:
-            logger.error(f"计算换手买点出错: {e}")
-            result["换手买点"] = pd.Series(False, index=daily_data.index)
+                patterns.append("震荡趋势")
+            
+            # 买点信号
+            if last_row["AnyBuyPoint"]:
+                if last_row["VolumeRiseBuyPoint"]:
+                    patterns.append("放量上涨买点")
+                if last_row["PullbackStabilizeBuyPoint"]:
+                    patterns.append("回调企稳买点")
+                if last_row["BreakoutBuyPoint"]:
+                    patterns.append("突破买点")
+                if last_row["BottomVolumeBuyPoint"]:
+                    patterns.append("底部放量买点")
+                if last_row["VolumeShrinkBuyPoint"]:
+                    patterns.append("缩量整理买点")
+            
+            # 洗盘信号
+            if last_row["AnyWashPlate"]:
+                if last_row["ShockWash"]:
+                    patterns.append("横盘震荡洗盘")
+                if last_row["PullbackWash"]:
+                    patterns.append("回调洗盘")
+                if last_row["FalseBreakWash"]:
+                    patterns.append("假突破洗盘")
+                if last_row["TimeWash"]:
+                    patterns.append("时间洗盘")
+                if last_row["ContinuousYinWash"]:
+                    patterns.append("连续阴线洗盘")
         
-        # 计算缩量买点
-        try:
-            volume_shrink = self.volume_shrink.calculate(daily_data)
-            result["缩量买点"] = volume_shrink["XG"]
-        except Exception as e:
-            logger.error(f"计算缩量买点出错: {e}")
-            result["缩量买点"] = pd.Series(False, index=daily_data.index)
-        
-        # 计算回踩均线买点
-        try:
-            ma_callback = self.ma_callback.calculate(daily_data)
-            result["回踩均线买点"] = ma_callback["XG"]
-        except Exception as e:
-            logger.error(f"计算回踩均线买点出错: {e}")
-            result["回踩均线买点"] = pd.Series(False, index=daily_data.index)
-        
-        # 如果未提供60分钟数据，则跳过BS吸筹买点
-        if hourly_data is not None:
-            try:
-                bs_absorb = self.bs_absorb.calculate(hourly_data)
-                # BS吸筹指标结果是计数，需要转换为布尔值
-                bs_absorb_signal = bs_absorb["XG"] >= 1
-                result["BS吸筹买点"] = self._expand_to_daily(bs_absorb_signal, daily_data.index)
-            except Exception as e:
-                logger.error(f"计算BS吸筹买点出错: {e}")
-                result["BS吸筹买点"] = pd.Series(False, index=daily_data.index)
-        
-        return result
+        return patterns
     
-    def _expand_to_daily(self, series: pd.Series, daily_index: pd.DatetimeIndex) -> pd.Series:
+    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        将周线或月线数据扩展到日线
+        生成标准化的信号输出
         
         Args:
-            series: 待扩展的序列
-            daily_index: 日线索引
+            data: 输入数据
+            **kwargs: 其他参数
             
         Returns:
-            pd.Series: 扩展后的序列
+            pd.DataFrame: 包含标准化信号的DataFrame
         """
-        # 创建一个空的Series，以日线索引为基础
-        result = pd.Series(False, index=daily_index)
+        # 计算选股模型和评分
+        result = self.calculate(data)
+        score = self.calculate_raw_score(data, **kwargs)
         
-        # 对于series中的每一个日期
-        for date in series.index:
-            # 找到下一个日期（如果有）
-            try:
-                next_date = series.index[series.index.get_loc(date) + 1]
-            except (IndexError, KeyError):
-                # 如果是最后一个日期，使用未来的某个日期
-                next_date = date + pd.Timedelta(days=30)
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # 设置买卖信号
+        signals['buy_signal'] = result["FinalSelect"]
+        signals['sell_signal'] = False  # 选股模型不产生卖出信号
+        signals['neutral_signal'] = ~result["FinalSelect"]
+        
+        # 设置趋势
+        signals['trend'] = result["TrendDirection"]
+        
+        # 设置评分
+        signals['score'] = score
+        
+        # 设置信号类型
+        signals['signal_type'] = 'neutral'
+        
+        # 根据选股类型设置信号类型
+        for i in signals.index:
+            if result.loc[i, "StrongUptrendSelect"]:
+                signals.loc[i, 'signal_type'] = 'strong_uptrend'
+            elif result.loc[i, "VolumeBreakoutSelect"]:
+                signals.loc[i, 'signal_type'] = 'volume_breakout'
+            elif result.loc[i, "PullbackBuySelect"]:
+                signals.loc[i, 'signal_type'] = 'pullback_buy'
+            elif result.loc[i, "WashplateStartSelect"]:
+                signals.loc[i, 'signal_type'] = 'washplate_start'
+            elif result.loc[i, "LowBuyElasticSelect"]:
+                signals.loc[i, 'signal_type'] = 'low_buy_elastic'
+        
+        # 设置信号描述
+        signals['signal_desc'] = ''
+        
+        # 为每个信号设置详细描述
+        for i in signals.index:
+            if result.loc[i, "FinalSelect"]:
+                # 获取选股类型
+                select_types = []
+                
+                if result.loc[i, "StrongUptrendSelect"]:
+                    select_types.append("强趋势上涨")
+                if result.loc[i, "VolumeBreakoutSelect"]:
+                    select_types.append("放量突破")
+                if result.loc[i, "PullbackBuySelect"]:
+                    select_types.append("回调买点")
+                if result.loc[i, "WashplateStartSelect"]:
+                    select_types.append("洗盘后启动")
+                if result.loc[i, "LowBuyElasticSelect"]:
+                    select_types.append("低吸高弹性")
+                
+                # 组合描述
+                type_desc = "、".join(select_types)
+                score_val = score.iloc[i]
+                priority = result.loc[i, "BuyPriority"]
+                
+                signals.loc[i, 'signal_desc'] = f"选股信号：{type_desc}，得分{score_val:.1f}，优先级{priority:.0f}"
+        
+        # 置信度设置
+        signals['confidence'] = 60  # 基础置信度
+        
+        # 根据选股得分和优先级调整置信度
+        for i in signals.index:
+            if result.loc[i, "FinalSelect"]:
+                # 根据选股得分调整（最多±20）
+                score_adj = (score.iloc[i] - 70) / 30 * 20
+                
+                # 根据优先级调整（最多±10）
+                priority = result.loc[i, "BuyPriority"]
+                priority_adj = (6 - priority) * 2.5
+                
+                signals.loc[i, 'confidence'] = min(95, max(50, 60 + score_adj + priority_adj))
+        
+        # 风险等级
+        signals['risk_level'] = '中'  # 默认中等风险
+        
+        # 高优先级选股风险较低
+        signals.loc[result["BuyPriority"] <= 2, 'risk_level'] = '低'
+        
+        # 低优先级选股风险较高
+        signals.loc[result["BuyPriority"] >= 4, 'risk_level'] = '高'
+        
+        # 建议仓位
+        signals['position_size'] = 0.0
+        
+        # 根据优先级和得分设置仓位
+        for i in signals.index[signals['buy_signal']]:
+            priority = result.loc[i, "BuyPriority"]
+            score_val = score.iloc[i]
             
-            # 为日线索引中位于当前日期和下一个日期之间的所有日期赋值
-            mask = (daily_index >= date) & (daily_index < next_date)
-            result.loc[mask] = series.loc[date]
+            # 基础仓位 - 根据优先级
+            if priority == 1:
+                base_position = 0.5
+            elif priority == 2:
+                base_position = 0.4
+            elif priority == 3:
+                base_position = 0.3
+            elif priority == 4:
+                base_position = 0.2
+            else:
+                base_position = 0.1
+            
+            # 得分调整 - 高分加仓
+            if score_val >= 90:
+                score_adj = 0.2
+            elif score_val >= 80:
+                score_adj = 0.1
+            elif score_val >= 70:
+                score_adj = 0.05
+            else:
+                score_adj = 0
+            
+            signals.loc[i, 'position_size'] = min(0.7, base_position + score_adj)
         
-        return result 
+        # 止损位
+        signals['stop_loss'] = 0.0
+        
+        # 根据选股类型设置不同的止损策略
+        for i in signals.index[signals['buy_signal']]:
+            try:
+                idx = data.index.get_loc(i)
+                
+                if result.loc[i, "StrongUptrendSelect"]:
+                    # 强趋势上涨 - 使用20日均线作为止损
+                    ma20 = data["close"].rolling(window=20).mean().iloc[idx]
+                    signals.loc[i, 'stop_loss'] = ma20 * 0.95
+                
+                elif result.loc[i, "VolumeBreakoutSelect"]:
+                    # 放量突破 - 使用突破点位作为止损
+                    # 简单以当前价格的5%作为止损
+                    signals.loc[i, 'stop_loss'] = data["close"].iloc[idx] * 0.95
+                
+                elif result.loc[i, "PullbackBuySelect"]:
+                    # 回调买点 - 使用回调低点作为止损
+                    if idx >= 10:
+                        low_price = data["low"].iloc[idx-10:idx+1].min()
+                        signals.loc[i, 'stop_loss'] = low_price * 0.97
+                
+                elif result.loc[i, "WashplateStartSelect"] or result.loc[i, "LowBuyElasticSelect"]:
+                    # 洗盘后启动或低吸高弹性 - 使用近期低点作为止损
+                    if idx >= 20:
+                        low_price = data["low"].iloc[idx-20:idx+1].min()
+                        signals.loc[i, 'stop_loss'] = low_price * 0.97
+                
+                else:
+                    # 默认止损策略 - 当前价格的7%止损
+                    signals.loc[i, 'stop_loss'] = data["close"].iloc[idx] * 0.93
+            
+            except Exception as e:
+                logger.error(f"计算止损位错误: {e}")
+                continue
+        
+        # 市场环境
+        signals['market_env'] = 'normal'
+        signals.loc[result["TrendDirection"] == 1, 'market_env'] = 'bull_market'
+        signals.loc[result["TrendDirection"] == -1, 'market_env'] = 'bear_market'
+        signals.loc[result["TrendDirection"] == 0, 'market_env'] = 'sideways_market'
+        
+        # 成交量确认
+        signals['volume_confirmation'] = True
+        
+        return signals 

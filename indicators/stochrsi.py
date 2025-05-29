@@ -35,11 +35,10 @@ class STOCHRSI(BaseIndicator):
             k_period: K值计算周期，默认为3
             d_period: D值计算周期，默认为3
         """
-        super().__init__()
+        super().__init__(name="STOCHRSI", description="随机相对强弱指数，将RSI标准化到0-100区间")
         self.period = period
         self.k_period = k_period
         self.d_period = d_period
-        self.name = "STOCHRSI"
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -89,7 +88,20 @@ class STOCHRSI(BaseIndicator):
         # 步骤2: 计算StochRSI
         min_rsi = rsi.rolling(window=self.period).min()
         max_rsi = rsi.rolling(window=self.period).max()
-        stoch_rsi = 100 * (rsi - min_rsi) / (max_rsi - min_rsi)
+        
+        # 避免除零错误，当max_rsi == min_rsi时，StochRSI设为50
+        rsi_range = max_rsi - min_rsi
+        stoch_rsi = np.where(
+            rsi_range == 0, 
+            50.0,  # 当RSI没有变化时，设为中性值
+            100 * (rsi - min_rsi) / rsi_range
+        )
+        
+        # 确保StochRSI在0-100范围内
+        stoch_rsi = np.clip(stoch_rsi, 0, 100)
+        
+        # 转换为pandas Series以便使用rolling方法
+        stoch_rsi = pd.Series(stoch_rsi, index=df_copy.index)
         
         # 步骤3: 计算K和D值
         k = stoch_rsi.rolling(window=self.k_period).mean()
@@ -101,7 +113,261 @@ class STOCHRSI(BaseIndicator):
         df_copy['k'] = k
         df_copy['d'] = d
         
+        # 保存结果到实例变量
+        self._result = df_copy
+        
         return df_copy
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算StochRSI原始评分
+        
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 获取指标值
+        k = result['k']
+        d = result['d']
+        stoch_rsi = result['stochrsi']
+        
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)
+        
+        # 1. StochRSI超买超卖评分
+        # 超卖区域（K < 20）买入信号
+        oversold_mask = k < 20
+        score += np.where(oversold_mask, 20, 0)
+        
+        # 超买区域（K > 80）卖出信号
+        overbought_mask = k > 80
+        score -= np.where(overbought_mask, 20, 0)
+        
+        # 2. K线与D线交叉评分
+        if len(k) > 1:
+            # K上穿D线（金叉）
+            golden_cross = (k.shift(1) <= d.shift(1)) & (k > d)
+            score += np.where(golden_cross, 25, 0)
+            
+            # K下穿D线（死叉）
+            death_cross = (k.shift(1) >= d.shift(1)) & (k < d)
+            score -= np.where(death_cross, 25, 0)
+        
+        # 3. StochRSI趋势评分
+        if len(k) >= 3:
+            # K线连续上升
+            k_rising = (k > k.shift(1)) & (k.shift(1) > k.shift(2))
+            score += np.where(k_rising, 15, 0)
+            
+            # K线连续下降
+            k_falling = (k < k.shift(1)) & (k.shift(1) < k.shift(2))
+            score -= np.where(k_falling, 15, 0)
+        
+        # 4. StochRSI背离评分
+        if len(data) >= 20:
+            divergence_score = self._calculate_stochrsi_divergence(data['close'], k)
+            score += divergence_score
+        
+        # 5. StochRSI强度评分
+        # K线在极值区域的强度
+        extreme_low = k < 10  # 极度超卖
+        extreme_high = k > 90  # 极度超买
+        score += np.where(extreme_low, 12, 0)
+        score -= np.where(extreme_high, 12, 0)
+        
+        # 6. StochRSI位置评分
+        # K线在中性区域上方
+        above_neutral = (k > 50) & (k < 80)
+        score += np.where(above_neutral, 8, 0)
+        
+        # K线在中性区域下方
+        below_neutral = (k < 50) & (k > 20)
+        score -= np.where(below_neutral, 8, 0)
+        
+        # 确保评分在0-100范围内
+        score = np.clip(score, 0, 100)
+        
+        return score
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别StochRSI技术形态
+        
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        if len(data) < 10:
+            return []
+        
+        patterns = []
+        
+        # 计算指标
+        result = self.calculate(data)
+        k = result['k']
+        d = result['d']
+        
+        if k.isna().all() or d.isna().all():
+            return patterns
+        
+        # 获取最近的有效值
+        recent_k = k.dropna().tail(10)
+        recent_d = d.dropna().tail(10)
+        
+        if len(recent_k) == 0 or len(recent_d) == 0:
+            return patterns
+        
+        current_k = recent_k.iloc[-1]
+        current_d = recent_d.iloc[-1]
+        
+        # 1. 超买超卖形态
+        if current_k > 80:
+            patterns.append("StochRSI超买")
+        elif current_k < 20:
+            patterns.append("StochRSI超卖")
+        elif 40 <= current_k <= 60:
+            patterns.append("StochRSI中性区域")
+        
+        # 2. 交叉形态
+        if len(recent_k) >= 2:
+            prev_k = recent_k.iloc[-2]
+            prev_d = recent_d.iloc[-2]
+            
+            if prev_k <= prev_d and current_k > current_d:
+                patterns.append("StochRSI金叉")
+            elif prev_k >= prev_d and current_k < current_d:
+                patterns.append("StochRSI死叉")
+        
+        # 3. 趋势形态
+        if len(recent_k) >= 3:
+            if all(recent_k.iloc[i] > recent_k.iloc[i-1] for i in range(-2, 0)):
+                patterns.append("StochRSI连续上升")
+            elif all(recent_k.iloc[i] < recent_k.iloc[i-1] for i in range(-2, 0)):
+                patterns.append("StochRSI连续下降")
+        
+        # 4. 背离形态
+        if len(data) >= 20:
+            divergence_type = self._detect_stochrsi_divergence_pattern(data['close'], k)
+            if divergence_type:
+                patterns.append(f"StochRSI{divergence_type}")
+        
+        # 5. 极值形态
+        if current_k < 10:
+            patterns.append("StochRSI极度超卖")
+        elif current_k > 90:
+            patterns.append("StochRSI极度超买")
+        
+        # 6. K线与D线位置关系
+        if current_k > current_d:
+            patterns.append("StochRSI K线上方")
+        else:
+            patterns.append("StochRSI K线下方")
+        
+        # 7. 钝化形态
+        if len(recent_k) >= 5:
+            if all(k_val > 80 for k_val in recent_k.tail(5)):
+                patterns.append("StochRSI高位钝化")
+            elif all(k_val < 20 for k_val in recent_k.tail(5)):
+                patterns.append("StochRSI低位钝化")
+        
+        return patterns
+    
+    def _calculate_stochrsi_divergence(self, price: pd.Series, k: pd.Series) -> pd.Series:
+        """
+        计算StochRSI背离评分
+        
+        Args:
+            price: 价格序列
+            k: StochRSI K线序列
+            
+        Returns:
+            pd.Series: 背离评分序列
+        """
+        divergence_score = pd.Series(0.0, index=price.index)
+        
+        if len(price) < 20:
+            return divergence_score
+        
+        # 寻找价格和K线的峰值谷值
+        window = 5
+        for i in range(window, len(price) - window):
+            price_window = price.iloc[i-window:i+window+1]
+            k_window = k.iloc[i-window:i+window+1]
+            
+            if pd.isna(k.iloc[i]):
+                continue
+            
+            if price.iloc[i] == price_window.max():  # 价格峰值
+                if k.iloc[i] != k_window.max():  # K线未创新高
+                    divergence_score.iloc[i:i+10] -= 30  # 负背离
+            elif price.iloc[i] == price_window.min():  # 价格谷值
+                if k.iloc[i] != k_window.min():  # K线未创新低
+                    divergence_score.iloc[i:i+10] += 30  # 正背离
+        
+        return divergence_score
+    
+    def _detect_stochrsi_divergence_pattern(self, price: pd.Series, k: pd.Series) -> Optional[str]:
+        """
+        检测StochRSI背离形态
+        
+        Args:
+            price: 价格序列
+            k: StochRSI K线序列
+            
+        Returns:
+            Optional[str]: 背离类型
+        """
+        if len(price) < 20:
+            return None
+        
+        # 寻找最近的峰值和谷值
+        recent_price = price.tail(20)
+        recent_k = k.tail(20)
+        
+        # 检查顶背离
+        price_peaks = []
+        k_peaks = []
+        for i in range(5, len(recent_price) - 5):
+            if recent_price.iloc[i] == recent_price.iloc[i-5:i+6].max():
+                price_peaks.append((i, recent_price.iloc[i]))
+                k_peaks.append((i, recent_k.iloc[i]))
+        
+        if len(price_peaks) >= 2:
+            last_price_peak = price_peaks[-1][1]
+            prev_price_peak = price_peaks[-2][1]
+            last_k_peak = k_peaks[-1][1]
+            prev_k_peak = k_peaks[-2][1]
+            
+            if last_price_peak > prev_price_peak and last_k_peak < prev_k_peak:
+                return "负背离"
+        
+        # 检查底背离
+        price_troughs = []
+        k_troughs = []
+        for i in range(5, len(recent_price) - 5):
+            if recent_price.iloc[i] == recent_price.iloc[i-5:i+6].min():
+                price_troughs.append((i, recent_price.iloc[i]))
+                k_troughs.append((i, recent_k.iloc[i]))
+        
+        if len(price_troughs) >= 2:
+            last_price_trough = price_troughs[-1][1]
+            prev_price_trough = price_troughs[-2][1]
+            last_k_trough = k_troughs[-1][1]
+            prev_k_trough = k_troughs[-2][1]
+            
+            if last_price_trough < prev_price_trough and last_k_trough > prev_k_trough:
+                return "正背离"
+        
+        return None
     
     # 兼容新接口
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

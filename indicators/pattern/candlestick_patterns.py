@@ -397,11 +397,400 @@ class CandlestickPatterns(BaseIndicator):
         # 截取最近的数据
         recent_result = result.iloc[-lookback:]
         
-        # 提取每种形态的最新状态
-        latest_patterns = {}
-        for pattern in PatternType:
-            pattern_name = pattern.value
+        # 获取最近形成的形态
+        patterns = {}
+        for pattern_type in PatternType:
+            pattern_name = pattern_type.value
             if pattern_name in recent_result.columns:
-                latest_patterns[pattern_name] = recent_result[pattern_name].any()
+                patterns[pattern_name] = recent_result[pattern_name].any()
         
-        return latest_patterns 
+        return patterns
+    
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算K线形态识别指标的原始评分
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含原始评分的DataFrame
+        """
+        # 计算指标值
+        indicator_data = self.calculate(data)
+        
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        # 1. 看涨形态评分（+15到+40分）
+        # 单日看涨形态
+        if PatternType.HAMMER.value in indicator_data.columns:
+            hammer_mask = indicator_data[PatternType.HAMMER.value]
+            score.loc[hammer_mask] += 20
+        
+        if PatternType.LONG_LEGGED_DOJI.value in indicator_data.columns:
+            long_legged_doji_mask = indicator_data[PatternType.LONG_LEGGED_DOJI.value]
+            score.loc[long_legged_doji_mask] += 15
+        
+        if PatternType.SINGLE_NEEDLE_BOTTOM.value in indicator_data.columns:
+            single_needle_mask = indicator_data[PatternType.SINGLE_NEEDLE_BOTTOM.value]
+            score.loc[single_needle_mask] += 25
+        
+        # 组合看涨形态
+        if PatternType.ENGULFING_BULLISH.value in indicator_data.columns:
+            engulfing_bullish_mask = indicator_data[PatternType.ENGULFING_BULLISH.value]
+            score.loc[engulfing_bullish_mask] += 30
+        
+        if PatternType.PIERCING_LINE.value in indicator_data.columns:
+            piercing_line_mask = indicator_data[PatternType.PIERCING_LINE.value]
+            score.loc[piercing_line_mask] += 25
+        
+        if PatternType.MORNING_STAR.value in indicator_data.columns:
+            morning_star_mask = indicator_data[PatternType.MORNING_STAR.value]
+            score.loc[morning_star_mask] += 35
+        
+        if PatternType.HARAMI_BULLISH.value in indicator_data.columns:
+            harami_bullish_mask = indicator_data[PatternType.HARAMI_BULLISH.value]
+            score.loc[harami_bullish_mask] += 20
+        
+        # 复合看涨形态
+        if PatternType.HEAD_SHOULDERS_BOTTOM.value in indicator_data.columns:
+            head_shoulders_bottom_mask = indicator_data[PatternType.HEAD_SHOULDERS_BOTTOM.value]
+            score.loc[head_shoulders_bottom_mask] += 40
+        
+        if PatternType.DOUBLE_BOTTOM.value in indicator_data.columns:
+            double_bottom_mask = indicator_data[PatternType.DOUBLE_BOTTOM.value]
+            score.loc[double_bottom_mask] += 35
+        
+        if PatternType.V_REVERSAL.value in indicator_data.columns:
+            v_reversal_mask = indicator_data[PatternType.V_REVERSAL.value]
+            score.loc[v_reversal_mask] += 30
+        
+        # 2. 看跌形态评分（-15到-40分）
+        # 单日看跌形态
+        if PatternType.HANGING_MAN.value in indicator_data.columns:
+            hanging_man_mask = indicator_data[PatternType.HANGING_MAN.value]
+            score.loc[hanging_man_mask] -= 20
+        
+        if PatternType.GRAVESTONE_DOJI.value in indicator_data.columns:
+            gravestone_doji_mask = indicator_data[PatternType.GRAVESTONE_DOJI.value]
+            score.loc[gravestone_doji_mask] -= 15
+        
+        if PatternType.SHOOTING_STAR.value in indicator_data.columns:
+            shooting_star_mask = indicator_data[PatternType.SHOOTING_STAR.value]
+            score.loc[shooting_star_mask] -= 25
+        
+        # 组合看跌形态
+        if PatternType.ENGULFING_BEARISH.value in indicator_data.columns:
+            engulfing_bearish_mask = indicator_data[PatternType.ENGULFING_BEARISH.value]
+            score.loc[engulfing_bearish_mask] -= 30
+        
+        if PatternType.DARK_CLOUD_COVER.value in indicator_data.columns:
+            dark_cloud_mask = indicator_data[PatternType.DARK_CLOUD_COVER.value]
+            score.loc[dark_cloud_mask] -= 25
+        
+        if PatternType.EVENING_STAR.value in indicator_data.columns:
+            evening_star_mask = indicator_data[PatternType.EVENING_STAR.value]
+            score.loc[evening_star_mask] -= 35
+        
+        # 复合看跌形态
+        if PatternType.HEAD_SHOULDERS_TOP.value in indicator_data.columns:
+            head_shoulders_top_mask = indicator_data[PatternType.HEAD_SHOULDERS_TOP.value]
+            score.loc[head_shoulders_top_mask] -= 40
+        
+        if PatternType.DOUBLE_TOP.value in indicator_data.columns:
+            double_top_mask = indicator_data[PatternType.DOUBLE_TOP.value]
+            score.loc[double_top_mask] -= 35
+        
+        # 3. 中性形态评分（-5到+5分）
+        if PatternType.DOJI.value in indicator_data.columns:
+            doji_mask = indicator_data[PatternType.DOJI.value]
+            # 十字星在不同位置有不同含义
+            if 'close' in data.columns and len(data) >= 20:
+                close_price = data['close']
+                ma20 = close_price.rolling(window=20).mean()
+                
+                # 在上升趋势中的十字星偏空
+                uptrend_doji = doji_mask & (close_price > ma20)
+                score.loc[uptrend_doji] -= 5
+                
+                # 在下降趋势中的十字星偏多
+                downtrend_doji = doji_mask & (close_price < ma20)
+                score.loc[downtrend_doji] += 5
+        
+        # 4. 岛型反转特殊评分（±30分）
+        if PatternType.ISLAND_REVERSAL.value in indicator_data.columns:
+            island_reversal_mask = indicator_data[PatternType.ISLAND_REVERSAL.value]
+            
+            # 需要结合价格趋势判断岛型反转的方向
+            if 'close' in data.columns and len(data) >= 5:
+                close_price = data['close']
+                price_change_5d = close_price.pct_change(5)
+                
+                # 在上升趋势后的岛型反转（看跌）
+                bearish_island = island_reversal_mask & (price_change_5d > 0.05)
+                score.loc[bearish_island] -= 30
+                
+                # 在下降趋势后的岛型反转（看涨）
+                bullish_island = island_reversal_mask & (price_change_5d < -0.05)
+                score.loc[bullish_island] += 30
+        
+        # 5. 形态强度调整（±10分）
+        # 根据成交量确认形态强度
+        if 'volume' in data.columns:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            vol_ratio = volume / vol_ma5
+            
+            # 任何形态如果伴随放量，增强信号强度
+            high_volume_mask = vol_ratio > 1.5
+            
+            # 看涨形态+放量
+            bullish_patterns = (
+                indicator_data.get(PatternType.HAMMER.value, False) |
+                indicator_data.get(PatternType.ENGULFING_BULLISH.value, False) |
+                indicator_data.get(PatternType.MORNING_STAR.value, False) |
+                indicator_data.get(PatternType.DOUBLE_BOTTOM.value, False)
+            )
+            if isinstance(bullish_patterns, pd.Series):
+                bullish_volume_confirm = bullish_patterns & high_volume_mask
+                score.loc[bullish_volume_confirm] += 10
+            
+            # 看跌形态+放量
+            bearish_patterns = (
+                indicator_data.get(PatternType.HANGING_MAN.value, False) |
+                indicator_data.get(PatternType.ENGULFING_BEARISH.value, False) |
+                indicator_data.get(PatternType.EVENING_STAR.value, False) |
+                indicator_data.get(PatternType.DOUBLE_TOP.value, False)
+            )
+            if isinstance(bearish_patterns, pd.Series):
+                bearish_volume_confirm = bearish_patterns & high_volume_mask
+                score.loc[bearish_volume_confirm] -= 10
+        
+        # 6. 形态位置调整（±15分）
+        # 在关键技术位置的形态更重要
+        if 'close' in data.columns and len(data) >= 60:
+            close_price = data['close']
+            
+            # 计算支撑阻力位
+            high_60 = close_price.rolling(window=60).max()
+            low_60 = close_price.rolling(window=60).min()
+            
+            # 在阻力位附近的看跌形态
+            near_resistance = close_price > high_60 * 0.95
+            bearish_at_resistance = (
+                (indicator_data.get(PatternType.HANGING_MAN.value, False) |
+                 indicator_data.get(PatternType.EVENING_STAR.value, False) |
+                 indicator_data.get(PatternType.SHOOTING_STAR.value, False)) &
+                near_resistance
+            )
+            if isinstance(bearish_at_resistance, pd.Series):
+                score.loc[bearish_at_resistance] -= 15
+            
+            # 在支撑位附近的看涨形态
+            near_support = close_price < low_60 * 1.05
+            bullish_at_support = (
+                (indicator_data.get(PatternType.HAMMER.value, False) |
+                 indicator_data.get(PatternType.MORNING_STAR.value, False) |
+                 indicator_data.get(PatternType.SINGLE_NEEDLE_BOTTOM.value, False)) &
+                near_support
+            )
+            if isinstance(bullish_at_support, pd.Series):
+                score.loc[bullish_at_support] += 15
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return pd.DataFrame({'score': score}, index=data.index)
+    
+    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+        """
+        识别最新的K线形态
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            List[str]: 识别到的形态列表
+        """
+        # 计算K线形态
+        result = self.calculate(data)
+        
+        # 获取最新的形态
+        latest_patterns = {}
+        for column in result.columns:
+            if result[column].iloc[-1]:
+                latest_patterns[column] = True
+        
+        return list(latest_patterns.keys())
+        
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        根据识别到的K线形态生成交易信号
+        
+        Args:
+            data: 输入数据，包含OHLC数据
+            *args, **kwargs: 附加参数
+            
+        Returns:
+            pd.DataFrame: 包含标准化信号的DataFrame
+        """
+        # 计算K线形态
+        pattern_results = self.calculate(data)
+        
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True
+        signals['trend'] = 0
+        signals['score'] = 50
+        signals['signal_type'] = ''
+        signals['signal_desc'] = ''
+        signals['confidence'] = 0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = 0.0
+        signals['market_env'] = '未知'
+        signals['volume_confirmation'] = False
+        
+        # 定义看涨形态
+        bullish_patterns = [
+            PatternType.HAMMER.value,
+            PatternType.MORNING_STAR.value,
+            PatternType.PIERCING_LINE.value,
+            PatternType.ENGULFING_BULLISH.value,
+            PatternType.HARAMI_BULLISH.value,
+            PatternType.SINGLE_NEEDLE_BOTTOM.value,
+            PatternType.HEAD_SHOULDERS_BOTTOM.value,
+            PatternType.DOUBLE_BOTTOM.value,
+            PatternType.TRIANGLE_ASCENDING.value,
+            PatternType.WEDGE_FALLING.value,
+            PatternType.CUP_WITH_HANDLE.value,
+            PatternType.V_REVERSAL.value
+        ]
+        
+        # 定义看跌形态
+        bearish_patterns = [
+            PatternType.HANGING_MAN.value,
+            PatternType.EVENING_STAR.value,
+            PatternType.DARK_CLOUD_COVER.value,
+            PatternType.ENGULFING_BEARISH.value,
+            PatternType.SHOOTING_STAR.value,
+            PatternType.HEAD_SHOULDERS_TOP.value,
+            PatternType.DOUBLE_TOP.value,
+            PatternType.TRIANGLE_DESCENDING.value,
+            PatternType.WEDGE_RISING.value
+        ]
+        
+        # 强看涨形态
+        strong_bullish_patterns = [
+            PatternType.MORNING_STAR.value,
+            PatternType.ENGULFING_BULLISH.value,
+            PatternType.DOUBLE_BOTTOM.value,
+            PatternType.HEAD_SHOULDERS_BOTTOM.value,
+            PatternType.V_REVERSAL.value
+        ]
+        
+        # 强看跌形态
+        strong_bearish_patterns = [
+            PatternType.EVENING_STAR.value,
+            PatternType.ENGULFING_BEARISH.value,
+            PatternType.DOUBLE_TOP.value,
+            PatternType.HEAD_SHOULDERS_TOP.value
+        ]
+        
+        # 生成信号
+        for i in range(len(data)):
+            # 初始化信号描述
+            pattern_desc = []
+            
+            # 检查看涨形态
+            bullish_found = False
+            for pattern in bullish_patterns:
+                if pattern in pattern_results.columns and pattern_results[pattern].iloc[i]:
+                    bullish_found = True
+                    pattern_desc.append(pattern)
+                    # 强看涨形态
+                    if pattern in strong_bullish_patterns:
+                        signals.loc[data.index[i], 'score'] = 75
+                        signals.loc[data.index[i], 'confidence'] = 80
+                    else:
+                        signals.loc[data.index[i], 'score'] = 65
+                        signals.loc[data.index[i], 'confidence'] = 70
+            
+            # 检查看跌形态
+            bearish_found = False
+            for pattern in bearish_patterns:
+                if pattern in pattern_results.columns and pattern_results[pattern].iloc[i]:
+                    bearish_found = True
+                    pattern_desc.append(pattern)
+                    # 强看跌形态
+                    if pattern in strong_bearish_patterns:
+                        signals.loc[data.index[i], 'score'] = 25
+                        signals.loc[data.index[i], 'confidence'] = 80
+                    else:
+                        signals.loc[data.index[i], 'score'] = 35
+                        signals.loc[data.index[i], 'confidence'] = 70
+            
+            # 设置信号标志
+            if bullish_found and not bearish_found:
+                signals.loc[data.index[i], 'buy_signal'] = True
+                signals.loc[data.index[i], 'sell_signal'] = False
+                signals.loc[data.index[i], 'neutral_signal'] = False
+                signals.loc[data.index[i], 'trend'] = 1
+                signals.loc[data.index[i], 'signal_type'] = '看涨形态'
+            elif bearish_found and not bullish_found:
+                signals.loc[data.index[i], 'buy_signal'] = False
+                signals.loc[data.index[i], 'sell_signal'] = True
+                signals.loc[data.index[i], 'neutral_signal'] = False
+                signals.loc[data.index[i], 'trend'] = -1
+                signals.loc[data.index[i], 'signal_type'] = '看跌形态'
+            
+            # 当出现多个信号时，可能有冲突
+            if bullish_found and bearish_found:
+                # 这种情况我们保持中性，但仍然记录形态
+                signals.loc[data.index[i], 'neutral_signal'] = True
+                signals.loc[data.index[i], 'score'] = 50
+                signals.loc[data.index[i], 'signal_type'] = '混合形态'
+            
+            # 设置信号描述
+            if pattern_desc:
+                signals.loc[data.index[i], 'signal_desc'] = ', '.join(pattern_desc)
+            
+            # 设置止损位
+            if bullish_found:
+                # 设置在当前K线的最低点下方
+                signals.loc[data.index[i], 'stop_loss'] = data['low'].iloc[i] * 0.98
+                # 设置仓位
+                signals.loc[data.index[i], 'position_size'] = 0.3 if signals.loc[data.index[i], 'score'] > 70 else 0.2
+                # 设置风险级别
+                signals.loc[data.index[i], 'risk_level'] = '低' if signals.loc[data.index[i], 'score'] > 70 else '中'
+            elif bearish_found:
+                # 设置在当前K线的最高点上方
+                signals.loc[data.index[i], 'stop_loss'] = data['high'].iloc[i] * 1.02
+                # 设置仓位
+                signals.loc[data.index[i], 'position_size'] = 0.3 if signals.loc[data.index[i], 'score'] < 30 else 0.2
+                # 设置风险级别
+                signals.loc[data.index[i], 'risk_level'] = '低' if signals.loc[data.index[i], 'score'] < 30 else '中'
+            
+            # 分析市场环境
+            if i >= 20:  # 需要一定的历史数据
+                # 简单的趋势判断
+                recent_trend = (data['close'].iloc[i] - data['close'].iloc[i-20]) / data['close'].iloc[i-20]
+                if recent_trend > 0.05:
+                    signals.loc[data.index[i], 'market_env'] = '上升趋势'
+                elif recent_trend < -0.05:
+                    signals.loc[data.index[i], 'market_env'] = '下降趋势'
+                else:
+                    signals.loc[data.index[i], 'market_env'] = '横盘整理'
+        
+        # 添加成交量确认
+        if 'volume' in data.columns:
+            for i in range(1, len(data)):
+                if data['volume'].iloc[i] > data['volume'].iloc[i-1] * 1.2:  # 成交量放大20%
+                    signals.loc[data.index[i], 'volume_confirmation'] = True
+                    # 成交量确认增加信号置信度
+                    signals.loc[data.index[i], 'confidence'] = min(100, signals.loc[data.index[i], 'confidence'] + 10)
+        
+        return signals 

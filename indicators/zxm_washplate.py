@@ -320,4 +320,230 @@ class ZXMWashPlate(BaseIndicator):
             if wash_name in recent_result.columns:
                 recent_wash_plates[wash_name] = recent_result[wash_name].any()
         
-        return recent_wash_plates 
+        return recent_wash_plates
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM洗盘指标的原始评分
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 检查是否有任何类型的洗盘形态
+        any_wash_plate = pd.Series(False, index=data.index)
+        for wash_type in WashPlateType:
+            if wash_type.value in result.columns:
+                any_wash_plate = any_wash_plate | result[wash_type.value]
+        
+        # 任何洗盘形态基础加分30分
+        score[any_wash_plate] += 30
+        
+        # 各洗盘形态的具体评分
+        # 1. 横盘震荡洗盘 - 中等强度洗盘
+        if WashPlateType.SHOCK_WASH.value in result.columns:
+            score[result[WashPlateType.SHOCK_WASH.value]] += 10
+        
+        # 2. 回调洗盘 - 较弱洗盘
+        if WashPlateType.PULLBACK_WASH.value in result.columns:
+            score[result[WashPlateType.PULLBACK_WASH.value]] += 5
+        
+        # 3. 假突破洗盘 - 最强洗盘
+        if WashPlateType.FALSE_BREAK_WASH.value in result.columns:
+            score[result[WashPlateType.FALSE_BREAK_WASH.value]] += 15
+        
+        # 4. 时间洗盘 - 强度洗盘
+        if WashPlateType.TIME_WASH.value in result.columns:
+            score[result[WashPlateType.TIME_WASH.value]] += 12
+        
+        # 5. 连续阴线洗盘 - 较弱洗盘
+        if WashPlateType.CONTINUOUS_YIN_WASH.value in result.columns:
+            score[result[WashPlateType.CONTINUOUS_YIN_WASH.value]] += 8
+        
+        # 多重洗盘形态加分
+        # 计算每天满足的洗盘形态数量
+        wash_count = pd.Series(0, index=data.index)
+        for i in range(len(data)):
+            count = 0
+            for wash_type in WashPlateType:
+                if wash_type.value in result.columns and result[wash_type.value].iloc[i]:
+                    count += 1
+            wash_count.iloc[i] = count
+        
+        # 多重洗盘形态加分
+        score[wash_count == 2] += 10  # 两种洗盘形态
+        score[wash_count >= 3] += 15  # 三种及以上洗盘形态
+        
+        # 洗盘后上涨确认 - 为了实现这个，我们需要检查洗盘后是否有明显上涨
+        # 我们定义：如果洗盘形成后5天内有任何一天收盘价上涨超过3%，就视为洗盘后上涨确认
+        for i in range(len(data) - 5):
+            if any_wash_plate.iloc[i]:
+                # 检查未来5天内是否有明显上涨
+                future_data = data.iloc[i:i+6]
+                if len(future_data) > 1:
+                    current_close = future_data['close'].iloc[0]
+                    future_closes = future_data['close'].iloc[1:]
+                    max_gain = ((future_closes / current_close) - 1).max() * 100
+                    if max_gain > 3:
+                        # 洗盘后有明显上涨，额外加分
+                        score.iloc[i] += 15
+        
+        # 技术指标配合加分
+        # 1. 计算均线系统
+        ma5 = data['close'].rolling(window=5).mean()
+        ma10 = data['close'].rolling(window=10).mean()
+        ma20 = data['close'].rolling(window=20).mean()
+        
+        # 价格站上短期均线加分 - 表明洗盘后开始上攻
+        price_above_ma5 = data['close'] > ma5
+        price_above_ma10 = data['close'] > ma10
+        
+        score[any_wash_plate & price_above_ma5] += 5
+        score[any_wash_plate & price_above_ma10] += 5
+        
+        # 2. 成交量变化配合
+        # 计算成交量变化率（当日成交量/5日平均量）
+        volume_ratio = data['volume'] / data['volume'].rolling(window=5).mean()
+        
+        # 洗盘后放量加分 - 表明洗盘完成准备上攻
+        score[any_wash_plate & (volume_ratio > 1.5)] += 10
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM洗盘相关的技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 只关注最后一个交易日的形态
+        patterns = []
+        last_row = result.iloc[-1] if not result.empty else None
+        
+        if last_row is not None:
+            # 检查各种洗盘形态
+            for wash_type in WashPlateType:
+                if wash_type.value in result.columns and last_row[wash_type.value]:
+                    patterns.append(f"{wash_type.value}")
+            
+            # 如果没有任何洗盘形态
+            if not patterns:
+                patterns.append("无洗盘形态")
+        
+        return patterns
+    
+    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成标准化的信号输出
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 包含标准化信号的DataFrame
+        """
+        # 计算指标和评分
+        result = self.calculate(data)
+        score = self.calculate_raw_score(data, **kwargs)
+        
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # 任何洗盘形态都视为买入信号
+        buy_signal = pd.Series(False, index=data.index)
+        for wash_type in WashPlateType:
+            if wash_type.value in result.columns:
+                buy_signal = buy_signal | result[wash_type.value]
+        
+        # 设置标准化信号
+        signals['buy_signal'] = buy_signal
+        signals['sell_signal'] = False  # 洗盘指标没有卖出信号
+        signals['neutral_signal'] = ~buy_signal
+        
+        # 设置趋势
+        signals['trend'] = 0  # 默认中性
+        signals.loc[buy_signal, 'trend'] = 1  # 洗盘后看涨
+        
+        # 设置评分
+        signals['score'] = score
+        
+        # 设置信号类型
+        signals['signal_type'] = 'neutral'
+        signals.loc[buy_signal, 'signal_type'] = 'wash_plate_buy'
+        
+        # 设置信号描述
+        signals['signal_desc'] = ''
+        
+        # 根据不同洗盘类型设置详细描述
+        for wash_type in WashPlateType:
+            if wash_type.value in result.columns:
+                mask = result[wash_type.value]
+                signals.loc[mask, 'signal_desc'] = f"{wash_type.value}形态，可考虑买入"
+        
+        # 置信度设置 - 根据评分高低确定
+        signals['confidence'] = 60  # 基础置信度
+        signals.loc[score > 70, 'confidence'] = 80
+        signals.loc[score > 85, 'confidence'] = 90
+        
+        # 风险等级
+        signals['risk_level'] = '中'  # 默认中等风险
+        
+        # 建议仓位 - 根据评分确定
+        signals['position_size'] = 0.0
+        signals.loc[buy_signal, 'position_size'] = 0.3  # 基础仓位
+        signals.loc[(buy_signal) & (score > 70), 'position_size'] = 0.5  # 高分仓位
+        signals.loc[(buy_signal) & (score > 85), 'position_size'] = 0.7  # 极高分仓位
+        
+        # 止损位 - 使用洗盘期间的最低价
+        signals['stop_loss'] = 0.0
+        for wash_type in WashPlateType:
+            if wash_type.value in result.columns:
+                for idx in data.index[result[wash_type.value]]:
+                    # 向前查看10个交易日的最低价作为止损位
+                    try:
+                        day_idx = data.index.get_loc(idx)
+                        if day_idx >= 10:
+                            low_price = data.iloc[day_idx-10:day_idx+1]['low'].min()
+                            signals.loc[idx, 'stop_loss'] = low_price * 0.97  # 最低点下方3%
+                    except:
+                        continue
+        
+        # 市场环境和成交量确认
+        signals['market_env'] = 'normal'
+        signals['volume_confirmation'] = False
+        
+        # 检查成交量确认
+        for idx in data.index[buy_signal]:
+            try:
+                day_idx = data.index.get_loc(idx)
+                if day_idx >= 5:
+                    # 当前成交量是否大于前5日平均成交量
+                    current_vol = data.iloc[day_idx]['volume']
+                    avg_vol = data.iloc[day_idx-5:day_idx]['volume'].mean()
+                    if current_vol > avg_vol * 1.5:
+                        signals.loc[idx, 'volume_confirmation'] = True
+            except:
+                continue
+        
+        return signals 

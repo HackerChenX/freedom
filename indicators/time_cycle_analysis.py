@@ -467,4 +467,237 @@ class TimeCycleAnalysis(BaseIndicator):
             
         except Exception as e:
             logger.error(f"提取主导周期时发生错误: {e}")
-            return [] 
+            return []
+
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成时间周期分析信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+        """
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True  # 默认为中性信号
+        signals['trend'] = 0  # 0表示中性
+        signals['score'] = 50.0  # 默认评分50分
+        signals['signal_type'] = None
+        signals['signal_desc'] = None
+        signals['confidence'] = 50.0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = None
+        signals['market_env'] = 'sideways_market'
+        signals['volume_confirmation'] = False
+        
+        # 计算时间周期指标
+        cycle_result = self.calculate(data)
+        
+        # 检查是否有有效的周期结果
+        if cycle_result.empty or 'combined_cycle_sine' not in cycle_result.columns:
+            return signals  # 如果没有有效的周期结果，返回默认信号
+        
+        # 获取当前周期相位
+        current_phase = self.get_current_cycle_phase(data)
+        
+        # 获取主要周期
+        dominant_cycles = self.get_dominant_cycles(data)
+        
+        # 使用组合周期正弦波判断趋势拐点
+        combined_sine = cycle_result['combined_cycle_sine']
+        
+        # 计算组合周期正弦波的一阶和二阶差分，用于判断拐点
+        sine_diff1 = combined_sine.diff()
+        sine_diff2 = sine_diff1.diff()
+        
+        # 初始化买卖信号
+        for i in range(5, len(signals)):
+            # 底部拐点（正弦波由负变正，且二阶导数为正）
+            if (combined_sine.iloc[i-1] < 0 and combined_sine.iloc[i] >= 0 and 
+                sine_diff1.iloc[i] > 0 and sine_diff2.iloc[i] > 0):
+                signals.loc[signals.index[i], 'buy_signal'] = True
+                signals.loc[signals.index[i], 'neutral_signal'] = False
+                signals.loc[signals.index[i], 'trend'] = 1
+                signals.loc[signals.index[i], 'signal_type'] = '周期底部'
+                signals.loc[signals.index[i], 'signal_desc'] = '时间周期底部拐点，潜在买入机会'
+                signals.loc[signals.index[i], 'confidence'] = 70
+                signals.loc[signals.index[i], 'score'] = 75
+                
+            # 顶部拐点（正弦波由正变负，且二阶导数为负）
+            elif (combined_sine.iloc[i-1] > 0 and combined_sine.iloc[i] <= 0 and 
+                  sine_diff1.iloc[i] < 0 and sine_diff2.iloc[i] < 0):
+                signals.loc[signals.index[i], 'sell_signal'] = True
+                signals.loc[signals.index[i], 'neutral_signal'] = False
+                signals.loc[signals.index[i], 'trend'] = -1
+                signals.loc[signals.index[i], 'signal_type'] = '周期顶部'
+                signals.loc[signals.index[i], 'signal_desc'] = '时间周期顶部拐点，潜在卖出机会'
+                signals.loc[signals.index[i], 'confidence'] = 70
+                signals.loc[signals.index[i], 'score'] = 25
+            
+            # 上升趋势确认（正弦波为正且一阶导数为正）
+            elif combined_sine.iloc[i] > 0.5 and sine_diff1.iloc[i] > 0:
+                signals.loc[signals.index[i], 'trend'] = 1
+                signals.loc[signals.index[i], 'signal_type'] = '上升周期'
+                signals.loc[signals.index[i], 'signal_desc'] = '时间周期处于上升阶段'
+                signals.loc[signals.index[i], 'score'] = 65
+                
+            # 下降趋势确认（正弦波为负且一阶导数为负）
+            elif combined_sine.iloc[i] < -0.5 and sine_diff1.iloc[i] < 0:
+                signals.loc[signals.index[i], 'trend'] = -1
+                signals.loc[signals.index[i], 'signal_type'] = '下降周期'
+                signals.loc[signals.index[i], 'signal_desc'] = '时间周期处于下降阶段'
+                signals.loc[signals.index[i], 'score'] = 35
+        
+        # 提高主要周期转折点的置信度
+        if dominant_cycles:
+            # 检查多个主要周期是否同时在转折点
+            for i in range(5, len(signals)):
+                cycle_alignment = 0
+                for j, cycle in enumerate(dominant_cycles[:3]):  # 只考虑前3个主要周期
+                    cycle_col = f"cycle_{j+1}_sine"
+                    if cycle_col in cycle_result.columns:
+                        cycle_sine = cycle_result[cycle_col]
+                        # 检查是否在底部拐点
+                        if (cycle_sine.iloc[i-1] < 0 and cycle_sine.iloc[i] >= 0):
+                            cycle_alignment += 1
+                        # 检查是否在顶部拐点
+                        elif (cycle_sine.iloc[i-1] > 0 and cycle_sine.iloc[i] <= 0):
+                            cycle_alignment -= 1
+                
+                # 多个周期同时在底部拐点，增强买入信号
+                if cycle_alignment >= 2:
+                    if signals['buy_signal'].iloc[i]:
+                        # 增加置信度
+                        signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)
+                        signals.loc[signals.index[i], 'signal_desc'] = '多个时间周期底部共振，强烈买入信号'
+                    else:
+                        # 生成新的买入信号
+                        signals.loc[signals.index[i], 'buy_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = 1
+                        signals.loc[signals.index[i], 'signal_type'] = '周期底部共振'
+                        signals.loc[signals.index[i], 'signal_desc'] = '多个时间周期底部共振，强烈买入信号'
+                        signals.loc[signals.index[i], 'confidence'] = 80
+                        signals.loc[signals.index[i], 'score'] = 80
+                
+                # 多个周期同时在顶部拐点，增强卖出信号
+                elif cycle_alignment <= -2:
+                    if signals['sell_signal'].iloc[i]:
+                        # 增加置信度
+                        signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)
+                        signals.loc[signals.index[i], 'signal_desc'] = '多个时间周期顶部共振，强烈卖出信号'
+                    else:
+                        # 生成新的卖出信号
+                        signals.loc[signals.index[i], 'sell_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = -1
+                        signals.loc[signals.index[i], 'signal_type'] = '周期顶部共振'
+                        signals.loc[signals.index[i], 'signal_desc'] = '多个时间周期顶部共振，强烈卖出信号'
+                        signals.loc[signals.index[i], 'confidence'] = 80
+                        signals.loc[signals.index[i], 'score'] = 20
+        
+        # 根据当前周期相位调整市场环境
+        if current_phase:
+            if current_phase in ['上升阶段', '加速上升阶段']:
+                signals['market_env'] = 'bull_market'
+            elif current_phase in ['顶部阶段', '减速上升阶段']:
+                signals['market_env'] = 'top_market'
+            elif current_phase in ['下降阶段', '加速下降阶段']:
+                signals['market_env'] = 'bear_market'
+            elif current_phase in ['底部阶段', '减速下降阶段']:
+                signals['market_env'] = 'bottom_market'
+        
+        # 使用价格走势确认信号
+        if 'close' in data.columns:
+            close_prices = data['close']
+            # 计算短期和长期移动平均线
+            ma20 = close_prices.rolling(window=20).mean()
+            ma60 = close_prices.rolling(window=60).mean()
+            
+            # 价格确认趋势
+            uptrend = close_prices > ma20
+            downtrend = close_prices < ma20
+            
+            # 使用移动平均线交叉确认信号
+            ma_crossover = (ma20.shift(1) <= ma60.shift(1)) & (ma20 > ma60)
+            ma_crossunder = (ma20.shift(1) >= ma60.shift(1)) & (ma20 < ma60)
+            
+            # 增强或减弱信号
+            for i in range(len(signals)):
+                if signals['buy_signal'].iloc[i]:
+                    if uptrend.iloc[i] or ma_crossover.iloc[i]:
+                        # 价格趋势确认，增加置信度
+                        signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)
+                    elif downtrend.iloc[i]:
+                        # 价格趋势矛盾，降低置信度
+                        signals.loc[signals.index[i], 'confidence'] = max(30, signals['confidence'].iloc[i] - 20)
+                
+                if signals['sell_signal'].iloc[i]:
+                    if downtrend.iloc[i] or ma_crossunder.iloc[i]:
+                        # 价格趋势确认，增加置信度
+                        signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)
+                    elif uptrend.iloc[i]:
+                        # 价格趋势矛盾，降低置信度
+                        signals.loc[signals.index[i], 'confidence'] = max(30, signals['confidence'].iloc[i] - 20)
+        
+        # 使用成交量确认信号
+        if 'volume' in data.columns:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            vol_ratio = volume / vol_ma5
+            
+            # 成交量放大确认
+            high_volume = vol_ratio > 1.5
+            signals.loc[high_volume, 'volume_confirmation'] = True
+            
+            # 成交量确认增强信号可靠性
+            for i in range(len(signals)):
+                if (signals['buy_signal'].iloc[i] or signals['sell_signal'].iloc[i]) and high_volume.iloc[i]:
+                    current_confidence = signals['confidence'].iloc[i]
+                    signals.loc[signals.index[i], 'confidence'] = min(90, current_confidence + 10)
+        
+        # 更新风险等级和仓位建议
+        for i in range(len(signals)):
+            confidence = signals['confidence'].iloc[i]
+            
+            # 根据信号强度和置信度设置风险等级
+            if confidence >= 80:
+                signals.loc[signals.index[i], 'risk_level'] = '低'
+            elif confidence >= 60:
+                signals.loc[signals.index[i], 'risk_level'] = '中'
+            else:
+                signals.loc[signals.index[i], 'risk_level'] = '高'
+            
+            # 设置建议仓位
+            if signals['buy_signal'].iloc[i] or signals['sell_signal'].iloc[i]:
+                if confidence >= 80:
+                    signals.loc[signals.index[i], 'position_size'] = 0.1  # 10%仓位
+                elif confidence >= 70:
+                    signals.loc[signals.index[i], 'position_size'] = 0.07  # 7%仓位
+                elif confidence >= 60:
+                    signals.loc[signals.index[i], 'position_size'] = 0.05  # 5%仓位
+        
+        # 计算动态止损
+        for i in range(len(signals)):
+            if signals['buy_signal'].iloc[i]:
+                # 买入信号的止损
+                if i >= 5 and i < len(data):
+                    # 使用前5个交易日的最低价作为止损参考
+                    stop_level = data['low'].iloc[i-5:i].min() * 0.98
+                    signals.loc[signals.index[i], 'stop_loss'] = stop_level
+            
+            elif signals['sell_signal'].iloc[i]:
+                # 卖出信号的止损
+                if i >= 5 and i < len(data):
+                    # 使用前5个交易日的最高价作为止损参考
+                    stop_level = data['high'].iloc[i-5:i].max() * 1.02
+                    signals.loc[signals.index[i], 'stop_loss'] = stop_level
+        
+        return signals 

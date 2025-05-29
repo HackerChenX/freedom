@@ -90,6 +90,7 @@ class IndicatorType(Enum):
     # 弹性指标
     ZXM_AMPLITUDE_ELASTICITY = "ZXM_AMPLITUDE_ELASTICITY"  # ZXM弹性-振幅指标
     ZXM_RISE_ELASTICITY = "ZXM_RISE_ELASTICITY"  # ZXM弹性-涨幅指标
+    ZXM_ELASTICITY_SCORE = "ZXM_ELASTICITY_SCORE"  # ZXM弹性评分指标
     
     # 买点指标
     ZXM_DAILY_MACD = "ZXM_DAILY_MACD"  # ZXM买点-日MACD指标
@@ -97,6 +98,7 @@ class IndicatorType(Enum):
     ZXM_VOLUME_SHRINK = "ZXM_VOLUME_SHRINK"  # ZXM买点-缩量指标
     ZXM_MA_CALLBACK = "ZXM_MA_CALLBACK"  # ZXM买点-回踩均线指标
     ZXM_BS_ABSORB = "ZXM_BS_ABSORB"  # ZXM买点-BS吸筹指标
+    ZXM_BUYPOINT_SCORE = "ZXM_BUYPOINT_SCORE"  # ZXM买点评分指标
     
     # 综合指标
     ZXM_SELECTION_MODEL = "ZXM_SELECTION_MODEL"  # ZXM体系通用选股模型

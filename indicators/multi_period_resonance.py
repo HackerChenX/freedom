@@ -340,4 +340,148 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
         for i in range(1, len(series)):
             result[i] = (m * series[i] + (n - m) * result[i-1]) / n
         
-        return result 
+        return result
+    
+    def generate_signals(self, data: pd.DataFrame, data_dict: Optional[Dict[KlinePeriod, pd.DataFrame]] = None, 
+                        periods: List[KlinePeriod] = None, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成多周期共振分析信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据（日线周期）
+            data_dict: 不同周期的数据字典，键为周期枚举，值为对应周期的数据框
+            periods: 要分析的周期列表，默认为[日线、60分钟、30分钟、15分钟]
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+        """
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True  # 默认为中性信号
+        signals['trend'] = 0  # 0表示中性
+        signals['score'] = 50.0  # 默认评分50分
+        signals['signal_type'] = None
+        signals['signal_desc'] = None
+        signals['confidence'] = 50.0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = None
+        signals['market_env'] = 'sideways_market'
+        signals['volume_confirmation'] = False
+        
+        # 如果没有提供多周期数据，则使用compute方法简化计算
+        if data_dict is None:
+            result = self.compute(data)
+            signals.loc[result['buy_signal'], 'buy_signal'] = True
+            signals.loc[result['buy_signal'], 'neutral_signal'] = False
+            signals.loc[result['buy_signal'], 'trend'] = 1
+            signals.loc[result['buy_signal'], 'score'] = 70.0
+            signals.loc[result['buy_signal'], 'signal_type'] = 'multi_period_bullish'
+            signals.loc[result['buy_signal'], 'signal_desc'] = '多周期共振看涨信号'
+            signals.loc[result['buy_signal'], 'confidence'] = 60.0
+            signals.loc[result['buy_signal'], 'position_size'] = 0.5
+            return signals
+        
+        # 使用MA金叉作为信号函数进行多周期共振分析
+        def ma_signal_func(df: pd.DataFrame) -> np.ndarray:
+            return self.ma_golden_cross_signal(df)
+        
+        # 计算多周期共振
+        ma_resonance = self.calculate(data_dict, ma_signal_func, periods)
+        
+        # 使用MACD金叉作为信号函数进行多周期共振分析
+        def macd_signal_func(df: pd.DataFrame) -> np.ndarray:
+            return self.macd_golden_cross_signal(df)
+        
+        macd_resonance = self.calculate(data_dict, macd_signal_func, periods)
+        
+        # 使用KDJ金叉作为信号函数进行多周期共振分析
+        def kdj_signal_func(df: pd.DataFrame) -> np.ndarray:
+            return self.kdj_golden_cross_signal(df)
+        
+        kdj_resonance = self.calculate(data_dict, kdj_signal_func, periods)
+        
+        # 综合多个指标的共振信号
+        for i, date in enumerate(signals.index):
+            # 计算各指标的共振等级
+            ma_level = ma_resonance.loc[date, 'resonance_level'] if date in ma_resonance.index else 0
+            macd_level = macd_resonance.loc[date, 'resonance_level'] if date in macd_resonance.index else 0
+            kdj_level = kdj_resonance.loc[date, 'resonance_level'] if date in kdj_resonance.index else 0
+            
+            # 总共振等级
+            total_level = max(ma_level, macd_level, kdj_level)
+            
+            # 根据共振等级生成信号
+            if total_level >= ResonanceLevel.MEDIUM.value:  # 中等及以上共振
+                signals.loc[date, 'buy_signal'] = True
+                signals.loc[date, 'neutral_signal'] = False
+                signals.loc[date, 'trend'] = 1
+                
+                # 根据共振等级设置评分和置信度
+                if total_level == ResonanceLevel.STRONG.value:
+                    signals.loc[date, 'score'] = 85.0
+                    signals.loc[date, 'confidence'] = 85.0
+                    signals.loc[date, 'signal_type'] = 'strong_resonance_bullish'
+                    signals.loc[date, 'signal_desc'] = '强共振看涨信号'
+                    signals.loc[date, 'risk_level'] = '低'
+                    signals.loc[date, 'position_size'] = 0.7
+                else:  # MEDIUM
+                    signals.loc[date, 'score'] = 70.0
+                    signals.loc[date, 'confidence'] = 70.0
+                    signals.loc[date, 'signal_type'] = 'medium_resonance_bullish'
+                    signals.loc[date, 'signal_desc'] = '中度共振看涨信号'
+                    signals.loc[date, 'position_size'] = 0.5
+                
+                # 计算止损位（简化示例）
+                if 'low' in data.columns:
+                    signals.loc[date, 'stop_loss'] = data.loc[date, 'low'] * 0.95
+            
+            # 弱共振也给出信号，但评分较低
+            elif total_level == ResonanceLevel.WEAK.value:
+                signals.loc[date, 'buy_signal'] = True
+                signals.loc[date, 'neutral_signal'] = False
+                signals.loc[date, 'trend'] = 1
+                signals.loc[date, 'score'] = 60.0
+                signals.loc[date, 'confidence'] = 55.0
+                signals.loc[date, 'signal_type'] = 'weak_resonance_bullish'
+                signals.loc[date, 'signal_desc'] = '弱共振看涨信号'
+                signals.loc[date, 'position_size'] = 0.3
+                
+                # 计算止损位（简化示例）
+                if 'low' in data.columns:
+                    signals.loc[date, 'stop_loss'] = data.loc[date, 'low'] * 0.93
+        
+        # 检测成交量确认
+        if 'volume' in data.columns:
+            # 简单判断：如果成交量大于20日均值，认为有成交量确认
+            vol_ma = data['volume'].rolling(20).mean()
+            volume_confirm = data['volume'] > vol_ma
+            signals.loc[volume_confirm.index, 'volume_confirmation'] = volume_confirm
+            
+            # 有成交量确认的信号，提高评分和置信度
+            volume_confirmed = signals['buy_signal'] & signals['volume_confirmation']
+            signals.loc[volume_confirmed, 'score'] += 5.0
+            signals.loc[volume_confirmed, 'confidence'] += 10.0
+            signals.loc[volume_confirmed, 'signal_desc'] = signals.loc[volume_confirmed, 'signal_desc'] + '（成交量确认）'
+        
+        # 市场环境判断（简化示例）
+        # 在实际应用中，应该有更复杂的市场环境检测算法
+        if 'close' in data.columns:
+            ma20 = data['close'].rolling(20).mean()
+            ma60 = data['close'].rolling(60).mean()
+            
+            bull_market = (data['close'] > ma20) & (ma20 > ma60)
+            bear_market = (data['close'] < ma20) & (ma20 < ma60)
+            
+            signals.loc[bull_market.index[bull_market], 'market_env'] = 'bull_market'
+            signals.loc[bear_market.index[bear_market], 'market_env'] = 'bear_market'
+        
+        # 确保评分在0-100范围内
+        signals['score'] = signals['score'].clip(0, 100)
+        signals['confidence'] = signals['confidence'].clip(0, 100)
+        
+        return signals 

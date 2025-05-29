@@ -47,8 +47,8 @@ class OBV(BaseIndicator):
         # 确保数据包含必需的列
         self.ensure_columns(data, ["close", "volume"])
         
-        # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        # 复制输入数据
+        result = data.copy()
         
         # 价格变动方向
         price_direction = np.zeros(len(data))
@@ -71,8 +71,327 @@ class OBV(BaseIndicator):
         # 计算OBV均线
         result["obv_ma"] = pd.Series(obv).rolling(window=self.ma_period).mean().values
         
+        # 保存结果
+        self._result = result
+        
         return result
     
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算OBV原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算OBV
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        obv = self._result['obv']
+        obv_ma = self._result['obv_ma']
+        close = self._result['close']
+        
+        # 1. OBV趋势与价格趋势一致性评分
+        obv_trend = obv > obv.shift(5)  # OBV上升趋势
+        price_trend = close > close.shift(5)  # 价格上升趋势
+        
+        # 趋势一致+15分
+        trend_consistency = (obv_trend & price_trend) | (~obv_trend & ~price_trend)
+        score += trend_consistency * 15
+        
+        # 2. OBV与价格背离评分
+        divergence_score = self._calculate_obv_divergence(close, obv)
+        score += divergence_score
+        
+        # 3. OBV突破评分
+        # OBV突破前期高点+20分
+        obv_breakout_high = self._detect_obv_breakout(obv, direction='up')
+        score += obv_breakout_high * 20
+        
+        # OBV跌破前期低点-20分
+        obv_breakout_low = self._detect_obv_breakout(obv, direction='down')
+        score -= obv_breakout_low * 20
+        
+        # 4. OBV均线交叉评分
+        # OBV上穿均线+15分
+        obv_cross_up_ma = self.crossover(obv, obv_ma)
+        score += obv_cross_up_ma * 15
+        
+        # OBV下穿均线-15分
+        obv_cross_down_ma = self.crossunder(obv, obv_ma)
+        score -= obv_cross_down_ma * 15
+        
+        # 5. OBV能量强度评分
+        volume_strength = self._calculate_volume_strength(data)
+        score += volume_strength
+        
+        # 6. OBV斜率评分
+        obv_slope = self._calculate_obv_slope(obv)
+        score += obv_slope
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别OBV技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算OBV
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        obv = self._result['obv']
+        obv_ma = self._result['obv_ma']
+        close = self._result['close']
+        
+        # 检查最近的信号
+        recent_periods = min(10, len(obv))
+        if recent_periods == 0:
+            return patterns
+        
+        recent_obv = obv.tail(recent_periods)
+        recent_obv_ma = obv_ma.tail(recent_periods)
+        recent_close = close.tail(recent_periods)
+        
+        # 1. OBV趋势形态
+        if recent_obv.iloc[-1] > recent_obv.iloc[-5]:
+            patterns.append("OBV上升趋势")
+        elif recent_obv.iloc[-1] < recent_obv.iloc[-5]:
+            patterns.append("OBV下降趋势")
+        else:
+            patterns.append("OBV横盘整理")
+        
+        # 2. OBV均线交叉形态
+        if self.crossover(recent_obv, recent_obv_ma).any():
+            patterns.append("OBV上穿均线")
+        if self.crossunder(recent_obv, recent_obv_ma).any():
+            patterns.append("OBV下穿均线")
+        
+        # 3. OBV背离形态
+        divergence_type = self._detect_obv_divergence_pattern(recent_close, recent_obv)
+        if divergence_type:
+            patterns.append(f"OBV{divergence_type}")
+        
+        # 4. OBV突破形态
+        if self._detect_obv_breakout(recent_obv, direction='up').any():
+            patterns.append("OBV突破前期高点")
+        if self._detect_obv_breakout(recent_obv, direction='down').any():
+            patterns.append("OBV跌破前期低点")
+        
+        # 5. 量价配合形态
+        volume_price_harmony = self._detect_volume_price_harmony(recent_close, recent_obv)
+        if volume_price_harmony == 'positive':
+            patterns.append("OBV量价配合良好")
+        elif volume_price_harmony == 'negative':
+            patterns.append("OBV量价背离")
+        
+        return patterns
+    
+    def _calculate_obv_divergence(self, price: pd.Series, obv: pd.Series) -> pd.Series:
+        """
+        计算OBV背离评分
+        
+        Args:
+            price: 价格序列
+            obv: OBV序列
+            
+        Returns:
+            pd.Series: 背离评分序列
+        """
+        divergence_score = pd.Series(0.0, index=price.index)
+        
+        if len(price) < 20:
+            return divergence_score
+        
+        # 寻找价格和OBV的峰值谷值
+        window = 5
+        for i in range(window, len(price) - window):
+            price_window = price.iloc[i-window:i+window+1]
+            obv_window = obv.iloc[i-window:i+window+1]
+            
+            if price.iloc[i] == price_window.max():  # 价格峰值
+                if obv.iloc[i] != obv_window.max():  # OBV未创新高
+                    divergence_score.iloc[i:i+10] -= 25  # 负背离
+            elif price.iloc[i] == price_window.min():  # 价格谷值
+                if obv.iloc[i] != obv_window.min():  # OBV未创新低
+                    divergence_score.iloc[i:i+10] += 25  # 正背离
+        
+        return divergence_score
+    
+    def _detect_obv_breakout(self, obv: pd.Series, direction: str, window: int = 20) -> pd.Series:
+        """
+        检测OBV突破
+        
+        Args:
+            obv: OBV序列
+            direction: 突破方向 ('up' 或 'down')
+            window: 检测窗口
+            
+        Returns:
+            pd.Series: 突破信号
+        """
+        breakout = pd.Series(False, index=obv.index)
+        
+        if len(obv) < window:
+            return breakout
+        
+        if direction == 'up':
+            # 突破前期高点
+            rolling_max = obv.rolling(window=window).max()
+            breakout = obv > rolling_max.shift(1)
+        elif direction == 'down':
+            # 跌破前期低点
+            rolling_min = obv.rolling(window=window).min()
+            breakout = obv < rolling_min.shift(1)
+        
+        return breakout
+    
+    def _calculate_volume_strength(self, data: pd.DataFrame) -> pd.Series:
+        """
+        计算成交量强度评分
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.Series: 成交量强度评分
+        """
+        volume_score = pd.Series(0.0, index=data.index)
+        
+        if 'volume' not in data.columns:
+            return volume_score
+        
+        volume = data['volume']
+        
+        # 成交量相对强度
+        volume_ma = volume.rolling(window=20).mean()
+        volume_ratio = volume / volume_ma
+        
+        # 成交量放大+10分
+        volume_score += np.where(volume_ratio > 1.5, 10, 0)
+        # 成交量萎缩-5分
+        volume_score -= np.where(volume_ratio < 0.5, 5, 0)
+        
+        return volume_score
+    
+    def _calculate_obv_slope(self, obv: pd.Series) -> pd.Series:
+        """
+        计算OBV斜率评分
+        
+        Args:
+            obv: OBV序列
+            
+        Returns:
+            pd.Series: 斜率评分
+        """
+        slope_score = pd.Series(0.0, index=obv.index)
+        
+        if len(obv) < 5:
+            return slope_score
+        
+        # 计算5周期OBV斜率
+        obv_slope = obv.diff(5)
+        
+        # 标准化斜率
+        obv_std = obv.rolling(window=20).std()
+        normalized_slope = obv_slope / obv_std
+        
+        # 斜率评分
+        slope_score += np.where(normalized_slope > 1, 10, 0)   # 强烈上升+10分
+        slope_score += np.where(normalized_slope > 0.5, 5, 0)  # 温和上升+5分
+        slope_score -= np.where(normalized_slope < -1, 10, 0)  # 强烈下降-10分
+        slope_score -= np.where(normalized_slope < -0.5, 5, 0) # 温和下降-5分
+        
+        return slope_score
+    
+    def _detect_obv_divergence_pattern(self, price: pd.Series, obv: pd.Series) -> Optional[str]:
+        """
+        检测OBV背离形态
+        
+        Args:
+            price: 价格序列
+            obv: OBV序列
+            
+        Returns:
+            Optional[str]: 背离类型或None
+        """
+        if len(price) < 10:
+            return None
+        
+        # 寻找最近的峰值和谷值
+        price_extremes = []
+        obv_extremes = []
+        
+        # 简化的极值检测
+        for i in range(2, len(price) - 2):
+            if (price.iloc[i] > price.iloc[i-1] and price.iloc[i] > price.iloc[i+1]):
+                price_extremes.append(price.iloc[i])
+                obv_extremes.append(obv.iloc[i])
+            elif (price.iloc[i] < price.iloc[i-1] and price.iloc[i] < price.iloc[i+1]):
+                price_extremes.append(price.iloc[i])
+                obv_extremes.append(obv.iloc[i])
+        
+        if len(price_extremes) >= 2:
+            price_trend = price_extremes[-1] - price_extremes[-2]
+            obv_trend = obv_extremes[-1] - obv_extremes[-2]
+            
+            # 正背离：价格创新低但OBV未创新低
+            if price_trend < -0.01 and obv_trend > 0:
+                return "正背离"
+            # 负背离：价格创新高但OBV未创新高
+            elif price_trend > 0.01 and obv_trend < 0:
+                return "负背离"
+        
+        return None
+    
+    def _detect_volume_price_harmony(self, price: pd.Series, obv: pd.Series) -> Optional[str]:
+        """
+        检测量价配合情况
+        
+        Args:
+            price: 价格序列
+            obv: OBV序列
+            
+        Returns:
+            Optional[str]: 配合情况
+        """
+        if len(price) < 5:
+            return None
+        
+        # 计算价格和OBV的趋势
+        price_trend = price.iloc[-1] - price.iloc[-5]
+        obv_trend = obv.iloc[-1] - obv.iloc[-5]
+        
+        # 量价配合判断
+        if price_trend > 0 and obv_trend > 0:
+            return 'positive'  # 价涨量增
+        elif price_trend < 0 and obv_trend < 0:
+            return 'positive'  # 价跌量减
+        elif (price_trend > 0 and obv_trend < 0) or (price_trend < 0 and obv_trend > 0):
+            return 'negative'  # 量价背离
+        
+        return None
+
     def get_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         生成OBV信号
@@ -177,4 +496,146 @@ class OBV(BaseIndicator):
                 data.iloc[i, data.columns.get_loc("obv_strength")] = 0
         
         return data
+
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成能量潮(OBV)指标信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+        """
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True  # 默认为中性信号
+        signals['trend'] = 0  # 0表示中性
+        signals['score'] = 50.0  # 默认评分50分
+        signals['signal_type'] = None
+        signals['signal_desc'] = None
+        signals['confidence'] = 50.0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = None
+        signals['market_env'] = 'sideways_market'
+        signals['volume_confirmation'] = False
+        
+        # 计算OBV指标
+        result = self.calculate(data)
+        
+        # 计算评分
+        scores = self.calculate_raw_score(data)
+        signals['score'] = scores
+        
+        # 识别形态
+        patterns = {}
+        for i, date in enumerate(data.index):
+            if i < 20:  # 需要足够的历史数据来识别形态
+                continue
+            patterns[date] = self.identify_patterns(data.iloc[:i+1])
+        
+        # 基于评分和形态生成买卖信号
+        for date, score in scores.items():
+            if date not in data.index:
+                continue
+            
+            # 获取当前形态
+            current_patterns = patterns.get(date, [])
+            
+            # 设置信号类型和描述
+            if score >= 70:
+                signals.loc[date, 'buy_signal'] = True
+                signals.loc[date, 'neutral_signal'] = False
+                signals.loc[date, 'trend'] = 1
+                
+                # 根据不同形态设置信号类型和描述
+                if "OBV正背离" in current_patterns:
+                    signals.loc[date, 'signal_type'] = 'obv_bullish_divergence'
+                    signals.loc[date, 'signal_desc'] = 'OBV正背离买入信号'
+                    signals.loc[date, 'confidence'] = 80.0
+                    signals.loc[date, 'position_size'] = 0.6
+                elif "OBV上穿均线" in current_patterns:
+                    signals.loc[date, 'signal_type'] = 'obv_golden_cross'
+                    signals.loc[date, 'signal_desc'] = 'OBV上穿均线买入信号'
+                    signals.loc[date, 'confidence'] = 70.0
+                    signals.loc[date, 'position_size'] = 0.5
+                elif "OBV突破前期高点" in current_patterns:
+                    signals.loc[date, 'signal_type'] = 'obv_breakout'
+                    signals.loc[date, 'signal_desc'] = 'OBV突破前期高点买入信号'
+                    signals.loc[date, 'confidence'] = 75.0
+                    signals.loc[date, 'position_size'] = 0.5
+                elif "OBV量价配合良好" in current_patterns:
+                    signals.loc[date, 'signal_type'] = 'obv_volume_price_harmony'
+                    signals.loc[date, 'signal_desc'] = 'OBV量价配合良好买入信号'
+                    signals.loc[date, 'confidence'] = 65.0
+                    signals.loc[date, 'position_size'] = 0.4
+                else:
+                    signals.loc[date, 'signal_type'] = 'obv_bullish'
+                    signals.loc[date, 'signal_desc'] = 'OBV看涨信号'
+                    signals.loc[date, 'confidence'] = 60.0
+                    signals.loc[date, 'position_size'] = 0.3
+            elif score <= 30:
+                signals.loc[date, 'sell_signal'] = True
+                signals.loc[date, 'neutral_signal'] = False
+                signals.loc[date, 'trend'] = -1
+                
+                # 根据不同形态设置信号类型和描述
+                if "OBV负背离" in current_patterns:
+                    signals.loc[date, 'signal_type'] = 'obv_bearish_divergence'
+                    signals.loc[date, 'signal_desc'] = 'OBV负背离卖出信号'
+                    signals.loc[date, 'confidence'] = 80.0
+                    signals.loc[date, 'position_size'] = 0.0
+                elif "OBV下穿均线" in current_patterns:
+                    signals.loc[date, 'signal_type'] = 'obv_death_cross'
+                    signals.loc[date, 'signal_desc'] = 'OBV下穿均线卖出信号'
+                    signals.loc[date, 'confidence'] = 70.0
+                    signals.loc[date, 'position_size'] = 0.0
+                elif "OBV跌破前期低点" in current_patterns:
+                    signals.loc[date, 'signal_type'] = 'obv_breakdown'
+                    signals.loc[date, 'signal_desc'] = 'OBV跌破前期低点卖出信号'
+                    signals.loc[date, 'confidence'] = 75.0
+                    signals.loc[date, 'position_size'] = 0.0
+                else:
+                    signals.loc[date, 'signal_type'] = 'obv_bearish'
+                    signals.loc[date, 'signal_desc'] = 'OBV看跌信号'
+                    signals.loc[date, 'confidence'] = 60.0
+                    signals.loc[date, 'position_size'] = 0.0
+        
+        # 设置止损位
+        for date in signals.index:
+            if signals.loc[date, 'buy_signal']:
+                # 简单示例：使用当日最低价的95%作为止损
+                if 'low' in data.columns:
+                    signals.loc[date, 'stop_loss'] = data.loc[date, 'low'] * 0.95
+        
+        # 设置成交量确认
+        # 简单判断：如果成交量大于20日均值，认为有成交量确认
+        if 'volume' in data.columns:
+            vol_ma = data['volume'].rolling(20).mean()
+            signals['volume_confirmation'] = data['volume'] > vol_ma
+        
+        # 市场环境判断（简化示例）
+        if 'close' in data.columns:
+            ma20 = data['close'].rolling(20).mean()
+            ma60 = data['close'].rolling(60).mean()
+            
+            bull_market = (data['close'] > ma20) & (ma20 > ma60)
+            bear_market = (data['close'] < ma20) & (ma20 < ma60)
+            
+            signals.loc[bull_market.index, 'market_env'] = 'bull_market'
+            signals.loc[bear_market.index, 'market_env'] = 'bear_market'
+        
+        # 设置风险等级
+        for date in signals.index:
+            if signals.loc[date, 'confidence'] >= 75:
+                signals.loc[date, 'risk_level'] = '低'
+            elif signals.loc[date, 'confidence'] <= 60:
+                signals.loc[date, 'risk_level'] = '高'
+        
+        return signals
 

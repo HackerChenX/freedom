@@ -90,6 +90,9 @@ class WMA(BaseIndicator):
                 raw=True
             )
         
+        # 存储结果
+        self._result = df_copy[[f'WMA{p}' for p in self.periods]]
+        
         return df_copy
         
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -176,4 +179,687 @@ class WMA(BaseIndicator):
             包含计算结果的DataFrame
         """
         return self.calculate(df)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算WMA原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算WMA
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        # 获取价格数据
+        close_price = data['close']
+        
+        # 1. 价格与WMA关系评分
+        price_wma_score = self._calculate_price_wma_score(close_price)
+        score += price_wma_score
+        
+        # 2. WMA交叉评分
+        cross_score = self._calculate_wma_cross_score()
+        score += cross_score
+        
+        # 3. WMA趋势评分
+        trend_score = self._calculate_wma_trend_score()
+        score += trend_score
+        
+        # 4. WMA排列评分
+        arrangement_score = self._calculate_wma_arrangement_score()
+        score += arrangement_score
+        
+        # 5. 价格穿越评分
+        penetration_score = self._calculate_price_wma_penetration_score(close_price)
+        score += penetration_score
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别WMA技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算WMA
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        close_price = data['close']
+        
+        # 1. 检测WMA交叉形态
+        cross_patterns = self._detect_wma_cross_patterns()
+        patterns.extend(cross_patterns)
+        
+        # 2. 检测WMA排列形态
+        arrangement_patterns = self._detect_wma_arrangement_patterns()
+        patterns.extend(arrangement_patterns)
+        
+        # 3. 检测价格与WMA关系形态
+        price_patterns = self._detect_price_wma_patterns(close_price)
+        patterns.extend(price_patterns)
+        
+        # 4. 检测WMA趋势形态
+        trend_patterns = self._detect_wma_trend_patterns()
+        patterns.extend(trend_patterns)
+        
+        # 5. 检测WMA支撑阻力形态
+        support_resistance_patterns = self._detect_wma_support_resistance_patterns(close_price)
+        patterns.extend(support_resistance_patterns)
+        
+        return patterns
+    
+    def _calculate_price_wma_score(self, close_price: pd.Series) -> pd.Series:
+        """
+        计算价格与WMA关系评分
+        
+        Args:
+            close_price: 收盘价序列
+            
+        Returns:
+            pd.Series: 价格关系评分
+        """
+        price_score = pd.Series(0.0, index=close_price.index)
+        
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in self._result.columns:
+                wma_values = self._result[wma_col]
+                
+                # 价格在WMA上方+6分（WMA对近期价格权重更高，反应更敏感）
+                above_wma = close_price > wma_values
+                price_score += above_wma * 6
+                
+                # 价格在WMA下方-6分
+                below_wma = close_price < wma_values
+                price_score -= below_wma * 6
+                
+                # 价格距离WMA的相对位置评分
+                price_distance = (close_price - wma_values) / wma_values * 100
+                
+                # 距离适中（1-3%）额外加分
+                moderate_distance = (abs(price_distance) >= 1) & (abs(price_distance) <= 3)
+                price_score += moderate_distance * 4
+        
+        return price_score / len(self.periods)  # 平均化
+    
+    def _calculate_wma_cross_score(self) -> pd.Series:
+        """
+        计算WMA交叉评分
+        
+        Returns:
+            pd.Series: 交叉评分
+        """
+        cross_score = pd.Series(0.0, index=self._result.index)
+        
+        # 需要至少两个周期才能计算交叉
+        if len(self.periods) < 2:
+            return cross_score
+        
+        sorted_periods = sorted(self.periods)
+        
+        for i in range(len(sorted_periods) - 1):
+            short_period = sorted_periods[i]
+            long_period = sorted_periods[i + 1]
+            
+            short_wma = f'WMA{short_period}'
+            long_wma = f'WMA{long_period}'
+            
+            if short_wma in self._result.columns and long_wma in self._result.columns:
+                # 金叉（短期WMA上穿长期WMA）+22分（WMA反应更快，权重稍高）
+                golden_cross = crossover(self._result[short_wma], self._result[long_wma])
+                cross_score += golden_cross * 22
+                
+                # 死叉（短期WMA下穿长期WMA）-22分
+                death_cross = crossunder(self._result[short_wma], self._result[long_wma])
+                cross_score -= death_cross * 22
+        
+        return cross_score
+    
+    def _calculate_wma_trend_score(self) -> pd.Series:
+        """
+        计算WMA趋势评分
+        
+        Returns:
+            pd.Series: 趋势评分
+        """
+        trend_score = pd.Series(0.0, index=self._result.index)
+        
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in self._result.columns:
+                wma_values = self._result[wma_col]
+                
+                # WMA上升趋势+9分（WMA对趋势变化更敏感）
+                wma_rising = wma_values > wma_values.shift(1)
+                trend_score += wma_rising * 9
+                
+                # WMA下降趋势-9分
+                wma_falling = wma_values < wma_values.shift(1)
+                trend_score -= wma_falling * 9
+                
+                # WMA加速上升+13分
+                if len(wma_values) >= 3:
+                    wma_accelerating = (wma_values.diff() > wma_values.shift(1).diff())
+                    trend_score += wma_accelerating * 13
+                
+                # WMA加速下降-13分
+                if len(wma_values) >= 3:
+                    wma_decelerating = (wma_values.diff() < wma_values.shift(1).diff())
+                    trend_score -= wma_decelerating * 13
+        
+        return trend_score / len(self.periods)  # 平均化
+    
+    def _calculate_wma_arrangement_score(self) -> pd.Series:
+        """
+        计算WMA排列评分
+        
+        Returns:
+            pd.Series: 排列评分
+        """
+        arrangement_score = pd.Series(0.0, index=self._result.index)
+        
+        if len(self.periods) < 3:
+            return arrangement_score
+        
+        sorted_periods = sorted(self.periods)
+        
+        # 检查多头排列（短期WMA在上，长期WMA在下）
+        bullish_arrangement = pd.Series(True, index=self._result.index)
+        bearish_arrangement = pd.Series(True, index=self._result.index)
+        
+        for i in range(len(sorted_periods) - 1):
+            short_wma = f'WMA{sorted_periods[i]}'
+            long_wma = f'WMA{sorted_periods[i + 1]}'
+            
+            if short_wma in self._result.columns and long_wma in self._result.columns:
+                # 多头排列：短期WMA > 长期WMA
+                bullish_arrangement &= (self._result[short_wma] > self._result[long_wma])
+                
+                # 空头排列：短期WMA < 长期WMA
+                bearish_arrangement &= (self._result[short_wma] < self._result[long_wma])
+        
+        # 多头排列+27分（WMA排列信号更强）
+        arrangement_score += bullish_arrangement * 27
+        
+        # 空头排列-27分
+        arrangement_score -= bearish_arrangement * 27
+        
+        return arrangement_score
+    
+    def _calculate_price_wma_penetration_score(self, close_price: pd.Series) -> pd.Series:
+        """
+        计算价格穿越WMA评分
+        
+        Args:
+            close_price: 收盘价序列
+            
+        Returns:
+            pd.Series: 穿越评分
+        """
+        penetration_score = pd.Series(0.0, index=close_price.index)
+        
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in self._result.columns:
+                wma_values = self._result[wma_col]
+                
+                # 价格上穿WMA+16分（WMA穿越信号较强）
+                price_cross_up = crossover(close_price, wma_values)
+                penetration_score += price_cross_up * 16
+                
+                # 价格下穿WMA-16分
+                price_cross_down = crossunder(close_price, wma_values)
+                penetration_score -= price_cross_down * 16
+        
+        return penetration_score / len(self.periods)  # 平均化
+    
+    def _detect_wma_cross_patterns(self) -> List[str]:
+        """
+        检测WMA交叉形态
+        
+        Returns:
+            List[str]: 交叉形态列表
+        """
+        patterns = []
+        
+        if len(self.periods) < 2:
+            return patterns
+        
+        sorted_periods = sorted(self.periods)
+        
+        for i in range(len(sorted_periods) - 1):
+            short_period = sorted_periods[i]
+            long_period = sorted_periods[i + 1]
+            
+            short_wma = f'WMA{short_period}'
+            long_wma = f'WMA{long_period}'
+            
+            if short_wma in self._result.columns and long_wma in self._result.columns:
+                # 检查最近的交叉
+                recent_periods = min(5, len(self._result))
+                recent_short = self._result[short_wma].tail(recent_periods)
+                recent_long = self._result[long_wma].tail(recent_periods)
+                
+                if crossover(recent_short, recent_long).any():
+                    patterns.append(f"WMA{short_period}上穿WMA{long_period}")
+                
+                if crossunder(recent_short, recent_long).any():
+                    patterns.append(f"WMA{short_period}下穿WMA{long_period}")
+        
+        return patterns
+    
+    def _detect_wma_arrangement_patterns(self) -> List[str]:
+        """
+        检测WMA排列形态
+        
+        Returns:
+            List[str]: 排列形态列表
+        """
+        patterns = []
+        
+        if len(self.periods) < 3:
+            return patterns
+        
+        sorted_periods = sorted(self.periods)
+        
+        # 检查当前排列状态
+        if len(self._result) > 0:
+            current_bullish = True
+            current_bearish = True
+            
+            for i in range(len(sorted_periods) - 1):
+                short_wma = f'WMA{sorted_periods[i]}'
+                long_wma = f'WMA{sorted_periods[i + 1]}'
+                
+                if short_wma in self._result.columns and long_wma in self._result.columns:
+                    current_short = self._result[short_wma].iloc[-1]
+                    current_long = self._result[long_wma].iloc[-1]
+                    
+                    if pd.isna(current_short) or pd.isna(current_long):
+                        continue
+                    
+                    if current_short <= current_long:
+                        current_bullish = False
+                    if current_short >= current_long:
+                        current_bearish = False
+            
+            if current_bullish:
+                patterns.append("WMA多头排列")
+            elif current_bearish:
+                patterns.append("WMA空头排列")
+            else:
+                patterns.append("WMA交织状态")
+        
+        return patterns
+    
+    def _detect_price_wma_patterns(self, close_price: pd.Series) -> List[str]:
+        """
+        检测价格与WMA关系形态
+        
+        Args:
+            close_price: 收盘价序列
+            
+        Returns:
+            List[str]: 价格关系形态列表
+        """
+        patterns = []
+        
+        if len(close_price) == 0:
+            return patterns
+        
+        current_price = close_price.iloc[-1]
+        above_count = 0
+        below_count = 0
+        
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in self._result.columns:
+                current_wma = self._result[wma_col].iloc[-1]
+                
+                if pd.isna(current_wma):
+                    continue
+                
+                if current_price > current_wma:
+                    above_count += 1
+                elif current_price < current_wma:
+                    below_count += 1
+        
+        total_wma = above_count + below_count
+        if total_wma > 0:
+            above_ratio = above_count / total_wma
+            
+            if above_ratio >= 0.8:
+                patterns.append("价格强势突破WMA")
+            elif above_ratio >= 0.6:
+                patterns.append("价格温和上行WMA")
+            elif above_ratio <= 0.2:
+                patterns.append("价格强势跌破WMA")
+            elif above_ratio <= 0.4:
+                patterns.append("价格温和下行WMA")
+            else:
+                patterns.append("价格WMA附近震荡")
+        
+        # 检查价格穿越
+        recent_periods = min(5, len(close_price))
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in self._result.columns:
+                recent_price = close_price.tail(recent_periods)
+                recent_wma = self._result[wma_col].tail(recent_periods)
+                
+                if crossover(recent_price, recent_wma).any():
+                    patterns.append(f"价格上穿WMA{period}")
+                
+                if crossunder(recent_price, recent_wma).any():
+                    patterns.append(f"价格下穿WMA{period}")
+        
+        return patterns
+    
+    def _detect_wma_trend_patterns(self) -> List[str]:
+        """
+        检测WMA趋势形态
+        
+        Returns:
+            List[str]: 趋势形态列表
+        """
+        patterns = []
+        
+        rising_count = 0
+        falling_count = 0
+        
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in self._result.columns and len(self._result) >= 2:
+                wma_values = self._result[wma_col]
+                current_wma = wma_values.iloc[-1]
+                prev_wma = wma_values.iloc[-2]
+                
+                if pd.isna(current_wma) or pd.isna(prev_wma):
+                    continue
+                
+                if current_wma > prev_wma:
+                    rising_count += 1
+                elif current_wma < prev_wma:
+                    falling_count += 1
+        
+        total_wma = rising_count + falling_count
+        if total_wma > 0:
+            rising_ratio = rising_count / total_wma
+            
+            if rising_ratio >= 0.8:
+                patterns.append("WMA全面上升")
+            elif rising_ratio >= 0.6:
+                patterns.append("WMA多数上升")
+            elif rising_ratio <= 0.2:
+                patterns.append("WMA全面下降")
+            elif rising_ratio <= 0.4:
+                patterns.append("WMA多数下降")
+            else:
+                patterns.append("WMA方向分化")
+        
+        return patterns
+    
+    def _detect_wma_support_resistance_patterns(self, close_price: pd.Series) -> List[str]:
+        """
+        检测WMA支撑阻力形态
+        
+        Args:
+            close_price: 收盘价序列
+            
+        Returns:
+            List[str]: 支撑阻力形态列表
+        """
+        patterns = []
+        
+        if len(close_price) < 5:
+            return patterns
+        
+        recent_periods = min(10, len(close_price))
+        recent_price = close_price.tail(recent_periods)
+        
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in self._result.columns:
+                recent_wma = self._result[wma_col].tail(recent_periods)
+                
+                # 检查支撑：价格多次接近WMA但未跌破
+                support_touches = 0
+                resistance_touches = 0
+                
+                for i in range(1, len(recent_price)):
+                    if pd.isna(recent_price.iloc[i]) or pd.isna(recent_wma.iloc[i]):
+                        continue
+                        
+                    price_diff = abs(recent_price.iloc[i] - recent_wma.iloc[i]) / recent_wma.iloc[i]
+                    
+                    if price_diff < 0.02:  # 2%以内认为是接触
+                        if recent_price.iloc[i] >= recent_wma.iloc[i]:
+                            if i > 0 and recent_price.iloc[i-1] < recent_wma.iloc[i-1]:
+                                support_touches += 1
+                        else:
+                            if i > 0 and recent_price.iloc[i-1] > recent_wma.iloc[i-1]:
+                                resistance_touches += 1
+                
+                if support_touches >= 2:
+                    patterns.append(f"WMA{period}形成支撑")
+                
+                if resistance_touches >= 2:
+                    patterns.append(f"WMA{period}形成阻力")
+        
+        return patterns
+
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成WMA指标标准化交易信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+        """
+        # 确保已计算WMA指标
+        if not self.has_result():
+            self.calculate(data)
+        
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True  # 默认为中性信号
+        signals['trend'] = 0  # 0表示中性
+        signals['score'] = 50.0  # 默认评分50分
+        signals['signal_type'] = None
+        signals['signal_desc'] = None
+        signals['confidence'] = 50.0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = None
+        signals['market_env'] = 'sideways_market'
+        signals['volume_confirmation'] = False
+        
+        # 计算评分
+        score = self.calculate_raw_score(data, **kwargs)
+        signals['score'] = score
+        
+        # 检测形态
+        patterns = self.identify_patterns(data, **kwargs)
+        
+        # 获取价格和WMA数据
+        close_price = data['close']
+        
+        # 需要至少两个周期才能检测交叉
+        if len(self.periods) >= 2 and self.periods[0] < self.periods[1]:
+            short_period = self.periods[0]
+            long_period = self.periods[1]
+            
+            short_wma = self._result[f'WMA{short_period}']
+            long_wma = self._result[f'WMA{long_period}']
+            
+            # 设置买入信号（短期WMA上穿长期WMA）
+            buy_signal_idx = crossover(short_wma, long_wma)
+            signals.loc[buy_signal_idx, 'buy_signal'] = True
+            signals.loc[buy_signal_idx, 'neutral_signal'] = False
+            signals.loc[buy_signal_idx, 'trend'] = 1
+            signals.loc[buy_signal_idx, 'signal_type'] = 'WMA金叉'
+            signals.loc[buy_signal_idx, 'signal_desc'] = f'WMA{short_period}上穿WMA{long_period}'
+            signals.loc[buy_signal_idx, 'confidence'] = 75.0
+            signals.loc[buy_signal_idx, 'position_size'] = 0.4
+            signals.loc[buy_signal_idx, 'risk_level'] = '中'
+            
+            # 设置卖出信号（短期WMA下穿长期WMA）
+            sell_signal_idx = crossunder(short_wma, long_wma)
+            signals.loc[sell_signal_idx, 'sell_signal'] = True
+            signals.loc[sell_signal_idx, 'neutral_signal'] = False
+            signals.loc[sell_signal_idx, 'trend'] = -1
+            signals.loc[sell_signal_idx, 'signal_type'] = 'WMA死叉'
+            signals.loc[sell_signal_idx, 'signal_desc'] = f'WMA{short_period}下穿WMA{long_period}'
+            signals.loc[sell_signal_idx, 'confidence'] = 75.0
+            signals.loc[sell_signal_idx, 'position_size'] = 0.4
+            signals.loc[sell_signal_idx, 'risk_level'] = '中'
+        
+        # 使用主要周期的WMA检测价格与WMA的关系
+        main_period = self.periods[0]
+        main_wma = self._result[f'WMA{main_period}']
+        
+        # 设置价格上穿WMA的买入信号
+        price_cross_wma_up_idx = crossover(close_price, main_wma)
+        signals.loc[price_cross_wma_up_idx, 'buy_signal'] = True
+        signals.loc[price_cross_wma_up_idx, 'neutral_signal'] = False
+        signals.loc[price_cross_wma_up_idx, 'trend'] = 1
+        signals.loc[price_cross_wma_up_idx, 'signal_type'] = '价格上穿WMA'
+        signals.loc[price_cross_wma_up_idx, 'signal_desc'] = f'价格上穿WMA{main_period}'
+        signals.loc[price_cross_wma_up_idx, 'confidence'] = 70.0
+        signals.loc[price_cross_wma_up_idx, 'position_size'] = 0.3
+        signals.loc[price_cross_wma_up_idx, 'risk_level'] = '中'
+        
+        # 设置价格下穿WMA的卖出信号
+        price_cross_wma_down_idx = crossunder(close_price, main_wma)
+        signals.loc[price_cross_wma_down_idx, 'sell_signal'] = True
+        signals.loc[price_cross_wma_down_idx, 'neutral_signal'] = False
+        signals.loc[price_cross_wma_down_idx, 'trend'] = -1
+        signals.loc[price_cross_wma_down_idx, 'signal_type'] = '价格下穿WMA'
+        signals.loc[price_cross_wma_down_idx, 'signal_desc'] = f'价格下穿WMA{main_period}'
+        signals.loc[price_cross_wma_down_idx, 'confidence'] = 70.0
+        signals.loc[price_cross_wma_down_idx, 'position_size'] = 0.3
+        signals.loc[price_cross_wma_down_idx, 'risk_level'] = '中'
+        
+        # 多WMA排列形成多头排列信号
+        if len(self.periods) >= 3:
+            periods_sorted = sorted(self.periods)
+            
+            # 检查当前周期是否形成多头排列（短期WMA > 中期WMA > 长期WMA）
+            is_bullish_arrangement = True
+            for i in range(len(periods_sorted) - 1):
+                short_wma = self._result[f'WMA{periods_sorted[i]}']
+                long_wma = self._result[f'WMA{periods_sorted[i+1]}']
+                if not (short_wma.iloc[-1] > long_wma.iloc[-1]):
+                    is_bullish_arrangement = False
+                    break
+            
+            if is_bullish_arrangement:
+                # 最近5个周期形成多头排列
+                bullish_arr_idx = signals.index[-5:]
+                signals.loc[bullish_arr_idx, 'buy_signal'] = True
+                signals.loc[bullish_arr_idx, 'neutral_signal'] = False
+                signals.loc[bullish_arr_idx, 'trend'] = 1
+                signals.loc[bullish_arr_idx, 'signal_type'] = 'WMA多头排列'
+                signals.loc[bullish_arr_idx, 'signal_desc'] = 'WMA形成多头排列，短期均线位于长期均线上方'
+                signals.loc[bullish_arr_idx, 'confidence'] = 80.0
+                signals.loc[bullish_arr_idx, 'position_size'] = 0.5
+                signals.loc[bullish_arr_idx, 'risk_level'] = '低'
+            
+            # 检查当前周期是否形成空头排列（短期WMA < 中期WMA < 长期WMA）
+            is_bearish_arrangement = True
+            for i in range(len(periods_sorted) - 1):
+                short_wma = self._result[f'WMA{periods_sorted[i]}']
+                long_wma = self._result[f'WMA{periods_sorted[i+1]}']
+                if not (short_wma.iloc[-1] < long_wma.iloc[-1]):
+                    is_bearish_arrangement = False
+                    break
+            
+            if is_bearish_arrangement:
+                # 最近5个周期形成空头排列
+                bearish_arr_idx = signals.index[-5:]
+                signals.loc[bearish_arr_idx, 'sell_signal'] = True
+                signals.loc[bearish_arr_idx, 'neutral_signal'] = False
+                signals.loc[bearish_arr_idx, 'trend'] = -1
+                signals.loc[bearish_arr_idx, 'signal_type'] = 'WMA空头排列'
+                signals.loc[bearish_arr_idx, 'signal_desc'] = 'WMA形成空头排列，短期均线位于长期均线下方'
+                signals.loc[bearish_arr_idx, 'confidence'] = 80.0
+                signals.loc[bearish_arr_idx, 'position_size'] = 0.5
+                signals.loc[bearish_arr_idx, 'risk_level'] = '低'
+        
+        # 根据形态设置更多信号
+        for pattern in patterns:
+            pattern_idx = signals.index[-5:]  # 假设形态影响最近5个周期
+            
+            if '支撑' in pattern:
+                signals.loc[pattern_idx, 'buy_signal'] = True
+                signals.loc[pattern_idx, 'neutral_signal'] = False
+                signals.loc[pattern_idx, 'trend'] = 1
+                signals.loc[pattern_idx, 'signal_type'] = 'WMA支撑'
+                signals.loc[pattern_idx, 'signal_desc'] = pattern
+                signals.loc[pattern_idx, 'confidence'] = 75.0
+                signals.loc[pattern_idx, 'position_size'] = 0.4
+                signals.loc[pattern_idx, 'risk_level'] = '低'
+            
+            elif '阻力' in pattern:
+                signals.loc[pattern_idx, 'sell_signal'] = True
+                signals.loc[pattern_idx, 'neutral_signal'] = False
+                signals.loc[pattern_idx, 'trend'] = -1
+                signals.loc[pattern_idx, 'signal_type'] = 'WMA阻力'
+                signals.loc[pattern_idx, 'signal_desc'] = pattern
+                signals.loc[pattern_idx, 'confidence'] = 75.0
+                signals.loc[pattern_idx, 'position_size'] = 0.4
+                signals.loc[pattern_idx, 'risk_level'] = '低'
+        
+        # 设置止损价格
+        if 'low' in data.columns and 'high' in data.columns:
+            # 买入信号的止损设为最近的低点或者主WMA线下方
+            buy_indices = signals[signals['buy_signal']].index
+            if not buy_indices.empty:
+                for idx in buy_indices:
+                    if idx > data.index[10]:  # 确保有足够的历史数据
+                        lookback = 5
+                        # 使用最近低点和主WMA值的较小值作为止损
+                        recent_low = data.loc[idx-lookback:idx, 'low'].min()
+                        wma_stop = main_wma.loc[idx] * 0.98
+                        signals.loc[idx, 'stop_loss'] = min(recent_low, wma_stop)
+            
+            # 卖出信号的止损设为最近的高点或者主WMA线上方
+            sell_indices = signals[signals['sell_signal']].index
+            if not sell_indices.empty:
+                for idx in sell_indices:
+                    if idx > data.index[10]:  # 确保有足够的历史数据
+                        lookback = 5
+                        # 使用最近高点和主WMA值的较大值作为止损
+                        recent_high = data.loc[idx-lookback:idx, 'high'].max()
+                        wma_stop = main_wma.loc[idx] * 1.02
+                        signals.loc[idx, 'stop_loss'] = max(recent_high, wma_stop)
+        
+        return signals
 

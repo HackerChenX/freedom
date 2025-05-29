@@ -14,6 +14,12 @@ from typing import Dict, Type, Callable, Any, Optional, List
 
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
+from indicators.macd_score import MACDScore
+from indicators.kdj_score import KDJScore
+from indicators.rsi_score import RSIScore
+from indicators.boll_score import BOLLScore
+from indicators.scoring_framework import IndicatorScoreBase, IndicatorScoreManager
+from indicators.volume_score import VolumeScore
 
 logger = get_logger(__name__)
 
@@ -170,8 +176,111 @@ class IndicatorRegistry:
         except Exception as e:
             logger.error(f"从模块 {module_name} 自动注册指标失败: {e}")
 
+    def register_scoring_indicator(self, name: str, indicator_class: type):
+        """
+        注册评分指标类
+        
+        Args:
+            name: 指标名称
+            indicator_class: 指标类
+        """
+        if not issubclass(indicator_class, IndicatorScoreBase):
+            raise ValueError(f"指标类 {indicator_class.__name__} 必须继承自 IndicatorScoreBase")
+        
+        self._registry[name] = {
+            'class': indicator_class,
+            'display_name': name,
+            'description': indicator_class.__doc__,
+            'parameter_mapping': {}
+        }
+        logger.info(f"注册评分指标: {name} -> {indicator_class.__name__}")
+
+    def create_scoring_indicator(self, name: str, **kwargs) -> IndicatorScoreBase:
+        """
+        创建评分指标实例
+        
+        Args:
+            name: 指标名称
+            **kwargs: 指标参数
+            
+        Returns:
+            IndicatorScoreBase: 指标实例
+            
+        Raises:
+            ValueError: 如果指标未注册
+        """
+        if name not in self._registry:
+            available = list(self._registry.keys())
+            raise ValueError(f"未注册的评分指标: {name}. 可用指标: {available}")
+        
+        indicator_class = self._registry[name]['class']
+        return indicator_class(**kwargs)
+
+    def get_available_scoring_indicators(self) -> List[str]:
+        """
+        获取所有可用的评分指标名称
+        
+        Returns:
+            List[str]: 评分指标名称列表
+        """
+        return list(self._registry.keys())
+
+    def create_score_manager(self, indicator_configs: List[Dict[str, Any]]) -> IndicatorScoreManager:
+        """
+        创建指标评分管理器
+        
+        Args:
+            indicator_configs: 指标配置列表，每个配置包含name、weight和其他参数
+            
+        Returns:
+            IndicatorScoreManager: 评分管理器实例
+            
+        Example:
+            configs = [
+                {'name': 'macd_score', 'weight': 1.5, 'fast_period': 12},
+                {'name': 'kdj_score', 'weight': 1.2, 'n': 9},
+                {'name': 'rsi_score', 'weight': 1.0, 'period': 14}
+            ]
+            manager = registry.create_score_manager(configs)
+        """
+        manager = IndicatorScoreManager()
+        
+        for config in indicator_configs:
+            name = config.pop('name')
+            weight = config.pop('weight', 1.0)
+            
+            # 创建指标实例
+            indicator = self.create_scoring_indicator(name, weight=weight, **config)
+            
+            # 注册到管理器
+            manager.register_indicator(indicator, weight)
+            
+            logger.info(f"添加评分指标到管理器: {name}, 权重: {weight}")
+        
+        return manager
+
 # 导出 IndicatorRegistry 单例
 indicator_registry = IndicatorRegistry()
+
+# 自动注册评分指标
+def _register_scoring_indicators():
+    """自动注册所有评分指标"""
+    scoring_indicators = {
+        'macd_score': MACDScore,
+        'kdj_score': KDJScore,
+        'rsi_score': RSIScore,
+        'boll_score': BOLLScore,
+        'volume_score': VolumeScore,
+    }
+    
+    for name, indicator_class in scoring_indicators.items():
+        try:
+            indicator_registry.register_scoring_indicator(name, indicator_class)
+        except Exception as e:
+            logger.error(f"注册评分指标 {name} 失败: {e}")
+
+# 执行自动注册
+_register_scoring_indicators()
 
 # 定义指标常量枚举
 class IndicatorEnum(str, Enum):
@@ -197,6 +306,11 @@ class IndicatorEnum(str, Enum):
     OBV = "OBV"                               # 能量潮
     RSI = "RSI"                               # 相对强弱指数
     DIVERGENCE = "DIVERGENCE"                 # 背离
+    
+    # 新增增强指标
+    UNIFIED_MA = "UNIFIED_MA"                 # 统一移动平均线
+    ENHANCED_MACD = "ENHANCED_MACD"           # 增强版MACD
+    ENHANCED_RSI = "ENHANCED_RSI"             # 增强版RSI
 
 # 定义标准指标参数映射
 STANDARD_PARAMETER_MAPPING = {
@@ -217,5 +331,29 @@ STANDARD_PARAMETER_MAPPING = {
     },
     IndicatorEnum.ZXM_ABSORB: {
         "threshold": "absorb_threshold"
+    },
+    IndicatorEnum.ZXM_ELASTICITY_SCORE: {
+        "threshold": "threshold"
+    },
+    IndicatorEnum.ZXM_BUYPOINT_SCORE: {
+        "threshold": "threshold"
+    },
+    # 新增增强指标参数映射
+    IndicatorEnum.UNIFIED_MA: {
+        "periods": "periods",
+        "ma_type": "ma_type",
+        "price_column": "price_col"
+    },
+    IndicatorEnum.ENHANCED_MACD: {
+        "fast_period": "fast_period",
+        "slow_period": "slow_period",
+        "signal_period": "signal_period",
+        "price_column": "price_col",
+        "use_dual_macd": "use_secondary_macd"
+    },
+    IndicatorEnum.ENHANCED_RSI: {
+        "periods": "periods",
+        "price_column": "price_col",
+        "use_multi_period": "use_multi_period"
     }
 } 

@@ -12,6 +12,7 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any
 
 from indicators.base_indicator import BaseIndicator
+from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -85,6 +86,9 @@ class VR(BaseIndicator):
         
         # 计算VR均线
         result["vr_ma"] = result["vr"].rolling(window=self.ma_period).mean()
+        
+        # 存储结果
+        self._result = result
         
         return result
     
@@ -207,4 +211,451 @@ class VR(BaseIndicator):
         data["vr_change_rate"] = data["vr"].pct_change(periods=window) * 100
         
         return data
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算VR原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算VR
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        # 1. VR超买超卖评分
+        overbought_oversold_score = self._calculate_vr_overbought_oversold_score()
+        score += overbought_oversold_score
+        
+        # 2. VR与均线关系评分
+        ma_relation_score = self._calculate_vr_ma_relation_score()
+        score += ma_relation_score
+        
+        # 3. VR趋势评分
+        trend_score = self._calculate_vr_trend_score()
+        score += trend_score
+        
+        # 4. VR背离评分
+        divergence_score = self._calculate_vr_divergence_score(data)
+        score += divergence_score
+        
+        # 5. VR强度评分
+        strength_score = self._calculate_vr_strength_score()
+        score += strength_score
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别VR技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算VR
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        # 1. 检测VR超买超卖形态
+        overbought_oversold_patterns = self._detect_vr_overbought_oversold_patterns()
+        patterns.extend(overbought_oversold_patterns)
+        
+        # 2. 检测VR与均线关系形态
+        ma_relation_patterns = self._detect_vr_ma_relation_patterns()
+        patterns.extend(ma_relation_patterns)
+        
+        # 3. 检测VR趋势形态
+        trend_patterns = self._detect_vr_trend_patterns()
+        patterns.extend(trend_patterns)
+        
+        # 4. 检测VR背离形态
+        divergence_patterns = self._detect_vr_divergence_patterns(data)
+        patterns.extend(divergence_patterns)
+        
+        # 5. 检测VR强度形态
+        strength_patterns = self._detect_vr_strength_patterns()
+        patterns.extend(strength_patterns)
+        
+        return patterns
+    
+    def _calculate_vr_overbought_oversold_score(self) -> pd.Series:
+        """
+        计算VR超买超卖评分
+        
+        Returns:
+            pd.Series: 超买超卖评分
+        """
+        overbought_oversold_score = pd.Series(0.0, index=self._result.index)
+        
+        vr_values = self._result['vr']
+        
+        # VR超卖区域（VR < 70）+20分
+        oversold_condition = vr_values < 70
+        overbought_oversold_score += oversold_condition * 20
+        
+        # VR超买区域（VR > 160）-20分
+        overbought_condition = vr_values > 160
+        overbought_oversold_score -= overbought_condition * 20
+        
+        # VR上穿70+15分
+        vr_cross_up_70 = crossover(vr_values, 70)
+        overbought_oversold_score += vr_cross_up_70 * 15
+        
+        # VR下穿160-15分
+        vr_cross_down_160 = crossunder(vr_values, 160)
+        overbought_oversold_score -= vr_cross_down_160 * 15
+        
+        # VR极度超卖（VR < 50）额外+15分
+        extreme_oversold = vr_values < 50
+        overbought_oversold_score += extreme_oversold * 15
+        
+        # VR极度超买（VR > 200）额外-15分
+        extreme_overbought = vr_values > 200
+        overbought_oversold_score -= extreme_overbought * 15
+        
+        return overbought_oversold_score
+    
+    def _calculate_vr_ma_relation_score(self) -> pd.Series:
+        """
+        计算VR与均线关系评分
+        
+        Returns:
+            pd.Series: 均线关系评分
+        """
+        ma_relation_score = pd.Series(0.0, index=self._result.index)
+        
+        vr_values = self._result['vr']
+        vr_ma_values = self._result['vr_ma']
+        
+        # VR在均线上方+8分
+        vr_above_ma = vr_values > vr_ma_values
+        ma_relation_score += vr_above_ma * 8
+        
+        # VR在均线下方-8分
+        vr_below_ma = vr_values < vr_ma_values
+        ma_relation_score -= vr_below_ma * 8
+        
+        # VR上穿均线+20分
+        vr_cross_up_ma = crossover(vr_values, vr_ma_values)
+        ma_relation_score += vr_cross_up_ma * 20
+        
+        # VR下穿均线-20分
+        vr_cross_down_ma = crossunder(vr_values, vr_ma_values)
+        ma_relation_score -= vr_cross_down_ma * 20
+        
+        return ma_relation_score
+    
+    def _calculate_vr_trend_score(self) -> pd.Series:
+        """
+        计算VR趋势评分
+        
+        Returns:
+            pd.Series: 趋势评分
+        """
+        trend_score = pd.Series(0.0, index=self._result.index)
+        
+        vr_values = self._result['vr']
+        
+        # VR上升趋势+10分
+        vr_rising = vr_values > vr_values.shift(1)
+        trend_score += vr_rising * 10
+        
+        # VR下降趋势-10分
+        vr_falling = vr_values < vr_values.shift(1)
+        trend_score -= vr_falling * 10
+        
+        # VR连续上升（3个周期）+15分
+        if len(vr_values) >= 3:
+            consecutive_rising = (
+                (vr_values > vr_values.shift(1)) &
+                (vr_values.shift(1) > vr_values.shift(2)) &
+                (vr_values.shift(2) > vr_values.shift(3))
+            )
+            trend_score += consecutive_rising * 15
+        
+        # VR连续下降（3个周期）-15分
+        if len(vr_values) >= 3:
+            consecutive_falling = (
+                (vr_values < vr_values.shift(1)) &
+                (vr_values.shift(1) < vr_values.shift(2)) &
+                (vr_values.shift(2) < vr_values.shift(3))
+            )
+            trend_score -= consecutive_falling * 15
+        
+        return trend_score
+    
+    def _calculate_vr_divergence_score(self, data: pd.DataFrame) -> pd.Series:
+        """
+        计算VR背离评分
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.Series: 背离评分
+        """
+        divergence_score = pd.Series(0.0, index=self._result.index)
+        
+        if 'close' not in data.columns:
+            return divergence_score
+        
+        close_price = data['close']
+        vr_values = self._result['vr']
+        
+        # 简化的背离检测
+        if len(close_price) >= 20:
+            # 检查最近20个周期的价格和VR趋势
+            recent_periods = 20
+            
+            for i in range(recent_periods, len(close_price)):
+                # 寻找最近的价格和VR峰值/谷值
+                price_window = close_price.iloc[i-recent_periods:i+1]
+                vr_window = vr_values.iloc[i-recent_periods:i+1]
+                
+                # 检查是否为价格新高/新低
+                current_price = close_price.iloc[i]
+                current_vr = vr_values.iloc[i]
+                
+                price_is_high = current_price >= price_window.max()
+                price_is_low = current_price <= price_window.min()
+                vr_is_high = current_vr >= vr_window.max()
+                vr_is_low = current_vr <= vr_window.min()
+                
+                # 正背离：价格创新低但VR未创新低
+                if price_is_low and not vr_is_low:
+                    divergence_score.iloc[i] += 25
+                
+                # 负背离：价格创新高但VR未创新高
+                elif price_is_high and not vr_is_high:
+                    divergence_score.iloc[i] -= 25
+        
+        return divergence_score
+    
+    def _calculate_vr_strength_score(self) -> pd.Series:
+        """
+        计算VR强度评分
+        
+        Returns:
+            pd.Series: 强度评分
+        """
+        strength_score = pd.Series(0.0, index=self._result.index)
+        
+        vr_values = self._result['vr']
+        
+        # 计算VR变化幅度
+        vr_change = vr_values.diff()
+        
+        # VR大幅上升（变化>20）+12分
+        large_rise = vr_change > 20
+        strength_score += large_rise * 12
+        
+        # VR大幅下降（变化<-20）-12分
+        large_fall = vr_change < -20
+        strength_score -= large_fall * 12
+        
+        # VR快速变化（绝对值>30）额外±8分
+        rapid_change = np.abs(vr_change) > 30
+        rapid_change_direction = np.sign(vr_change)
+        strength_score += rapid_change * rapid_change_direction * 8
+        
+        return strength_score
+    
+    def _detect_vr_overbought_oversold_patterns(self) -> List[str]:
+        """
+        检测VR超买超卖形态
+        
+        Returns:
+            List[str]: 超买超卖形态列表
+        """
+        patterns = []
+        
+        vr_values = self._result['vr']
+        
+        if len(vr_values) > 0:
+            current_vr = vr_values.iloc[-1]
+            
+            if pd.isna(current_vr):
+                return patterns
+            
+            if current_vr < 50:
+                patterns.append("VR极度超卖")
+            elif current_vr < 70:
+                patterns.append("VR超卖")
+            elif current_vr > 200:
+                patterns.append("VR极度超买")
+            elif current_vr > 160:
+                patterns.append("VR超买")
+            elif 90 <= current_vr <= 120:
+                patterns.append("VR中性区域")
+        
+        # 检查最近的阈值穿越
+        recent_periods = min(5, len(vr_values))
+        recent_vr = vr_values.tail(recent_periods)
+        
+        if crossover(recent_vr, 70).any():
+            patterns.append("VR上穿超卖线")
+        
+        if crossunder(recent_vr, 160).any():
+            patterns.append("VR下穿超买线")
+        
+        return patterns
+    
+    def _detect_vr_ma_relation_patterns(self) -> List[str]:
+        """
+        检测VR与均线关系形态
+        
+        Returns:
+            List[str]: 均线关系形态列表
+        """
+        patterns = []
+        
+        vr_values = self._result['vr']
+        vr_ma_values = self._result['vr_ma']
+        
+        # 检查最近的均线穿越
+        recent_periods = min(5, len(vr_values))
+        recent_vr = vr_values.tail(recent_periods)
+        recent_vr_ma = vr_ma_values.tail(recent_periods)
+        
+        if crossover(recent_vr, recent_vr_ma).any():
+            patterns.append("VR上穿均线")
+        
+        if crossunder(recent_vr, recent_vr_ma).any():
+            patterns.append("VR下穿均线")
+        
+        # 检查当前位置
+        if len(vr_values) > 0 and len(vr_ma_values) > 0:
+            current_vr = vr_values.iloc[-1]
+            current_vr_ma = vr_ma_values.iloc[-1]
+            
+            if not pd.isna(current_vr) and not pd.isna(current_vr_ma):
+                if current_vr > current_vr_ma:
+                    patterns.append("VR均线上方")
+                elif current_vr < current_vr_ma:
+                    patterns.append("VR均线下方")
+                else:
+                    patterns.append("VR均线位置")
+        
+        return patterns
+    
+    def _detect_vr_trend_patterns(self) -> List[str]:
+        """
+        检测VR趋势形态
+        
+        Returns:
+            List[str]: 趋势形态列表
+        """
+        patterns = []
+        
+        vr_values = self._result['vr']
+        
+        # 检查VR趋势
+        if len(vr_values) >= 3:
+            recent_3 = vr_values.tail(3)
+            if len(recent_3) == 3 and not recent_3.isna().any():
+                if (recent_3.iloc[2] > recent_3.iloc[1] > recent_3.iloc[0]):
+                    patterns.append("VR连续上升")
+                elif (recent_3.iloc[2] < recent_3.iloc[1] < recent_3.iloc[0]):
+                    patterns.append("VR连续下降")
+        
+        # 检查当前趋势
+        if len(vr_values) >= 2:
+            current_vr = vr_values.iloc[-1]
+            prev_vr = vr_values.iloc[-2]
+            
+            if not pd.isna(current_vr) and not pd.isna(prev_vr):
+                if current_vr > prev_vr:
+                    patterns.append("VR上升")
+                elif current_vr < prev_vr:
+                    patterns.append("VR下降")
+                else:
+                    patterns.append("VR平稳")
+        
+        return patterns
+    
+    def _detect_vr_divergence_patterns(self, data: pd.DataFrame) -> List[str]:
+        """
+        检测VR背离形态
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            List[str]: 背离形态列表
+        """
+        patterns = []
+        
+        if 'close' not in data.columns:
+            return patterns
+        
+        close_price = data['close']
+        vr_values = self._result['vr']
+        
+        if len(close_price) >= 20:
+            # 检查最近20个周期的趋势
+            recent_price = close_price.tail(20)
+            recent_vr = vr_values.tail(20)
+            
+            # 简化的背离检测
+            price_trend = recent_price.iloc[-1] - recent_price.iloc[0]
+            vr_trend = recent_vr.iloc[-1] - recent_vr.iloc[0]
+            
+            # 背离检测
+            if price_trend < -0.02 and vr_trend > 5:  # 价格下跌但VR上升
+                patterns.append("VR正背离")
+            elif price_trend > 0.02 and vr_trend < -5:  # 价格上涨但VR下降
+                patterns.append("VR负背离")
+            elif abs(price_trend) < 0.01 and abs(vr_trend) < 2:
+                patterns.append("VR价格同步")
+        
+        return patterns
+    
+    def _detect_vr_strength_patterns(self) -> List[str]:
+        """
+        检测VR强度形态
+        
+        Returns:
+            List[str]: 强度形态列表
+        """
+        patterns = []
+        
+        vr_values = self._result['vr']
+        
+        if len(vr_values) >= 2:
+            current_vr = vr_values.iloc[-1]
+            prev_vr = vr_values.iloc[-2]
+            
+            if not pd.isna(current_vr) and not pd.isna(prev_vr):
+                vr_change = current_vr - prev_vr
+                
+                if vr_change > 30:
+                    patterns.append("VR急速上升")
+                elif vr_change > 20:
+                    patterns.append("VR大幅上升")
+                elif vr_change < -30:
+                    patterns.append("VR急速下降")
+                elif vr_change < -20:
+                    patterns.append("VR大幅下降")
+                elif abs(vr_change) <= 5:
+                    patterns.append("VR变化平缓")
+        
+        return patterns
 

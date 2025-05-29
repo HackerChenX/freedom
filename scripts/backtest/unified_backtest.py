@@ -217,7 +217,7 @@ class UnifiedBacktest:
                 return {}
                 
             # 计算所有技术指标
-            result = self._calculate_all_indicators(data, buy_index)
+            result = self._calculate_all_indicators(data, buy_index, days_before=days_before)
             
             return result
                 
@@ -227,52 +227,67 @@ class UnifiedBacktest:
             
     def _calculate_all_indicators(self, data: pd.DataFrame, buy_index: int, days_before: int = 10) -> Dict[str, Any]:
         """
-        计算所有技术指标并进行形态识别
+        计算所有技术指标
         
         Args:
             data: 股票数据
             buy_index: 买点索引
-            days_before: 分析买点前几天的数据
+            days_before: 回溯分析天数
             
         Returns:
-            Dict: 分析结果，包含各指标值和识别出的形态
+            Dict: 技术指标结果
         """
-        result = {
-            'indicators': {},
-            'patterns': []
-        }
-        
         try:
-            # 股票基础数据
-            close = data['close'].values
-            open_price = data['open'].values
-            high = data['high'].values
-            low = data['low'].values
-            volume = data['volume'].values if 'volume' in data.columns else None
+            # 初始化结果字典
+            result = {
+                'indicators': {},
+                'patterns': []
+            }
             
-            # 基本指标计算
+            # 检查数据长度是否足够
+            if buy_index < days_before:
+                logger.warning(f"数据长度不足，需要至少{days_before}天数据进行分析")
+                return result
+                
+            # 计算各类指标
             self._calculate_ma_indicators(data, buy_index, result)
             self._calculate_macd_indicators(data, buy_index, result)
             self._calculate_kdj_indicators(data, buy_index, result)
             self._calculate_rsi_indicators(data, buy_index, result)
             self._calculate_boll_indicators(data, buy_index, result)
             self._calculate_vol_indicators(data, buy_index, result)
+            self._calculate_bias_indicators(data, buy_index, result)
+            self._calculate_sar_indicators(data, buy_index, result)
+            self._calculate_obv_indicators(data, buy_index, result)
+            self._calculate_dmi_indicators(data, buy_index, result)
+            self._calculate_wr_indicators(data, buy_index, result)
+            self._calculate_cci_indicators(data, buy_index, result)
+            self._calculate_roc_indicators(data, buy_index, result)
+            self._calculate_vosc_indicators(data, buy_index, result)
+            self._calculate_mfi_indicators(data, buy_index, result)
+            self._calculate_stochrsi_indicators(data, buy_index, result)
+            self._calculate_momentum_indicators(data, buy_index, result)
+            self._calculate_rsima_indicators(data, buy_index, result)
+            self._calculate_intraday_volatility_indicators(data, buy_index, result)
+            self._calculate_atr_indicators(data, buy_index, result)
+            self._calculate_emv_indicators(data, buy_index, result)
+            self._calculate_volume_ratio_indicators(data, buy_index, result)
             
-            # 进阶指标计算
-            self._calculate_advanced_indicators(data, buy_index, result)
-            
-            # ZXM体系指标计算
+            # 计算ZXM指标
             self._calculate_zxm_indicators(data, buy_index, result)
             
-            # 特殊形态识别
-            self._identify_patterns(data, buy_index, days_before, result)
+            # 计算形态特征
+            self._calculate_patterns(data, buy_index, days_before, result)
+            
+            # 排序结果中的形态
+            result['patterns'] = sorted(result['patterns'])
             
             return result
             
         except Exception as e:
             logger.error(f"计算技术指标时出错: {e}")
-            return result
-            
+            return {'indicators': {}, 'patterns': []}
+
     def _calculate_ma_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
         """
         计算均线指标
@@ -507,40 +522,71 @@ class UnifiedBacktest:
             result: 结果字典，将被修改
         """
         try:
-            # 计算RSI指标，周期为6、12、24
-            rsi6_indicator = IndicatorFactory.create_indicator("RSI", period=6)
-            rsi6_result = rsi6_indicator.compute(data)
+            # 计算RSI指标，使用双周期策略：6周期和14周期
+            rsi_indicator = IndicatorFactory.create_indicator("RSI", periods=[6, 14])
+            rsi_result = rsi_indicator.compute(data)
             
-            rsi12_indicator = IndicatorFactory.create_indicator("RSI", period=12)
-            rsi12_result = rsi12_indicator.compute(data)
-            
-            rsi24_indicator = IndicatorFactory.create_indicator("RSI", period=24)
-            rsi24_result = rsi24_indicator.compute(data)
-            
-            # 提取RSI值，处理不同的列名
-            rsi6 = rsi6_result['RSI6'].values if 'RSI6' in rsi6_result.columns else rsi6_result['rsi'].values
-            rsi12 = rsi12_result['RSI12'].values if 'RSI12' in rsi12_result.columns else rsi12_result['rsi'].values
-            rsi24 = rsi24_result['RSI24'].values if 'RSI24' in rsi24_result.columns else rsi24_result['rsi'].values
+            # 提取RSI值
+            rsi6 = rsi_result['RSI6'].values
+            rsi14 = rsi_result['RSI14'].values
             
             result['indicators']['rsi'] = {
                 'rsi6': rsi6[buy_index],
-                'rsi12': rsi12[buy_index],
-                'rsi24': rsi24[buy_index],
+                'rsi14': rsi14[buy_index],
                 'rsi6_prev': rsi6[buy_index-1] if buy_index > 0 else None,
-                'rsi12_prev': rsi12[buy_index-1] if buy_index > 0 else None,
-                'rsi24_prev': rsi24[buy_index-1] if buy_index > 0 else None,
+                'rsi14_prev': rsi14[buy_index-1] if buy_index > 0 else None,
                 'rsi6_diff': rsi6[buy_index] - rsi6[buy_index-1] if buy_index > 0 else None,
-                'rsi12_diff': rsi12[buy_index] - rsi12[buy_index-1] if buy_index > 0 else None,
-                'rsi24_diff': rsi24[buy_index] - rsi24[buy_index-1] if buy_index > 0 else None
+                'rsi14_diff': rsi14[buy_index] - rsi14[buy_index-1] if buy_index > 0 else None
             }
+            
+            # 添加RSI双周期策略的指标
+            if 'dual_rsi_buy_signal' in rsi_result.columns:
+                result['indicators']['rsi']['dual_rsi_buy_signal'] = bool(rsi_result['dual_rsi_buy_signal'].values[buy_index])
+                result['indicators']['rsi']['dual_rsi_sell_signal'] = bool(rsi_result['dual_rsi_sell_signal'].values[buy_index])
+                result['indicators']['rsi']['dual_rsi_bullish'] = bool(rsi_result['dual_rsi_bullish'].values[buy_index])
+                result['indicators']['rsi']['dual_rsi_bearish'] = bool(rsi_result['dual_rsi_bearish'].values[buy_index])
+                
+                # 添加背离信号
+                if 'dual_rsi_top_divergence' in rsi_result.columns:
+                    result['indicators']['rsi']['dual_rsi_top_divergence'] = bool(rsi_result['dual_rsi_top_divergence'].values[buy_index])
+                if 'dual_rsi_bottom_divergence' in rsi_result.columns:
+                    result['indicators']['rsi']['dual_rsi_bottom_divergence'] = bool(rsi_result['dual_rsi_bottom_divergence'].values[buy_index])
             
             # RSI超卖反弹
             if buy_index > 0 and rsi6[buy_index] > rsi6[buy_index-1] and rsi6[buy_index-1] < 30:
                 result['patterns'].append('RSI超卖反弹')
                 
             # RSI金叉
-            if buy_index > 0 and rsi6[buy_index-1] < rsi12[buy_index-1] and rsi6[buy_index] > rsi12[buy_index]:
+            if buy_index > 0 and rsi6[buy_index-1] < rsi14[buy_index-1] and rsi6[buy_index] > rsi14[buy_index]:
                 result['patterns'].append('RSI金叉')
+            
+            # RSI死叉
+            if buy_index > 0 and rsi6[buy_index-1] > rsi14[buy_index-1] and rsi6[buy_index] < rsi14[buy_index]:
+                result['patterns'].append('RSI死叉')
+                
+            # 双周期RSI买入信号
+            if 'dual_rsi_buy_signal' in rsi_result.columns and rsi_result['dual_rsi_buy_signal'].values[buy_index]:
+                result['patterns'].append('双周期RSI买入信号')
+            
+            # 双周期RSI卖出信号
+            if 'dual_rsi_sell_signal' in rsi_result.columns and rsi_result['dual_rsi_sell_signal'].values[buy_index]:
+                result['patterns'].append('双周期RSI卖出信号')
+            
+            # 双周期RSI多头趋势
+            if 'dual_rsi_bullish' in rsi_result.columns and rsi_result['dual_rsi_bullish'].values[buy_index]:
+                result['patterns'].append('双周期RSI多头趋势')
+            
+            # 双周期RSI空头趋势
+            if 'dual_rsi_bearish' in rsi_result.columns and rsi_result['dual_rsi_bearish'].values[buy_index]:
+                result['patterns'].append('双周期RSI空头趋势')
+            
+            # 双周期RSI顶背离
+            if 'dual_rsi_top_divergence' in rsi_result.columns and rsi_result['dual_rsi_top_divergence'].values[buy_index]:
+                result['patterns'].append('双周期RSI顶背离')
+            
+            # 双周期RSI底背离
+            if 'dual_rsi_bottom_divergence' in rsi_result.columns and rsi_result['dual_rsi_bottom_divergence'].values[buy_index]:
+                result['patterns'].append('双周期RSI底背离')
                 
             # RSI底背离检测
             if buy_index >= 20:
@@ -550,35 +596,6 @@ class UnifiedBacktest:
                 
                 if curr_price > min_price and rsi6[min_price_idx] > rsi6[buy_index]:
                     result['patterns'].append('RSI底背离')
-                    
-            # 使用RSIMA指标
-            try:
-                rsima_indicator = IndicatorFactory.create_indicator("RSIMA")
-                rsima_result = rsima_indicator.compute(data)
-                
-                rsi_value = rsima_result['rsi'].values
-                rsi_ma = rsima_result['rsi_ma'].values
-                trend_strength = rsima_result['trend_strength'].values if 'trend_strength' in rsima_result.columns else np.zeros_like(rsi_value)
-                
-                result['indicators']['rsima'] = {
-                    'rsi': rsi_value[buy_index],
-                    'rsi_ma': rsi_ma[buy_index],
-                    'trend_strength': trend_strength[buy_index],
-                    'rsi_prev': rsi_value[buy_index-1] if buy_index > 0 else None,
-                    'rsi_ma_prev': rsi_ma[buy_index-1] if buy_index > 0 else None
-                }
-                
-                # RSI金叉均线
-                if buy_index > 0 and rsi_value[buy_index-1] < rsi_ma[buy_index-1] and rsi_value[buy_index] > rsi_ma[buy_index]:
-                    result['patterns'].append('RSI金叉均线')
-                
-                # 检测强势趋势
-                if trend_strength[buy_index] > 80:
-                    result['patterns'].append('RSIMA强势趋势')
-                elif trend_strength[buy_index] > 50:
-                    result['patterns'].append('RSIMA中等趋势')
-            except Exception as e:
-                logger.warning(f"计算RSIMA指标失败: {e}")
                 
         except Exception as e:
             logger.error(f"计算RSI指标时出错: {e}")
@@ -603,11 +620,16 @@ class UnifiedBacktest:
             
             close = data['close'].values
             
+            # 计算带宽和带宽变化率
+            bandwidth = boll_indicator.get_bandwidth().values
+            bandwidth_rate = boll_indicator.get_bandwidth_rate(periods=10).values
+            
             result['indicators']['boll'] = {
                 'upper': upper[buy_index],
                 'middle': middle[buy_index],
                 'lower': lower[buy_index],
-                'width': (upper[buy_index] - lower[buy_index]) / middle[buy_index] if middle[buy_index] > 0 else None,
+                'width': bandwidth[buy_index],
+                'width_rate': bandwidth_rate[buy_index] if not np.isnan(bandwidth_rate[buy_index]) else None,
                 'close_position': (close[buy_index] - lower[buy_index]) / (upper[buy_index] - lower[buy_index]) if (upper[buy_index] - lower[buy_index]) > 0 else None
             }
             
@@ -621,15 +643,31 @@ class UnifiedBacktest:
             if buy_index > 0 and close[buy_index-1] < lower[buy_index-1] and close[buy_index] > lower[buy_index]:
                 result['patterns'].append('BOLL下轨支撑反弹')
                 
+            # 带宽变化率分析
+            if buy_index > 10 and not np.isnan(bandwidth_rate[buy_index]):
+                # 带宽收缩超过15%
+                if bandwidth_rate[buy_index] < -15:
+                    result['patterns'].append('BOLL带宽快速收缩')
+                
+                # 带宽扩张超过20%
+                if bandwidth_rate[buy_index] > 20:
+                    result['patterns'].append('BOLL带宽快速扩张')
+                
+                # 带宽由收缩转为扩张
+                if bandwidth_rate[buy_index] > 0 and bandwidth_rate[buy_index-1] < 0:
+                    # 计算之前5个周期的平均带宽变化率
+                    prev_avg_rate = np.mean(bandwidth_rate[buy_index-5:buy_index])
+                    if prev_avg_rate < -5:  # 之前是明显的收缩趋势
+                        result['patterns'].append('BOLL带宽收缩转扩张')
+            
             # BOLL带宽收窄后放大
             if buy_index > 5:
-                width_now = (upper[buy_index] - lower[buy_index]) / middle[buy_index] if middle[buy_index] > 0 else 0
-                width_prev = (upper[buy_index-1] - lower[buy_index-1]) / middle[buy_index-1] if middle[buy_index-1] > 0 else 0
+                width_now = bandwidth[buy_index]
+                width_prev = bandwidth[buy_index-1]
                 width_min = float('inf')
                 
                 for i in range(buy_index-5, buy_index):
-                    width = (upper[i] - lower[i]) / middle[i] if middle[i] > 0 else 0
-                    width_min = min(width_min, width)
+                    width_min = min(width_min, bandwidth[i])
                 
                 if width_now > width_prev and width_prev <= width_min:
                     result['patterns'].append('BOLL带宽收窄后放大')
@@ -1057,9 +1095,10 @@ class UnifiedBacktest:
                 
             # 计算ZXM买点-回踩均线指标
             try:
-                zxm_ma_callback = IndicatorFactory.create_indicator("ZXM_MA_CALLBACK", callback_percent=4.0)
+                zxm_ma_callback = IndicatorFactory.create_indicator("ZXM_MA_CALLBACK")
                 zxm_ma_callback_result = zxm_ma_callback.compute(data)
                 
+                ma_ratio = zxm_ma_callback_result['MA_RATIO'].values if 'MA_RATIO' in zxm_ma_callback_result.columns else np.zeros(len(data))
                 a20 = zxm_ma_callback_result['A20'].values if 'A20' in zxm_ma_callback_result.columns else np.zeros(len(data), dtype=bool)
                 a30 = zxm_ma_callback_result['A30'].values if 'A30' in zxm_ma_callback_result.columns else np.zeros(len(data), dtype=bool)
                 a60 = zxm_ma_callback_result['A60'].values if 'A60' in zxm_ma_callback_result.columns else np.zeros(len(data), dtype=bool)
@@ -1080,37 +1119,97 @@ class UnifiedBacktest:
             except Exception as e:
                 logger.warning(f"计算ZXM回踩均线买点指标失败: {e}")
                 
-            # 计算各类指标满足情况 - 但不再合并为一个总得分
+            # 直接使用ZXM弹性评分指标
             try:
-                # 统计满足的ZXM指标数量
-                trend_indicators = result['indicators']['zxm_trend'].keys() if 'zxm_trend' in result['indicators'] else []
-                elasticity_indicators = result['indicators']['zxm_elasticity'].keys() if 'zxm_elasticity' in result['indicators'] else []
-                buypoint_indicators = result['indicators']['zxm_buypoint'].keys() if 'zxm_buypoint' in result['indicators'] else []
+                zxm_elasticity_score = IndicatorFactory.create_indicator("ZXM_ELASTICITY_SCORE", threshold=75)
+                zxm_elasticity_score_result = zxm_elasticity_score.compute(data)
                 
-                trend_count = sum(1 for ind in trend_indicators if result['indicators']['zxm_trend'][ind]['signal'])
-                elasticity_count = sum(1 for ind in elasticity_indicators if result['indicators']['zxm_elasticity'][ind]['signal'])
-                buypoint_count = sum(1 for ind in buypoint_indicators if result['indicators']['zxm_buypoint'][ind]['signal'])
+                elasticity_score = zxm_elasticity_score_result['ElasticityScore'].values if 'ElasticityScore' in zxm_elasticity_score_result.columns else np.zeros(len(data))
+                elasticity_signal = zxm_elasticity_score_result['Signal'].values if 'Signal' in zxm_elasticity_score_result.columns else np.zeros(len(data), dtype=bool)
                 
-                # 计算各类指标得分
-                trend_score = (trend_count / len(trend_indicators)) * 100 if trend_indicators else 0
-                elasticity_score = (elasticity_count / len(elasticity_indicators)) * 100 if elasticity_indicators else 0
-                buypoint_score = (buypoint_count / len(buypoint_indicators)) * 100 if buypoint_indicators else 0
+                result['indicators']['zxm_elasticity_score'] = {
+                    'score': elasticity_score[buy_index],
+                    'signal': bool(elasticity_signal[buy_index])
+                }
                 
-                # 将各部分得分单独保存，不计算综合得分
-                result['indicators']['zxm_trend_score'] = trend_score
-                result['indicators']['zxm_elasticity_score'] = elasticity_score
-                result['indicators']['zxm_buypoint_score'] = buypoint_score
-                
-                # 添加单独的买点形态
-                if trend_score >= 50:
-                    result['patterns'].append('ZXM趋势满足')
-                if elasticity_score >= 50:
-                    result['patterns'].append('ZXM弹性满足')
-                if buypoint_score >= 50:
-                    result['patterns'].append('ZXM买点满足')
-                
+                # 添加ZXM弹性评分形态
+                if elasticity_signal[buy_index]:
+                    result['patterns'].append('ZXM弹性评分满足')
             except Exception as e:
-                logger.warning(f"计算ZXM各部分指标得分失败: {e}")
+                logger.warning(f"计算ZXM弹性评分指标失败: {e}")
+                
+                # 如果直接使用评分指标失败，则回退到旧的手动计算方式
+                try:
+                    # 统计满足的ZXM弹性指标数量
+                    elasticity_indicators = result['indicators']['zxm_elasticity'].keys() if 'zxm_elasticity' in result['indicators'] else []
+                    elasticity_count = sum(1 for ind in elasticity_indicators if result['indicators']['zxm_elasticity'][ind]['signal'])
+                    elasticity_score = (elasticity_count / len(elasticity_indicators)) * 100 if elasticity_indicators else 0
+                    
+                    result['indicators']['zxm_elasticity_score'] = {
+                        'score': elasticity_score,
+                        'signal': elasticity_score >= 75
+                    }
+                    
+                    # 添加ZXM弹性满足形态
+                    if elasticity_score >= 75:
+                        result['patterns'].append('ZXM弹性满足')
+                except Exception as e2:
+                    logger.error(f"计算ZXM弹性评分指标(手动计算方式)失败: {e2}")
+            
+            # 直接使用ZXM买点评分指标
+            try:
+                zxm_buypoint_score = IndicatorFactory.create_indicator("ZXM_BUYPOINT_SCORE", threshold=75)
+                zxm_buypoint_score_result = zxm_buypoint_score.compute(data)
+                
+                buypoint_score = zxm_buypoint_score_result['BuyPointScore'].values if 'BuyPointScore' in zxm_buypoint_score_result.columns else np.zeros(len(data))
+                buypoint_signal = zxm_buypoint_score_result['Signal'].values if 'Signal' in zxm_buypoint_score_result.columns else np.zeros(len(data), dtype=bool)
+                
+                result['indicators']['zxm_buypoint_score'] = {
+                    'score': buypoint_score[buy_index],
+                    'signal': bool(buypoint_signal[buy_index])
+                }
+                
+                # 添加ZXM买点评分形态
+                if buypoint_signal[buy_index]:
+                    result['patterns'].append('ZXM买点评分满足')
+            except Exception as e:
+                logger.warning(f"计算ZXM买点评分指标失败: {e}")
+                
+                # 如果直接使用评分指标失败，则回退到旧的手动计算方式
+                try:
+                    # 统计满足的ZXM买点指标数量
+                    buypoint_indicators = result['indicators']['zxm_buypoint'].keys() if 'zxm_buypoint' in result['indicators'] else []
+                    buypoint_count = sum(1 for ind in buypoint_indicators if result['indicators']['zxm_buypoint'][ind]['signal'])
+                    buypoint_score = (buypoint_count / len(buypoint_indicators)) * 100 if buypoint_indicators else 0
+                    
+                    result['indicators']['zxm_buypoint_score'] = {
+                        'score': buypoint_score,
+                        'signal': buypoint_score >= 75
+                    }
+                    
+                    # 添加ZXM买点满足形态
+                    if buypoint_score >= 75:
+                        result['patterns'].append('ZXM买点满足')
+                except Exception as e2:
+                    logger.error(f"计算ZXM买点评分指标(手动计算方式)失败: {e2}")
+            
+            # 计算ZXM趋势评分
+            try:
+                # 统计满足的ZXM趋势指标数量
+                trend_indicators = result['indicators']['zxm_trend'].keys() if 'zxm_trend' in result['indicators'] else []
+                trend_count = sum(1 for ind in trend_indicators if result['indicators']['zxm_trend'][ind]['signal'])
+                trend_score = (trend_count / len(trend_indicators)) * 100 if trend_indicators else 0
+                
+                result['indicators']['zxm_trend_score'] = {
+                    'score': trend_score,
+                    'signal': trend_score >= 75
+                }
+                
+                # 添加ZXM趋势满足形态
+                if trend_score >= 75:
+                    result['patterns'].append('ZXM趋势满足')
+            except Exception as e:
+                logger.error(f"计算ZXM趋势评分失败: {e}")
                 
         except Exception as e:
             logger.error(f"计算ZXM体系指标时出错: {e}")
@@ -1971,34 +2070,634 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"保存Markdown结果失败: {str(e)}")
             
-def analyze_buypoint_indicators(input_file: str, pattern_type: str, output_file: str) -> None:
-    """
-    分析买点的技术指标
+    def _calculate_sar_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算SAR指标（抛物线转向）
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典，将被修改
+        """
+        try:
+            # 计算SAR指标
+            sar_indicator = IndicatorFactory.create_indicator("SAR", acceleration=0.02, maximum=0.2)
+            sar_result = sar_indicator.compute(data)
+            
+            sar = sar_result['SAR'].values
+            close = data['close'].values
+            
+            # 当前状态判断：SAR在价格上方为空头市场，SAR在价格下方为多头市场
+            is_bullish = close[buy_index] > sar[buy_index]
+            
+            result['indicators']['sar'] = {
+                'sar': sar[buy_index],
+                'close': close[buy_index],
+                'is_bullish': is_bullish,
+                'sar_prev': sar[buy_index-1] if buy_index > 0 else None,
+                'close_prev': close[buy_index-1] if buy_index > 0 else None
+            }
+            
+            # 检测SAR转向信号
+            if buy_index > 0:
+                # 由空头转为多头（买入信号）
+                if close[buy_index-1] <= sar[buy_index-1] and close[buy_index] > sar[buy_index]:
+                    result['patterns'].append('SAR由空转多')
+                
+                # 由多头转为空头（卖出信号）
+                if close[buy_index-1] >= sar[buy_index-1] and close[buy_index] < sar[buy_index]:
+                    result['patterns'].append('SAR由多转空')
+                    
+            # SAR与其他指标的配合
+            if is_bullish and 'ma' in result['indicators']:
+                ma20 = result['indicators']['ma'].get('ma20')
+                if ma20 and close[buy_index] > ma20:
+                    result['patterns'].append('SAR多头确认')
+                    
+        except Exception as e:
+            logger.warning(f"计算SAR指标失败: {e}")
+            
+    def _calculate_obv_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算OBV指标（能量潮）
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典，将被修改
+        """
+        try:
+            # 检查是否有成交量数据
+            if 'volume' not in data.columns:
+                logger.warning("无成交量数据，无法计算OBV指标")
+                return
+                
+            # 计算OBV指标
+            obv_indicator = IndicatorFactory.create_indicator("OBV")
+            obv_result = obv_indicator.compute(data)
+            
+            obv = obv_result['OBV'].values
+            obv_ma = obv_result['OBV_MA'].values if 'OBV_MA' in obv_result.columns else None
+            
+            result['indicators']['obv'] = {
+                'obv': obv[buy_index],
+                'obv_ma': obv_ma[buy_index] if obv_ma is not None else None,
+                'obv_prev': obv[buy_index-1] if buy_index > 0 else None,
+                'obv_ma_prev': obv_ma[buy_index-1] if obv_ma is not None and buy_index > 0 else None,
+                'obv_diff': obv[buy_index] - obv[buy_index-1] if buy_index > 0 else None
+            }
+            
+            # 检测OBV趋势
+            if buy_index >= 5:
+                # 计算OBV 5日趋势
+                obv_trend = np.polyfit(np.arange(5), obv[buy_index-4:buy_index+1], 1)[0]
+                result['indicators']['obv']['obv_trend'] = obv_trend
+                
+                # OBV持续上升
+                if obv_trend > 0 and obv[buy_index] > obv[buy_index-1] > obv[buy_index-2]:
+                    result['patterns'].append('OBV持续上升')
+                    
+                # OBV持续下降
+                if obv_trend < 0 and obv[buy_index] < obv[buy_index-1] < obv[buy_index-2]:
+                    result['patterns'].append('OBV持续下降')
+            
+            # 检测OBV与收盘价的背离
+            if buy_index >= 20:
+                # 获取收盘价
+                close = data['close'].values
+                
+                # 收盘价创新高但OBV未创新高（顶背离）
+                recent_close_max_idx = np.argmax(close[buy_index-20:buy_index+1]) + buy_index - 20
+                recent_obv_max_idx = np.argmax(obv[buy_index-20:buy_index+1]) + buy_index - 20
+                
+                if recent_close_max_idx == buy_index and recent_obv_max_idx < buy_index:
+                    result['patterns'].append('OBV顶背离')
+                
+                # 收盘价创新低但OBV未创新低（底背离）
+                recent_close_min_idx = np.argmin(close[buy_index-20:buy_index+1]) + buy_index - 20
+                recent_obv_min_idx = np.argmin(obv[buy_index-20:buy_index+1]) + buy_index - 20
+                
+                if recent_close_min_idx == buy_index and recent_obv_min_idx < buy_index:
+                    result['patterns'].append('OBV底背离')
+                    
+            # 检测OBV上穿均线
+            if obv_ma is not None and buy_index > 0:
+                if obv[buy_index-1] <= obv_ma[buy_index-1] and obv[buy_index] > obv_ma[buy_index]:
+                    result['patterns'].append('OBV上穿均线')
+                    
+        except Exception as e:
+            logger.warning(f"计算OBV指标失败: {e}")
+            
+    def _calculate_dmi_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算DMI指标（趋向指标）
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典，将被修改
+        """
+        try:
+            # 计算DMI指标
+            dmi_indicator = IndicatorFactory.create_indicator("DMI", period=14)
+            dmi_result = dmi_indicator.compute(data)
+            
+            # 提取DMI指标值
+            pdi = dmi_result['PDI'].values
+            mdi = dmi_result['MDI'].values
+            adx = dmi_result['ADX'].values
+            
+            result['indicators']['dmi'] = {
+                'pdi': pdi[buy_index],
+                'mdi': mdi[buy_index],
+                'adx': adx[buy_index],
+                'pdi_prev': pdi[buy_index-1] if buy_index > 0 else None,
+                'mdi_prev': mdi[buy_index-1] if buy_index > 0 else None,
+                'adx_prev': adx[buy_index-1] if buy_index > 0 else None
+            }
+            
+            # 检测DMI金叉（PDI上穿MDI）
+            if buy_index > 0:
+                if pdi[buy_index-1] < mdi[buy_index-1] and pdi[buy_index] > mdi[buy_index]:
+                    result['patterns'].append('DMI金叉')
+            
+            # 检测ADX上升 - 趋势增强
+            if buy_index > 2 and adx[buy_index] > adx[buy_index-1] > adx[buy_index-2]:
+                result['patterns'].append('ADX持续上升')
+            
+            # 检测强势趋势
+            if adx[buy_index] > 25:
+                if pdi[buy_index] > mdi[buy_index]:
+                    result['patterns'].append('DMI多头趋势')
+                else:
+                    result['patterns'].append('DMI空头趋势')
+                    
+        except Exception as e:
+            logger.warning(f"计算DMI指标失败: {e}")
     
-    Args:
-        input_file: 输入文件路径，包含股票代码和买点日期
-        pattern_type: 买点类型描述
-        output_file: 输出文件路径
-    """
-    backtest = UnifiedBacktest()
-    backtest.batch_analyze(input_file, output_file, pattern_type)
+    def _calculate_rsima_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算RSIMA指标（RSI均线系统指标）
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典，将被修改
+        """
+        try:
+            # 计算RSIMA指标
+            rsima_indicator = IndicatorFactory.create_indicator("RSIMA", rsi_period=14, ma_periods=[5, 10, 20])
+            rsima_result = rsima_indicator.compute(data)
+            
+            # 提取RSI和RSI均线值
+            rsi = rsima_result['rsi'].values
+            rsi_ma5 = rsima_result['rsi_ma5'].values
+            rsi_ma10 = rsima_result['rsi_ma10'].values
+            rsi_ma20 = rsima_result['rsi_ma20'].values
+            
+            result['indicators']['rsima'] = {
+                'rsi': rsi[buy_index],
+                'rsi_ma5': rsi_ma5[buy_index],
+                'rsi_ma10': rsi_ma10[buy_index],
+                'rsi_ma20': rsi_ma20[buy_index],
+                'rsi_prev': rsi[buy_index-1] if buy_index > 0 else None,
+                'rsi_ma5_prev': rsi_ma5[buy_index-1] if buy_index > 0 else None,
+                'rsi_ma10_prev': rsi_ma10[buy_index-1] if buy_index > 0 else None,
+                'rsi_ma20_prev': rsi_ma20[buy_index-1] if buy_index > 0 else None
+            }
+            
+            # 检测RSI超买超卖区域
+            if rsi[buy_index] < 30:
+                result['patterns'].append('RSI超卖区域')
+            elif rsi[buy_index] > 70:
+                result['patterns'].append('RSI超买区域')
+            
+            # 检测RSI超卖反弹
+            if buy_index > 0 and rsi[buy_index-1] < 30 and rsi[buy_index] > 30:
+                result['patterns'].append('RSI超卖反弹')
+            
+            # 检测RSI与50线的关系
+            if buy_index > 0:
+                if rsi[buy_index-1] < 50 and rsi[buy_index] > 50:
+                    result['patterns'].append('RSI上穿50线')
+                elif rsi[buy_index-1] > 50 and rsi[buy_index] < 50:
+                    result['patterns'].append('RSI下穿50线')
+            
+            # 检测RSI金叉均线
+            if buy_index > 0:
+                # RSI上穿MA5
+                if rsi[buy_index-1] < rsi_ma5[buy_index-1] and rsi[buy_index] > rsi_ma5[buy_index]:
+                    result['patterns'].append('RSI金叉均线')
+                    result['patterns'].append('RSIMA金叉')
+                # RSI下穿MA5
+                elif rsi[buy_index-1] > rsi_ma5[buy_index-1] and rsi[buy_index] < rsi_ma5[buy_index]:
+                    result['patterns'].append('RSIMA死叉')
+            
+            # 检测RSIMA多头排列
+            if rsi_ma5[buy_index] > rsi_ma10[buy_index] > rsi_ma20[buy_index]:
+                result['patterns'].append('RSIMA多头排列')
+                
+                # 如果RSI也在所有均线之上，则为强势趋势
+                if rsi[buy_index] > rsi_ma5[buy_index]:
+                    result['patterns'].append('RSIMA强势趋势')
+                    
+        except Exception as e:
+            logger.warning(f"计算RSIMA指标失败: {e}")
     
-    # 生成策略文件
-    strategy_file = os.path.join(get_strategies_dir(), f"strategy_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.py")
-    backtest.generate_strategy(strategy_file)
-    
-def main():
-    """主程序入口"""
-    parser = argparse.ArgumentParser(description="统一回测系统")
-    parser.add_argument("--input", "-i", help="输入文件路径，包含股票代码和买点日期", required=True)
-    parser.add_argument("--output", "-o", help="输出文件路径", required=True)
-    parser.add_argument("--type", "-t", help="买点类型描述", default="")
-    
-    args = parser.parse_args()
-    
-    logger.info(f"开始分析，输入文件: {args.input}，输出文件: {args.output}")
-    analyze_buypoint_indicators(args.input, args.type, args.output)
-    logger.info("分析完成")
-    
-if __name__ == "__main__":
-    main() 
+    def _calculate_intraday_volatility_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算INTRADAY_VOLATILITY指标（日内波动率指标）
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典，将被修改
+        """
+        try:
+            # 计算INTRADAY_VOLATILITY指标
+            volatility_indicator = IndicatorFactory.create_indicator("INTRADAY_VOLATILITY", smooth_period=5)
+            volatility_result = volatility_indicator.compute(data)
+            
+            # 提取波动率和波动率均线值
+            volatility = volatility_result['volatility'].values
+            volatility_ma = volatility_result['volatility_ma'].values
+            
+            result['indicators']['intraday_volatility'] = {
+                'volatility': volatility[buy_index],
+                'volatility_ma': volatility_ma[buy_index],
+                'volatility_prev': volatility[buy_index-1] if buy_index > 0 else None,
+                'volatility_ma_prev': volatility_ma[buy_index-1] if buy_index > 0 else None
+            }
+            
+            # 检测波动率突然变化
+            if buy_index > 0:
+                volatility_change = volatility[buy_index] / volatility[buy_index-1] - 1
+                
+                if volatility_change > 0.5:  # 增加50%以上
+                    result['patterns'].append('波动率突然上升')
+                elif volatility_change < -0.3:  # 减少30%以上
+                    result['patterns'].append('波动率突然下降')
+            
+            # 检测波动率区域
+            avg_volatility = np.mean(volatility[max(0, buy_index-20):buy_index+1])
+            std_volatility = np.std(volatility[max(0, buy_index-20):buy_index+1])
+            
+            if volatility[buy_index] < avg_volatility - std_volatility:
+                result['patterns'].append('低波动率区域')
+            elif volatility[buy_index] > avg_volatility + std_volatility:
+                result['patterns'].append('高波动率区域')
+            
+            # 检测波动率持续变化
+            if buy_index > 4:
+                if (volatility[buy_index] < volatility[buy_index-1] < volatility[buy_index-2] < 
+                    volatility[buy_index-3] < volatility[buy_index-4]):
+                    result['patterns'].append('波动率持续降低')
+                
+                # 波动率筑底后上升
+                if (volatility[buy_index-3] > volatility[buy_index-2] and 
+                    volatility[buy_index-2] <= volatility[buy_index-1] and 
+                    volatility[buy_index-1] < volatility[buy_index] and
+                    volatility[buy_index-2] < avg_volatility - 0.5 * std_volatility):
+                    result['patterns'].append('波动率极低后上升')
+                    result['patterns'].append('波动率筑底')
+            
+            # 检测波动率与均线关系
+            if buy_index > 0:
+                if (volatility[buy_index-1] < volatility_ma[buy_index-1] and 
+                    volatility[buy_index] > volatility_ma[buy_index]):
+                    result['patterns'].append('波动率盘整突破')
+            
+            # 检测波动率与价格的背离
+            if buy_index > 20:
+                close = data['close'].values
+                
+                # 价格创新高但波动率未创新高（顶背离）
+                recent_close_max_idx = np.argmax(close[buy_index-20:buy_index+1]) + buy_index - 20
+                recent_vol_max_idx = np.argmax(volatility[buy_index-20:buy_index+1]) + buy_index - 20
+                
+                if recent_close_max_idx == buy_index and recent_vol_max_idx < buy_index:
+                    result['patterns'].append('日内波动率顶背离')
+                
+                # 价格创新低但波动率未创新低（底背离）
+                recent_close_min_idx = np.argmin(close[buy_index-20:buy_index+1]) + buy_index - 20
+                recent_vol_min_idx = np.argmin(volatility[buy_index-20:buy_index+1]) + buy_index - 20
+                
+                if recent_close_min_idx == buy_index and recent_vol_min_idx < buy_index:
+                    result['patterns'].append('日内波动率底背离')
+            
+            # 检测异常波动
+            if volatility[buy_index] > avg_volatility + 2 * std_volatility:
+                result['patterns'].append('日内波动率异常')
+                
+        except Exception as e:
+            logger.warning(f"计算INTRADAY_VOLATILITY指标失败: {e}")
+            
+    def _calculate_atr_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算ATR指标（平均真实波幅）
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典，将被修改
+        """
+        try:
+            # 检查数据完整性
+            if 'high' not in data.columns or 'low' not in data.columns or 'close' not in data.columns:
+                logger.warning("缺少计算ATR所需的价格数据")
+                return
+                
+            # 计算ATR指标
+            atr_indicator = IndicatorFactory.create_indicator("ATR", period=14)
+            atr_result = atr_indicator.compute(data)
+            
+            # 提取ATR值
+            atr = atr_result['ATR'].values
+            
+            # 计算相对ATR（ATR/收盘价的百分比）
+            close = data['close'].values
+            relative_atr = atr / close * 100  # 转为百分比
+            
+            # 保存指标值
+            result['indicators']['atr'] = {
+                'atr': atr[buy_index],
+                'relative_atr': relative_atr[buy_index],
+                'atr_prev': atr[buy_index-1] if buy_index > 0 else None,
+                'relative_atr_prev': relative_atr[buy_index-1] if buy_index > 0 else None
+            }
+            
+            # 计算ATR的历史统计特征
+            if buy_index >= 20:
+                lookback_period = 20
+                atr_history = atr[max(0, buy_index-lookback_period):buy_index+1]
+                atr_mean = np.mean(atr_history)
+                atr_std = np.std(atr_history)
+                
+                result['indicators']['atr']['atr_mean'] = atr_mean
+                result['indicators']['atr']['atr_std'] = atr_std
+                
+                # 计算当前ATR在历史分布中的位置 (z-score)
+                atr_z_score = (atr[buy_index] - atr_mean) / atr_std if atr_std > 0 else 0
+                result['indicators']['atr']['atr_z_score'] = atr_z_score
+                
+                # 检测ATR突然放大（市场波动性增加）
+                if atr_z_score > 2:
+                    result['patterns'].append('ATR异常放大')
+                    
+                # 检测ATR突然收缩（市场波动性降低）
+                if atr_z_score < -1.5:
+                    result['patterns'].append('ATR异常收缩')
+            
+            # 检测ATR趋势
+            if buy_index >= 5:
+                # 计算ATR 5日趋势
+                atr_trend = np.polyfit(np.arange(5), atr[buy_index-4:buy_index+1], 1)[0]
+                result['indicators']['atr']['atr_trend'] = atr_trend
+                
+                # ATR持续上升（波动性增加）
+                if atr_trend > 0 and all(atr[i] < atr[i+1] for i in range(buy_index-4, buy_index)):
+                    result['patterns'].append('ATR持续上升')
+                    
+                # ATR持续下降（波动性减少）
+                if atr_trend < 0 and all(atr[i] > atr[i+1] for i in range(buy_index-4, buy_index)):
+                    result['patterns'].append('ATR持续下降')
+            
+            # 检测ATR与价格的关系
+            if buy_index > 0:
+                # 计算价格波动率
+                price_change = abs(close[buy_index] / close[buy_index-1] - 1) * 100  # 百分比
+                
+                # 当日价格变动超过ATR的2倍，可能是重要突破
+                if price_change > relative_atr[buy_index] * 2:
+                    if close[buy_index] > close[buy_index-1]:
+                        result['patterns'].append('ATR突破上行')
+                    else:
+                        result['patterns'].append('ATR突破下行')
+                
+                # 当相对ATR大于5%，表示股票波动性很高
+                if relative_atr[buy_index] > 5:
+                    result['patterns'].append('高波动性股票')
+                    
+                # 当相对ATR小于1%，表示股票波动性很低
+                if relative_atr[buy_index] < 1:
+                    result['patterns'].append('低波动性股票')
+            
+            # 检测波动率收缩后的爆发形态
+            if buy_index >= 10:
+                # 先收缩后放大的形态
+                compression_period = 5
+                expansion_period = 3
+                
+                # 前期ATR收缩
+                compression = all(atr[buy_index-compression_period-expansion_period+i] > 
+                                atr[buy_index-expansion_period+i] for i in range(compression_period-1))
+                
+                # 后期ATR放大
+                expansion = all(atr[buy_index-expansion_period+i] < 
+                                atr[buy_index-expansion_period+i+1] for i in range(expansion_period))
+                
+                if compression and expansion:
+                    result['patterns'].append('ATR收缩后爆发')
+                
+        except Exception as e:
+            logger.warning(f"计算ATR指标失败: {e}")
+
+    def _calculate_emv_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算EMV指标
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典
+        """
+        try:
+            # 检查数据长度是否足够
+            if len(data) < 20 or buy_index < 20:
+                logger.warning("数据长度不足，无法计算EMV指标")
+                return
+                
+            # 计算EMV指标
+            emv_indicator = IndicatorFactory.create("EMV", period=14, volume_scale=10000)
+            emv_result = emv_indicator.compute(data.iloc[:buy_index+1])
+            
+            # 获取EMV值
+            current_emv = emv_result['EMV'].iloc[buy_index]
+            current_daily_emv = emv_result['daily_emv'].iloc[buy_index]
+            
+            # 计算EMV的短期趋势
+            emv_trend = np.polyfit(range(5), emv_result['EMV'].iloc[buy_index-4:buy_index+1].values, 1)[0]
+            
+            # 添加到结果字典
+            result['indicators']['emv'] = {
+                'current': round(current_emv, 4),
+                'daily': round(current_daily_emv, 4),
+                'trend': round(emv_trend, 6)
+            }
+            
+            # 判断EMV形态
+            # EMV多空判断
+            if current_emv > 0:
+                result['patterns'].append("EMV多头")
+            else:
+                result['patterns'].append("EMV空头")
+                
+            # EMV趋势判断
+            if emv_trend > 0:
+                result['patterns'].append("EMV上升趋势")
+            else:
+                result['patterns'].append("EMV下降趋势")
+                
+            # EMV拐点判断
+            if buy_index > 2:
+                prev_emv = emv_result['EMV'].iloc[buy_index-1]
+                prev2_emv = emv_result['EMV'].iloc[buy_index-2]
+                
+                # EMV由负转正
+                if current_emv > 0 and prev_emv <= 0:
+                    result['patterns'].append("EMV由负转正")
+                    
+                # EMV由正转负
+                if current_emv < 0 and prev_emv >= 0:
+                    result['patterns'].append("EMV由正转负")
+                    
+                # EMV由降转升
+                if current_emv > prev_emv and prev_emv <= prev2_emv:
+                    result['patterns'].append("EMV由降转升")
+                    
+                # EMV由升转降
+                if current_emv < prev_emv and prev_emv >= prev2_emv:
+                    result['patterns'].append("EMV由升转降")
+                    
+            # EMV数值判断
+            if abs(current_emv) > 0.1:  # 异常活跃
+                if current_emv > 0:
+                    result['patterns'].append("EMV异常活跃(多)")
+                else:
+                    result['patterns'].append("EMV异常活跃(空)")
+                    
+            # EMV与价格的背离
+            if buy_index > 5:
+                price_trend = np.polyfit(range(5), data['close'].iloc[buy_index-4:buy_index+1].values, 1)[0]
+                
+                # 价升EMV降
+                if price_trend > 0 and emv_trend < 0:
+                    result['patterns'].append("价升EMV降")
+                    
+                # 价降EMV升
+                if price_trend < 0 and emv_trend > 0:
+                    result['patterns'].append("价降EMV升")
+                    
+            # EMV持续上升/下降
+            if buy_index > 3:
+                is_rising = all(emv_result['EMV'].iloc[buy_index-i] > emv_result['EMV'].iloc[buy_index-i-1] for i in range(3))
+                is_falling = all(emv_result['EMV'].iloc[buy_index-i] < emv_result['EMV'].iloc[buy_index-i-1] for i in range(3))
+                
+                if is_rising:
+                    result['patterns'].append("EMV持续上升")
+                if is_falling:
+                    result['patterns'].append("EMV持续下降")
+            
+            logger.debug(f"EMV指标计算完成: {result['indicators']['emv']}")
+            
+        except Exception as e:
+            logger.warning(f"计算EMV指标失败: {e}")
+
+    def _calculate_volume_ratio_indicators(self, data: pd.DataFrame, buy_index: int, result: Dict[str, Any]) -> None:
+        """
+        计算量比指标
+        
+        Args:
+            data: 股票数据
+            buy_index: 买点索引
+            result: 结果字典
+        """
+        try:
+            # 检查数据长度是否足够
+            if len(data) < 10 or buy_index < 10:
+                logger.warning("数据长度不足，无法计算量比指标")
+                return
+                
+            # 计算量比指标
+            volume_ratio_indicator = IndicatorFactory.create("VOLUME_RATIO", reference_period=5, ma_period=3)
+            volume_ratio_result = volume_ratio_indicator.compute(data.iloc[:buy_index+1])
+            
+            # 获取当前和历史量比值
+            current_vr = volume_ratio_result['volume_ratio'].iloc[buy_index]
+            current_vr_ma = volume_ratio_result['volume_ratio_ma'].iloc[buy_index]
+            
+            # 计算最近几天的量比平均值
+            recent_vr = volume_ratio_result['volume_ratio'].iloc[max(0, buy_index-5):buy_index+1].mean()
+            
+            # 添加到结果字典
+            result['indicators']['volume_ratio'] = {
+                'current': round(current_vr, 2),
+                'ma': round(current_vr_ma, 2),
+                'recent_average': round(recent_vr, 2)
+            }
+            
+            # 判断量比形态
+            # 放量形态
+            if current_vr > 1.5:
+                result['patterns'].append("量比放大")
+                
+                # 连续放量
+                if buy_index > 2 and all(volume_ratio_result['volume_ratio'].iloc[buy_index-i] > 1.2 for i in range(3)):
+                    result['patterns'].append("连续放量")
+            
+            # 缩量形态
+            if current_vr < 0.7:
+                result['patterns'].append("量比萎缩")
+                
+                # 连续缩量
+                if buy_index > 2 and all(volume_ratio_result['volume_ratio'].iloc[buy_index-i] < 0.8 for i in range(3)):
+                    result['patterns'].append("连续缩量")
+            
+            # 量比金叉和死叉
+            if buy_index > 1:
+                # 量比上穿均线
+                if (volume_ratio_result['volume_ratio'].iloc[buy_index] > volume_ratio_result['volume_ratio_ma'].iloc[buy_index] and
+                    volume_ratio_result['volume_ratio'].iloc[buy_index-1] <= volume_ratio_result['volume_ratio_ma'].iloc[buy_index-1]):
+                    result['patterns'].append("量比金叉")
+                
+                # 量比下穿均线
+                if (volume_ratio_result['volume_ratio'].iloc[buy_index] < volume_ratio_result['volume_ratio_ma'].iloc[buy_index] and
+                    volume_ratio_result['volume_ratio'].iloc[buy_index-1] >= volume_ratio_result['volume_ratio_ma'].iloc[buy_index-1]):
+                    result['patterns'].append("量比死叉")
+            
+            # 量价关系
+            if buy_index > 1:
+                # 价升量增
+                if (data['close'].iloc[buy_index] > data['close'].iloc[buy_index-1] and
+                    volume_ratio_result['volume_ratio'].iloc[buy_index] > volume_ratio_result['volume_ratio'].iloc[buy_index-1]):
+                    result['patterns'].append("价升量增")
+                
+                # 价升量减
+                if (data['close'].iloc[buy_index] > data['close'].iloc[buy_index-1] and
+                    volume_ratio_result['volume_ratio'].iloc[buy_index] < volume_ratio_result['volume_ratio'].iloc[buy_index-1]):
+                    result['patterns'].append("价升量减")
+                
+                # 价跌量增
+                if (data['close'].iloc[buy_index] < data['close'].iloc[buy_index-1] and
+                    volume_ratio_result['volume_ratio'].iloc[buy_index] > volume_ratio_result['volume_ratio'].iloc[buy_index-1]):
+                    result['patterns'].append("价跌量增")
+                
+                # 价跌量减
+                if (data['close'].iloc[buy_index] < data['close'].iloc[buy_index-1] and
+                    volume_ratio_result['volume_ratio'].iloc[buy_index] < volume_ratio_result['volume_ratio'].iloc[buy_index-1]):
+                    result['patterns'].append("价跌量减")
+            
+            # 量比突变
+            if buy_index > 1:
+                # 突然放量
+                if volume_ratio_result['volume_ratio'].iloc[buy_index] > volume_ratio_result['volume_ratio'].iloc[buy_index-1] * 1.5:
+                    result['patterns'].append("突然放量")
+                
+                # 突然缩量
+                if volume_ratio_result['volume_ratio'].iloc[buy_index] < volume_ratio_result['volume_ratio'].iloc[buy_index-1] * 0.6:
+                    result['patterns'].append("突然缩量")
+            
+            logger.debug(f"量比指标计算完成: {result['indicators']['volume_ratio']}")
+            
+        except Exception as e:
+            logger.error(f"计算量比指标时出错: {e}")

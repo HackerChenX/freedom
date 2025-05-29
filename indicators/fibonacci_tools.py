@@ -292,3 +292,725 @@ class FibonacciTools(BaseIndicator):
         except ImportError:
             logger.error("绘图需要安装matplotlib库")
             return None 
+    
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算斐波那契工具指标的原始评分
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含原始评分的DataFrame
+        """
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        if len(data) < 20:
+            return pd.DataFrame({'score': score}, index=data.index)
+        
+        # 自动检测摆动点
+        swing_high_idx, swing_low_idx = self._detect_swing_points(data)
+        
+        # 计算回调线和扩展线
+        try:
+            retracement_result = self.calculate_retracement(data, swing_high_idx, swing_low_idx)
+            extension_result = self.calculate_extension(data, swing_high_idx, swing_low_idx)
+        except Exception as e:
+            logger.warning(f"计算斐波那契水平线失败: {e}")
+            return pd.DataFrame({'score': score}, index=data.index)
+        
+        close_price = data['close']
+        latest_close = close_price.iloc[-1]
+        
+        # 1. 关键斐波那契水平支撑/阻力评分（±20分）
+        # 检查当前价格是否接近关键斐波那契水平
+        key_levels = [0.236, 0.382, 0.5, 0.618, 0.786]
+        
+        for level in key_levels:
+            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            if level_name in retracement_result.columns:
+                level_price = retracement_result[level_name].iloc[0]
+                
+                # 计算价格与斐波那契水平的距离（百分比）
+                price_distance = abs(latest_close - level_price) / latest_close
+                
+                # 如果价格接近斐波那契水平（误差在2%以内）
+                if price_distance < 0.02:
+                    # 根据斐波那契水平的重要性给分
+                    if level == 0.618:  # 黄金分割位最重要
+                        if latest_close > level_price:  # 价格在支撑位上方
+                            score.iloc[-5:] += 20
+                        else:  # 价格在阻力位下方
+                            score.iloc[-5:] -= 20
+                    elif level in [0.382, 0.5]:  # 次重要水平
+                        if latest_close > level_price:
+                            score.iloc[-5:] += 15
+                        else:
+                            score.iloc[-5:] -= 15
+                    else:  # 其他水平
+                        if latest_close > level_price:
+                            score.iloc[-5:] += 10
+                        else:
+                            score.iloc[-5:] -= 10
+        
+        # 2. 斐波那契扩展目标评分（±15分）
+        # 检查价格是否接近扩展目标
+        extension_levels = [0.618, 1.0, 1.618]
+        
+        for level in extension_levels:
+            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            if level_name in extension_result.columns:
+                level_price = extension_result[level_name].iloc[0]
+                
+                # 计算价格与扩展目标的距离
+                price_distance = abs(latest_close - level_price) / latest_close
+                
+                # 如果价格接近扩展目标（误差在3%以内）
+                if price_distance < 0.03:
+                    if level == 1.618:  # 黄金扩展位
+                        score.iloc[-3:] += 15
+                    elif level == 1.0:  # 100%扩展
+                        score.iloc[-3:] += 12
+                    else:  # 其他扩展位
+                        score.iloc[-3:] += 8
+        
+        # 3. 斐波那契聚集区评分（±25分）
+        # 检查是否有多个斐波那契水平聚集
+        fib_levels = []
+        
+        # 收集所有斐波那契水平
+        for level in key_levels:
+            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            if level_name in retracement_result.columns:
+                fib_levels.append(retracement_result[level_name].iloc[0])
+        
+        for level in extension_levels:
+            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            if level_name in extension_result.columns:
+                fib_levels.append(extension_result[level_name].iloc[0])
+        
+        # 检查聚集区
+        if len(fib_levels) >= 2:
+            fib_levels = sorted(fib_levels)
+            
+            # 寻找价格聚集区（多个水平在5%范围内）
+            for i in range(len(fib_levels)):
+                cluster_count = 1
+                cluster_center = fib_levels[i]
+                
+                for j in range(i+1, len(fib_levels)):
+                    if abs(fib_levels[j] - cluster_center) / cluster_center < 0.05:
+                        cluster_count += 1
+                    else:
+                        break
+                
+                # 如果当前价格接近聚集区
+                if cluster_count >= 2:
+                    distance_to_cluster = abs(latest_close - cluster_center) / latest_close
+                    if distance_to_cluster < 0.03:
+                        # 聚集区的重要性随聚集水平数量增加
+                        cluster_score = min(25, cluster_count * 8)
+                        
+                        if latest_close > cluster_center:  # 价格在聚集区上方（支撑）
+                            score.iloc[-3:] += cluster_score
+                        else:  # 价格在聚集区下方（阻力）
+                            score.iloc[-3:] -= cluster_score
+                        break
+        
+        # 4. 斐波那契突破评分（±20分）
+        # 检查价格是否突破重要斐波那契水平
+        if len(data) >= 5:
+            recent_closes = close_price.iloc[-5:]
+            
+            for level in [0.382, 0.5, 0.618]:
+                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                if level_name in retracement_result.columns:
+                    level_price = retracement_result[level_name].iloc[0]
+                    
+                    # 检查是否有突破
+                    # 向上突破：之前在水平下方，现在在上方
+                    prev_below = (recent_closes.iloc[:-1] < level_price).any()
+                    now_above = recent_closes.iloc[-1] > level_price
+                    
+                    # 向下突破：之前在水平上方，现在在下方
+                    prev_above = (recent_closes.iloc[:-1] > level_price).any()
+                    now_below = recent_closes.iloc[-1] < level_price
+                    
+                    if prev_below and now_above:  # 向上突破
+                        breakthrough_score = 20 if level == 0.618 else 15
+                        score.iloc[-3:] += breakthrough_score
+                    elif prev_above and now_below:  # 向下突破
+                        breakthrough_score = 20 if level == 0.618 else 15
+                        score.iloc[-3:] -= breakthrough_score
+        
+        # 5. 成交量确认评分（±10分）
+        # 斐波那契水平的突破或反弹如果伴随放量，增强信号
+        if 'volume' in data.columns and len(data) >= 10:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            latest_vol_ratio = (volume / vol_ma5).iloc[-1]
+            
+            # 检查是否在重要斐波那契水平附近且伴随放量
+            near_important_level = False
+            
+            for level in [0.382, 0.5, 0.618]:
+                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                if level_name in retracement_result.columns:
+                    level_price = retracement_result[level_name].iloc[0]
+                    price_distance = abs(latest_close - level_price) / latest_close
+                    
+                    if price_distance < 0.03:  # 接近重要水平
+                        near_important_level = True
+                        break
+            
+            if near_important_level and pd.notna(latest_vol_ratio):
+                if latest_vol_ratio > 1.5:  # 放量
+                    score.iloc[-2:] += 10
+                elif latest_vol_ratio < 0.7:  # 缩量
+                    score.iloc[-2:] -= 5
+        
+        # 6. 趋势一致性评分（±15分）
+        # 检查斐波那契信号是否与趋势一致
+        if len(data) >= 20:
+            ma20 = close_price.rolling(window=20).mean()
+            latest_ma20 = ma20.iloc[-1]
+            
+            # 判断趋势方向
+            if latest_close > latest_ma20 * 1.02:  # 上升趋势
+                # 在上升趋势中，斐波那契支撑位更重要
+                for level in [0.382, 0.5, 0.618]:
+                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    if level_name in retracement_result.columns:
+                        level_price = retracement_result[level_name].iloc[0]
+                        
+                        # 如果价格在斐波那契支撑位上方且接近
+                        if latest_close > level_price:
+                            price_distance = abs(latest_close - level_price) / latest_close
+                            if price_distance < 0.05:
+                                score.iloc[-3:] += 15
+                                break
+            
+            elif latest_close < latest_ma20 * 0.98:  # 下降趋势
+                # 在下降趋势中，斐波那契阻力位更重要
+                for level in [0.382, 0.5, 0.618]:
+                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    if level_name in retracement_result.columns:
+                        level_price = retracement_result[level_name].iloc[0]
+                        
+                        # 如果价格在斐波那契阻力位下方且接近
+                        if latest_close < level_price:
+                            price_distance = abs(latest_close - level_price) / latest_close
+                            if price_distance < 0.05:
+                                score.iloc[-3:] -= 15
+                                break
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return pd.DataFrame({'score': score}, index=data.index)
+    
+    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+        """
+        识别斐波那契工具相关的技术形态
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        if len(data) < 20:
+            return patterns
+        
+        # 自动检测摆动点
+        try:
+            swing_high_idx, swing_low_idx = self._detect_swing_points(data)
+            retracement_result = self.calculate_retracement(data, swing_high_idx, swing_low_idx)
+            extension_result = self.calculate_extension(data, swing_high_idx, swing_low_idx)
+        except Exception as e:
+            logger.warning(f"计算斐波那契水平线失败: {e}")
+            return patterns
+        
+        close_price = data['close']
+        latest_close = close_price.iloc[-1]
+        
+        # 1. 关键斐波那契水平识别
+        key_levels = [0.236, 0.382, 0.5, 0.618, 0.786]
+        
+        for level in key_levels:
+            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            if level_name in retracement_result.columns:
+                level_price = retracement_result[level_name].iloc[0]
+                price_distance = abs(latest_close - level_price) / latest_close
+                
+                if price_distance < 0.02:  # 接近斐波那契水平
+                    if level == 0.618:
+                        patterns.append(f"黄金分割位-{level:.3f}")
+                    elif level == 0.5:
+                        patterns.append(f"50%回调位-{level:.3f}")
+                    else:
+                        patterns.append(f"斐波那契回调位-{level:.3f}")
+                    
+                    # 判断支撑还是阻力
+                    if latest_close > level_price:
+                        patterns.append(f"斐波那契支撑-{level:.3f}")
+                    else:
+                        patterns.append(f"斐波那契阻力-{level:.3f}")
+        
+        # 2. 斐波那契扩展目标识别
+        extension_levels = [0.618, 1.0, 1.618, 2.618]
+        
+        for level in extension_levels:
+            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            if level_name in extension_result.columns:
+                level_price = extension_result[level_name].iloc[0]
+                price_distance = abs(latest_close - level_price) / latest_close
+                
+                if price_distance < 0.03:  # 接近扩展目标
+                    if level == 1.618:
+                        patterns.append(f"黄金扩展位-{level:.3f}")
+                    elif level == 1.0:
+                        patterns.append(f"100%扩展位-{level:.3f}")
+                    else:
+                        patterns.append(f"斐波那契扩展位-{level:.3f}")
+        
+        # 3. 斐波那契聚集区识别
+        fib_levels = []
+        level_names = []
+        
+        # 收集所有斐波那契水平
+        for level in key_levels:
+            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            if level_name in retracement_result.columns:
+                fib_levels.append(retracement_result[level_name].iloc[0])
+                level_names.append(f"回调{level:.3f}")
+        
+        for level in extension_levels:
+            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            if level_name in extension_result.columns:
+                fib_levels.append(extension_result[level_name].iloc[0])
+                level_names.append(f"扩展{level:.3f}")
+        
+        # 检查聚集区
+        if len(fib_levels) >= 2:
+            fib_data = list(zip(fib_levels, level_names))
+            fib_data.sort(key=lambda x: x[0])  # 按价格排序
+            
+            # 寻找聚集区
+            for i in range(len(fib_data)):
+                cluster_levels = [fib_data[i]]
+                cluster_center = fib_data[i][0]
+                
+                for j in range(i+1, len(fib_data)):
+                    if abs(fib_data[j][0] - cluster_center) / cluster_center < 0.05:
+                        cluster_levels.append(fib_data[j])
+                    else:
+                        break
+                
+                # 如果形成聚集区且当前价格接近
+                if len(cluster_levels) >= 2:
+                    distance_to_cluster = abs(latest_close - cluster_center) / latest_close
+                    if distance_to_cluster < 0.03:
+                        level_desc = "+".join([level[1] for level in cluster_levels])
+                        patterns.append(f"斐波那契聚集区-{level_desc}")
+                        
+                        if latest_close > cluster_center:
+                            patterns.append("聚集区支撑")
+                        else:
+                            patterns.append("聚集区阻力")
+                        break
+        
+        # 4. 斐波那契突破识别
+        if len(data) >= 5:
+            recent_closes = close_price.iloc[-5:]
+            
+            for level in [0.382, 0.5, 0.618]:
+                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                if level_name in retracement_result.columns:
+                    level_price = retracement_result[level_name].iloc[0]
+                    
+                    # 检查突破
+                    prev_below = (recent_closes.iloc[:-1] < level_price).any()
+                    now_above = recent_closes.iloc[-1] > level_price
+                    prev_above = (recent_closes.iloc[:-1] > level_price).any()
+                    now_below = recent_closes.iloc[-1] < level_price
+                    
+                    if prev_below and now_above:
+                        patterns.append(f"向上突破斐波那契-{level:.3f}")
+                        if level == 0.618:
+                            patterns.append("突破黄金分割位")
+                    elif prev_above and now_below:
+                        patterns.append(f"向下突破斐波那契-{level:.3f}")
+                        if level == 0.618:
+                            patterns.append("跌破黄金分割位")
+        
+        # 5. 斐波那契反弹/回调识别
+        if len(data) >= 10:
+            # 检查是否在斐波那契水平附近发生反弹或回调
+            for level in [0.382, 0.5, 0.618]:
+                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                if level_name in retracement_result.columns:
+                    level_price = retracement_result[level_name].iloc[0]
+                    
+                    # 检查最近是否触及该水平并反弹
+                    recent_lows = data['low'].iloc[-5:]
+                    recent_highs = data['high'].iloc[-5:]
+                    
+                    # 检查是否触及支撑位并反弹
+                    touched_support = (recent_lows <= level_price * 1.02).any()
+                    bounced_up = latest_close > level_price * 1.01
+                    
+                    if touched_support and bounced_up:
+                        patterns.append(f"斐波那契支撑反弹-{level:.3f}")
+                        if level == 0.618:
+                            patterns.append("黄金分割位支撑反弹")
+                    
+                    # 检查是否触及阻力位并回调
+                    touched_resistance = (recent_highs >= level_price * 0.98).any()
+                    pulled_back = latest_close < level_price * 0.99
+                    
+                    if touched_resistance and pulled_back:
+                        patterns.append(f"斐波那契阻力回调-{level:.3f}")
+                        if level == 0.618:
+                            patterns.append("黄金分割位阻力回调")
+        
+        # 6. 成交量确认分析
+        if 'volume' in data.columns and len(data) >= 10:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            latest_vol_ratio = (volume / vol_ma5).iloc[-1]
+            
+            # 检查重要斐波那契水平附近的成交量
+            near_important_level = False
+            important_level_name = ""
+            
+            for level in [0.382, 0.5, 0.618]:
+                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                if level_name in retracement_result.columns:
+                    level_price = retracement_result[level_name].iloc[0]
+                    price_distance = abs(latest_close - level_price) / latest_close
+                    
+                    if price_distance < 0.03:
+                        near_important_level = True
+                        important_level_name = f"{level:.3f}"
+                        break
+            
+            if near_important_level and pd.notna(latest_vol_ratio):
+                if latest_vol_ratio > 1.5:
+                    patterns.append(f"斐波那契水平放量-{important_level_name}")
+                elif latest_vol_ratio < 0.7:
+                    patterns.append(f"斐波那契水平缩量-{important_level_name}")
+        
+        # 7. 趋势一致性分析
+        if len(data) >= 20:
+            ma20 = close_price.rolling(window=20).mean()
+            latest_ma20 = ma20.iloc[-1]
+            
+            if latest_close > latest_ma20 * 1.02:  # 上升趋势
+                patterns.append("上升趋势中的斐波那契分析")
+                
+                # 检查是否在关键支撑位上方
+                for level in [0.382, 0.5, 0.618]:
+                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    if level_name in retracement_result.columns:
+                        level_price = retracement_result[level_name].iloc[0]
+                        
+                        if latest_close > level_price:
+                            price_distance = abs(latest_close - level_price) / latest_close
+                            if price_distance < 0.05:
+                                patterns.append(f"上升趋势斐波那契支撑-{level:.3f}")
+                                break
+            
+            elif latest_close < latest_ma20 * 0.98:  # 下降趋势
+                patterns.append("下降趋势中的斐波那契分析")
+                
+                # 检查是否在关键阻力位下方
+                for level in [0.382, 0.5, 0.618]:
+                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    if level_name in retracement_result.columns:
+                        level_price = retracement_result[level_name].iloc[0]
+                        
+                        if latest_close < level_price:
+                            price_distance = abs(latest_close - level_price) / latest_close
+                            if price_distance < 0.05:
+                                patterns.append(f"下降趋势斐波那契阻力-{level:.3f}")
+                                break
+            else:
+                patterns.append("横盘趋势中的斐波那契分析")
+        
+        # 8. 斐波那契时间序列分析
+        try:
+            time_series_result = self.calculate_time_series(data, swing_low_idx)
+            
+            # 检查是否接近重要时间节点
+            current_idx = len(data) - 1
+            for time_level in self.TIME_SERIES[:8]:  # 检查前8个时间序列
+                target_idx = swing_low_idx + time_level
+                
+                if abs(current_idx - target_idx) <= 2:  # 接近时间节点
+                    patterns.append(f"斐波那契时间节点-{time_level}周期")
+                    
+                    if time_level in [8, 13, 21]:  # 重要时间节点
+                        patterns.append(f"重要时间节点-{time_level}")
+        
+        except Exception as e:
+            logger.warning(f"斐波那契时间序列分析失败: {e}")
+        
+        return patterns 
+        
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成斐波那契工具指标信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+        """
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True  # 默认为中性信号
+        signals['trend'] = 0  # 0表示中性
+        signals['score'] = 50.0  # 默认评分50分
+        signals['signal_type'] = None
+        signals['signal_desc'] = None
+        signals['confidence'] = 50.0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = None
+        signals['market_env'] = 'sideways_market'
+        signals['volume_confirmation'] = False
+        
+        # 计算原始评分
+        if kwargs.get('use_raw_score', True):
+            score_data = self.calculate_raw_score(data)
+            if 'score' in score_data.columns:
+                signals['score'] = score_data['score']
+        
+        # 获取识别的形态
+        patterns = self.identify_patterns(data)
+        
+        # 自动检测摆动点
+        try:
+            swing_high_idx, swing_low_idx = self._detect_swing_points(data)
+            retracement_result = self.calculate_retracement(data, swing_high_idx, swing_low_idx)
+        except Exception as e:
+            logger.warning(f"计算斐波那契水平线失败: {e}")
+            return signals
+        
+        close_price = data['close'].values
+        latest_close = data['close'].iloc[-1]
+        
+        # 根据评分生成买卖信号
+        for i in range(len(signals)):
+            score = signals['score'].iloc[i]
+            
+            if score >= 70:
+                signals.loc[signals.index[i], 'buy_signal'] = True
+                signals.loc[signals.index[i], 'neutral_signal'] = False
+                signals.loc[signals.index[i], 'trend'] = 1
+            elif score <= 30:
+                signals.loc[signals.index[i], 'sell_signal'] = True
+                signals.loc[signals.index[i], 'neutral_signal'] = False
+                signals.loc[signals.index[i], 'trend'] = -1
+        
+        # 生成斐波那契水平突破信号
+        for level in [0.382, 0.5, 0.618]:
+            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            if level_name in retracement_result.columns:
+                level_prices = retracement_result[level_name].values
+                
+                for i in range(5, len(signals)):
+                    if i >= len(level_prices):
+                        continue
+                    
+                    # 向上突破
+                    if (close_price[i] > level_prices[i]) and (close_price[i-1] <= level_prices[i-1]):
+                        signals.loc[signals.index[i], 'buy_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = 1
+                        
+                        if level == 0.618:
+                            signals.loc[signals.index[i], 'signal_type'] = '突破黄金分割位'
+                            signals.loc[signals.index[i], 'signal_desc'] = f'价格突破0.618黄金分割位'
+                            signals.loc[signals.index[i], 'confidence'] = 75
+                        else:
+                            signals.loc[signals.index[i], 'signal_type'] = f'突破{level:.3f}回调位'
+                            signals.loc[signals.index[i], 'signal_desc'] = f'价格突破{level:.3f}斐波那契回调位'
+                            signals.loc[signals.index[i], 'confidence'] = 65
+                    
+                    # 向下突破
+                    elif (close_price[i] < level_prices[i]) and (close_price[i-1] >= level_prices[i-1]):
+                        signals.loc[signals.index[i], 'sell_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = -1
+                        
+                        if level == 0.618:
+                            signals.loc[signals.index[i], 'signal_type'] = '跌破黄金分割位'
+                            signals.loc[signals.index[i], 'signal_desc'] = f'价格跌破0.618黄金分割位'
+                            signals.loc[signals.index[i], 'confidence'] = 75
+                        else:
+                            signals.loc[signals.index[i], 'signal_type'] = f'跌破{level:.3f}回调位'
+                            signals.loc[signals.index[i], 'signal_desc'] = f'价格跌破{level:.3f}斐波那契回调位'
+                            signals.loc[signals.index[i], 'confidence'] = 65
+        
+        # 处理基于形态的信号增强
+        for pattern in patterns:
+            # 黄金分割位相关信号
+            if "黄金分割位支撑反弹" in pattern:
+                # 找到最近的斐波那契反弹位
+                for i in range(len(signals)-1, max(0, len(signals)-10), -1):
+                    if not signals['signal_type'].iloc[i]:  # 如果没有设置信号类型
+                        signals.loc[signals.index[i], 'buy_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = 1
+                        signals.loc[signals.index[i], 'signal_type'] = '黄金分割位支撑反弹'
+                        signals.loc[signals.index[i], 'signal_desc'] = '价格在0.618黄金分割位获得支撑反弹'
+                        signals.loc[signals.index[i], 'confidence'] = 70
+                        break
+            
+            elif "黄金分割位阻力回调" in pattern:
+                # 找到最近的斐波那契回调位
+                for i in range(len(signals)-1, max(0, len(signals)-10), -1):
+                    if not signals['signal_type'].iloc[i]:  # 如果没有设置信号类型
+                        signals.loc[signals.index[i], 'sell_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = -1
+                        signals.loc[signals.index[i], 'signal_type'] = '黄金分割位阻力回调'
+                        signals.loc[signals.index[i], 'signal_desc'] = '价格在0.618黄金分割位遇阻回落'
+                        signals.loc[signals.index[i], 'confidence'] = 70
+                        break
+            
+            # 斐波那契聚集区信号
+            elif "聚集区支撑" in pattern:
+                for i in range(len(signals)-1, max(0, len(signals)-5), -1):
+                    if not signals['signal_type'].iloc[i]:
+                        signals.loc[signals.index[i], 'buy_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = 1
+                        signals.loc[signals.index[i], 'signal_type'] = '斐波那契聚集区支撑'
+                        signals.loc[signals.index[i], 'signal_desc'] = '价格在多个斐波那契水平聚集区获得支撑'
+                        signals.loc[signals.index[i], 'confidence'] = 80
+                        break
+            
+            elif "聚集区阻力" in pattern:
+                for i in range(len(signals)-1, max(0, len(signals)-5), -1):
+                    if not signals['signal_type'].iloc[i]:
+                        signals.loc[signals.index[i], 'sell_signal'] = True
+                        signals.loc[signals.index[i], 'neutral_signal'] = False
+                        signals.loc[signals.index[i], 'trend'] = -1
+                        signals.loc[signals.index[i], 'signal_type'] = '斐波那契聚集区阻力'
+                        signals.loc[signals.index[i], 'signal_desc'] = '价格在多个斐波那契水平聚集区遇阻回落'
+                        signals.loc[signals.index[i], 'confidence'] = 80
+                        break
+            
+            # 时间节点信号
+            elif "重要时间节点" in pattern:
+                time_level = int(pattern.split('-')[1])
+                for i in range(len(signals)-1, max(0, len(signals)-3), -1):
+                    if not signals['signal_type'].iloc[i]:
+                        # 根据最近的价格趋势判断买卖方向
+                        if len(data) >= 5:
+                            recent_trend = data['close'].iloc[-5:].diff().mean()
+                            if recent_trend > 0:
+                                signals.loc[signals.index[i], 'buy_signal'] = True
+                                signals.loc[signals.index[i], 'trend'] = 1
+                                signals.loc[signals.index[i], 'signal_desc'] = f'斐波那契{time_level}周期时间节点-上升反转'
+                            else:
+                                signals.loc[signals.index[i], 'sell_signal'] = True
+                                signals.loc[signals.index[i], 'trend'] = -1
+                                signals.loc[signals.index[i], 'signal_desc'] = f'斐波那契{time_level}周期时间节点-下降反转'
+                            
+                            signals.loc[signals.index[i], 'neutral_signal'] = False
+                            signals.loc[signals.index[i], 'signal_type'] = f'斐波那契时间节点-{time_level}'
+                            signals.loc[signals.index[i], 'confidence'] = 65
+                        break
+        
+        # 成交量确认
+        if 'volume' in data.columns:
+            volume = data['volume']
+            vol_ma5 = volume.rolling(window=5).mean()
+            vol_ratio = volume / vol_ma5
+            
+            # 成交量放大确认
+            high_volume = vol_ratio > 1.5
+            signals.loc[high_volume, 'volume_confirmation'] = True
+            
+            # 成交量确认增强信号可靠性
+            for i in range(len(signals)):
+                if (signals['buy_signal'].iloc[i] or signals['sell_signal'].iloc[i]) and high_volume.iloc[i]:
+                    current_confidence = signals['confidence'].iloc[i]
+                    signals.loc[signals.index[i], 'confidence'] = min(90, current_confidence + 10)
+        
+        # 更新风险等级和仓位建议
+        for i in range(len(signals)):
+            score = signals['score'].iloc[i]
+            confidence = signals['confidence'].iloc[i]
+            
+            # 根据信号强度和置信度设置风险等级
+            if (score >= 80 or score <= 20) and confidence >= 70:
+                signals.loc[signals.index[i], 'risk_level'] = '低'
+            elif (score >= 70 or score <= 30) and confidence >= 60:
+                signals.loc[signals.index[i], 'risk_level'] = '中'
+            else:
+                signals.loc[signals.index[i], 'risk_level'] = '高'
+            
+            # 设置建议仓位
+            if signals['buy_signal'].iloc[i]:
+                if confidence >= 80:
+                    signals.loc[signals.index[i], 'position_size'] = 0.1  # 10%仓位
+                elif confidence >= 70:
+                    signals.loc[signals.index[i], 'position_size'] = 0.07  # 7%仓位
+                elif confidence >= 60:
+                    signals.loc[signals.index[i], 'position_size'] = 0.05  # 5%仓位
+            elif signals['sell_signal'].iloc[i]:
+                if confidence >= 80:
+                    signals.loc[signals.index[i], 'position_size'] = 0.1  # 10%仓位
+                elif confidence >= 70:
+                    signals.loc[signals.index[i], 'position_size'] = 0.07  # 7%仓位
+                elif confidence >= 60:
+                    signals.loc[signals.index[i], 'position_size'] = 0.05  # 5%仓位
+        
+        # 设置市场环境
+        if len(data) >= 20:
+            ma20 = data['close'].rolling(window=20).mean()
+            latest_ma20 = ma20.iloc[-1]
+            
+            if latest_close > latest_ma20 * 1.02:
+                signals.loc[signals.index[-1], 'market_env'] = 'bullish_market'  # 上升市场
+            elif latest_close < latest_ma20 * 0.98:
+                signals.loc[signals.index[-1], 'market_env'] = 'bearish_market'  # 下降市场
+            else:
+                signals.loc[signals.index[-1], 'market_env'] = 'sideways_market'  # 震荡市场
+        
+        # 计算止损位
+        for i in range(len(signals)):
+            if signals['buy_signal'].iloc[i]:
+                # 买入信号的止损：使用下方最近的斐波那契水平
+                for level in [0.618, 0.5, 0.382]:
+                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    if level_name in retracement_result.columns:
+                        level_price = retracement_result[level_name].iloc[0]
+                        if level_price < close_price[i]:
+                            signals.loc[signals.index[i], 'stop_loss'] = level_price * 0.98
+                            break
+            
+            elif signals['sell_signal'].iloc[i]:
+                # 卖出信号的止损：使用上方最近的斐波那契水平
+                for level in [0.382, 0.5, 0.618]:
+                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    if level_name in retracement_result.columns:
+                        level_price = retracement_result[level_name].iloc[0]
+                        if level_price > close_price[i]:
+                            signals.loc[signals.index[i], 'stop_loss'] = level_price * 1.02
+                            break
+        
+        return signals 

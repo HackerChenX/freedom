@@ -85,6 +85,9 @@ class BIAS(BaseIndicator):
             # 计算BIAS
             df_copy[f'BIAS{p}'] = (df_copy['close'] - ma) / ma * 100
         
+        # 存储结果
+        self._result = df_copy[[f'BIAS{p}' for p in self.periods]]
+        
         return df_copy
         
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -177,4 +180,570 @@ class BIAS(BaseIndicator):
             包含计算结果的DataFrame
         """
         return self.calculate(df)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算BIAS原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算BIAS
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        # 1. BIAS超买超卖评分
+        overbought_oversold_score = self._calculate_bias_overbought_oversold_score()
+        score += overbought_oversold_score
+        
+        # 2. BIAS回归评分
+        regression_score = self._calculate_bias_regression_score()
+        score += regression_score
+        
+        # 3. BIAS极值评分
+        extreme_score = self._calculate_bias_extreme_score()
+        score += extreme_score
+        
+        # 4. BIAS趋势评分
+        trend_score = self._calculate_bias_trend_score()
+        score += trend_score
+        
+        # 5. BIAS零轴穿越评分
+        zero_cross_score = self._calculate_bias_zero_cross_score()
+        score += zero_cross_score
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别BIAS技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算BIAS
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        # 1. 检测BIAS超买超卖形态
+        overbought_oversold_patterns = self._detect_bias_overbought_oversold_patterns()
+        patterns.extend(overbought_oversold_patterns)
+        
+        # 2. 检测BIAS回归形态
+        regression_patterns = self._detect_bias_regression_patterns()
+        patterns.extend(regression_patterns)
+        
+        # 3. 检测BIAS极值形态
+        extreme_patterns = self._detect_bias_extreme_patterns()
+        patterns.extend(extreme_patterns)
+        
+        # 4. 检测BIAS趋势形态
+        trend_patterns = self._detect_bias_trend_patterns()
+        patterns.extend(trend_patterns)
+        
+        # 5. 检测BIAS零轴穿越形态
+        zero_cross_patterns = self._detect_bias_zero_cross_patterns()
+        patterns.extend(zero_cross_patterns)
+        
+        return patterns
+    
+    def _calculate_bias_overbought_oversold_score(self) -> pd.Series:
+        """
+        计算BIAS超买超卖评分
+        
+        Returns:
+            pd.Series: 超买超卖评分
+        """
+        overbought_oversold_score = pd.Series(0.0, index=self._result.index)
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns:
+                bias_values = self._result[bias_col]
+                
+                # 超卖区域（BIAS < -6%）+20分
+                oversold_condition = bias_values < -6
+                oversold_intensity = np.abs(bias_values + 6) / 6  # 计算超卖强度
+                oversold_score = oversold_condition * (20 + oversold_intensity * 10)  # 最多+30分
+                overbought_oversold_score += oversold_score
+                
+                # 超买区域（BIAS > 6%）-20分
+                overbought_condition = bias_values > 6
+                overbought_intensity = (bias_values - 6) / 6  # 计算超买强度
+                overbought_score = overbought_condition * (20 + overbought_intensity * 10)  # 最多-30分
+                overbought_oversold_score -= overbought_score
+                
+                # 极度超卖（BIAS < -10%）额外+15分
+                extreme_oversold = bias_values < -10
+                overbought_oversold_score += extreme_oversold * 15
+                
+                # 极度超买（BIAS > 10%）额外-15分
+                extreme_overbought = bias_values > 10
+                overbought_oversold_score -= extreme_overbought * 15
+        
+        return overbought_oversold_score / len(self.periods)  # 平均化
+    
+    def _calculate_bias_regression_score(self) -> pd.Series:
+        """
+        计算BIAS回归评分
+        
+        Returns:
+            pd.Series: 回归评分
+        """
+        regression_score = pd.Series(0.0, index=self._result.index)
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns:
+                bias_values = self._result[bias_col]
+                
+                # BIAS从超卖区域回归+18分
+                bias_from_oversold = (bias_values.shift(1) < -6) & (bias_values >= -6)
+                regression_score += bias_from_oversold * 18
+                
+                # BIAS从超买区域回归-18分
+                bias_from_overbought = (bias_values.shift(1) > 6) & (bias_values <= 6)
+                regression_score -= bias_from_overbought * 18
+                
+                # BIAS向零轴回归（绝对值减小）+8分
+                bias_abs_decreasing = (np.abs(bias_values) < np.abs(bias_values.shift(1)))
+                regression_score += bias_abs_decreasing * 8
+        
+        return regression_score / len(self.periods)  # 平均化
+    
+    def _calculate_bias_extreme_score(self) -> pd.Series:
+        """
+        计算BIAS极值评分
+        
+        Returns:
+            pd.Series: 极值评分
+        """
+        extreme_score = pd.Series(0.0, index=self._result.index)
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns:
+                bias_values = self._result[bias_col]
+                
+                # 计算BIAS的历史分位数
+                if len(bias_values) >= 60:  # 至少60个数据点
+                    rolling_window = min(60, len(bias_values))
+                    
+                    # 计算滚动分位数
+                    bias_percentile = bias_values.rolling(rolling_window).apply(
+                        lambda x: (x.iloc[-1] <= x).sum() / len(x) * 100
+                    )
+                    
+                    # BIAS处于历史低位（10%分位数以下）+25分
+                    low_percentile = bias_percentile <= 10
+                    extreme_score += low_percentile * 25
+                    
+                    # BIAS处于历史高位（90%分位数以上）-25分
+                    high_percentile = bias_percentile >= 90
+                    extreme_score -= high_percentile * 25
+                    
+                    # BIAS处于极低位（5%分位数以下）额外+15分
+                    extreme_low = bias_percentile <= 5
+                    extreme_score += extreme_low * 15
+                    
+                    # BIAS处于极高位（95%分位数以上）额外-15分
+                    extreme_high = bias_percentile >= 95
+                    extreme_score -= extreme_high * 15
+        
+        return extreme_score / len(self.periods)  # 平均化
+    
+    def _calculate_bias_trend_score(self) -> pd.Series:
+        """
+        计算BIAS趋势评分
+        
+        Returns:
+            pd.Series: 趋势评分
+        """
+        trend_score = pd.Series(0.0, index=self._result.index)
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns:
+                bias_values = self._result[bias_col]
+                
+                # BIAS上升趋势+10分
+                bias_rising = bias_values > bias_values.shift(1)
+                trend_score += bias_rising * 10
+                
+                # BIAS下降趋势-10分
+                bias_falling = bias_values < bias_values.shift(1)
+                trend_score -= bias_falling * 10
+                
+                # BIAS连续上升（3个周期）+15分
+                if len(bias_values) >= 3:
+                    consecutive_rising = (
+                        (bias_values > bias_values.shift(1)) &
+                        (bias_values.shift(1) > bias_values.shift(2)) &
+                        (bias_values.shift(2) > bias_values.shift(3))
+                    )
+                    trend_score += consecutive_rising * 15
+                
+                # BIAS连续下降（3个周期）-15分
+                if len(bias_values) >= 3:
+                    consecutive_falling = (
+                        (bias_values < bias_values.shift(1)) &
+                        (bias_values.shift(1) < bias_values.shift(2)) &
+                        (bias_values.shift(2) < bias_values.shift(3))
+                    )
+                    trend_score -= consecutive_falling * 15
+        
+        return trend_score / len(self.periods)  # 平均化
+    
+    def _calculate_bias_zero_cross_score(self) -> pd.Series:
+        """
+        计算BIAS零轴穿越评分
+        
+        Returns:
+            pd.Series: 零轴穿越评分
+        """
+        zero_cross_score = pd.Series(0.0, index=self._result.index)
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns:
+                bias_values = self._result[bias_col]
+                
+                # BIAS上穿零轴+22分
+                bias_cross_up = crossover(bias_values, 0)
+                zero_cross_score += bias_cross_up * 22
+                
+                # BIAS下穿零轴-22分
+                bias_cross_down = crossunder(bias_values, 0)
+                zero_cross_score -= bias_cross_down * 22
+        
+        return zero_cross_score / len(self.periods)  # 平均化
+    
+    def _detect_bias_overbought_oversold_patterns(self) -> List[str]:
+        """
+        检测BIAS超买超卖形态
+        
+        Returns:
+            List[str]: 超买超卖形态列表
+        """
+        patterns = []
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns and len(self._result) > 0:
+                current_bias = self._result[bias_col].iloc[-1]
+                
+                if pd.isna(current_bias):
+                    continue
+                
+                if current_bias < -10:
+                    patterns.append(f"BIAS{period}极度超卖")
+                elif current_bias < -6:
+                    patterns.append(f"BIAS{period}超卖")
+                elif current_bias > 10:
+                    patterns.append(f"BIAS{period}极度超买")
+                elif current_bias > 6:
+                    patterns.append(f"BIAS{period}超买")
+                elif -3 <= current_bias <= 3:
+                    patterns.append(f"BIAS{period}中性区域")
+        
+        return patterns
+    
+    def _detect_bias_regression_patterns(self) -> List[str]:
+        """
+        检测BIAS回归形态
+        
+        Returns:
+            List[str]: 回归形态列表
+        """
+        patterns = []
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns and len(self._result) >= 2:
+                bias_values = self._result[bias_col]
+                current_bias = bias_values.iloc[-1]
+                prev_bias = bias_values.iloc[-2]
+                
+                if pd.isna(current_bias) or pd.isna(prev_bias):
+                    continue
+                
+                # 检测从超卖区域回归
+                if prev_bias < -6 and current_bias >= -6:
+                    patterns.append(f"BIAS{period}从超卖区域回归")
+                
+                # 检测从超买区域回归
+                if prev_bias > 6 and current_bias <= 6:
+                    patterns.append(f"BIAS{period}从超买区域回归")
+                
+                # 检测向零轴回归
+                if abs(current_bias) < abs(prev_bias):
+                    patterns.append(f"BIAS{period}向零轴回归")
+        
+        return patterns
+    
+    def _detect_bias_extreme_patterns(self) -> List[str]:
+        """
+        检测BIAS极值形态
+        
+        Returns:
+            List[str]: 极值形态列表
+        """
+        patterns = []
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns and len(self._result) >= 60:
+                bias_values = self._result[bias_col]
+                current_bias = bias_values.iloc[-1]
+                
+                if pd.isna(current_bias):
+                    continue
+                
+                # 计算历史分位数
+                recent_60 = bias_values.tail(60)
+                percentile = (current_bias <= recent_60).sum() / len(recent_60) * 100
+                
+                if percentile <= 5:
+                    patterns.append(f"BIAS{period}历史极低位")
+                elif percentile <= 10:
+                    patterns.append(f"BIAS{period}历史低位")
+                elif percentile >= 95:
+                    patterns.append(f"BIAS{period}历史极高位")
+                elif percentile >= 90:
+                    patterns.append(f"BIAS{period}历史高位")
+        
+        return patterns
+    
+    def _detect_bias_trend_patterns(self) -> List[str]:
+        """
+        检测BIAS趋势形态
+        
+        Returns:
+            List[str]: 趋势形态列表
+        """
+        patterns = []
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns and len(self._result) >= 3:
+                bias_values = self._result[bias_col]
+                
+                # 检查最近3个周期的趋势
+                recent_3 = bias_values.tail(3)
+                if len(recent_3) == 3 and not recent_3.isna().any():
+                    if (recent_3.iloc[2] > recent_3.iloc[1] > recent_3.iloc[0]):
+                        patterns.append(f"BIAS{period}连续上升")
+                    elif (recent_3.iloc[2] < recent_3.iloc[1] < recent_3.iloc[0]):
+                        patterns.append(f"BIAS{period}连续下降")
+                
+                # 检查当前趋势
+                if len(bias_values) >= 2:
+                    current_bias = bias_values.iloc[-1]
+                    prev_bias = bias_values.iloc[-2]
+                    
+                    if not pd.isna(current_bias) and not pd.isna(prev_bias):
+                        if current_bias > prev_bias:
+                            patterns.append(f"BIAS{period}上升")
+                        elif current_bias < prev_bias:
+                            patterns.append(f"BIAS{period}下降")
+                        else:
+                            patterns.append(f"BIAS{period}平稳")
+        
+        return patterns
+    
+    def _detect_bias_zero_cross_patterns(self) -> List[str]:
+        """
+        检测BIAS零轴穿越形态
+        
+        Returns:
+            List[str]: 零轴穿越形态列表
+        """
+        patterns = []
+        
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns:
+                bias_values = self._result[bias_col]
+                
+                # 检查最近的零轴穿越
+                recent_periods = min(5, len(bias_values))
+                recent_bias = bias_values.tail(recent_periods)
+                
+                if crossover(recent_bias, 0).any():
+                    patterns.append(f"BIAS{period}上穿零轴")
+                
+                if crossunder(recent_bias, 0).any():
+                    patterns.append(f"BIAS{period}下穿零轴")
+                
+                # 检查当前位置
+                if len(bias_values) > 0:
+                    current_bias = bias_values.iloc[-1]
+                    if not pd.isna(current_bias):
+                        if current_bias > 0:
+                            patterns.append(f"BIAS{period}零轴上方")
+                        elif current_bias < 0:
+                            patterns.append(f"BIAS{period}零轴下方")
+                        else:
+                            patterns.append(f"BIAS{period}零轴位置")
+        
+        return patterns
+
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成BIAS指标标准化交易信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+        """
+        # 确保已计算BIAS指标
+        if not self.has_result():
+            self.calculate(data)
+        
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['neutral_signal'] = True  # 默认为中性信号
+        signals['trend'] = 0  # 0表示中性
+        signals['score'] = 50.0  # 默认评分50分
+        signals['signal_type'] = None
+        signals['signal_desc'] = None
+        signals['confidence'] = 50.0
+        signals['risk_level'] = '中'
+        signals['position_size'] = 0.0
+        signals['stop_loss'] = None
+        signals['market_env'] = 'sideways_market'
+        signals['volume_confirmation'] = False
+        
+        # 获取参数
+        overbought = kwargs.get('overbought', 6)  # 超买阈值
+        oversold = kwargs.get('oversold', -6)  # 超卖阈值
+        
+        # 使用主要周期的BIAS生成信号
+        main_period = self.periods[0]
+        bias_col = f'BIAS{main_period}'
+        
+        if bias_col in self._result.columns:
+            bias = self._result[bias_col]
+            
+            # 计算评分
+            score = self.calculate_raw_score(data, **kwargs)
+            signals['score'] = score
+            
+            # 检测形态
+            patterns = self.identify_patterns(data, **kwargs)
+            
+            # 设置买入信号
+            buy_signal_idx = (
+                # 超卖区域上穿信号线
+                crossover(bias, oversold) | 
+                # 或BIAS开始由负转正
+                crossover(bias, 0)
+            )
+            signals.loc[buy_signal_idx, 'buy_signal'] = True
+            signals.loc[buy_signal_idx, 'neutral_signal'] = False
+            signals.loc[buy_signal_idx, 'trend'] = 1
+            signals.loc[buy_signal_idx, 'signal_type'] = 'BIAS超卖回升'
+            signals.loc[buy_signal_idx, 'signal_desc'] = 'BIAS指标从超卖区域回升或穿越0轴'
+            signals.loc[buy_signal_idx, 'confidence'] = 70.0
+            signals.loc[buy_signal_idx, 'position_size'] = 0.3
+            
+            # 设置卖出信号
+            sell_signal_idx = (
+                # 超买区域下穿信号线
+                crossunder(bias, overbought) | 
+                # 或BIAS开始由正转负
+                crossunder(bias, 0)
+            )
+            signals.loc[sell_signal_idx, 'sell_signal'] = True
+            signals.loc[sell_signal_idx, 'neutral_signal'] = False
+            signals.loc[sell_signal_idx, 'trend'] = -1
+            signals.loc[sell_signal_idx, 'signal_type'] = 'BIAS超买回落'
+            signals.loc[sell_signal_idx, 'signal_desc'] = 'BIAS指标从超买区域回落或穿越0轴'
+            signals.loc[sell_signal_idx, 'confidence'] = 70.0
+            signals.loc[sell_signal_idx, 'position_size'] = 0.3
+            
+            # 设置强烈买入信号
+            strong_buy_idx = bias < oversold * 2  # BIAS处于极度超卖区域
+            signals.loc[strong_buy_idx, 'buy_signal'] = True
+            signals.loc[strong_buy_idx, 'neutral_signal'] = False
+            signals.loc[strong_buy_idx, 'trend'] = 1
+            signals.loc[strong_buy_idx, 'signal_type'] = 'BIAS极度超卖'
+            signals.loc[strong_buy_idx, 'signal_desc'] = 'BIAS指标处于极度超卖区域'
+            signals.loc[strong_buy_idx, 'confidence'] = 80.0
+            signals.loc[strong_buy_idx, 'position_size'] = 0.5
+            
+            # 设置强烈卖出信号
+            strong_sell_idx = bias > overbought * 2  # BIAS处于极度超买区域
+            signals.loc[strong_sell_idx, 'sell_signal'] = True
+            signals.loc[strong_sell_idx, 'neutral_signal'] = False
+            signals.loc[strong_sell_idx, 'trend'] = -1
+            signals.loc[strong_sell_idx, 'signal_type'] = 'BIAS极度超买'
+            signals.loc[strong_sell_idx, 'signal_desc'] = 'BIAS指标处于极度超买区域'
+            signals.loc[strong_sell_idx, 'confidence'] = 80.0
+            signals.loc[strong_sell_idx, 'position_size'] = 0.5
+            
+            # 根据BIAS形态设置信号
+            for pattern in patterns:
+                if '底背离' in pattern:
+                    pattern_idx = signals.index[-5:]  # 假设形态影响最近5个周期
+                    signals.loc[pattern_idx, 'buy_signal'] = True
+                    signals.loc[pattern_idx, 'neutral_signal'] = False
+                    signals.loc[pattern_idx, 'trend'] = 1
+                    signals.loc[pattern_idx, 'signal_type'] = 'BIAS底背离'
+                    signals.loc[pattern_idx, 'signal_desc'] = pattern
+                    signals.loc[pattern_idx, 'confidence'] = 85.0
+                    signals.loc[pattern_idx, 'position_size'] = 0.6
+                elif '顶背离' in pattern:
+                    pattern_idx = signals.index[-5:]  # 假设形态影响最近5个周期
+                    signals.loc[pattern_idx, 'sell_signal'] = True
+                    signals.loc[pattern_idx, 'neutral_signal'] = False
+                    signals.loc[pattern_idx, 'trend'] = -1
+                    signals.loc[pattern_idx, 'signal_type'] = 'BIAS顶背离'
+                    signals.loc[pattern_idx, 'signal_desc'] = pattern
+                    signals.loc[pattern_idx, 'confidence'] = 85.0
+                    signals.loc[pattern_idx, 'position_size'] = 0.6
+            
+            # 设置止损价格
+            if 'low' in data.columns and 'high' in data.columns:
+                # 买入信号的止损设为最近的低点
+                buy_indices = signals[signals['buy_signal']].index
+                if not buy_indices.empty:
+                    for idx in buy_indices:
+                        if idx > data.index[10]:  # 确保有足够的历史数据
+                            lookback = 5
+                            signals.loc[idx, 'stop_loss'] = data.loc[idx-lookback:idx, 'low'].min() * 0.98
+                
+                # 卖出信号的止损设为最近的高点
+                sell_indices = signals[signals['sell_signal']].index
+                if not sell_indices.empty:
+                    for idx in sell_indices:
+                        if idx > data.index[10]:  # 确保有足够的历史数据
+                            lookback = 5
+                            signals.loc[idx, 'stop_loss'] = data.loc[idx-lookback:idx, 'high'].max() * 1.02
+        
+        return signals
 

@@ -34,10 +34,9 @@ class VOSC(BaseIndicator):
             short_period: 短期移动平均周期，默认为12
             long_period: 长期移动平均周期，默认为26
         """
-        super().__init__()
+        super().__init__(name="VOSC", description="成交量震荡指标，通过对成交量的长短期移动平均差值的百分比来衡量成交量的变化和趋势")
         self.short_period = short_period
         self.long_period = long_period
-        self.name = "VOSC"
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -98,6 +97,9 @@ class VOSC(BaseIndicator):
         # 计算VOSC的移动平均作为信号线
         df_copy['vosc_signal'] = df_copy['vosc'].rolling(window=9).mean()
         
+        # 存储结果
+        self._result = df_copy[['vosc', 'vosc_signal']]
+        
         return df_copy
         
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -138,6 +140,435 @@ class VOSC(BaseIndicator):
                 df_copy.iloc[i, df_copy.columns.get_loc('vosc_sell_signal')] = 1
         
         return df_copy
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算VOSC原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算VOSC
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        # 1. VOSC零轴穿越评分
+        zero_cross_score = self._calculate_vosc_zero_cross_score()
+        score += zero_cross_score
+        
+        # 2. VOSC与信号线交叉评分
+        signal_cross_score = self._calculate_vosc_signal_cross_score()
+        score += signal_cross_score
+        
+        # 3. VOSC趋势评分
+        trend_score = self._calculate_vosc_trend_score()
+        score += trend_score
+        
+        # 4. VOSC极值评分
+        extreme_score = self._calculate_vosc_extreme_score()
+        score += extreme_score
+        
+        # 5. VOSC与价格关系评分
+        price_relation_score = self._calculate_vosc_price_relation_score(data)
+        score += price_relation_score
+        
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别VOSC技术形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 确保已计算VOSC
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        # 1. 检测VOSC零轴穿越形态
+        zero_cross_patterns = self._detect_vosc_zero_cross_patterns()
+        patterns.extend(zero_cross_patterns)
+        
+        # 2. 检测VOSC与信号线交叉形态
+        signal_cross_patterns = self._detect_vosc_signal_cross_patterns()
+        patterns.extend(signal_cross_patterns)
+        
+        # 3. 检测VOSC趋势形态
+        trend_patterns = self._detect_vosc_trend_patterns()
+        patterns.extend(trend_patterns)
+        
+        # 4. 检测VOSC极值形态
+        extreme_patterns = self._detect_vosc_extreme_patterns()
+        patterns.extend(extreme_patterns)
+        
+        # 5. 检测VOSC与价格关系形态
+        price_relation_patterns = self._detect_vosc_price_relation_patterns(data)
+        patterns.extend(price_relation_patterns)
+        
+        return patterns
+    
+    def _calculate_vosc_zero_cross_score(self) -> pd.Series:
+        """
+        计算VOSC零轴穿越评分
+        
+        Returns:
+            pd.Series: 零轴穿越评分
+        """
+        zero_cross_score = pd.Series(0.0, index=self._result.index)
+        
+        vosc_values = self._result['vosc']
+        
+        # VOSC上穿零轴+25分
+        vosc_cross_up_zero = crossover(vosc_values, 0)
+        zero_cross_score += vosc_cross_up_zero * 25
+        
+        # VOSC下穿零轴-25分
+        vosc_cross_down_zero = crossunder(vosc_values, 0)
+        zero_cross_score -= vosc_cross_down_zero * 25
+        
+        # VOSC在零轴上方+8分
+        vosc_above_zero = vosc_values > 0
+        zero_cross_score += vosc_above_zero * 8
+        
+        # VOSC在零轴下方-8分
+        vosc_below_zero = vosc_values < 0
+        zero_cross_score -= vosc_below_zero * 8
+        
+        return zero_cross_score
+    
+    def _calculate_vosc_signal_cross_score(self) -> pd.Series:
+        """
+        计算VOSC与信号线交叉评分
+        
+        Returns:
+            pd.Series: 信号线交叉评分
+        """
+        signal_cross_score = pd.Series(0.0, index=self._result.index)
+        
+        vosc_values = self._result['vosc']
+        signal_values = self._result['vosc_signal']
+        
+        # VOSC上穿信号线+20分
+        vosc_cross_up_signal = crossover(vosc_values, signal_values)
+        signal_cross_score += vosc_cross_up_signal * 20
+        
+        # VOSC下穿信号线-20分
+        vosc_cross_down_signal = crossunder(vosc_values, signal_values)
+        signal_cross_score -= vosc_cross_down_signal * 20
+        
+        # VOSC在信号线上方+5分
+        vosc_above_signal = vosc_values > signal_values
+        signal_cross_score += vosc_above_signal * 5
+        
+        # VOSC在信号线下方-5分
+        vosc_below_signal = vosc_values < signal_values
+        signal_cross_score -= vosc_below_signal * 5
+        
+        return signal_cross_score
+    
+    def _calculate_vosc_trend_score(self) -> pd.Series:
+        """
+        计算VOSC趋势评分
+        
+        Returns:
+            pd.Series: 趋势评分
+        """
+        trend_score = pd.Series(0.0, index=self._result.index)
+        
+        vosc_values = self._result['vosc']
+        
+        # VOSC上升趋势+10分
+        vosc_rising = vosc_values > vosc_values.shift(1)
+        trend_score += vosc_rising * 10
+        
+        # VOSC下降趋势-10分
+        vosc_falling = vosc_values < vosc_values.shift(1)
+        trend_score -= vosc_falling * 10
+        
+        # VOSC连续上升（3个周期）+15分
+        if len(vosc_values) >= 3:
+            consecutive_rising = (
+                (vosc_values > vosc_values.shift(1)) &
+                (vosc_values.shift(1) > vosc_values.shift(2)) &
+                (vosc_values.shift(2) > vosc_values.shift(3))
+            )
+            trend_score += consecutive_rising * 15
+        
+        # VOSC连续下降（3个周期）-15分
+        if len(vosc_values) >= 3:
+            consecutive_falling = (
+                (vosc_values < vosc_values.shift(1)) &
+                (vosc_values.shift(1) < vosc_values.shift(2)) &
+                (vosc_values.shift(2) < vosc_values.shift(3))
+            )
+            trend_score -= consecutive_falling * 15
+        
+        return trend_score
+    
+    def _calculate_vosc_extreme_score(self) -> pd.Series:
+        """
+        计算VOSC极值评分
+        
+        Returns:
+            pd.Series: 极值评分
+        """
+        extreme_score = pd.Series(0.0, index=self._result.index)
+        
+        vosc_values = self._result['vosc']
+        
+        # VOSC极度超买（>50）-20分
+        vosc_extreme_overbought = vosc_values > 50
+        extreme_score -= vosc_extreme_overbought * 20
+        
+        # VOSC极度超卖（<-50）+20分
+        vosc_extreme_oversold = vosc_values < -50
+        extreme_score += vosc_extreme_oversold * 20
+        
+        # VOSC超买（>20）-10分
+        vosc_overbought = (vosc_values > 20) & (vosc_values <= 50)
+        extreme_score -= vosc_overbought * 10
+        
+        # VOSC超卖（<-20）+10分
+        vosc_oversold = (vosc_values < -20) & (vosc_values >= -50)
+        extreme_score += vosc_oversold * 10
+        
+        return extreme_score
+    
+    def _calculate_vosc_price_relation_score(self, data: pd.DataFrame) -> pd.Series:
+        """
+        计算VOSC与价格关系评分
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.Series: 价格关系评分
+        """
+        price_relation_score = pd.Series(0.0, index=self._result.index)
+        
+        if 'close' not in data.columns:
+            return price_relation_score
+        
+        close_price = data['close']
+        vosc_values = self._result['vosc']
+        
+        # 计算价格变化率
+        price_change = close_price.pct_change()
+        
+        # 价格上涨且VOSC为正+12分
+        price_up_vosc_positive = (price_change > 0) & (vosc_values > 0)
+        price_relation_score += price_up_vosc_positive * 12
+        
+        # 价格下跌且VOSC为负-12分
+        price_down_vosc_negative = (price_change < 0) & (vosc_values < 0)
+        price_relation_score -= price_down_vosc_negative * 12
+        
+        # 价格上涨但VOSC为负（量价背离）-15分
+        price_up_vosc_negative = (price_change > 0) & (vosc_values < 0)
+        price_relation_score -= price_up_vosc_negative * 15
+        
+        # 价格下跌但VOSC为正（量价背离）+15分
+        price_down_vosc_positive = (price_change < 0) & (vosc_values > 0)
+        price_relation_score += price_down_vosc_positive * 15
+        
+        return price_relation_score
+    
+    def _detect_vosc_zero_cross_patterns(self) -> List[str]:
+        """
+        检测VOSC零轴穿越形态
+        
+        Returns:
+            List[str]: 零轴穿越形态列表
+        """
+        patterns = []
+        
+        vosc_values = self._result['vosc']
+        
+        # 检查最近的零轴穿越
+        recent_periods = min(5, len(vosc_values))
+        recent_vosc = vosc_values.tail(recent_periods)
+        
+        if crossover(recent_vosc, 0).any():
+            patterns.append("VOSC上穿零轴")
+        
+        if crossunder(recent_vosc, 0).any():
+            patterns.append("VOSC下穿零轴")
+        
+        # 检查当前位置
+        if len(vosc_values) > 0:
+            current_vosc = vosc_values.iloc[-1]
+            if not pd.isna(current_vosc):
+                if current_vosc > 0:
+                    patterns.append("VOSC零轴上方")
+                elif current_vosc < 0:
+                    patterns.append("VOSC零轴下方")
+                else:
+                    patterns.append("VOSC零轴位置")
+        
+        return patterns
+    
+    def _detect_vosc_signal_cross_patterns(self) -> List[str]:
+        """
+        检测VOSC与信号线交叉形态
+        
+        Returns:
+            List[str]: 信号线交叉形态列表
+        """
+        patterns = []
+        
+        vosc_values = self._result['vosc']
+        signal_values = self._result['vosc_signal']
+        
+        # 检查最近的信号线穿越
+        recent_periods = min(5, len(vosc_values))
+        recent_vosc = vosc_values.tail(recent_periods)
+        recent_signal = signal_values.tail(recent_periods)
+        
+        if crossover(recent_vosc, recent_signal).any():
+            patterns.append("VOSC上穿信号线")
+        
+        if crossunder(recent_vosc, recent_signal).any():
+            patterns.append("VOSC下穿信号线")
+        
+        # 检查当前位置关系
+        if len(vosc_values) > 0 and len(signal_values) > 0:
+            current_vosc = vosc_values.iloc[-1]
+            current_signal = signal_values.iloc[-1]
+            
+            if not pd.isna(current_vosc) and not pd.isna(current_signal):
+                if current_vosc > current_signal:
+                    patterns.append("VOSC信号线上方")
+                elif current_vosc < current_signal:
+                    patterns.append("VOSC信号线下方")
+                else:
+                    patterns.append("VOSC信号线重合")
+        
+        return patterns
+    
+    def _detect_vosc_trend_patterns(self) -> List[str]:
+        """
+        检测VOSC趋势形态
+        
+        Returns:
+            List[str]: 趋势形态列表
+        """
+        patterns = []
+        
+        vosc_values = self._result['vosc']
+        
+        # 检查VOSC趋势
+        if len(vosc_values) >= 3:
+            recent_3 = vosc_values.tail(3)
+            if len(recent_3) == 3 and not recent_3.isna().any():
+                if (recent_3.iloc[2] > recent_3.iloc[1] > recent_3.iloc[0]):
+                    patterns.append("VOSC连续上升")
+                elif (recent_3.iloc[2] < recent_3.iloc[1] < recent_3.iloc[0]):
+                    patterns.append("VOSC连续下降")
+        
+        # 检查当前趋势
+        if len(vosc_values) >= 2:
+            current_vosc = vosc_values.iloc[-1]
+            prev_vosc = vosc_values.iloc[-2]
+            
+            if not pd.isna(current_vosc) and not pd.isna(prev_vosc):
+                if current_vosc > prev_vosc:
+                    patterns.append("VOSC上升")
+                elif current_vosc < prev_vosc:
+                    patterns.append("VOSC下降")
+                else:
+                    patterns.append("VOSC平稳")
+        
+        return patterns
+    
+    def _detect_vosc_extreme_patterns(self) -> List[str]:
+        """
+        检测VOSC极值形态
+        
+        Returns:
+            List[str]: 极值形态列表
+        """
+        patterns = []
+        
+        vosc_values = self._result['vosc']
+        
+        if len(vosc_values) > 0:
+            current_vosc = vosc_values.iloc[-1]
+            
+            if pd.isna(current_vosc):
+                return patterns
+            
+            if current_vosc > 50:
+                patterns.append("VOSC极度超买")
+            elif current_vosc > 20:
+                patterns.append("VOSC超买")
+            elif current_vosc < -50:
+                patterns.append("VOSC极度超卖")
+            elif current_vosc < -20:
+                patterns.append("VOSC超卖")
+            elif -10 <= current_vosc <= 10:
+                patterns.append("VOSC中性区域")
+        
+        return patterns
+    
+    def _detect_vosc_price_relation_patterns(self, data: pd.DataFrame) -> List[str]:
+        """
+        检测VOSC与价格关系形态
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            List[str]: 价格关系形态列表
+        """
+        patterns = []
+        
+        if 'close' not in data.columns:
+            return patterns
+        
+        close_price = data['close']
+        vosc_values = self._result['vosc']
+        
+        if len(close_price) >= 5:
+            # 检查最近5个周期的价格和VOSC关系
+            recent_price = close_price.tail(5)
+            recent_vosc = vosc_values.tail(5)
+            
+            # 计算价格和VOSC的趋势
+            price_trend = recent_price.iloc[-1] - recent_price.iloc[0]
+            vosc_trend = recent_vosc.iloc[-1] - recent_vosc.iloc[0]
+            
+            # 量价配合
+            if price_trend > 0 and vosc_trend > 0:
+                patterns.append("量价配合上涨")
+            elif price_trend < 0 and vosc_trend < 0:
+                patterns.append("量价配合下跌")
+            # 量价背离
+            elif price_trend > 0 and vosc_trend < 0:
+                patterns.append("量价背离上涨")
+            elif price_trend < 0 and vosc_trend > 0:
+                patterns.append("量价背离下跌")
+            else:
+                patterns.append("量价关系中性")
+        
+        return patterns
         
     def plot(self, df: pd.DataFrame, ax=None, **kwargs):
         """

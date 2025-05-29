@@ -8,10 +8,34 @@ import abc
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple, Callable
+from enum import Enum
 
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+class MarketEnvironment(Enum):
+    """市场环境枚举"""
+    BULL_MARKET = "牛市"
+    BEAR_MARKET = "熊市"
+    SIDEWAYS_MARKET = "震荡市"
+    VOLATILE_MARKET = "高波动市"
+
+
+class SignalStrength(Enum):
+    """信号强度枚举"""
+    VERY_STRONG = 5
+    STRONG = 4
+    MODERATE = 3
+    WEAK = 2
+    VERY_WEAK = 1
+    NEUTRAL = 0
+    VERY_WEAK_NEGATIVE = -1
+    WEAK_NEGATIVE = -2
+    MODERATE_NEGATIVE = -3
+    STRONG_NEGATIVE = -4
+    VERY_STRONG_NEGATIVE = -5
 
 
 class BaseIndicator(abc.ABC):
@@ -21,13 +45,14 @@ class BaseIndicator(abc.ABC):
     所有技术指标类应继承此类，并实现必要的抽象方法
     """
     
-    def __init__(self, name: str = "", description: str = ""):
+    def __init__(self, name: str = "", description: str = "", weight: float = 1.0):
         """
         初始化技术指标
         
         Args:
             name: 指标名称，可选参数，如果未提供则使用子类的name属性
             description: 指标描述
+            weight: 指标权重，用于综合评分
         """
         # 如果未提供name，则尝试使用子类中定义的name属性
         if not name and hasattr(self, 'name'):
@@ -36,8 +61,10 @@ class BaseIndicator(abc.ABC):
             self.name = name
             
         self.description = description
+        self.weight = weight
         self._result = None
         self._error = None
+        self._score_cache = {}
     
     @property
     def result(self) -> Optional[pd.DataFrame]:
@@ -71,6 +98,221 @@ class BaseIndicator(abc.ABC):
             pd.DataFrame: 计算结果
         """
         pass
+    
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算指标评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 评分结果，包含：
+                - raw_score: 原始评分序列
+                - final_score: 最终评分序列
+                - market_environment: 市场环境
+                - patterns: 识别的形态
+                - signals: 生成的信号
+                - confidence: 置信度
+        """
+        try:
+            # 计算原始评分
+            raw_score = self.calculate_raw_score(data, **kwargs)
+            
+            # 检测市场环境
+            market_env = self.detect_market_environment(data)
+            
+            # 应用市场环境权重调整
+            adjusted_score = self.apply_market_environment_adjustment(raw_score, market_env)
+            
+            # 识别形态
+            patterns = self.identify_patterns(data, **kwargs)
+            
+            # 生成信号
+            signals = self.generate_trading_signals(data, **kwargs)
+            
+            # 计算置信度
+            confidence = self.calculate_confidence(adjusted_score, patterns, signals)
+            
+            return {
+                'raw_score': raw_score,
+                'final_score': adjusted_score,
+                'market_environment': market_env,
+                'patterns': patterns,
+                'signals': signals,
+                'confidence': confidence
+            }
+            
+        except Exception as e:
+            logger.error(f"计算 {self.name} 评分时出错: {e}")
+            # 返回默认值
+            return {
+                'raw_score': pd.Series(50.0, index=data.index),
+                'final_score': pd.Series(50.0, index=data.index),
+                'market_environment': MarketEnvironment.SIDEWAYS_MARKET,
+                'patterns': [],
+                'signals': {},
+                'confidence': 50.0
+            }
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算原始评分（子类可重写此方法实现具体的评分逻辑）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 默认实现：基于信号生成简单评分
+        signals = self.generate_signals(data, **kwargs)
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        
+        if 'buy_signal' in signals.columns:
+            score += signals['buy_signal'] * 20  # 买入信号+20分
+        if 'sell_signal' in signals.columns:
+            score -= signals['sell_signal'] * 20  # 卖出信号-20分
+            
+        return np.clip(score, 0, 100)
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别技术形态（子类可重写此方法实现具体的形态识别）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        patterns = []
+        
+        # 基础形态识别：金叉死叉
+        signals = self.generate_signals(data, **kwargs)
+        
+        if 'buy_signal' in signals.columns and signals['buy_signal'].any():
+            patterns.append("买入信号")
+        if 'sell_signal' in signals.columns and signals['sell_signal'].any():
+            patterns.append("卖出信号")
+            
+        return patterns
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成交易信号（子类可重写此方法实现具体的信号生成）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, pd.Series]: 信号字典
+        """
+        # 调用原有的generate_signals方法
+        signals_df = self.generate_signals(data, **kwargs)
+        
+        # 转换为字典格式
+        signals = {}
+        for col in signals_df.columns:
+            signals[col] = signals_df[col]
+            
+        return signals
+    
+    def detect_market_environment(self, data: pd.DataFrame, lookback_period: int = 60) -> MarketEnvironment:
+        """
+        检测市场环境
+        
+        Args:
+            data: 输入数据
+            lookback_period: 回看周期
+            
+        Returns:
+            MarketEnvironment: 市场环境
+        """
+        if len(data) < lookback_period:
+            return MarketEnvironment.SIDEWAYS_MARKET
+        
+        recent_data = data.tail(lookback_period)
+        
+        # 计算趋势强度
+        price_change = (recent_data['close'].iloc[-1] - recent_data['close'].iloc[0]) / recent_data['close'].iloc[0]
+        
+        # 计算波动率
+        returns = recent_data['close'].pct_change().dropna()
+        volatility = returns.std() * np.sqrt(252)  # 年化波动率
+        
+        # 判断市场环境
+        if price_change > 0.2:  # 上涨超过20%
+            return MarketEnvironment.BULL_MARKET
+        elif price_change < -0.2:  # 下跌超过20%
+            return MarketEnvironment.BEAR_MARKET
+        elif volatility > 0.3:  # 高波动率
+            return MarketEnvironment.VOLATILE_MARKET
+        else:
+            return MarketEnvironment.SIDEWAYS_MARKET
+    
+    def apply_market_environment_adjustment(self, score: pd.Series, market_env: MarketEnvironment) -> pd.Series:
+        """
+        应用市场环境权重调整
+        
+        Args:
+            score: 原始评分
+            market_env: 市场环境
+            
+        Returns:
+            pd.Series: 调整后的评分
+        """
+        # 根据市场环境调整评分
+        if market_env == MarketEnvironment.BULL_MARKET:
+            # 牛市中，适度提高买入信号的权重
+            adjustment = 1.1
+        elif market_env == MarketEnvironment.BEAR_MARKET:
+            # 熊市中，适度降低买入信号的权重
+            adjustment = 0.9
+        elif market_env == MarketEnvironment.VOLATILE_MARKET:
+            # 高波动市场中，降低信号权重
+            adjustment = 0.8
+        else:
+            # 震荡市场，保持原有权重
+            adjustment = 1.0
+        
+        adjusted_score = score * adjustment
+        return np.clip(adjusted_score, 0, 100)
+    
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+        
+        Args:
+            score: 评分序列
+            patterns: 识别的形态
+            signals: 生成的信号
+            
+        Returns:
+            float: 置信度（0-100）
+        """
+        base_confidence = 50.0
+        
+        # 基于评分的置信度
+        latest_score = score.iloc[-1] if len(score) > 0 else 50.0
+        score_confidence = abs(latest_score - 50) * 2  # 距离中性分越远，置信度越高
+        
+        # 基于形态数量的置信度
+        pattern_confidence = min(len(patterns) * 10, 30)  # 每个形态增加10分，最多30分
+        
+        # 基于信号强度的置信度
+        signal_confidence = 0
+        for signal_name, signal_series in signals.items():
+            if signal_series.any():
+                signal_confidence += 10
+        signal_confidence = min(signal_confidence, 20)  # 最多20分
+        
+        total_confidence = base_confidence + score_confidence + pattern_confidence + signal_confidence
+        return min(total_confidence, 100.0)
     
     def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -179,33 +421,47 @@ class BaseIndicator(abc.ABC):
         return True
     
     @staticmethod
-    def crossover(series1: pd.Series, series2: pd.Series) -> pd.Series:
+    def crossover(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
         """
         计算两个序列的上穿信号
         
         Args:
             series1: 第一个序列
-            series2: 第二个序列
+            series2: 第二个序列或标量值
             
         Returns:
             pd.Series: 上穿信号序列，上穿为True，否则为False
         """
-        series1, series2 = pd.Series(series1), pd.Series(series2)
+        series1 = pd.Series(series1)
+        
+        if isinstance(series2, (int, float)):
+            # 如果是标量，创建同样长度的序列
+            series2 = pd.Series([series2] * len(series1), index=series1.index)
+        else:
+            series2 = pd.Series(series2)
+            
         return (series1.shift(1) < series2.shift(1)) & (series1 > series2)
     
     @staticmethod
-    def crossunder(series1: pd.Series, series2: pd.Series) -> pd.Series:
+    def crossunder(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
         """
         计算两个序列的下穿信号
         
         Args:
             series1: 第一个序列
-            series2: 第二个序列
+            series2: 第二个序列或标量值
             
         Returns:
             pd.Series: 下穿信号序列，下穿为True，否则为False
         """
-        series1, series2 = pd.Series(series1), pd.Series(series2)
+        series1 = pd.Series(series1)
+        
+        if isinstance(series2, (int, float)):
+            # 如果是标量，创建同样长度的序列
+            series2 = pd.Series([series2] * len(series1), index=series1.index)
+        else:
+            series2 = pd.Series(series2)
+            
         return (series1.shift(1) > series2.shift(1)) & (series1 < series2)
     
     @staticmethod
