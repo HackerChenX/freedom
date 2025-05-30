@@ -302,8 +302,25 @@ class KDJ(BaseIndicator):
         # 1. K和D线交叉评分
         golden_cross = self.crossover(k, d)
         death_cross = self.crossunder(k, d)
-        score += golden_cross * 20  # K上穿D+20分
-        score -= death_cross * 20   # K下穿D-20分
+        
+        # 优化点：KD线夹角系数
+        if len(k) >= 3 and len(d) >= 3:
+            # 计算K与D线夹角（使用差值占平均值的百分比来近似）
+            kd_angle = abs(k - d) / ((k + d) / 2) * 100
+            
+            # 夹角越大，交叉信号越强
+            kd_angle_coef = np.clip(1 + kd_angle * 0.01, 1.0, 1.5)  # 系数范围：1.0-1.5
+            
+            # 使用夹角系数调整交叉信号分数
+            golden_cross_score = golden_cross * 20 * np.where(golden_cross, kd_angle_coef, 1.0)
+            death_cross_score = death_cross * 20 * np.where(death_cross, kd_angle_coef, 1.0)
+            
+            score += golden_cross_score  # K上穿D+20分（带夹角系数）
+            score -= death_cross_score   # K下穿D-20分（带夹角系数）
+        else:
+            # 如果历史数据不足，使用默认加分
+            score += golden_cross * 20  # K上穿D+20分
+            score -= death_cross * 20   # K下穿D-20分
         
         # 2. 超买超卖区域评分
         oversold_area = (k < 20) & (d < 20) & (j < 20)
@@ -317,11 +334,28 @@ class KDJ(BaseIndicator):
         score += k_leaving_oversold * 15   # K线离开超卖区+15分
         score -= k_leaving_overbought * 15 # K线离开超买区-15分
         
-        # 4. J线极端区域评分
-        j_extreme_oversold = j < 0
-        j_extreme_overbought = j > 100
-        score += j_extreme_oversold * 30   # J线极端超卖+30分
-        score -= j_extreme_overbought * 30 # J线极端超买-30分
+        # 4. J线极端区域评分 - 优化点：历史极值归一化
+        if len(j) >= 60:
+            # 计算J值的60周期历史极值
+            j_rolling_max = j.rolling(60).max()
+            j_rolling_min = j.rolling(60).min()
+            
+            # 归一化J值到历史极值范围内（0-100）
+            j_normalized = (j - j_rolling_min) / (j_rolling_max - j_rolling_min) * 100
+            j_normalized = j_normalized.fillna(50)  # 处理可能的NaN值
+            
+            # 使用归一化的J值进行评分
+            j_extreme_oversold = j_normalized < 10    # 历史10%分位
+            j_extreme_overbought = j_normalized > 90  # 历史90%分位
+            
+            score += j_extreme_oversold * 30   # J线历史极低+30分
+            score -= j_extreme_overbought * 30 # J线历史极高-30分
+        else:
+            # 如果历史数据不足，使用绝对值判断
+            j_extreme_oversold = j < 0
+            j_extreme_overbought = j > 100
+            score += j_extreme_oversold * 30   # J线极端超卖+30分
+            score -= j_extreme_overbought * 30 # J线极端超买-30分
         
         # 5. 钝化形态评分
         # 低位钝化（连续多个周期在超卖区）
@@ -332,7 +366,26 @@ class KDJ(BaseIndicator):
         score += low_stagnation * 20   # 低位钝化+20分
         score -= high_stagnation * 20  # 高位钝化-20分
         
-        # 6. 背离评分
+        # 6. J线加速度评估 - 优化点：加速度因子
+        if len(j) >= 3:
+            # 计算J线的一阶导数（速度）和二阶导数（加速度）
+            j_velocity = j - j.shift(1)
+            j_acceleration = j_velocity - j_velocity.shift(1)
+            
+            # J线正加速（加速上升）
+            j_positive_acceleration = j_acceleration > 0
+            
+            # J线负加速（加速下降）
+            j_negative_acceleration = j_acceleration < 0
+            
+            # 加速度分值：加速度越大，分值越高
+            accel_magnitude = np.clip(abs(j_acceleration) * 0.5, 0, 15)
+            
+            # 上升加速加分，下降加速减分
+            accel_score = np.where(j_positive_acceleration, accel_magnitude, -accel_magnitude)
+            score += accel_score
+        
+        # 7. 背离评分
         if len(data) >= 20:
             divergence_score = self._calculate_kdj_divergence(data['close'], k, d)
             score += divergence_score
@@ -350,66 +403,98 @@ class KDJ(BaseIndicator):
         Returns:
             List[str]: 识别出的形态列表
         """
-        patterns = []
-        
         # 确保已计算KDJ
         if not self.has_result():
             self.calculate(data, **kwargs)
         
         if self._result is None:
-            return patterns
+            return []
+        
+        patterns = []
         
         k = self._result['K']
         d = self._result['D']
         j = self._result['J']
         
-        # 检查最近的信号
-        recent_periods = min(5, len(k))
-        if recent_periods == 0:
-            return patterns
+        # 1. 检测金叉/死叉
+        golden_cross = self.crossover(k, d)
+        death_cross = self.crossunder(k, d)
         
-        recent_k = k.tail(recent_periods)
-        recent_d = d.tail(recent_periods)
-        recent_j = j.tail(recent_periods)
-        
-        # 1. 金叉死叉形态
-        if self.crossover(recent_k, recent_d).any():
-            if recent_k.iloc[-1] < 20 and recent_d.iloc[-1] < 20:
-                patterns.append("KDJ超卖区金叉")
-            elif recent_k.iloc[-1] > 80 and recent_d.iloc[-1] > 80:
-                patterns.append("KDJ超买区金叉")
+        if golden_cross.any():
+            # 优化：检测KD夹角
+            if len(k) >= 3 and len(d) >= 3:
+                last_cross_idx = golden_cross.to_numpy().nonzero()[0][-1]
+                kd_angle = abs(k.iloc[last_cross_idx] - d.iloc[last_cross_idx]) / ((k.iloc[last_cross_idx] + d.iloc[last_cross_idx]) / 2) * 100
+                
+                if kd_angle > 10:
+                    patterns.append("KDJ大角度金叉")
+                else:
+                    patterns.append("KDJ金叉")
             else:
-                patterns.append("KDJ中位金叉")
+                patterns.append("KDJ金叉")
         
-        if self.crossunder(recent_k, recent_d).any():
-            if recent_k.iloc[-1] > 80 and recent_d.iloc[-1] > 80:
-                patterns.append("KDJ超买区死叉")
-            elif recent_k.iloc[-1] < 20 and recent_d.iloc[-1] < 20:
-                patterns.append("KDJ超卖区死叉")
+        if death_cross.any():
+            # 优化：检测KD夹角
+            if len(k) >= 3 and len(d) >= 3:
+                last_cross_idx = death_cross.to_numpy().nonzero()[0][-1]
+                kd_angle = abs(k.iloc[last_cross_idx] - d.iloc[last_cross_idx]) / ((k.iloc[last_cross_idx] + d.iloc[last_cross_idx]) / 2) * 100
+                
+                if kd_angle > 10:
+                    patterns.append("KDJ大角度死叉")
+                else:
+                    patterns.append("KDJ死叉")
             else:
-                patterns.append("KDJ中位死叉")
+                patterns.append("KDJ死叉")
         
-        # 2. 超买超卖形态
-        if (recent_k.iloc[-1] < 20 and recent_d.iloc[-1] < 20 and recent_j.iloc[-1] < 20):
-            patterns.append("KDJ三线超卖")
-        if (recent_k.iloc[-1] > 80 and recent_d.iloc[-1] > 80 and recent_j.iloc[-1] > 80):
-            patterns.append("KDJ三线超买")
+        # 2. 检测超买超卖区域
+        current_k = k.iloc[-1]
+        current_d = d.iloc[-1]
+        current_j = j.iloc[-1]
         
-        # 3. J线极端形态
-        if recent_j.iloc[-1] < 0:
-            patterns.append("KDJ J线极端超卖")
-        if recent_j.iloc[-1] > 100:
-            patterns.append("KDJ J线极端超买")
+        if current_k < 20 and current_d < 20:
+            patterns.append("KDJ超卖区")
+        elif current_k > 80 and current_d > 80:
+            patterns.append("KDJ超买区")
         
-        # 4. 钝化形态
-        if self._detect_stagnation(k, d, j, low_threshold=20, periods=5).iloc[-1]:
-            patterns.append("KDJ低位钝化")
-        if self._detect_stagnation(k, d, j, high_threshold=80, periods=5).iloc[-1]:
-            patterns.append("KDJ高位钝化")
+        # 3. J线极值
+        if current_j < 0:
+            patterns.append("J值极端低位")
+        elif current_j > 100:
+            patterns.append("J值极端高位")
         
-        # 5. 背离形态
-        if len(data) >= 20:
-            divergence_type = self._detect_kdj_divergence_pattern(data['close'], k, d)
+        # 4. 三线同向
+        recent_period = min(5, len(k))
+        if recent_period >= 3:
+            k_trend = k.iloc[-1] > k.iloc[-3]
+            d_trend = d.iloc[-1] > d.iloc[-3]
+            j_trend = j.iloc[-1] > j.iloc[-3]
+            
+            if k_trend and d_trend and j_trend:
+                patterns.append("KDJ三线同向上")
+            elif not k_trend and not d_trend and not j_trend:
+                patterns.append("KDJ三线同向下")
+        
+        # 5. J线加速度形态 - 优化：检测加速度变化
+        if len(j) >= 3:
+            j_velocity = j - j.shift(1)
+            j_acceleration = j_velocity - j_velocity.shift(1)
+            
+            recent_accel = j_acceleration.iloc[-1]
+            
+            if recent_accel > 2:
+                patterns.append("J线加速上升")
+            elif recent_accel < -2:
+                patterns.append("J线加速下降")
+        
+        # 6. KD线排列
+        if current_j > current_k > current_d:
+            patterns.append("KDJ多头排列")
+        elif current_j < current_k < current_d:
+            patterns.append("KDJ空头排列")
+        
+        # 7. 背离检测
+        if len(data) >= 20 and 'close' in data.columns:
+            divergence_type = self._detect_divergence(data['close'], k)
             if divergence_type:
                 patterns.append(f"KDJ{divergence_type}")
         
@@ -478,43 +563,59 @@ class KDJ(BaseIndicator):
         
         return divergence_score
     
-    def _detect_kdj_divergence_pattern(self, price: pd.Series, k: pd.Series, d: pd.Series) -> Optional[str]:
+    def _detect_divergence(self, price: pd.Series, k: pd.Series) -> Optional[str]:
         """
         检测KDJ背离形态
         
         Args:
             price: 价格序列
-            k, d: KDJ的K线和D线
+            k: KDJ的K线
             
         Returns:
-            Optional[str]: 背离类型或None
+            Optional[str]: 背离类型，如果没有检测到则返回None
         """
-        if len(price) < 20:
+        if len(price) < 20 or len(k) < 20:
             return None
         
-        # 寻找最近的峰值和谷值
-        recent_data = price.tail(20)
-        recent_k = k.tail(20)
+        # 查找局部极值点
+        window = 5
+        price_highs = []
+        price_lows = []
+        k_highs = []
+        k_lows = []
         
-        price_peaks = []
-        k_peaks = []
-        
-        # 简化的峰值检测
-        for i in range(2, len(recent_data) - 2):
-            if (recent_data.iloc[i] > recent_data.iloc[i-1] and 
-                recent_data.iloc[i] > recent_data.iloc[i+1]):
-                price_peaks.append(recent_data.iloc[i])
-                k_peaks.append(recent_k.iloc[i])
-        
-        if len(price_peaks) >= 2:
-            price_trend = price_peaks[-1] - price_peaks[-2]
-            k_trend = k_peaks[-1] - k_peaks[-2]
+        for i in range(window, len(price) - window):
+            price_window = price.iloc[i-window:i+window+1]
+            k_window = k.iloc[i-window:i+window+1]
             
-            # 正背离：价格创新低但KDJ未创新低
-            if price_trend < -0.01 and k_trend > 1:
-                return "正背离"
-            # 负背离：价格创新高但KDJ未创新高
-            elif price_trend > 0.01 and k_trend < -1:
-                return "负背离"
+            # 价格高点和低点
+            if price.iloc[i] == price_window.max():  # 价格高点
+                price_highs.append((i, price.iloc[i]))
+                k_highs.append((i, k.iloc[i]))
+            
+            if price.iloc[i] == price_window.min():  # 价格低点
+                price_lows.append((i, price.iloc[i]))
+                k_lows.append((i, k.iloc[i]))
+        
+        # 至少需要两个高点或低点来判断背离
+        if len(price_highs) >= 2 and len(k_highs) >= 2:
+            # 检查顶背离：价格创新高，但KDJ未创新高
+            latest_price_high = price_highs[-1][1]
+            previous_price_high = price_highs[-2][1]
+            latest_k_high = k_highs[-1][1]
+            previous_k_high = k_highs[-2][1]
+            
+            if latest_price_high > previous_price_high and latest_k_high < previous_k_high:
+                return "顶背离"
+        
+        if len(price_lows) >= 2 and len(k_lows) >= 2:
+            # 检查底背离：价格创新低，但KDJ未创新低
+            latest_price_low = price_lows[-1][1]
+            previous_price_low = price_lows[-2][1]
+            latest_k_low = k_lows[-1][1]
+            previous_k_low = k_lows[-2][1]
+            
+            if latest_price_low < previous_price_low and latest_k_low > previous_k_low:
+                return "底背离"
         
         return None 

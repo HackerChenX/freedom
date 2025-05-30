@@ -81,6 +81,23 @@ class VOL(BaseIndicator):
         # 计算相对成交量（当前成交量与N日平均成交量的比值）
         df_copy['vol_ratio'] = df_copy['volume'] / df_copy['vol_ma5']
         
+        # 优化: 计算相对成交量变化率
+        df_copy['vol_ratio_change'] = df_copy['vol_ratio'].pct_change()
+        
+        # 优化: 计算成交量波动率
+        df_copy['vol_std'] = df_copy['volume'].rolling(window=20).std() / df_copy['vol_ma20']
+        
+        # 优化: 计算相对于60日平均的成交量比
+        if len(df_copy) >= 60:
+            df_copy['vol_ma60'] = df_copy['volume'].rolling(window=60).mean()
+            df_copy['vol_ratio_60'] = df_copy['volume'] / df_copy['vol_ma60']
+        else:
+            df_copy['vol_ma60'] = df_copy['vol_ma20']  # 数据不足时使用20日均量代替
+            df_copy['vol_ratio_60'] = df_copy['volume'] / df_copy['vol_ma60']
+        
+        # 保存结果
+        self._result = df_copy
+        
         return df_copy
         
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -168,7 +185,7 @@ class VOL(BaseIndicator):
         
         return ax
 
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
         """
         计算成交量指标的原始评分
         
@@ -176,7 +193,7 @@ class VOL(BaseIndicator):
             data: 包含OHLCV数据的DataFrame
             
         Returns:
-            pd.DataFrame: 包含原始评分的DataFrame
+            pd.Series: 包含原始评分的Series
         """
         # 计算指标值
         indicator_data = self.calculate(data)
@@ -184,14 +201,43 @@ class VOL(BaseIndicator):
         # 初始化评分
         score = pd.Series(50.0, index=data.index)  # 基础分50分
         
+        # 1. 成交量水平评分
+        volume_level_score = self._calculate_volume_level_score(indicator_data)
+        score += volume_level_score
+        
+        # 2. 量价配合评分
+        price_volume_score = self._calculate_price_volume_harmony(data, indicator_data)
+        score += price_volume_score
+        
+        # 3. 成交量趋势评分
+        volume_trend_score = self._calculate_volume_trend_score(indicator_data)
+        score += volume_trend_score
+        
+        # 4. 相对量比评估 (优化)
+        relative_volume_score = self._calculate_relative_volume_score(indicator_data)
+        score += relative_volume_score
+        
+        # 5. 异常放量识别 (优化)
+        abnormal_volume_score = self._detect_abnormal_volume(data, indicator_data)
+        score += abnormal_volume_score
+        
+        return np.clip(score, 0, 100)
+
+    def _calculate_volume_level_score(self, indicator_data: pd.DataFrame) -> pd.Series:
+        """
+        计算成交量水平评分
+        
+        Args:
+            indicator_data: 包含成交量指标的DataFrame
+            
+        Returns:
+            pd.Series: 成交量水平评分
+        """
+        score = pd.Series(0.0, index=indicator_data.index)
+        
         # 获取成交量数据
-        volume = indicator_data['vol']
-        vol_ma5 = indicator_data['vol_ma5']
-        vol_ma10 = indicator_data['vol_ma10']
-        vol_ma20 = indicator_data['vol_ma20']
         vol_ratio = indicator_data['vol_ratio'].fillna(1.0)
         
-        # 1. 成交量水平评分（-15到+25分）
         # 放量加分，缩量减分
         high_volume_mask = vol_ratio > 1.5
         score.loc[high_volume_mask] += 15
@@ -205,7 +251,24 @@ class VOL(BaseIndicator):
         very_low_volume_mask = vol_ratio < 0.5
         score.loc[very_low_volume_mask] -= 15
         
-        # 2. 量价配合评分（-20到+25分）
+        return score
+
+    def _calculate_price_volume_harmony(self, data: pd.DataFrame, indicator_data: pd.DataFrame) -> pd.Series:
+        """
+        计算量价配合评分
+        
+        Args:
+            data: 原始数据DataFrame
+            indicator_data: 包含成交量指标的DataFrame
+            
+        Returns:
+            pd.Series: 量价配合评分
+        """
+        score = pd.Series(0.0, index=indicator_data.index)
+        
+        # 获取成交量数据
+        vol_ratio = indicator_data['vol_ratio'].fillna(1.0)
+        
         if 'close' in data.columns:
             close_price = data['close']
             price_change = close_price.pct_change().fillna(0)
@@ -234,7 +297,23 @@ class VOL(BaseIndicator):
             price_down_vol_down = (price_change < -0.02) & (vol_ratio < 0.8)
             score.loc[price_down_vol_down] += 10
         
-        # 3. 成交量趋势评分（-15到+15分）
+        return score
+
+    def _calculate_volume_trend_score(self, indicator_data: pd.DataFrame) -> pd.Series:
+        """
+        计算成交量趋势评分
+        
+        Args:
+            indicator_data: 包含成交量指标的DataFrame
+            
+        Returns:
+            pd.Series: 成交量趋势评分
+        """
+        score = pd.Series(0.0, index=indicator_data.index)
+        
+        # 获取成交量数据
+        volume = indicator_data['vol']
+        
         # 计算成交量趋势
         vol_trend_5 = volume.rolling(window=5).mean().pct_change().fillna(0)
         vol_trend_10 = volume.rolling(window=10).mean().pct_change().fillna(0)
@@ -255,67 +334,122 @@ class VOL(BaseIndicator):
         sharp_volume_down = vol_trend_5 < -0.3
         score.loc[sharp_volume_down] -= 15
         
-        # 4. 成交量突破评分（-10到+25分）
-        # 突破性放量（成交量创近期新高）
-        if len(volume) >= 20:
-            vol_20_max = volume.rolling(window=20).max()
-            vol_20_avg = volume.rolling(window=20).mean()
+        return score
+
+    def _calculate_relative_volume_score(self, indicator_data: pd.DataFrame) -> pd.Series:
+        """
+        计算相对量比评分 (优化点)
+        
+        将当前成交量与不同周期的移动平均进行比较，以识别真实的量能变化
+        
+        Args:
+            indicator_data: 包含成交量指标的DataFrame
             
-            # 创新高且大幅放量
-            breakthrough_volume = (volume >= vol_20_max) & (volume > vol_20_avg * 2)
-            score.loc[breakthrough_volume] += 25
+        Returns:
+            pd.Series: 相对量比评分
+        """
+        score = pd.Series(0.0, index=indicator_data.index)
+        
+        # 确保需要的列存在
+        required_cols = ['vol_ratio', 'vol_ratio_60', 'vol_ratio_change']
+        for col in required_cols:
+            if col not in indicator_data.columns:
+                return score
+        
+        # 1. 多周期相对量比评分
+        vol_ratio = indicator_data['vol_ratio'].fillna(1.0)       # 相对5日均量
+        vol_ratio_60 = indicator_data['vol_ratio_60'].fillna(1.0) # 相对60日均量
+        
+        # 计算权重：长期比值(60日)相对于短期比值(5日)的比例
+        relative_strength = vol_ratio_60 / vol_ratio
+        
+        # 权重系数(1-1.5)，用于调整评分
+        weight_coef = np.clip(1 + (relative_strength - 1) * 2, 0.5, 1.5)
+        
+        # 长短周期量比一致性得分
+        # 相对60日和5日均量同时放大，信号更强
+        consistent_high_volume = (vol_ratio > 1.3) & (vol_ratio_60 > 1.5)
+        score.loc[consistent_high_volume] += 15 * weight_coef.loc[consistent_high_volume]
+        
+        # 相对60日放大更多，表明真正的量能释放
+        strong_long_term_volume = (vol_ratio_60 > vol_ratio) & (vol_ratio_60 > 2.0)
+        score.loc[strong_long_term_volume] += 20
+        
+        # 2. 相对量比变化趋势评分
+        vol_ratio_change = indicator_data['vol_ratio_change'].fillna(0)
+        
+        # 计算相对量比的加速度（变化率的变化率）
+        vol_ratio_accel = vol_ratio_change.diff().fillna(0)
+        
+        # 相对量比加速上升，预示主力资金加速介入
+        vol_ratio_accelerating = (vol_ratio_change > 0.1) & (vol_ratio_accel > 0)
+        score.loc[vol_ratio_accelerating] += 10
+        
+        # 相对量比加速下降，预示主力资金加速撤离
+        vol_ratio_decelerating = (vol_ratio_change < -0.1) & (vol_ratio_accel < 0)
+        score.loc[vol_ratio_decelerating] -= 10
+        
+        return score
+
+    def _detect_abnormal_volume(self, data: pd.DataFrame, indicator_data: pd.DataFrame) -> pd.Series:
+        """
+        异常放量识别 (优化点)
+        
+        检测不符合历史模式的异常成交量，可能预示重要转折点或主力行为
+        
+        Args:
+            data: 原始数据DataFrame
+            indicator_data: 包含成交量指标的DataFrame
             
-            # 一般突破性放量
-            moderate_breakthrough = (volume >= vol_20_max * 0.9) & (volume > vol_20_avg * 1.5)
-            score.loc[moderate_breakthrough] += 15
+        Returns:
+            pd.Series: 异常放量评分
+        """
+        score = pd.Series(0.0, index=indicator_data.index)
         
-        # 5. 成交量异常评分（-20到+20分）
-        # 计算成交量的标准差
-        if len(volume) >= 20:
-            vol_std = volume.rolling(window=20).std()
-            vol_mean = volume.rolling(window=20).mean()
+        # 确保需要的列存在
+        if 'vol' not in indicator_data.columns or 'vol_std' not in indicator_data.columns:
+            return score
+        
+        volume = indicator_data['vol']
+        vol_ma20 = indicator_data['vol_ma20'].fillna(volume)
+        vol_std = indicator_data['vol_std'].fillna(0.2)  # 默认波动率
+        
+        # 1. 异常放量识别 - 基于标准差
+        # 计算Z分数（成交量偏离均值的标准差倍数）
+        z_score = (volume - vol_ma20) / (vol_ma20 * vol_std)
+        
+        # 超过3个标准差的异常放量
+        extreme_volume = z_score > 3
+        score.loc[extreme_volume] += 30
+        
+        # 超过2个标准差的高成交量
+        high_volume = (z_score > 2) & (z_score <= 3)
+        score.loc[high_volume] += 20
+        
+        # 2. 价格关键位突破的放量确认
+        if 'close' in data.columns and 'high' in data.columns and 'low' in data.columns:
+            close_price = data['close']
+            high_price = data['high']
+            low_price = data['low']
             
-            # 异常放量（超过2个标准差）
-            abnormal_high_vol = volume > (vol_mean + 2 * vol_std)
-            score.loc[abnormal_high_vol] += 20
+            # 计算20日高点和低点
+            high_20d = high_price.rolling(window=20).max().shift(1)
+            low_20d = low_price.rolling(window=20).min().shift(1)
             
-            # 异常缩量（低于2个标准差）
-            abnormal_low_vol = volume < (vol_mean - 2 * vol_std)
-            score.loc[abnormal_low_vol] -= 15
+            # 向上突破20日高点且放量
+            upside_breakout = (close_price > high_20d) & (z_score > 1.5)
+            score.loc[upside_breakout] += 25
             
-            # 极端异常放量（超过3个标准差）
-            extreme_high_vol = volume > (vol_mean + 3 * vol_std)
-            score.loc[extreme_high_vol] += 15  # 额外加分
-            
-            # 极端异常缩量（低于3个标准差）
-            extreme_low_vol = volume < (vol_mean - 3 * vol_std)
-            score.loc[extreme_low_vol] -= 20
+            # 向下突破20日低点且放量
+            downside_breakout = (close_price < low_20d) & (z_score > 1.5)
+            score.loc[downside_breakout] -= 25
         
-        # 6. 成交量均线关系评分（-10到+10分）
-        # 短期均线高于长期均线
-        vol_ma_bullish = (vol_ma5 > vol_ma10) & (vol_ma10 > vol_ma20)
-        vol_ma_bullish = vol_ma_bullish.fillna(False)
-        score.loc[vol_ma_bullish] += 8
+        # 3. 成交量断层识别
+        vol_ratio = volume / volume.shift(1)
+        vol_gap = (vol_ratio > 3) & (volume > vol_ma20 * 1.5)
+        score.loc[vol_gap] += 15
         
-        # 短期均线低于长期均线
-        vol_ma_bearish = (vol_ma5 < vol_ma10) & (vol_ma10 < vol_ma20)
-        vol_ma_bearish = vol_ma_bearish.fillna(False)
-        score.loc[vol_ma_bearish] -= 8
-        
-        # 成交量在均线之上
-        vol_above_ma = volume > vol_ma5
-        vol_above_ma = vol_above_ma.fillna(False)
-        score.loc[vol_above_ma] += 5
-        
-        # 成交量在均线之下
-        vol_below_ma = volume < vol_ma5
-        vol_below_ma = vol_below_ma.fillna(False)
-        score.loc[vol_below_ma] -= 5
-        
-        # 确保评分在0-100范围内
-        score = score.clip(0, 100)
-        
-        return pd.DataFrame({'score': score}, index=data.index)
+        return score
     
     def identify_patterns(self, data: pd.DataFrame) -> List[str]:
         """

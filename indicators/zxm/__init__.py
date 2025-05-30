@@ -27,6 +27,9 @@ from indicators.zxm.score_indicators import (
 
 from indicators.zxm.selection_model import SelectionModel
 
+from indicators.zxm.diagnostics import ZXMDiagnostics
+from indicators.zxm.market_breadth import ZXMMarketBreadth
+
 __all__ = [
     # 趋势指标
     'ZXMDailyTrendUp', 'ZXMWeeklyTrendUp', 'ZXMMonthlyKDJTrendUp',
@@ -46,5 +49,11 @@ __all__ = [
     'ZXMElasticityScore', 'ZXMBuyPointScore', 'StockScoreCalculator',
     
     # 选股模型
-    'SelectionModel'
+    'SelectionModel',
+    
+    # 诊断指标
+    'ZXMDiagnostics',
+    
+    # 市场宽度指标
+    'ZXMMarketBreadth'
 ] 

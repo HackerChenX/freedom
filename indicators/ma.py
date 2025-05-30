@@ -498,11 +498,27 @@ class MA(BaseIndicator):
             if short_ma in self._result.columns and long_ma in self._result.columns:
                 # 金叉（短期均线上穿长期均线）+20分
                 golden_cross = self.crossover(self._result[short_ma], self._result[long_ma])
-                cross_score += golden_cross * 20
                 
                 # 死叉（短期均线下穿长期均线）-20分
                 death_cross = self.crossunder(self._result[short_ma], self._result[long_ma])
-                cross_score -= death_cross * 20
+                
+                # 优化点：交叉角度评估
+                if len(self._result) >= 5:
+                    # 计算短期均线和长期均线的斜率
+                    short_ma_slope = (self._result[short_ma] - self._result[short_ma].shift(5)) / self._result[short_ma].shift(5) * 100
+                    long_ma_slope = (self._result[long_ma] - self._result[long_ma].shift(5)) / self._result[long_ma].shift(5) * 100
+                    
+                    # 计算交叉角度系数（斜率差越大，角度越大）
+                    cross_angle = np.abs(short_ma_slope - long_ma_slope)
+                    angle_coef = np.clip(1 + cross_angle * 0.05, 0.5, 1.5)  # 角度系数范围：0.5-1.5
+                    
+                    # 根据交叉角度调整得分
+                    cross_score += golden_cross * 20 * np.where(golden_cross, angle_coef, 1.0)
+                    cross_score -= death_cross * 20 * np.where(death_cross, angle_coef, 1.0)
+                else:
+                    # 无足够数据计算角度时，使用默认得分
+                    cross_score += golden_cross * 20
+                    cross_score -= death_cross * 20
         
         return cross_score
     
@@ -523,6 +539,15 @@ class MA(BaseIndicator):
             if ma_col in self._result.columns:
                 ma_values = self._result[ma_col]
                 
+                # 计算均线斜率得分 - 优化点：引入斜率权重
+                if len(ma_values) >= 5:
+                    # 计算5周期斜率
+                    ma_slope = (ma_values - ma_values.shift(5)) / ma_values.shift(5) * 100
+                    
+                    # 斜率得分：斜率越大，加分越多
+                    slope_score = np.clip(ma_slope * 2, -10, 10)  # 最大±10分
+                    trend_score += slope_score
+                
                 # 均线上升趋势+8分
                 ma_rising = ma_values > ma_values.shift(1)
                 trend_score += ma_rising * 8
@@ -536,11 +561,6 @@ class MA(BaseIndicator):
                     ma_accelerating = (ma_values.diff() > ma_values.shift(1).diff())
                     trend_score += ma_accelerating * 12
                 
-                # 均线加速下降-12分
-                if len(ma_values) >= 3:
-                    ma_decelerating = (ma_values.diff() < ma_values.shift(1).diff())
-                    trend_score -= ma_decelerating * 12
-        
         return trend_score / len(periods)  # 平均化
     
     def _calculate_ma_arrangement_score(self, periods: List[int]) -> pd.Series:

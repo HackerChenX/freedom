@@ -202,7 +202,7 @@ class BIAS(BaseIndicator):
         score = pd.Series(50.0, index=data.index)  # 基础分50分
         
         # 1. BIAS超买超卖评分
-        overbought_oversold_score = self._calculate_bias_overbought_oversold_score()
+        overbought_oversold_score = self._calculate_bias_overbought_oversold_score(data)
         score += overbought_oversold_score
         
         # 2. BIAS回归评分
@@ -220,6 +220,11 @@ class BIAS(BaseIndicator):
         # 5. BIAS零轴穿越评分
         zero_cross_score = self._calculate_bias_zero_cross_score()
         score += zero_cross_score
+        
+        # 6. 多周期协同评估（优化点）
+        if len(self.periods) > 1:
+            multi_period_score = self._calculate_multi_period_consistency_score()
+            score += multi_period_score
         
         return np.clip(score, 0, 100)
     
@@ -265,41 +270,70 @@ class BIAS(BaseIndicator):
         
         return patterns
     
-    def _calculate_bias_overbought_oversold_score(self) -> pd.Series:
+    def _calculate_bias_overbought_oversold_score(self, data: pd.DataFrame = None) -> pd.Series:
         """
         计算BIAS超买超卖评分
         
+        Args:
+            data: 输入数据，用于计算市场波动率（优化点）
+            
         Returns:
-            pd.Series: 超买超卖评分
+            pd.Series: 超买超卖评分序列
         """
-        overbought_oversold_score = pd.Series(0.0, index=self._result.index)
+        if self._result is None:
+            return pd.Series(0.0)
         
-        for period in self.periods:
-            bias_col = f'BIAS{period}'
-            if bias_col in self._result.columns:
-                bias_values = self._result[bias_col]
-                
-                # 超卖区域（BIAS < -6%）+20分
-                oversold_condition = bias_values < -6
-                oversold_intensity = np.abs(bias_values + 6) / 6  # 计算超卖强度
-                oversold_score = oversold_condition * (20 + oversold_intensity * 10)  # 最多+30分
-                overbought_oversold_score += oversold_score
-                
-                # 超买区域（BIAS > 6%）-20分
-                overbought_condition = bias_values > 6
-                overbought_intensity = (bias_values - 6) / 6  # 计算超买强度
-                overbought_score = overbought_condition * (20 + overbought_intensity * 10)  # 最多-30分
-                overbought_oversold_score -= overbought_score
-                
-                # 极度超卖（BIAS < -10%）额外+15分
-                extreme_oversold = bias_values < -10
-                overbought_oversold_score += extreme_oversold * 15
-                
-                # 极度超买（BIAS > 10%）额外-15分
-                extreme_overbought = bias_values > 10
-                overbought_oversold_score -= extreme_overbought * 15
+        score = pd.Series(0.0, index=self._result.index)
         
-        return overbought_oversold_score / len(self.periods)  # 平均化
+        # 获取主要周期的BIAS
+        main_period = self.periods[0]
+        bias_col = f'BIAS{main_period}'
+        
+        if bias_col not in self._result.columns:
+            return score
+        
+        bias = self._result[bias_col]
+        
+        # 优化点：市场环境自适应阈值
+        # 根据波动率动态调整超买超卖阈值
+        if data is not None and len(data) >= 60:
+            # 计算价格的20日波动率
+            if 'close' in data.columns:
+                price_volatility = data['close'].pct_change().rolling(window=20).std()
+                
+                # 计算波动率相对于近60日平均波动率的比例
+                volatility_ratio = price_volatility / price_volatility.rolling(window=60).mean()
+                volatility_ratio = volatility_ratio.fillna(1.0)
+                
+                # 根据波动率调整阈值
+                overbought_threshold = 6.0 * np.clip(volatility_ratio, 0.8, 2.0)  # 高波动率时放宽阈值
+                oversold_threshold = -6.0 * np.clip(volatility_ratio, 0.8, 2.0)   # 低波动率时收紧阈值
+            else:
+                # 无法获取价格数据时使用默认阈值
+                overbought_threshold = pd.Series(6.0, index=bias.index)
+                oversold_threshold = pd.Series(-6.0, index=bias.index)
+        else:
+            # 数据不足时使用默认阈值
+            overbought_threshold = pd.Series(6.0, index=bias.index)
+            oversold_threshold = pd.Series(-6.0, index=bias.index)
+        
+        # 超买区
+        overbought = bias > overbought_threshold
+        extreme_overbought = bias > (overbought_threshold * 1.5)
+        
+        # 超卖区
+        oversold = bias < oversold_threshold
+        extreme_oversold = bias < (oversold_threshold * 1.5)
+        
+        # 超买区评分
+        score -= overbought * 15  # 超买 -15分
+        score -= extreme_overbought * 10  # 极度超买 额外 -10分
+        
+        # 超卖区评分
+        score += oversold * 15  # 超卖 +15分
+        score += extreme_oversold * 10  # 极度超卖 额外 +10分
+        
+        return score
     
     def _calculate_bias_regression_score(self) -> pd.Series:
         """
@@ -435,6 +469,90 @@ class BIAS(BaseIndicator):
                 zero_cross_score -= bias_cross_down * 22
         
         return zero_cross_score / len(self.periods)  # 平均化
+    
+    def _calculate_multi_period_consistency_score(self) -> pd.Series:
+        """
+        计算多周期一致性评分（优化点）
+        
+        当多个周期的BIAS指标同时给出一致信号时，信号更加可靠
+        
+        Returns:
+            pd.Series: 多周期一致性评分
+        """
+        if self._result is None or len(self.periods) <= 1:
+            return pd.Series(0.0)
+        
+        score = pd.Series(0.0, index=self._result.index)
+        
+        # 准备各周期的BIAS数据
+        bias_cols = [f'BIAS{p}' for p in self.periods if f'BIAS{p}' in self._result.columns]
+        if len(bias_cols) <= 1:
+            return score
+        
+        # 分析各周期BIAS的趋势方向
+        bias_signs = pd.DataFrame(index=self._result.index)
+        for col in bias_cols:
+            bias_signs[f'{col}_sign'] = np.sign(self._result[col])
+        
+        # 计算一致性
+        row_sum = bias_signs.sum(axis=1)
+        row_count = bias_signs.shape[1]
+        
+        # 完全一致看涨（所有BIAS为正）
+        full_bullish = row_sum == row_count
+        score += full_bullish * 20  # 全部看涨 +20分
+        
+        # 完全一致看跌（所有BIAS为负）
+        full_bearish = row_sum == -row_count
+        score -= full_bearish * 20  # 全部看跌 -20分
+        
+        # 多数看涨（>60%的BIAS为正）
+        mostly_bullish = (row_sum > 0) & (abs(row_sum) >= row_count * 0.6) & ~full_bullish
+        score += mostly_bullish * 10  # 多数看涨 +10分
+        
+        # 多数看跌（>60%的BIAS为负）
+        mostly_bearish = (row_sum < 0) & (abs(row_sum) >= row_count * 0.6) & ~full_bearish
+        score -= mostly_bearish * 10  # 多数看跌 -10分
+        
+        # 分析一致性强度（BIAS值的协方差）
+        if len(bias_cols) >= 2:
+            # 计算最近5个周期的BIAS协方差
+            recent_bias = self._result[bias_cols].tail(5)
+            
+            # 计算标准差占平均值的百分比作为一致性强度指标
+            if len(recent_bias) > 0:
+                # 计算各周期BIAS的标准差
+                bias_std = recent_bias.std(axis=1)
+                # 计算各周期BIAS的绝对值平均值
+                bias_abs_mean = recent_bias.abs().mean(axis=1)
+                
+                # 避免除零错误
+                bias_abs_mean = bias_abs_mean.replace(0, np.nan)
+                
+                # 计算变异系数（标准差/平均值）作为一致性指标
+                cov = bias_std / bias_abs_mean
+                cov = cov.fillna(1.0)  # 处理可能的NaN值
+                
+                # 变异系数越低，一致性越高
+                consistency_strength = 1 - np.clip(cov, 0, 1)
+                
+                # 在最近周期应用一致性强度调整
+                last_idx = score.index[-1]
+                if last_idx in consistency_strength.index:
+                    # 一致性强度作为现有多周期分数的调节因子
+                    recent_score = score.iloc[-5:]
+                    # 只对非零分数应用调节因子
+                    non_zero_mask = recent_score != 0
+                    
+                    # 一致性越高，信号越强
+                    strength_factor = 1 + consistency_strength * 0.5  # 1.0-1.5的调节因子
+                    score.iloc[-5:] = np.where(
+                        non_zero_mask,
+                        recent_score * strength_factor,
+                        recent_score
+                    )
+        
+        return score
     
     def _detect_bias_overbought_oversold_patterns(self) -> List[str]:
         """

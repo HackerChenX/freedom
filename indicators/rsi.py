@@ -411,40 +411,71 @@ class RSI(BaseIndicator):
         
         rsi = self._result['RSI14']  # 使用正确的列名
         
-        # 1. 超买超卖区域评分
-        oversold_condition = rsi <= 30
-        overbought_condition = rsi >= 70
+        # 计算市场波动率因子 - 优化点：波动率自适应阈值
+        price_volatility = None
+        if 'close' in data.columns:
+            # 计算最近20日的标准差，并与120日移动平均波动率比较
+            recent_volatility = data['close'].pct_change().rolling(20).std()
+            long_term_volatility = data['close'].pct_change().rolling(120).std()
+            
+            # 确保波动率数据存在
+            if not long_term_volatility.isna().all():
+                price_volatility = recent_volatility / long_term_volatility.fillna(method='ffill')
+                price_volatility = price_volatility.fillna(1.0)  # 默认值为1.0
+        
+        # 根据波动率动态调整RSI阈值
+        if price_volatility is not None:
+            # 波动率越高，阈值越宽松
+            oversold_threshold = 30 - np.clip(price_volatility * 5, 0, 10)  # 最低20
+            overbought_threshold = 70 + np.clip(price_volatility * 5, 0, 10)  # 最高80
+        else:
+            # 使用默认阈值
+            oversold_threshold = 30
+            overbought_threshold = 70
+        
+        # 1. 超买超卖区域评分 - 优化：动态阈值
+        oversold_condition = rsi <= oversold_threshold
+        overbought_condition = rsi >= overbought_threshold
         
         # 超卖区评分：RSI越低，加分越多
-        oversold_score = np.where(oversold_condition, (30 - rsi) * 1.0, 0)  # 最多+30分
+        oversold_score = np.where(oversold_condition, (oversold_threshold - rsi) * 1.0, 0)  # 最多+30分
         score += oversold_score
         
         # 超买区评分：RSI越高，减分越多
-        overbought_score = np.where(overbought_condition, (rsi - 70) * 1.0, 0)  # 最多-30分
+        overbought_score = np.where(overbought_condition, (rsi - overbought_threshold) * 1.0, 0)  # 最多-30分
         score -= overbought_score
         
-        # 2. RSI穿越关键位置评分
-        rsi_cross_up_30 = self.crossover(rsi, 30)
-        rsi_cross_down_70 = self.crossunder(rsi, 70)
-        score += rsi_cross_up_30 * 20    # RSI上穿30+20分
-        score -= rsi_cross_down_70 * 20  # RSI下穿70-20分
+        # 2. RSI穿越关键位置评分 - 使用动态阈值
+        rsi_cross_up_oversold = self.crossover(rsi, oversold_threshold)
+        rsi_cross_down_overbought = self.crossunder(rsi, overbought_threshold)
+        score += rsi_cross_up_oversold * 20    # RSI上穿超卖阈值+20分
+        score -= rsi_cross_down_overbought * 20  # RSI下穿超买阈值-20分
         
-        # 3. 中线穿越评分
+        # 3. RSI变化速率评分 - 优化点：速率因子
+        if len(rsi) >= 5:
+            # 计算5周期RSI变化速率
+            rsi_change_rate = (rsi - rsi.shift(5)) / 5
+            
+            # RSI快速上升或下降，得分更高
+            rsi_speed_score = np.clip(rsi_change_rate * 3, -15, 15)  # 最大±15分
+            score += rsi_speed_score
+        
+        # 4. 中线穿越评分
         rsi_cross_up_50 = self.crossover(rsi, 50)
         rsi_cross_down_50 = self.crossunder(rsi, 50)
         score += rsi_cross_up_50 * 15    # RSI上穿50+15分
         score -= rsi_cross_down_50 * 15  # RSI下穿50-15分
         
-        # 4. RSI背离评分
+        # 5. RSI背离评分
         if len(data) >= 20:
             divergence_score = self._calculate_rsi_divergence(data['close'], rsi)
             score += divergence_score
         
-        # 5. RSI形态评分
+        # 6. RSI形态评分
         pattern_score = self._calculate_rsi_pattern_score(rsi)
         score += pattern_score
         
-        # 6. RSI斜率评分
+        # 7. RSI斜率评分
         slope_score = self._calculate_rsi_slope_score(rsi)
         score += slope_score
         

@@ -700,4 +700,361 @@ class TimeCycleAnalysis(BaseIndicator):
                     stop_level = data['high'].iloc[i-5:i].max() * 1.02
                     signals.loc[signals.index[i], 'stop_loss'] = stop_level
         
-        return signals 
+        return signals
+
+    def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        计算时间周期分析的原始评分（0-100分）
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 包含原始评分的DataFrame
+        """
+        # 初始化评分DataFrame
+        scores = pd.DataFrame(index=data.index)
+        scores['raw_score'] = 50.0  # 默认评分50分（中性）
+        
+        # 计算时间周期指标
+        cycle_result = self.calculate(data)
+        
+        # 检查是否有有效的周期结果
+        if cycle_result.empty or 'combined_cycle_sine' not in cycle_result.columns:
+            return scores  # 如果没有有效的周期结果，返回默认评分
+        
+        # 获取组合周期正弦波
+        combined_sine = cycle_result['combined_cycle_sine']
+        
+        # 计算组合周期正弦波的一阶和二阶差分，用于判断拐点
+        sine_diff1 = combined_sine.diff()
+        sine_diff2 = sine_diff1.diff()
+        
+        # 获取主要周期
+        dominant_cycles = self.get_dominant_cycles(data)
+        
+        # 获取当前周期相位
+        current_phase = self.get_current_cycle_phase(data)
+        
+        # 初始化基于周期的评分
+        for i in range(5, len(scores)):
+            # 基础评分：基于组合正弦波的值和方向
+            base_score = 50 + combined_sine.iloc[i] * 25  # 将-1到1的正弦波值映射到25-75分范围
+            
+            # 考虑趋势方向（一阶导数）
+            if sine_diff1.iloc[i] > 0:
+                base_score += 10  # 上升趋势加分
+            elif sine_diff1.iloc[i] < 0:
+                base_score -= 10  # 下降趋势减分
+            
+            # 考虑趋势加速度（二阶导数）
+            if sine_diff2.iloc[i] > 0:
+                base_score += 5  # 加速上升或减速下降加分
+            elif sine_diff2.iloc[i] < 0:
+                base_score -= 5  # 减速上升或加速下降减分
+            
+            # 底部拐点（正弦波由负变正，且二阶导数为正）- 强烈买入信号
+            if (combined_sine.iloc[i-1] < 0 and combined_sine.iloc[i] >= 0 and 
+                sine_diff1.iloc[i] > 0 and sine_diff2.iloc[i] > 0):
+                base_score = 75  # 明确的买入信号
+            
+            # 顶部拐点（正弦波由正变负，且二阶导数为负）- 强烈卖出信号
+            elif (combined_sine.iloc[i-1] > 0 and combined_sine.iloc[i] <= 0 and 
+                  sine_diff1.iloc[i] < 0 and sine_diff2.iloc[i] < 0):
+                base_score = 25  # 明确的卖出信号
+            
+            # 记录基础评分
+            scores.loc[scores.index[i], 'raw_score'] = base_score
+        
+        # 调整评分：多周期共振
+        if dominant_cycles:
+            for i in range(5, len(scores)):
+                cycle_alignment = 0
+                # 检查多个主要周期是否同时在转折点
+                for j, cycle in enumerate(dominant_cycles[:3]):  # 只考虑前3个主要周期
+                    cycle_col = f"cycle_{j+1}_sine"
+                    if cycle_col in cycle_result.columns:
+                        cycle_sine = cycle_result[cycle_col]
+                        # 检查是否在底部拐点
+                        if (cycle_sine.iloc[i-1] < 0 and cycle_sine.iloc[i] >= 0):
+                            cycle_alignment += 1
+                        # 检查是否在顶部拐点
+                        elif (cycle_sine.iloc[i-1] > 0 and cycle_sine.iloc[i] <= 0):
+                            cycle_alignment -= 1
+                
+                # 多个周期同时在底部拐点，强烈买入信号
+                if cycle_alignment >= 2:
+                    scores.loc[scores.index[i], 'raw_score'] = min(100, scores['raw_score'].iloc[i] + 20)
+                # 多个周期同时在顶部拐点，强烈卖出信号
+                elif cycle_alignment <= -2:
+                    scores.loc[scores.index[i], 'raw_score'] = max(0, scores['raw_score'].iloc[i] - 20)
+        
+        # 调整评分：周期相位影响
+        if current_phase:
+            phase_adjustment = 0
+            
+            if current_phase in ['上升阶段', '加速上升阶段']:
+                phase_adjustment = 10  # 上升阶段加分
+            elif current_phase in ['顶部阶段', '减速上升阶段']:
+                phase_adjustment = -5  # 顶部阶段轻微减分
+            elif current_phase in ['下降阶段', '加速下降阶段']:
+                phase_adjustment = -10  # 下降阶段减分
+            elif current_phase in ['底部阶段', '减速下降阶段']:
+                phase_adjustment = 5  # 底部阶段轻微加分
+            
+            # 应用相位调整
+            scores['raw_score'] = scores['raw_score'] + phase_adjustment
+        
+        # 使用价格趋势确认调整评分
+        if 'close' in data.columns:
+            close_prices = data['close']
+            # 计算短期和长期移动平均线
+            ma20 = close_prices.rolling(window=20).mean()
+            ma60 = close_prices.rolling(window=60).mean()
+            
+            # 价格确认趋势
+            uptrend = close_prices > ma20
+            downtrend = close_prices < ma20
+            
+            # 使用移动平均线交叉确认信号
+            ma_crossover = (ma20.shift(1) <= ma60.shift(1)) & (ma20 > ma60)
+            ma_crossunder = (ma20.shift(1) >= ma60.shift(1)) & (ma20 < ma60)
+            
+            # 价格趋势确认，增强或减弱评分
+            for i in range(5, len(scores)):
+                current_score = scores['raw_score'].iloc[i]
+                
+                # 价格上升趋势确认
+                if uptrend.iloc[i] or ma_crossover.iloc[i]:
+                    if current_score > 50:  # 如果评分已经偏向买入
+                        scores.loc[scores.index[i], 'raw_score'] = min(100, current_score + 10)
+                    elif current_score < 50:  # 如果评分偏向卖出但价格上升
+                        scores.loc[scores.index[i], 'raw_score'] = min(50, current_score + 5)
+                
+                # 价格下降趋势确认
+                elif downtrend.iloc[i] or ma_crossunder.iloc[i]:
+                    if current_score < 50:  # 如果评分已经偏向卖出
+                        scores.loc[scores.index[i], 'raw_score'] = max(0, current_score - 10)
+                    elif current_score > 50:  # 如果评分偏向买入但价格下降
+                        scores.loc[scores.index[i], 'raw_score'] = max(50, current_score - 5)
+        
+        # 限制评分范围在0-100之间
+        scores['raw_score'] = scores['raw_score'].clip(0, 100)
+        
+        return scores
+
+    def identify_patterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        识别时间周期分析中的关键形态
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 包含识别出的形态信息的DataFrame
+        """
+        # 初始化形态DataFrame
+        patterns = pd.DataFrame(index=data.index)
+        patterns['pattern'] = None
+        patterns['pattern_strength'] = 0.0
+        patterns['pattern_desc'] = None
+        
+        # 计算时间周期指标
+        cycle_result = self.calculate(data)
+        
+        # 检查是否有有效的周期结果
+        if cycle_result.empty or 'combined_cycle_sine' not in cycle_result.columns:
+            return patterns  # 如果没有有效的周期结果，返回空形态
+        
+        # 获取组合周期正弦波
+        combined_sine = cycle_result['combined_cycle_sine']
+        
+        # 计算组合周期正弦波的一阶和二阶差分，用于判断拐点
+        sine_diff1 = combined_sine.diff()
+        sine_diff2 = sine_diff1.diff()
+        
+        # 获取主要周期
+        dominant_cycles = self.get_dominant_cycles(data)
+        
+        # 定义要识别的周期形态
+        for i in range(5, len(patterns)):
+            # 1. 周期底部拐点
+            if (combined_sine.iloc[i-1] < 0 and combined_sine.iloc[i] >= 0 and 
+                sine_diff1.iloc[i] > 0 and sine_diff2.iloc[i] > 0):
+                patterns.loc[patterns.index[i], 'pattern'] = '周期底部拐点'
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.8
+                patterns.loc[patterns.index[i], 'pattern_desc'] = '时间周期底部拐点，潜在买入机会'
+            
+            # 2. 周期顶部拐点
+            elif (combined_sine.iloc[i-1] > 0 and combined_sine.iloc[i] <= 0 and 
+                  sine_diff1.iloc[i] < 0 and sine_diff2.iloc[i] < 0):
+                patterns.loc[patterns.index[i], 'pattern'] = '周期顶部拐点'
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.8
+                patterns.loc[patterns.index[i], 'pattern_desc'] = '时间周期顶部拐点，潜在卖出机会'
+            
+            # 3. 上升周期加速
+            elif combined_sine.iloc[i] > 0 and sine_diff1.iloc[i] > 0 and sine_diff2.iloc[i] > 0:
+                patterns.loc[patterns.index[i], 'pattern'] = '上升周期加速'
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.6
+                patterns.loc[patterns.index[i], 'pattern_desc'] = '时间周期上升阶段加速，趋势增强'
+            
+            # 4. 下降周期加速
+            elif combined_sine.iloc[i] < 0 and sine_diff1.iloc[i] < 0 and sine_diff2.iloc[i] < 0:
+                patterns.loc[patterns.index[i], 'pattern'] = '下降周期加速'
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.6
+                patterns.loc[patterns.index[i], 'pattern_desc'] = '时间周期下降阶段加速，趋势增强'
+            
+            # 5. 上升减速（可能接近顶部）
+            elif combined_sine.iloc[i] > 0 and sine_diff1.iloc[i] > 0 and sine_diff2.iloc[i] < 0:
+                patterns.loc[patterns.index[i], 'pattern'] = '上升周期减速'
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.5
+                patterns.loc[patterns.index[i], 'pattern_desc'] = '时间周期上升阶段减速，可能接近顶部'
+            
+            # 6. 下降减速（可能接近底部）
+            elif combined_sine.iloc[i] < 0 and sine_diff1.iloc[i] < 0 and sine_diff2.iloc[i] > 0:
+                patterns.loc[patterns.index[i], 'pattern'] = '下降周期减速'
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.5
+                patterns.loc[patterns.index[i], 'pattern_desc'] = '时间周期下降阶段减速，可能接近底部'
+        
+        # 识别多周期共振形态
+        if dominant_cycles:
+            for i in range(5, len(patterns)):
+                cycle_alignment = 0
+                aligned_cycles = []
+                
+                # 检查多个主要周期是否同时在转折点
+                for j, cycle in enumerate(dominant_cycles[:3]):  # 只考虑前3个主要周期
+                    cycle_col = f"cycle_{j+1}_sine"
+                    if cycle_col in cycle_result.columns:
+                        cycle_sine = cycle_result[cycle_col]
+                        # 检查是否在底部拐点
+                        if (cycle_sine.iloc[i-1] < 0 and cycle_sine.iloc[i] >= 0):
+                            cycle_alignment += 1
+                            aligned_cycles.append(cycle['length'])
+                        # 检查是否在顶部拐点
+                        elif (cycle_sine.iloc[i-1] > 0 and cycle_sine.iloc[i] <= 0):
+                            cycle_alignment -= 1
+                            aligned_cycles.append(cycle['length'])
+                
+                # 多个周期同时在底部拐点，形成底部共振
+                if cycle_alignment >= 2:
+                    patterns.loc[patterns.index[i], 'pattern'] = '周期底部共振'
+                    patterns.loc[patterns.index[i], 'pattern_strength'] = 0.9
+                    patterns.loc[patterns.index[i], 'pattern_desc'] = f'多个时间周期底部共振（{", ".join([str(c) for c in aligned_cycles])}日），强烈买入信号'
+                
+                # 多个周期同时在顶部拐点，形成顶部共振
+                elif cycle_alignment <= -2:
+                    patterns.loc[patterns.index[i], 'pattern'] = '周期顶部共振'
+                    patterns.loc[patterns.index[i], 'pattern_strength'] = 0.9
+                    patterns.loc[patterns.index[i], 'pattern_desc'] = f'多个时间周期顶部共振（{", ".join([str(c) for c in aligned_cycles])}日），强烈卖出信号'
+        
+        # 识别重复周期形态 - 寻找规律性出现的高低点
+        if len(dominant_cycles) > 0:
+            main_cycle = dominant_cycles[0]['length']
+            # 检查是否有明显的重复周期
+            if main_cycle > 10 and main_cycle < 100:  # 忽略太短或太长的周期
+                # 查找周期性高低点
+                cycle_peaks = []
+                cycle_troughs = []
+                
+                for i in range(5, len(patterns)-5):
+                    # 查找局部高点
+                    if (combined_sine.iloc[i] > combined_sine.iloc[i-1] and
+                        combined_sine.iloc[i] > combined_sine.iloc[i+1] and
+                        combined_sine.iloc[i] > 0.5):
+                        cycle_peaks.append(i)
+                    
+                    # 查找局部低点
+                    if (combined_sine.iloc[i] < combined_sine.iloc[i-1] and
+                        combined_sine.iloc[i] < combined_sine.iloc[i+1] and
+                        combined_sine.iloc[i] < -0.5):
+                        cycle_troughs.append(i)
+                
+                # 检查高点间距是否符合主周期
+                if len(cycle_peaks) >= 2:
+                    peak_intervals = [cycle_peaks[j] - cycle_peaks[j-1] for j in range(1, len(cycle_peaks))]
+                    avg_peak_interval = sum(peak_intervals) / len(peak_intervals)
+                    
+                    # 如果平均间距接近主周期，标记为重复高点周期
+                    if abs(avg_peak_interval - main_cycle) < main_cycle * 0.2:
+                        for peak in cycle_peaks:
+                            patterns.loc[patterns.index[peak], 'pattern'] = '重复周期高点'
+                            patterns.loc[patterns.index[peak], 'pattern_strength'] = 0.7
+                            patterns.loc[patterns.index[peak], 'pattern_desc'] = f'重复周期高点（{main_cycle:.0f}日周期），潜在卖出时机'
+                
+                # 检查低点间距是否符合主周期
+                if len(cycle_troughs) >= 2:
+                    trough_intervals = [cycle_troughs[j] - cycle_troughs[j-1] for j in range(1, len(cycle_troughs))]
+                    avg_trough_interval = sum(trough_intervals) / len(trough_intervals)
+                    
+                    # 如果平均间距接近主周期，标记为重复低点周期
+                    if abs(avg_trough_interval - main_cycle) < main_cycle * 0.2:
+                        for trough in cycle_troughs:
+                            patterns.loc[patterns.index[trough], 'pattern'] = '重复周期低点'
+                            patterns.loc[patterns.index[trough], 'pattern_strength'] = 0.7
+                            patterns.loc[patterns.index[trough], 'pattern_desc'] = f'重复周期低点（{main_cycle:.0f}日周期），潜在买入时机'
+        
+        # 识别波浪形态（连续的上升-下降-上升或下降-上升-下降）
+        for i in range(20, len(patterns)):
+            recent_sine = combined_sine.iloc[i-20:i+1]
+            
+            # 如果有至少3个交替的上升和下降段，可能是波浪形态
+            zero_crossings = ((recent_sine.shift(1) * recent_sine) < 0).sum()
+            if zero_crossings >= 3:
+                # 计算波浪的规律性
+                sine_peaks = recent_sine[
+                    (recent_sine > recent_sine.shift(1)) & 
+                    (recent_sine > recent_sine.shift(-1))
+                ]
+                sine_troughs = recent_sine[
+                    (recent_sine < recent_sine.shift(1)) & 
+                    (recent_sine < recent_sine.shift(-1))
+                ]
+                
+                # 如果波峰和波谷分布均匀，更可能是规则的波浪形态
+                if len(sine_peaks) >= 2 and len(sine_troughs) >= 2:
+                    peak_intervals = np.diff(sine_peaks.index)
+                    trough_intervals = np.diff(sine_troughs.index)
+                    
+                    if peak_intervals.std() / peak_intervals.mean() < 0.3 and trough_intervals.std() / trough_intervals.mean() < 0.3:
+                        patterns.loc[patterns.index[i], 'pattern'] = '周期波浪形态'
+                        patterns.loc[patterns.index[i], 'pattern_strength'] = 0.6
+                        patterns.loc[patterns.index[i], 'pattern_desc'] = '规则的周期波浪形态，可用于节奏交易'
+        
+        # 使用价格走势确认形态
+        if 'close' in data.columns and 'high' in data.columns and 'low' in data.columns:
+            close_prices = data['close']
+            highs = data['high']
+            lows = data['low']
+            
+            # 价格形态与周期形态确认
+            for i in range(20, len(patterns)):
+                if patterns['pattern'].iloc[i] in ['周期底部拐点', '周期底部共振', '下降周期减速', '重复周期低点']:
+                    # 检查价格是否形成低点并反弹
+                    price_low_formed = (
+                        lows.iloc[i-1] > lows.iloc[i] and 
+                        lows.iloc[i] < lows.iloc[i+1] and
+                        close_prices.iloc[i+1] > close_prices.iloc[i]
+                    )
+                    if price_low_formed:
+                        # 增强形态强度
+                        patterns.loc[patterns.index[i], 'pattern_strength'] = min(1.0, patterns['pattern_strength'].iloc[i] + 0.2)
+                        patterns.loc[patterns.index[i], 'pattern_desc'] = patterns['pattern_desc'].iloc[i] + '，价格形态确认'
+                
+                elif patterns['pattern'].iloc[i] in ['周期顶部拐点', '周期顶部共振', '上升周期减速', '重复周期高点']:
+                    # 检查价格是否形成高点并回落
+                    price_high_formed = (
+                        highs.iloc[i-1] < highs.iloc[i] and 
+                        highs.iloc[i] > highs.iloc[i+1] and
+                        close_prices.iloc[i+1] < close_prices.iloc[i]
+                    )
+                    if price_high_formed:
+                        # 增强形态强度
+                        patterns.loc[patterns.index[i], 'pattern_strength'] = min(1.0, patterns['pattern_strength'].iloc[i] + 0.2)
+                        patterns.loc[patterns.index[i], 'pattern_desc'] = patterns['pattern_desc'].iloc[i] + '，价格形态确认'
+        
+        return patterns 

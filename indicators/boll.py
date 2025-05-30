@@ -144,20 +144,76 @@ class BOLL(BaseIndicator):
         price_from_upper_to_middle = self._detect_price_movement(close, upper, middle, direction='down')
         score -= price_from_upper_to_middle * 15
         
-        # 4. 带宽变化评分
+        # 4. 带宽变化评分 - 优化点：带宽变化率评估
         bandwidth = (upper - lower) / middle
-        bandwidth_expanding = bandwidth > bandwidth.shift(1)
-        bandwidth_contracting = bandwidth < bandwidth.shift(1)
         
-        # 带宽收缩（可能孕育突破）+15分
-        score += bandwidth_contracting * 15
+        # 计算带宽变化率
+        if len(bandwidth) >= 20:
+            # 计算带宽20日变化率
+            bw_periods = self._parameters['bw_periods']
+            bandwidth_change_rate = (bandwidth - bandwidth.shift(bw_periods)) / bandwidth.shift(bw_periods)
+            
+            # 带宽快速收缩（可能孕育爆发行情）
+            bandwidth_fast_contracting = bandwidth_change_rate < -0.2
+            score += bandwidth_fast_contracting * 20
+            
+            # 带宽快速扩张（趋势确认）
+            bandwidth_fast_expanding = bandwidth_change_rate > 0.2
+            # 根据价格位置决定加分还是减分
+            expanding_score = np.where(close > middle, 15, -15)  # 价格在中轨上方加分，下方减分
+            score += bandwidth_fast_expanding * expanding_score
+        else:
+            # 如果历史数据不足，使用原有的简单判断
+            bandwidth_expanding = bandwidth > bandwidth.shift(1)
+            bandwidth_contracting = bandwidth < bandwidth.shift(1)
+            score += bandwidth_contracting * 15
         
         # 带宽极低（即将突破）+20分
         bandwidth_percentile = bandwidth.rolling(window=60).rank(pct=True)
         extremely_low_bandwidth = bandwidth_percentile < 0.1
         score += extremely_low_bandwidth * 20
         
-        # 5. 中轨穿越评分
+        # 5. 价格弹性系数 - 优化点：价格与轨道的弹性关系
+        if len(close) >= 5:
+            # 计算价格与最近触及的边界距离变化率
+            price_position = (close - lower) / (upper - lower)  # 价格在带宽中的相对位置(0-1)
+            
+            # 识别从边界回归中轨的情况
+            from_edge_to_middle = (
+                # 从下轨回归
+                ((price_position.shift(5) < 0.2) & (price_position > 0.2) & (price_position < 0.5)) |
+                # 从上轨回归
+                ((price_position.shift(5) > 0.8) & (price_position < 0.8) & (price_position > 0.5))
+            )
+            
+            # 计算弹性系数：移动更快得分更高
+            elasticity = abs(price_position - price_position.shift(5)) * 20
+            elasticity_score = np.clip(elasticity, 0, 15)
+            
+            # 从下轨弹回加分，从上轨回落减分
+            elasticity_direction = np.where(price_position.shift(5) < 0.5, 1, -1)
+            score += from_edge_to_middle * elasticity_score * elasticity_direction
+        
+        # 6. 布林带斜率配合 - 优化点：价格与布林带方向一致性
+        if len(middle) >= 10:
+            # 计算中轨斜率
+            middle_slope = (middle - middle.shift(5)) / middle.shift(5) * 100
+            
+            # 计算价格短期斜率
+            price_slope = (close - close.shift(5)) / close.shift(5) * 100
+            
+            # 判断方向一致性
+            direction_match = np.sign(middle_slope) == np.sign(price_slope)
+            
+            # 方向一致系数：方向一致时信号更强
+            direction_coef = np.where(direction_match, 1.2, 0.8)
+            
+            # 应用方向一致系数调整评分
+            # 注意：这里仅调整已有的评分，而不是添加新分数
+            score_adjustment = (score - 50) * (direction_coef - 1.0)
+            score += score_adjustment
+        
+        # 7. 中轨穿越评分
         # 价格上穿中轨+10分
         price_cross_up_middle = self.crossover(close, middle)
         score += price_cross_up_middle * 10
@@ -194,7 +250,7 @@ class BOLL(BaseIndicator):
         lower = self._result['lower']
         
         # 检查最近的信号
-        recent_periods = min(5, len(close))
+        recent_periods = min(10, len(close))  # 增加至10周期以识别更多形态
         if recent_periods == 0:
             return patterns
         
@@ -208,38 +264,74 @@ class BOLL(BaseIndicator):
         current_middle = recent_middle.iloc[-1]
         current_lower = recent_lower.iloc[-1]
         
-        # 1. 价格位置形态
-        if current_close <= current_lower:
-            patterns.append("BOLL下轨支撑")
-        elif current_close >= current_upper:
-            patterns.append("BOLL上轨阻力")
-        elif abs(current_close - current_middle) / current_middle < 0.01:
-            patterns.append("BOLL中轨震荡")
+        # 1. 基本位置形态
+        if current_close >= current_upper:
+            patterns.append("布林带超买区")
+        elif current_close <= current_lower:
+            patterns.append("布林带超卖区")
         
         # 2. 突破形态
-        if current_close < current_lower:
-            patterns.append("BOLL下轨突破")
-        elif current_close > current_upper:
-            patterns.append("BOLL上轨突破")
+        if self.crossover(recent_close, recent_upper).any():
+            patterns.append("突破布林带上轨")
+        if self.crossunder(recent_close, recent_lower).any():
+            patterns.append("突破布林带下轨")
         
-        # 3. 穿越形态
-        if self.crossover(recent_close, recent_middle).any():
-            patterns.append("BOLL价格上穿中轨")
-        if self.crossunder(recent_close, recent_middle).any():
-            patterns.append("BOLL价格下穿中轨")
+        # 3. 带宽形态 - 优化：更精细的带宽形态识别
+        bandwidth = (upper - lower) / middle
+        recent_bandwidth = bandwidth.tail(recent_periods)
         
-        # 4. 带宽形态
-        bandwidth = (recent_upper - recent_lower) / recent_middle
-        if self._detect_bandwidth_squeeze(bandwidth):
-            patterns.append("BOLL带宽收缩")
-        if self._detect_bandwidth_expansion(bandwidth):
-            patterns.append("BOLL带宽扩张")
+        # 计算带宽历史百分位
+        if len(bandwidth) >= 60:
+            bandwidth_percentile = bandwidth.rolling(window=60).rank(pct=True)
+            recent_bw_percentile = bandwidth_percentile.tail(recent_periods)
+            
+            if recent_bw_percentile.iloc[-1] < 0.1:
+                patterns.append("布林带极度收窄")
+            elif recent_bw_percentile.iloc[-1] < 0.2:
+                patterns.append("布林带收窄")
+            elif recent_bw_percentile.iloc[-1] > 0.9:
+                patterns.append("布林带极度扩张")
+            elif recent_bw_percentile.iloc[-1] > 0.8:
+                patterns.append("布林带扩张")
+            
+            # 带宽变化趋势
+            if recent_bandwidth.iloc[-1] < recent_bandwidth.iloc[-3] * 0.9:
+                patterns.append("带宽快速收窄")
+            elif recent_bandwidth.iloc[-1] > recent_bandwidth.iloc[-3] * 1.1:
+                patterns.append("带宽快速扩张")
         
-        # 5. 特殊形态
-        if self._detect_bollinger_squeeze(recent_close, recent_upper, recent_lower):
-            patterns.append("BOLL收口形态")
-        if self._detect_bollinger_breakout(recent_close, recent_upper, recent_lower):
-            patterns.append("BOLL突破形态")
+        # 4. 弹性反转形态 - 优化：识别从边界弹回的形态
+        price_position = (close - lower) / (upper - lower)  # 位置百分比(0-1)
+        recent_position = price_position.tail(recent_periods)
+        
+        # 从下轨弹回中轨
+        if (recent_position.iloc[-5] < 0.2 and recent_position.iloc[-1] > 0.4 and recent_position.iloc[-1] < 0.6):
+            patterns.append("下轨弹回中轨")
+        
+        # 从上轨回落中轨
+        if (recent_position.iloc[-5] > 0.8 and recent_position.iloc[-1] < 0.6 and recent_position.iloc[-1] > 0.4):
+            patterns.append("上轨回落中轨")
+        
+        # 5. 方向一致性形态 - 优化：识别价格与布林带方向一致的形态
+        if len(middle) >= 10:
+            # 计算中轨斜率和价格斜率
+            middle_slope = (middle.iloc[-1] - middle.iloc[-10]) / middle.iloc[-10]
+            price_slope = (close.iloc[-1] - close.iloc[-10]) / close.iloc[-10]
+            
+            if middle_slope > 0.01 and price_slope > 0.01:
+                patterns.append("价格与布林带同步上涨")
+            elif middle_slope < -0.01 and price_slope < -0.01:
+                patterns.append("价格与布林带同步下跌")
+            elif middle_slope > 0.01 and price_slope < 0:
+                patterns.append("价格背离布林带上涨")
+            elif middle_slope < -0.01 and price_slope > 0:
+                patterns.append("价格背离布林带下跌")
+        
+        # 6. 走势形态
+        if self._detect_w_bottom_pattern(recent_close, recent_lower):
+            patterns.append("布林带W底形态")
+        if self._detect_m_top_pattern(recent_close, recent_upper):
+            patterns.append("布林带M顶形态")
         
         return patterns
     
@@ -707,3 +799,67 @@ class BOLL(BaseIndicator):
         signals.loc[tight_range_idx, 'market_env'] = 'strong_sideways_market'
         
         return signals 
+
+    def _detect_w_bottom_pattern(self, price: pd.Series, lower: pd.Series) -> bool:
+        """
+        检测W底形态
+        
+        Args:
+            price: 价格序列
+            lower: 下轨序列
+            
+        Returns:
+            bool: 是否为W底形态
+        """
+        if len(price) < 10:
+            return False
+        
+        # 寻找接近或突破下轨的两个低点
+        touch_lower = (price - lower).abs() / lower < 0.02  # 接近下轨的点
+        touch_indices = np.where(touch_lower)[0]
+        
+        if len(touch_indices) >= 2:
+            # 查找最近的两个接触点
+            last_two = touch_indices[-2:]
+            
+            # 确保两点之间有反弹（中间点高于两端点）
+            if len(last_two) == 2 and last_two[1] - last_two[0] >= 3:  # 至少间隔3个点
+                middle_idx = (last_two[0] + last_two[1]) // 2
+                if price.iloc[middle_idx] > price.iloc[last_two[0]] * 1.02 and price.iloc[middle_idx] > price.iloc[last_two[1]] * 1.02:
+                    # 第二个低点后有向上突破
+                    if len(price) > last_two[1] + 2 and price.iloc[-1] > price.iloc[last_two[1]] * 1.03:
+                        return True
+        
+        return False
+
+    def _detect_m_top_pattern(self, price: pd.Series, upper: pd.Series) -> bool:
+        """
+        检测M顶形态
+        
+        Args:
+            price: 价格序列
+            upper: 上轨序列
+            
+        Returns:
+            bool: 是否为M顶形态
+        """
+        if len(price) < 10:
+            return False
+        
+        # 寻找接近或突破上轨的两个高点
+        touch_upper = (price - upper).abs() / upper < 0.02  # 接近上轨的点
+        touch_indices = np.where(touch_upper)[0]
+        
+        if len(touch_indices) >= 2:
+            # 查找最近的两个接触点
+            last_two = touch_indices[-2:]
+            
+            # 确保两点之间有回调（中间点低于两端点）
+            if len(last_two) == 2 and last_two[1] - last_two[0] >= 3:  # 至少间隔3个点
+                middle_idx = (last_two[0] + last_two[1]) // 2
+                if price.iloc[middle_idx] < price.iloc[last_two[0]] * 0.98 and price.iloc[middle_idx] < price.iloc[last_two[1]] * 0.98:
+                    # 第二个高点后有向下突破
+                    if len(price) > last_two[1] + 2 and price.iloc[-1] < price.iloc[last_two[1]] * 0.97:
+                        return True
+        
+        return False 
