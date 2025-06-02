@@ -24,263 +24,199 @@ from indicators.volume_score import VolumeScore
 logger = get_logger(__name__)
 
 class IndicatorRegistry:
-    """指标注册表，管理所有指标的唯一标识和创建函数"""
+    """指标注册表，管理所有可用的技术指标"""
     
-    _registry: Dict[str, Dict[str, Any]] = {}
+    _indicators = {}
+    _instance = None
     
-    @classmethod
-    def register(cls, indicator_id: str, indicator_class: Type[BaseIndicator], 
-                display_name: str = None, description: str = None,
-                parameter_mapping: Dict[str, str] = None):
+    def __new__(cls):
+        """单例模式实现"""
+        if cls._instance is None:
+            cls._instance = super(IndicatorRegistry, cls).__new__(cls)
+            cls._instance._initialize_default_indicators()
+        return cls._instance
+    
+    def _initialize_default_indicators(self):
+        """初始化默认指标"""
+        # 这里可以初始化系统默认提供的指标
+        # 将在后面使用register_indicator注册
+        pass
+    
+    def register_indicator(self, indicator_class, name=None, description=None, overwrite=False):
         """
-        注册指标
+        注册一个技术指标
         
         Args:
-            indicator_id: 指标唯一标识
             indicator_class: 指标类
-            display_name: 显示名称
-            description: 描述
-            parameter_mapping: 参数映射，用于将外部参数名映射到指标类初始化参数名
+            name: 指标名称，如果为None则使用类名
+            description: 指标描述
+            overwrite: 是否覆盖已存在的指标
         """
-        if indicator_id in cls._registry:
-            logger.warning(f"指标 {indicator_id} 已存在，将被覆盖")
+        if name is None:
+            name = indicator_class.__name__
             
-        if not display_name:
-            display_name = indicator_class.__name__
+        if name in self._indicators and not overwrite:
+            logger.warning(f"指标 {name} 已存在，将不会覆盖。如需覆盖请设置overwrite=True")
+            return False
             
-        cls._registry[indicator_id] = {
+        self._indicators[name] = {
             'class': indicator_class,
-            'display_name': display_name,
-            'description': description,
-            'parameter_mapping': parameter_mapping or {}
+            'description': description or getattr(indicator_class, 'description', ''),
+            'name': name
         }
         
-        logger.debug(f"注册指标: {indicator_id} -> {indicator_class.__name__}")
-        
-    @classmethod
-    def get_indicator_class(cls, indicator_id: str) -> Optional[Type[BaseIndicator]]:
+        logger.info(f"注册指标: {name}")
+        return True
+    
+    def get_indicator_class(self, name):
         """获取指标类"""
-        if indicator_id not in cls._registry:
+        if name not in self._indicators:
+            logger.error(f"指标 {name} 未注册")
             return None
-        return cls._registry[indicator_id]['class']
+        return self._indicators[name]['class']
     
-    @classmethod
-    def get_display_name(cls, indicator_id: str) -> str:
-        """获取指标显示名称"""
-        if indicator_id not in cls._registry:
-            return indicator_id
-        return cls._registry[indicator_id]['display_name']
-    
-    @classmethod
-    def get_description(cls, indicator_id: str) -> Optional[str]:
-        """获取指标描述"""
-        if indicator_id not in cls._registry:
-            return None
-        return cls._registry[indicator_id]['description']
-    
-    @classmethod
-    def get_parameter_mapping(cls, indicator_id: str) -> Dict[str, str]:
-        """获取参数映射"""
-        if indicator_id not in cls._registry:
-            return {}
-        return cls._registry[indicator_id]['parameter_mapping']
-    
-    @classmethod
-    def create_indicator(cls, indicator_id: str, **params) -> Optional[BaseIndicator]:
+    def create_indicator(self, name, **kwargs):
         """
         创建指标实例
         
         Args:
-            indicator_id: 指标唯一标识
-            **params: 指标参数
+            name: 指标名称
+            **kwargs: 传递给指标构造函数的参数
             
         Returns:
-            BaseIndicator: 指标实例
+            指标实例或None
         """
-        if indicator_id not in cls._registry:
-            logger.error(f"指标 {indicator_id} 未注册")
+        indicator_class = self.get_indicator_class(name)
+        if indicator_class is None:
             return None
             
-        indicator_class = cls._registry[indicator_id]['class']
-        parameter_mapping = cls._registry[indicator_id]['parameter_mapping']
+        try:
+            return indicator_class(**kwargs)
+        except Exception as e:
+            logger.error(f"创建指标 {name} 实例失败: {e}")
+            return None
+    
+    def get_all_indicators(self):
+        """获取所有注册的指标信息"""
+        return self._indicators.copy()
+    
+    def get_indicator_names(self):
+        """获取所有注册的指标名称"""
+        return list(self._indicators.keys())
+
+    def register_standard_indicators(self):
+        """注册标准指标集"""
+        # 导入所有指标类
+        from indicators.macd import MACD
+        from indicators.kdj import KDJ
+        from indicators.rsi import RSI
+        from indicators.boll import BOLL
+        from indicators.ma import MA
+        from indicators.volume import Volume
         
-        # 应用参数映射
-        mapped_params = {}
-        for param_name, param_value in params.items():
-            # 如果参数名在映射中，使用映射后的名称
-            if param_name in parameter_mapping:
-                mapped_params[parameter_mapping[param_name]] = param_value
-            else:
-                mapped_params[param_name] = param_value
+        # 注册指标
+        self.register_indicator(MACD, name="MACD", description="移动平均线收敛散度指标")
+        self.register_indicator(KDJ, name="KDJ", description="随机指标")
+        self.register_indicator(RSI, name="RSI", description="相对强弱指数")
+        self.register_indicator(BOLL, name="BOLL", description="布林带")
+        self.register_indicator(MA, name="MA", description="移动平均线")
+        self.register_indicator(Volume, name="Volume", description="成交量指标")
+
+    def initialize_pattern_registry(self):
+        """初始化形态注册表，将所有指标的形态导入到形态注册表中"""
+        from indicators.pattern_registry import PatternRegistry
+        
+        # 创建所有指标的实例
+        indicators = []
+        for name, info in self._indicators.items():
+            try:
+                indicator = self.create_indicator(name)
+                if indicator:
+                    indicators.append(indicator)
+            except Exception as e:
+                logger.error(f"创建指标 {name} 实例失败: {e}")
                 
-        try:
-            # 创建指标实例
-            indicator = indicator_class(**mapped_params)
-            return indicator
-        except Exception as e:
-            logger.error(f"创建指标 {indicator_id} 实例失败: {e}")
-            logger.error(f"参数: {mapped_params}")
-            return None
-    
-    @classmethod
-    def get_all_indicator_ids(cls) -> List[str]:
-        """获取所有指标ID"""
-        return list(cls._registry.keys())
-    
-    @classmethod
-    def get_all_indicators(cls) -> Dict[str, Dict[str, Any]]:
-        """获取所有指标信息"""
-        return cls._registry
-    
-    @classmethod
-    def auto_register_from_module(cls, module_name: str):
-        """
-        从模块自动注册指标
+        # 将所有指标的形态注册到PatternRegistry
+        PatternRegistry.auto_register_from_indicators(indicators)
         
-        Args:
-            module_name: 模块名，如 'indicators.technical'
-        """
-        try:
-            module = importlib.import_module(module_name)
-            
-            # 遍历模块中的所有类
-            for name, obj in inspect.getmembers(module):
-                # 如果是类，并且是BaseIndicator的子类，但不是BaseIndicator本身
-                if (inspect.isclass(obj) and 
-                    issubclass(obj, BaseIndicator) and 
-                    obj != BaseIndicator):
-                    
-                    # 获取类的 indicator_id 属性，如果没有则使用类名
-                    indicator_id = getattr(obj, 'indicator_id', name.upper())
-                    
-                    # 获取类的 display_name 属性，如果没有则使用类名
-                    display_name = getattr(obj, 'display_name', name)
-                    
-                    # 获取类的 description 属性
-                    description = getattr(obj, 'description', obj.__doc__)
-                    
-                    # 获取类的 parameter_mapping 属性
-                    parameter_mapping = getattr(obj, 'parameter_mapping', {})
-                    
-                    # 注册指标
-                    cls.register(
-                        indicator_id=indicator_id,
-                        indicator_class=obj,
-                        display_name=display_name,
-                        description=description,
-                        parameter_mapping=parameter_mapping
-                    )
-            
-            logger.info(f"从模块 {module_name} 自动注册了 {len(cls._registry)} 个指标")
-            
-        except Exception as e:
-            logger.error(f"从模块 {module_name} 自动注册指标失败: {e}")
+        # 记录已注册的形态
+        pattern_count = len(PatternRegistry.get_all_pattern_ids())
+        logger.info(f"从指标中注册了 {pattern_count} 个形态")
 
-    def register_scoring_indicator(self, name: str, indicator_class: type):
-        """
-        注册评分指标类
-        
-        Args:
-            name: 指标名称
-            indicator_class: 指标类
-        """
-        if not issubclass(indicator_class, IndicatorScoreBase):
-            raise ValueError(f"指标类 {indicator_class.__name__} 必须继承自 IndicatorScoreBase")
-        
-        self._registry[name] = {
-            'class': indicator_class,
-            'display_name': name,
-            'description': indicator_class.__doc__,
-            'parameter_mapping': {}
-        }
-        logger.info(f"注册评分指标: {name} -> {indicator_class.__name__}")
-
-    def create_scoring_indicator(self, name: str, **kwargs) -> IndicatorScoreBase:
-        """
-        创建评分指标实例
-        
-        Args:
-            name: 指标名称
-            **kwargs: 指标参数
-            
-        Returns:
-            IndicatorScoreBase: 指标实例
-            
-        Raises:
-            ValueError: 如果指标未注册
-        """
-        if name not in self._registry:
-            available = list(self._registry.keys())
-            raise ValueError(f"未注册的评分指标: {name}. 可用指标: {available}")
-        
-        indicator_class = self._registry[name]['class']
-        return indicator_class(**kwargs)
-
-    def get_available_scoring_indicators(self) -> List[str]:
-        """
-        获取所有可用的评分指标名称
-        
-        Returns:
-            List[str]: 评分指标名称列表
-        """
-        return list(self._registry.keys())
-
-    def create_score_manager(self, indicator_configs: List[Dict[str, Any]]) -> IndicatorScoreManager:
-        """
-        创建指标评分管理器
-        
-        Args:
-            indicator_configs: 指标配置列表，每个配置包含name、weight和其他参数
-            
-        Returns:
-            IndicatorScoreManager: 评分管理器实例
-            
-        Example:
-            configs = [
-                {'name': 'macd_score', 'weight': 1.5, 'fast_period': 12},
-                {'name': 'kdj_score', 'weight': 1.2, 'n': 9},
-                {'name': 'rsi_score', 'weight': 1.0, 'period': 14}
-            ]
-            manager = registry.create_score_manager(configs)
-        """
-        manager = IndicatorScoreManager()
-        
-        for config in indicator_configs:
-            name = config.pop('name')
-            weight = config.pop('weight', 1.0)
-            
-            # 创建指标实例
-            indicator = self.create_scoring_indicator(name, weight=weight, **config)
-            
-            # 注册到管理器
-            manager.register_indicator(indicator, weight)
-            
-            logger.info(f"添加评分指标到管理器: {name}, 权重: {weight}")
-        
-        return manager
-
-# 导出 IndicatorRegistry 单例
+# 初始化并注册标准指标
 indicator_registry = IndicatorRegistry()
+indicator_registry.register_standard_indicators()
+indicator_registry.initialize_pattern_registry()
 
-# 自动注册评分指标
-def _register_scoring_indicators():
-    """自动注册所有评分指标"""
-    scoring_indicators = {
-        'macd_score': MACDScore,
-        'kdj_score': KDJScore,
-        'rsi_score': RSIScore,
-        'boll_score': BOLLScore,
-        'volume_score': VolumeScore,
-    }
+def get_indicator(name, **kwargs):
+    """
+    获取指标实例的便捷函数
     
-    for name, indicator_class in scoring_indicators.items():
-        try:
-            indicator_registry.register_scoring_indicator(name, indicator_class)
-        except Exception as e:
-            logger.error(f"注册评分指标 {name} 失败: {e}")
+    Args:
+        name: 指标名称
+        **kwargs: 传递给指标构造函数的参数
+        
+    Returns:
+        指标实例或None
+    """
+    return indicator_registry.create_indicator(name, **kwargs)
 
-# 执行自动注册
-_register_scoring_indicators()
+def register_indicator(indicator_class, name=None, description=None, overwrite=False):
+    """
+    注册指标的便捷函数
+    
+    Args:
+        indicator_class: 指标类
+        name: 指标名称
+        description: 指标描述
+        overwrite: 是否覆盖已存在的指标
+        
+    Returns:
+        bool: 是否成功注册
+    """
+    return indicator_registry.register_indicator(indicator_class, name, description, overwrite)
+
+def get_all_indicator_names():
+    """获取所有注册的指标名称"""
+    return indicator_registry.get_indicator_names()
+
+def create_indicator_score_manager(indicators=None, weights=None, market_environment=None):
+    """
+    创建指标评分管理器
+    
+    Args:
+        indicators: 指标名称列表，如果为None则使用所有注册的指标
+        weights: 指标权重字典，键为指标名称，值为权重
+        market_environment: 市场环境
+        
+    Returns:
+        IndicatorScoreManager: 指标评分管理器
+    """
+    from indicators.scoring_framework import IndicatorScoreManager, MarketEnvironment
+    
+    # 创建管理器
+    manager = IndicatorScoreManager()
+    
+    # 设置市场环境
+    if market_environment:
+        manager.set_market_environment(market_environment)
+        
+    # 如果没有指定指标，使用所有注册的指标
+    if indicators is None:
+        indicators = get_all_indicator_names()
+        
+    # 如果没有指定权重，使用默认权重1.0
+    if weights is None:
+        weights = {name: 1.0 for name in indicators}
+        
+    # 添加指标
+    for name in indicators:
+        indicator = get_indicator(name)
+        if indicator:
+            weight = weights.get(name, 1.0)
+            manager.add_indicator(indicator, weight)
+            
+    return manager
 
 # 定义指标常量枚举
 class IndicatorEnum(str, Enum):

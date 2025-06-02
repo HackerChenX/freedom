@@ -266,7 +266,7 @@ class DataManager:
             if filters and 'price' in filters and isinstance(filters['price'], dict):
                 price = filters['price']
             
-            # 使用stock_info表代替stock_basic表
+            # 使用stock_info表代替stock_info表
             # 通过最新日期的日线数据获取股票列表 - 优化查询以减少内存使用
             # 使用更直接的方式，不使用子查询来减少内存占用
             sql = f"""

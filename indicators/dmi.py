@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
@@ -941,3 +941,93 @@ class DMI(BaseIndicator):
         """
         return self.calculate(df)
 
+    def _register_dmi_patterns(self):
+        """注册DMI特有的形态检测方法"""
+        self.register_pattern(self._detect_dmi_crossover, "DMI交叉")
+        self.register_pattern(self._detect_adx_rising, "ADX上升")
+    
+    def _detect_dmi_crossover(self, data: pd.DataFrame) -> Optional[PatternResult]:
+        # ... 实现DMI交叉检测逻辑 ...
+        return PatternResult(pattern_name="DMI交叉", strength=strength, duration=duration)
+    
+    def _detect_adx_rising(self, data: pd.DataFrame) -> Optional[PatternResult]:
+        # ... 实现ADX上升检测逻辑 ...
+        return PatternResult(pattern_name="ADX上升", strength=strength, duration=duration)
+    
+    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
+        self.ensure_columns(data, ['pdi', 'mdi', 'adx'])
+        patterns = []
+        
+        for pattern_func in self._pattern_registry.values():
+            result = pattern_func(data)
+            if result:
+                patterns.append(result)
+        
+        return patterns
+
+
+
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+
+    
+            """
+
+    
+            生成交易信号
+        
+
+    
+            Args:
+
+    
+                data: 输入数据
+
+    
+                **kwargs: 额外参数
+            
+
+    
+            Returns:
+
+    
+                Dict[str, pd.Series]: 包含交易信号的字典
+
+    
+            """
+
+    
+            # 确保已计算指标
+
+    
+            if not self.has_result():
+
+    
+                self.calculate(data, **kwargs)
+            
+
+    
+            # 初始化信号
+
+    
+            signals = {}
+
+    
+            signals['buy_signal'] = pd.Series(False, index=data.index)
+
+    
+            signals['sell_signal'] = pd.Series(False, index=data.index)
+
+    
+            signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+
+    
+            # 在这里实现指标特定的信号生成逻辑
+
+    
+            # 此处提供默认实现
+        
+
+    
+            return signals

@@ -372,3 +372,115 @@ def cache_result(ttl: Optional[float] = None,
             return result
         return wrapper
     return decorator 
+
+
+class LRUCache:
+    """
+    LRU（最近最少使用）缓存实现
+    
+    使用OrderedDict保持项目的使用顺序，实现高效的LRU淘汰策略
+    """
+    
+    def __init__(self, capacity: int):
+        """
+        初始化LRU缓存
+        
+        Args:
+            capacity: 缓存容量
+        """
+        self._capacity = max(1, capacity)
+        self._cache = {}
+        self._usage_order = []
+        self._lock = threading.Lock()
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        获取缓存值，并更新使用顺序
+        
+        Args:
+            key: 缓存键
+            default: 默认值
+            
+        Returns:
+            缓存值或默认值
+        """
+        with self._lock:
+            if key not in self._cache:
+                return default
+            
+            # 更新使用顺序
+            self._usage_order.remove(key)
+            self._usage_order.append(key)
+            
+            return self._cache[key]
+    
+    def set(self, key: str, value: Any) -> None:
+        """
+        设置缓存值
+        
+        Args:
+            key: 缓存键
+            value: 缓存值
+        """
+        with self._lock:
+            # 如果键已存在，更新使用顺序
+            if key in self._cache:
+                self._usage_order.remove(key)
+            # 如果缓存已满，删除最久未使用的项
+            elif len(self._cache) >= self._capacity:
+                oldest_key = self._usage_order.pop(0)
+                del self._cache[oldest_key]
+            
+            # 添加新项
+            self._cache[key] = value
+            self._usage_order.append(key)
+    
+    def delete(self, key: str) -> bool:
+        """
+        删除缓存值
+        
+        Args:
+            key: 缓存键
+            
+        Returns:
+            bool: 是否删除成功
+        """
+        with self._lock:
+            if key in self._cache:
+                del self._cache[key]
+                self._usage_order.remove(key)
+                return True
+            return False
+    
+    def exists(self, key: str) -> bool:
+        """
+        检查键是否存在
+        
+        Args:
+            key: 缓存键
+            
+        Returns:
+            bool: 是否存在
+        """
+        with self._lock:
+            return key in self._cache
+    
+    def clear(self) -> None:
+        """清空缓存"""
+        with self._lock:
+            self._cache.clear()
+            self._usage_order.clear()
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        获取缓存统计信息
+        
+        Returns:
+            Dict: 包含缓存统计信息的字典
+        """
+        with self._lock:
+            return {
+                'capacity': self._capacity,
+                'size': len(self._cache),
+                'usage': len(self._cache) / self._capacity if self._capacity > 0 else 0
+            } 

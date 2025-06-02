@@ -100,7 +100,7 @@ class SignalWatcher:
             
             if watch_result:
                 # 获取股票基本信息
-                stock_info = self.data_manager.get_stock_basic_info([stock_code])
+                stock_info = self.data_manager.get_stock_info_info([stock_code])
                 stock_name = stock_info.iloc[0]['stock_name'] if not stock_info.empty else ""
                 
                 # 添加到结果
@@ -422,7 +422,7 @@ class SignalWatcher:
             return {"error": "策略没有定义条件"}
         
         # 获取股票基本信息
-        stock_info = self.data_manager.get_stock_basic_info([stock_code])
+        stock_info = self.data_manager.get_stock_info_info([stock_code])
         if stock_info.empty:
             return {"error": f"未找到股票 {stock_code} 的基本信息"}
             

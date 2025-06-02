@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Union
+import openpyxl
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -46,7 +47,8 @@ class BuyPointDimensionAnalyzer:
             "trend_analysis": {},
             "volume_analysis": {},
             "time_analysis": {},
-            "indicator_analysis": {}
+            "indicator_analysis": {},
+            "multi_period_analysis": {}
         }
         
         # 结果输出目录
@@ -271,7 +273,7 @@ class BuyPointDimensionAnalyzer:
         # 杯柄形态
         cup_and_handle = self._detect_cup_and_handle(kline_data)
         self._update_pattern_count(stats, "杯柄形态", len(cup_and_handle))
-        
+    
     def _detect_double_bottom(self, data: pd.DataFrame) -> List[int]:
         """检测双底形态"""
         # 简化检测逻辑
@@ -452,17 +454,17 @@ class BuyPointDimensionAnalyzer:
         common_features = []
         
         # 设置频率阈值
-        threshold = 0.3
+        threshold = 0.2
         
         # 遍历各类形态
-        for category, patterns in pattern_stats.items():
+        for pattern_type, patterns in pattern_stats.items():
             for pattern, stats in patterns.items():
                 if stats["frequency"] >= threshold:
                     common_features.append({
-                        "category": category,
                         "pattern": pattern,
                         "frequency": stats["frequency"],
-                        "count": stats["count"]
+                        "count": stats["count"],
+                        "pattern_type": pattern_type
                     })
         
         # 按频率排序
@@ -1022,6 +1024,7 @@ class BuyPointDimensionAnalyzer:
         try:
             # 获取每个周期的特征分析
             period_results = {}
+            all_features = []  # 收集所有特征用于关联分析
             
             for period in periods:
                 # 获取对应周期的数据起止日期
@@ -1042,9 +1045,54 @@ class BuyPointDimensionAnalyzer:
                     "trend_features": trend_features.get("common_features", []),
                     "volume_features": volume_features.get("common_features", [])
                 }
+                
+                # 收集特征用于关联分析
+                for feature_type, features in period_results[period].items():
+                    for feature in features:
+                        feature_data = feature.copy()
+                        feature_data["period"] = period
+                        feature_data["type"] = feature_type.replace("_features", "")
+                        all_features.append(feature_data)
             
             # 寻找多周期共性特征
             common_features = self._find_multi_period_common_features(period_results)
+            
+            # 使用多维度特征筛选
+            # 筛选高频率特征
+            high_frequency_criteria = {"min_frequency": 0.3}
+            high_frequency_features = self.filter_features(all_features, high_frequency_criteria)
+            
+            # 按特征类型筛选
+            pattern_criteria = {"types": ["pattern"]}
+            pattern_features = self.filter_features(all_features, pattern_criteria)
+            
+            trend_criteria = {"types": ["trend"]}
+            trend_features = self.filter_features(all_features, trend_criteria)
+            
+            volume_criteria = {"types": ["volume"]}
+            volume_features = self.filter_features(all_features, volume_criteria)
+            
+            # 添加特征股票和日期信息用于关联分析
+            feature_data_for_correlation = []
+            for feature in all_features:
+                for stock_code in stock_codes:
+                    feature_data_for_correlation.append({
+                        "stock_code": stock_code,
+                        "date": date,
+                        "pattern": feature.get("pattern", feature.get("feature", "")),
+                        "type": feature.get("type", ""),
+                        "period": feature.get("period", "")
+                    })
+            
+            # 分析特征关联性
+            correlation_result = self.analyze_feature_correlation(feature_data_for_correlation)
+            
+            # 分析特征时序模式
+            temporal_result = self.analyze_temporal_patterns(feature_data_for_correlation)
+            
+            # 优化特征组合
+            optimized_features = self.optimize_feature_combination(
+                high_frequency_features, "frequency", max_features=7)
             
             # 构建结果
             result = {
@@ -1052,10 +1100,17 @@ class BuyPointDimensionAnalyzer:
                 "periods": periods,
                 "stock_count": len(stock_codes),
                 "period_results": period_results,
-                "common_features": common_features
+                "common_features": common_features,
+                "high_frequency_features": high_frequency_features,
+                "pattern_features": pattern_features,
+                "trend_features": trend_features,
+                "volume_features": volume_features,
+                "feature_correlation": correlation_result,
+                "temporal_patterns": temporal_result,
+                "optimized_features": optimized_features
             }
             
-            logger.info(f"多周期分析完成")
+            logger.info(f"多周期分析完成，发现 {len(common_features)} 个共性特征，{len(correlation_result.get('strong_associations', []))} 个强关联规则")
             return result
             
         except Exception as e:
@@ -1322,6 +1377,12 @@ class BuyPointDimensionAnalyzer:
                 },
                 "indicator_analysis": {
                     "common_signals": self.analysis_results.get("indicator_analysis", {}).get("common_signals", [])
+                },
+                "multi_period_analysis": {
+                    "common_features": self.analysis_results.get("multi_period_analysis", {}).get("common_features", []),
+                    "feature_correlation": self.analysis_results.get("multi_period_analysis", {}).get("feature_correlation", {}),
+                    "temporal_patterns": self.analysis_results.get("multi_period_analysis", {}).get("temporal_patterns", {}),
+                    "optimized_features": self.analysis_results.get("multi_period_analysis", {}).get("optimized_features", {})
                 }
             }
             
@@ -1351,8 +1412,49 @@ class BuyPointDimensionAnalyzer:
                         "count": signal.get("count", 0)
                     })
             
+            # 添加优化特征组合
+            optimized_features = self.analysis_results.get("multi_period_analysis", {}).get("optimized_features", {}).get("optimized_features", [])
+            if optimized_features:
+                for feature in optimized_features:
+                    if "frequency" in feature and feature["frequency"] > 0.3:
+                        key_features.append({
+                            "type": feature.get("type", "optimized"),
+                            "feature": feature.get("pattern", feature.get("signal", feature.get("feature", ""))),
+                            "frequency": feature["frequency"],
+                            "count": feature.get("count", 0),
+                            "source": "optimized"
+                        })
+            
+            # 添加强关联规则
+            strong_associations = self.analysis_results.get("multi_period_analysis", {}).get("feature_correlation", {}).get("strong_associations", [])
+            if strong_associations:
+                for i, rule in enumerate(strong_associations[:5]):  # 只添加前5个强关联规则
+                    key_features.append({
+                        "type": "association_rule",
+                        "feature": f"{rule['antecedent']} -> {rule['consequent']}",
+                        "frequency": rule.get("support", 0),
+                        "confidence": rule.get("confidence", 0),
+                        "lift": rule.get("lift", 0),
+                        "source": "correlation"
+                    })
+            
+            # 添加时序模式
+            frequent_patterns = self.analysis_results.get("multi_period_analysis", {}).get("temporal_patterns", {}).get("frequent_patterns", [])
+            if frequent_patterns:
+                for i, pattern in enumerate(frequent_patterns[:3]):  # 只添加前3个频繁时序模式
+                    sequence = pattern.get("sequence", [])
+                    if sequence:
+                        sequence_str = " -> ".join([f"{item.get('type', '')}:{item.get('feature', '')}" for item in sequence])
+                        key_features.append({
+                            "type": "temporal_pattern",
+                            "feature": sequence_str,
+                            "support": pattern.get("support", 0),
+                            "count": pattern.get("count", 0),
+                            "source": "temporal"
+                        })
+            
             # 按频率排序
-            key_features.sort(key=lambda x: x["frequency"], reverse=True)
+            key_features.sort(key=lambda x: x.get("frequency", x.get("support", 0)), reverse=True)
             
             report["key_features"] = key_features
             
@@ -1360,12 +1462,117 @@ class BuyPointDimensionAnalyzer:
             description = self._generate_buypoint_description(key_features)
             report["description"] = description
             
+            # 特征评分
+            report["feature_scores"] = self._score_features(key_features)
+            
+            # 特征关联网络
+            report["feature_network"] = self.analysis_results.get("multi_period_analysis", {}).get("feature_correlation", {}).get("feature_network", [])
+            
+            # 优化特征组合
+            feature_combinations = self.analysis_results.get("multi_period_analysis", {}).get("optimized_features", {}).get("feature_combinations", [])
+            report["feature_combinations"] = feature_combinations
+            
             logger.info("买点维度综合分析报告生成完成")
             return report
             
         except Exception as e:
             logger.error(f"生成买点维度综合分析报告时出错: {e}")
             return {}
+    
+    def _score_features(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        对特征进行评分
+        
+        Args:
+            features: 特征列表
+            
+        Returns:
+            Dict: 特征评分结果
+        """
+        try:
+            # 特征类型权重
+            type_weights = {
+                "pattern": 1.0,
+                "trend": 1.2,
+                "volume": 0.9,
+                "indicator": 1.1,
+                "association_rule": 1.3,
+                "temporal_pattern": 1.4,
+                "optimized": 1.5
+            }
+            
+            # 计算各维度得分
+            dimension_scores = {
+                "pattern": 0,
+                "trend": 0,
+                "volume": 0,
+                "indicator": 0,
+                "correlation": 0,
+                "temporal": 0
+            }
+            
+            dimension_counts = {dim: 0 for dim in dimension_scores.keys()}
+            
+            # 计算每个特征的加权得分
+            feature_scores = {}
+            for feature in features:
+                feature_type = feature.get("type", "")
+                feature_name = feature.get("feature", "")
+                
+                # 特征基础分数
+                base_score = feature.get("frequency", feature.get("support", 0)) * 100
+                
+                # 应用类型权重
+                type_weight = type_weights.get(feature_type, 1.0)
+                weighted_score = base_score * type_weight
+                
+                # 特征来源加成
+                source = feature.get("source", "")
+                if source == "optimized":
+                    weighted_score *= 1.2
+                elif source == "correlation":
+                    weighted_score *= 1.15
+                elif source == "temporal":
+                    weighted_score *= 1.25
+                
+                # 存储特征得分
+                feature_scores[feature_name] = weighted_score
+                
+                # 更新维度得分
+                if feature_type in ["pattern", "trend", "volume", "indicator"]:
+                    dimension_scores[feature_type] += weighted_score
+                    dimension_counts[feature_type] += 1
+                elif feature_type == "association_rule":
+                    dimension_scores["correlation"] += weighted_score
+                    dimension_counts["correlation"] += 1
+                elif feature_type == "temporal_pattern":
+                    dimension_scores["temporal"] += weighted_score
+                    dimension_counts["temporal"] += 1
+            
+            # 计算维度平均分
+            for dim in dimension_scores:
+                if dimension_counts[dim] > 0:
+                    dimension_scores[dim] /= dimension_counts[dim]
+                    
+            # 计算总得分
+            total_score = sum(dimension_scores.values()) / len([s for s in dimension_scores.values() if s > 0]) if any(dimension_scores.values()) else 0
+            
+            # 结果
+            result = {
+                "total_score": total_score,
+                "dimension_scores": dimension_scores,
+                "feature_scores": feature_scores
+            }
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"特征评分时出错: {e}")
+            return {
+                "total_score": 0,
+                "dimension_scores": {},
+                "feature_scores": {}
+            }
     
     def save_results(self, output_file: str, format_type: str = "json") -> None:
         """
@@ -1401,138 +1608,446 @@ class BuyPointDimensionAnalyzer:
                 report = self.get_comprehensive_report()
                 
                 # 构建Markdown内容
-                markdown = "# 买点多维度分析报告\n\n"
-                markdown += f"分析日期: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-                
-                # 买点描述
-                if "description" in report:
-                    markdown += "## 买点特征描述\n\n"
-                    markdown += f"{report['description']}\n\n"
-                
-                # 关键特征
-                if "key_features" in report and report["key_features"]:
-                    markdown += "## 关键特征\n\n"
-                    markdown += "| 特征类型 | 特征 | 出现频率 | 出现次数 |\n"
-                    markdown += "| -------- | ---- | -------- | -------- |\n"
-                    
-                    for feature in report["key_features"]:
-                        markdown += f"| {feature['type']} | {feature['feature']} | "
-                        markdown += f"{feature['frequency']*100:.2f}% | {feature['count']} |\n"
-                    
-                    markdown += "\n"
-                
-                # K线形态特征
-                common_patterns = report.get("pattern_analysis", {}).get("common_features", [])
-                if common_patterns:
-                    markdown += "## K线形态特征\n\n"
-                    markdown += "| 形态类别 | 形态 | 出现频率 | 出现次数 |\n"
-                    markdown += "| -------- | ---- | -------- | -------- |\n"
-                    
-                    for pattern in common_patterns:
-                        markdown += f"| {pattern.get('category', '-')} | {pattern.get('pattern', '-')} | "
-                        markdown += f"{pattern.get('frequency', 0)*100:.2f}% | {pattern.get('count', 0)} |\n"
-                    
-                    markdown += "\n"
-                
-                # 趋势特征
-                common_trends = report.get("trend_analysis", {}).get("common_features", [])
-                if common_trends:
-                    markdown += "## 趋势特征\n\n"
-                    markdown += "| 趋势类别 | 趋势特征 | 出现频率 | 出现次数 |\n"
-                    markdown += "| -------- | -------- | -------- | -------- |\n"
-                    
-                    for trend in common_trends:
-                        markdown += f"| {trend.get('category', '-')} | {trend.get('pattern', '-')} | "
-                        markdown += f"{trend.get('frequency', 0)*100:.2f}% | {trend.get('count', 0)} |\n"
-                    
-                    markdown += "\n"
-                
-                # 量能特征
-                common_volumes = report.get("volume_analysis", {}).get("common_features", [])
-                if common_volumes:
-                    markdown += "## 量能特征\n\n"
-                    markdown += "| 量能类别 | 量能特征 | 出现频率 | 出现次数 |\n"
-                    markdown += "| -------- | -------- | -------- | -------- |\n"
-                    
-                    for volume in common_volumes:
-                        markdown += f"| {volume.get('category', '-')} | {volume.get('pattern', '-')} | "
-                        markdown += f"{volume.get('frequency', 0)*100:.2f}% | {volume.get('count', 0)} |\n"
-                    
-                    markdown += "\n"
-                
-                # 指标信号
-                common_signals = report.get("indicator_analysis", {}).get("common_signals", [])
-                if common_signals:
-                    markdown += "## 指标信号\n\n"
-                    markdown += "| 指标 | 信号 | 出现频率 | 出现次数 |\n"
-                    markdown += "| ---- | ---- | -------- | -------- |\n"
-                    
-                    for signal in common_signals:
-                        markdown += f"| {signal.get('indicator', '-')} | {signal.get('signal', '-')} | "
-                        markdown += f"{signal.get('frequency', 0)*100:.2f}% | {signal.get('count', 0)} |\n"
-                    
-                    markdown += "\n"
+                md_content = self._generate_markdown_report(report)
                 
                 # 保存到文件
                 with open(output_file, 'w', encoding='utf-8') as f:
-                    f.write(markdown)
+                    f.write(md_content)
             
-            else:
-                logger.error(f"不支持的输出格式: {format_type}")
-                return
-                
             logger.info(f"买点分析结果已保存到: {output_file}")
             
         except Exception as e:
             logger.error(f"保存买点分析结果时出错: {e}")
     
-    def export_to_excel(self, output_file: str) -> None:
+    def _generate_markdown_report(self, report: Dict[str, Any]) -> str:
         """
-        导出分析结果到Excel
+        生成Markdown格式的报告
         
         Args:
-            output_file: 输出Excel文件路径
+            report: 报告数据
+            
+        Returns:
+            str: Markdown格式的报告内容
+        """
+        md = []
+        
+        # 添加标题
+        md.append("# 买点维度分析报告\n")
+        md.append(f"*报告生成时间: {report.get('report_time', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}*\n")
+        
+        # 添加买点描述
+        md.append("## 买点描述\n")
+        md.append(report.get("description", "无法生成买点描述，关键特征不足。"))
+        md.append("\n")
+        
+        # 添加特征评分
+        feature_scores = report.get("feature_scores", {})
+        if feature_scores:
+            md.append("## 特征维度评分\n")
+            md.append(f"**总评分**: {feature_scores.get('total_score', 0):.2f}\n")
+            
+            md.append("### 各维度评分\n")
+            dimension_scores = feature_scores.get("dimension_scores", {})
+            md.append("| 维度 | 评分 |\n")
+            md.append("| --- | --- |\n")
+            for dim, score in dimension_scores.items():
+                md.append(f"| {dim} | {score:.2f} |\n")
+            md.append("\n")
+        
+        # 添加关键特征
+        md.append("## 关键特征\n")
+        key_features = report.get("key_features", [])
+        if key_features:
+            md.append("| 特征类型 | 特征内容 | 频率/支持度 | 计数 |\n")
+            md.append("| --- | --- | --- | --- |\n")
+            
+            for feature in key_features:
+                feature_type = feature.get("type", "")
+                feature_name = feature.get("feature", "")
+                frequency = feature.get("frequency", feature.get("support", 0))
+                count = feature.get("count", 0)
+                
+                md.append(f"| {feature_type} | {feature_name} | {frequency:.2f} | {count} |\n")
+            md.append("\n")
+        
+        # 添加特征关联分析
+        md.append("## 特征关联分析\n")
+        feature_correlation = report.get("multi_period_analysis", {}).get("feature_correlation", {})
+        if feature_correlation:
+            # 强关联规则
+            strong_associations = feature_correlation.get("strong_associations", [])
+            if strong_associations:
+                md.append("### 强关联规则\n")
+                md.append("| 前项 | 后项 | 支持度 | 置信度 | 提升度 |\n")
+                md.append("| --- | --- | --- | --- | --- |\n")
+                
+                for rule in strong_associations[:10]:  # 只显示前10个规则
+                    antecedent = rule.get("antecedent", "")
+                    consequent = rule.get("consequent", "")
+                    support = rule.get("support", 0)
+                    confidence = rule.get("confidence", 0)
+                    lift = rule.get("lift", 0)
+                    
+                    md.append(f"| {antecedent} | {consequent} | {support:.2f} | {confidence:.2f} | {lift:.2f} |\n")
+                md.append("\n")
+            
+            # 特征重要性
+            feature_importance = feature_correlation.get("feature_importance", {})
+            if feature_importance:
+                md.append("### 特征重要性\n")
+                md.append("| 特征 | 重要性分数 |\n")
+                md.append("| --- | --- |\n")
+                
+                for feature, score in list(feature_importance.items())[:15]:  # 只显示前15个特征
+                    md.append(f"| {feature} | {score:.2f} |\n")
+                md.append("\n")
+        
+        # 添加时序模式分析
+        md.append("## 时序模式分析\n")
+        temporal_patterns = report.get("multi_period_analysis", {}).get("temporal_patterns", {})
+        if temporal_patterns:
+            frequent_patterns = temporal_patterns.get("frequent_patterns", [])
+            if frequent_patterns:
+                md.append("### 频繁时序模式\n")
+                md.append("| 时序模式 | 支持度 | 计数 |\n")
+                md.append("| --- | --- | --- |\n")
+                
+                for pattern in frequent_patterns[:10]:  # 只显示前10个模式
+                    sequence = pattern.get("sequence", [])
+                    if sequence:
+                        sequence_str = " -> ".join([f"{item.get('type', '')}:{item.get('feature', '')}" for item in sequence])
+                        support = pattern.get("support", 0)
+                        count = pattern.get("count", 0)
+                        
+                        md.append(f"| {sequence_str} | {support:.2f} | {count} |\n")
+                md.append("\n")
+        
+        # 添加优化特征组合
+        md.append("## 优化特征组合\n")
+        optimized_features = report.get("multi_period_analysis", {}).get("optimized_features", {})
+        if optimized_features:
+            feature_list = optimized_features.get("optimized_features", [])
+            if feature_list:
+                md.append("### 最优特征集\n")
+                md.append("| 特征 | 频率 | 来源 |\n")
+                md.append("| --- | --- | --- |\n")
+                
+                for feature in feature_list:
+                    feature_name = feature.get("pattern", feature.get("signal", feature.get("feature", "")))
+                    frequency = feature.get("frequency", 0)
+                    feature_type = feature.get("type", "")
+                    
+                    md.append(f"| {feature_name} | {frequency:.2f} | {feature_type} |\n")
+                md.append("\n")
+            
+            # 特征组合
+            feature_combinations = report.get("feature_combinations", [])
+            if feature_combinations:
+                md.append("### 推荐特征组合\n")
+                md.append("| 组合描述 | 组合类型 |\n")
+                md.append("| --- | --- |\n")
+                
+                for combo in feature_combinations[:7]:  # 只显示前7个组合
+                    description = combo.get("description", "")
+                    combo_type = combo.get("combo_type", "")
+                    
+                    md.append(f"| {description} | {combo_type} |\n")
+                md.append("\n")
+        
+        # 添加各周期分析结果摘要
+        md.append("## 各周期分析摘要\n")
+        period_results = report.get("multi_period_analysis", {}).get("period_results", {})
+        if period_results:
+            for period, results in period_results.items():
+                md.append(f"### {period} 周期\n")
+                
+                # 形态特征
+                pattern_features = results.get("pattern_features", [])
+                if pattern_features:
+                    md.append("#### 形态特征\n")
+                    md.append("| 特征 | 频率 | 计数 |\n")
+                    md.append("| --- | --- | --- |\n")
+                    
+                    for feature in pattern_features[:5]:  # 只显示前5个特征
+                        pattern = feature.get("pattern", "")
+                        frequency = feature.get("frequency", 0)
+                        count = feature.get("count", 0)
+                        
+                        md.append(f"| {pattern} | {frequency:.2f} | {count} |\n")
+                    md.append("\n")
+                
+                # 趋势特征
+                trend_features = results.get("trend_features", [])
+                if trend_features:
+                    md.append("#### 趋势特征\n")
+                    md.append("| 特征 | 频率 | 计数 |\n")
+                    md.append("| --- | --- | --- |\n")
+                    
+                    for feature in trend_features[:5]:  # 只显示前5个特征
+                        pattern = feature.get("pattern", "")
+                        frequency = feature.get("frequency", 0)
+                        count = feature.get("count", 0)
+                        
+                        md.append(f"| {pattern} | {frequency:.2f} | {count} |\n")
+                    md.append("\n")
+                
+                # 量能特征
+                volume_features = results.get("volume_features", [])
+                if volume_features:
+                    md.append("#### 量能特征\n")
+                    md.append("| 特征 | 频率 | 计数 |\n")
+                    md.append("| --- | --- | --- |\n")
+                    
+                    for feature in volume_features[:5]:  # 只显示前5个特征
+                        pattern = feature.get("pattern", "")
+                        frequency = feature.get("frequency", 0)
+                        count = feature.get("count", 0)
+                        
+                        md.append(f"| {pattern} | {frequency:.2f} | {count} |\n")
+                    md.append("\n")
+        
+        return "".join(md)
+
+    def export_to_excel(self, output_file: str) -> None:
+        """
+        导出分析结果到Excel文件
+        
+        Args:
+            output_file: 输出文件路径
         """
         logger.info(f"导出买点分析结果到Excel: {output_file}")
         
         try:
-            # 确保输出目录存在
-            os.makedirs(os.path.dirname(output_file), exist_ok=True)
-            
             # 获取综合报告
             report = self.get_comprehensive_report()
             
-            # 创建Excel写入器
-            with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-                # 关键特征
-                if "key_features" in report and report["key_features"]:
-                    key_features_df = pd.DataFrame(report["key_features"])
-                    key_features_df.to_excel(writer, sheet_name="关键特征", index=False)
-                
-                # K线形态特征
-                common_patterns = report.get("pattern_analysis", {}).get("common_features", [])
-                if common_patterns:
-                    patterns_df = pd.DataFrame(common_patterns)
-                    patterns_df.to_excel(writer, sheet_name="K线形态特征", index=False)
-                
-                # 趋势特征
-                common_trends = report.get("trend_analysis", {}).get("common_features", [])
-                if common_trends:
-                    trends_df = pd.DataFrame(common_trends)
-                    trends_df.to_excel(writer, sheet_name="趋势特征", index=False)
-                
-                # 量能特征
-                common_volumes = report.get("volume_analysis", {}).get("common_features", [])
-                if common_volumes:
-                    volumes_df = pd.DataFrame(common_volumes)
-                    volumes_df.to_excel(writer, sheet_name="量能特征", index=False)
-                
-                # 指标信号
-                common_signals = report.get("indicator_analysis", {}).get("common_signals", [])
-                if common_signals:
-                    signals_df = pd.DataFrame(common_signals)
-                    signals_df.to_excel(writer, sheet_name="指标信号", index=False)
+            # 创建Excel工作簿
+            wb = openpyxl.Workbook()
             
+            # 创建概览工作表
+            overview_sheet = wb.active
+            overview_sheet.title = "分析概览"
+            
+            # 添加标题
+            overview_sheet['A1'] = "买点维度分析报告"
+            overview_sheet['A1'].font = openpyxl.styles.Font(size=14, bold=True)
+            overview_sheet.merge_cells('A1:E1')
+            
+            # 添加报告时间
+            overview_sheet['A2'] = "报告生成时间:"
+            overview_sheet['B2'] = report.get('report_time', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            
+            # 添加买点描述
+            overview_sheet['A4'] = "买点描述"
+            overview_sheet['A4'].font = openpyxl.styles.Font(bold=True)
+            overview_sheet.merge_cells('A4:E4')
+            
+            overview_sheet['A5'] = report.get("description", "无法生成买点描述，关键特征不足。")
+            overview_sheet.merge_cells('A5:E5')
+            overview_sheet.row_dimensions[5].height = 60
+            
+            # 添加特征评分
+            overview_sheet['A7'] = "特征评分"
+            overview_sheet['A7'].font = openpyxl.styles.Font(bold=True)
+            overview_sheet.merge_cells('A7:E7')
+            
+            feature_scores = report.get("feature_scores", {})
+            if feature_scores:
+                overview_sheet['A8'] = "总评分:"
+                overview_sheet['B8'] = feature_scores.get('total_score', 0)
+                
+                # 各维度评分
+                overview_sheet['A10'] = "各维度评分:"
+                overview_sheet['A10'].font = openpyxl.styles.Font(bold=True)
+                overview_sheet.merge_cells('A10:E10')
+                
+                overview_sheet['A11'] = "维度"
+                overview_sheet['B11'] = "评分"
+                overview_sheet['A11'].font = openpyxl.styles.Font(bold=True)
+                overview_sheet['B11'].font = openpyxl.styles.Font(bold=True)
+                
+                dimension_scores = feature_scores.get("dimension_scores", {})
+                row = 12
+                for dim, score in dimension_scores.items():
+                    overview_sheet[f'A{row}'] = dim
+                    overview_sheet[f'B{row}'] = score
+                    row += 1
+            
+            # 创建关键特征工作表
+            key_features_sheet = wb.create_sheet("关键特征")
+            
+            key_features_sheet['A1'] = "关键特征"
+            key_features_sheet['A1'].font = openpyxl.styles.Font(size=14, bold=True)
+            key_features_sheet.merge_cells('A1:E1')
+            
+            key_features_sheet['A3'] = "特征类型"
+            key_features_sheet['B3'] = "特征内容"
+            key_features_sheet['C3'] = "频率/支持度"
+            key_features_sheet['D3'] = "计数"
+            
+            for col in ['A', 'B', 'C', 'D']:
+                key_features_sheet[f'{col}3'].font = openpyxl.styles.Font(bold=True)
+            
+            key_features = report.get("key_features", [])
+            row = 4
+            for feature in key_features:
+                key_features_sheet[f'A{row}'] = feature.get("type", "")
+                key_features_sheet[f'B{row}'] = feature.get("feature", "")
+                key_features_sheet[f'C{row}'] = feature.get("frequency", feature.get("support", 0))
+                key_features_sheet[f'D{row}'] = feature.get("count", 0)
+                row += 1
+            
+            # 创建特征关联分析工作表
+            correlation_sheet = wb.create_sheet("特征关联分析")
+            
+            correlation_sheet['A1'] = "特征关联分析"
+            correlation_sheet['A1'].font = openpyxl.styles.Font(size=14, bold=True)
+            correlation_sheet.merge_cells('A1:E1')
+            
+            feature_correlation = report.get("multi_period_analysis", {}).get("feature_correlation", {})
+            if feature_correlation:
+                # 强关联规则
+                correlation_sheet['A3'] = "强关联规则"
+                correlation_sheet['A3'].font = openpyxl.styles.Font(bold=True)
+                correlation_sheet.merge_cells('A3:E3')
+                
+                correlation_sheet['A4'] = "前项"
+                correlation_sheet['B4'] = "后项"
+                correlation_sheet['C4'] = "支持度"
+                correlation_sheet['D4'] = "置信度"
+                correlation_sheet['E4'] = "提升度"
+                
+                for col in ['A', 'B', 'C', 'D', 'E']:
+                    correlation_sheet[f'{col}4'].font = openpyxl.styles.Font(bold=True)
+                
+                strong_associations = feature_correlation.get("strong_associations", [])
+                row = 5
+                for rule in strong_associations:
+                    correlation_sheet[f'A{row}'] = rule.get("antecedent", "")
+                    correlation_sheet[f'B{row}'] = rule.get("consequent", "")
+                    correlation_sheet[f'C{row}'] = rule.get("support", 0)
+                    correlation_sheet[f'D{row}'] = rule.get("confidence", 0)
+                    correlation_sheet[f'E{row}'] = rule.get("lift", 0)
+                    row += 1
+                
+                # 特征重要性
+                row += 2
+                correlation_sheet[f'A{row}'] = "特征重要性"
+                correlation_sheet[f'A{row}'].font = openpyxl.styles.Font(bold=True)
+                correlation_sheet.merge_cells(f'A{row}:C{row}')
+                
+                row += 1
+                correlation_sheet[f'A{row}'] = "特征"
+                correlation_sheet[f'B{row}'] = "重要性分数"
+                correlation_sheet[f'A{row}'].font = openpyxl.styles.Font(bold=True)
+                correlation_sheet[f'B{row}'].font = openpyxl.styles.Font(bold=True)
+                
+                feature_importance = feature_correlation.get("feature_importance", {})
+                row += 1
+                for feature, score in list(feature_importance.items())[:20]:  # 只显示前20个特征
+                    correlation_sheet[f'A{row}'] = feature
+                    correlation_sheet[f'B{row}'] = score
+                    row += 1
+            
+            # 创建时序模式分析工作表
+            temporal_sheet = wb.create_sheet("时序模式分析")
+            
+            temporal_sheet['A1'] = "时序模式分析"
+            temporal_sheet['A1'].font = openpyxl.styles.Font(size=14, bold=True)
+            temporal_sheet.merge_cells('A1:C1')
+            
+            temporal_patterns = report.get("multi_period_analysis", {}).get("temporal_patterns", {})
+            if temporal_patterns:
+                frequent_patterns = temporal_patterns.get("frequent_patterns", [])
+                if frequent_patterns:
+                    temporal_sheet['A3'] = "频繁时序模式"
+                    temporal_sheet['A3'].font = openpyxl.styles.Font(bold=True)
+                    temporal_sheet.merge_cells('A3:C3')
+                    
+                    temporal_sheet['A4'] = "时序模式"
+                    temporal_sheet['B4'] = "支持度"
+                    temporal_sheet['C4'] = "计数"
+                    
+                    for col in ['A', 'B', 'C']:
+                        temporal_sheet[f'{col}4'].font = openpyxl.styles.Font(bold=True)
+                    
+                    row = 5
+                    for pattern in frequent_patterns:
+                        sequence = pattern.get("sequence", [])
+                        if sequence:
+                            sequence_str = " -> ".join([f"{item.get('type', '')}:{item.get('feature', '')}" for item in sequence])
+                            temporal_sheet[f'A{row}'] = sequence_str
+                            temporal_sheet[f'B{row}'] = pattern.get("support", 0)
+                            temporal_sheet[f'C{row}'] = pattern.get("count", 0)
+                            row += 1
+            
+            # 创建优化特征组合工作表
+            optimized_sheet = wb.create_sheet("优化特征组合")
+            
+            optimized_sheet['A1'] = "优化特征组合"
+            optimized_sheet['A1'].font = openpyxl.styles.Font(size=14, bold=True)
+            optimized_sheet.merge_cells('A1:C1')
+            
+            optimized_features = report.get("multi_period_analysis", {}).get("optimized_features", {})
+            if optimized_features:
+                feature_list = optimized_features.get("optimized_features", [])
+                if feature_list:
+                    optimized_sheet['A3'] = "最优特征集"
+                    optimized_sheet['A3'].font = openpyxl.styles.Font(bold=True)
+                    optimized_sheet.merge_cells('A3:C3')
+                    
+                    optimized_sheet['A4'] = "特征"
+                    optimized_sheet['B4'] = "频率"
+                    optimized_sheet['C4'] = "类型"
+                    
+                    for col in ['A', 'B', 'C']:
+                        optimized_sheet[f'{col}4'].font = openpyxl.styles.Font(bold=True)
+                    
+                    row = 5
+                    for feature in feature_list:
+                        feature_name = feature.get("pattern", feature.get("signal", feature.get("feature", "")))
+                        optimized_sheet[f'A{row}'] = feature_name
+                        optimized_sheet[f'B{row}'] = feature.get("frequency", 0)
+                        optimized_sheet[f'C{row}'] = feature.get("type", "")
+                        row += 1
+                
+                # 特征组合
+                feature_combinations = optimized_features.get("feature_combinations", [])
+                if feature_combinations:
+                    row += 2
+                    optimized_sheet[f'A{row}'] = "推荐特征组合"
+                    optimized_sheet[f'A{row}'].font = openpyxl.styles.Font(bold=True)
+                    optimized_sheet.merge_cells(f'A{row}:C{row}')
+                    
+                    row += 1
+                    optimized_sheet[f'A{row}'] = "组合描述"
+                    optimized_sheet[f'B{row}'] = "组合类型"
+                    optimized_sheet[f'A{row}'].font = openpyxl.styles.Font(bold=True)
+                    optimized_sheet[f'B{row}'].font = openpyxl.styles.Font(bold=True)
+                    
+                    row += 1
+                    for combo in feature_combinations:
+                        optimized_sheet[f'A{row}'] = combo.get("description", "")
+                        optimized_sheet[f'B{row}'] = combo.get("combo_type", "")
+                        row += 1
+            
+            # 调整列宽
+            for sheet in wb.worksheets:
+                for col in sheet.columns:
+                    max_length = 0
+                    column = col[0].column_letter
+                    for cell in col:
+                        if cell.value:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                    adjusted_width = (max_length + 2)
+                    sheet.column_dimensions[column].width = min(adjusted_width, 60)
+            
+            # 保存Excel文件
+            wb.save(output_file)
             logger.info(f"买点分析结果已导出到Excel: {output_file}")
             
         except Exception as e:
@@ -1602,3 +2117,510 @@ class BuyPointDimensionAnalyzer:
             return description
         else:
             return "无法生成买点描述，关键特征不足。" 
+
+    def analyze_feature_correlation(self, features_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        分析特征之间的关联性
+        
+        Args:
+            features_data: 特征数据列表，每个特征包含pattern/signal和出现情况
+            
+        Returns:
+            Dict: 特征关联分析结果
+        """
+        logger.info("开始分析特征之间的关联性")
+        
+        try:
+            # 按股票和日期组织特征出现情况
+            feature_occurrences = {}
+            
+            for feature in features_data:
+                stock_code = feature.get("stock_code", "")
+                date = feature.get("date", "")
+                feature_name = feature.get("pattern", feature.get("signal", ""))
+                feature_type = feature.get("type", "")
+                
+                key = f"{stock_code}_{date}"
+                if key not in feature_occurrences:
+                    feature_occurrences[key] = set()
+                
+                feature_occurrences[key].add(f"{feature_type}:{feature_name}")
+            
+            # 构建特征共现矩阵
+            all_features = set()
+            for features in feature_occurrences.values():
+                all_features.update(features)
+            
+            all_features = sorted(list(all_features))
+            feature_index = {feature: i for i, feature in enumerate(all_features)}
+            
+            # 初始化共现矩阵
+            co_occurrence_matrix = np.zeros((len(all_features), len(all_features)), dtype=int)
+            
+            # 填充共现矩阵
+            for features in feature_occurrences.values():
+                for feature1 in features:
+                    for feature2 in features:
+                        if feature1 != feature2:
+                            i = feature_index[feature1]
+                            j = feature_index[feature2]
+                            co_occurrence_matrix[i, j] += 1
+            
+            # 计算关联规则
+            association_rules = []
+            total_records = len(feature_occurrences)
+            
+            for i, feature1 in enumerate(all_features):
+                for j, feature2 in enumerate(all_features):
+                    if i != j and co_occurrence_matrix[i, j] > 0:
+                        # 计算支持度和置信度
+                        support = co_occurrence_matrix[i, j] / total_records
+                        
+                        # 计算feature1的出现次数
+                        feature1_count = sum(1 for features in feature_occurrences.values() if feature1 in features)
+                        
+                        confidence = co_occurrence_matrix[i, j] / feature1_count if feature1_count > 0 else 0
+                        
+                        # 计算提升度
+                        feature2_count = sum(1 for features in feature_occurrences.values() if feature2 in features)
+                        expected_confidence = feature2_count / total_records if total_records > 0 else 0
+                        lift = confidence / expected_confidence if expected_confidence > 0 else 0
+                        
+                        association_rules.append({
+                            "antecedent": feature1,
+                            "consequent": feature2,
+                            "support": support,
+                            "confidence": confidence,
+                            "lift": lift,
+                            "co_occurrence_count": int(co_occurrence_matrix[i, j])
+                        })
+            
+            # 按提升度排序
+            association_rules.sort(key=lambda x: x["lift"], reverse=True)
+            
+            # 提取强关联规则
+            strong_rules = [rule for rule in association_rules if rule["lift"] > 1.5 and rule["confidence"] > 0.5]
+            
+            # 构建特征关联网络
+            feature_network = []
+            for rule in association_rules[:min(100, len(association_rules))]:
+                feature_network.append({
+                    "source": rule["antecedent"],
+                    "target": rule["consequent"],
+                    "weight": rule["lift"]
+                })
+            
+            # 计算特征重要性（基于PageRank算法思想）
+            feature_importance = self._calculate_feature_importance(all_features, association_rules)
+            
+            # 保存分析结果
+            correlation_result = {
+                "feature_count": len(all_features),
+                "record_count": total_records,
+                "strong_associations": strong_rules[:20],  # 只保留前20个强关联规则
+                "feature_network": feature_network,
+                "feature_importance": feature_importance
+            }
+            
+            logger.info(f"特征关联性分析完成，发现 {len(strong_rules)} 个强关联规则")
+            return correlation_result
+            
+        except Exception as e:
+            logger.error(f"分析特征关联性时出错: {e}")
+            return {}
+    
+    def _calculate_feature_importance(self, features: List[str], 
+                                   association_rules: List[Dict[str, Any]]) -> Dict[str, float]:
+        """计算特征重要性（基于PageRank算法思想）"""
+        # 初始化每个特征的重要性为1
+        importance = {feature: 1.0 for feature in features}
+        
+        # 迭代计算
+        damping = 0.85
+        iterations = 10
+        
+        for _ in range(iterations):
+            new_importance = {feature: 0.0 for feature in features}
+            
+            # 计算特征转移矩阵
+            for rule in association_rules:
+                source = rule["antecedent"]
+                target = rule["consequent"]
+                weight = rule["lift"]
+                
+                # 累加来源特征的加权重要性
+                new_importance[target] += importance[source] * weight
+            
+            # 应用阻尼因子并归一化
+            total = sum(new_importance.values())
+            if total > 0:
+                for feature in features:
+                    new_importance[feature] = (1 - damping) + damping * new_importance[feature] / total
+            
+            importance = new_importance
+        
+        # 排序并返回
+        sorted_importance = {k: v for k, v in sorted(
+            importance.items(), key=lambda item: item[1], reverse=True
+        )}
+        
+        return sorted_importance
+    
+    def analyze_temporal_patterns(self, features_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        分析特征的时序模式
+        
+        Args:
+            features_data: 特征数据列表，每个特征包含pattern/signal和出现日期
+            
+        Returns:
+            Dict: 时序模式分析结果
+        """
+        logger.info("开始分析特征的时序模式")
+        
+        try:
+            # 按股票组织特征出现时间序列
+            stock_timelines = {}
+            
+            for feature in features_data:
+                stock_code = feature.get("stock_code", "")
+                date = feature.get("date", "")
+                feature_name = feature.get("pattern", feature.get("signal", ""))
+                feature_type = feature.get("type", "")
+                
+                if not date or not stock_code:
+                    continue
+                
+                if stock_code not in stock_timelines:
+                    stock_timelines[stock_code] = {}
+                
+                if date not in stock_timelines[stock_code]:
+                    stock_timelines[stock_code][date] = []
+                
+                stock_timelines[stock_code][date].append({
+                    "feature": feature_name,
+                    "type": feature_type
+                })
+            
+            # 发现序列模式
+            sequence_patterns = {}
+            
+            # 提取最长为3的序列模式
+            max_sequence_length = 3
+            
+            for stock_code, timeline in stock_timelines.items():
+                # 按日期排序
+                sorted_dates = sorted(timeline.keys())
+                
+                # 对于每个日期，检查后续日期中的特征序列
+                for i, date in enumerate(sorted_dates[:-1]):
+                    current_features = timeline[date]
+                    
+                    # 对当前日期的每个特征
+                    for current_feature in current_features:
+                        # 寻找后续日期的特征序列
+                        for sequence_length in range(2, min(max_sequence_length + 1, len(sorted_dates) - i)):
+                            sequence = [current_feature]
+                            
+                            # 添加后续日期的特征
+                            is_valid_sequence = True
+                            for j in range(1, sequence_length):
+                                next_date = sorted_dates[i + j]
+                                next_features = timeline[next_date]
+                                
+                                if not next_features:
+                                    is_valid_sequence = False
+                                    break
+                                
+                                # 添加第一个特征
+                                sequence.append(next_features[0])
+                            
+                            if is_valid_sequence:
+                                # 生成序列标识符
+                                sequence_key = " -> ".join([f"{item['type']}:{item['feature']}" for item in sequence])
+                                
+                                if sequence_key not in sequence_patterns:
+                                    sequence_patterns[sequence_key] = {
+                                        "sequence": sequence,
+                                        "count": 0,
+                                        "stocks": set()
+                                    }
+                                
+                                sequence_patterns[sequence_key]["count"] += 1
+                                sequence_patterns[sequence_key]["stocks"].add(stock_code)
+            
+            # 计算频率和支持度
+            total_stocks = len(stock_timelines)
+            
+            for key, pattern in sequence_patterns.items():
+                pattern["support"] = len(pattern["stocks"]) / total_stocks if total_stocks > 0 else 0
+                pattern["stocks"] = list(pattern["stocks"])  # 转换为列表以便JSON序列化
+            
+            # 按支持度排序
+            sorted_patterns = {k: v for k, v in sorted(
+                sequence_patterns.items(), key=lambda item: item[1]["support"], reverse=True
+            )}
+            
+            # 提取频繁序列模式
+            frequent_patterns = {k: v for k, v in sorted_patterns.items() if v["support"] >= 0.1}
+            
+            result = {
+                "total_stocks": total_stocks,
+                "pattern_count": len(sequence_patterns),
+                "frequent_patterns": list(frequent_patterns.values())
+            }
+            
+            logger.info(f"特征时序模式分析完成，发现 {len(frequent_patterns)} 个频繁序列模式")
+            return result
+            
+        except Exception as e:
+            logger.error(f"分析特征时序模式时出错: {e}")
+            return {}
+    
+    def filter_features(self, features: List[Dict[str, Any]], 
+                      criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        根据多维度标准筛选特征
+        
+        Args:
+            features: 待筛选的特征列表
+            criteria: 筛选标准，包含各个维度的筛选条件
+            
+        Returns:
+            List[Dict[str, Any]]: 筛选后的特征列表
+        """
+        logger.info("开始多维度特征筛选")
+        
+        try:
+            filtered_features = features.copy()
+            
+            # 频率筛选
+            if "min_frequency" in criteria:
+                min_freq = criteria["min_frequency"]
+                filtered_features = [f for f in filtered_features 
+                                  if f.get("frequency", 0) >= min_freq]
+            
+            if "max_frequency" in criteria:
+                max_freq = criteria["max_frequency"]
+                filtered_features = [f for f in filtered_features 
+                                  if f.get("frequency", 0) <= max_freq]
+            
+            # 类型筛选
+            if "types" in criteria and criteria["types"]:
+                allowed_types = set(criteria["types"])
+                filtered_features = [f for f in filtered_features 
+                                  if f.get("type", "") in allowed_types]
+            
+            # 周期筛选
+            if "periods" in criteria and criteria["periods"]:
+                allowed_periods = set(criteria["periods"])
+                filtered_features = [f for f in filtered_features 
+                                  if not f.get("periods") or  # 如果没有周期信息，保留
+                                  any(p in allowed_periods for p in f.get("periods", []))]
+            
+            # 关键词筛选
+            if "keywords" in criteria and criteria["keywords"]:
+                keywords = criteria["keywords"]
+                filtered_features = [f for f in filtered_features 
+                                  if any(kw.lower() in f.get("pattern", "").lower() or 
+                                      kw.lower() in f.get("signal", "").lower() or
+                                      kw.lower() in f.get("feature", "").lower()
+                                      for kw in keywords)]
+            
+            # 排除关键词
+            if "exclude_keywords" in criteria and criteria["exclude_keywords"]:
+                exclude_keywords = criteria["exclude_keywords"]
+                filtered_features = [f for f in filtered_features 
+                                  if not any(kw.lower() in f.get("pattern", "").lower() or 
+                                         kw.lower() in f.get("signal", "").lower() or
+                                         kw.lower() in f.get("feature", "").lower()
+                                         for kw in exclude_keywords)]
+            
+            # 最小股票数量
+            if "min_stock_count" in criteria:
+                min_count = criteria["min_stock_count"]
+                filtered_features = [f for f in filtered_features 
+                                  if f.get("count", 0) >= min_count]
+            
+            # 指标类型筛选
+            if "indicator_types" in criteria and criteria["indicator_types"]:
+                allowed_indicators = set(criteria["indicator_types"])
+                filtered_features = [f for f in filtered_features 
+                                  if any(ind.lower() in f.get("indicator", "").lower() or
+                                      ind.lower() in f.get("feature", "").lower() or
+                                      ind.lower() in f.get("pattern", "").lower()
+                                      for ind in allowed_indicators)]
+            
+            # 自定义筛选函数
+            if "custom_filter" in criteria and callable(criteria["custom_filter"]):
+                custom_filter = criteria["custom_filter"]
+                filtered_features = [f for f in filtered_features if custom_filter(f)]
+            
+            logger.info(f"特征筛选完成: 从 {len(features)} 个特征中筛选出 {len(filtered_features)} 个特征")
+            return filtered_features
+            
+        except Exception as e:
+            logger.error(f"多维度特征筛选时出错: {e}")
+            return features
+    
+    def optimize_feature_combination(self, features: List[Dict[str, Any]], 
+                                   target_metric: str,
+                                   max_features: int = 10) -> Dict[str, Any]:
+        """
+        优化特征组合，找出最佳的特征子集
+        
+        Args:
+            features: 候选特征列表
+            target_metric: 优化目标指标，如'frequency'、'lift'等
+            max_features: 最大特征数量
+            
+        Returns:
+            Dict: 优化结果，包含最佳特征组合
+        """
+        logger.info(f"开始优化特征组合，目标指标: {target_metric}")
+        
+        try:
+            # 如果特征数量不多，直接返回全部特征
+            if len(features) <= max_features:
+                return {
+                    "optimized_features": features,
+                    "feature_count": len(features),
+                    "optimization_metric": target_metric,
+                    "score": sum(f.get(target_metric, 0) for f in features)
+                }
+            
+            # 根据目标指标对特征排序
+            sorted_features = sorted(features, 
+                                  key=lambda x: x.get(target_metric, 0), 
+                                  reverse=True)
+            
+            # 贪婪算法选择特征
+            selected_features = []
+            current_score = 0
+            feature_overlap = {}  # 记录特征重叠情况
+            
+            # 选择第一个特征
+            first_feature = sorted_features[0]
+            selected_features.append(first_feature)
+            current_score += first_feature.get(target_metric, 0)
+            
+            # 使用贪婪算法选择剩余特征
+            remaining_features = sorted_features[1:]
+            
+            while len(selected_features) < max_features and remaining_features:
+                best_feature = None
+                best_score_gain = 0
+                
+                for feature in remaining_features:
+                    # 计算增加此特征的分数增益
+                    score_gain = feature.get(target_metric, 0)
+                    
+                    # 考虑与已选特征的重叠度
+                    overlap_penalty = 0
+                    for selected in selected_features:
+                        overlap = self._calculate_feature_overlap(feature, selected)
+                        if overlap > 0:
+                            overlap_penalty += overlap * 0.5  # 惩罚系数
+                    
+                    # 应用惩罚
+                    adjusted_gain = score_gain - overlap_penalty
+                    
+                    if adjusted_gain > best_score_gain:
+                        best_score_gain = adjusted_gain
+                        best_feature = feature
+                
+                # 如果找不到能提供正收益的特征，则停止
+                if best_feature is None or best_score_gain <= 0:
+                    break
+                    
+                # 添加最佳特征
+                selected_features.append(best_feature)
+                current_score += best_score_gain
+                remaining_features.remove(best_feature)
+            
+            # 计算组合得分
+            combined_score = sum(f.get(target_metric, 0) for f in selected_features)
+            
+            # 构建结果
+            result = {
+                "optimized_features": selected_features,
+                "feature_count": len(selected_features),
+                "optimization_metric": target_metric,
+                "score": combined_score,
+                "feature_combinations": self._generate_feature_combinations(selected_features)
+            }
+            
+            logger.info(f"特征组合优化完成，选择了 {len(selected_features)} 个特征，组合得分: {combined_score}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"优化特征组合时出错: {e}")
+            return {
+                "optimized_features": features[:max_features],
+                "feature_count": min(len(features), max_features),
+                "optimization_metric": target_metric,
+                "score": sum(f.get(target_metric, 0) for f in features[:max_features]),
+                "error": str(e)
+            }
+    
+    def _calculate_feature_overlap(self, feature1: Dict[str, Any], 
+                                feature2: Dict[str, Any]) -> float:
+        """计算两个特征之间的重叠度"""
+        # 检查特征类型
+        if feature1.get("type", "") != feature2.get("type", ""):
+            return 0.0
+        
+        # 检查特征名称相似性
+        name1 = feature1.get("pattern", feature1.get("signal", feature1.get("feature", "")))
+        name2 = feature2.get("pattern", feature2.get("signal", feature2.get("feature", "")))
+        
+        if name1 == name2:
+            return 1.0
+        
+        # 简单的相似度计算 - 可以用更复杂的算法替换
+        # 检查是否有共同的关键词
+        words1 = set(name1.lower().split())
+        words2 = set(name2.lower().split())
+        
+        common_words = words1.intersection(words2)
+        
+        if not common_words:
+            return 0.0
+            
+        # 计算Jaccard相似度
+        similarity = len(common_words) / len(words1.union(words2))
+        
+        return similarity
+    
+    def _generate_feature_combinations(self, features: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """生成特征组合"""
+        combinations = []
+        
+        # 生成2个特征的组合
+        if len(features) >= 2:
+            for i in range(len(features)):
+                for j in range(i+1, len(features)):
+                    combo = {
+                        "features": [features[i], features[j]],
+                        "combo_type": "AND",
+                        "description": f"{self._get_feature_name(features[i])} AND {self._get_feature_name(features[j])}"
+                    }
+                    combinations.append(combo)
+        
+        # 生成3个特征的组合 (限制数量)
+        if len(features) >= 3:
+            for i in range(min(5, len(features))):
+                for j in range(i+1, min(6, len(features))):
+                    for k in range(j+1, min(7, len(features))):
+                        combo = {
+                            "features": [features[i], features[j], features[k]],
+                            "combo_type": "AND",
+                            "description": f"{self._get_feature_name(features[i])} AND {self._get_feature_name(features[j])} AND {self._get_feature_name(features[k])}"
+                        }
+                        combinations.append(combo)
+        
+        return combinations
+    
+    def _get_feature_name(self, feature: Dict[str, Any]) -> str:
+        """获取特征的显示名称"""
+        return feature.get("pattern", feature.get("signal", feature.get("feature", "未知特征")))

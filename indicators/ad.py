@@ -49,21 +49,172 @@ class AD(BaseIndicator):
         
         # 处理分母为0的情况
         price_position = price_position.replace([np.inf, -np.inf], 0)
-        price_position = price_position.fillna(0)
         
-        # 计算每日资金流量
-        money_flow = price_position * df_copy['volume']
+        # 计算资金流乘数
+        money_flow_multiplier = price_position * df_copy['volume']
         
-        # 计算累积/派发线
-        df_copy['AD'] = money_flow.cumsum()
+        # 计算AD指标
+        df_copy['AD'] = money_flow_multiplier.cumsum()
         
         # 计算AD的移动平均
-        df_copy['AD_MA'] = df_copy['AD'].rolling(window=20).mean()
+        df_copy['AD_MA'] = df_copy['AD'].rolling(window=14).mean()
         
         # 保存结果
-        self._result = df_copy[['AD', 'AD_MA']]
+        self._result = df_copy
+        return df_copy
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+        """
+        获取AD指标的所有形态信息
         
-        return self._result
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[Dict[str, Any]]: 包含形态信息的字典列表
+        """
+        if not self.has_result():
+            self.calculate(data)
+            
+        result = []
+        
+        # 如果没有计算结果，先计算
+        if not self.has_result():
+            self.calculate(data)
+            
+        # 获取AD指标数据
+        ad_data = self.result['AD']
+        ad_ma_data = self.result['AD_MA']
+        
+        # 检测金叉形态
+        if len(ad_data) >= 2:
+            cross_over = crossover(ad_data.iloc[-2:], ad_ma_data.iloc[-2:])
+            if cross_over.iloc[-1]:
+                pattern_data = {
+                    'pattern_id': "AD_GOLDEN_CROSS",
+                    'display_name': "AD金叉",
+                    'indicator_id': self.name,
+                    'strength': SignalStrength.STRONG.value,
+                    'duration': 1,
+                    'details': {
+                        'ad_value': float(ad_data.iloc[-1]),
+                        'ad_ma_value': float(ad_ma_data.iloc[-1])
+                    }
+                }
+                result.append(pattern_data)
+        
+        # 检测死叉形态
+        if len(ad_data) >= 2:
+            cross_under = crossunder(ad_data.iloc[-2:], ad_ma_data.iloc[-2:])
+            if cross_under.iloc[-1]:
+                pattern_data = {
+                    'pattern_id': "AD_DEATH_CROSS",
+                    'display_name': "AD死叉",
+                    'indicator_id': self.name,
+                    'strength': SignalStrength.STRONG_NEGATIVE.value,
+                    'duration': 1,
+                    'details': {
+                        'ad_value': float(ad_data.iloc[-1]),
+                        'ad_ma_value': float(ad_ma_data.iloc[-1])
+                    }
+                }
+                result.append(pattern_data)
+        
+        # 检测量价背离
+        if len(data) >= 30 and 'close' in data.columns:
+            price_trend = data['close'].pct_change(5).iloc[-1]
+            ad_trend = ad_data.pct_change(5).iloc[-1]
+            
+            # 价格上涨但AD下降（顶背离）
+            if price_trend > 0.02 and ad_trend < -0.02:
+                pattern_data = {
+                    'pattern_id': "AD_PRICE_DIVERGENCE_TOP",
+                    'display_name': "AD与价格顶背离",
+                    'indicator_id': self.name,
+                    'strength': SignalStrength.VERY_STRONG_NEGATIVE.value,
+                    'duration': 3,
+                    'details': {
+                        'price_trend': float(price_trend),
+                        'ad_trend': float(ad_trend)
+                    }
+                }
+                result.append(pattern_data)
+            # 价格下跌但AD上升（底背离）
+            elif price_trend < -0.02 and ad_trend > 0.02:
+                pattern_data = {
+                    'pattern_id': "AD_PRICE_DIVERGENCE_BOTTOM",
+                    'display_name': "AD与价格底背离",
+                    'indicator_id': self.name,
+                    'strength': SignalStrength.VERY_STRONG.value,
+                    'duration': 3,
+                    'details': {
+                        'price_trend': float(price_trend),
+                        'ad_trend': float(ad_trend)
+                    }
+                }
+                result.append(pattern_data)
+        
+        # 检测量能变化
+        if len(ad_data) >= 2:
+            ad_change = ad_data.pct_change().iloc[-1]
+            
+            # AD快速上涨
+            if ad_change > 0.05:
+                pattern_data = {
+                    'pattern_id': "AD_RAPID_INCREASE",
+                    'display_name': "AD快速上涨",
+                    'indicator_id': self.name,
+                    'strength': SignalStrength.MODERATE.value,
+                    'duration': 2,
+                    'details': {
+                        'change_rate': float(ad_change)
+                    }
+                }
+                result.append(pattern_data)
+            # AD快速下跌
+            elif ad_change < -0.05:
+                pattern_data = {
+                    'pattern_id': "AD_RAPID_DECREASE",
+                    'display_name': "AD快速下跌",
+                    'indicator_id': self.name,
+                    'strength': SignalStrength.MODERATE_NEGATIVE.value,
+                    'duration': 2,
+                    'details': {
+                        'change_rate': float(ad_change)
+                    }
+                }
+                result.append(pattern_data)
+        
+        return result
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
+        """
+        计算AD指标评分（0-100分制）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            float: 综合评分（0-100）
+        """
+        raw_score = self.calculate_raw_score(data, **kwargs)
+        
+        if raw_score.empty:
+            return 50.0  # 默认中性评分
+        
+        last_score = raw_score.iloc[-1]
+        
+        # 应用市场环境调整
+        market_env = kwargs.get('market_env', self._market_environment)
+        adjusted_score = self.apply_market_environment_adjustment(market_env, last_score)
+        
+        # 计算置信度
+        confidence = self.calculate_confidence(adjusted_score, self.get_patterns(data), {})
+        
+        # 返回最终评分
+        return float(np.clip(adjusted_score * confidence, 0, 100))
     
     def has_result(self) -> bool:
         """检查是否已计算结果"""

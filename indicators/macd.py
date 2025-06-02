@@ -6,9 +6,9 @@ MACD指标模块
 
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Union, Optional, Tuple
+from typing import Dict, List, Union, Optional, Tuple, Any
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
 from indicators.common import macd as calc_macd, cross
 from enums.indicator_types import CrossType
 
@@ -37,31 +37,481 @@ class MACD(BaseIndicator):
         self.slow_period = slow_period
         self.signal_period = signal_period
         self.adapt_to_volatility = adapt_to_volatility
-        self.market_environment = "normal"  # 默认市场环境
+        self._market_environment = MarketEnvironment.SIDEWAYS_MARKET
+        
+        # 注册MACD指标形态
+        self._register_macd_patterns()
     
-    def set_market_environment(self, environment: str) -> None:
+    def _register_macd_patterns(self):
+        """注册MACD指标的所有形态"""
+        # 注册金叉形态
+        self.register_pattern(
+            pattern_id="golden_cross",
+            display_name="MACD金叉",
+            detection_func=self._detect_golden_cross,
+            score_impact=20.0
+        )
+        
+        # 注册死叉形态
+        self.register_pattern(
+            pattern_id="death_cross",
+            display_name="MACD死叉",
+            detection_func=self._detect_death_cross,
+            score_impact=-20.0
+        )
+        
+        # 注册零轴上穿形态
+        self.register_pattern(
+            pattern_id="zero_axis_crossover",
+            display_name="MACD零轴上穿",
+            detection_func=self._detect_zero_axis_crossover,
+            score_impact=15.0
+        )
+        
+        # 注册零轴下穿形态
+        self.register_pattern(
+            pattern_id="zero_axis_crossunder",
+            display_name="MACD零轴下穿",
+            detection_func=self._detect_zero_axis_crossunder,
+            score_impact=-15.0
+        )
+        
+        # 注册底背离形态
+        self.register_pattern(
+            pattern_id="bullish_divergence",
+            display_name="MACD底背离",
+            detection_func=self._detect_bullish_divergence,
+            score_impact=25.0
+        )
+        
+        # 注册顶背离形态
+        self.register_pattern(
+            pattern_id="bearish_divergence",
+            display_name="MACD顶背离",
+            detection_func=self._detect_bearish_divergence,
+            score_impact=-25.0
+        )
+        
+        # 注册双底形态
+        self.register_pattern(
+            pattern_id="double_bottom",
+            display_name="MACD双底",
+            detection_func=self._detect_double_bottom,
+            score_impact=18.0
+        )
+        
+        # 注册连续三阳上穿形态
+        self.register_pattern(
+            pattern_id="three_line_strike",
+            display_name="MACD三线上穿",
+            detection_func=self._detect_three_line_strike,
+            score_impact=12.0
+        )
+        
+        # 注册连续三阴下穿形态
+        self.register_pattern(
+            pattern_id="three_line_fall",
+            display_name="MACD三线下穿",
+            detection_func=self._detect_three_line_fall,
+            score_impact=-12.0
+        )
+    
+    def _detect_golden_cross(self, data: pd.DataFrame) -> bool:
+        """检测MACD金叉形态"""
+        if not self.has_result() or 'DIF' not in data.columns or 'DEA' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 2:
+            return False
+        
+        # 获取最近两个周期的MACD值
+        dif = data['DIF'].iloc[-2:].values
+        dea = data['DEA'].iloc[-2:].values
+        
+        # 金叉条件：当前DIF在DEA上方，且前一周期DIF在DEA下方
+        golden_cross = dif[-1] > dea[-1] and dif[-2] <= dea[-2]
+        
+        return golden_cross
+    
+    def _detect_death_cross(self, data: pd.DataFrame) -> bool:
+        """检测MACD死叉形态"""
+        if not self.has_result() or 'DIF' not in data.columns or 'DEA' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 2:
+            return False
+        
+        # 获取最近两个周期的MACD值
+        dif = data['DIF'].iloc[-2:].values
+        dea = data['DEA'].iloc[-2:].values
+        
+        # 死叉条件：当前DIF在DEA下方，且前一周期DIF在DEA上方
+        death_cross = dif[-1] < dea[-1] and dif[-2] >= dea[-2]
+        
+        return death_cross
+    
+    def _detect_zero_axis_crossover(self, data: pd.DataFrame) -> bool:
+        """检测MACD零轴上穿形态"""
+        if not self.has_result() or 'DIF' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 2:
+            return False
+        
+        # 获取最近两个周期的DIF值
+        dif = data['DIF'].iloc[-2:].values
+        
+        # 零轴上穿条件：当前DIF大于0，且前一周期DIF小于等于0
+        zero_axis_crossover = dif[-1] > 0 and dif[-2] <= 0
+        
+        return zero_axis_crossover
+    
+    def _detect_zero_axis_crossunder(self, data: pd.DataFrame) -> bool:
+        """检测MACD零轴下穿形态"""
+        if not self.has_result() or 'DIF' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 2:
+            return False
+        
+        # 获取最近两个周期的DIF值
+        dif = data['DIF'].iloc[-2:].values
+        
+        # 零轴下穿条件：当前DIF小于0，且前一周期DIF大于等于0
+        zero_axis_crossunder = dif[-1] < 0 and dif[-2] >= 0
+        
+        return zero_axis_crossunder
+    
+    def _detect_bullish_divergence(self, data: pd.DataFrame) -> bool:
+        """检测MACD底背离形态"""
+        if not self.has_result() or 'DIF' not in data.columns or 'MACD' not in data.columns or 'close' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 底背离：价格创新低，但MACD指标未创新低
+        try:
+            # 获取最近20个周期的数据
+            close = data['close'].iloc[-20:].values
+            macd = data['MACD'].iloc[-20:].values
+            
+            # 查找局部最小值的位置
+            close_lows = []
+            macd_lows = []
+            
+            for i in range(1, len(close) - 1):
+                if close[i] < close[i-1] and close[i] < close[i+1]:
+                    close_lows.append((i, close[i]))
+                
+                if macd[i] < macd[i-1] and macd[i] < macd[i+1]:
+                    macd_lows.append((i, macd[i]))
+            
+            # 至少需要2个低点才能形成背离
+            if len(close_lows) < 2 or len(macd_lows) < 2:
+                return False
+            
+            # 排序找出最低的两个点
+            close_lows.sort(key=lambda x: x[1])
+            
+            # 获取价格的两个最低点位置
+            idx1, val1 = close_lows[0]
+            idx2, val2 = close_lows[1]
+            
+            # 确保两个低点之间的距离足够
+            if abs(idx1 - idx2) < 3:
+                return False
+            
+            # 获取这两个时间点对应的MACD值
+            macd_val1 = macd[idx1]
+            macd_val2 = macd[idx2]
+            
+            # 如果价格第二个低点低于第一个低点，但MACD第二个低点高于第一个低点，则形成底背离
+            return val2 < val1 and macd_val2 > macd_val1
+        except Exception as e:
+            logger.error(f"检测MACD底背离形态出错: {e}")
+            return False
+    
+    def _detect_bearish_divergence(self, data: pd.DataFrame) -> bool:
+        """检测MACD顶背离形态"""
+        if not self.has_result() or 'DIF' not in data.columns or 'MACD' not in data.columns or 'close' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 顶背离：价格创新高，但MACD指标未创新高
+        try:
+            # 获取最近20个周期的数据
+            close = data['close'].iloc[-20:].values
+            macd = data['MACD'].iloc[-20:].values
+            
+            # 查找局部最大值的位置
+            close_highs = []
+            macd_highs = []
+            
+            for i in range(1, len(close) - 1):
+                if close[i] > close[i-1] and close[i] > close[i+1]:
+                    close_highs.append((i, close[i]))
+                
+                if macd[i] > macd[i-1] and macd[i] > macd[i+1]:
+                    macd_highs.append((i, macd[i]))
+            
+            # 至少需要2个高点才能形成背离
+            if len(close_highs) < 2 or len(macd_highs) < 2:
+                return False
+            
+            # 排序找出最高的两个点
+            close_highs.sort(key=lambda x: x[1], reverse=True)
+            
+            # 获取价格的两个最高点位置
+            idx1, val1 = close_highs[0]
+            idx2, val2 = close_highs[1]
+            
+            # 确保两个高点之间的距离足够
+            if abs(idx1 - idx2) < 3:
+                return False
+            
+            # 获取这两个时间点对应的MACD值
+            macd_val1 = macd[idx1]
+            macd_val2 = macd[idx2]
+            
+            # 如果价格第二个高点高于第一个高点，但MACD第二个高点低于第一个高点，则形成顶背离
+            return val2 > val1 and macd_val2 < macd_val1
+        except Exception as e:
+            logger.error(f"检测MACD顶背离形态出错: {e}")
+            return False
+    
+    def _detect_double_bottom(self, data: pd.DataFrame) -> bool:
+        """检测MACD双底形态"""
+        if not self.has_result() or 'MACD' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 30:
+            return False
+        
+        try:
+            # 获取最近30个周期的MACD数据
+            macd = data['MACD'].iloc[-30:].values
+            
+            # 查找局部最小值
+            troughs = []
+            for i in range(2, len(macd) - 2):
+                if (macd[i] < macd[i-1] and 
+                    macd[i] < macd[i-2] and 
+                    macd[i] < macd[i+1] and 
+                    macd[i] < macd[i+2]):
+                    troughs.append((i, macd[i]))
+            
+            # 至少需要2个低点才能形成双底
+            if len(troughs) < 2:
+                return False
+            
+            # 按时间排序
+            troughs.sort(key=lambda x: x[0])
+            
+            # 检查最近的两个低点
+            if len(troughs) >= 2:
+                idx1, val1 = troughs[-2]
+                idx2, val2 = troughs[-1]
+                
+                # 确保两个低点之间的距离足够
+                if abs(idx2 - idx1) < 5 or abs(idx2 - idx1) > 20:
+                    return False
+                
+                # 确保两个低点的深度接近
+                depth_diff = abs(val1 - val2)
+                if depth_diff > abs(val1) * 0.3:  # 深度差异不超过30%
+                    return False
+                
+                # 确保中间有一个小的反弹
+                middle_idx = (idx1 + idx2) // 2
+                middle_val = macd[middle_idx]
+                
+                if middle_val <= min(val1, val2):
+                    return False
+                
+                # 确保第二个低点之后有上升趋势
+                if idx2 < len(macd) - 2 and macd[idx2 + 1] > macd[idx2] and macd[idx2 + 2] > macd[idx2 + 1]:
+                    return True
+            
+            return False
+        except Exception as e:
+            logger.error(f"检测MACD双底形态出错: {e}")
+            return False
+    
+    def _detect_three_line_strike(self, data: pd.DataFrame) -> bool:
+        """检测MACD三连阳形态"""
+        if not self.has_result() or 'MACD' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 4:
+            return False
+        
+        try:
+            # 获取最近4个周期的MACD柱状值
+            macd = data['MACD'].iloc[-4:].values
+            
+            # 三连阳条件：连续三个周期MACD柱状值为正且依次增大
+            three_positive = (
+                macd[0] > 0 and 
+                macd[1] > 0 and 
+                macd[2] > 0 and 
+                macd[1] > macd[0] and 
+                macd[2] > macd[1]
+            )
+            
+            return three_positive
+        except Exception as e:
+            logger.error(f"检测MACD三连阳形态出错: {e}")
+            return False
+    
+    def _detect_three_line_fall(self, data: pd.DataFrame) -> bool:
+        """检测MACD三连阴形态"""
+        if not self.has_result() or 'MACD' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 4:
+            return False
+        
+        try:
+            # 获取最近4个周期的MACD柱状值
+            macd = data['MACD'].iloc[-4:].values
+            
+            # 三连阴条件：连续三个周期MACD柱状值为负且依次减小
+            three_negative = (
+                macd[0] < 0 and 
+                macd[1] < 0 and 
+                macd[2] < 0 and 
+                macd[1] < macd[0] and 
+                macd[2] < macd[1]
+            )
+            
+            return three_negative
+        except Exception as e:
+            logger.error(f"检测MACD三连阴形态出错: {e}")
+            return False
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算MACD指标的原始评分（0-100分制）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列，取值范围0-100
+        """
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        # 获取MACD指标值
+        if 'DIF' not in data.columns or 'DEA' not in data.columns or 'MACD' not in data.columns:
+            raise ValueError("数据中缺少MACD指标列")
+        
+        dif = data['DIF']
+        dea = data['DEA']
+        macd_hist = data['MACD']
+        
+        # 基础评分计算
+        # 1. DIF位置分：基于DIF相对零轴的位置，贡献30分权重
+        # DIF > 0 时分数高于50，DIF < 0 时分数低于50
+        dif_score = 50 + dif * 100  # 调整系数，使得MACD常见值域能映射到0-100
+        # 限制在30-70范围内
+        dif_score = np.clip(dif_score, 30, 70)
+        
+        # 2. DIF-DEA关系分：基于DIF和DEA的关系，贡献25分权重
+        diff_score = 50 + (dif - dea) * 200  # DIF高于DEA得分高，低于则得分低
+        # 限制在20-80范围内
+        diff_score = np.clip(diff_score, 20, 80)
+        
+        # 3. 柱状图分：基于MACD柱状图，贡献25分权重
+        hist_score = 50 + macd_hist * 300  # 正柱得分高，负柱得分低
+        # 限制在20-80范围内
+        hist_score = np.clip(hist_score, 20, 80)
+        
+        # 4. 趋势分：基于DIF和DEA的趋势，贡献20分权重
+        dif_trend = dif - dif.shift(3)
+        dea_trend = dea - dea.shift(3)
+        trend_score = 50 + (dif_trend + dea_trend) * 200  # 上升趋势得分高，下降趋势得分低
+        # 限制在20-80范围内
+        trend_score = np.clip(trend_score, 20, 80)
+        
+        # 合并各部分得分，按权重加权平均
+        raw_score = (
+            dif_score * 0.3 +     # DIF位置分权重30%
+            diff_score * 0.25 +   # DIF-DEA关系分权重25%
+            hist_score * 0.25 +   # 柱状图分权重25%
+            trend_score * 0.2     # 趋势分权重20%
+        )
+        
+        # 检测形态对评分的影响
+        patterns = self.get_patterns(data, **kwargs)
+        
+        # 形态影响分数：最多调整±20分
+        pattern_adjustment = pd.Series(0, index=data.index)
+        for pattern in patterns:
+            # 找到对应的注册形态信息
+            if pattern.pattern_id in self._registered_patterns:
+                score_impact = self._registered_patterns[pattern.pattern_id]['score_impact']
+                # 应用形态影响
+                pattern_adjustment += score_impact
+        
+        # 限制形态调整范围
+        pattern_adjustment = np.clip(pattern_adjustment, -20, 20)
+        raw_score += pattern_adjustment
+        
+        # 确保最终分数在0-100范围内
+        final_score = np.clip(raw_score, 0, 100)
+        
+        return pd.Series(final_score, index=data.index)
+    
+    def set_market_environment(self, environment: Union[str, MarketEnvironment]) -> None:
         """
         设置市场环境
         
         Args:
-            environment: 市场环境，可选值为 "bull_market", "bear_market", "sideways_market", "volatile_market", "normal"
+            environment: 市场环境，可以是MarketEnvironment枚举或字符串
         """
-        valid_environments = ["bull_market", "bear_market", "sideways_market", "volatile_market", "normal"]
-        if environment not in valid_environments:
-            raise ValueError(f"无效的市场环境，有效值为: {', '.join(valid_environments)}")
+        if isinstance(environment, MarketEnvironment):
+            self._market_environment = environment
+            return
             
-        self.market_environment = environment
+        # 兼容旧版接口
+        env_mapping = {
+            "bull_market": MarketEnvironment.BULL_MARKET,
+            "bear_market": MarketEnvironment.BEAR_MARKET,
+            "sideways_market": MarketEnvironment.SIDEWAYS_MARKET,
+            "volatile_market": MarketEnvironment.VOLATILE_MARKET,
+            "normal": MarketEnvironment.SIDEWAYS_MARKET,
+        }
+        
+        if environment not in env_mapping:
+            valid_values = list(env_mapping.keys())
+            raise ValueError(f"无效的市场环境，有效值为: {', '.join(valid_values)}")
+            
+        self._market_environment = env_mapping[environment]
     
-    def get_market_environment(self) -> str:
+    def get_market_environment(self) -> MarketEnvironment:
         """
         获取当前市场环境
         
         Returns:
-            str: 当前市场环境
+            MarketEnvironment: 当前市场环境
         """
-        return self.market_environment
+        return self._market_environment
     
-    def detect_market_environment(self, data: pd.DataFrame) -> str:
+    def detect_market_environment(self, data: pd.DataFrame) -> MarketEnvironment:
         """
         根据价格数据检测市场环境
         
@@ -69,7 +519,7 @@ class MACD(BaseIndicator):
             data: 输入数据，包含价格数据
             
         Returns:
-            str: 检测到的市场环境
+            MarketEnvironment: 检测到的市场环境
         """
         if 'close' not in data.columns:
             raise ValueError("输入数据必须包含'close'列")
@@ -86,7 +536,7 @@ class MACD(BaseIndicator):
         
         # 检查是否有足够的数据
         if len(price) < 60:
-            return "normal"
+            return MarketEnvironment.SIDEWAYS_MARKET
             
         # 获取最新值
         latest_price = price.iloc[-1]
@@ -100,19 +550,19 @@ class MACD(BaseIndicator):
         # 判断市场环境
         if latest_volatility > long_term_volatility * 1.5:
             # 高波动率市场
-            return "volatile_market"
+            return MarketEnvironment.VOLATILE_MARKET
         elif latest_price > latest_ma20 and latest_ma20 > latest_ma60 and latest_price > price.iloc[-20:].min() * 1.1:
             # 牛市条件: 价格高于20日均线，20日均线高于60日均线，且价格比近期最低点高10%以上
-            return "bull_market"
+            return MarketEnvironment.BULL_MARKET
         elif latest_price < latest_ma20 and latest_ma20 < latest_ma60 and latest_price < price.iloc[-20:].max() * 0.9:
             # 熊市条件: 价格低于20日均线，20日均线低于60日均线，且价格比近期最高点低10%以上
-            return "bear_market"
+            return MarketEnvironment.BEAR_MARKET
         elif abs((latest_price / latest_ma60) - 1) < 0.05:
             # 盘整市场: 价格在长期均线附近波动不超过5%
-            return "sideways_market"
+            return MarketEnvironment.SIDEWAYS_MARKET
         else:
-            # 默认为正常市场
-            return "normal"
+            # 默认为盘整市场
+            return MarketEnvironment.SIDEWAYS_MARKET
     
     def calculate(self, data: pd.DataFrame, price_col: str = 'close', 
                   add_prefix: bool = False, **kwargs) -> pd.DataFrame:
@@ -131,72 +581,77 @@ class MACD(BaseIndicator):
         Raises:
             ValueError: 如果输入数据不包含价格列
         """
-        # 确保数据包含价格列
-        self.ensure_columns(data, [price_col])
-        
-        # 复制输入数据
-        result = data.copy()
-        
-        # 如果开启波动率自适应，调整MACD参数
-        fast_period = self.fast_period
-        slow_period = self.slow_period
-        signal_period = self.signal_period
-        
-        if self.adapt_to_volatility:
-            # 计算价格波动率
-            returns = result[price_col].pct_change()
-            volatility = returns.rolling(window=20).std() * np.sqrt(252)  # 年化波动率
+        try:
+            # 确保数据包含价格列
+            self.ensure_columns(data, [price_col])
             
-            # 确保有足够的数据
-            if len(volatility) >= 20 and not volatility.iloc[-1] != volatility.iloc[-1]:  # 检查NaN
-                # 计算相对波动率（相对于过去120天）
-                long_term_vol = volatility.iloc[-120:].mean() if len(volatility) >= 120 else volatility.mean()
-                relative_vol = volatility.iloc[-1] / long_term_vol
+            # 复制输入数据
+            result = data.copy()
+            
+            # 如果开启波动率自适应，调整MACD参数
+            fast_period = self.fast_period
+            slow_period = self.slow_period
+            signal_period = self.signal_period
+            
+            if self.adapt_to_volatility:
+                # 计算价格波动率
+                returns = result[price_col].pct_change()
+                volatility = returns.rolling(window=20).std() * np.sqrt(252)  # 年化波动率
                 
-                # 根据相对波动率调整参数
-                if relative_vol > 1.5:  # 高波动
-                    fast_period = int(fast_period * 1.2)  # 增加快周期
-                    slow_period = int(slow_period * 1.2)  # 增加慢周期
-                elif relative_vol < 0.7:  # 低波动
-                    fast_period = max(6, int(fast_period * 0.8))  # 减少快周期，但不低于6
-                    slow_period = max(16, int(slow_period * 0.8))  # 减少慢周期，但不低于16
-        
-        # 使用统一的公共函数计算MACD
-        dif, dea, macd_hist = calc_macd(
-            result[price_col].values,
-            fast_period,
-            slow_period,
-            signal_period
-        )
-        
-        # 确保前N个值为NaN，其中N = max(fast_period, slow_period) - 1
-        min_periods = max(fast_period, slow_period) - 1
-        dif[:min_periods] = np.nan
-        dea[:min_periods + signal_period - 1] = np.nan
-        macd_hist[:min_periods + signal_period - 1] = np.nan
-        
-        # 设置列名
-        if add_prefix:
-            macd_col = self.get_column_name('DIF')
-            signal_col = self.get_column_name('DEA')
-            hist_col = self.get_column_name('MACD')
-        else:
-            macd_col = 'DIF'
-            signal_col = 'DEA'
-            hist_col = 'MACD'
-        
-        # 添加结果列
-        result[macd_col] = dif
-        result[signal_col] = dea
-        result[hist_col] = macd_hist
-        
-        # 添加MACD背离信号
-        result = self._add_divergence_signals(result, macd_col, price_col=price_col)
-        
-        # 保存结果
-        self._result = result
-        
-        return result
+                # 确保有足够的数据
+                if len(volatility) >= 20 and not np.isnan(volatility.iloc[-1]):  # 检查NaN
+                    # 计算相对波动率（相对于过去120天）
+                    long_term_vol = volatility.iloc[-120:].mean() if len(volatility) >= 120 else volatility.mean()
+                    relative_vol = volatility.iloc[-1] / long_term_vol
+                    
+                    # 根据相对波动率调整参数
+                    if relative_vol > 1.5:  # 高波动
+                        fast_period = int(fast_period * 1.2)  # 增加快周期
+                        slow_period = int(slow_period * 1.2)  # 增加慢周期
+                    elif relative_vol < 0.7:  # 低波动
+                        fast_period = max(6, int(fast_period * 0.8))  # 减少快周期，但不低于6
+                        slow_period = max(16, int(slow_period * 0.8))  # 减少慢周期，但不低于16
+            
+            # 使用统一的公共函数计算MACD
+            dif, dea, macd_hist = calc_macd(
+                result[price_col].values,
+                fast_period,
+                slow_period,
+                signal_period
+            )
+            
+            # 确保前N个值为NaN，其中N = max(fast_period, slow_period) - 1
+            min_periods = max(fast_period, slow_period) - 1
+            dif[:min_periods] = np.nan
+            dea[:min_periods + signal_period - 1] = np.nan
+            macd_hist[:min_periods + signal_period - 1] = np.nan
+            
+            # 设置列名
+            if add_prefix:
+                macd_col = self.get_column_name('DIF')
+                signal_col = self.get_column_name('DEA')
+                hist_col = self.get_column_name('MACD')
+            else:
+                macd_col = 'DIF'
+                signal_col = 'DEA'
+                hist_col = 'MACD'
+            
+            # 添加结果列
+            result[macd_col] = dif
+            result[signal_col] = dea
+            result[hist_col] = macd_hist
+            
+            # 添加MACD背离信号
+            result = self._add_divergence_signals(result, macd_col, price_col=price_col)
+            
+            # 保存结果
+            self._result = result
+            
+            return result
+            
+        except Exception as e:
+            self._error = e
+            raise e
     
     def add_signals(self, data: pd.DataFrame, macd_col: str = 'DIF', 
                    signal_col: str = 'DEA', hist_col: str = 'MACD') -> pd.DataFrame:
@@ -394,31 +849,25 @@ class MACD(BaseIndicator):
             'error': str(self._error) if self._error else None
         }
         
-    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成MACD交易信号
         
         Args:
             data: 输入数据
+            **kwargs: 其他参数
             
         Returns:
-            pd.DataFrame: 信号DataFrame
+            Dict[str, pd.Series]: 包含各类信号的字典
         """
         # 确保已计算MACD
         if not self.has_result():
             self.calculate(data)
             
-        result = self.calculate(data)
+        result = self._result
         
-        # 创建信号DataFrame
-        signals = pd.DataFrame(index=result.index)
-        signals['dif'] = result['DIF']
-        signals['dea'] = result['DEA']
-        signals['macd'] = result['MACD']
-        
-        # 计算MACD评分
-        macd_score = self.calculate_raw_score(data)
-        signals['score'] = macd_score
+        # 初始化信号字典
+        signals = {}
         
         # 计算传统的金叉/死叉信号
         golden_cross = self.get_buy_signal(result)
@@ -433,252 +882,79 @@ class MACD(BaseIndicator):
         hist_turn_negative = (result['MACD'] < 0) & (result['MACD'].shift(1) >= 0)
         
         # 背离信号
-        bullish_divergence = result['macd_bullish_divergence']
-        bearish_divergence = result['macd_bearish_divergence']
+        bullish_divergence = result['macd_bullish_divergence'] if 'macd_bullish_divergence' in result.columns else pd.Series(False, index=result.index)
+        bearish_divergence = result['macd_bearish_divergence'] if 'macd_bearish_divergence' in result.columns else pd.Series(False, index=result.index)
         
-        # 1. 基于传统信号的初步买入/卖出信号
+        # 计算原始评分
+        score = self.calculate_raw_score(data, **kwargs)
+        
+        # 构建买入信号
         buy_signal = (
             golden_cross |  # 金叉
             zero_cross_up |  # DIF上穿零轴
             hist_turn_positive |  # 柱状图由负转正
-            bullish_divergence  # 看涨背离
+            bullish_divergence |  # 看涨背离
+            (score > 70)  # 评分高于70
         )
         
+        # 构建卖出信号
         sell_signal = (
             death_cross |  # 死叉
             zero_cross_down |  # DIF下穿零轴
             hist_turn_negative |  # 柱状图由正转负
-            bearish_divergence  # 看跌背离
+            bearish_divergence |  # 看跌背离
+            (score < 30)  # 评分低于30
         )
         
-        # 2. 基于评分的买入/卖出信号增强
-        # 评分高于70，增加买入信号
-        buy_signal = buy_signal | (macd_score > 70)
+        # 计算信号强度
+        buy_strength = pd.Series(0, index=result.index)
+        sell_strength = pd.Series(0, index=result.index)
         
-        # 评分低于30，增加卖出信号
-        sell_signal = sell_signal | (macd_score < 30)
+        # 根据评分设置信号强度
+        for i in range(len(score)):
+            if buy_signal.iloc[i]:
+                score_val = score.iloc[i]
+                if score_val > 90:
+                    buy_strength.iloc[i] = 5  # 非常强
+                elif score_val > 80:
+                    buy_strength.iloc[i] = 4  # 强
+                elif score_val > 70:
+                    buy_strength.iloc[i] = 3  # 中等
+                elif score_val > 60:
+                    buy_strength.iloc[i] = 2  # 弱
+                else:
+                    buy_strength.iloc[i] = 1  # 非常弱
+                    
+            if sell_signal.iloc[i]:
+                score_val = score.iloc[i]
+                if score_val < 10:
+                    sell_strength.iloc[i] = 5  # 非常强
+                elif score_val < 20:
+                    sell_strength.iloc[i] = 4  # 强
+                elif score_val < 30:
+                    sell_strength.iloc[i] = 3  # 中等
+                elif score_val < 40:
+                    sell_strength.iloc[i] = 2  # 弱
+                else:
+                    sell_strength.iloc[i] = 1  # 非常弱
         
-        # 3. 信号质量评估与过滤
-        # 计算DIF与DEA的距离，用于评估交叉质量
-        dif_dea_distance = abs(signals['dif'] - signals['dea'])
-        dif_dea_std = dif_dea_distance.rolling(20).std().fillna(dif_dea_distance)
-        distance_ratio = dif_dea_distance / dif_dea_std
-        
-        # 过滤弱交叉信号（距离太小的交叉）
-        weak_cross = distance_ratio < 0.5  # 交叉时DIF与DEA距离小于平均的一半
-        buy_signal = buy_signal & (~(golden_cross & weak_cross))  # 排除弱金叉
-        sell_signal = sell_signal & (~(death_cross & weak_cross))  # 排除弱死叉
-        
-        # 4. 连续信号抑制（避免短期内重复信号）
-        # 计算前10个周期内的信号数量
-        prev_buy_signals = buy_signal.rolling(10).sum().fillna(0)
-        prev_sell_signals = sell_signal.rolling(10).sum().fillna(0)
-        
-        # 如果前10个周期已有相同类型的信号，且评分变化不大，则抑制当前信号
-        score_change = abs(macd_score - macd_score.shift(10))
-        
-        buy_signal = buy_signal & ((prev_buy_signals < 1) | (score_change > 15))
-        sell_signal = sell_signal & ((prev_sell_signals < 1) | (score_change > 15))
-        
-        # 5. 市场环境适应性调整（如果有市场环境信息）
-        if hasattr(self, 'market_environment'):
-            market_env = self.market_environment
-            
-            # 根据市场环境调整信号
-            if market_env == 'bull_market':
-                # 牛市环境：降低买入门槛，提高卖出门槛
-                buy_signal = buy_signal | (macd_score > 65)
-                sell_signal = sell_signal & (macd_score < 25)
-            elif market_env == 'bear_market':
-                # 熊市环境：提高买入门槛，降低卖出门槛
-                buy_signal = buy_signal & (macd_score > 75)
-                sell_signal = sell_signal | (macd_score < 35)
-            elif market_env == 'volatile_market':
-                # 高波动环境：要求更强的信号确认
-                buy_signal = buy_signal & (golden_cross | (macd_score > 75))
-                sell_signal = sell_signal & (death_cross | (macd_score < 25))
-        
-        # 保存最终信号
+        # 添加所有信号到字典
         signals['buy_signal'] = buy_signal
         signals['sell_signal'] = sell_signal
-        
-        # 计算信号强度（1-5，数字越大表示信号越强）
-        signals['buy_strength'] = 1
-        signals['sell_strength'] = 1
-        
-        # 根据评分调整信号强度
-        for i in range(len(signals)):
-            if signals['buy_signal'].iloc[i]:
-                score_val = signals['score'].iloc[i]
-                if score_val > 90:
-                    signals.loc[signals.index[i], 'buy_strength'] = 5
-                elif score_val > 80:
-                    signals.loc[signals.index[i], 'buy_strength'] = 4
-                elif score_val > 70:
-                    signals.loc[signals.index[i], 'buy_strength'] = 3
-                elif score_val > 60:
-                    signals.loc[signals.index[i], 'buy_strength'] = 2
-                    
-            if signals['sell_signal'].iloc[i]:
-                score_val = signals['score'].iloc[i]
-                if score_val < 10:
-                    signals.loc[signals.index[i], 'sell_strength'] = 5
-                elif score_val < 20:
-                    signals.loc[signals.index[i], 'sell_strength'] = 4
-                elif score_val < 30:
-                    signals.loc[signals.index[i], 'sell_strength'] = 3
-                elif score_val < 40:
-                    signals.loc[signals.index[i], 'sell_strength'] = 2
-        
-        # 添加信号描述
-        signals['signal_desc'] = ""
-        for i in range(len(signals)):
-            desc = []
-            if golden_cross.iloc[i]:
-                desc.append("金叉")
-            if death_cross.iloc[i]:
-                desc.append("死叉")
-            if zero_cross_up.iloc[i]:
-                desc.append("DIF上穿零轴")
-            if zero_cross_down.iloc[i]:
-                desc.append("DIF下穿零轴")
-            if hist_turn_positive.iloc[i]:
-                desc.append("柱状图转正")
-            if hist_turn_negative.iloc[i]:
-                desc.append("柱状图转负")
-            if bullish_divergence.iloc[i]:
-                desc.append("看涨背离")
-            if bearish_divergence.iloc[i]:
-                desc.append("看跌背离")
-                
-            signals.loc[signals.index[i], 'signal_desc'] = ", ".join(desc) if desc else ""
+        signals['buy_strength'] = buy_strength
+        signals['sell_strength'] = sell_strength
+        signals['golden_cross'] = golden_cross
+        signals['death_cross'] = death_cross
+        signals['zero_cross_up'] = zero_cross_up
+        signals['zero_cross_down'] = zero_cross_down
+        signals['hist_turn_positive'] = hist_turn_positive
+        signals['hist_turn_negative'] = hist_turn_negative
+        signals['bullish_divergence'] = bullish_divergence
+        signals['bearish_divergence'] = bearish_divergence
+        signals['score'] = score
         
         return signals
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算MACD的原始评分
-        
-        Args:
-            data: 输入数据
-            **kwargs: 其他参数
-            
-        Returns:
-            pd.Series: 评分序列（0-100）
-        """
-        # 确保已计算MACD
-        if not self.has_result():
-            self.calculate(data)
-        
-        # 获取MACD指标数据
-        result = self.calculate(data)
-        dif = result['DIF']
-        dea = result['DEA']
-        macd_hist = result['MACD']
-        
-        # 初始化评分（50为中性）
-        score = pd.Series(50.0, index=result.index)
-        
-        # 1. 基础金叉/死叉评分
-        golden_cross = self.get_buy_signal(result)
-        death_cross = self.get_sell_signal(result)
-        
-        # 计算DIF与零轴的距离系数（距离越远权重越低）
-        zero_distance = abs(dif) / dif.rolling(120).std().fillna(0.01)
-        zero_distance_coef = np.clip(1 - zero_distance * 0.2, 0.5, 1.0)
-        
-        # 金叉/死叉评分（考虑零轴距离）
-        cross_score = golden_cross * 20 - death_cross * 20
-        cross_score = cross_score * zero_distance_coef
-        score += cross_score
-        
-        # 2. DIF和DEA位置评分
-        score += ((dif > 0) & (dea > 0)) * 10  # 同时位于零轴上方，看涨
-        score -= ((dif < 0) & (dea < 0)) * 10  # 同时位于零轴下方，看跌
-        
-        # 3. 零轴穿越评分
-        zero_cross_up = (dif > 0) & (dif.shift(1) <= 0)
-        zero_cross_down = (dif < 0) & (dif.shift(1) >= 0)
-        score += zero_cross_up * 15
-        score -= zero_cross_down * 15
-        
-        # 4. 柱状图变化评分
-        hist_up = (macd_hist > 0) & (macd_hist.shift(1) <= 0)
-        hist_down = (macd_hist < 0) & (macd_hist.shift(1) >= 0)
-        score += hist_up * 12
-        score -= hist_down * 12
-        
-        # 5. 柱状图能量因子评分（新增）
-        # 计算最近10个周期与前10个周期的柱状图能量比率
-        hist_window = 10
-        for i in range(hist_window, len(macd_hist)):
-            recent_hist = abs(macd_hist.iloc[i-hist_window:i])
-            prev_hist = abs(macd_hist.iloc[i-hist_window*2:i-hist_window])
-            
-            if len(recent_hist) == hist_window and len(prev_hist) == hist_window:
-                # 计算能量比率（当前能量/前期能量）
-                recent_energy = recent_hist.sum()
-                prev_energy = prev_hist.sum()
-                
-                if prev_energy > 0:
-                    energy_ratio = recent_energy / prev_energy
-                    
-                    # 能量增加时增强信号得分
-                    if energy_ratio > 1.2:  # 柱状图能量明显增加
-                        energy_score = min(15, (energy_ratio - 1) * 30)
-                        
-                        # 根据柱状图方向确定加减分
-                        if macd_hist.iloc[i] > 0:
-                            score.iloc[i] += energy_score  # 正柱状图能量增加，加分
-                        else:
-                            score.iloc[i] -= energy_score  # 负柱状图能量增加，减分
-        
-        # 6. MACD背离评分（增强）
-        bearish_div = result['macd_bearish_divergence']
-        bullish_div = result['macd_bullish_divergence']
-        
-        score += bullish_div * 25  # 看涨背离强度更高
-        score -= bearish_div * 25  # 看跌背离强度更高
-        
-        # 7. DIF与DEA的离散度评分（新增）
-        # 计算DIF与DEA的绝对距离相对于近期标准差的比例
-        dif_dea_distance = abs(dif - dea)
-        dif_dea_std = dif_dea_distance.rolling(20).std().fillna(dif_dea_distance)
-        distance_ratio = dif_dea_distance / dif_dea_std
-        
-        # 距离显著增大（离散度增加），表示趋势加速
-        accel_score = np.clip(distance_ratio - 1, 0, 2) * 5
-        
-        # 根据DIF和DEA的相对位置确定加减分
-        score += ((dif > dea) & (distance_ratio > 1)) * accel_score  # DIF > DEA且离散度增加，加分
-        score -= ((dif < dea) & (distance_ratio > 1)) * accel_score  # DIF < DEA且离散度增加，减分
-        
-        # 8. 柱状图连续增长/下降评分（新增）
-        hist_consecutive_up = 0
-        hist_consecutive_down = 0
-        
-        for i in range(1, len(macd_hist)):
-            if macd_hist.iloc[i] > macd_hist.iloc[i-1]:
-                hist_consecutive_up += 1
-                hist_consecutive_down = 0
-            elif macd_hist.iloc[i] < macd_hist.iloc[i-1]:
-                hist_consecutive_down += 1
-                hist_consecutive_up = 0
-            else:
-                hist_consecutive_up = 0
-                hist_consecutive_down = 0
-                
-            # 柱状图连续5周期增长，强势加分
-            if hist_consecutive_up >= 5:
-                score.iloc[i] += min(10, hist_consecutive_up)
-                
-            # 柱状图连续5周期下降，强势减分
-            if hist_consecutive_down >= 5:
-                score.iloc[i] -= min(10, hist_consecutive_down)
-        
-        # 限制评分范围在0-100之间
-        return np.clip(score, 0, 100)
-    
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别MACD指标形态
@@ -694,7 +970,7 @@ class MACD(BaseIndicator):
         if not self.has_result():
             self.calculate(data)
             
-        result = self.calculate(data)
+        result = self._result
         patterns = []
         
         dif = result['DIF']
@@ -1000,3 +1276,259 @@ class MACD(BaseIndicator):
             bool: 是否已计算过指标
         """
         return hasattr(self, '_result') and self._result is not None 
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+        """
+        获取MACD指标的技术形态
+        
+        Args:
+            data: 输入数据，通常是K线数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[Dict[str, Any]]: 形态列表
+        """
+        # 确保已计算MACD指标
+        if self._result is None:
+            self.calculate(data)
+        
+        # 调用父类方法获取基础形态
+        patterns = super().get_patterns(data, **kwargs)
+        
+        # MACD特有的形态处理逻辑
+        for pattern in patterns:
+            # 添加MACD特有的详细信息
+            if self._result is not None and not self._result.empty:
+                latest_idx = self._result.index[-1]
+                pattern['details'].update({
+                    'dif': float(self._result['DIF'].iloc[-1]),
+                    'dea': float(self._result['DEA'].iloc[-1]),
+                    'macd': float(self._result['MACD'].iloc[-1]),
+                    'is_above_zero': bool(self._result['DIF'].iloc[-1] > 0),
+                    'hist_direction': 'up' if self._result['MACD'].iloc[-1] > self._result['MACD'].iloc[-2] else 'down'
+                })
+                
+                # 根据形态类型增强强度计算
+                if pattern['pattern_id'] == 'golden_cross':
+                    # 金叉强度与角度和DIF值相关
+                    angle = self._calculate_cross_angle(self._result['DIF'], self._result['DEA'])
+                    pattern['strength'] = min(100, 50 + angle.iloc[-1] * 10)
+                    
+                elif pattern['pattern_id'] == 'death_cross':
+                    # 死叉强度与角度和DIF值相关
+                    angle = self._calculate_cross_angle(self._result['DEA'], self._result['DIF'])
+                    pattern['strength'] = min(100, 50 + angle.iloc[-1] * 10)
+                    
+                elif pattern['pattern_id'] in ['bullish_divergence', 'bearish_divergence']:
+                    # 背离强度与价格和MACD的差异程度相关
+                    pattern['strength'] = self._calculate_divergence_strength(
+                        data['close'], 
+                        self._result['DIF'],
+                        is_bullish=(pattern['pattern_id'] == 'bullish_divergence')
+                    )
+        
+        return patterns
+
+    def _calculate_divergence_strength(self, price: pd.Series, indicator: pd.Series, 
+                                     is_bullish: bool = True, lookback: int = 20) -> float:
+        """
+        计算背离强度
+        
+        Args:
+            price: 价格序列
+            indicator: 指标序列
+            is_bullish: 是否为底背离
+            lookback: 回溯周期数
+            
+        Returns:
+            float: 背离强度(0-100)
+        """
+        if len(price) < lookback or len(indicator) < lookback:
+            return 50.0
+        
+        # 截取回溯窗口的数据
+        price_window = price.iloc[-lookback:]
+        indicator_window = indicator.iloc[-lookback:]
+        
+        if is_bullish:
+            # 底背离: 寻找价格和指标的低点
+            price_min_idx = price_window.idxmin()
+            indicator_min_idx = indicator_window.idxmin()
+            
+            # 如果最低点不一致，说明存在背离
+            if price_min_idx != indicator_min_idx:
+                # 计算价格新低的程度
+                price_latest_min = price_window.iloc[-5:].min()
+                price_prev_min = price_window.iloc[:-5].min()
+                price_decline = (price_prev_min - price_latest_min) / price_prev_min if price_prev_min > 0 else 0
+                
+                # 计算指标背离的程度
+                indicator_latest_min = indicator_window.iloc[-5:].min()
+                indicator_prev_min = indicator_window.iloc[:-5].min()
+                indicator_improve = max(0, indicator_latest_min - indicator_prev_min)
+                
+                # 综合评分: 价格下跌越多，指标改善越明显，评分越高
+                return min(100, 50 + price_decline * 100 + indicator_improve * 20)
+        else:
+            # 顶背离: 寻找价格和指标的高点
+            price_max_idx = price_window.idxmax()
+            indicator_max_idx = indicator_window.idxmax()
+            
+            # 如果最高点不一致，说明存在背离
+            if price_max_idx != indicator_max_idx:
+                # 计算价格新高的程度
+                price_latest_max = price_window.iloc[-5:].max()
+                price_prev_max = price_window.iloc[:-5].max()
+                price_rise = (price_latest_max - price_prev_max) / price_prev_max if price_prev_max > 0 else 0
+                
+                # 计算指标背离的程度
+                indicator_latest_max = indicator_window.iloc[-5:].max()
+                indicator_prev_max = indicator_window.iloc[:-5].max()
+                indicator_weaken = max(0, indicator_prev_max - indicator_latest_max)
+                
+                # 综合评分: 价格上涨越多，指标减弱越明显，评分越高
+                return min(100, 50 + price_rise * 100 + indicator_weaken * 20)
+        
+        return 50.0
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算指标评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 评分结果，包含：
+                - raw_score: 原始评分序列
+                - final_score: 最终评分序列
+                - market_environment: 市场环境
+                - patterns: 识别的形态
+                - signals: 生成的信号
+                - confidence: 置信度
+        """
+        try:
+            # 确保已计算MACD
+            if not self.has_result():
+                self.calculate(data)
+                
+            # 检测市场环境
+            market_env = self.detect_market_environment(data)
+            self.set_market_environment(market_env)
+            
+            # 计算原始评分
+            raw_score = self.calculate_raw_score(data, **kwargs)
+            
+            # 应用市场环境调整
+            final_score = self.apply_market_environment_adjustment(raw_score, market_env)
+            
+            # 识别形态
+            patterns = self.get_patterns(data, **kwargs)
+            
+            # 生成信号
+            signals = self.generate_trading_signals(data, **kwargs)
+            
+            # 计算置信度
+            confidence = self.calculate_confidence(raw_score, patterns, signals)
+            
+            # 构建返回结果
+            result = {
+                'raw_score': raw_score,
+                'final_score': final_score,
+                'market_environment': market_env,
+                'patterns': patterns,
+                'signals': signals,
+                'confidence': confidence
+            }
+            
+            return result
+            
+        except Exception as e:
+            self._error = e
+            import traceback
+            traceback.print_exc()
+            return {
+                'raw_score': None,
+                'final_score': None,
+                'market_environment': None,
+                'patterns': [],
+                'signals': {},
+                'confidence': 0.0,
+                'error': str(e)
+            }
+            
+    def apply_market_environment_adjustment(self, score: pd.Series, market_env: MarketEnvironment) -> pd.Series:
+        """
+        根据市场环境调整评分
+        
+        Args:
+            score: 原始评分序列
+            market_env: 市场环境
+            
+        Returns:
+            pd.Series: 调整后的评分序列
+        """
+        adjusted_score = score.copy()
+        
+        if market_env == MarketEnvironment.BULL_MARKET:
+            # 牛市环境下，上涨信号得分提高，下跌信号得分降低
+            adjusted_score = np.where(score > 50, 
+                                    score + (score - 50) * 0.2,  # 多头信号增强
+                                    score + (score - 50) * 0.1)  # 空头信号减弱
+        elif market_env == MarketEnvironment.BEAR_MARKET:
+            # 熊市环境下，下跌信号得分提高，上涨信号得分降低
+            adjusted_score = np.where(score < 50, 
+                                    score - (50 - score) * 0.2,  # 空头信号增强
+                                    score - (score - 50) * 0.1)  # 多头信号减弱
+        elif market_env == MarketEnvironment.VOLATILE_MARKET:
+            # 高波动市场，极端信号得分更加极端，中性信号得分更加中性
+            adjusted_score = np.where(
+                (score > 60) | (score < 40),  # 极端信号
+                score + (score - 50) * 0.15,  # 极端更极端
+                50 + (score - 50) * 0.8  # 中性更中性
+            )
+            
+        # 限制评分范围在0-100之间
+        return pd.Series(np.clip(adjusted_score, 0, 100), index=score.index)
+        
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算指标结果的置信度
+        
+        Args:
+            score: 评分序列
+            patterns: 识别的形态
+            signals: 生成的信号
+            
+        Returns:
+            float: 置信度（0-1）
+        """
+        # 基础置信度：0.5
+        confidence = 0.5
+        
+        # 根据形态数量调整置信度
+        if len(patterns) >= 3:
+            confidence += 0.1  # 多种形态同时出现，置信度提高
+        
+        # 根据评分极端程度调整置信度
+        latest_score = score.iloc[-1]
+        if latest_score > 80 or latest_score < 20:
+            confidence += 0.15  # 评分极端，置信度提高
+        elif 40 <= latest_score <= 60:
+            confidence -= 0.1  # 评分中性，置信度降低
+        
+        # 根据信号强度调整置信度
+        if 'buy_strength' in signals and signals['buy_strength'].iloc[-1] >= 4:
+            confidence += 0.1  # 强买入信号，置信度提高
+        if 'sell_strength' in signals and signals['sell_strength'].iloc[-1] >= 4:
+            confidence += 0.1  # 强卖出信号，置信度提高
+        
+        # 根据高质量形态调整置信度
+        high_quality_patterns = ["高质量金叉", "高质量死叉", "MACD正背离", "MACD负背离"]
+        for pattern in high_quality_patterns:
+            if pattern in patterns:
+                confidence += 0.05  # 高质量形态，置信度提高
+                
+        # 限制置信度范围在0-1之间
+        return max(0.0, min(1.0, confidence)) 

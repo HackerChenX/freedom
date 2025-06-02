@@ -342,186 +342,21 @@ class PlatformBreakout(BaseIndicator):
         
         return pd.DataFrame({'score': score}, index=data.index) 
 
-    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
-        """
-        识别平台突破相关的技术形态
-        
-        Args:
-            data: 包含OHLCV数据的DataFrame
-            
-        Returns:
-            List[str]: 识别出的形态列表
-        """
+    def _register_breakout_patterns(self):
+        """注册平台突破特有的形态检测方法"""
+        self.register_pattern(self._detect_breakout, "平台突破")
+        self.register_pattern(self._detect_false_breakout, "假突破")
+    
+    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
+        self.ensure_columns(data, ['high', 'low', 'close'])
         patterns = []
         
-        # 计算指标值
-        indicator_data = self.calculate(data)
+        for pattern_func in self._pattern_registry.values():
+            result = pattern_func(data)
+            if result:
+                patterns.append(result)
         
-        if len(indicator_data) < 5 or 'close' not in data.columns:
-            return patterns
-        
-        # 1. 平台形态识别
-        if 'is_platform' in indicator_data.columns:
-            # 检查当前是否处于平台期
-            if indicator_data['is_platform'].iloc[-1]:
-                # 获取平台持续天数
-                if 'platform_days' in indicator_data.columns:
-                    days = indicator_data['platform_days'].iloc[-1]
-                    if days >= 30:
-                        patterns.append(f"长期平台期-{days}天")
-                    elif days >= 15:
-                        patterns.append(f"中期平台期-{days}天")
-                    else:
-                        patterns.append(f"短期平台期-{days}天")
-                
-                # 平台区间大小
-                if ('platform_upper' in indicator_data.columns and 
-                    'platform_lower' in indicator_data.columns):
-                    upper = indicator_data['platform_upper'].iloc[-1]
-                    lower = indicator_data['platform_lower'].iloc[-1]
-                    
-                    if pd.notna(upper) and pd.notna(lower) and lower > 0:
-                        range_percent = (upper - lower) / lower * 100
-                        patterns.append(f"平台波动幅度-{range_percent:.2f}%")
-        
-        # 2. 突破形态识别
-        breakout_detected = False
-        
-        if 'up_breakout' in indicator_data.columns:
-            # 检查最近5天内是否有向上突破
-            recent_up_breakouts = indicator_data['up_breakout'].tail(5).sum()
-            if recent_up_breakouts > 0:
-                breakout_detected = True
-                patterns.append("向上突破形态")
-                
-                # 突破强度分析
-                if 'breakout_strength' in indicator_data.columns:
-                    for i in range(1, 6):
-                        if i <= len(indicator_data) and indicator_data['up_breakout'].iloc[-i]:
-                            strength = indicator_data['breakout_strength'].iloc[-i]
-                            if pd.notna(strength):
-                                if strength >= 0.05:
-                                    patterns.append("强势向上突破")
-                                elif strength >= 0.02:
-                                    patterns.append("中等向上突破")
-                                else:
-                                    patterns.append("弱势向上突破")
-                            break
-        
-        if 'down_breakout' in indicator_data.columns:
-            # 检查最近5天内是否有向下突破
-            recent_down_breakouts = indicator_data['down_breakout'].tail(5).sum()
-            if recent_down_breakouts > 0:
-                breakout_detected = True
-                patterns.append("向下突破形态")
-                
-                # 突破强度分析
-                if 'breakout_strength' in indicator_data.columns:
-                    for i in range(1, 6):
-                        if i <= len(indicator_data) and indicator_data['down_breakout'].iloc[-i]:
-                            strength = indicator_data['breakout_strength'].iloc[-i]
-                            if pd.notna(strength):
-                                if strength >= 0.05:
-                                    patterns.append("强势向下突破")
-                                elif strength >= 0.02:
-                                    patterns.append("中等向下突破")
-                                else:
-                                    patterns.append("弱势向下突破")
-                            break
-        
-        # 如果没有检测到突破，分析是否接近突破
-        if not breakout_detected and 'is_platform' in indicator_data.columns:
-            if indicator_data['is_platform'].iloc[-1]:
-                if ('platform_upper' in indicator_data.columns and 
-                    'platform_lower' in indicator_data.columns and
-                    'close' in data.columns):
-                    
-                    upper = indicator_data['platform_upper'].iloc[-1]
-                    lower = indicator_data['platform_lower'].iloc[-1]
-                    latest_close = data['close'].iloc[-1]
-                    
-                    if pd.notna(upper) and pd.notna(lower) and pd.notna(latest_close):
-                        upper_distance = (upper - latest_close) / latest_close
-                        lower_distance = (latest_close - lower) / latest_close
-                        
-                        if upper_distance <= 0.01:  # 接近上边界1%以内
-                            patterns.append("接近上边界突破")
-                        elif lower_distance <= 0.01:  # 接近下边界1%以内
-                            patterns.append("接近下边界突破")
-        
-        # 3. 成交量分析
-        if 'volume' in data.columns:
-            volume = data['volume']
-            vol_ma10 = volume.rolling(window=10).mean()
-            latest_vol_ratio = (volume / vol_ma10).iloc[-1]
-            
-            if pd.notna(latest_vol_ratio):
-                if latest_vol_ratio >= 2.0:
-                    patterns.append("突破成交量异常放大")
-                elif latest_vol_ratio >= 1.5:
-                    patterns.append("突破成交量明显放大")
-                elif latest_vol_ratio <= 0.5:
-                    patterns.append("成交量明显萎缩")
-        
-        # 4. 平台突破后表现分析
-        if len(data) >= 5:
-            for i in range(5, 0, -1):
-                if i < len(indicator_data):
-                    if indicator_data['up_breakout'].iloc[-i]:
-                        # 分析向上突破后的表现
-                        post_breakout_change = (data['close'].iloc[-1] - data['close'].iloc[-i]) / data['close'].iloc[-i]
-                        
-                        if post_breakout_change >= 0.05:
-                            patterns.append("向上突破后强势上涨")
-                        elif post_breakout_change >= 0.02:
-                            patterns.append("向上突破后温和上涨")
-                        elif post_breakout_change <= -0.02:
-                            patterns.append("向上突破后反向下跌")
-                        else:
-                            patterns.append("向上突破后盘整")
-                        break
-                    
-                    elif indicator_data['down_breakout'].iloc[-i]:
-                        # 分析向下突破后的表现
-                        post_breakout_change = (data['close'].iloc[-1] - data['close'].iloc[-i]) / data['close'].iloc[-i]
-                        
-                        if post_breakout_change <= -0.05:
-                            patterns.append("向下突破后加速下跌")
-                        elif post_breakout_change <= -0.02:
-                            patterns.append("向下突破后温和下跌")
-                        elif post_breakout_change >= 0.02:
-                            patterns.append("向下突破后反向上涨")
-                        else:
-                            patterns.append("向下突破后盘整")
-                        break
-        
-        # 5. 平台整理形态分类
-        if 'is_platform' in indicator_data.columns and indicator_data['is_platform'].sum() > 0:
-            # 分析平台与趋势的关系
-            if len(data) >= 30:
-                ma20 = data['close'].rolling(window=20).mean()
-                ma50 = data['close'].rolling(window=50).mean()
-                
-                if pd.notna(ma20.iloc[-1]) and pd.notna(ma50.iloc[-1]):
-                    if ma20.iloc[-1] > ma50.iloc[-1] * 1.05:
-                        patterns.append("上升趋势中的平台整理")
-                    elif ma20.iloc[-1] < ma50.iloc[-1] * 0.95:
-                        patterns.append("下降趋势中的平台整理")
-                    else:
-                        patterns.append("横盘趋势中的平台整理")
-        
-        # 6. 平台形态的常见演变
-        if 'platform_days' in indicator_data.columns and len(data) >= 20:
-            max_platform_days = indicator_data['platform_days'].max()
-            if max_platform_days >= 20:
-                patterns.append("持久平台整理")
-                
-                if 'up_breakout' in indicator_data.columns and indicator_data['up_breakout'].sum() > 0:
-                    patterns.append("长期平台上行突破")
-                elif 'down_breakout' in indicator_data.columns and indicator_data['down_breakout'].sum() > 0:
-                    patterns.append("长期平台下行突破")
-        
-        return patterns 
+        return patterns
 
     def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """

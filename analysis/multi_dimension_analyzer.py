@@ -156,7 +156,7 @@ class MultiDimensionAnalyzer:
         try:
             sql = f"""
             SELECT stock_code, stock_name, industry, market, market_cap
-            FROM stock_basic
+            FROM stock_info
             WHERE stock_code = '{stock_code}'
             LIMIT 1
             """
@@ -181,7 +181,7 @@ class MultiDimensionAnalyzer:
                 
             sql = f"""
             SELECT stock_code
-            FROM stock_basic
+            FROM stock_info
             WHERE industry = '{industry}'{exclude_condition}
             LIMIT 50
             """
@@ -456,7 +456,7 @@ class MultiDimensionAnalyzer:
             stock_codes_str = "', '".join(stock_codes)
             sql = f"""
             SELECT industry, COUNT(*) as count
-            FROM stock_basic
+            FROM stock_info
             WHERE stock_code IN ('{stock_codes_str}')
             GROUP BY industry
             ORDER BY count DESC
@@ -525,60 +525,338 @@ class MultiDimensionAnalyzer:
         return key_features
     
     def _extract_common_features(self, analysis_result: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """提取股票组的共性特征"""
+        """
+        提取共性特征
+        
+        Args:
+            analysis_result: 分析结果
+            
+        Returns:
+            List[Dict[str, Any]]: 共性特征列表
+        """
         common_features = []
         
-        # 从多周期分析中提取特征
-        multi_period = analysis_result.get("multi_period_analysis", {})
-        period_common_features = multi_period.get("common_features", [])
+        # 按周期和指标类别组织特征
+        feature_by_period = {}
         
-        for feature in period_common_features:
-            if isinstance(feature, dict):
-                common_features.append({
-                    "type": "multi_period",
-                    "feature": feature.get("feature", ""),
-                    "periods": feature.get("periods", []),
-                    "frequency": feature.get("avg_frequency", 0),
-                    "details": feature.get("details", [])
-                })
+        # 处理多周期分析结果
+        if "multi_period_analysis" in analysis_result and analysis_result["multi_period_analysis"]:
+            for period, period_data in analysis_result["multi_period_analysis"]["period_results"].items():
+                if period not in feature_by_period:
+                    feature_by_period[period] = {"pattern": [], "trend": [], "indicator": [], "volume": []}
+                
+                # 收集形态特征
+                if "pattern_features" in period_data:
+                    feature_by_period[period]["pattern"].extend(period_data["pattern_features"])
+                
+                # 收集趋势特征
+                if "trend_features" in period_data:
+                    feature_by_period[period]["trend"].extend(period_data["trend_features"])
+                
+                # 收集成交量特征
+                if "volume_features" in period_data:
+                    feature_by_period[period]["volume"].extend(period_data["volume_features"])
         
-        # 从指标分析中提取特征
-        indicator_analysis = analysis_result.get("indicator_analysis", {})
-        for period, period_analysis in indicator_analysis.items():
-            common_signals = period_analysis.get("common_signals", [])
+        # 处理指标分析结果
+        if "indicator_analysis" in analysis_result:
+            for period, indicator_data in analysis_result["indicator_analysis"].items():
+                if period not in feature_by_period:
+                    feature_by_period[period] = {"pattern": [], "trend": [], "indicator": [], "volume": []}
+                
+                if "common_signals" in indicator_data:
+                    feature_by_period[period]["indicator"].extend(indicator_data["common_signals"])
+        
+        # 对每个周期的特征进行分组和排序
+        for period, features in feature_by_period.items():
+            # 整合各类特征
+            all_period_features = []
             
-            for signal in common_signals:
-                if signal["frequency"] > 0.4:  # 共性特征可以设置较低的阈值
-                    common_features.append({
-                        "type": "indicator",
-                        "period": period,
-                        "indicator": signal.get("indicator", ""),
-                        "signal": signal.get("signal", ""),
-                        "frequency": signal.get("frequency", 0)
-                    })
+            # 添加形态特征
+            for feature in features["pattern"]:
+                feature_with_meta = feature.copy()
+                feature_with_meta["period"] = period
+                feature_with_meta["type"] = "pattern"
+                all_period_features.append(feature_with_meta)
+            
+            # 添加趋势特征
+            for feature in features["trend"]:
+                feature_with_meta = feature.copy()
+                feature_with_meta["period"] = period
+                feature_with_meta["type"] = "trend"
+                all_period_features.append(feature_with_meta)
+            
+            # 添加指标特征
+            for feature in features["indicator"]:
+                feature_with_meta = feature.copy()
+                feature_with_meta["period"] = period
+                feature_with_meta["type"] = "indicator"
+                all_period_features.append(feature_with_meta)
+            
+            # 添加成交量特征
+            for feature in features["volume"]:
+                feature_with_meta = feature.copy()
+                feature_with_meta["period"] = period
+                feature_with_meta["type"] = "volume"
+                all_period_features.append(feature_with_meta)
+            
+            # 全部收集后统一按频率和权重排序
+            all_period_features.sort(key=lambda x: (x.get("frequency", 0) * x.get("importance", 1)), reverse=True)
+            
+            # 添加到共性特征列表
+            common_features.extend(all_period_features)
         
-        # 从行业分布中提取特征
-        industry_distribution = analysis_result.get("industry_distribution", {})
-        percentages = industry_distribution.get("percentages", {})
+        # 不再限制特征数量，返回全部特征用于后续分析
+        return common_features
+    
+    def analyze_feature_correlation(self, common_features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        分析特征之间的关联性
         
-        # 只选择占比较高的行业
-        high_percentage_industries = [
-            {"industry": k, "percentage": v}
-            for k, v in percentages.items()
-            if v > 0.2  # 占比超过20%的行业
-        ]
+        Args:
+            common_features: 共性特征列表
+            
+        Returns:
+            Dict[str, Any]: 特征关联性分析结果
+        """
+        if not common_features:
+            return {"correlation_matrix": {}, "feature_clusters": [], "association_rules": []}
+            
+        # 创建特征出现矩阵
+        feature_names = [f"{feature.get('period', 'UNKNOWN')}_{feature.get('type', 'UNKNOWN')}_{feature.get('name', 'UNKNOWN')}" 
+                       for feature in common_features]
         
-        for industry in high_percentage_industries:
-            common_features.append({
-                "type": "industry",
-                "feature": f"行业集中: {industry['industry']}",
-                "frequency": industry["percentage"]
-            })
+        # 特征之间的共现关系（简化版关联分析）
+        correlation_matrix = {}
+        for i, feature1 in enumerate(feature_names):
+            correlation_matrix[feature1] = {}
+            
+            # 计算与其他特征的关联程度
+            for j, feature2 in enumerate(feature_names):
+                if i == j:
+                    correlation_matrix[feature1][feature2] = 1.0  # 自身相关性为1
+                    continue
+                    
+                # 计算两个特征的关联性
+                # 简化版：基于频率相似度和特征类型的相似度计算
+                freq1 = common_features[i].get("frequency", 0)
+                freq2 = common_features[j].get("frequency", 0)
+                
+                # 频率相似度 (0-1)
+                freq_similarity = 1.0 - abs(freq1 - freq2) / max(1, max(freq1, freq2))
+                
+                # 类型相似度 (同周期同类型给高分，不同周期不同类型给低分)
+                type_similarity = 0.0
+                if common_features[i].get("period") == common_features[j].get("period"):
+                    type_similarity += 0.5
+                if common_features[i].get("type") == common_features[j].get("type"):
+                    type_similarity += 0.5
+                
+                # 组合相似度
+                correlation = (freq_similarity * 0.7 + type_similarity * 0.3)
+                correlation_matrix[feature1][feature2] = round(correlation, 2)
+        
+        # 特征聚类 - 基于相关性矩阵识别相似特征组
+        feature_clusters = []
+        processed_features = set()
+        
+        # 相关性阈值
+        threshold = 0.7
+        
+        for feature_name in feature_names:
+            if feature_name in processed_features:
+                continue
+                
+            # 查找与当前特征高度相关的其他特征
+            cluster = [feature_name]
+            processed_features.add(feature_name)
+            
+            for other_feature in feature_names:
+                if other_feature != feature_name and other_feature not in processed_features:
+                    if correlation_matrix[feature_name][other_feature] >= threshold:
+                        cluster.append(other_feature)
+                        processed_features.add(other_feature)
+            
+            if len(cluster) > 1:  # 只保留有多个特征的聚类
+                feature_clusters.append(cluster)
+        
+        # 识别特征关联规则
+        association_rules = []
+        
+        # 规则置信度阈值
+        confidence_threshold = 0.6
+        
+        # 对每对特征计算规则
+        for i, feature1 in enumerate(feature_names):
+            for j, feature2 in enumerate(feature_names):
+                if i == j:
+                    continue
+                
+                # 简化版关联规则计算，基于相关性
+                correlation = correlation_matrix[feature1][feature2]
+                
+                if correlation >= confidence_threshold:
+                    # 构建关联规则
+                    rule = {
+                        "antecedent": feature1,
+                        "consequent": feature2,
+                        "support": min(common_features[i].get("frequency", 0), common_features[j].get("frequency", 0)) / 100,
+                        "confidence": correlation,
+                        "lift": correlation / (common_features[j].get("frequency", 100) / 100)
+                    }
+                    association_rules.append(rule)
+        
+        # 按置信度排序规则
+        association_rules.sort(key=lambda x: x["confidence"], reverse=True)
+        
+        return {
+            "correlation_matrix": correlation_matrix,
+            "feature_clusters": feature_clusters,
+            "association_rules": association_rules
+        }
+        
+    def calculate_feature_importance(self, common_features: List[Dict[str, Any]], 
+                                    correlation_analysis: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+        """
+        计算特征重要性评分
+        
+        Args:
+            common_features: 共性特征列表
+            correlation_analysis: 特征关联性分析结果，如果提供则用于增强重要性计算
+            
+        Returns:
+            List[Dict[str, Any]]: 带有重要性分数的特征列表
+        """
+        if not common_features:
+            return []
+            
+        # 复制特征列表以避免修改原始数据
+        scored_features = []
+        
+        # 首先基于频率和确信度评估基础重要性
+        for feature in common_features:
+            feature_copy = feature.copy()
+            
+            # 基础重要性计算
+            frequency = feature.get("frequency", 0)
+            confidence = feature.get("confidence", 0.5)
+            
+            # 特征类型权重
+            type_weight = {
+                "pattern": 1.0,    # K线形态
+                "trend": 0.9,      # 趋势特征
+                "indicator": 0.8,  # 指标信号
+                "volume": 0.7      # 成交量特征
+            }.get(feature.get("type", ""), 0.5)
+            
+            # 周期权重 - 短周期略重于长周期
+            period_weight = {
+                "DAILY": 1.0,
+                "WEEKLY": 0.9,
+                "MONTHLY": 0.8
+            }.get(feature.get("period", ""), 0.5)
+            
+            # 计算基础重要性分数 (0-100)
+            base_importance = frequency * confidence * type_weight * period_weight
+            
+            # 标准化到0-100范围
+            feature_copy["importance"] = min(100, base_importance)
+            scored_features.append(feature_copy)
+        
+        # 如果提供了相关性分析结果，进一步调整重要性
+        if correlation_analysis and "association_rules" in correlation_analysis:
+            # 创建特征名称到索引的映射
+            feature_name_to_index = {}
+            for i, feature in enumerate(scored_features):
+                feature_name = f"{feature.get('period', 'UNKNOWN')}_{feature.get('type', 'UNKNOWN')}_{feature.get('name', 'UNKNOWN')}"
+                feature_name_to_index[feature_name] = i
+            
+            # 应用关联规则增强重要性
+            for rule in correlation_analysis["association_rules"]:
+                antecedent = rule["antecedent"]
+                consequent = rule["consequent"]
+                
+                if antecedent in feature_name_to_index and consequent in feature_name_to_index:
+                    # 获取特征索引
+                    ant_idx = feature_name_to_index[antecedent]
+                    con_idx = feature_name_to_index[consequent]
+                    
+                    # 基于规则的置信度和提升度调整重要性
+                    confidence_boost = rule["confidence"] * 0.2  # 置信度贡献
+                    lift_boost = min(0.1, rule["lift"] * 0.05)   # 提升度贡献
+                    
+                    # 应用提升
+                    scored_features[ant_idx]["importance"] += confidence_boost * 10
+                    scored_features[con_idx]["importance"] += lift_boost * 10
+                    
+                    # 确保不超过100
+                    scored_features[ant_idx]["importance"] = min(100, scored_features[ant_idx]["importance"])
+                    scored_features[con_idx]["importance"] = min(100, scored_features[con_idx]["importance"])
+        
+        # 根据重要性重新排序
+        scored_features.sort(key=lambda x: x["importance"], reverse=True)
+        
+        return scored_features
+        
+    def analyze_time_series_patterns(self, common_features: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        分析特征的时序模式
+        
+        Args:
+            common_features: 共性特征列表
+            
+        Returns:
+            List[Dict[str, Any]]: 时序模式列表
+        """
+        if not common_features or len(common_features) < 3:
+            return []
+            
+        # 时序模式列表
+        time_series_patterns = []
+        
+        # 按类型分组特征
+        features_by_type = {}
+        for feature in common_features:
+            feature_type = feature.get("type", "unknown")
+            if feature_type not in features_by_type:
+                features_by_type[feature_type] = []
+            features_by_type[feature_type].append(feature)
+        
+        # 分析每种类型内的时序模式
+        for feature_type, type_features in features_by_type.items():
+            # 按频率排序
+            sorted_features = sorted(type_features, key=lambda x: x.get("frequency", 0), reverse=True)
+            
+            # 寻找序列模式 (至少3个特征)
+            if len(sorted_features) >= 3:
+                for i in range(len(sorted_features) - 2):
+                    # 创建3特征序列
+                    pattern = {
+                        "type": feature_type,
+                        "sequence": [
+                            sorted_features[i].get("name", "unknown"),
+                            sorted_features[i+1].get("name", "unknown"),
+                            sorted_features[i+2].get("name", "unknown")
+                        ],
+                        "frequency": min([
+                            sorted_features[i].get("frequency", 0),
+                            sorted_features[i+1].get("frequency", 0),
+                            sorted_features[i+2].get("frequency", 0)
+                        ]) * 0.7,  # 保守估计
+                        "confidence": (
+                            sorted_features[i].get("confidence", 0.5) + 
+                            sorted_features[i+1].get("confidence", 0.5) + 
+                            sorted_features[i+2].get("confidence", 0.5)
+                        ) / 3
+                    }
+                    
+                    # 只保留频率足够高的序列
+                    if pattern["frequency"] >= 30:  # 至少30%的出现率
+                        time_series_patterns.append(pattern)
         
         # 按频率排序
-        common_features.sort(key=lambda x: x.get("frequency", 0), reverse=True)
+        time_series_patterns.sort(key=lambda x: x["frequency"], reverse=True)
         
-        return common_features
+        return time_series_patterns
     
     def _generate_stock_assessment(self, analysis_result: Dict[str, Any]) -> Dict[str, Any]:
         """生成单个股票的综合评估"""

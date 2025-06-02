@@ -152,7 +152,7 @@ class StrategyComparison:
             except AttributeError:
                 # 如果方法不存在，使用替代方法
                 try:
-                    sql = "SELECT DISTINCT stock_code FROM stock_basic"
+                    sql = "SELECT DISTINCT stock_code FROM stock_info"
                     result = self.db_manager.execute_query(sql)
                     stock_pool = [row['stock_code'] for row in result] if result else []
                 except Exception as e:
@@ -312,7 +312,7 @@ class StrategyComparison:
             
             sql = f"""
             SELECT industry, COUNT(*) as count
-            FROM stock_basic
+            FROM stock_info
             WHERE stock_code IN ({placeholders_str})
             GROUP BY industry
             ORDER BY count DESC
@@ -335,7 +335,7 @@ class StrategyComparison:
                 stock_codes_str = "', '".join(safe_codes)
                 sql = f"""
                 SELECT industry, COUNT(*) as count
-                FROM stock_basic
+                FROM stock_info
                 WHERE stock_code IN ('{stock_codes_str}')
                 GROUP BY industry
                 ORDER BY count DESC
@@ -395,7 +395,7 @@ class StrategyComparison:
             
             sql = f"""
             SELECT stock_code, market_cap, pb_ratio, pe_ratio
-            FROM stock_basic
+            FROM stock_info
             WHERE stock_code IN ({placeholders_str})
             """
             
@@ -416,7 +416,7 @@ class StrategyComparison:
                 stock_codes_str = "', '".join(safe_codes)
                 sql = f"""
                 SELECT stock_code, market_cap, pb_ratio, pe_ratio
-                FROM stock_basic
+                FROM stock_info
                 WHERE stock_code IN ('{stock_codes_str}')
                 """
                 result = self.db_manager.execute_query(sql)

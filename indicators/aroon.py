@@ -218,47 +218,250 @@ class Aroon(BaseIndicator):
         
         return np.clip(score, 0, 100)
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
         """
-        识别Aroon技术形态
+        获取AROON指标的所有形态信息
         
         Args:
             data: 输入数据
             **kwargs: 其他参数
             
         Returns:
-            List[str]: 识别出的形态列表
+            List[Dict[str, Any]]: 包含形态信息的字典列表
         """
-        patterns = []
-        
-        # 确保已计算Aroon
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate(data)
+            
+        result = []
         
-        if self._result is None:
-            return patterns
+        # 检查是否有足够的数据
+        if len(self._result) < 2:
+            return result
         
-        # 1. 检测Aroon交叉形态
-        cross_patterns = self._detect_aroon_cross_patterns()
-        patterns.extend(cross_patterns)
+        aroon_up_col = 'aroon_up'
+        aroon_down_col = 'aroon_down'
+        aroon_oscillator_col = 'aroon_oscillator'
         
-        # 2. 检测Aroon极值形态
-        extreme_patterns = self._detect_aroon_extreme_patterns()
-        patterns.extend(extreme_patterns)
+        current_aroon_up = self._result[aroon_up_col].iloc[-1]
+        current_aroon_down = self._result[aroon_down_col].iloc[-1]
+        previous_aroon_up = self._result[aroon_up_col].iloc[-2]
+        previous_aroon_down = self._result[aroon_down_col].iloc[-2]
         
-        # 3. 检测Aroon趋势形态
-        trend_patterns = self._detect_aroon_trend_patterns()
-        patterns.extend(trend_patterns)
+        # 检测阿隆交叉模式
+        if len(self._result) >= 2:
+            # 阿隆金叉（Aroon_Up上穿Aroon_Down）
+            if previous_aroon_up <= previous_aroon_down and current_aroon_up > current_aroon_down:
+                strength = 0.8  # 强势信号
+                
+                pattern_data = {
+                    'pattern_id': "AROON_GOLDEN_CROSS",
+                    'display_name': f"阿隆金叉（看涨信号）：{current_aroon_up:.1f} > {current_aroon_down:.1f}",
+                    'indicator_id': self.name,
+                    'strength': strength,
+                    'duration': 2,
+                    'details': {
+                        'aroon_up': float(current_aroon_up),
+                        'aroon_down': float(current_aroon_down),
+                        'aroon_diff': float(current_aroon_up - current_aroon_down)
+                    }
+                }
+                result.append(pattern_data)
+            # 阿隆死叉（Aroon_Up下穿Aroon_Down）
+            elif previous_aroon_up >= previous_aroon_down and current_aroon_up < current_aroon_down:
+                strength = -0.8  # 强势下跌信号
+                
+                pattern_data = {
+                    'pattern_id': "AROON_DEATH_CROSS",
+                    'display_name': f"阿隆死叉（看跌信号）：{current_aroon_up:.1f} < {current_aroon_down:.1f}",
+                    'indicator_id': self.name,
+                    'strength': strength,
+                    'duration': 2,
+                    'details': {
+                        'aroon_up': float(current_aroon_up),
+                        'aroon_down': float(current_aroon_down),
+                        'aroon_diff': float(current_aroon_up - current_aroon_down)
+                    }
+                }
+                result.append(pattern_data)
         
-        # 4. 检测Aroon震荡器形态
-        oscillator_patterns = self._detect_aroon_oscillator_patterns()
-        patterns.extend(oscillator_patterns)
+        # 检测极端值模式
+        if current_aroon_up >= 90:
+            strength = 0.9  # 极端强势信号
+            
+            pattern_data = {
+                'pattern_id': "AROON_EXTREME_UP",
+                'display_name': f"阿隆上值极端高位（{current_aroon_up:.1f}）",
+                'indicator_id': self.name,
+                'strength': strength,
+                'duration': 3,
+                'details': {
+                    'aroon_up': float(current_aroon_up),
+                    'period': self.period
+                }
+            }
+            result.append(pattern_data)
+        elif current_aroon_up >= 80:
+            strength = 0.7  # 强势信号
+            
+            pattern_data = {
+                'pattern_id': "AROON_HIGH_UP",
+                'display_name': f"阿隆上值高位（{current_aroon_up:.1f}）",
+                'indicator_id': self.name,
+                'strength': strength,
+                'duration': 2,
+                'details': {
+                    'aroon_up': float(current_aroon_up),
+                    'period': self.period
+                }
+            }
+            result.append(pattern_data)
         
-        # 5. 检测Aroon强度形态
-        strength_patterns = self._detect_aroon_strength_patterns()
-        patterns.extend(strength_patterns)
+        if current_aroon_down >= 90:
+            strength = -0.9  # 极端弱势信号
+            
+            pattern_data = {
+                'pattern_id': "AROON_EXTREME_DOWN",
+                'display_name': f"阿隆下值极端高位（{current_aroon_down:.1f}）",
+                'indicator_id': self.name,
+                'strength': strength,
+                'duration': 3,
+                'details': {
+                    'aroon_down': float(current_aroon_down),
+                    'period': self.period
+                }
+            }
+            result.append(pattern_data)
+        elif current_aroon_down >= 80:
+            strength = -0.7  # 弱势信号
+            
+            pattern_data = {
+                'pattern_id': "AROON_HIGH_DOWN",
+                'display_name': f"阿隆下值高位（{current_aroon_down:.1f}）",
+                'indicator_id': self.name,
+                'strength': strength,
+                'duration': 2,
+                'details': {
+                    'aroon_down': float(current_aroon_down),
+                    'period': self.period
+                }
+            }
+            result.append(pattern_data)
         
-        return patterns
+        # 检测趋势延续模式
+        if len(self._result) >= 5:
+            recent_values = self._result.iloc[-5:]
+            
+            # 连续上升的趋势
+            if all(recent_values[aroon_up_col].iloc[i+1] > recent_values[aroon_up_col].iloc[i] 
+                   for i in range(len(recent_values)-1)):
+                strength = 0.6  # 中等强度信号
+                
+                pattern_data = {
+                    'pattern_id': "AROON_UP_TREND_CONTINUATION",
+                    'display_name': f"阿隆上值连续上升趋势（{current_aroon_up:.1f}）",
+                    'indicator_id': self.name,
+                    'strength': strength,
+                    'duration': 3,
+                    'details': {
+                        'aroon_up': float(current_aroon_up),
+                        'previous_aroon_up': float(previous_aroon_up),
+                        'trend_duration': 5
+                    }
+                }
+                result.append(pattern_data)
+            # 连续下降的趋势
+            elif all(recent_values[aroon_down_col].iloc[i+1] > recent_values[aroon_down_col].iloc[i] 
+                   for i in range(len(recent_values)-1)):
+                strength = -0.6  # 中等强度下跌信号
+                
+                pattern_data = {
+                    'pattern_id': "AROON_DOWN_TREND_CONTINUATION",
+                    'display_name': f"阿隆下值连续上升趋势（{current_aroon_down:.1f}）",
+                    'indicator_id': self.name,
+                    'strength': strength,
+                    'duration': 3,
+                    'details': {
+                        'aroon_down': float(current_aroon_down),
+                        'previous_aroon_down': float(previous_aroon_down),
+                        'trend_duration': 5
+                    }
+                }
+                result.append(pattern_data)
+        
+        # 检测趋势反转模式
+        if len(self._result) >= 3:
+            current_oscillator = self._result[aroon_oscillator_col].iloc[-1]
+            previous_oscillator = self._result[aroon_oscillator_col].iloc[-2]
+            pre_previous_oscillator = self._result[aroon_oscillator_col].iloc[-3]
+            
+            # 正向反转（可能预示上涨趋势开始）
+            if pre_previous_oscillator < previous_oscillator < current_oscillator and current_oscillator < 0:
+                strength = 0.7  # 强势信号
+                
+                pattern_data = {
+                    'pattern_id': "AROON_POSITIVE_REVERSAL",
+                    'display_name': f"阿隆正向反转（{current_oscillator:.1f}）",
+                    'indicator_id': self.name,
+                    'strength': strength,
+                    'duration': 2,
+                    'details': {
+                        'current_oscillator': float(current_oscillator),
+                        'previous_oscillator': float(previous_oscillator),
+                        'pre_previous_oscillator': float(pre_previous_oscillator)
+                    }
+                }
+                result.append(pattern_data)
+            # 负向反转（可能预示下跌趋势开始）
+            elif pre_previous_oscillator > previous_oscillator > current_oscillator and current_oscillator > 0:
+                strength = -0.7  # 强势下跌信号
+                
+                pattern_data = {
+                    'pattern_id': "AROON_NEGATIVE_REVERSAL",
+                    'display_name': f"阿隆负向反转（{current_oscillator:.1f}）",
+                    'indicator_id': self.name,
+                    'strength': strength,
+                    'duration': 2,
+                    'details': {
+                        'current_oscillator': float(current_oscillator),
+                        'previous_oscillator': float(previous_oscillator),
+                        'pre_previous_oscillator': float(pre_previous_oscillator)
+                    }
+                }
+                result.append(pattern_data)
+        
+        # 检测趋势强度变化
+        if current_aroon_up > 50 and previous_aroon_up <= 50:
+            strength = 0.5  # 中等强度信号
+            
+            pattern_data = {
+                'pattern_id': "AROON_UP_BREAK_50",
+                'display_name': f"阿隆上值突破50（{current_aroon_up:.1f}）",
+                'indicator_id': self.name,
+                'strength': strength,
+                'duration': 2,
+                'details': {
+                    'aroon_up': float(current_aroon_up),
+                    'previous_aroon_up': float(previous_aroon_up)
+                }
+            }
+            result.append(pattern_data)
+        elif current_aroon_down > 50 and previous_aroon_down <= 50:
+            strength = -0.5  # 中等强度下跌信号
+            
+            pattern_data = {
+                'pattern_id': "AROON_DOWN_BREAK_50",
+                'display_name': f"阿隆下值突破50（{current_aroon_down:.1f}）",
+                'indicator_id': self.name,
+                'strength': strength,
+                'duration': 2,
+                'details': {
+                    'aroon_down': float(current_aroon_down),
+                    'previous_aroon_down': float(previous_aroon_down)
+                }
+            }
+            result.append(pattern_data)
+        
+        return result
     
     def _calculate_aroon_cross_score(self) -> pd.Series:
         """

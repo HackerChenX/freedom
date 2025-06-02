@@ -103,7 +103,7 @@ class StockAnalysisReport:
             industry = f.industry
             
             # 获取同行业股票
-            query = f"SELECT code, name FROM stock_basic WHERE industry = '{industry}'"
+            query = f"SELECT code, name FROM stock_info WHERE industry = '{industry}'"
             industry_stocks = self.db_manager.db.client.execute(query)
             
             # 计算行业涨跌幅

@@ -142,4 +142,61 @@ class DBManager:
         Returns:
             float: 平均价格
         """
-        return self.db.get_avg_price(code, start) 
+        return self.db.get_avg_price(code, start)
+    
+    def get_stock_name(self, stock_code):
+        """
+        获取股票名称
+        
+        Args:
+            stock_code: 股票代码
+            
+        Returns:
+            str: 股票名称，如果未找到则返回股票代码
+        """
+        try:
+            # 获取股票列表
+            stocks_df = self.db.get_stock_list()
+            
+            # 过滤出匹配的股票
+            matched_stocks = stocks_df[stocks_df['code'] == stock_code]
+            
+            # 如果找到匹配的股票，返回名称
+            if not matched_stocks.empty:
+                return matched_stocks.iloc[0]['name']
+            
+            # 未找到匹配的股票，返回股票代码
+            return stock_code
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"获取股票 {stock_code} 名称失败: {e}")
+            return stock_code
+            
+    def get_trading_dates(self, stock_code, start_date, end_date):
+        """
+        获取交易日期列表
+        
+        Args:
+            stock_code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            list: 交易日期列表
+        """
+        try:
+            # 获取日线数据
+            df = self.db.get_stock_info(stock_code, 'day', start_date, end_date)
+            
+            # 如果数据为空，返回空列表
+            if df.empty:
+                return []
+                
+            # 返回日期列表
+            return df['date'].tolist()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"获取股票 {stock_code} 交易日期失败: {e}")
+            return [] 

@@ -9,7 +9,8 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
+import re
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -26,18 +27,24 @@ class EMA(BaseIndicator):
     描述：对近期价格赋予更高权重
     """
     
-    def __init__(self, period: int = 14, periods: List[int] = None):
+    def __init__(self, name: str = "EMA", description: str = "指数移动平均线", periods: List[int] = None):
         """
         初始化指数移动平均线(EMA)指标
         
         Args:
-            period: 计算周期，默认为14
-            periods: 多个计算周期，如果提供，将计算多个周期的EMA
+            name: 指标名称
+            description: 指标描述
+            periods: 计算周期列表，默认为[5, 10, 20, 60]
         """
-        super().__init__()
-        self.period = period
-        self.periods = periods if periods is not None else [period]
-        self.name = "EMA"
+        super().__init__(name=name, description=description)
+        
+        if periods is None:
+            self.periods = [5, 10, 20, 60]
+        else:
+            self.periods = periods
+        
+        # 注册EMA形态
+        self._register_ema_patterns()
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -851,4 +858,301 @@ class EMA(BaseIndicator):
                         signals.loc[idx, 'stop_loss'] = max(recent_high, ema_stop)
         
         return signals
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+        """
+        获取检测到的所有形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[Dict[str, Any]]: 形态列表
+        """
+        patterns = []
+        return patterns
+        
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成交易信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, pd.Series]: 信号字典，包含不同类型的信号
+        """
+        # 确保已计算EMA指标
+        if not self.has_result():
+            self.calculate(data)
+            
+        signals = {}
+        
+        # 获取价格和EMA数据
+        close_price = data['close']
+        
+        # 初始化信号序列
+        signals['buy'] = pd.Series(False, index=data.index)
+        signals['sell'] = pd.Series(False, index=data.index)
+        signals['exit_long'] = pd.Series(False, index=data.index)
+        signals['exit_short'] = pd.Series(False, index=data.index)
+        
+        # 需要至少两个周期才能检测交叉
+        if len(self.periods) >= 2 and self.periods[0] < self.periods[1]:
+            short_period = self.periods[0]
+            long_period = self.periods[1]
+            
+            short_ema = self._result[f'EMA{short_period}']
+            long_ema = self._result[f'EMA{long_period}']
+            
+            # 设置买入信号（短期EMA上穿长期EMA）
+            signals['buy'] = self.crossover(short_ema, long_ema)
+            
+            # 设置卖出信号（短期EMA下穿长期EMA）
+            signals['sell'] = self.crossunder(short_ema, long_ema)
+            
+            # 设置平仓信号
+            signals['exit_long'] = signals['sell']
+            signals['exit_short'] = signals['buy']
+        
+        # 使用主要周期的EMA检测价格与EMA的关系
+        main_period = self.periods[0]
+        main_ema = self._result[f'EMA{main_period}']
+        
+        # 设置价格上穿EMA的买入信号
+        price_cross_ema_up = self.crossover(close_price, main_ema)
+        signals['price_above_ema'] = price_cross_ema_up
+        
+        # 设置价格下穿EMA的卖出信号
+        price_cross_ema_down = self.crossunder(close_price, main_ema)
+        signals['price_below_ema'] = price_cross_ema_down
+        
+        # 合并信号
+        signals['buy'] = signals['buy'] | price_cross_ema_up
+        signals['sell'] = signals['sell'] | price_cross_ema_down
+        
+        return signals
+        
+    def _register_ema_patterns(self):
+        """
+        注册EMA形态
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType
+        
+        # 注册EMA交叉形态
+        PatternRegistry.register(
+            pattern_id="EMA_GOLDEN_CROSS",
+            display_name="EMA金叉",
+            description="短周期EMA上穿长周期EMA，看涨信号",
+            indicator_types=["EMA", "均线"],
+            score_impact=15.0,
+            pattern_type="reversal",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_DEATH_CROSS",
+            display_name="EMA死叉",
+            description="短周期EMA下穿长周期EMA，看跌信号",
+            indicator_types=["EMA", "均线"],
+            score_impact=-15.0,
+            pattern_type="reversal",
+            signal_type="bearish"
+        )
+        
+        # 注册EMA排列形态
+        PatternRegistry.register(
+            pattern_id="EMA_BULLISH_ALIGNMENT",
+            display_name="EMA多头排列",
+            description="短周期EMA位于长周期EMA上方，呈阶梯状排列，强势上涨信号",
+            indicator_types=["EMA", "均线"],
+            score_impact=20.0,
+            pattern_type="trend",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_BEARISH_ALIGNMENT",
+            display_name="EMA空头排列",
+            description="短周期EMA位于长周期EMA下方，呈阶梯状排列，强势下跌信号",
+            indicator_types=["EMA", "均线"],
+            score_impact=-20.0,
+            pattern_type="trend",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_INTERWEAVED",
+            display_name="EMA交织状态",
+            description="各周期EMA交织在一起，表示市场处于震荡整理中",
+            indicator_types=["EMA", "均线"],
+            score_impact=0.0,
+            pattern_type="consolidation",
+            signal_type="neutral"
+        )
+        
+        # 注册价格与EMA关系形态
+        PatternRegistry.register(
+            pattern_id="PRICE_STRONG_ABOVE_EMA",
+            display_name="价格强势突破EMA",
+            description="价格远高于多数EMA，表示强势上涨",
+            indicator_types=["EMA", "均线"],
+            score_impact=18.0,
+            pattern_type="momentum",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="PRICE_ABOVE_EMA",
+            display_name="价格温和上行EMA",
+            description="价格位于多数EMA上方但距离不远",
+            indicator_types=["EMA", "均线"],
+            score_impact=12.0,
+            pattern_type="trend",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="PRICE_STRONG_BELOW_EMA",
+            display_name="价格强势跌破EMA",
+            description="价格远低于多数EMA，表示强势下跌",
+            indicator_types=["EMA", "均线"],
+            score_impact=-18.0,
+            pattern_type="momentum",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="PRICE_BELOW_EMA",
+            display_name="价格温和下行EMA",
+            description="价格位于多数EMA下方但距离不远",
+            indicator_types=["EMA", "均线"],
+            score_impact=-12.0,
+            pattern_type="trend",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="PRICE_NEAR_EMA",
+            display_name="价格EMA附近震荡",
+            description="价格在EMA附近波动，表示市场处于震荡状态",
+            indicator_types=["EMA", "均线"],
+            score_impact=0.0,
+            pattern_type="consolidation",
+            signal_type="neutral"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="PRICE_CROSS_ABOVE_EMA",
+            display_name="价格上穿EMA",
+            description="价格上穿某一周期的EMA，可能是买入信号",
+            indicator_types=["EMA", "均线"],
+            score_impact=15.0,
+            pattern_type="reversal",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="PRICE_CROSS_BELOW_EMA",
+            display_name="价格下穿EMA",
+            description="价格下穿某一周期的EMA，可能是卖出信号",
+            indicator_types=["EMA", "均线"],
+            score_impact=-15.0,
+            pattern_type="reversal",
+            signal_type="bearish"
+        )
+        
+        # 注册EMA趋势形态
+        PatternRegistry.register(
+            pattern_id="EMA_STRONG_UPTREND",
+            display_name="EMA强势上升",
+            description="所有周期的EMA都快速上升，表示强势上涨趋势",
+            indicator_types=["EMA", "均线"],
+            score_impact=20.0,
+            pattern_type="trend",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_MODERATE_UPTREND",
+            display_name="EMA温和上升",
+            description="大部分周期的EMA平缓上升",
+            indicator_types=["EMA", "均线"],
+            score_impact=10.0,
+            pattern_type="trend",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_STRONG_DOWNTREND",
+            display_name="EMA强势下降",
+            description="所有周期的EMA都快速下降，表示强势下跌趋势",
+            indicator_types=["EMA", "均线"],
+            score_impact=-20.0,
+            pattern_type="trend",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_MODERATE_DOWNTREND",
+            display_name="EMA温和下降",
+            description="大部分周期的EMA平缓下降",
+            indicator_types=["EMA", "均线"],
+            score_impact=-10.0,
+            pattern_type="trend",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_FLAT",
+            display_name="EMA盘整",
+            description="多数EMA水平移动，表示市场处于盘整状态",
+            indicator_types=["EMA", "均线"],
+            score_impact=0.0,
+            pattern_type="consolidation",
+            signal_type="neutral"
+        )
+        
+        # 注册EMA支撑/阻力形态
+        PatternRegistry.register(
+            pattern_id="EMA_SUPPORT",
+            display_name="EMA支撑",
+            description="EMA作为价格的支撑位，价格触及后反弹",
+            indicator_types=["EMA", "均线"],
+            score_impact=15.0,
+            pattern_type="support",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_RESISTANCE",
+            display_name="EMA阻力",
+            description="EMA作为价格的阻力位，价格触及后回落",
+            indicator_types=["EMA", "均线"],
+            score_impact=-15.0,
+            pattern_type="resistance",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_MULTIPLE_SUPPORT",
+            display_name="EMA多重支撑",
+            description="多条EMA在相近价位形成支撑带",
+            indicator_types=["EMA", "均线"],
+            score_impact=20.0,
+            pattern_type="support",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="EMA_MULTIPLE_RESISTANCE",
+            display_name="EMA多重阻力",
+            description="多条EMA在相近价位形成阻力带",
+            indicator_types=["EMA", "均线"],
+            score_impact=-20.0,
+            pattern_type="resistance",
+            signal_type="bearish"
+        )
 

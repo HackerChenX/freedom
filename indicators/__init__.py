@@ -27,44 +27,50 @@ from indicators.mfi import MFI
 from indicators.vr import VR
 from indicators.pvt import PVT
 from indicators.volume_ratio import VolumeRatio
-from indicators.platform_breakout import PlatformBreakout
-from indicators.pattern.candlestick_patterns import CandlestickPatterns
-from indicators.zxm_washplate import ZXMWashPlate
 from indicators.chip_distribution import ChipDistribution
-from indicators.fibonacci_tools import FibonacciTools
-from indicators.elliott_wave import ElliottWave
-from indicators.gann_tools import GannTools
-from indicators.emv import EMV
-from indicators.intraday_volatility import IntradayVolatility
-from indicators.v_shaped_reversal import VShapedReversal
-from indicators.island_reversal import IslandReversal
-from indicators.time_cycle_analysis import TimeCycleAnalysis
-from indicators.factory import IndicatorFactory
-from indicators.momentum import Momentum
-from indicators.rsima import RSIMA
-# 添加已有但未导入的指标
-from indicators.trix import TRIX
-from indicators.vix import VIX
-from indicators.divergence import DIVERGENCE
-from indicators.multi_period_resonance import MULTI_PERIOD_RESONANCE
-from indicators.zxm_absorb import ZXM_ABSORB
-# 导入公式指标模块
-from indicators.formula_indicators import CrossOver, KDJCondition, MACDCondition, MACondition, GenericCondition
+from indicators.adapter import IndicatorAdapter, register_indicator, get_indicator, calculate_indicator, list_all_indicators
+from indicators.composite import TechnicalComposite, technical_composite
+from indicators.institutional_behavior import InstitutionalBehavior
+from indicators.stock_vix import StockVIX
+from indicators.fibonacci import Fibonacci
+from indicators.sentiment_analysis import SentimentAnalysis
+from indicators.adx import ADX
+from indicators.atr import ATR
+from indicators.trend_classification import TrendClassification, TrendType
+from indicators.multi_period_resonance import MultiPeriodResonance
 
-# 导入ZXM体系指标
-from indicators.zxm.trend_indicators import (
-    ZXMDailyTrendUp, ZXMWeeklyTrendUp, ZXMMonthlyKDJTrendUp, 
-    ZXMWeeklyKDJDOrDEATrendUp, ZXMWeeklyKDJDTrendUp,
-    ZXMMonthlyMACD, ZXMWeeklyMACD
-)
-from indicators.zxm.elasticity_indicators import (
-    ZXMAmplitudeElasticity, ZXMRiseElasticity
-)
-from indicators.zxm.buy_point_indicators import (
-    ZXMDailyMACD, ZXMTurnover, ZXMVolumeShrink,
-    ZXMMACallback, ZXMBSAbsorb
-)
-from indicators.zxm.selection_model import ZXMSelectionModel
+# 注册指标
+register_indicator(MA())
+register_indicator(EMA())
+register_indicator(WMA())
+register_indicator(MACD())
+register_indicator(BIAS())
+register_indicator(BOLL())
+register_indicator(SAR())
+register_indicator(DMI())
+register_indicator(RSI())
+register_indicator(KDJ())
+register_indicator(WR())
+register_indicator(CCI())
+register_indicator(MTM())
+register_indicator(ROC())
+register_indicator(STOCHRSI())
+register_indicator(VOL())
+register_indicator(OBV())
+register_indicator(VOSC())
+register_indicator(MFI())
+register_indicator(VR())
+register_indicator(PVT())
+register_indicator(VolumeRatio())
+register_indicator(ChipDistribution())
+register_indicator(InstitutionalBehavior())
+register_indicator(StockVIX())
+register_indicator(Fibonacci())
+register_indicator(SentimentAnalysis())
+register_indicator(ADX())
+register_indicator(ATR())
+register_indicator(TrendClassification())
+register_indicator(MultiPeriodResonance())
 
 __all__ = [
     'BaseIndicator',
@@ -90,47 +96,21 @@ __all__ = [
     'VR',
     'PVT',
     'VolumeRatio',
-    'PlatformBreakout',
-    'CandlestickPatterns',
-    'ZXMWashPlate',
     'ChipDistribution',
-    'FibonacciTools',
-    'ElliottWave',
-    'GannTools',
-    'EMV',
-    'IntradayVolatility',
-    'VShapedReversal',
-    'IslandReversal',
-    'TimeCycleAnalysis',
-    'Momentum',
-    'RSIMA',
-    # 添加已有但未导入的指标
-    'TRIX',
-    'VIX',
-    'DIVERGENCE',
-    'MULTI_PERIOD_RESONANCE',
-    'ZXM_ABSORB',
-    # 添加ZXM体系指标
-    'ZXMDailyTrendUp',
-    'ZXMWeeklyTrendUp',
-    'ZXMMonthlyKDJTrendUp',
-    'ZXMWeeklyKDJDOrDEATrendUp',
-    'ZXMWeeklyKDJDTrendUp',
-    'ZXMMonthlyMACD',
-    'ZXMWeeklyMACD',
-    'ZXMAmplitudeElasticity',
-    'ZXMRiseElasticity',
-    'ZXMDailyMACD',
-    'ZXMTurnover',
-    'ZXMVolumeShrink',
-    'ZXMMACallback',
-    'ZXMBSAbsorb',
-    'ZXMSelectionModel',
-    'IndicatorFactory',
-    # 添加公式指标
-    'CrossOver',
-    'KDJCondition',
-    'MACDCondition',
-    'MACondition',
-    'GenericCondition'
+    'IndicatorAdapter',
+    'register_indicator',
+    'get_indicator',
+    'calculate_indicator',
+    'list_all_indicators',
+    'TechnicalComposite',
+    'technical_composite',
+    'InstitutionalBehavior',
+    'StockVIX',
+    'Fibonacci',
+    'SentimentAnalysis',
+    'ADX',
+    'ATR',
+    'TrendClassification',
+    'TrendType',
+    'MultiPeriodResonance'
 ] 

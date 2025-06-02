@@ -798,4 +798,20 @@ class TRIX(BaseIndicator):
             # 卖出信号且成交量放大，确认信号
             signals.loc[signals['sell_signal'] & vol_increase, 'volume_confirmation'] = True
         
-        return signals 
+        return signals
+
+    def _register_trix_patterns(self):
+        """注册TRIX特有的形态检测方法"""
+        self.register_pattern(self._detect_trix_zero_cross, "TRIX零轴穿越")
+        self.register_pattern(self._detect_trix_divergence, "TRIX背离")
+    
+    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
+        self.ensure_columns(data, ['trix', 'trix_ma'])
+        patterns = []
+        
+        for pattern_func in self._pattern_registry.values():
+            result = pattern_func(data)
+            if result:
+                patterns.append(result)
+        
+        return patterns 

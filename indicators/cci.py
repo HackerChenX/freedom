@@ -609,3 +609,69 @@ class CCI(BaseIndicator):
         """
         return self.calculate(df)
 
+
+
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+
+    
+            """
+
+    
+            生成交易信号
+        
+
+    
+            Args:
+
+    
+                data: 输入数据
+
+    
+                **kwargs: 额外参数
+            
+
+    
+            Returns:
+
+    
+                Dict[str, pd.Series]: 包含交易信号的字典
+
+    
+            """
+
+    
+            # 确保已计算指标
+
+    
+            if not self.has_result():
+
+    
+                self.calculate(data, **kwargs)
+            
+
+    
+            # 初始化信号
+
+    
+            signals = {}
+
+    
+            signals['buy_signal'] = pd.Series(False, index=data.index)
+
+    
+            signals['sell_signal'] = pd.Series(False, index=data.index)
+
+    
+            signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+
+    
+            # 在这里实现指标特定的信号生成逻辑
+
+    
+            # 此处提供默认实现
+        
+
+    
+            return signals

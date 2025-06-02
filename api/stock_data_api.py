@@ -707,7 +707,7 @@ class BaoStockAPI(StockDataAPI):
                 # 添加股票名称
                 stock_names = []
                 for code in stock_list['code']:
-                    rs = self.bs.query_stock_basic(code=code)
+                    rs = self.bs.query_stock_info(code=code)
                     try:
                         basic_info = rs.get_data()
                         if not basic_info.empty:
@@ -884,7 +884,7 @@ class BaoStockAPI(StockDataAPI):
                 # 获取股票名称
                 all_stock_names = pd.DataFrame()
                 for code in stock_codes:
-                    rs_info = self.bs.query_stock_basic(code=code)
+                    rs_info = self.bs.query_stock_info(code=code)
                     if rs_info.error_code == '0':
                         try:
                             info_df = self.bs.get_data(rs_info)

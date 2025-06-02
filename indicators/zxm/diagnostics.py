@@ -489,3 +489,409 @@ class ZXMDiagnostics(BaseIndicator):
                 result['health'].iloc[i] = 50 + direction * strength * 30  # 负动量健康度惩罚较小
         
         return result 
+
+    def analyze_indicators_result(self, result, title="ZXM体系指标分析结果"):
+        """
+        分析ZXM体系指标结果
+        
+        Args:
+            result: 分析结果
+            title: 标题
+            
+        Returns:
+            Dict: 分析结果字典
+        """
+        analysis_result = {
+            "title": title,
+            "indicators": {},
+            "composite_score": 0,
+            "composite_rating": "",
+            "trend_consistency": {},
+            "recommendation": ""
+        }
+        
+        # 检查是否是ZXM指标分析结果
+        zxm_indicators = ['ZXM_DK_SG', 'ZXM_MACD', 'ZXM_MOMENTUM', 'ZXM_KDJ', 'ZXM_BOLL']
+        
+        found_zxm = False
+        for period_key, period_data in result.get('periods', {}).items():
+            for indicator_name in period_data.get('indicators', {}).keys():
+                if any(zxm_name in indicator_name for zxm_name in zxm_indicators):
+                    found_zxm = True
+                    break
+            if found_zxm:
+                break
+        
+        if not found_zxm:
+            analysis_result["error"] = "未发现ZXM体系指标"
+            return analysis_result
+        
+        # 分析ZXM指标结果
+        period_results = {}
+        for period_key, period_data in result.get('periods', {}).items():
+            period_result = {
+                "indicators": {}
+            }
+            
+            for indicator_name, indicator_data in period_data.get('indicators', {}).items():
+                if any(zxm_name in indicator_name for zxm_name in zxm_indicators):
+                    score = indicator_data.get('score', 0) * 100
+                    patterns = indicator_data.get('patterns', [])
+                    
+                    indicator_result = {
+                        "score": score,
+                        "patterns": patterns
+                    }
+                    
+                    # 分析ZXM特有的值
+                    if 'ZXM_DK_SG' in indicator_name:
+                        indicator_result.update(self.analyze_dk_sg_values(indicator_data))
+                    elif 'ZXM_MACD' in indicator_name:
+                        indicator_result.update(self.analyze_macd_values(indicator_data))
+                    elif 'ZXM_MOMENTUM' in indicator_name:
+                        indicator_result.update(self.analyze_momentum_values(indicator_data))
+                    elif 'ZXM_KDJ' in indicator_name:
+                        indicator_result.update(self.analyze_kdj_values(indicator_data))
+                    elif 'ZXM_BOLL' in indicator_name:
+                        indicator_result.update(self.analyze_boll_values(indicator_data))
+                    
+                    period_result["indicators"][indicator_name] = indicator_result
+            
+            period_results[period_key] = period_result
+        
+        analysis_result["periods"] = period_results
+        
+        # 分析ZXM多周期合成
+        composite_analysis = self.analyze_composite(result)
+        analysis_result.update(composite_analysis)
+        
+        # 分析ZXM多周期趋势一致性
+        trend_consistency = self.analyze_trend_consistency(result)
+        analysis_result["trend_consistency"] = trend_consistency
+        
+        return analysis_result
+    
+    def analyze_dk_sg_values(self, indicator_data):
+        """分析ZXM多空势格指标值"""
+        values = indicator_data.get('values', {})
+        if not values:
+            return {}
+        
+        dk_value = values.get('dk_value', 0)
+        sg_value = values.get('sg_value', 0)
+        dk_status = "多头" if dk_value > 0 else "空头" if dk_value < 0 else "中性"
+        sg_level = "强势" if sg_value > 0.5 else "弱势" if sg_value < -0.5 else "盘整"
+        
+        return {
+            "dk_value": dk_value,
+            "sg_value": sg_value,
+            "dk_status": dk_status,
+            "sg_level": sg_level
+        }
+    
+    def analyze_macd_values(self, indicator_data):
+        """分析ZXM MACD指标值"""
+        values = indicator_data.get('values', {})
+        if not values:
+            return {}
+        
+        dif = values.get('dif', 0)
+        dea = values.get('dea', 0)
+        macd = values.get('macd', 0)
+        
+        # 判断MACD状态
+        if dif > dea:
+            if macd > 0:
+                status = "金叉后多头加速"
+            else:
+                status = "金叉初期"
+        else:
+            if macd < 0:
+                status = "死叉后空头加速"
+            else:
+                status = "死叉初期"
+        
+        return {
+            "dif": dif,
+            "dea": dea,
+            "macd": macd,
+            "status": status
+        }
+    
+    def analyze_momentum_values(self, indicator_data):
+        """分析ZXM动量指标值"""
+        values = indicator_data.get('values', {})
+        if not values:
+            return {}
+        
+        momentum = values.get('momentum', 0)
+        signal = values.get('signal', 0)
+        
+        # 判断动量状态
+        if momentum > signal:
+            if momentum > 0:
+                status = "上升动量加速"
+            else:
+                status = "下降动量减缓"
+        else:
+            if momentum < 0:
+                status = "下降动量加速"
+            else:
+                status = "上升动量减缓"
+        
+        return {
+            "momentum": momentum,
+            "signal": signal,
+            "status": status
+        }
+    
+    def analyze_kdj_values(self, indicator_data):
+        """分析ZXM KDJ指标值"""
+        values = indicator_data.get('values', {})
+        if not values:
+            return {}
+        
+        k = values.get('k', 0)
+        d = values.get('d', 0)
+        j = values.get('j', 0)
+        
+        # 判断KDJ状态
+        if k > d:
+            if k < 20:
+                status = "超卖区金叉"
+            elif k > 80:
+                status = "超买区金叉"
+            else:
+                status = "多头行情中"
+        else:
+            if k < 20:
+                status = "超卖区死叉"
+            elif k > 80:
+                status = "超买区死叉"
+            else:
+                status = "空头行情中"
+        
+        return {
+            "k": k,
+            "d": d,
+            "j": j,
+            "status": status
+        }
+    
+    def analyze_boll_values(self, indicator_data):
+        """分析ZXM布林带指标值"""
+        values = indicator_data.get('values', {})
+        if not values:
+            return {}
+        
+        upper = values.get('upper', 0)
+        middle = values.get('middle', 0)
+        lower = values.get('lower', 0)
+        price = values.get('price', 0)
+        width = (upper - lower) / middle if middle != 0 else 0
+        
+        # 判断布林带状态
+        if price > upper:
+            status = "突破上轨"
+        elif price < lower:
+            status = "跌破下轨"
+        elif price > middle:
+            status = "运行于上轨与中轨之间"
+        else:
+            status = "运行于中轨与下轨之间"
+        
+        # 判断带宽状态
+        width_status = "收缩" if width < 0.1 else "扩张" if width > 0.2 else "正常"
+        
+        return {
+            "upper": upper,
+            "middle": middle,
+            "lower": lower,
+            "price": price,
+            "width": width,
+            "status": status,
+            "width_status": width_status
+        }
+    
+    def analyze_composite(self, result):
+        """分析ZXM多周期合成"""
+        # 周期权重
+        period_weights = {
+            'daily': 0.3,
+            'weekly': 0.5,
+            'monthly': 0.2
+        }
+        
+        # 指标权重
+        indicator_weights = {
+            'ZXM_DK_SG': 0.3,
+            'ZXM_MACD': 0.2,
+            'ZXM_MOMENTUM': 0.2,
+            'ZXM_KDJ': 0.15,
+            'ZXM_BOLL': 0.15
+        }
+        
+        # 计算综合得分
+        composite_score = 0
+        total_weight = 0
+        
+        for period_key, period_data in result.get('periods', {}).items():
+            period_weight = period_weights.get(period_key, 0.1)
+            
+            for indicator_name, indicator_data in period_data.get('indicators', {}).items():
+                for indicator_type, weight in indicator_weights.items():
+                    if indicator_type in indicator_name:
+                        score = indicator_data.get('score', 0)
+                        indicator_weight = period_weight * weight
+                        composite_score += score * indicator_weight
+                        total_weight += indicator_weight
+        
+        # 归一化得分
+        if total_weight > 0:
+            normalized_score = composite_score / total_weight
+        else:
+            normalized_score = 0
+        
+        # 综合评级
+        if normalized_score >= 0.8:
+            rating = "强烈买入"
+        elif normalized_score >= 0.6:
+            rating = "买入"
+        elif normalized_score >= 0.4:
+            rating = "观望偏多"
+        elif normalized_score >= 0.2:
+            rating = "观望"
+        elif normalized_score >= 0:
+            rating = "观望偏空"
+        else:
+            rating = "回避"
+        
+        return {
+            "composite_score": normalized_score * 100,
+            "composite_rating": rating
+        }
+    
+    def analyze_trend_consistency(self, result):
+        """分析ZXM多周期趋势一致性"""
+        # 记录各周期趋势
+        trends = {}
+        
+        # 遍历各周期指标
+        for period_key, period_data in result.get('periods', {}).items():
+            period_trend = None
+            trend_strength = 0
+            
+            # 分析该周期的趋势
+            for indicator_name, indicator_data in period_data.get('indicators', {}).items():
+                if 'ZXM_DK_SG' in indicator_name:
+                    values = indicator_data.get('values', {})
+                    dk_value = values.get('dk_value', 0)
+                    
+                    if dk_value > 0:
+                        indicator_trend = "上升"
+                        indicator_strength = dk_value
+                    elif dk_value < 0:
+                        indicator_trend = "下降"
+                        indicator_strength = -dk_value
+                    else:
+                        indicator_trend = "盘整"
+                        indicator_strength = 0
+                    
+                    # 使用多空势格作为主要趋势判断
+                    if period_trend is None or indicator_strength > trend_strength:
+                        period_trend = indicator_trend
+                        trend_strength = indicator_strength
+                
+                elif 'ZXM_MACD' in indicator_name:
+                    values = indicator_data.get('values', {})
+                    dif = values.get('dif', 0)
+                    dea = values.get('dea', 0)
+                    
+                    if dif > dea:
+                        indicator_trend = "上升"
+                        indicator_strength = abs(dif - dea)
+                    elif dif < dea:
+                        indicator_trend = "下降"
+                        indicator_strength = abs(dif - dea)
+                    else:
+                        indicator_trend = "盘整"
+                        indicator_strength = 0
+                    
+                    # 更新周期趋势（如果强度更大）
+                    if period_trend is None or indicator_strength > trend_strength:
+                        period_trend = indicator_trend
+                        trend_strength = indicator_strength
+            
+            # 记录该周期的趋势
+            if period_trend:
+                trends[period_key] = {
+                    "trend": period_trend,
+                    "strength": trend_strength
+                }
+        
+        # 分析趋势一致性
+        unique_trends = set(trend_data["trend"] for trend_data in trends.values())
+        
+        if len(unique_trends) == 1:
+            trend = next(iter(unique_trends))
+            consistency = "高"
+            consistency_description = f"所有周期都是{trend}趋势"
+        elif len(unique_trends) == 2 and "盘整" in unique_trends:
+            # 如果只有盘整和另一个趋势，判断为中等一致性
+            other_trend = next(trend for trend in unique_trends if trend != "盘整")
+            consistency = "中"
+            consistency_description = f"部分周期为{other_trend}趋势，部分为盘整"
+        else:
+            consistency = "低"
+            consistency_description = "各周期趋势不一致"
+        
+        # 判断多周期趋势方向
+        daily_trend = trends.get("daily", {}).get("trend", "盘整")
+        weekly_trend = trends.get("weekly", {}).get("trend", "盘整")
+        monthly_trend = trends.get("monthly", {}).get("trend", "盘整")
+        
+        # 给出趋势方向建议
+        if weekly_trend == "上升" and monthly_trend != "下降":
+            direction = "上升"
+        elif weekly_trend == "下降" and monthly_trend != "上升":
+            direction = "下降"
+        elif monthly_trend == "上升" and weekly_trend != "下降":
+            direction = "潜在上升"
+        elif monthly_trend == "下降" and weekly_trend != "上升":
+            direction = "潜在下降"
+        else:
+            direction = "盘整"
+        
+        # 给出操作建议
+        if direction == "上升":
+            if daily_trend == "上升":
+                advice = "可以积极买入"
+            elif daily_trend == "盘整":
+                advice = "回调时买入"
+            else:
+                advice = "等待日线回调结束后买入"
+        elif direction == "潜在上升":
+            if daily_trend == "上升":
+                advice = "谨慎买入，设置止损"
+            else:
+                advice = "等待更明确的信号"
+        elif direction == "下降":
+            if daily_trend == "下降":
+                advice = "回避"
+            else:
+                advice = "反弹时减仓"
+        elif direction == "潜在下降":
+            if daily_trend == "下降":
+                advice = "回避"
+            else:
+                advice = "减仓或设置止损"
+        else:
+            advice = "观望，等待趋势明朗"
+        
+        return {
+            "trends": trends,
+            "consistency": consistency,
+            "consistency_description": consistency_description,
+            "direction": direction,
+            "advice": advice
+        } 

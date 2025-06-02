@@ -183,6 +183,9 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
         # 生成总的共振信号：至少是弱共振
         result["resonance_signal"] = resonance_level >= ResonanceLevel.WEAK.value
         
+        # 保存结果
+        self._result = result
+        
         return result
     
     def ma_golden_cross_signal(self, data: pd.DataFrame, short_period: int = 5, long_period: int = 10) -> np.ndarray:
@@ -342,146 +345,231 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
         
         return result
     
-    def generate_signals(self, data: pd.DataFrame, data_dict: Optional[Dict[KlinePeriod, pd.DataFrame]] = None, 
-                        periods: List[KlinePeriod] = None, *args, **kwargs) -> pd.DataFrame:
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成多周期共振分析信号
+        生成交易信号
         
         Args:
-            data: 输入数据，包含OHLCV数据（日线周期）
-            data_dict: 不同周期的数据字典，键为周期枚举，值为对应周期的数据框
-            periods: 要分析的周期列表，默认为[日线、60分钟、30分钟、15分钟]
-            *args: 位置参数
-            **kwargs: 关键字参数
+            data: 输入数据
+            **kwargs: 额外参数
             
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            Dict[str, pd.Series]: 包含交易信号的字典
         """
-        # 初始化信号DataFrame
-        signals = pd.DataFrame(index=data.index)
-        signals['buy_signal'] = False
-        signals['sell_signal'] = False
-        signals['neutral_signal'] = True  # 默认为中性信号
-        signals['trend'] = 0  # 0表示中性
-        signals['score'] = 50.0  # 默认评分50分
-        signals['signal_type'] = None
-        signals['signal_desc'] = None
-        signals['confidence'] = 50.0
-        signals['risk_level'] = '中'
-        signals['position_size'] = 0.0
-        signals['stop_loss'] = None
-        signals['market_env'] = 'sideways_market'
-        signals['volume_confirmation'] = False
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
-        # 如果没有提供多周期数据，则使用compute方法简化计算
-        if data_dict is None:
-            result = self.compute(data)
-            signals.loc[result['buy_signal'], 'buy_signal'] = True
-            signals.loc[result['buy_signal'], 'neutral_signal'] = False
-            signals.loc[result['buy_signal'], 'trend'] = 1
-            signals.loc[result['buy_signal'], 'score'] = 70.0
-            signals.loc[result['buy_signal'], 'signal_type'] = 'multi_period_bullish'
-            signals.loc[result['buy_signal'], 'signal_desc'] = '多周期共振看涨信号'
-            signals.loc[result['buy_signal'], 'confidence'] = 60.0
-            signals.loc[result['buy_signal'], 'position_size'] = 0.5
-            return signals
+        # 初始化信号
+        signals = {}
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
+    
+        # 在这里实现指标特定的信号生成逻辑
+        # 此处提供默认实现
         
-        # 使用MA金叉作为信号函数进行多周期共振分析
-        def ma_signal_func(df: pd.DataFrame) -> np.ndarray:
-            return self.ma_golden_cross_signal(df)
+        if self._result is not None and "resonance_signal" in self._result.columns:
+            # 使用共振信号作为买入信号
+            for date, row in self._result.iterrows():
+                if date in signals['buy_signal'].index:
+                    signals['buy_signal'].loc[date] = row["resonance_signal"]
+                    
+                    # 设置信号强度，基于共振等级
+                    if "resonance_level" in self._result.columns:
+                        signals['signal_strength'].loc[date] = row["resonance_level"] * 25  # 0-75分
+    
+        return signals
         
-        # 计算多周期共振
-        ma_resonance = self.calculate(data_dict, ma_signal_func, periods)
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算指标原始评分
         
-        # 使用MACD金叉作为信号函数进行多周期共振分析
-        def macd_signal_func(df: pd.DataFrame) -> np.ndarray:
-            return self.macd_golden_cross_signal(df)
-        
-        macd_resonance = self.calculate(data_dict, macd_signal_func, periods)
-        
-        # 使用KDJ金叉作为信号函数进行多周期共振分析
-        def kdj_signal_func(df: pd.DataFrame) -> np.ndarray:
-            return self.kdj_golden_cross_signal(df)
-        
-        kdj_resonance = self.calculate(data_dict, kdj_signal_func, periods)
-        
-        # 综合多个指标的共振信号
-        for i, date in enumerate(signals.index):
-            # 计算各指标的共振等级
-            ma_level = ma_resonance.loc[date, 'resonance_level'] if date in ma_resonance.index else 0
-            macd_level = macd_resonance.loc[date, 'resonance_level'] if date in macd_resonance.index else 0
-            kdj_level = kdj_resonance.loc[date, 'resonance_level'] if date in kdj_resonance.index else 0
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
             
-            # 总共振等级
-            total_level = max(ma_level, macd_level, kdj_level)
+        Returns:
+            pd.Series: 评分(0-100)
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)
+    
+        # 基于共振等级计算评分
+        if "resonance_level" in self._result.columns:
+            for date, row in self._result.iterrows():
+                if date in score.index:
+                    level = row["resonance_level"]
+                    # 转换共振等级为评分（0-100）
+                    if level == ResonanceLevel.NONE.value:
+                        score.loc[date] = 25.0  # 无共振
+                    elif level == ResonanceLevel.WEAK.value:
+                        score.loc[date] = 50.0  # 弱共振
+                    elif level == ResonanceLevel.MEDIUM.value:
+                        score.loc[date] = 75.0  # 中等共振
+                    elif level == ResonanceLevel.STRONG.value:
+                        score.loc[date] = 90.0  # 强共振
+        
+        return score
+    
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
+        """
+        计算最终评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+        
+        Returns:
+            float: 评分(0-100)
+        """
+        # 计算原始评分序列
+        raw_scores = self.calculate_raw_score(data, **kwargs)
+        
+        # 取最近的评分作为最终评分
+        if not raw_scores.empty:
+            return raw_scores.iloc[-1]
+        
+        # 默认评分
+        return 50.0
+    
+    def identify_partial_resonance(self, data_dict: Dict[KlinePeriod, pd.DataFrame], 
+                                 signal_func: Callable[[pd.DataFrame], np.ndarray], 
+                                 periods: List[KlinePeriod] = None,
+                                 *args, **kwargs) -> pd.DataFrame:
+        """
+        识别部分周期共振
+        
+        Args:
+            data_dict: 不同周期的数据字典
+            signal_func: 信号生成函数
+            periods: 要分析的周期列表
             
-            # 根据共振等级生成信号
-            if total_level >= ResonanceLevel.MEDIUM.value:  # 中等及以上共振
-                signals.loc[date, 'buy_signal'] = True
-                signals.loc[date, 'neutral_signal'] = False
-                signals.loc[date, 'trend'] = 1
+        Returns:
+            pd.DataFrame: 部分共振结果
+        """
+        # 设置默认周期
+        if periods is None:
+            periods = [KlinePeriod.DAILY, KlinePeriod.MINUTE_60, KlinePeriod.MINUTE_30, KlinePeriod.MINUTE_15]
+        
+        # 确保所有周期数据都存在
+        available_periods = []
+        for period in periods:
+            if period in data_dict:
+                available_periods.append(period)
+        
+        if len(available_periods) < 2:
+            logger.warning("周期数量不足，无法识别部分共振")
+            return pd.DataFrame()
+        
+        # 获取日线周期数据作为基准
+        daily_data = data_dict.get(KlinePeriod.DAILY)
+        if daily_data is None:
+            base_period = available_periods[0]
+            daily_data = data_dict[base_period]
+        
+        # 初始化结果数据框
+        result = pd.DataFrame(index=daily_data.index)
+        
+        # 计算每个周期的信号
+        signals_by_period = {}
+        for period in available_periods:
+            try:
+                period_data = data_dict[period]
+                signal = signal_func(period_data)
+                signals_by_period[period] = signal
+            except Exception as e:
+                logger.error(f"计算周期 {period.value} 的信号时出错: {e}")
+        
+        # 初始化部分共振信号
+        result["partial_signal"] = False
+        
+        # 部分共振规则：
+        # 1. 至少有两个周期产生同向信号
+        # 2. 包含日线周期
+        daily_period = KlinePeriod.DAILY
+        
+        if daily_period in signals_by_period:
+            daily_signal = signals_by_period[daily_period]
+            
+            # 遍历每个交易日
+            for i, date in enumerate(result.index):
+                if i < len(daily_signal) and daily_signal[i]:
+                    # 日线有信号，检查其他周期
+                    matching_periods = 1  # 日线已经计入
+                    
+                    for period in signals_by_period:
+                        if period != daily_period:
+                            period_signal = signals_by_period[period]
+                            if i < len(period_signal) and period_signal[i]:
+                                matching_periods += 1
+                    
+                    # 至少有两个周期共振
+                    if matching_periods >= 2:
+                        result.loc[date, "partial_signal"] = True
+        
+        return result
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+        """
+        获取指标形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[Dict[str, Any]]: 形态列表
+        """
+        patterns = []
+        
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return patterns
+        
+        # 分析共振形态
+        if "resonance_level" in self._result.columns:
+            # 寻找强共振形态
+            for i, (date, row) in enumerate(self._result.iterrows()):
+                level = row["resonance_level"]
                 
-                # 根据共振等级设置评分和置信度
-                if total_level == ResonanceLevel.STRONG.value:
-                    signals.loc[date, 'score'] = 85.0
-                    signals.loc[date, 'confidence'] = 85.0
-                    signals.loc[date, 'signal_type'] = 'strong_resonance_bullish'
-                    signals.loc[date, 'signal_desc'] = '强共振看涨信号'
-                    signals.loc[date, 'risk_level'] = '低'
-                    signals.loc[date, 'position_size'] = 0.7
-                else:  # MEDIUM
-                    signals.loc[date, 'score'] = 70.0
-                    signals.loc[date, 'confidence'] = 70.0
-                    signals.loc[date, 'signal_type'] = 'medium_resonance_bullish'
-                    signals.loc[date, 'signal_desc'] = '中度共振看涨信号'
-                    signals.loc[date, 'position_size'] = 0.5
-                
-                # 计算止损位（简化示例）
-                if 'low' in data.columns:
-                    signals.loc[date, 'stop_loss'] = data.loc[date, 'low'] * 0.95
-            
-            # 弱共振也给出信号，但评分较低
-            elif total_level == ResonanceLevel.WEAK.value:
-                signals.loc[date, 'buy_signal'] = True
-                signals.loc[date, 'neutral_signal'] = False
-                signals.loc[date, 'trend'] = 1
-                signals.loc[date, 'score'] = 60.0
-                signals.loc[date, 'confidence'] = 55.0
-                signals.loc[date, 'signal_type'] = 'weak_resonance_bullish'
-                signals.loc[date, 'signal_desc'] = '弱共振看涨信号'
-                signals.loc[date, 'position_size'] = 0.3
-                
-                # 计算止损位（简化示例）
-                if 'low' in data.columns:
-                    signals.loc[date, 'stop_loss'] = data.loc[date, 'low'] * 0.93
+                if level >= ResonanceLevel.MEDIUM.value:
+                    # 计算持续天数
+                    duration = 1
+                    for j in range(i+1, len(self._result)):
+                        next_level = self._result.iloc[j]["resonance_level"]
+                        if next_level >= ResonanceLevel.MEDIUM.value:
+                            duration += 1
+                        else:
+                            break
+                    
+                    # 创建形态
+                    pattern = {
+                        "name": f"多周期{'强' if level == ResonanceLevel.STRONG.value else '中等'}共振",
+                        "start_date": date,
+                        "end_date": self._result.index[min(i + duration - 1, len(self._result) - 1)],
+                        "duration": duration,
+                        "strength": level / ResonanceLevel.STRONG.value,  # 0-1之间的强度
+                        "description": f"多周期{'强' if level == ResonanceLevel.STRONG.value else '中等'}共振持续{duration}天",
+                        "type": "bullish" if level == ResonanceLevel.STRONG.value else "neutral"
+                    }
+                    
+                    patterns.append(pattern)
+                    
+                    # 跳过已经处理的形态时间段
+                    i += duration
         
-        # 检测成交量确认
-        if 'volume' in data.columns:
-            # 简单判断：如果成交量大于20日均值，认为有成交量确认
-            vol_ma = data['volume'].rolling(20).mean()
-            volume_confirm = data['volume'] > vol_ma
-            signals.loc[volume_confirm.index, 'volume_confirmation'] = volume_confirm
-            
-            # 有成交量确认的信号，提高评分和置信度
-            volume_confirmed = signals['buy_signal'] & signals['volume_confirmation']
-            signals.loc[volume_confirmed, 'score'] += 5.0
-            signals.loc[volume_confirmed, 'confidence'] += 10.0
-            signals.loc[volume_confirmed, 'signal_desc'] = signals.loc[volume_confirmed, 'signal_desc'] + '（成交量确认）'
-        
-        # 市场环境判断（简化示例）
-        # 在实际应用中，应该有更复杂的市场环境检测算法
-        if 'close' in data.columns:
-            ma20 = data['close'].rolling(20).mean()
-            ma60 = data['close'].rolling(60).mean()
-            
-            bull_market = (data['close'] > ma20) & (ma20 > ma60)
-            bear_market = (data['close'] < ma20) & (ma20 < ma60)
-            
-            signals.loc[bull_market.index[bull_market], 'market_env'] = 'bull_market'
-            signals.loc[bear_market.index[bear_market], 'market_env'] = 'bear_market'
-        
-        # 确保评分在0-100范围内
-        signals['score'] = signals['score'].clip(0, 100)
-        signals['confidence'] = signals['confidence'].clip(0, 100)
-        
-        return signals 
+        return patterns
+
+# 创建符合驼峰命名法的别名，供导入使用
+MultiPeriodResonance = MULTI_PERIOD_RESONANCE 

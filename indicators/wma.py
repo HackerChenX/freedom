@@ -9,9 +9,9 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
@@ -681,35 +681,34 @@ class WMA(BaseIndicator):
         Returns:
             pd.DataFrame: 信号结果DataFrame，包含标准化信号
         """
+        # 实现生成信号的逻辑
+        pass
+        
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成交易信号
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, pd.Series]: 信号字典，包含不同类型的信号
+        """
         # 确保已计算WMA指标
         if not self.has_result():
             self.calculate(data)
-        
-        # 初始化信号DataFrame
-        signals = pd.DataFrame(index=data.index)
-        signals['buy_signal'] = False
-        signals['sell_signal'] = False
-        signals['neutral_signal'] = True  # 默认为中性信号
-        signals['trend'] = 0  # 0表示中性
-        signals['score'] = 50.0  # 默认评分50分
-        signals['signal_type'] = None
-        signals['signal_desc'] = None
-        signals['confidence'] = 50.0
-        signals['risk_level'] = '中'
-        signals['position_size'] = 0.0
-        signals['stop_loss'] = None
-        signals['market_env'] = 'sideways_market'
-        signals['volume_confirmation'] = False
-        
-        # 计算评分
-        score = self.calculate_raw_score(data, **kwargs)
-        signals['score'] = score
-        
-        # 检测形态
-        patterns = self.identify_patterns(data, **kwargs)
+            
+        signals = {}
         
         # 获取价格和WMA数据
         close_price = data['close']
+        
+        # 初始化信号序列
+        signals['buy'] = pd.Series(False, index=data.index)
+        signals['sell'] = pd.Series(False, index=data.index)
+        signals['exit_long'] = pd.Series(False, index=data.index)
+        signals['exit_short'] = pd.Series(False, index=data.index)
         
         # 需要至少两个周期才能检测交叉
         if len(self.periods) >= 2 and self.periods[0] < self.periods[1]:
@@ -720,146 +719,56 @@ class WMA(BaseIndicator):
             long_wma = self._result[f'WMA{long_period}']
             
             # 设置买入信号（短期WMA上穿长期WMA）
-            buy_signal_idx = crossover(short_wma, long_wma)
-            signals.loc[buy_signal_idx, 'buy_signal'] = True
-            signals.loc[buy_signal_idx, 'neutral_signal'] = False
-            signals.loc[buy_signal_idx, 'trend'] = 1
-            signals.loc[buy_signal_idx, 'signal_type'] = 'WMA金叉'
-            signals.loc[buy_signal_idx, 'signal_desc'] = f'WMA{short_period}上穿WMA{long_period}'
-            signals.loc[buy_signal_idx, 'confidence'] = 75.0
-            signals.loc[buy_signal_idx, 'position_size'] = 0.4
-            signals.loc[buy_signal_idx, 'risk_level'] = '中'
+            signals['buy'] = crossover(short_wma, long_wma)
             
             # 设置卖出信号（短期WMA下穿长期WMA）
-            sell_signal_idx = crossunder(short_wma, long_wma)
-            signals.loc[sell_signal_idx, 'sell_signal'] = True
-            signals.loc[sell_signal_idx, 'neutral_signal'] = False
-            signals.loc[sell_signal_idx, 'trend'] = -1
-            signals.loc[sell_signal_idx, 'signal_type'] = 'WMA死叉'
-            signals.loc[sell_signal_idx, 'signal_desc'] = f'WMA{short_period}下穿WMA{long_period}'
-            signals.loc[sell_signal_idx, 'confidence'] = 75.0
-            signals.loc[sell_signal_idx, 'position_size'] = 0.4
-            signals.loc[sell_signal_idx, 'risk_level'] = '中'
+            signals['sell'] = crossunder(short_wma, long_wma)
+            
+            # 设置平仓信号
+            signals['exit_long'] = signals['sell']
+            signals['exit_short'] = signals['buy']
         
         # 使用主要周期的WMA检测价格与WMA的关系
         main_period = self.periods[0]
         main_wma = self._result[f'WMA{main_period}']
         
         # 设置价格上穿WMA的买入信号
-        price_cross_wma_up_idx = crossover(close_price, main_wma)
-        signals.loc[price_cross_wma_up_idx, 'buy_signal'] = True
-        signals.loc[price_cross_wma_up_idx, 'neutral_signal'] = False
-        signals.loc[price_cross_wma_up_idx, 'trend'] = 1
-        signals.loc[price_cross_wma_up_idx, 'signal_type'] = '价格上穿WMA'
-        signals.loc[price_cross_wma_up_idx, 'signal_desc'] = f'价格上穿WMA{main_period}'
-        signals.loc[price_cross_wma_up_idx, 'confidence'] = 70.0
-        signals.loc[price_cross_wma_up_idx, 'position_size'] = 0.3
-        signals.loc[price_cross_wma_up_idx, 'risk_level'] = '中'
+        price_cross_wma_up = crossover(close_price, main_wma)
+        signals['price_above_wma'] = price_cross_wma_up
         
         # 设置价格下穿WMA的卖出信号
-        price_cross_wma_down_idx = crossunder(close_price, main_wma)
-        signals.loc[price_cross_wma_down_idx, 'sell_signal'] = True
-        signals.loc[price_cross_wma_down_idx, 'neutral_signal'] = False
-        signals.loc[price_cross_wma_down_idx, 'trend'] = -1
-        signals.loc[price_cross_wma_down_idx, 'signal_type'] = '价格下穿WMA'
-        signals.loc[price_cross_wma_down_idx, 'signal_desc'] = f'价格下穿WMA{main_period}'
-        signals.loc[price_cross_wma_down_idx, 'confidence'] = 70.0
-        signals.loc[price_cross_wma_down_idx, 'position_size'] = 0.3
-        signals.loc[price_cross_wma_down_idx, 'risk_level'] = '中'
+        price_cross_wma_down = crossunder(close_price, main_wma)
+        signals['price_below_wma'] = price_cross_wma_down
         
-        # 多WMA排列形成多头排列信号
-        if len(self.periods) >= 3:
-            periods_sorted = sorted(self.periods)
-            
-            # 检查当前周期是否形成多头排列（短期WMA > 中期WMA > 长期WMA）
-            is_bullish_arrangement = True
-            for i in range(len(periods_sorted) - 1):
-                short_wma = self._result[f'WMA{periods_sorted[i]}']
-                long_wma = self._result[f'WMA{periods_sorted[i+1]}']
-                if not (short_wma.iloc[-1] > long_wma.iloc[-1]):
-                    is_bullish_arrangement = False
-                    break
-            
-            if is_bullish_arrangement:
-                # 最近5个周期形成多头排列
-                bullish_arr_idx = signals.index[-5:]
-                signals.loc[bullish_arr_idx, 'buy_signal'] = True
-                signals.loc[bullish_arr_idx, 'neutral_signal'] = False
-                signals.loc[bullish_arr_idx, 'trend'] = 1
-                signals.loc[bullish_arr_idx, 'signal_type'] = 'WMA多头排列'
-                signals.loc[bullish_arr_idx, 'signal_desc'] = 'WMA形成多头排列，短期均线位于长期均线上方'
-                signals.loc[bullish_arr_idx, 'confidence'] = 80.0
-                signals.loc[bullish_arr_idx, 'position_size'] = 0.5
-                signals.loc[bullish_arr_idx, 'risk_level'] = '低'
-            
-            # 检查当前周期是否形成空头排列（短期WMA < 中期WMA < 长期WMA）
-            is_bearish_arrangement = True
-            for i in range(len(periods_sorted) - 1):
-                short_wma = self._result[f'WMA{periods_sorted[i]}']
-                long_wma = self._result[f'WMA{periods_sorted[i+1]}']
-                if not (short_wma.iloc[-1] < long_wma.iloc[-1]):
-                    is_bearish_arrangement = False
-                    break
-            
-            if is_bearish_arrangement:
-                # 最近5个周期形成空头排列
-                bearish_arr_idx = signals.index[-5:]
-                signals.loc[bearish_arr_idx, 'sell_signal'] = True
-                signals.loc[bearish_arr_idx, 'neutral_signal'] = False
-                signals.loc[bearish_arr_idx, 'trend'] = -1
-                signals.loc[bearish_arr_idx, 'signal_type'] = 'WMA空头排列'
-                signals.loc[bearish_arr_idx, 'signal_desc'] = 'WMA形成空头排列，短期均线位于长期均线下方'
-                signals.loc[bearish_arr_idx, 'confidence'] = 80.0
-                signals.loc[bearish_arr_idx, 'position_size'] = 0.5
-                signals.loc[bearish_arr_idx, 'risk_level'] = '低'
-        
-        # 根据形态设置更多信号
-        for pattern in patterns:
-            pattern_idx = signals.index[-5:]  # 假设形态影响最近5个周期
-            
-            if '支撑' in pattern:
-                signals.loc[pattern_idx, 'buy_signal'] = True
-                signals.loc[pattern_idx, 'neutral_signal'] = False
-                signals.loc[pattern_idx, 'trend'] = 1
-                signals.loc[pattern_idx, 'signal_type'] = 'WMA支撑'
-                signals.loc[pattern_idx, 'signal_desc'] = pattern
-                signals.loc[pattern_idx, 'confidence'] = 75.0
-                signals.loc[pattern_idx, 'position_size'] = 0.4
-                signals.loc[pattern_idx, 'risk_level'] = '低'
-            
-            elif '阻力' in pattern:
-                signals.loc[pattern_idx, 'sell_signal'] = True
-                signals.loc[pattern_idx, 'neutral_signal'] = False
-                signals.loc[pattern_idx, 'trend'] = -1
-                signals.loc[pattern_idx, 'signal_type'] = 'WMA阻力'
-                signals.loc[pattern_idx, 'signal_desc'] = pattern
-                signals.loc[pattern_idx, 'confidence'] = 75.0
-                signals.loc[pattern_idx, 'position_size'] = 0.4
-                signals.loc[pattern_idx, 'risk_level'] = '低'
-        
-        # 设置止损价格
-        if 'low' in data.columns and 'high' in data.columns:
-            # 买入信号的止损设为最近的低点或者主WMA线下方
-            buy_indices = signals[signals['buy_signal']].index
-            if not buy_indices.empty:
-                for idx in buy_indices:
-                    if idx > data.index[10]:  # 确保有足够的历史数据
-                        lookback = 5
-                        # 使用最近低点和主WMA值的较小值作为止损
-                        recent_low = data.loc[idx-lookback:idx, 'low'].min()
-                        wma_stop = main_wma.loc[idx] * 0.98
-                        signals.loc[idx, 'stop_loss'] = min(recent_low, wma_stop)
-            
-            # 卖出信号的止损设为最近的高点或者主WMA线上方
-            sell_indices = signals[signals['sell_signal']].index
-            if not sell_indices.empty:
-                for idx in sell_indices:
-                    if idx > data.index[10]:  # 确保有足够的历史数据
-                        lookback = 5
-                        # 使用最近高点和主WMA值的较大值作为止损
-                        recent_high = data.loc[idx-lookback:idx, 'high'].max()
-                        wma_stop = main_wma.loc[idx] * 1.02
-                        signals.loc[idx, 'stop_loss'] = max(recent_high, wma_stop)
+        # 合并信号
+        signals['buy'] = signals['buy'] | price_cross_wma_up
+        signals['sell'] = signals['sell'] | price_cross_wma_down
         
         return signals
+    
+    def _register_wma_patterns(self):
+        """注册WMA特有的形态检测方法"""
+        super()._register_ma_patterns()
+        self.register_pattern(self._detect_wma_convergence, "WMA收敛")
+        self.register_pattern(self._detect_wma_divergence, "WMA发散")
+    
+    def _detect_wma_convergence(self, data: pd.DataFrame) -> Optional[PatternResult]:
+        # ... 实现WMA收敛检测逻辑 ...
+        return PatternResult(pattern_name="WMA收敛", strength=strength, duration=duration)
+    
+    def _detect_wma_divergence(self, data: pd.DataFrame) -> Optional[PatternResult]:
+        # ... 实现WMA发散检测逻辑 ...
+        return PatternResult(pattern_name="WMA发散", strength=strength, duration=duration)
+
+    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
+        """检测并返回所有识别的形态"""
+        self.ensure_columns(data, ['close'] + [f'WMA{period}' for period in self.periods])
+        patterns = []
+        
+        for pattern_func in self._pattern_registry.values():
+            result = pattern_func(data)
+            if result:
+                patterns.append(result)
+        
+        return patterns
 

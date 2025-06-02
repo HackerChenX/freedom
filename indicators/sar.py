@@ -9,7 +9,7 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -38,6 +38,9 @@ class SAR(BaseIndicator):
         self.acceleration = acceleration
         self.maximum = maximum
         self.name = "SAR"
+        
+        # 注册SAR形态
+        self._register_sar_patterns()
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -742,3 +745,665 @@ class SAR(BaseIndicator):
             logger.error(f"计算指标 {self.name} 时出错: {str(e)}")
             raise
 
+    def _register_sar_patterns(self):
+        """
+        注册SAR形态
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType
+        
+        # 注册趋势反转形态
+        PatternRegistry.register(
+            pattern_id="SAR_BULLISH_REVERSAL",
+            display_name="SAR做多信号",
+            description="SAR由下降趋势转为上升趋势，产生做多信号",
+            indicator_types=["SAR", "趋势"],
+            score_impact=15.0,
+            pattern_type="reversal",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_BEARISH_REVERSAL",
+            display_name="SAR做空信号",
+            description="SAR由上升趋势转为下降趋势，产生做空信号",
+            indicator_types=["SAR", "趋势"],
+            score_impact=-15.0,
+            pattern_type="reversal",
+            signal_type="bearish"
+        )
+        
+        # 注册趋势持续形态
+        PatternRegistry.register(
+            pattern_id="SAR_STRONG_UPTREND",
+            display_name="SAR强势上升趋势",
+            description="SAR长期保持在价格下方，表示强势上升趋势",
+            indicator_types=["SAR", "趋势"],
+            score_impact=10.0,
+            pattern_type="trend",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_UPTREND",
+            display_name="SAR上升趋势",
+            description="SAR保持在价格下方，表示上升趋势",
+            indicator_types=["SAR", "趋势"],
+            score_impact=7.0,
+            pattern_type="trend",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_SHORT_UPTREND",
+            display_name="SAR短期上升趋势",
+            description="SAR刚刚转为上升趋势",
+            indicator_types=["SAR", "趋势"],
+            score_impact=5.0,
+            pattern_type="trend",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_STRONG_DOWNTREND",
+            display_name="SAR强势下降趋势",
+            description="SAR长期保持在价格上方，表示强势下降趋势",
+            indicator_types=["SAR", "趋势"],
+            score_impact=-10.0,
+            pattern_type="trend",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_DOWNTREND",
+            display_name="SAR下降趋势",
+            description="SAR保持在价格上方，表示下降趋势",
+            indicator_types=["SAR", "趋势"],
+            score_impact=-7.0,
+            pattern_type="trend",
+            signal_type="bearish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_SHORT_DOWNTREND",
+            display_name="SAR短期下降趋势",
+            description="SAR刚刚转为下降趋势",
+            indicator_types=["SAR", "趋势"],
+            score_impact=-5.0,
+            pattern_type="trend",
+            signal_type="bearish"
+        )
+        
+        # 注册SAR距离形态
+        PatternRegistry.register(
+            pattern_id="SAR_CLOSE_TO_PRICE",
+            display_name="SAR接近价格",
+            description="SAR与价格距离较近，可能即将反转",
+            indicator_types=["SAR", "趋势"],
+            score_impact=0.0,
+            pattern_type="warning",
+            signal_type="neutral"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_MODERATE_DISTANCE",
+            display_name="SAR与价格中等距离",
+            description="SAR与价格保持中等距离",
+            indicator_types=["SAR", "趋势"],
+            score_impact=5.0,
+            pattern_type="continuation",
+            signal_type="neutral"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_FAR_FROM_PRICE",
+            display_name="SAR远离价格",
+            description="SAR与价格距离较远，趋势强劲",
+            indicator_types=["SAR", "趋势"],
+            score_impact=8.0,
+            pattern_type="trend",
+            signal_type="neutral"
+        )
+        
+        # 注册加速因子形态
+        PatternRegistry.register(
+            pattern_id="SAR_HIGH_ACCELERATION",
+            display_name="SAR高加速趋势",
+            description="SAR加速因子较高，趋势强劲",
+            indicator_types=["SAR", "趋势"],
+            score_impact=10.0,
+            pattern_type="momentum",
+            signal_type="neutral"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_MEDIUM_ACCELERATION",
+            display_name="SAR中等加速趋势",
+            description="SAR加速因子中等，趋势稳定",
+            indicator_types=["SAR", "趋势"],
+            score_impact=5.0,
+            pattern_type="momentum",
+            signal_type="neutral"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_LOW_ACCELERATION",
+            display_name="SAR低加速趋势",
+            description="SAR加速因子较低，趋势刚开始或较弱",
+            indicator_types=["SAR", "趋势"],
+            score_impact=2.0,
+            pattern_type="momentum",
+            signal_type="neutral"
+        )
+        
+        # 注册趋势稳定性形态
+        PatternRegistry.register(
+            pattern_id="SAR_STABLE_TREND",
+            display_name="SAR稳定趋势",
+            description="SAR趋势稳定，没有频繁转向",
+            indicator_types=["SAR", "趋势"],
+            score_impact=8.0,
+            pattern_type="stability",
+            signal_type="neutral"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_VOLATILE_TREND",
+            display_name="SAR波动趋势",
+            description="SAR趋势不稳定，频繁转向",
+            indicator_types=["SAR", "趋势"],
+            score_impact=-5.0,
+            pattern_type="stability",
+            signal_type="neutral"
+        )
+        
+        # 注册支撑/阻力形态
+        PatternRegistry.register(
+            pattern_id="SAR_AS_SUPPORT",
+            display_name="SAR支撑",
+            description="SAR作为价格支撑位",
+            indicator_types=["SAR", "趋势"],
+            score_impact=12.0,
+            pattern_type="support_resistance",
+            signal_type="bullish"
+        )
+        
+        PatternRegistry.register(
+            pattern_id="SAR_AS_RESISTANCE",
+            display_name="SAR阻力",
+            description="SAR作为价格阻力位",
+            indicator_types=["SAR", "趋势"],
+            score_impact=-12.0,
+            pattern_type="support_resistance",
+            signal_type="bearish"
+        )
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+        """
+        获取SAR形态列表
+        
+        Args:
+            data: 输入K线数据
+            **kwargs: 其他参数
+            
+        Returns:
+            List[Dict[str, Any]]: 形态识别结果列表
+        """
+        from indicators.base_indicator import PatternResult, SignalStrength
+        from indicators.pattern_registry import PatternRegistry, PatternType
+        
+        # 确保已计算SAR
+        if not self.has_result():
+            self.calculate(data)
+        
+        patterns = []
+        
+        # 如果没有结果或数据不足，返回空列表
+        if self._result is None or len(self._result) < 3:
+            return patterns
+        
+        # 获取价格和SAR数据
+        sar = self._result['sar']
+        trend = self._result['trend']
+        close = data['close']
+        high = data['high']
+        low = data['low']
+        
+        # 最近的趋势变化
+        recent_trends = trend.tail(10)
+        
+        # 1. SAR趋势反转形态
+        if len(trend) >= 2:
+            # 检测上升趋势开始（做多信号）
+            if trend.iloc[-1] == 1 and trend.iloc[-2] == -1:
+                reversal_strength = self._calculate_reversal_strength(data, sar, trend, True)
+                patterns.append(PatternResult(
+                    pattern_id="SAR_BULLISH_REVERSAL",
+                    display_name="SAR做多信号",
+                    strength=reversal_strength,
+                    duration=1,
+                    details={"sar_value": sar.iloc[-1], "price": close.iloc[-1]}
+                ).to_dict())
+            
+            # 检测下降趋势开始（做空信号）
+            elif trend.iloc[-1] == -1 and trend.iloc[-2] == 1:
+                reversal_strength = self._calculate_reversal_strength(data, sar, trend, False)
+                patterns.append(PatternResult(
+                    pattern_id="SAR_BEARISH_REVERSAL",
+                    display_name="SAR做空信号",
+                    strength=reversal_strength,
+                    duration=1,
+                    details={"sar_value": sar.iloc[-1], "price": close.iloc[-1]}
+                ).to_dict())
+        
+        # 2. SAR趋势持续形态
+        current_trend = trend.iloc[-1]
+        trend_duration = self._calculate_trend_duration(trend)
+        
+        if current_trend == 1:  # 上升趋势
+            if trend_duration >= 10:
+                # 长期上升趋势
+                patterns.append(PatternResult(
+                    pattern_id="SAR_STRONG_UPTREND",
+                    display_name="SAR强势上升趋势",
+                    strength=85,
+                    duration=trend_duration,
+                    details={"duration": trend_duration, "sar_value": sar.iloc[-1]}
+                ).to_dict())
+            elif trend_duration >= 5:
+                # 中期上升趋势
+                patterns.append(PatternResult(
+                    pattern_id="SAR_UPTREND",
+                    display_name="SAR上升趋势",
+                    strength=75,
+                    duration=trend_duration,
+                    details={"duration": trend_duration, "sar_value": sar.iloc[-1]}
+                ).to_dict())
+            else:
+                # 短期上升趋势
+                patterns.append(PatternResult(
+                    pattern_id="SAR_SHORT_UPTREND",
+                    display_name="SAR短期上升趋势",
+                    strength=65,
+                    duration=trend_duration,
+                    details={"duration": trend_duration, "sar_value": sar.iloc[-1]}
+                ).to_dict())
+        else:  # 下降趋势
+            if trend_duration >= 10:
+                # 长期下降趋势
+                patterns.append(PatternResult(
+                    pattern_id="SAR_STRONG_DOWNTREND",
+                    display_name="SAR强势下降趋势",
+                    strength=85,
+                    duration=trend_duration,
+                    details={"duration": trend_duration, "sar_value": sar.iloc[-1]}
+                ).to_dict())
+            elif trend_duration >= 5:
+                # 中期下降趋势
+                patterns.append(PatternResult(
+                    pattern_id="SAR_DOWNTREND",
+                    display_name="SAR下降趋势",
+                    strength=75,
+                    duration=trend_duration,
+                    details={"duration": trend_duration, "sar_value": sar.iloc[-1]}
+                ).to_dict())
+            else:
+                # 短期下降趋势
+                patterns.append(PatternResult(
+                    pattern_id="SAR_SHORT_DOWNTREND",
+                    display_name="SAR短期下降趋势",
+                    strength=65,
+                    duration=trend_duration,
+                    details={"duration": trend_duration, "sar_value": sar.iloc[-1]}
+                ).to_dict())
+        
+        # 3. SAR与价格的距离关系
+        sar_price_distance = self._calculate_sar_price_distance(sar, close, high, low)
+        
+        if sar_price_distance == "CLOSE":
+            # SAR接近价格，可能即将反转
+            patterns.append(PatternResult(
+                pattern_id="SAR_CLOSE_TO_PRICE",
+                display_name="SAR接近价格",
+                strength=90,
+                duration=1,
+                details={"sar_value": sar.iloc[-1], "price": close.iloc[-1]}
+            ).to_dict())
+        elif sar_price_distance == "MODERATE":
+            # SAR与价格中等距离
+            patterns.append(PatternResult(
+                pattern_id="SAR_MODERATE_DISTANCE",
+                display_name="SAR与价格中等距离",
+                strength=70,
+                duration=1,
+                details={"sar_value": sar.iloc[-1], "price": close.iloc[-1]}
+            ).to_dict())
+        elif sar_price_distance == "FAR":
+            # SAR与价格较远，趋势强劲
+            patterns.append(PatternResult(
+                pattern_id="SAR_FAR_FROM_PRICE",
+                display_name="SAR远离价格",
+                strength=80,
+                duration=1,
+                details={"sar_value": sar.iloc[-1], "price": close.iloc[-1]}
+            ).to_dict())
+        
+        # 4. SAR加速因子状态
+        af = self._result['af']
+        current_af = af.iloc[-1]
+        
+        if current_af >= 0.15:
+            # 加速因子较高，趋势强烈
+            patterns.append(PatternResult(
+                pattern_id="SAR_HIGH_ACCELERATION",
+                display_name="SAR高加速趋势",
+                strength=85,
+                duration=1,
+                details={"acceleration_factor": current_af}
+            ).to_dict())
+        elif current_af >= 0.1:
+            # 加速因子中等，趋势稳定
+            patterns.append(PatternResult(
+                pattern_id="SAR_MEDIUM_ACCELERATION",
+                display_name="SAR中等加速趋势",
+                strength=75,
+                duration=1,
+                details={"acceleration_factor": current_af}
+            ).to_dict())
+        else:
+            # 加速因子较低，趋势刚开始或较弱
+            patterns.append(PatternResult(
+                pattern_id="SAR_LOW_ACCELERATION",
+                display_name="SAR低加速趋势",
+                strength=65,
+                duration=1,
+                details={"acceleration_factor": current_af}
+            ).to_dict())
+        
+        # 5. SAR趋势稳定性
+        trend_stability = self._calculate_trend_stability(trend)
+        
+        if trend_stability == "STABLE":
+            # 稳定趋势
+            patterns.append(PatternResult(
+                pattern_id="SAR_STABLE_TREND",
+                display_name="SAR稳定趋势",
+                strength=80,
+                duration=5,
+                details={"stability": "stable"}
+            ).to_dict())
+        elif trend_stability == "VOLATILE":
+            # 不稳定趋势，频繁转向
+            patterns.append(PatternResult(
+                pattern_id="SAR_VOLATILE_TREND",
+                display_name="SAR波动趋势",
+                strength=60,
+                duration=5,
+                details={"stability": "volatile"}
+            ).to_dict())
+        
+        # 6. SAR支撑/阻力形态
+        support_resistance = self._detect_sar_support_resistance(sar, close, trend)
+        
+        if support_resistance == "SUPPORT":
+            # SAR作为支撑
+            patterns.append(PatternResult(
+                pattern_id="SAR_AS_SUPPORT",
+                display_name="SAR支撑",
+                strength=75,
+                duration=3,
+                details={"type": "support"}
+            ).to_dict())
+        elif support_resistance == "RESISTANCE":
+            # SAR作为阻力
+            patterns.append(PatternResult(
+                pattern_id="SAR_AS_RESISTANCE",
+                display_name="SAR阻力",
+                strength=75,
+                duration=3,
+                details={"type": "resistance"}
+            ).to_dict())
+        
+        return patterns
+
+    def _calculate_reversal_strength(self, data: pd.DataFrame, sar: pd.Series, trend: pd.Series, is_bullish: bool) -> float:
+        """
+        计算SAR反转信号的强度
+        
+        Args:
+            data: 价格数据
+            sar: SAR值序列
+            trend: 趋势序列
+            is_bullish: 是否为看涨反转
+            
+        Returns:
+            float: 信号强度
+        """
+        close = data['close']
+        high = data['high']
+        low = data['low']
+        
+        # 基础强度
+        base_strength = 75.0
+        
+        # 计算当前价格与SAR的距离
+        current_close = close.iloc[-1]
+        current_sar = sar.iloc[-1]
+        
+        # 根据价格与SAR的相对距离调整强度
+        if is_bullish:
+            price_range = high.iloc[-1] - low.iloc[-1]
+            if price_range > 0:
+                distance_ratio = (current_close - current_sar) / price_range
+                distance_score = min(15, distance_ratio * 30)
+            else:
+                distance_score = 0
+        else:
+            price_range = high.iloc[-1] - low.iloc[-1]
+            if price_range > 0:
+                distance_ratio = (current_sar - current_close) / price_range
+                distance_score = min(15, distance_ratio * 30)
+            else:
+                distance_score = 0
+        
+        # 检查之前趋势的持续时间
+        prev_trend_duration = 0
+        for i in range(2, min(20, len(trend))):
+            if trend.iloc[-i] != trend.iloc[-2]:
+                break
+            prev_trend_duration += 1
+        
+        # 之前趋势持续时间越长，反转信号越强
+        duration_score = min(10, prev_trend_duration / 2)
+        
+        # 计算总强度
+        total_strength = base_strength + distance_score + duration_score
+        
+        return min(95, total_strength)
+
+    def _calculate_trend_duration(self, trend: pd.Series) -> int:
+        """
+        计算当前趋势持续的天数
+        
+        Args:
+            trend: 趋势序列
+        
+        Returns:
+            int: 趋势持续天数
+        """
+        if len(trend) == 0:
+            return 0
+        
+        current_trend = trend.iloc[-1]
+        duration = 0
+        
+        for i in range(1, len(trend) + 1):
+            if i > len(trend) or trend.iloc[-i] != current_trend:
+                break
+            duration += 1
+        
+        return duration
+
+    def _calculate_sar_price_distance(self, sar: pd.Series, close: pd.Series, high: pd.Series, low: pd.Series) -> str:
+        """
+        计算SAR与价格的距离关系
+        
+        Args:
+            sar: SAR值序列
+            close: 收盘价序列
+            high: 最高价序列
+            low: 最低价序列
+        
+        Returns:
+            str: 距离关系描述
+        """
+        if len(sar) == 0 or len(close) == 0:
+            return "UNKNOWN"
+        
+        current_sar = sar.iloc[-1]
+        current_close = close.iloc[-1]
+        
+        # 计算当日价格范围
+        current_range = high.iloc[-1] - low.iloc[-1]
+        
+        if current_range == 0:
+            return "MODERATE"
+        
+        # 计算SAR与价格的距离占价格范围的比例
+        distance_ratio = abs(current_sar - current_close) / current_range
+        
+        if distance_ratio < 0.5:
+            return "CLOSE"
+        elif distance_ratio < 1.5:
+            return "MODERATE"
+        else:
+            return "FAR"
+
+    def _calculate_trend_stability(self, trend: pd.Series) -> str:
+        """
+        计算SAR趋势的稳定性
+        
+        Args:
+            trend: 趋势序列
+        
+        Returns:
+            str: 稳定性描述
+        """
+        if len(trend) < 10:
+            return "UNKNOWN"
+        
+        # 统计最近10天内的趋势变化次数
+        recent_trend = trend.tail(10)
+        changes = 0
+        
+        for i in range(1, len(recent_trend)):
+            if recent_trend.iloc[i] != recent_trend.iloc[i-1]:
+                changes += 1
+        
+        if changes <= 1:
+            return "STABLE"
+        else:
+            return "VOLATILE"
+
+    def _detect_sar_support_resistance(self, sar: pd.Series, close: pd.Series, trend: pd.Series) -> Optional[str]:
+        """
+        检测SAR是否形成支撑或阻力
+        
+        Args:
+            sar: SAR值序列
+            close: 收盘价序列
+            trend: 趋势序列
+        
+        Returns:
+            Optional[str]: 支撑/阻力描述
+        """
+        if len(sar) < 5 or len(close) < 5:
+            return None
+        
+        current_trend = trend.iloc[-1]
+        current_close = close.iloc[-1]
+        current_sar = sar.iloc[-1]
+        
+        # 检查最近5天的价格是否接近SAR
+        recent_close = close.tail(5)
+        recent_sar = sar.tail(5)
+        
+        min_distance = float('inf')
+        for i in range(len(recent_close)):
+            distance = abs(recent_close.iloc[i] - recent_sar.iloc[i])
+            min_distance = min(min_distance, distance)
+        
+        # 如果价格曾经接近SAR但未突破
+        if min_distance < (current_close * 0.01):  # 接近度阈值为1%
+            if current_trend == 1:  # 上升趋势
+                return "SUPPORT"
+            else:  # 下降趋势
+                return "RESISTANCE"
+        
+        return None
+
+
+
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+
+
+            """
+
+
+            生成交易信号
+        
+
+
+            Args:
+
+
+                data: 输入数据
+
+
+                **kwargs: 额外参数
+            
+
+
+            Returns:
+
+
+                Dict[str, pd.Series]: 包含交易信号的字典
+
+
+            """
+
+
+            # 确保已计算指标
+
+
+            if not self.has_result():
+
+
+                self.calculate(data, **kwargs)
+            
+
+
+            # 初始化信号
+
+
+            signals = {}
+
+
+            signals['buy_signal'] = pd.Series(False, index=data.index)
+
+
+            signals['sell_signal'] = pd.Series(False, index=data.index)
+
+
+            signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+
+
+            # 在这里实现指标特定的信号生成逻辑
+
+
+            # 此处提供默认实现
+        
+
+
+            return signals

@@ -414,7 +414,7 @@ class ClickHouseDB:
         SELECT 
             code, name, industry, area, list_date
         FROM 
-            stock_basic
+            stock_info
         WHERE 
             is_valid = 1
         """
@@ -422,19 +422,19 @@ class ClickHouseDB:
         return self.query(query)
     
     def get_stock_info(self, stock_code: str, level: str, start_date: Union[str, datetime.datetime], 
-                       end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
+                   end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
         """
         获取股票K线数据
-        
+
         Args:
             stock_code: 股票代码
-            level: K线周期（例如 day, week, month, 60min, 30min, 15min）
+            level: K线周期
             start_date: 开始日期
             end_date: 结束日期
-            
+
         Returns:
             pd.DataFrame: 股票K线数据
-            
+
         Raises:
             Exception: 查询失败时抛出
         """
@@ -550,7 +550,7 @@ class ClickHouseDB:
         SELECT 
             code, name, industry, area, list_date
         FROM 
-            stock_basic
+            stock_info
         WHERE 
             is_valid = 1 AND
             industry = %(industry)s

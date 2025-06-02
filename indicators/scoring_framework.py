@@ -6,7 +6,7 @@
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Union, Optional, Any, Tuple
+from typing import Dict, List, Union, Optional, Any, Tuple, Callable
 from abc import ABC, abstractmethod
 from enum import Enum
 
@@ -307,29 +307,59 @@ class PatternRecognitionMixin:
 
 
 class IndicatorScoreManager:
-    """
-    指标评分管理器
-    
-    管理多个指标的评分和综合评估
-    """
+    """指标评分管理器"""
     
     def __init__(self):
-        """初始化指标评分管理器"""
-        self.indicators = {}
-        self.weights = {}
+        """初始化评分管理器"""
+        self.indicators: List[IndicatorScoreBase] = []
+        self.weights: Dict[str, float] = {}
+        self.market_environment = MarketEnvironment.SIDEWAYS_MARKET
+        self.pattern_registry = None  # 将在first_time_setup中初始化
+        self._setup_done = False
+        
+    def first_time_setup(self):
+        """首次设置，延迟导入避免循环依赖"""
+        if self._setup_done:
+            return
+            
+        from indicators.pattern_registry import PatternRegistry
+        self.pattern_registry = PatternRegistry
+        self._setup_done = True
     
-    def register_indicator(self, indicator: IndicatorScoreBase, weight: float = 1.0):
+    def add_indicator(self, indicator: IndicatorScoreBase, weight: float = 1.0) -> None:
         """
-        注册指标
+        添加指标
         
         Args:
-            indicator: 指标评分实例
-            weight: 指标权重
+            indicator: 指标实例
+            weight: 权重
         """
-        self.indicators[indicator.name] = indicator
+        self.indicators.append(indicator)
         self.weights[indicator.name] = weight
-    
-    def calculate_comprehensive_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        
+    def set_weight(self, indicator_name: str, weight: float) -> None:
+        """
+        设置指标权重
+        
+        Args:
+            indicator_name: 指标名称
+            weight: 权重
+        """
+        self.weights[indicator_name] = weight
+        
+    def set_market_environment(self, environment: MarketEnvironment) -> None:
+        """
+        设置市场环境
+        
+        Args:
+            environment: 市场环境
+        """
+        self.market_environment = environment
+        # 同时更新所有指标的市场环境
+        for indicator in self.indicators:
+            indicator.set_market_environment(environment)
+            
+    def calculate_combined_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算综合评分
         
@@ -340,69 +370,365 @@ class IndicatorScoreManager:
         Returns:
             Dict[str, Any]: 综合评分结果
         """
+        if not self._setup_done:
+            self.first_time_setup()
+            
         if not self.indicators:
-            raise ValueError("没有注册任何指标")
+            return {
+                'combined_score': pd.Series(50.0, index=data.index),
+                'indicator_scores': {},
+                'patterns': [],
+                'signals': {},
+                'confidence': 0.0
+            }
+            
+        # 计算每个指标的评分
+        indicator_scores = {}
+        pattern_results = []
+        signals = {}
+        confidences = []
         
-        # 计算各指标评分
-        indicator_results = {}
-        total_weight = 0
-        weighted_score = pd.Series(0.0, index=data.index)
-        all_patterns = []
-        all_signals = {}
-        
-        for name, indicator in self.indicators.items():
-            try:
-                result = indicator.calculate_final_score(data, **kwargs)
-                indicator_results[name] = result
+        for indicator in self.indicators:
+            # 设置市场环境
+            indicator.set_market_environment(self.market_environment)
+            
+            # 计算指标评分
+            score_result = indicator.calculate_final_score(data, **kwargs)
+            
+            indicator_name = indicator.name
+            indicator_scores[indicator_name] = score_result
+            
+            # 收集所有指标的形态
+            if 'patterns' in score_result:
+                pattern_results.extend(score_result['patterns'])
                 
-                # 累加权重评分
-                weight = self.weights[name]
-                weighted_score += result['final_score'] * weight
-                total_weight += weight
+            # 合并信号
+            if 'signals' in score_result:
+                signals[indicator_name] = score_result['signals']
                 
-                # 收集形态
-                all_patterns.extend([f"{name}_{pattern}" for pattern in result['patterns']])
+            # 收集置信度
+            if 'confidence' in score_result:
+                confidences.append(score_result['confidence'])
+        
+        # 汇总所有指标形态ID
+        pattern_ids = [p.pattern_id for p in pattern_results if hasattr(p, 'pattern_id')]
+        
+        # 计算模式对评分的影响
+        pattern_impact = 0.0
+        if self.pattern_registry and pattern_ids:
+            pattern_impact = self.pattern_registry.calculate_combined_score_impact(pattern_ids)
+        
+        # 计算加权评分
+        total_weight = sum(self.weights.values())
+        combined_score = pd.Series(0.0, index=data.index)
+        
+        for indicator in self.indicators:
+            indicator_name = indicator.name
+            indicator_result = indicator_scores[indicator_name]
+            indicator_weight = self.weights.get(indicator_name, 1.0)
+            
+            # 获取最终评分（可能是score或final_score）
+            if 'score' in indicator_result:
+                indicator_score = indicator_result['score']
+            elif 'final_score' in indicator_result:
+                indicator_score = indicator_result['final_score']
+            else:
+                indicator_score = pd.Series(50.0, index=data.index)
                 
-                # 收集信号
-                for signal_name, signal_series in result['signals'].items():
-                    all_signals[f"{name}_{signal_name}"] = signal_series
-                
-            except Exception as e:
-                logger.error(f"计算指标 {name} 评分时出错: {e}")
-                continue
+            # 应用权重
+            weight_ratio = indicator_weight / total_weight
+            combined_score += indicator_score * weight_ratio
         
-        # 计算最终综合评分
-        if total_weight > 0:
-            final_score = weighted_score / total_weight
-        else:
-            final_score = pd.Series(0.0, index=data.index)
+        # 应用形态影响
+        combined_score += pattern_impact
         
-        # 生成综合信号
-        comprehensive_signal = self._generate_comprehensive_signal(final_score)
+        # 确保评分范围在0-100
+        combined_score = np.clip(combined_score, 0, 100)
         
-        return {
-            'comprehensive_score': final_score,
-            'indicator_results': indicator_results,
-            'patterns': list(set(all_patterns)),  # 去重
-            'signals': all_signals,
-            'comprehensive_signal': comprehensive_signal,
-            'total_weight': total_weight
+        # 计算综合置信度
+        confidence = np.mean(confidences) if confidences else 0.5
+        
+        # 构建返回结果
+        result = {
+            'combined_score': combined_score,
+            'indicator_scores': indicator_scores,
+            'patterns': pattern_results,
+            'pattern_ids': pattern_ids,
+            'pattern_impact': pattern_impact,
+            'signals': signals,
+            'confidence': confidence,
+            'weights': self.weights.copy(),
+            'market_environment': self.market_environment,
+            'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
         }
-    
-    def _generate_comprehensive_signal(self, score: pd.Series) -> Dict[str, pd.Series]:
+        
+        return result
+        
+    def generate_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成综合信号
+        生成交易信号
         
         Args:
-            score: 综合评分序列
+            data: 输入数据
+            **kwargs: 其他参数
             
         Returns:
-            Dict[str, pd.Series]: 综合信号字典
+            Dict[str, pd.Series]: 交易信号
+        """
+        # 计算综合评分
+        result = self.calculate_combined_score(data, **kwargs)
+        combined_score = result['combined_score']
+        
+        # 初始化信号字典
+        signals = {
+            'buy_signal': pd.Series(False, index=data.index),
+            'sell_signal': pd.Series(False, index=data.index),
+            'buy_strength': pd.Series(0, index=data.index),
+            'sell_strength': pd.Series(0, index=data.index)
+        }
+        
+        # 根据综合评分生成信号
+        # 1. 强烈买入信号：评分 >= 80
+        strong_buy = combined_score >= 80
+        signals['buy_signal'] |= strong_buy
+        signals['buy_strength'] = np.where(strong_buy, 5, signals['buy_strength'])
+        
+        # 2. 买入信号：评分 >= 70 且 < 80
+        buy = (combined_score >= 70) & (combined_score < 80)
+        signals['buy_signal'] |= buy
+        signals['buy_strength'] = np.where(buy, 4, signals['buy_strength'])
+        
+        # 3. 弱买入信号：评分 >= 60 且 < 70
+        weak_buy = (combined_score >= 60) & (combined_score < 70)
+        signals['buy_signal'] |= weak_buy
+        signals['buy_strength'] = np.where(weak_buy, 3, signals['buy_strength'])
+        
+        # 4. 强烈卖出信号：评分 <= 20
+        strong_sell = combined_score <= 20
+        signals['sell_signal'] |= strong_sell
+        signals['sell_strength'] = np.where(strong_sell, 5, signals['sell_strength'])
+        
+        # 5. 卖出信号：评分 > 20 且 <= 30
+        sell = (combined_score > 20) & (combined_score <= 30)
+        signals['sell_signal'] |= sell
+        signals['sell_strength'] = np.where(sell, 4, signals['sell_strength'])
+        
+        # 6. 弱卖出信号：评分 > 30 且 <= 40
+        weak_sell = (combined_score > 30) & (combined_score <= 40)
+        signals['sell_signal'] |= weak_sell
+        signals['sell_strength'] = np.where(weak_sell, 3, signals['sell_strength'])
+        
+        # 如果有特定形态，增强或减弱信号
+        if 'patterns' in result and result['patterns']:
+            pattern_scores = {}
+            
+            if not self._setup_done:
+                self.first_time_setup()
+                
+            # 对每个形态，根据其信号类型和强度调整信号
+            for pattern in result['patterns']:
+                if not hasattr(pattern, 'pattern_id') or not self.pattern_registry:
+                    continue
+                    
+                pattern_id = pattern.pattern_id
+                pattern_info = self.pattern_registry.get_pattern_info(pattern_id)
+                
+                if not pattern_info:
+                    continue
+                    
+                signal_type = pattern_info.get('signal_type')
+                score_impact = pattern_info.get('score_impact', 0.0)
+                
+                # 累积每个形态的评分影响
+                if pattern_id not in pattern_scores:
+                    pattern_scores[pattern_id] = 0.0
+                pattern_scores[pattern_id] += score_impact
+                
+                # 根据形态的信号类型和强度调整信号
+                if signal_type == 'bullish' and score_impact > 0:
+                    # 看涨形态增强买入信号
+                    signals['buy_signal'] |= True
+                    # 根据形态强度增加信号强度
+                    strength_boost = min(int(abs(score_impact) / 5), 2)
+                    signals['buy_strength'] += strength_boost
+                    
+                elif signal_type == 'bearish' and score_impact < 0:
+                    # 看跌形态增强卖出信号
+                    signals['sell_signal'] |= True
+                    # 根据形态强度增加信号强度
+                    strength_boost = min(int(abs(score_impact) / 5), 2)
+                    signals['sell_strength'] += strength_boost
+            
+            # 限制信号强度范围
+            signals['buy_strength'] = np.clip(signals['buy_strength'], 0, 5)
+            signals['sell_strength'] = np.clip(signals['sell_strength'], 0, 5)
+            
+            # 添加形态评分到信号字典
+            signals['pattern_scores'] = pattern_scores
+        
+        # 合并各指标的原始信号
+        if 'signals' in result:
+            indicator_signals = result['signals']
+            signals['indicator_signals'] = indicator_signals
+        
+        return signals
+        
+    def get_signal_summary(self, data: pd.DataFrame, index: int = -1, **kwargs) -> Dict[str, Any]:
+        """
+        获取指定位置的信号摘要
+        
+        Args:
+            data: 输入数据
+            index: 索引位置，默认为最后一个位置
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 信号摘要
+        """
+        # 生成信号
+        signals = self.generate_signals(data, **kwargs)
+        
+        # 获取指定位置的信号
+        buy_signal = signals['buy_signal'].iloc[index]
+        sell_signal = signals['sell_signal'].iloc[index]
+        buy_strength = signals['buy_strength'].iloc[index]
+        sell_strength = signals['sell_strength'].iloc[index]
+        
+        # 获取综合评分
+        result = self.calculate_combined_score(data, **kwargs)
+        combined_score = result['combined_score'].iloc[index]
+        
+        # 获取形态信息
+        patterns = result.get('patterns', [])
+        active_patterns = [p for p in patterns if hasattr(p, 'pattern_id')]
+        
+        # 构建形态摘要
+        pattern_summary = []
+        if active_patterns and self.pattern_registry:
+            for pattern in active_patterns:
+                pattern_id = pattern.pattern_id
+                pattern_info = self.pattern_registry.get_pattern_info(pattern_id)
+                
+                if pattern_info:
+                    pattern_summary.append({
+                        'pattern_id': pattern_id,
+                        'display_name': pattern_info.get('display_name', pattern_id),
+                        'signal_type': pattern_info.get('signal_type', 'neutral'),
+                        'score_impact': pattern_info.get('score_impact', 0.0),
+                        'strength': getattr(pattern, 'strength', 1.0)
+                    })
+        
+        # 构建指标评分摘要
+        indicator_summary = {}
+        for indicator in self.indicators:
+            indicator_name = indicator.name
+            if indicator_name in result['indicator_scores']:
+                indicator_result = result['indicator_scores'][indicator_name]
+                
+                # 获取评分
+                if 'score' in indicator_result:
+                    score = indicator_result['score'].iloc[index]
+                elif 'final_score' in indicator_result:
+                    score = indicator_result['final_score'].iloc[index]
+                else:
+                    score = 50.0
+                    
+                # 获取信号
+                indicator_signals = {}
+                if indicator_name in signals.get('indicator_signals', {}):
+                    ind_sigs = signals['indicator_signals'][indicator_name]
+                    for sig_name, sig_series in ind_sigs.items():
+                        indicator_signals[sig_name] = sig_series.iloc[index]
+                
+                indicator_summary[indicator_name] = {
+                    'score': score,
+                    'weight': self.weights.get(indicator_name, 1.0),
+                    'signals': indicator_signals
+                }
+        
+        # 确定整体信号类型
+        if buy_signal and not sell_signal:
+            signal_type = 'BUY'
+        elif sell_signal and not buy_signal:
+            signal_type = 'SELL'
+        elif buy_signal and sell_signal:
+            # 如果同时有买入和卖出信号，比较强度
+            if buy_strength > sell_strength:
+                signal_type = 'BUY'
+            elif sell_strength > buy_strength:
+                signal_type = 'SELL'
+            else:
+                signal_type = 'NEUTRAL'
+        else:
+            signal_type = 'NEUTRAL'
+            
+        # 确定信号强度
+        if signal_type == 'BUY':
+            signal_strength = buy_strength
+        elif signal_type == 'SELL':
+            signal_strength = sell_strength
+        else:
+            signal_strength = 0
+            
+        # 构建返回结果
+        summary = {
+            'signal_type': signal_type,
+            'signal_strength': signal_strength,
+            'combined_score': combined_score,
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'buy_strength': buy_strength,
+            'sell_strength': sell_strength,
+            'patterns': pattern_summary,
+            'indicators': indicator_summary,
+            'confidence': result.get('confidence', 0.5),
+            'market_environment': str(self.market_environment),
+            'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        return summary
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        将管理器转换为字典
+        
+        Returns:
+            Dict[str, Any]: 字典表示
         """
         return {
-            'strong_buy': score >= 80,
-            'buy': score >= 60,
-            'hold': (score >= 40) & (score < 60),
-            'sell': (score >= 20) & (score < 40),
-            'strong_sell': score < 20
-        } 
+            'indicators': [indicator.name for indicator in self.indicators],
+            'weights': self.weights,
+            'market_environment': str(self.market_environment)
+        }
+        
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], indicator_factory: Callable = None) -> 'IndicatorScoreManager':
+        """
+        从字典创建管理器
+        
+        Args:
+            data: 字典数据
+            indicator_factory: 指标创建工厂函数
+            
+        Returns:
+            IndicatorScoreManager: 管理器实例
+        """
+        manager = cls()
+        
+        # 设置市场环境
+        if 'market_environment' in data:
+            manager.set_market_environment(MarketEnvironment(data['market_environment']))
+            
+        # 如果没有提供指标工厂，则不加载指标
+        if not indicator_factory:
+            return manager
+            
+        # 加载指标
+        if 'indicators' in data and 'weights' in data:
+            for indicator_name in data['indicators']:
+                indicator = indicator_factory(indicator_name)
+                if indicator:
+                    weight = data['weights'].get(indicator_name, 1.0)
+                    manager.add_indicator(indicator, weight)
+                    
+        return manager 

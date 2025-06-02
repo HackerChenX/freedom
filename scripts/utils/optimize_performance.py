@@ -117,7 +117,7 @@ def optimize_database():
         
         # 执行优化操作
         optimize_queries = [
-            "OPTIMIZE TABLE stock_basic FINAL",
+            "OPTIMIZE TABLE stock_info FINAL",
             "OPTIMIZE TABLE stock_daily FINAL",
             "OPTIMIZE TABLE stock_selection_result FINAL"
         ]

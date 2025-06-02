@@ -10,8 +10,9 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
+from scipy import stats
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
@@ -88,6 +89,19 @@ class BIAS(BaseIndicator):
         # 存储结果
         self._result = df_copy[[f'BIAS{p}' for p in self.periods]]
         
+        # 如果有多个周期，自动进行多周期协同评估
+        if len(self.periods) > 1:
+            multi_period_result = self.evaluate_multi_period_bias(df_copy)
+            # 合并多周期评估结果到返回数据中
+            for col in multi_period_result.columns:
+                df_copy[f'BIAS_MP_{col}'] = multi_period_result[col]
+        
+        # 自动进行回归速率分析
+        regression_result = self.analyze_regression_rate(df_copy)
+        # 合并回归分析结果到返回数据中
+        for col in regression_result.columns:
+            df_copy[f'BIAS_REG_{col}'] = regression_result[col]
+        
         return df_copy
         
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -116,20 +130,67 @@ class BIAS(BaseIndicator):
         overbought = kwargs.get('overbought', 6)  # 超买阈值
         oversold = kwargs.get('oversold', -6)  # 超卖阈值
         
-        # 使用主要周期的BIAS生成信号
+        # 使用主要周期的BIAS生成基础信号
         main_period = self.periods[0]
         bias_col = f'BIAS{main_period}'
         
         # 检查必要的指标列是否存在
         if bias_col in df_copy.columns:
             # 超卖区域上穿信号线为买入信号
-            df_copy.loc[crossover(df_copy[bias_col], oversold), f'bias_signal'] = 1
+            df_copy.loc[self._crossover(df_copy[bias_col], oversold), f'bias_signal'] = 1
             
             # 超买区域下穿信号线为卖出信号
-            df_copy.loc[crossunder(df_copy[bias_col], overbought), f'bias_signal'] = -1
+            df_copy.loc[self._crossunder(df_copy[bias_col], overbought), f'bias_signal'] = -1
+            
+            # 使用多周期协同评估增强信号
+            if len(self.periods) > 1 and 'BIAS_MP_resonance_signal' in df_copy.columns:
+                # 提高共振信号的权重
+                resonance_mask = (df_copy['BIAS_MP_resonance_signal'] == 1) & (df_copy[f'bias_signal'] != 0)
+                
+                # 设置共振信号标记
+                df_copy['bias_resonance'] = False
+                df_copy.loc[resonance_mask, 'bias_resonance'] = True
+                
+                # 增加共振信号的强度指标
+                if 'BIAS_MP_resonance_strength' in df_copy.columns:
+                    df_copy['bias_signal_strength'] = df_copy['bias_signal'].abs()
+                    resonance_strength = df_copy['BIAS_MP_resonance_strength'] / 100  # 归一化到0-1
+                    
+                    # 根据共振强度增强信号强度
+                    df_copy.loc[resonance_mask, 'bias_signal_strength'] = df_copy.loc[resonance_mask, 'bias_signal_strength'] * (1 + resonance_strength)
+                else:
+                    df_copy['bias_signal_strength'] = df_copy['bias_signal'].abs()
+            
+            # 使用回归速率分析优化信号
+            reg_col = f'BIAS_REG_regression_efficiency_{main_period}'
+            if reg_col in df_copy.columns:
+                # 回归效率高的信号更可靠
+                signal_mask = df_copy[f'bias_signal'] != 0
+                
+                if 'bias_signal_confidence' not in df_copy.columns:
+                    df_copy['bias_signal_confidence'] = 0.5  # 默认中等置信度
+                
+                # 根据回归效率调整信号置信度
+                df_copy.loc[signal_mask, 'bias_signal_confidence'] = 0.5 + df_copy.loc[signal_mask, reg_col] * 0.5
         
         return df_copy
+    
+    def _crossover(self, series1, series2):
+        """判断series1是否上穿series2"""
+        if isinstance(series2, (int, float)):
+            series2 = pd.Series(series2, index=series1.index)
         
+        crossover = (series1.shift(1) <= series2.shift(1)) & (series1 > series2)
+        return crossover
+    
+    def _crossunder(self, series1, series2):
+        """判断series1是否下穿series2"""
+        if isinstance(series2, (int, float)):
+            series2 = pd.Series(series2, index=series1.index)
+        
+        crossunder = (series1.shift(1) >= series2.shift(1)) & (series1 < series2)
+        return crossunder
+    
     def plot(self, df: pd.DataFrame, ax=None, **kwargs):
         """
         绘制均线多空指标(BIAS)指标图表
@@ -222,9 +283,37 @@ class BIAS(BaseIndicator):
         score += zero_cross_score
         
         # 6. 多周期协同评估（优化点）
+        multi_period_score = pd.Series(0.0, index=data.index)
+        
         if len(self.periods) > 1:
-            multi_period_score = self._calculate_multi_period_consistency_score()
+            # 使用已经计算好的多周期协同评估结果
+            if 'BIAS_MP_resonance_strength' in data.columns:
+                # 根据共振强度提升评分
+                resonance_strength = data['BIAS_MP_resonance_strength']
+                multi_period_score = resonance_strength * 0.2  # 最多贡献20分
+                
+                # 当存在强共振信号时额外加分
+                if 'BIAS_MP_resonance_signal' in data.columns:
+                    signal_mask = data['BIAS_MP_resonance_signal'] == 1
+                    multi_period_score.loc[signal_mask] += 10  # 强共振信号额外加10分
+            else:
+                # 如果没有预计算的共振结果，则使用内部函数计算
+                multi_period_score = self._calculate_multi_period_consistency_score()
+                
             score += multi_period_score
+        
+        # 7. 回归率分析评分
+        regression_rate_score = pd.Series(0.0, index=data.index)
+        
+        # 使用已经计算好的回归速率分析结果
+        main_period = self.periods[0]
+        if f'BIAS_REG_regression_efficiency_{main_period}' in data.columns:
+            # 回归效率高的BIAS可能更可靠
+            regression_efficiency = data[f'BIAS_REG_regression_efficiency_{main_period}']
+            # 转换为0-15分
+            regression_rate_score = regression_efficiency * 0.15
+            
+            score += regression_rate_score
         
         return np.clip(score, 0, 100)
     
@@ -248,25 +337,30 @@ class BIAS(BaseIndicator):
         if self._result is None:
             return patterns
         
-        # 1. 检测BIAS超买超卖形态
+        # 1. 检测超买超卖形态
         overbought_oversold_patterns = self._detect_bias_overbought_oversold_patterns()
         patterns.extend(overbought_oversold_patterns)
         
-        # 2. 检测BIAS回归形态
+        # 2. 检测回归形态（增强版）
         regression_patterns = self._detect_bias_regression_patterns()
         patterns.extend(regression_patterns)
         
-        # 3. 检测BIAS极值形态
+        # 3. 检测极值形态
         extreme_patterns = self._detect_bias_extreme_patterns()
         patterns.extend(extreme_patterns)
         
-        # 4. 检测BIAS趋势形态
+        # 4. 检测趋势形态
         trend_patterns = self._detect_bias_trend_patterns()
         patterns.extend(trend_patterns)
         
-        # 5. 检测BIAS零轴穿越形态
+        # 5. 检测零轴穿越形态
         zero_cross_patterns = self._detect_bias_zero_cross_patterns()
         patterns.extend(zero_cross_patterns)
+        
+        # 6. 检测多周期协同形态（新增）
+        if len(self.periods) > 1:
+            multi_period_patterns = self._detect_bias_multi_period_patterns()
+            patterns.extend(multi_period_patterns)
         
         return patterns
     
@@ -337,31 +431,156 @@ class BIAS(BaseIndicator):
     
     def _calculate_bias_regression_score(self) -> pd.Series:
         """
-        计算BIAS回归评分
+        计算BIAS回归评分（增强版）
+        优化实现：评估BIAS回归至均衡值的速度和强度，提高回归速率分析的精确度
         
         Returns:
-            pd.Series: 回归评分
+            pd.Series: BIAS回归评分（-15到15分）
         """
+        # 初始化评分
         regression_score = pd.Series(0.0, index=self._result.index)
         
-        for period in self.periods:
-            bias_col = f'BIAS{period}'
-            if bias_col in self._result.columns:
-                bias_values = self._result[bias_col]
-                
-                # BIAS从超卖区域回归+18分
-                bias_from_oversold = (bias_values.shift(1) < -6) & (bias_values >= -6)
-                regression_score += bias_from_oversold * 18
-                
-                # BIAS从超买区域回归-18分
-                bias_from_overbought = (bias_values.shift(1) > 6) & (bias_values <= 6)
-                regression_score -= bias_from_overbought * 18
-                
-                # BIAS向零轴回归（绝对值减小）+8分
-                bias_abs_decreasing = (np.abs(bias_values) < np.abs(bias_values.shift(1)))
-                regression_score += bias_abs_decreasing * 8
+        # 获取主要周期的BIAS
+        main_period = self.periods[0]
+        bias_col = f'BIAS{main_period}'
         
-        return regression_score / len(self.periods)  # 平均化
+        if bias_col not in self._result.columns:
+            return regression_score
+        
+        # 计算BIAS的绝对值（与零轴的距离）
+        bias_abs = self._result[bias_col].abs()
+        
+        # 计算BIAS变动率（回归速度）
+        bias_change = self._result[bias_col].diff()
+        
+        # 计算BIAS加速度（回归加速度）
+        bias_acceleration = bias_change.diff()
+        
+        # 计算回归速率指标（偏离度与变化率的比值）
+        regression_rate = pd.Series(index=self._result.index)
+        for i in range(1, len(self._result)):
+            current_bias = self._result[bias_col].iloc[i]
+            current_change = bias_change.iloc[i]
+            
+            # 仅在回归方向时计算速率（向零轴方向移动）
+            if (current_bias > 0 and current_change < 0) or (current_bias < 0 and current_change > 0):
+                regression_rate.iloc[i] = abs(current_change) / (abs(current_bias) + 0.1)  # 避免除以零
+            else:
+                regression_rate.iloc[i] = 0
+        
+        # 对每个数据点评估
+        for i in range(5, len(self._result)):  # 从第5个点开始，确保有足够历史数据
+            # 当前BIAS值
+            current_bias = self._result[bias_col].iloc[i]
+            
+            # BIAS向零轴回归的速度
+            current_change = bias_change.iloc[i]
+            
+            # BIAS回归的加速度
+            current_accel = bias_acceleration.iloc[i]
+            
+            # 回归速率
+            current_rate = regression_rate.iloc[i]
+            
+            # 计算动态阈值 - 基于历史波动性
+            lookback = min(20, i)
+            bias_std = self._result[bias_col].iloc[i-lookback:i].std() if lookback > 0 else 6
+            
+            # 动态偏离阈值
+            extreme_threshold = max(15, bias_std * 2.5)
+            high_threshold = max(8, bias_std * 1.5)
+            moderate_threshold = max(3, bias_std * 0.8)
+            
+            # 评估BIAS偏离程度与回归状态
+            if abs(current_bias) > extreme_threshold:  # 极度偏离
+                # 极度偏离且加速回归是强烈信号
+                if (current_bias > 0 and current_change < 0) or (current_bias < 0 and current_change > 0):
+                    # BIAS偏离且开始回归，这是买入/卖出信号
+                    regression_score.iloc[i] += 10 * (-np.sign(current_bias))
+                    
+                    # 考虑加速度因素
+                    if (current_bias > 0 and current_accel < 0) or (current_bias < 0 and current_accel > 0):
+                        # 加速回归，信号更强
+                        regression_score.iloc[i] += 5 * (-np.sign(current_bias))
+                else:
+                    # 极度偏离且继续偏离，这是危险信号
+                    regression_score.iloc[i] -= 7 * np.sign(current_bias)
+            
+            elif abs(current_bias) > high_threshold:  # 高度偏离
+                # 高度偏离且回归
+                if (current_bias > 0 and current_change < 0) or (current_bias < 0 and current_change > 0):
+                    regression_score.iloc[i] += 7 * (-np.sign(current_bias))
+                    
+                    # 回归加速度评分
+                    if (current_bias > 0 and current_accel < 0) or (current_bias < 0 and current_accel > 0):
+                        regression_score.iloc[i] += 3 * (-np.sign(current_bias))
+                else:
+                    # 高度偏离且继续偏离
+                    regression_score.iloc[i] -= 5 * np.sign(current_bias)
+            
+            elif abs(current_bias) > moderate_threshold:  # 中度偏离
+                # 中度偏离且回归
+                if (current_bias > 0 and current_change < 0) or (current_bias < 0 and current_change > 0):
+                    regression_score.iloc[i] += 5 * (-np.sign(current_bias))
+                else:
+                    # 中度偏离且继续偏离
+                    regression_score.iloc[i] -= 3 * np.sign(current_bias)
+            
+            else:  # 接近零轴
+                # 在零轴附近的震荡，评分轻微
+                regression_score.iloc[i] += -3 * np.sign(current_change)
+            
+            # 考虑回归速度 - 优化点：更精确的回归速率评估
+            if current_rate > 0:  # 确保是回归方向
+                # 计算历史回归速率的分位数
+                if i >= 20:
+                    regression_rates = regression_rate.iloc[i-20:i]
+                    non_zero_rates = regression_rates[regression_rates > 0]
+                    
+                    if len(non_zero_rates) > 0:
+                        rate_percentile = np.percentile(non_zero_rates, [25, 50, 75, 90])
+                        
+                        # 根据回归速率分位数进行评分
+                        if current_rate > rate_percentile[3]:  # 极快回归 (>90%)
+                            regression_score.iloc[i] += 5 * (-np.sign(current_bias))
+                        elif current_rate > rate_percentile[2]:  # 快速回归 (>75%)
+                            regression_score.iloc[i] += 3 * (-np.sign(current_bias))
+                        elif current_rate > rate_percentile[1]:  # 中速回归 (>50%)
+                            regression_score.iloc[i] += 1.5 * (-np.sign(current_bias))
+                    else:
+                        # 回归速率评分（简化版，无历史数据时）
+                        if current_rate > 0.3:  # 快速回归
+                            regression_score.iloc[i] += 3 * (-np.sign(current_bias))
+                        elif current_rate > 0.1:  # 中速回归
+                            regression_score.iloc[i] += 1.5 * (-np.sign(current_bias))
+                else:
+                    # 回归速率评分（简化版，数据点不足时）
+                    if current_rate > 0.3:  # 快速回归
+                        regression_score.iloc[i] += 3 * (-np.sign(current_bias))
+                    elif current_rate > 0.1:  # 中速回归
+                        regression_score.iloc[i] += 1.5 * (-np.sign(current_bias))
+            
+            # 回归持续性评分 - 新增功能点：评估回归的持续性
+            if i >= 5:
+                # 检查最近5个点的回归一致性
+                consistent_regression = True
+                regression_direction = np.sign(current_change) * -np.sign(current_bias)
+                
+                for j in range(1, 5):
+                    prev_bias = self._result[bias_col].iloc[i-j]
+                    prev_change = bias_change.iloc[i-j]
+                    prev_direction = np.sign(prev_change) * -np.sign(prev_bias)
+                    
+                    if prev_direction != regression_direction or prev_direction == 0:
+                        consistent_regression = False
+                        break
+                
+                # 持续回归加分
+                if consistent_regression and regression_direction > 0:
+                    regression_score.iloc[i] += 4
+        
+        # 限制评分范围
+        return regression_score.clip(-15, 15)
     
     def _calculate_bias_extreme_score(self) -> pd.Series:
         """
@@ -472,87 +691,171 @@ class BIAS(BaseIndicator):
     
     def _calculate_multi_period_consistency_score(self) -> pd.Series:
         """
-        计算多周期一致性评分（优化点）
-        
-        当多个周期的BIAS指标同时给出一致信号时，信号更加可靠
+        计算多周期BIAS一致性评分
+        优化实现：增强多周期一致性评估，根据不同周期BIAS的协同性给予评分
         
         Returns:
-            pd.Series: 多周期一致性评分
+            pd.Series: 多周期一致性评分（-15到15分）
         """
-        if self._result is None or len(self.periods) <= 1:
-            return pd.Series(0.0)
+        # 初始化评分
+        consistency_score = pd.Series(0.0, index=self._result.index)
         
-        score = pd.Series(0.0, index=self._result.index)
+        if len(self.periods) <= 1:
+            return consistency_score
         
-        # 准备各周期的BIAS数据
-        bias_cols = [f'BIAS{p}' for p in self.periods if f'BIAS{p}' in self._result.columns]
-        if len(bias_cols) <= 1:
-            return score
+        # 按照从短到长排序周期
+        sorted_periods = sorted(self.periods)
         
-        # 分析各周期BIAS的趋势方向
-        bias_signs = pd.DataFrame(index=self._result.index)
-        for col in bias_cols:
-            bias_signs[f'{col}_sign'] = np.sign(self._result[col])
-        
-        # 计算一致性
-        row_sum = bias_signs.sum(axis=1)
-        row_count = bias_signs.shape[1]
-        
-        # 完全一致看涨（所有BIAS为正）
-        full_bullish = row_sum == row_count
-        score += full_bullish * 20  # 全部看涨 +20分
-        
-        # 完全一致看跌（所有BIAS为负）
-        full_bearish = row_sum == -row_count
-        score -= full_bearish * 20  # 全部看跌 -20分
-        
-        # 多数看涨（>60%的BIAS为正）
-        mostly_bullish = (row_sum > 0) & (abs(row_sum) >= row_count * 0.6) & ~full_bullish
-        score += mostly_bullish * 10  # 多数看涨 +10分
-        
-        # 多数看跌（>60%的BIAS为负）
-        mostly_bearish = (row_sum < 0) & (abs(row_sum) >= row_count * 0.6) & ~full_bearish
-        score -= mostly_bearish * 10  # 多数看跌 -10分
-        
-        # 分析一致性强度（BIAS值的协方差）
-        if len(bias_cols) >= 2:
-            # 计算最近5个周期的BIAS协方差
-            recent_bias = self._result[bias_cols].tail(5)
+        # 计算各周期BIAS的方向一致性
+        for i in range(len(self._result)):
+            if i < 5:  # 前几个数据点可能不够计算
+                continue
             
-            # 计算标准差占平均值的百分比作为一致性强度指标
-            if len(recent_bias) > 0:
-                # 计算各周期BIAS的标准差
-                bias_std = recent_bias.std(axis=1)
-                # 计算各周期BIAS的绝对值平均值
-                bias_abs_mean = recent_bias.abs().mean(axis=1)
+            # 统计上涨和下跌的BIAS数量
+            up_count = 0
+            down_count = 0
+            
+            # 统计超买和超卖的BIAS数量
+            overbought_count = 0
+            oversold_count = 0
+            
+            # 计算各周期的方向和状态
+            for p in sorted_periods:
+                bias_col = f'BIAS{p}'
+                if bias_col not in self._result.columns:
+                    continue
                 
-                # 避免除零错误
-                bias_abs_mean = bias_abs_mean.replace(0, np.nan)
+                # 计算BIAS方向
+                current_bias = self._result[bias_col].iloc[i]
+                prev_bias = self._result[bias_col].iloc[i-1]
                 
-                # 计算变异系数（标准差/平均值）作为一致性指标
-                cov = bias_std / bias_abs_mean
-                cov = cov.fillna(1.0)  # 处理可能的NaN值
+                if current_bias > prev_bias:
+                    up_count += 1
+                elif current_bias < prev_bias:
+                    down_count += 1
                 
-                # 变异系数越低，一致性越高
-                consistency_strength = 1 - np.clip(cov, 0, 1)
+                # 计算超买超卖状态（使用动态阈值）
+                lookback = min(20, i)
+                volatility = self._result[bias_col].iloc[i-lookback:i].std() if lookback > 0 else 6
                 
-                # 在最近周期应用一致性强度调整
-                last_idx = score.index[-1]
-                if last_idx in consistency_strength.index:
-                    # 一致性强度作为现有多周期分数的调节因子
-                    recent_score = score.iloc[-5:]
-                    # 只对非零分数应用调节因子
-                    non_zero_mask = recent_score != 0
-                    
-                    # 一致性越高，信号越强
-                    strength_factor = 1 + consistency_strength * 0.5  # 1.0-1.5的调节因子
-                    score.iloc[-5:] = np.where(
-                        non_zero_mask,
-                        recent_score * strength_factor,
-                        recent_score
-                    )
+                overbought_threshold = max(6, volatility * 1.5)
+                oversold_threshold = min(-6, -volatility * 1.5)
+                
+                if current_bias > overbought_threshold:
+                    overbought_count += 1
+                elif current_bias < oversold_threshold:
+                    oversold_count += 1
+            
+            # 计算方向一致性得分
+            total_periods = len(sorted_periods)
+            if up_count == total_periods:  # 所有周期都上涨
+                consistency_score.iloc[i] += 8
+            elif down_count == total_periods:  # 所有周期都下跌
+                consistency_score.iloc[i] -= 8
+            elif up_count > down_count:  # 多数周期上涨
+                consistency_score.iloc[i] += 4 * (up_count / total_periods)
+            elif down_count > up_count:  # 多数周期下跌
+                consistency_score.iloc[i] -= 4 * (down_count / total_periods)
+            
+            # 计算超买超卖一致性得分
+            if overbought_count >= total_periods * 0.7:  # 70%以上周期超买
+                consistency_score.iloc[i] -= 7  # 超买是卖出信号，得分降低
+            elif oversold_count >= total_periods * 0.7:  # 70%以上周期超卖
+                consistency_score.iloc[i] += 7  # 超卖是买入信号，得分提高
+            elif overbought_count > 0 and oversold_count > 0:  # 周期分歧
+                consistency_score.iloc[i] -= 3  # 信号混乱，轻微降低得分
         
-        return score
+        # 计算周期间的协同性（相关性）与收敛/发散性
+        if len(sorted_periods) >= 2:
+            # 为避免前期数据不足，从一定位置开始计算
+            start_idx = max(30, sorted_periods[-1])
+            
+            if len(self._result) > start_idx:
+                # 准备各周期的BIAS数据
+                bias_data = {}
+                for p in sorted_periods:
+                    bias_col = f'BIAS{p}'
+                    if bias_col in self._result.columns:
+                        bias_data[p] = self._result[bias_col]
+                
+                # 计算周期间的相关性矩阵和收敛/发散性
+                for i in range(start_idx, len(self._result)):
+                    # 使用20个点的滚动窗口
+                    window_size = min(20, i)
+                    
+                    # 1. 计算相关性矩阵
+                    period_corrs = []
+                    for j in range(len(sorted_periods)-1):
+                        for k in range(j+1, len(sorted_periods)):
+                            p1 = sorted_periods[j]
+                            p2 = sorted_periods[k]
+                            
+                            if p1 in bias_data and p2 in bias_data:
+                                s1 = bias_data[p1].iloc[i-window_size:i]
+                                s2 = bias_data[p2].iloc[i-window_size:i]
+                                
+                                try:
+                                    corr = s1.corr(s2)
+                                    if not np.isnan(corr):
+                                        period_corrs.append(corr)
+                                except:
+                                    pass
+                    
+                    # 计算平均相关性
+                    if period_corrs:
+                        avg_corr = np.mean(period_corrs)
+                        # 高相关性加分，低相关性减分
+                        consistency_score.iloc[i] += avg_corr * 7
+                    
+                    # 2. 计算BIAS收敛/发散性
+                    current_range = []
+                    prev_range = []
+                    
+                    for p in sorted_periods:
+                        if p in bias_data:
+                            current_range.append(bias_data[p].iloc[i])
+                            if i > 5:
+                                prev_range.append(bias_data[p].iloc[i-5])
+                    
+                    if current_range and prev_range:
+                        current_spread = max(current_range) - min(current_range)
+                        prev_spread = max(prev_range) - min(prev_range)
+                        
+                        # 计算收敛/发散趋势
+                        if current_spread < prev_spread * 0.7:  # 收敛30%以上
+                            # BIAS收敛通常表示趋势即将形成
+                            consistency_score.iloc[i] += 5
+                        elif current_spread > prev_spread * 1.3:  # 发散30%以上
+                            # BIAS发散通常表示趋势分歧加大
+                            consistency_score.iloc[i] -= 3
+                        
+                        # 考虑绝对收敛水平
+                        if current_spread < 3:  # 极度收敛
+                            consistency_score.iloc[i] += 3
+                        elif current_spread > 15:  # 极度发散
+                            consistency_score.iloc[i] -= 4
+                    
+                    # 3. 判断多周期共振信号
+                    # 计算各周期的突破或回踩信号
+                    breakout_count = 0
+                    breakdown_count = 0
+                    
+                    for p in sorted_periods:
+                        if p in bias_data:
+                            # 零轴突破
+                            if bias_data[p].iloc[i] > 0 and bias_data[p].iloc[i-1] <= 0:
+                                breakout_count += 1
+                            elif bias_data[p].iloc[i] < 0 and bias_data[p].iloc[i-1] >= 0:
+                                breakdown_count += 1
+                    
+                    # 多周期共同突破/跌破是强信号
+                    if breakout_count >= len(sorted_periods) * 0.5:  # 半数以上周期突破
+                        consistency_score.iloc[i] += 8
+                    if breakdown_count >= len(sorted_periods) * 0.5:  # 半数以上周期跌破
+                        consistency_score.iloc[i] -= 8
+        
+        # 限制得分范围
+        return consistency_score.clip(-15, 15)
     
     def _detect_bias_overbought_oversold_patterns(self) -> List[str]:
         """
@@ -586,34 +889,254 @@ class BIAS(BaseIndicator):
     
     def _detect_bias_regression_patterns(self) -> List[str]:
         """
-        检测BIAS回归形态
+        检测BIAS回归形态（增强版）
+        优化实现：识别BIAS回归的速度、模式和跨周期协同关系
         
         Returns:
-            List[str]: 回归形态列表
+            List[str]: 检测到的回归形态
         """
         patterns = []
         
-        for period in self.periods:
+        # 需要至少2个周期进行多周期分析
+        if len(self.periods) < 2:
+            # 获取主要周期的BIAS
+            main_period = self.periods[0]
+            bias_col = f'BIAS{main_period}'
+            
+            if bias_col not in self._result.columns:
+                return patterns
+            
+            # 需要至少5个数据点
+            if len(self._result) < 5:
+                return patterns
+            
+            # 获取最后几个点的BIAS值
+            last_idx = len(self._result) - 1
+            current_bias = self._result[bias_col].iloc[last_idx]
+            prev_bias = self._result[bias_col].iloc[last_idx-1]
+            
+            # 计算BIAS变动率（回归速度）
+            bias_change = self._result[bias_col].diff().iloc[last_idx]
+            
+            # 计算BIAS加速度
+            bias_accel = self._result[bias_col].diff().diff().iloc[last_idx]
+            
+            # 计算最近5个点的变动方向一致性
+            bias_5days = self._result[bias_col].iloc[last_idx-4:last_idx+1]
+            consecutive_up = True
+            consecutive_down = True
+            
+            for i in range(len(bias_5days) - 1):
+                if bias_5days.iloc[i+1] <= bias_5days.iloc[i]:
+                    consecutive_up = False
+                if bias_5days.iloc[i+1] >= bias_5days.iloc[i]:
+                    consecutive_down = False
+            
+            # 确定当前BIAS的偏离状态
+            # 使用动态阈值
+            lookback = min(20, last_idx)
+            volatility = self._result[bias_col].iloc[last_idx-lookback:last_idx].std() if lookback > 0 else 6
+            
+            overbought_threshold = max(6, volatility * 1.5)
+            oversold_threshold = min(-6, -volatility * 1.5)
+            
+            is_overbought = current_bias > overbought_threshold
+            is_oversold = current_bias < oversold_threshold
+            
+            # 从超买区开始回归
+            if is_overbought and bias_change < 0:
+                patterns.append("BIAS超买开始回归")
+                
+                # 判断回归速度
+                if abs(bias_change) > volatility:
+                    patterns.append("BIAS超买快速回归")
+                
+                # 判断加速度
+                if bias_accel < 0:
+                    patterns.append("BIAS超买加速回归")
+            
+            # 从超卖区开始回归
+            elif is_oversold and bias_change > 0:
+                patterns.append("BIAS超卖开始回归")
+                
+                # 判断回归速度
+                if abs(bias_change) > volatility:
+                    patterns.append("BIAS超卖快速回归")
+                
+                # 判断加速度
+                if bias_accel > 0:
+                    patterns.append("BIAS超卖加速回归")
+            
+            # 连续上升或下降形态
+            if consecutive_up:
+                patterns.append("BIAS连续5日上升")
+            elif consecutive_down:
+                patterns.append("BIAS连续5日下降")
+            
+            # 零轴附近震荡
+            if abs(current_bias) < 3 and abs(prev_bias) < 3:
+                patterns.append("BIAS零轴震荡")
+            
+            # 回归到零轴
+            if (prev_bias > 0 and current_bias <= 0) or (prev_bias < 0 and current_bias >= 0):
+                patterns.append("BIAS穿越零轴")
+            
+            return patterns
+        
+        # 多周期回归分析
+        # 按照从短到长排序周期
+        sorted_periods = sorted(self.periods)
+        
+        # 获取最后几个点的数据
+        last_idx = len(self._result) - 1
+        if last_idx < 5:  # 确保有足够的数据点
+            return patterns
+        
+        # 1. 计算各周期BIAS的回归状态
+        bias_data = {}
+        changes = {}
+        accels = {}
+        
+        # 获取各周期的BIAS、变化率和加速度
+        for period in sorted_periods:
             bias_col = f'BIAS{period}'
-            if bias_col in self._result.columns and len(self._result) >= 2:
+            if bias_col in self._result.columns:
                 bias_values = self._result[bias_col]
-                current_bias = bias_values.iloc[-1]
-                prev_bias = bias_values.iloc[-2]
+                bias_data[period] = bias_values.iloc[last_idx]
+                changes[period] = bias_values.diff().iloc[last_idx]
+                accels[period] = bias_values.diff().diff().iloc[last_idx]
+        
+        # 2. 计算动态阈值（基于历史波动率）
+        volatility = {}
+        overbought_thresholds = {}
+        oversold_thresholds = {}
+        
+        for period in sorted_periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns:
+                lookback = min(20, last_idx)
+                vol = self._result[bias_col].iloc[last_idx-lookback:last_idx].std() if lookback > 0 else 6
+                volatility[period] = vol
+                overbought_thresholds[period] = max(6, vol * 1.5)
+                oversold_thresholds[period] = min(-6, -vol * 1.5)
+        
+        # 3. 判断各周期的偏离状态
+        overbought_periods = []
+        oversold_periods = []
+        
+        for period in sorted_periods:
+            if period in bias_data:
+                if bias_data[period] > overbought_thresholds[period]:
+                    overbought_periods.append(period)
+                elif bias_data[period] < oversold_thresholds[period]:
+                    oversold_periods.append(period)
+        
+        # 4. 判断各周期的回归状态
+        regression_from_overbought = []
+        regression_from_oversold = []
+        
+        for period in sorted_periods:
+            if period in bias_data and period in changes:
+                if period in overbought_periods and changes[period] < 0:
+                    regression_from_overbought.append(period)
+                elif period in oversold_periods and changes[period] > 0:
+                    regression_from_oversold.append(period)
+        
+        # 5. 分析回归速率一致性
+        if len(regression_from_overbought) >= 2 or len(regression_from_oversold) >= 2:
+            # 计算回归速率（变化量/偏离度）
+            regression_rates = {}
+            
+            for period in sorted_periods:
+                if period in bias_data and period in changes:
+                    # 计算回归速率
+                    if (bias_data[period] > 0 and changes[period] < 0) or (bias_data[period] < 0 and changes[period] > 0):
+                        regression_rates[period] = abs(changes[period]) / (abs(bias_data[period]) + 0.1)
+            
+            # 分析回归速率一致性
+            if regression_rates:
+                rate_values = list(regression_rates.values())
+                avg_rate = np.mean(rate_values)
+                max_rate = max(rate_values)
+                min_rate = min(rate_values)
                 
-                if pd.isna(current_bias) or pd.isna(prev_bias):
-                    continue
+                # 判断回归速率一致性
+                rate_consistency = (max_rate - min_rate) / avg_rate if avg_rate > 0 else 0
                 
-                # 检测从超卖区域回归
-                if prev_bias < -6 and current_bias >= -6:
-                    patterns.append(f"BIAS{period}从超卖区域回归")
+                if rate_consistency < 0.3:  # 速率高度一致
+                    if avg_rate > 0.3:
+                        patterns.append("多周期BIAS快速同步回归")
+                    else:
+                        patterns.append("多周期BIAS稳定同步回归")
+                elif rate_consistency > 0.7:  # 速率高度不一致
+                    patterns.append("多周期BIAS回归速率分化")
+        
+        # 6. 分析多周期回归形态
+        if len(regression_from_overbought) > 0:
+            if len(regression_from_overbought) == len(sorted_periods):
+                patterns.append("全周期BIAS超买同步回归")
+            elif len(regression_from_overbought) >= len(sorted_periods) * 0.7:
+                patterns.append("多数周期BIAS超买回归")
+            
+            # 检查是否为领先回归（短周期先回归）
+            short_regressing = sorted_periods[0] in regression_from_overbought
+            long_regressing = sorted_periods[-1] in regression_from_overbought
+            
+            if short_regressing and not long_regressing:
+                patterns.append("短周期BIAS超买先行回归")
+            elif long_regressing and not short_regressing:
+                patterns.append("长周期BIAS超买先行回归")
+        
+        if len(regression_from_oversold) > 0:
+            if len(regression_from_oversold) == len(sorted_periods):
+                patterns.append("全周期BIAS超卖同步回归")
+            elif len(regression_from_oversold) >= len(sorted_periods) * 0.7:
+                patterns.append("多数周期BIAS超卖回归")
+            
+            # 检查是否为领先回归（短周期先回归）
+            short_regressing = sorted_periods[0] in regression_from_oversold
+            long_regressing = sorted_periods[-1] in regression_from_oversold
+            
+            if short_regressing and not long_regressing:
+                patterns.append("短周期BIAS超卖先行回归")
+            elif long_regressing and not short_regressing:
+                patterns.append("长周期BIAS超卖先行回归")
+        
+        # 7. 分析回归加速度趋势
+        acceleration_up = []
+        acceleration_down = []
+        
+        for period in sorted_periods:
+            if period in accels:
+                if bias_data[period] > 0 and accels[period] < 0:  # 超买加速回归
+                    acceleration_up.append(period)
+                elif bias_data[period] < 0 and accels[period] > 0:  # 超卖加速回归
+                    acceleration_down.append(period)
+        
+        if len(acceleration_up) >= len(sorted_periods) * 0.7:
+            patterns.append("多周期BIAS超买加速回归")
+        if len(acceleration_down) >= len(sorted_periods) * 0.7:
+            patterns.append("多周期BIAS超卖加速回归")
+        
+        # 8. 分析零轴穿越协同性
+        cross_zero_up = []
+        cross_zero_down = []
+        
+        for period in sorted_periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in self._result.columns and last_idx > 0:
+                current = self._result[bias_col].iloc[last_idx]
+                prev = self._result[bias_col].iloc[last_idx-1]
                 
-                # 检测从超买区域回归
-                if prev_bias > 6 and current_bias <= 6:
-                    patterns.append(f"BIAS{period}从超买区域回归")
-                
-                # 检测向零轴回归
-                if abs(current_bias) < abs(prev_bias):
-                    patterns.append(f"BIAS{period}向零轴回归")
+                if current >= 0 and prev < 0:  # 上穿零轴
+                    cross_zero_up.append(period)
+                elif current <= 0 and prev > 0:  # 下穿零轴
+                    cross_zero_down.append(period)
+        
+        if len(cross_zero_up) >= 2:
+            patterns.append(f"{len(cross_zero_up)}周期BIAS同步上穿零轴")
+        if len(cross_zero_down) >= 2:
+            patterns.append(f"{len(cross_zero_down)}周期BIAS同步下穿零轴")
         
         return patterns
     
@@ -721,6 +1244,287 @@ class BIAS(BaseIndicator):
                             patterns.append(f"BIAS{period}零轴下方")
                         else:
                             patterns.append(f"BIAS{period}零轴位置")
+        
+        return patterns
+
+    def _detect_bias_multi_period_patterns(self) -> List[str]:
+        """
+        检测多周期BIAS协同形态（增强版）
+        优化实现：提供更精细的多周期BIAS协同性分析，包括趋势一致性、分歧与背离识别
+        
+        Returns:
+            List[str]: 检测到的多周期协同形态
+        """
+        patterns = []
+        
+        if len(self.periods) <= 1:
+            return patterns
+        
+        # 按照从短到长排序周期
+        sorted_periods = sorted(self.periods)
+        
+        # 获取最后一个点的BIAS值
+        last_idx = len(self._result) - 1
+        if last_idx < 0:
+            return patterns
+        
+        # 准备各周期的BIAS数据
+        bias_values = {}
+        bias_changes = {}
+        
+        for p in sorted_periods:
+            bias_col = f'BIAS{p}'
+            if bias_col in self._result.columns:
+                bias_values[p] = self._result[bias_col].iloc[last_idx]
+                if last_idx > 0:
+                    bias_changes[p] = self._result[bias_col].iloc[last_idx] - self._result[bias_col].iloc[last_idx-1]
+        
+        # 检查各周期BIAS方向和状态
+        up_count = 0
+        down_count = 0
+        overbought_count = 0
+        oversold_count = 0
+        
+        # 动态阈值计算
+        volatility = {}
+        for p in sorted_periods:
+            bias_col = f'BIAS{p}'
+            if bias_col not in self._result.columns:
+                continue
+        
+            # 计算最近20个点的标准差作为波动率度量
+            lookback = min(20, last_idx)
+            if lookback > 0:
+                volatility[p] = self._result[bias_col].iloc[last_idx-lookback:last_idx].std()
+            else:
+                volatility[p] = 6
+        
+        # 检查各周期BIAS的方向和状态
+        for p in sorted_periods:
+            bias_col = f'BIAS{p}'
+            if bias_col not in self._result.columns:
+                continue
+        
+            # 检查方向
+            if p in bias_changes:
+                if bias_changes[p] > 0:
+                    up_count += 1
+                elif bias_changes[p] < 0:
+                    down_count += 1
+        
+            # 检查超买超卖状态
+            if p in bias_values and p in volatility:
+                current_bias = bias_values[p]
+                overbought_threshold = max(6, volatility[p] * 1.5)
+                oversold_threshold = min(-6, -volatility[p] * 1.5)
+                
+                if current_bias > overbought_threshold:
+                    overbought_count += 1
+                elif current_bias < oversold_threshold:
+                    oversold_count += 1
+        
+        # 1. 分析多周期方向一致性
+        total_periods = len(sorted_periods)
+        
+        # 方向一致性形态
+        if up_count == total_periods:
+            patterns.append("多周期BIAS一致上升")
+        elif down_count == total_periods:
+            patterns.append("多周期BIAS一致下降")
+        elif up_count >= total_periods * 0.7:
+            patterns.append("多周期BIAS多数上升")
+        elif down_count >= total_periods * 0.7:
+            patterns.append("多周期BIAS多数下降")
+        
+        # 2. 分析超买超卖一致性
+        if overbought_count >= total_periods * 0.7:
+            patterns.append("多周期BIAS超买一致")
+        elif oversold_count >= total_periods * 0.7:
+            patterns.append("多周期BIAS超卖一致")
+        
+        # 周期分歧形态
+        if overbought_count > 0 and oversold_count > 0:
+            patterns.append("多周期BIAS超买超卖分歧")
+        
+        # 3. 分析短周期与长周期关系
+        if len(sorted_periods) >= 2:
+            short_p = sorted_periods[0]
+            long_p = sorted_periods[-1]
+            
+            # 确保数据存在
+            if short_p in bias_values and long_p in bias_values and short_p in volatility and long_p in volatility:
+                short_bias = bias_values[short_p]
+                long_bias = bias_values[long_p]
+                
+                # 3.1 短期超买/卖而长期未超买/卖
+                short_overbought = short_bias > max(6, volatility[short_p] * 1.5)
+                long_overbought = long_bias > max(6, volatility[long_p] * 1.5)
+                short_oversold = short_bias < min(-6, -volatility[short_p] * 1.5)
+                long_oversold = long_bias < min(-6, -volatility[long_p] * 1.5)
+                
+                if short_overbought and not long_overbought:
+                    patterns.append("短周期超买长周期正常")
+                elif short_oversold and not long_oversold:
+                    patterns.append("短周期超卖长周期正常")
+                elif long_overbought and not short_overbought:
+                    patterns.append("长周期超买短周期正常")
+                elif long_oversold and not short_oversold:
+                    patterns.append("长周期超卖短周期正常")
+                
+                # 3.2 短周期与长周期方向相反
+                if short_p in bias_changes and long_p in bias_changes:
+                    short_direction = np.sign(bias_changes[short_p])
+                    long_direction = np.sign(bias_changes[long_p])
+                    
+                    if short_direction * long_direction < 0:  # 方向相反
+                        if short_direction > 0:
+                            patterns.append("短周期上升长周期下降")
+                        else:
+                            patterns.append("短周期下降长周期上升")
+        
+        # 4. 高级分析：多周期趋势协同性
+        if len(self._result) >= 10:  # 需要至少10个数据点
+            # 准备各周期最近的趋势数据
+            period_trends = {}
+            
+            for p in sorted_periods:
+                bias_col = f'BIAS{p}'
+                if bias_col in self._result.columns:
+                    # 计算最近10个点的线性回归斜率
+                    recent_bias = self._result[bias_col].iloc[last_idx-9:last_idx+1]
+                    if not recent_bias.isna().any():
+                        x = np.arange(len(recent_bias))
+                        y = recent_bias.values
+                        try:
+                            slope, _, _, _, _ = stats.linregress(x, y)
+                            period_trends[p] = slope
+                        except:
+                            # 如果回归计算失败，使用简单的方向判断
+                            if recent_bias.iloc[-1] > recent_bias.iloc[0]:
+                                period_trends[p] = 1
+                            elif recent_bias.iloc[-1] < recent_bias.iloc[0]:
+                                period_trends[p] = -1
+                            else:
+                                period_trends[p] = 0
+            
+            # 分析趋势一致性
+            if period_trends:
+                up_trend_count = sum(1 for slope in period_trends.values() if slope > 0)
+                down_trend_count = sum(1 for slope in period_trends.values() if slope < 0)
+                
+                if up_trend_count == len(period_trends):
+                    patterns.append("多周期BIAS趋势一致向上")
+                elif down_trend_count == len(period_trends):
+                    patterns.append("多周期BIAS趋势一致向下")
+                
+                # 分析趋势强度
+                trend_strengths = [abs(slope) for slope in period_trends.values()]
+                avg_strength = np.mean(trend_strengths)
+                
+                if avg_strength > 0.5:  # 趋势强
+                    if up_trend_count > down_trend_count:
+                        patterns.append("多周期BIAS强势上行")
+                    elif down_trend_count > up_trend_count:
+                        patterns.append("多周期BIAS强势下行")
+                elif avg_strength < 0.1:  # 趋势弱
+                    patterns.append("多周期BIAS震荡盘整")
+        
+        # 5. 高级分析：多周期背离识别
+        if len(self._result) >= 20:  # 需要足够的历史数据
+            try:
+                # 获取价格数据（假设存在close列）
+                price_data = None
+                for col in ['close', 'Close', 'CLOSE']:
+                    if col in self._result.index.names or col in self._result.columns:
+                        price_data = self._result[col] if col in self._result.columns else self._result.index.get_level_values(col)
+                        break
+                
+                if price_data is not None:
+                    # 检测顶背离和底背离
+                    for p in sorted_periods:
+                        bias_col = f'BIAS{p}'
+                        if bias_col in self._result.columns:
+                            # 获取最近20个点的数据
+                            recent_price = price_data.iloc[last_idx-19:last_idx+1]
+                            recent_bias = self._result[bias_col].iloc[last_idx-19:last_idx+1]
+                            
+                            # 寻找局部极值点
+                            price_highs = []
+                            price_lows = []
+                            bias_highs = []
+                            bias_lows = []
+                            
+                            for i in range(1, len(recent_price)-1):
+                                # 价格局部高点
+                                if recent_price.iloc[i] > recent_price.iloc[i-1] and recent_price.iloc[i] > recent_price.iloc[i+1]:
+                                    price_highs.append((i, recent_price.iloc[i]))
+                                # 价格局部低点
+                                if recent_price.iloc[i] < recent_price.iloc[i-1] and recent_price.iloc[i] < recent_price.iloc[i+1]:
+                                    price_lows.append((i, recent_price.iloc[i]))
+                                
+                                # BIAS局部高点
+                                if recent_bias.iloc[i] > recent_bias.iloc[i-1] and recent_bias.iloc[i] > recent_bias.iloc[i+1]:
+                                    bias_highs.append((i, recent_bias.iloc[i]))
+                                # BIAS局部低点
+                                if recent_bias.iloc[i] < recent_bias.iloc[i-1] and recent_bias.iloc[i] < recent_bias.iloc[i+1]:
+                                    bias_lows.append((i, recent_bias.iloc[i]))
+                            
+                            # 检查最近的两个高点和低点是否形成背离
+                            if len(price_highs) >= 2 and len(bias_highs) >= 2:
+                                # 价格创新高但BIAS没有 = 顶背离
+                                if price_highs[-1][1] > price_highs[-2][1] and bias_highs[-1][1] < bias_highs[-2][1]:
+                                    patterns.append(f"BIAS{p}顶部背离")
+                            
+                            if len(price_lows) >= 2 and len(bias_lows) >= 2:
+                                # 价格创新低但BIAS没有 = 底背离
+                                if price_lows[-1][1] < price_lows[-2][1] and bias_lows[-1][1] > bias_lows[-2][1]:
+                                    patterns.append(f"BIAS{p}底部背离")
+            except:
+                # 背离检测失败时不添加相关形态
+                pass
+        
+        # 6. 分析多周期收敛/发散形态
+        if len(sorted_periods) >= 3 and len(self._result) >= 10:
+            current_spread = max(bias_values.values()) - min(bias_values.values())
+            
+            # 计算5个周期前的BIAS差距
+            past_spread = None
+            if last_idx >= 5:
+                past_values = {}
+                for p in sorted_periods:
+                    bias_col = f'BIAS{p}'
+                    if bias_col in self._result.columns:
+                        past_values[p] = self._result[bias_col].iloc[last_idx-5]
+                
+                if len(past_values) == len(sorted_periods):
+                    past_spread = max(past_values.values()) - min(past_values.values())
+            
+            if past_spread is not None:
+                # 判断BIAS是否收敛或发散
+                if current_spread < past_spread * 0.7:  # 收敛30%以上
+                    patterns.append("多周期BIAS明显收敛")
+                elif current_spread > past_spread * 1.3:  # 发散30%以上
+                    patterns.append("多周期BIAS明显发散")
+        
+        # 7. 分析周期间隐含动能
+        # 短周期BIAS进入超买/超卖区而长周期未进入，可能意味着短暂波动
+        # 长周期BIAS进入超买/超卖区而短周期未进入，可能意味着大趋势变化
+        if len(sorted_periods) >= 2:
+            short_p = sorted_periods[0]
+            mid_p = sorted_periods[len(sorted_periods)//2] if len(sorted_periods) > 2 else None
+            long_p = sorted_periods[-1]
+            
+            if short_p in bias_values and long_p in bias_values:
+                # 判断周期间动量传导
+                if mid_p is not None and mid_p in bias_values:
+                    # 检查是否形成串联动能（短->中->长）
+                    short_mid_same_dir = np.sign(bias_values[short_p]) == np.sign(bias_values[mid_p])
+                    mid_long_same_dir = np.sign(bias_values[mid_p]) == np.sign(bias_values[long_p])
+                    
+                    if short_mid_same_dir and not mid_long_same_dir:
+                        patterns.append("BIAS动能向中周期传导")
+                    elif short_mid_same_dir and mid_long_same_dir:
+                        patterns.append("BIAS动能全周期传导")
         
         return patterns
 
@@ -865,3 +1669,403 @@ class BIAS(BaseIndicator):
         
         return signals
 
+    def evaluate_multi_period_bias(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        分析不同周期BIAS的协同关系，提供高级多周期协同评估
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.DataFrame: 多周期协同评估结果
+        """
+        # 确保已计算BIAS
+        if not self.has_result():
+            self.calculate(data)
+        
+        if len(self.periods) <= 1:
+            return pd.DataFrame(index=self._result.index)
+        
+        # 按照从短到长排序周期
+        sorted_periods = sorted(self.periods)
+        
+        # 初始化结果数据框
+        result = pd.DataFrame(index=self._result.index)
+        
+        # 1. 计算各周期之间的相关性矩阵
+        if len(self._result) >= 20:
+            correlation_matrix = {}
+            for i, p1 in enumerate(sorted_periods):
+                bias_col1 = f'BIAS{p1}'
+                if bias_col1 not in self._result.columns:
+                    continue
+                
+                for j, p2 in enumerate(sorted_periods[i+1:], i+1):
+                    bias_col2 = f'BIAS{p2}'
+                    if bias_col2 not in self._result.columns:
+                        continue
+                    
+                    # 计算20日滚动相关系数
+                    rolling_corr = self._result[bias_col1].rolling(20).corr(self._result[bias_col2])
+                    correlation_matrix[f'corr_{p1}_{p2}'] = rolling_corr
+                    result[f'corr_{p1}_{p2}'] = rolling_corr
+            
+            # 计算平均相关系数
+            if correlation_matrix:
+                corr_cols = list(correlation_matrix.keys())
+                result['avg_correlation'] = sum(result[col] for col in corr_cols) / len(corr_cols)
+        
+        # 2. 计算BIAS多周期协同指数
+        resonance_index = pd.Series(0.0, index=self._result.index)
+        
+        for i in range(len(self._result)):
+            if i < 5:  # 前几个数据点可能不够计算
+                continue
+            
+            # 2.1 方向一致性
+            direction_agreement = 0
+            valid_periods = 0
+            
+            for p in sorted_periods:
+                bias_col = f'BIAS{p}'
+                if bias_col not in self._result.columns:
+                    continue
+                
+                valid_periods += 1
+                if i > 0:
+                    # 方向：1=上升，-1=下降，0=不变
+                    direction = np.sign(self._result[bias_col].iloc[i] - self._result[bias_col].iloc[i-1])
+                    direction_agreement += direction
+            
+            if valid_periods > 0:
+                # 归一化方向一致性 (-1到1)
+                direction_score = abs(direction_agreement) / valid_periods
+                resonance_index.iloc[i] += direction_score * 0.4  # 40%权重
+            
+            # 2.2 位置一致性
+            position_agreement = 0
+            for p in sorted_periods:
+                bias_col = f'BIAS{p}'
+                if bias_col not in self._result.columns:
+                    continue
+                
+                # 位置：1=正值，-1=负值，0=零
+                position = np.sign(self._result[bias_col].iloc[i])
+                position_agreement += position
+            
+            if valid_periods > 0:
+                # 归一化位置一致性 (-1到1)
+                position_score = abs(position_agreement) / valid_periods
+                resonance_index.iloc[i] += position_score * 0.3  # 30%权重
+            
+            # 2.3 极值一致性
+            extreme_agreement = 0
+            for p in sorted_periods:
+                bias_col = f'BIAS{p}'
+                if bias_col not in self._result.columns:
+                    continue
+                
+                # 计算动态阈值
+                lookback = min(20, i)
+                std = self._result[bias_col].iloc[i-lookback:i].std() if lookback > 0 else 6
+                
+                overbought = max(6, std * 1.5)
+                oversold = min(-6, -std * 1.5)
+                
+                current_bias = self._result[bias_col].iloc[i]
+                
+                # 极值：1=超买，-1=超卖，0=正常
+                if current_bias > overbought:
+                    extreme_agreement += 1
+                elif current_bias < oversold:
+                    extreme_agreement -= 1
+            
+            if valid_periods > 0:
+                # 归一化极值一致性 (-1到1)
+                extreme_score = abs(extreme_agreement) / valid_periods
+                resonance_index.iloc[i] += extreme_score * 0.3  # 30%权重
+        
+        # 添加协同指数到结果
+        result['resonance_index'] = resonance_index
+        
+        # 3. 计算周期扩散指数 - 衡量各周期间的分歧程度
+        if len(sorted_periods) >= 2:
+            dispersion_index = pd.Series(0.0, index=self._result.index)
+            
+            for i in range(len(self._result)):
+                if i < 5:
+                    continue
+                
+                # 获取各周期当前值
+                period_values = []
+                for p in sorted_periods:
+                    bias_col = f'BIAS{p}'
+                    if bias_col in self._result.columns:
+                        period_values.append(self._result[bias_col].iloc[i])
+                
+                if period_values:
+                    # 计算当前值的标准差作为扩散度量
+                    dispersion = np.std(period_values)
+                    
+                    # 归一化扩散指数 (0到1)
+                    max_dispersion = 15  # 经验值，可调整
+                    dispersion_index.iloc[i] = min(dispersion / max_dispersion, 1.0)
+            
+            result['dispersion_index'] = dispersion_index
+        
+        # 4. 计算共振信号强度
+        result['resonance_strength'] = result['resonance_index'] * (1 - result.get('dispersion_index', 0))
+        
+        # 5. 生成共振信号
+        resonance_signal = pd.Series(0, index=self._result.index)
+        
+        # 强共振阈值
+        strong_resonance = 0.7
+        
+        # 处理每个数据点
+        for i in range(5, len(self._result)):
+            # 检查共振强度
+            if result['resonance_strength'].iloc[i] > strong_resonance:
+                # 判断方向
+                direction_sum = 0
+                for p in sorted_periods:
+                    bias_col = f'BIAS{p}'
+                    if bias_col in self._result.columns:
+                        direction_sum += np.sign(self._result[bias_col].iloc[i])
+                
+                # 多数周期为正值表示做多信号，多数为负值表示做空信号
+                if direction_sum > 0:
+                    resonance_signal.iloc[i] = 1  # 做多信号
+                elif direction_sum < 0:
+                    resonance_signal.iloc[i] = -1  # 做空信号
+        
+        result['resonance_signal'] = resonance_signal
+        
+        return result
+
+    def analyze_regression_rate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        分析BIAS回归均值的速率，量化动量特性
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.DataFrame: 回归速率分析结果
+        """
+        # 确保已计算BIAS
+        if not self.has_result():
+            self.calculate(data)
+        
+        # 初始化结果数据框
+        result = pd.DataFrame(index=self._result.index)
+        
+        # 对每个周期进行分析
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col not in self._result.columns:
+                continue
+            
+            # 1. 计算回归速率 - BIAS向零轴回归的速度
+            bias_abs = self._result[bias_col].abs()  # 偏离度
+            bias_change = self._result[bias_col].diff()  # 变动率
+            
+            # 回归速率：BIAS向零轴方向的变动率与偏离度的比值
+            regression_rate = pd.Series(index=self._result.index)
+            for i in range(1, len(self._result)):
+                current_bias = self._result[bias_col].iloc[i]
+                current_change = bias_change.iloc[i]
+                
+                # 仅在回归方向时计算速率（朝零轴方向）
+                if (current_bias > 0 and current_change < 0) or (current_bias < 0 and current_change > 0):
+                    regression_rate.iloc[i] = abs(current_change) / (bias_abs.iloc[i] + 0.1)  # 避免除以零
+                else:
+                    regression_rate.iloc[i] = 0
+            
+            result[f'regression_rate_{period}'] = regression_rate
+            
+            # 2. 计算加速度 - 回归速率的变化率
+            regression_accel = regression_rate.diff()
+            result[f'regression_accel_{period}'] = regression_accel
+            
+            # 3. 计算回归效率 - 回归速率相对于历史的百分位
+            if len(self._result) >= 20:
+                regression_efficiency = pd.Series(index=self._result.index)
+                
+                for i in range(20, len(self._result)):
+                    if regression_rate.iloc[i] > 0:  # 只在回归时计算效率
+                        # 获取历史回归速率（只考虑正值）
+                        hist_rates = regression_rate.iloc[i-20:i]
+                        positive_rates = hist_rates[hist_rates > 0]
+                        
+                        if len(positive_rates) > 0:
+                            # 计算当前速率在历史中的百分位
+                            percentile = sum(regression_rate.iloc[i] >= positive_rates) / len(positive_rates)
+                            regression_efficiency.iloc[i] = percentile
+                
+                result[f'regression_efficiency_{period}'] = regression_efficiency
+            
+            # 4. 计算回归持续性 - 连续回归的时间长度
+            regression_duration = pd.Series(0, index=self._result.index)
+            
+            current_duration = 0
+            for i in range(1, len(self._result)):
+                current_bias = self._result[bias_col].iloc[i]
+                current_change = bias_change.iloc[i]
+                
+                # 检查是否处于回归状态
+                if (current_bias > 0 and current_change < 0) or (current_bias < 0 and current_change > 0):
+                    current_duration += 1
+                else:
+                    current_duration = 0
+                
+                regression_duration.iloc[i] = current_duration
+            
+            result[f'regression_duration_{period}'] = regression_duration
+            
+            # 5. 计算临界点 - BIAS回归的关键阶段
+            regression_critical = pd.Series(0, index=self._result.index)
+            
+            for i in range(20, len(self._result)):
+                current_bias = self._result[bias_col].iloc[i]
+                
+                # 动态计算临界阈值
+                hist_bias = self._result[bias_col].iloc[i-20:i]
+                std = hist_bias.std()
+                
+                # 定义临界区域
+                critical_zone = std * 0.5  # 在均值附近的临界区域
+                
+                # 标记临界点：1=从正值接近零轴，-1=从负值接近零轴，2=刚穿过零轴转正，-2=刚穿过零轴转负
+                if 0 < current_bias < critical_zone:
+                    regression_critical.iloc[i] = 1
+                elif -critical_zone < current_bias < 0:
+                    regression_critical.iloc[i] = -1
+                elif current_bias > 0 and i > 0 and self._result[bias_col].iloc[i-1] <= 0:
+                    regression_critical.iloc[i] = 2
+                elif current_bias < 0 and i > 0 and self._result[bias_col].iloc[i-1] >= 0:
+                    regression_critical.iloc[i] = -2
+            
+            result[f'regression_critical_{period}'] = regression_critical
+        
+        # 6. 综合回归评分 - 基于回归速率、效率和持续性的综合得分
+        if len(self.periods) > 0:
+            regression_score = pd.Series(0.0, index=self._result.index)
+            
+            for period in self.periods:
+                rate_col = f'regression_rate_{period}'
+                eff_col = f'regression_efficiency_{period}'
+                dur_col = f'regression_duration_{period}'
+                
+                if rate_col in result.columns:
+                    # 速率得分 (0-40分)
+                    regression_score += result[rate_col] * 40
+                
+                if eff_col in result.columns:
+                    # 效率得分 (0-30分)
+                    regression_score += result[eff_col] * 30
+                
+                if dur_col in result.columns:
+                    # 持续性得分 (0-30分)，最多考虑5天的持续性
+                    duration_score = result[dur_col].clip(0, 5) / 5 * 30
+                    regression_score += duration_score
+            
+            # 平均化得分
+            regression_score = regression_score / len(self.periods)
+            
+            # 考虑BIAS的方向，确定最终得分的正负
+            for period in self.periods:
+                bias_col = f'BIAS{period}'
+                if bias_col in self._result.columns:
+                    # 为得分添加方向：正值BIAS回归得负分，负值BIAS回归得正分
+                    regression_score = regression_score * (-np.sign(self._result[bias_col]))
+                    break
+            
+            result['regression_score'] = regression_score
+        
+        return result
+
+    def _register_bias_patterns(self):
+        """注册BIAS特有的形态检测方法"""
+        self.register_pattern(self._detect_bias_extreme, "BIAS极值")
+        self.register_pattern(self._detect_bias_divergence, "BIAS背离")
+    
+    # ... 形态检测方法实现 ...
+    
+    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
+        self.ensure_columns(data, ['bias'])
+        patterns = []
+        
+        for pattern_func in self._pattern_registry.values():
+            result = pattern_func(data)
+            if result:
+                patterns.append(result)
+        
+        return patterns
+
+
+
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+
+    
+            """
+
+    
+            生成交易信号
+        
+
+    
+            Args:
+
+    
+                data: 输入数据
+
+    
+                **kwargs: 额外参数
+            
+
+    
+            Returns:
+
+    
+                Dict[str, pd.Series]: 包含交易信号的字典
+
+    
+            """
+
+    
+            # 确保已计算指标
+
+    
+            if not self.has_result():
+
+    
+                self.calculate(data, **kwargs)
+            
+
+    
+            # 初始化信号
+
+    
+            signals = {}
+
+    
+            signals['buy_signal'] = pd.Series(False, index=data.index)
+
+    
+            signals['sell_signal'] = pd.Series(False, index=data.index)
+
+    
+            signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+
+    
+            # 在这里实现指标特定的信号生成逻辑
+
+    
+            # 此处提供默认实现
+        
+
+    
+            return signals

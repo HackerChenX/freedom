@@ -13,7 +13,7 @@ import datetime
 from typing import List, Dict, Any, Optional
 
 from utils.logger import get_logger
-from scripts.backtest.comprehensive_backtest import ComprehensiveBacktest
+from scripts.backtest.consolidated_backtest import ConsolidatedBacktest
 
 logger = get_logger(__name__)
 
@@ -32,7 +32,7 @@ def main():
     # 运行综合回测
     try:
         print("开始股票综合回测分析...")
-        backtest = ComprehensiveBacktest()
+        backtest = ConsolidatedBacktest()
         report_file, strategy_file = backtest.run(args.csv, args.days_before, args.days_after)
         
         if report_file:

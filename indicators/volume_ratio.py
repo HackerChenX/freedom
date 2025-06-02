@@ -261,4 +261,56 @@ class VolumeRatio(BaseIndicator):
             activity_df.loc[activity_df.index[-1], 'trend'] = '上升' if trend > 0 else '下降'
             activity_df.loc[activity_df.index[-1], 'trend_strength'] = abs(trend) * 10
         
-        return activity_df 
+        return activity_df
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算指标原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分(0-100)
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)
+    
+        # 在这里实现指标特定的评分逻辑
+        # 此处提供默认实现
+    
+        return score
+        
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成交易信号
+        
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        # 初始化信号
+        signals = {}
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
+    
+        # 在这里实现指标特定的信号生成逻辑
+        # 此处提供默认实现
+    
+        return signals
