@@ -1,0 +1,40 @@
+# 数据库配置模板
+# 复制此文件为 database.yaml 并修改配置
+
+# ClickHouse数据库配置
+clickhouse:
+  host: localhost
+  port: 9000
+  database: stock
+  user: default
+  password: 
+  timeout: 30
+  compression: true
+  
+  # 连接池配置
+  pool:
+    min_size: 5
+    max_size: 20
+    timeout: 30
+    max_overflow: 10
+    
+  # 查询配置
+  query:
+    timeout: 30
+    max_rows: 1000000
+    max_memory_usage: 20000000000  # 20GB
+    
+  # 缓存配置
+  cache:
+    enabled: true
+    ttl: 3600  # 缓存时间（秒）
+    max_size: 1000  # 最大缓存条目数
+
+# 日志配置
+logging:
+  level: INFO
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}"
+  rotation: "1 day"
+  retention: "7 days"
+  compression: true
+  path: "logs/database.log" 
