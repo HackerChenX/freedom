@@ -42,6 +42,8 @@ tmp/
 user_files/
 metadata_dropped/
 preprocessed_configs/
+doc/*.pdf
+doc/ZXM体系3.0版GJ.pdf
 
 # 配置文件
 config/database.yaml
