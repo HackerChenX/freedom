@@ -21,15 +21,15 @@ class Period(Enum):
     内部值使用标准化格式，便于数据库查询和策略配置
     """
     # 分钟级别周期
-    MIN_5 = "MIN5"         # 5分钟线
-    MIN_15 = "MIN15"       # 15分钟线
-    MIN_30 = "MIN30"       # 30分钟线
-    MIN_60 = "MIN60"       # 60分钟线
+    MIN_5 = "5分钟"         # 5分钟线
+    MIN_15 = "15分钟"       # 15分钟线
+    MIN_30 = "30分钟"       # 30分钟线
+    MIN_60 = "60分钟"       # 60分钟线
     
     # 日级别周期
-    DAILY = "DAILY"        # 日线
-    WEEKLY = "WEEKLY"      # 周线
-    MONTHLY = "MONTHLY"    # 月线
+    DAILY = "日线"        # 日线
+    WEEKLY = "周线"      # 周线
+    MONTHLY = "月线"    # 月线
     
     @classmethod
     def get_description(cls, period) -> str:

@@ -12,6 +12,18 @@ class DBManager:
     _instance = None
     _db = None
     
+    def __new__(cls):
+        """
+        实现单例模式
+        
+        Returns:
+            DBManager: 单例实例
+        """
+        if cls._instance is None:
+            cls._instance = super(DBManager, cls).__new__(cls)
+            cls._instance.init_db()
+        return cls._instance
+    
     @classmethod
     def get_instance(cls):
         """
@@ -26,13 +38,9 @@ class DBManager:
     
     def __init__(self):
         """
-        初始化数据库连接
+        初始化方法，由于使用__new__实现单例，这里不需要做额外工作
         """
-        if DBManager._instance is not None:
-            raise Exception("DBManager是单例类，请使用get_instance()方法获取实例")
-        
-        DBManager._instance = self
-        self.init_db()
+        pass
     
     def init_db(self):
         """
@@ -53,20 +61,20 @@ class DBManager:
             self.init_db()
         return self._db
     
-    def get_stock_info(self, stock_code, level, start, end):
+    def get_stock_info(self, stock_code, level, start_date, end_date):
         """
         获取股票信息
         
         Args:
             stock_code: 股票代码
             level: K线周期
-            start: 开始日期
-            end: 结束日期
+            start_date: 开始日期
+            end_date: 结束日期
             
         Returns:
             list: 股票数据列表
         """
-        return self.db.get_stock_info(stock_code, level, start, end)
+        return self.db.get_stock_info(stock_code, level, start_date, end_date)
     
     def get_industry_info(self, symbol, start, end):
         """
@@ -157,14 +165,14 @@ class DBManager:
         try:
             # 获取股票列表
             stocks_df = self.db.get_stock_list()
-            
+            # 标准化列名
+            if 'stock_code' in stocks_df.columns and 'stock_name' in stocks_df.columns:
+                stocks_df = stocks_df.rename(columns={'stock_code': 'code', 'stock_name': 'name'})
             # 过滤出匹配的股票
             matched_stocks = stocks_df[stocks_df['code'] == stock_code]
-            
             # 如果找到匹配的股票，返回名称
             if not matched_stocks.empty:
                 return matched_stocks.iloc[0]['name']
-            
             # 未找到匹配的股票，返回股票代码
             return stock_code
         except Exception as e:
@@ -199,4 +207,13 @@ class DBManager:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"获取股票 {stock_code} 交易日期失败: {e}")
-            return [] 
+            return []
+            
+    def get_stock_list(self):
+        """
+        获取股票列表
+        
+        Returns:
+            DataFrame: 股票列表
+        """
+        return self.db.get_stock_list() 

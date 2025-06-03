@@ -20,68 +20,45 @@ wheels/
 .installed.cfg
 *.egg
 
+# 虚拟环境
+venv/
+venv1/
+ENV/
+env/
+.env/
+
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 .DS_Store
-*.sublime-project
-*.sublime-workspace
 
-# Logs
+# 项目特定
 logs/
 *.log
-!logs/.gitkeep
-!logs/archive/.gitkeep
-
-# Database
-db/clickhouse
-*.db
-*.sqlite3
-
-# Output and temporary files
-data/result/
-output/
-temp/
+data/
 tmp/
-metadata/
+user_files/
 metadata_dropped/
 preprocessed_configs/
-format_schemas/
-store/
-user_files/
-uuid
-status
-flags/
-!data/result/.gitkeep
 
-# Environments
-venv/
-env/
-ENV/
+# 配置文件
+config/database.yaml
+config/*.local.yaml
 
-# 测试相关
+# 测试
 .coverage
 htmlcov/
 .pytest_cache/
-nosetests.xml
+.tox/
 coverage.xml
 *.cover
 .hypothesis/
 
-# Cursor
-.cursor/cursors.json
-.cursor/settings.json 
-
-# Large files
-*.patch
-*.pdf
-*.dat
-*.bin
-*.pkl
-*.npy
-*.npz
-*.model
-*.backup
+# 其他
+.cursor/
+.lingma/
+.trae/
+uuid
 get-pip.py

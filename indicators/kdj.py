@@ -18,6 +18,7 @@ from indicators.common import crossover, crossunder
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternInfo, get_pattern_registry
 from utils.logger import get_logger
 from utils.decorators import log_calls, error_handling
+from utils.technical_utils import calculate_kdj
 
 logger = get_logger(__name__)
 
@@ -631,16 +632,33 @@ class KDJ(BaseIndicator):
             logger.warning(f"判断市场环境出错: {e}")
             return MarketEnvironment.SIDEWAYS_MARKET
     
-    @log_calls(level=logging.DEBUG)
-    @error_handling(error_message="KDJ指标计算失败", retries=0)
-    def calculate(self, data: pd.DataFrame, add_prefix: bool = False, **kwargs) -> pd.DataFrame:
+    def calculate(self, *args, **kwargs) -> pd.DataFrame:
+        """
+        计算KDJ指标，支持多种参数格式
+        """
+        # 如果第一个参数是DataFrame，直接用
+        if len(args) == 1 and isinstance(args[0], pd.DataFrame):
+            data = args[0]
+        # 如果传递了open, high, low, close, volume等序列，组装为DataFrame
+        elif len(args) >= 4:
+            columns = ['open', 'high', 'low', 'close', 'volume']
+            data_dict = {}
+            for i, col in enumerate(columns):
+                if i < len(args):
+                    data_dict[col] = args[i]
+            data = pd.DataFrame(data_dict)
+        else:
+            raise ValueError('参数格式不支持')
+        # 兼容原有参数
+        return self._calculate_kdj(data, **kwargs)
+
+    def _calculate_kdj(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算KDJ指标
         
         Args:
             data: 输入数据，包含价格数据的DataFrame
-            add_prefix: 是否在输出列名前添加指标名称前缀
-            kwargs: 其他参数
+            **kwargs: 其他参数
             
         Returns:
             pd.DataFrame: 包含KDJ指标的DataFrame
@@ -662,14 +680,9 @@ class KDJ(BaseIndicator):
         )
         
         # 设置列名（使用大写字母）
-        if add_prefix:
-            k_col = self.get_column_name('K')
-            d_col = self.get_column_name('D')
-            j_col = self.get_column_name('J')
-        else:
-            k_col = 'K'
-            d_col = 'D'
-            j_col = 'J'
+        k_col = self.get_column_name('K')
+        d_col = self.get_column_name('D')
+        j_col = self.get_column_name('J')
         
         # 添加结果列
         result[k_col] = k
@@ -1206,4 +1219,69 @@ class KDJ(BaseIndicator):
                 # 综合评分: 价格上涨越多，指标减弱越明显，评分越高
                 return min(100, 50 + price_rise * 100 * weight + indicator_weaken * 10)
         
-        return 50.0 
+        return 50.0
+
+# =====================
+# 简化版KDJ形态分析器，供PatternAnalyzer等直接调用
+# =====================
+
+class KDJIndicator:
+    """KDJ指标分析器（简化版，仅用于形态识别）"""
+    def __init__(self, k_period: int = 9, d_period: int = 3, j_period: int = 3):
+        self.k_period = k_period
+        self.d_period = d_period
+        self.j_period = j_period
+        self.patterns = {
+            'kdj_golden_cross': {
+                'name': 'KDJ金叉',
+                'description': 'K线上穿D线',
+                'analyzer': self._analyze_golden_cross
+            },
+            'kdj_death_cross': {
+                'name': 'KDJ死叉',
+                'description': 'K线下穿D线',
+                'analyzer': self._analyze_death_cross
+            }
+        }
+
+    def calculate(self, high: pd.Series, low: pd.Series, close: pd.Series) -> Tuple[pd.Series, pd.Series, pd.Series]:
+        return calculate_kdj(high, low, close, self.k_period, self.d_period, self.j_period)
+
+    def analyze_pattern(self, pattern_id: str, data: pd.DataFrame) -> List[Dict]:
+        if pattern_id not in self.patterns:
+            raise ValueError(f"不支持的KDJ形态: {pattern_id}")
+        return self.patterns[pattern_id]['analyzer'](data)
+
+    def _analyze_golden_cross(self, data: pd.DataFrame) -> List[Dict]:
+        k, d, j = self.calculate(data['high'], data['low'], data['close'])
+        results = []
+        for i in range(1, len(data)):
+            if k.iloc[i-1] < d.iloc[i-1] and k.iloc[i] > d.iloc[i]:
+                strength = min(1.0, abs(k.iloc[i] - d.iloc[i]) / (abs(k.iloc[i-1] - d.iloc[i-1]) + 1e-6))
+                results.append({
+                    'date': data.index[i],
+                    'pattern': 'kdj_golden_cross',
+                    'strength': strength,
+                    'price': data['close'].iloc[i],
+                    'k': k.iloc[i],
+                    'd': d.iloc[i],
+                    'j': j.iloc[i]
+                })
+        return results
+
+    def _analyze_death_cross(self, data: pd.DataFrame) -> List[Dict]:
+        k, d, j = self.calculate(data['high'], data['low'], data['close'])
+        results = []
+        for i in range(1, len(data)):
+            if k.iloc[i-1] > d.iloc[i-1] and k.iloc[i] < d.iloc[i]:
+                strength = min(1.0, abs(k.iloc[i] - d.iloc[i]) / (abs(k.iloc[i-1] - d.iloc[i-1]) + 1e-6))
+                results.append({
+                    'date': data.index[i],
+                    'pattern': 'kdj_death_cross',
+                    'strength': strength,
+                    'price': data['close'].iloc[i],
+                    'k': k.iloc[i],
+                    'd': d.iloc[i],
+                    'j': j.iloc[i]
+                })
+        return results 

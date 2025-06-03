@@ -367,6 +367,49 @@ class ZXMDiagnostics(BaseIndicator):
         
         return signals
         
+    def generate_trading_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成交易信号（满足BaseIndicator抽象类的要求）
+        
+        Args:
+            data: DataFrame，包含OHLCV数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+                signal_threshold: 信号阈值，默认70
+                
+        Returns:
+            DataFrame: 包含交易信号的DataFrame
+        """
+        # 获取参数
+        signal_threshold = kwargs.get('signal_threshold', 70)
+        
+        # 初始化结果DataFrame
+        signals = pd.DataFrame(index=data.index)
+        signals['buy_signal'] = False
+        signals['sell_signal'] = False
+        signals['signal_strength'] = 0.0
+        
+        # 计算诊断结果
+        diagnosis_result = self.calculate(data, *args, **kwargs)
+        
+        if diagnosis_result.empty:
+            return signals
+            
+        # 生成交易信号
+        for i in range(len(signals)):
+            if i < len(diagnosis_result):
+                # 买入信号条件
+                if diagnosis_result['diagnosis_score'].iloc[i] > signal_threshold:
+                    signals['buy_signal'].iloc[i] = True
+                    signals['signal_strength'].iloc[i] = (diagnosis_result['diagnosis_score'].iloc[i] - signal_threshold) / (100 - signal_threshold)
+                
+                # 卖出信号条件
+                elif diagnosis_result['diagnosis_score'].iloc[i] < 30:
+                    signals['sell_signal'].iloc[i] = True
+                    signals['signal_strength'].iloc[i] = (30 - diagnosis_result['diagnosis_score'].iloc[i]) / 30
+        
+        return signals
+
     # 分析方法
     def _analyze_trend_health(self, data: pd.DataFrame, lookback_period: int) -> Dict[str, pd.Series]:
         """分析趋势健康度"""

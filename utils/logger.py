@@ -213,6 +213,39 @@ def get_logger(name: str, level: Optional[Union[str, int]] = None,
 init_logging()
 
 
+def setup_logger(log_file: Optional[str] = None, log_level: Optional[Union[str, int]] = None) -> None:
+    """
+    设置特定的日志配置
+    
+    Args:
+        log_file: 日志文件路径，如果为None则使用默认日志文件
+        log_level: 日志级别，可以是字符串或整数
+    """
+    if log_level is not None:
+        if isinstance(log_level, str):
+            log_level = _LOG_LEVELS.get(log_level.upper(), logging.INFO)
+    else:
+        log_level = get_config('log.level', 'info')
+        if isinstance(log_level, str):
+            log_level = _LOG_LEVELS.get(log_level.lower(), logging.INFO)
+    
+    # 重新初始化日志系统
+    init_logging(level=log_level, to_console=True, to_file=True)
+    
+    # 如果指定了日志文件，添加专用文件处理器
+    if log_file is not None:
+        log_dir = _ensure_log_dir()
+        full_log_file = os.path.join(log_dir, log_file)
+        file_handler = _create_file_handler(full_log_file)
+        file_handler.setLevel(log_level)
+        
+        # 添加到根日志器
+        root_logger = logging.getLogger()
+        # 检查是否已经有这个文件的处理器
+        if not any(getattr(h, 'baseFilename', None) == full_log_file for h in root_logger.handlers):
+            root_logger.addHandler(file_handler)
+
+
 def setup_app_logger() -> logging.Logger:
     """
     设置应用程序级别的日志器

@@ -234,7 +234,7 @@ class StrategyManager:
             Dict[str, Any]: 合并后的策略配置
         """
         merged = copy.deepcopy(original)
-        for key, value in updates["strategy"].items():
+        for key, value in updates["strategy"].items()``:
             if key != "id" and key != "create_time":
                 merged["strategy"][key] = value
         return merged

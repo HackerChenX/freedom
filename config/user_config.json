@@ -3,7 +3,7 @@
         "host": "127.0.0.1",
         "port": 9000,
         "user": "default",
-        "password": "",
+        "password": "123456",
         "database": "stock"
     },
     "paths": {

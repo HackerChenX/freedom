@@ -10,6 +10,8 @@ import threading
 import time
 import os
 import atexit
+import numpy as np
+from enums.period import Period  # 添加 Period 枚举的导入
 
 # 导入KlinePeriod枚举，但使用try-except避免循环导入问题
 try:
@@ -411,76 +413,143 @@ class ClickHouseDB:
             Exception: 查询失败时抛出
         """
         query = """
-        SELECT 
-            code, name, industry, area, list_date
+        SELECT DISTINCT
+            code as stock_code, 
+            name as stock_name
         FROM 
             stock_info
         WHERE 
-            is_valid = 1
+            level = '日线'
         """
         
-        return self.query(query)
+        result = self.query(query)
+        
+        # 确保列名标准化
+        if not result.empty and 'col_0' in result.columns:
+            column_mapping = {
+                'col_0': 'stock_code',
+                'col_1': 'stock_name'
+            }
+            result = result.rename(columns=column_mapping)
+        
+        return result
     
-    def get_stock_info(self, stock_code: str, level: str, start_date: Union[str, datetime.datetime], 
-                   end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
+    def get_stock_info(self, stock_code: str, level: Union[str, Period], start_date: Union[str, datetime.datetime], 
+                       end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
         """
         获取股票K线数据
 
         Args:
             stock_code: 股票代码
-            level: K线周期
-            start_date: 开始日期
-            end_date: 结束日期
+            level: K线周期，必须是 Period 枚举值或可转换为 Period 的字符串
+            start_date: 开始日期，支持格式：'YYYY-MM-DD' 或 'YYYYMMDD'
+            end_date: 结束日期，支持格式：'YYYY-MM-DD' 或 'YYYYMMDD'
 
         Returns:
-            pd.DataFrame: 股票K线数据
+            pd.DataFrame: 股票K线数据，包含以下字段：
+                - code: 股票代码
+                - name: 股票名称
+                - date: 日期
+                - level: K线周期
+                - open: 开盘价
+                - high: 最高价
+                - low: 最低价
+                - close: 收盘价
+                - volume: 成交量
+                - turnover_rate: 换手率
+                - price_change: 价格变动
+                - price_range: 价格区间
+                - industry: 行业
 
         Raises:
+            ValueError: 参数无效时抛出
             Exception: 查询失败时抛出
         """
-        # 转换日期格式
-        if isinstance(start_date, str):
-            try:
-                # 尝试转换为日期格式
-                if len(start_date) == 8:  # 20220101格式
-                    start_date = datetime.datetime.strptime(start_date, '%Y%m%d').date()
-                else:  # 其他格式
-                    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
-            except ValueError:
-                logger.warning(f"无法将开始日期 {start_date} 转换为日期格式，使用原始字符串")
-        
-        if isinstance(end_date, str):
-            try:
-                # 尝试转换为日期格式
-                if len(end_date) == 8:  # 20220101格式
-                    end_date = datetime.datetime.strptime(end_date, '%Y%m%d').date()
-                else:  # 其他格式
-                    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
-            except ValueError:
-                logger.warning(f"无法将结束日期 {end_date} 转换为日期格式，使用原始字符串")
-        
-        # 将周期标准化为数据库中的level值
-        level_map = {
-            'day': '日线',
-            'week': '周线',
-            'month': '月线',
-            '60min': '60分钟',
-            '30min': '30分钟',
-            '15min': '15分钟',
-            '5min': '5分钟',
-            # 支持大写格式
-            'DAILY': '日线',
-            'WEEKLY': '周线',
-            'MONTHLY': '月线',
-            'MIN60': '60分钟',
-            'MIN30': '30分钟',
-            'MIN15': '15分钟',
-            'MIN5': '5分钟'
-        }
-        
-        normalized_level = level_map.get(level, level)
-        
         try:
+            # 参数验证
+            if not isinstance(stock_code, str) or not stock_code.isdigit():
+                raise ValueError(f"无效的股票代码格式: {stock_code}，应为数字字符串")
+            
+            # 转换周期为 Period 枚举
+            if isinstance(level, str):
+                try:
+                    level = Period.from_string(level)
+                except ValueError as e:
+                    raise ValueError(f"无效的K线周期: {level}，支持的周期: {', '.join(Period.get_all_period_values())}") from e
+            elif not isinstance(level, Period):
+                raise ValueError(f"周期参数必须是 Period 枚举或可转换为 Period 的字符串，当前类型: {type(level)}")
+            
+            normalized_level = level.value
+            logger.info(f"查询股票 {stock_code} 的 {normalized_level} 周期数据")
+            
+            # 转换日期格式
+            def parse_date(date_str: str) -> datetime.date:
+                try:
+                    if len(date_str) == 8:  # 20220101格式
+                        return datetime.datetime.strptime(date_str, '%Y%m%d').date()
+                    else:  # 其他格式
+                        return datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError as e:
+                    raise ValueError(f"无效的日期格式: {date_str}，支持格式: YYYY-MM-DD 或 YYYYMMDD") from e
+            
+            # 转换开始日期
+            if isinstance(start_date, str):
+                start_date = parse_date(start_date)
+            elif isinstance(start_date, datetime.datetime):
+                start_date = start_date.date()
+            elif not isinstance(start_date, datetime.date):
+                raise ValueError(f"无效的开始日期类型: {type(start_date)}")
+            
+            # 转换结束日期
+            if isinstance(end_date, str):
+                end_date = parse_date(end_date)
+            elif isinstance(end_date, datetime.datetime):
+                end_date = end_date.date()
+            elif not isinstance(end_date, datetime.date):
+                raise ValueError(f"无效的结束日期类型: {type(end_date)}")
+            
+            # 验证日期范围
+            if start_date > end_date:
+                raise ValueError(f"开始日期 {start_date} 不能晚于结束日期 {end_date}")
+            
+            # 预检查数据是否存在
+            check_query = """
+            SELECT 
+                COUNT(*) as count,
+                MIN(date) as min_date,
+                MAX(date) as max_date
+            FROM 
+                stock_info
+            WHERE 
+                code = %(stock_code)s AND level = %(level)s
+            """
+            
+            check_params = {
+                'stock_code': stock_code,
+                'level': normalized_level
+            }
+            
+            check_result = self.query(check_query, check_params)
+            
+            if check_result.empty or check_result.iloc[0, 0] == 0:
+                logger.warning(f"数据库中不存在股票 {stock_code} 的 {normalized_level} 周期数据")
+                return pd.DataFrame(columns=['code', 'name', 'date', 'level', 'open', 'high', 'low', 'close', 
+                                           'volume', 'turnover_rate', 'price_change', 'price_range', 'industry'])
+            
+            min_date = check_result.iloc[0, 1]
+            max_date = check_result.iloc[0, 2]
+            
+            logger.info(f"股票 {stock_code} 的 {normalized_level} 周期数据范围: {min_date} 至 {max_date}")
+            
+            # 调整查询日期范围
+            if start_date < min_date:
+                logger.warning(f"开始日期 {start_date} 早于数据最早日期 {min_date}，将使用最早日期")
+                start_date = min_date
+            
+            if end_date > max_date:
+                logger.warning(f"结束日期 {end_date} 晚于数据最新日期 {max_date}，将使用最新日期")
+                end_date = max_date
+            
             # 构建查询
             query = """
             SELECT 
@@ -501,37 +570,42 @@ class ClickHouseDB:
                 'end_date': end_date
             }
             
+            logger.info(f"执行查询: {query} 参数: {params}")
             result = self.query(query, params)
             
-            # 使用DataFrame.empty属性判断结果是否为空
             if result.empty:
-                logger.warning(f"未找到股票 {stock_code} 的 {normalized_level} 周期数据")
-                return pd.DataFrame()
+                logger.warning(f"未找到股票 {stock_code} 在 {start_date} 至 {end_date} 期间的 {normalized_level} 周期数据")
+                return pd.DataFrame(columns=['code', 'name', 'date', 'level', 'open', 'high', 'low', 'close', 
+                                           'volume', 'turnover_rate', 'price_change', 'price_range', 'industry'])
             
-            # 重命名列
-            column_map = {
-                'col_0': 'code',
-                'col_1': 'name',
-                'col_2': 'date',
-                'col_3': 'level',
-                'col_4': 'open',
-                'col_5': 'high',
-                'col_6': 'low',
-                'col_7': 'close',
-                'col_8': 'volume',
-                'col_9': 'turnover_rate',
-                'col_10': 'price_change',
-                'col_11': 'price_range',
-                'col_12': 'industry'
-            }
+            # 标准化列名
+            if 'col_0' in result.columns:
+                column_mapping = {
+                    'col_0': 'code',
+                    'col_1': 'name',
+                    'col_2': 'date',
+                    'col_3': 'level',
+                    'col_4': 'open',
+                    'col_5': 'high',
+                    'col_6': 'low',
+                    'col_7': 'close',
+                    'col_8': 'volume',
+                    'col_9': 'turnover_rate',
+                    'col_10': 'price_change',
+                    'col_11': 'price_range',
+                    'col_12': 'industry'
+                }
+                result = result.rename(columns=column_mapping)
             
-            result.rename(columns=column_map, inplace=True)
-            
+            logger.info(f"成功获取 {len(result)} 条股票 {stock_code} 的 {normalized_level} 周期数据")
             return result
             
+        except ValueError as e:
+            logger.error(f"参数验证失败: {e}")
+            raise
         except Exception as e:
             logger.error(f"从数据库加载股票 {stock_code} {level} 数据失败: {e}")
-            return pd.DataFrame()
+            raise
     
     def get_industry_stocks(self, industry: str) -> pd.DataFrame:
         """
@@ -911,6 +985,33 @@ class ClickHouseDB:
                 conn.execute(query, params)
         
         logger.info(f"已保存{len(result_data)}条{result_type}结果数据")
+
+    def get_stock_name(self, stock_code: str) -> str:
+        """
+        获取股票名称
+        Args:
+            stock_code: 股票代码
+        Returns:
+            str: 股票名称，如果未找到则返回股票代码
+        """
+        try:
+            query = """
+            SELECT code, name FROM stock_info WHERE code = %(stock_code)s AND level = '日线' LIMIT 1
+            """
+            params = {'stock_code': stock_code}
+            result = self.query(query, params)
+            # 标准化列名
+            if not result.empty:
+                if 'col_0' in result.columns:
+                    result = result.rename(columns={'col_0': 'code', 'col_1': 'name'})
+                elif 'stock_code' in result.columns and 'stock_name' in result.columns:
+                    result = result.rename(columns={'stock_code': 'code', 'stock_name': 'name'})
+                # 取第一行的name
+                return result.iloc[0]['name']
+            return stock_code
+        except Exception as e:
+            logger.error(f"获取股票 {stock_code} 名称失败: {e}")
+            return stock_code
 
 def get_clickhouse_db(config: Optional[Dict[str, Any]] = None) -> ClickHouseDB:
     """

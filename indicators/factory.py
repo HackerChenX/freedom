@@ -69,8 +69,11 @@ class IndicatorFactory:
             indicator_class: 指标类
         """
         # 使用lambda创建工厂函数
-        cls._indicators[indicator_type] = lambda **params: indicator_class(**params)
-        logger.info(f"已注册指标: {indicator_type}")
+        if indicator_type not in cls._indicators:
+            cls._indicators[indicator_type] = lambda **params: indicator_class(**params)
+            logger.info(f"已注册指标: {indicator_type}")
+        else:
+            logger.debug(f"指标 {indicator_type} 已存在，跳过重复注册")
     
     @classmethod
     def get_indicator_types(cls) -> Dict[str, callable]:
@@ -124,10 +127,6 @@ class IndicatorFactory:
         
         会扫描indicators包及其子包中的所有模块，找出所有继承自BaseIndicator的类并注册
         """
-        # 如果已经注册过，则不再重复注册
-        if cls._has_auto_registered:
-            return
-            
         logger.info("开始自动注册所有指标...")
         
         # 获取indicators包的路径
@@ -207,7 +206,19 @@ class IndicatorFactory:
                 logger.error(f"处理子包 {pkg_name} 时出错: {e}")
         
         logger.info(f"自动注册完成，共注册了 {registered_count} 个指标")
+        
+        # 设置标记，避免重复注册
         cls._has_auto_registered = True
-
-# 初始调用时自动注册所有指标
-IndicatorFactory.auto_register_all_indicators()
+    
+    @classmethod
+    def get_all_registered_indicators(cls) -> List[str]:
+        """
+        获取所有已注册的指标ID
+        
+        Returns:
+            List[str]: 指标ID列表
+        """
+        # 确保已经自动注册所有指标
+        cls._ensure_auto_registered()
+            
+        return list(cls._indicators.keys())
