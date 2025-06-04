@@ -4,13 +4,14 @@
 """
 自动指标分析器
 
-自动分析所有技术指标，判断买点日期命中的指标形态
+自动分析多个技术指标并识别形态
 """
 
 import os
 import sys
 import pandas as pd
-from typing import Dict, List, Any, Optional, Tuple
+import numpy as np
+from typing import List, Dict, Any, Tuple, Optional, Union, Set
 from datetime import datetime
 
 # 添加项目根目录到Python路径
@@ -20,6 +21,7 @@ sys.path.insert(0, root_dir)
 from utils.logger import get_logger
 from indicators.factory import IndicatorFactory
 from indicators.scoring_framework import IndicatorScoreManager
+from indicators.base_indicator import BaseIndicator
 
 # 尝试导入pattern_recognition_analyzer，如果talib不可用则跳过
 try:
@@ -63,42 +65,47 @@ class AutoIndicatorAnalyzer:
         return indicators
     
     def analyze_all_indicators(self, 
-                            stock_data: Dict[str, pd.DataFrame], 
-                            date: str) -> Dict[str, List[Dict[str, Any]]]:
+                      stock_data: Dict[str, pd.DataFrame],
+                      target_rows: Dict[str, int]) -> Dict[str, List[Dict[str, Any]]]:
         """
-        分析所有指标形态
+        分析所有指标
         
         Args:
-            stock_data: 股票多周期数据，格式为 {period: dataframe}
-            date: 买点日期
+            stock_data: 多周期股票数据
+            target_rows: 每个周期的目标行索引
             
         Returns:
-            Dict[str, List[Dict[str, Any]]]: 按周期分组的命中指标列表
+            Dict[str, List[Dict[str, Any]]]: 按周期组织的指标分析结果
         """
-        results = {}
-        
-        # 遍历所有周期
-        for period, df in stock_data.items():
-            if df.empty:
-                logger.warning(f"周期 {period} 的数据为空，跳过分析")
-                continue
+        try:
+            results = {}
+            
+            # 对每个周期的数据分别进行分析
+            for period, df in stock_data.items():
+                if df is None or df.empty:
+                    logger.warning(f"周期 {period} 的数据为空，跳过分析")
+                    continue
+                    
+                # 获取目标行索引
+                target_row = target_rows.get(period)
+                if target_row is None:
+                    logger.warning(f"周期 {period} 没有提供目标行索引，使用最后一行")
+                    target_row = len(df) - 1
+                    
+                if target_row < 0 or target_row >= len(df):
+                    logger.warning(f"周期 {period} 的目标行索引 {target_row} 超出范围，跳过分析")
+                    continue
+                    
+                # 分析该周期的所有指标
+                period_results = self._analyze_period_indicators(df, target_row)
                 
-            # 确保数据按日期排序
-            df = df.sort_values('date')
-            
-            # 找到最接近买点日期的数据行
-            target_row = self._find_closest_date_row(df, date)
-            if target_row is None:
-                logger.warning(f"在周期 {period} 找不到日期 {date} 附近的数据")
-                continue
-                
-            # 分析该周期下所有指标
-            period_results = self._analyze_period_indicators(df, target_row)
-            
-            # 存储结果
-            results[period] = period_results
-            
-        return results
+                if period_results:
+                    results[period] = period_results
+                    
+            return results
+        except Exception as e:
+            logger.error(f"分析所有指标时出错: {e}")
+            return {}
     
     def _find_closest_date_row(self, df: pd.DataFrame, target_date: str) -> Optional[int]:
         """
@@ -161,6 +168,16 @@ class AutoIndicatorAnalyzer:
             try:
                 # 创建指标实例
                 indicator = self.indicator_factory.create_indicator(indicator_name)
+                
+                # 检查指标实例是否有效
+                if indicator is None:
+                    logger.warning(f"无法创建指标 {indicator_name} 的实例，跳过分析")
+                    continue
+                    
+                # 检查是否有calculate方法
+                if not hasattr(indicator, 'calculate') or not callable(getattr(indicator, 'calculate')):
+                    logger.warning(f"指标 {indicator_name} 没有calculate方法，跳过分析")
+                    continue
                 
                 # 计算指标值
                 indicator_df = indicator.calculate(df)
@@ -260,55 +277,104 @@ class AutoIndicatorAnalyzer:
         
         Args:
             indicator_name: 指标名称
-            indicator_df: 指标数据
+            indicator_df: 指标计算结果
             target_idx: 目标行索引
             
         Returns:
-            List[Dict[str, Any]]: 命中的指标形态列表
+            List[Dict[str, Any]]: 命中的形态列表
         """
         hit_patterns = []
         
+        # 获取指标实例
+        indicator = self._get_indicator_instance(indicator_name)
+        if indicator is None:
+            return []
+        
+        # 尝试使用identify_patterns方法识别形态
         try:
-            # 获取目标日期及其前几天的数据
-            lookback = 5  # 回看天数
-            start_idx = max(0, target_idx - lookback)
-            recent_data = indicator_df.iloc[start_idx:target_idx+1]
+            # 尝试调用identify_patterns方法
+            patterns = []
+            try:
+                # 尝试直接传递数据
+                patterns = indicator.identify_patterns(indicator_df)
+            except TypeError as e:
+                # 处理参数不匹配的情况
+                if "takes 1 positional argument but 2 were given" in str(e):
+                    # 如果方法不接受数据参数，直接调用无参方法
+                    try:
+                        patterns = indicator.identify_patterns()
+                    except Exception as inner_e:
+                        logger.warning(f"使用 identify_patterns 方法分析指标 {indicator_name} 形态时出错: {inner_e}")
+                else:
+                    logger.warning(f"使用 identify_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
             
-            if recent_data.empty:
-                return []
-                
-            # 创建指标实例
-            indicator = self.indicator_factory.create_indicator(indicator_name)
-            
-            # 获取指标支持的形态
-            indicator_patterns = indicator.get_supported_patterns()
-            
-            # 检查每种形态
-            for pattern in indicator_patterns:
-                # 检查形态是否命中
-                is_hit, details = indicator.is_pattern_matching(
-                    pattern, 
-                    recent_data
-                )
-                
-                if is_hit:
+            # 处理结果
+            if patterns:
+                for pattern in patterns:
                     # 计算形态得分
-                    score = self.score_manager.score_indicator_pattern(
-                        indicator_name, 
-                        pattern, 
-                        details
-                    )
+                    score = self.score_manager.score_pattern(pattern, {})
                     
                     hit_patterns.append({
-                        'type': 'indicator',
-                        'name': indicator_name,
-                        'pattern': pattern,
-                        'score': score,
-                        'details': details
+                        'indicator': indicator_name,
+                        'pattern_id': pattern,
+                        'display_name': self._get_pattern_display_name(pattern),
+                        'score_impact': score,
+                        'date_diff': 0,  # 当前日期的形态
+                        'type': 'indicator'
                     })
-            
-            return hit_patterns
-            
         except Exception as e:
-            logger.error(f"分析指标 {indicator_name} 形态时出错: {e}")
-            return [] 
+            logger.error(f"使用 identify_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
+        
+        # 尝试使用get_patterns方法获取更详细的形态信息
+        try:
+            # 检查数据是否足够
+            if indicator_df.empty or target_idx >= len(indicator_df):
+                return hit_patterns
+            
+            # 尝试调用get_patterns方法
+            detailed_patterns = []
+            try:
+                # 尝试直接传递数据
+                detailed_patterns = indicator.get_patterns(indicator_df)
+            except TypeError as e:
+                # 处理参数不匹配的情况
+                if "takes 1 positional argument but 2 were given" in str(e):
+                    # 如果方法不接受数据参数，直接调用无参方法
+                    try:
+                        detailed_patterns = indicator.get_patterns()
+                    except Exception as inner_e:
+                        logger.warning(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {inner_e}")
+                else:
+                    logger.warning(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
+            except Exception as e:
+                logger.warning(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
+            
+            # 处理详细形态
+            if detailed_patterns:
+                for pattern in detailed_patterns:
+                    # 添加指标名称
+                    pattern['indicator'] = indicator_name
+                    # 添加到结果
+                    hit_patterns.append(pattern)
+        except Exception as e:
+            logger.error(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
+        
+        return hit_patterns
+    
+    def _get_indicator_instance(self, indicator_name: str) -> Optional[BaseIndicator]:
+        """
+        获取指标实例
+        
+        Args:
+            indicator_name: 指标名称
+            
+        Returns:
+            Optional[BaseIndicator]: 指标实例，获取失败则返回None
+        """
+        try:
+            # 创建指标实例
+            indicator = self.indicator_factory.create_indicator(indicator_name)
+            return indicator
+        except Exception as e:
+            logger.error(f"创建指标 {indicator_name} 实例时出错: {e}")
+            return None 

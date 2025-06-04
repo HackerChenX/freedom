@@ -89,16 +89,42 @@ class IndicatorFactory:
         return cls._indicators.copy()
 
     @classmethod
-    def create_indicator(cls, indicator_type: str, **params) -> Optional[BaseIndicator]:
+    def create_indicator(cls, indicator_type: str, **kwargs) -> Optional[BaseIndicator]:
         """
-        兼容旧接口，调用create方法
+        创建指标实例
+        
         Args:
             indicator_type: 指标类型
-            **params: 指标参数
+            **kwargs: 传递给指标构造函数的参数
+            
         Returns:
-            BaseIndicator: 指标实例
+            Optional[BaseIndicator]: 指标实例，如果创建失败则返回None
         """
-        return cls.create(indicator_type, **params)
+        try:
+            # 获取指标类
+            indicator_class = cls._indicators.get(indicator_type)
+            if indicator_class is None:
+                logger.error(f"未找到指标类型: {indicator_type}")
+                return None
+            
+            # 检查是否是抽象类且有未实现的抽象方法
+            if hasattr(indicator_class, "__abstractmethods__"):
+                abstract_methods = getattr(indicator_class, "__abstractmethods__")
+                if abstract_methods:
+                    logger.warning(f"指标类 {indicator_type} 有未实现的抽象方法: {abstract_methods}，跳过创建")
+                    return None
+            
+            # 创建指标实例
+            indicator = indicator_class(**kwargs)
+            
+            # 初始化注册的形态
+            if hasattr(indicator, "register_patterns") and callable(getattr(indicator, "register_patterns")):
+                indicator.register_patterns()
+            
+            return indicator
+        except Exception as e:
+            logger.error(f"创建指标实例失败: {e}")
+            return None
         
     @classmethod
     def get_supported_indicators(cls) -> list:

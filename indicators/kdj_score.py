@@ -48,15 +48,37 @@ class KDJScore(IndicatorScoreBase, PatternRecognitionMixin):
         Returns:
             pd.Series: 原始评分序列（0-100分）
         """
-        # 计算KDJ指标
-        k, d, j = calc_kdj(
-            data['close'].values,
-            data['high'].values,
-            data['low'].values,
-            self.n,
-            self.m1,
-            self.m2
-        )
+        # 确保数据包含必要的列
+        if not all(col in data.columns for col in ['high', 'low', 'close']):
+            raise ValueError(f"输入数据缺少必要的列：high, low, close")
+            
+        try:
+            # 计算KDJ指标
+            from utils.technical_utils import calculate_kdj
+            k, d, j = calculate_kdj(
+                data['high'],
+                data['low'],
+                data['close'],
+                self.n,
+                self.m1,
+                self.m2
+            )
+        except ImportError:
+            # 如果导入失败，使用内部实现
+            logger.warning("无法导入calculate_kdj函数，使用common.kdj")
+            try:
+                k, d, j = calc_kdj(
+                    data['close'].values,
+                    data['high'].values,
+                    data['low'].values,
+                    self.n,
+                    self.m1,
+                    self.m2
+                )
+            except Exception as e:
+                logger.error(f"计算KDJ指标失败: {e}")
+                # 返回默认评分
+                return pd.Series(50.0, index=data.index)
         
         # 初始化评分
         score = pd.Series(50.0, index=data.index)  # 基础分50分

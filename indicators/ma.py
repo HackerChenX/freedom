@@ -1515,47 +1515,43 @@ class MA(BaseIndicator):
         """
         注册MA形态
         """
-        from indicators.pattern_registry import PatternRegistry, PatternType
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
         
         # 注册MA交叉形态
-        PatternRegistry.register(
-            pattern_id="MA_GOLDEN_CROSS",
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="MA",
+            pattern_id="GOLDEN_CROSS",
             display_name="MA金叉",
             description="短周期MA上穿长周期MA，看涨信号",
-            indicator_types=["MA", "均线"],
             score_impact=15.0,
-            pattern_type="reversal",
             signal_type="bullish"
         )
         
-        PatternRegistry.register(
-            pattern_id="MA_DEATH_CROSS",
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="MA",
+            pattern_id="DEATH_CROSS",
             display_name="MA死叉",
             description="短周期MA下穿长周期MA，看跌信号",
-            indicator_types=["MA", "均线"],
             score_impact=-15.0,
-            pattern_type="reversal",
             signal_type="bearish"
         )
         
         # 注册MA排列形态
-        PatternRegistry.register(
-            pattern_id="MA_BULLISH_ALIGNMENT",
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="MA",
+            pattern_id="BULLISH_ALIGNMENT",
             display_name="MA多头排列",
             description="短周期MA位于长周期MA上方，呈阶梯状排列，强势上涨信号",
-            indicator_types=["MA", "均线"],
             score_impact=20.0,
-            pattern_type="trend",
             signal_type="bullish"
         )
         
-        PatternRegistry.register(
-            pattern_id="MA_BEARISH_ALIGNMENT",
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="MA",
+            pattern_id="BEARISH_ALIGNMENT",
             display_name="MA空头排列",
             description="短周期MA位于长周期MA下方，呈阶梯状排列，强势下跌信号",
-            indicator_types=["MA", "均线"],
             score_impact=-20.0,
-            pattern_type="trend",
             signal_type="bearish"
         )
         

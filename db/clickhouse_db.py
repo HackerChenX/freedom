@@ -357,50 +357,46 @@ class ClickHouseDB:
             stock_code: 股票代码
             start_date: 开始日期
             end_date: 结束日期
-            period: K线周期，可以是字符串或者枚举值
+            period: K线周期，可以是表名或周期枚举
             
         Returns:
             pd.DataFrame: K线数据
+        """
+        try:
+            # 处理日期
+            start_date_str = self._format_date_param(start_date)
+            end_date_str = self._format_date_param(end_date)
             
-        Raises:
-            ValueError: 参数无效时抛出
-            Exception: 查询失败时抛出
-        """
-        # 转换日期格式
-        if isinstance(start_date, str):
-            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-        if isinstance(end_date, str):
-            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-        
-        # 转换周期格式
-        period_str = period
-        if HAS_KLINE_PERIOD and isinstance(period, KlinePeriod):
-            period_str = period.value
-        
-        # 根据周期确定表名
-        table_name = f"kline_{period_str}"
-        
-        # 构建查询
-        query = f"""
-        SELECT 
-            date, code, open, high, low, close, volume, amount
-        FROM 
-            {table_name}
-        WHERE 
-            code = %(code)s AND
-            date >= %(start_date)s AND
-            date <= %(end_date)s
-        ORDER BY 
-            date
-        """
-        
-        params = {
-            'code': stock_code,
-            'start_date': start_date,
-            'end_date': end_date
-        }
-        
-        return self.query(query, params)
+            # 表名直接使用传入的period参数，无需转换
+            table = period
+            
+            # 构建查询参数
+            params = {
+                "code": stock_code,
+                "start_date": start_date_str,
+                "end_date": end_date_str
+            }
+            
+            # 构建SQL查询
+            query = f"""
+            SELECT 
+                date, code, open, high, low, close, volume, amount
+            FROM 
+                {table}
+            WHERE 
+                code = %(code)s AND
+                date >= %(start_date)s AND
+                date <= %(end_date)s
+            ORDER BY 
+                date
+            """
+            
+            # 执行查询
+            return self.query(query, params)
+            
+        except Exception as e:
+            logger.error(f"获取K线数据时出错: {e}")
+            return pd.DataFrame()
     
     def get_stock_list(self) -> pd.DataFrame:
         """
@@ -1012,6 +1008,50 @@ class ClickHouseDB:
         except Exception as e:
             logger.error(f"获取股票 {stock_code} 名称失败: {e}")
             return stock_code
+
+    def _format_date_param(self, date_param: Union[str, datetime.datetime, datetime.date]) -> str:
+        """
+        格式化日期参数为数据库可接受的格式
+        
+        Args:
+            date_param: 日期参数，可以是字符串、datetime.datetime或datetime.date
+            
+        Returns:
+            str: 格式化后的日期字符串
+        """
+        if date_param is None:
+            return datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+            
+        if isinstance(date_param, str):
+            # 处理YYYYMMDD格式
+            if len(date_param) == 8 and date_param.isdigit():
+                return f"{date_param[:4]}-{date_param[4:6]}-{date_param[6:]} 00:00:00"
+            
+            # 处理YYYY-MM-DD格式
+            elif len(date_param) == 10 and date_param[4] == '-' and date_param[7] == '-':
+                return f"{date_param} 00:00:00"
+                
+            # 如果已经包含时间部分，直接返回
+            elif len(date_param) > 10 and date_param[4] == '-' and date_param[7] == '-':
+                return date_param
+                
+            # 处理无效日期
+            elif date_param == '19700101' or date_param == '1970-01-01':
+                return datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+                
+            else:
+                logger.warning(f"无法识别的日期格式: {date_param}，使用当前日期")
+                return datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+                
+        elif isinstance(date_param, datetime.datetime):
+            return date_param.strftime('%Y-%m-%d %H:%M:%S')
+            
+        elif isinstance(date_param, datetime.date):
+            return f"{date_param.strftime('%Y-%m-%d')} 00:00:00"
+            
+        else:
+            logger.warning(f"无法处理的日期类型: {type(date_param)}，使用当前日期")
+            return datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
 
 def get_clickhouse_db(config: Optional[Dict[str, Any]] = None) -> ClickHouseDB:
     """

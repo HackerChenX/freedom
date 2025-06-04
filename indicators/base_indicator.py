@@ -456,25 +456,44 @@ class BaseIndicator(abc.ABC):
         
         return matched_patterns
     
-    @abc.abstractmethod
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
-        此方法需要由子类实现，用于生成交易信号
-        
         Args:
-            data: 输入数据
+            data: 输入数据，必须包含价格数据
             **kwargs: 其他参数
             
         Returns:
-            Dict[str, pd.Series]: 信号字典，包含各类信号序列
+            Dict[str, pd.Series]: 交易信号，包含buy和sell系列
         """
-        # 默认实现，子类应该覆盖此方法
-        return {
-            'buy_signal': pd.Series(False, index=data.index),
-            'sell_signal': pd.Series(False, index=data.index)
-        }
+        logger.warning(f"指标 {self.name} 使用默认的交易信号生成方法")
+        
+        # 创建空信号
+        signals = {}
+        signals["buy"] = pd.Series(False, index=data.index)
+        signals["sell"] = pd.Series(False, index=data.index)
+        
+        # 尝试使用已计算的结果生成简单信号
+        if self._result is not None and not self._result.empty:
+            try:
+                # 基于已识别的形态生成信号
+                patterns = self.identify_patterns(self._result)
+                
+                # 遍历形态生成信号
+                for pattern in patterns:
+                    pattern_info = self._registered_patterns.get(pattern, {})
+                    score_impact = pattern_info.get('score_impact', 0)
+                    
+                    # 基于得分影响生成信号
+                    if score_impact > 0:  # 正面影响，生成买入信号
+                        signals["buy"].iloc[-1] = True
+                    elif score_impact < 0:  # 负面影响，生成卖出信号
+                        signals["sell"].iloc[-1] = True
+            except Exception as e:
+                logger.error(f"生成交易信号时出错: {e}")
+        
+        return signals
     
     def detect_market_environment(self, data: pd.DataFrame, lookback_period: int = 60) -> MarketEnvironment:
         """

@@ -76,21 +76,32 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
         
         return result
     
-    def calculate(self, data_dict: Dict[KlinePeriod, pd.DataFrame], 
-                  signal_func: Callable[[pd.DataFrame], np.ndarray], 
+    def calculate(self, data: Union[pd.DataFrame, Dict[KlinePeriod, pd.DataFrame]], 
+                  signal_func: Callable[[pd.DataFrame], np.ndarray] = None, 
                   periods: List[KlinePeriod] = None, 
                   *args, **kwargs) -> pd.DataFrame:
         """
         计算多周期共振分析指标
         
         Args:
-            data_dict: 不同周期的数据字典，键为周期枚举，值为对应周期的数据框
+            data: 可以是单一DataFrame或不同周期的数据字典
             signal_func: 信号生成函数，接受一个DataFrame，返回一个布尔型numpy数组
             periods: 要分析的周期列表，默认为[日线、60分钟、30分钟、15分钟]
             
         Returns:
             pd.DataFrame: 计算结果，包含共振信号和共振等级
         """
+        # 如果输入是单一DataFrame，使用简化的分析方法
+        if isinstance(data, pd.DataFrame):
+            return self._calculate_single_dataframe(data, **kwargs)
+        
+        # 如果没有提供信号函数，抛出异常
+        if signal_func is None:
+            raise ValueError("多周期分析需要提供signal_func参数")
+            
+        # 处理多周期数据字典
+        data_dict = data
+        
         # 设置默认周期
         if periods is None:
             periods = [KlinePeriod.DAILY, KlinePeriod.MINUTE_60, KlinePeriod.MINUTE_30, KlinePeriod.MINUTE_15]
@@ -187,6 +198,117 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
         self._result = result
         
         return result
+    
+    def _calculate_single_dataframe(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        使用单一数据框计算简化的共振指标
+        
+        Args:
+            data: 输入的K线数据DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        # 初始化结果数据框
+        result = pd.DataFrame(index=data.index)
+        
+        # 计算不同指标的信号
+        # 1. MA金叉信号
+        ma_signal = self.ma_golden_cross_signal(data)
+        
+        # 2. MACD金叉信号 
+        macd_signal = self.macd_golden_cross_signal(data)
+        
+        # 3. KDJ金叉信号
+        kdj_signal = self.kdj_golden_cross_signal(data)
+        
+        # 4. RSI信号 (RSI < 30 为超卖信号)
+        rsi_signal = np.zeros(len(data), dtype=bool)
+        if 'close' in data.columns:
+            close = data['close'].values
+            rsi = self._calculate_rsi(close)
+            rsi_signal = rsi < 30
+        
+        # 添加各个信号到结果
+        result['ma_signal'] = ma_signal
+        result['macd_signal'] = macd_signal
+        result['kdj_signal'] = kdj_signal
+        result['rsi_signal'] = rsi_signal
+        
+        # 计算共振信号
+        signals = [ma_signal, macd_signal, kdj_signal, rsi_signal]
+        resonance_count = np.zeros(len(data))
+        for signal in signals:
+            resonance_count += signal
+        
+        # 计算共振等级
+        resonance_level = np.zeros(len(data), dtype=int)
+        for i in range(len(data)):
+            if resonance_count[i] == 0:
+                resonance_level[i] = ResonanceLevel.NONE.value
+            elif resonance_count[i] == 1:
+                resonance_level[i] = ResonanceLevel.NONE.value  # 单指标不算共振
+            elif resonance_count[i] == 2:
+                resonance_level[i] = ResonanceLevel.WEAK.value
+            elif resonance_count[i] == 3:
+                resonance_level[i] = ResonanceLevel.MEDIUM.value
+            else:
+                resonance_level[i] = ResonanceLevel.STRONG.value
+        
+        # 添加共振信号和等级到结果
+        result["resonance_count"] = resonance_count
+        result["resonance_level"] = resonance_level
+        # 生成总的共振信号：至少是弱共振
+        result["resonance_signal"] = resonance_level >= ResonanceLevel.WEAK.value
+        
+        # 保存结果
+        self._result = result
+        
+        return result
+        
+    def _calculate_rsi(self, close: np.ndarray, period: int = 14) -> np.ndarray:
+        """
+        计算RSI指标
+        
+        Args:
+            close: 收盘价数组
+            period: 周期，默认为14
+            
+        Returns:
+            np.ndarray: RSI值数组
+        """
+        # 计算价格变化
+        delta = np.zeros(len(close))
+        delta[1:] = close[1:] - close[:-1]
+        
+        # 分离上涨和下跌
+        gain = np.where(delta > 0, delta, 0)
+        loss = np.where(delta < 0, -delta, 0)
+        
+        # 计算平均上涨和下跌
+        avg_gain = np.zeros(len(close))
+        avg_loss = np.zeros(len(close))
+        
+        # 初始平均值
+        if len(close) > period:
+            avg_gain[period] = np.mean(gain[1:period+1])
+            avg_loss[period] = np.mean(loss[1:period+1])
+            
+            # 后续值使用Wilder平滑方法
+            for i in range(period+1, len(close)):
+                avg_gain[i] = (avg_gain[i-1] * (period-1) + gain[i]) / period
+                avg_loss[i] = (avg_loss[i-1] * (period-1) + loss[i]) / period
+        
+        # 计算相对强度
+        rs = np.zeros(len(close))
+        valid_indices = (avg_loss != 0)
+        rs[valid_indices] = avg_gain[valid_indices] / avg_loss[valid_indices]
+        
+        # 计算RSI
+        rsi = 100 - (100 / (1 + rs))
+        
+        return rsi
     
     def ma_golden_cross_signal(self, data: pd.DataFrame, short_period: int = 5, long_period: int = 10) -> np.ndarray:
         """

@@ -148,13 +148,57 @@ class PeriodDataProcessor:
             # 格式化结束日期
             end_date = self._format_date(end_date)
             
-            # 查询K线数据
-            kline_data = self.db.get_kline_data(
-                stock_code=stock_code,
-                start_date=start_date,
-                end_date=end_date,
-                period=period.value
-            )
+            # 创建周期枚举到level字段值的映射
+            level_map = {
+                KlinePeriod.MIN_15: "15分钟",
+                KlinePeriod.MIN_30: "30分钟", 
+                KlinePeriod.MIN_60: "60分钟",
+                KlinePeriod.DAILY: "日线",
+                KlinePeriod.WEEKLY: "周线",
+                KlinePeriod.MONTHLY: "月线"
+            }
+            
+            # 获取对应的level值
+            level_value = level_map.get(period)
+            if not level_value:
+                logger.error(f"未找到周期 {period.value} 对应的level值")
+                return pd.DataFrame()
+            
+            # 查询K线数据 - 直接从stock_info表查询，使用字符串拼接避免类型转换问题
+            query = f"""
+            SELECT 
+                date, code, open, high, low, close, volume
+            FROM 
+                stock_info
+            WHERE 
+                code = '{stock_code}' AND
+                level = '{level_value}' AND
+                date >= '{start_date}' AND
+                date <= '{end_date}'
+            ORDER BY 
+                date
+            """
+            
+            kline_data = self.db.query(query)
+            
+            # 标准化列名
+            if not kline_data.empty:
+                # 如果查询结果返回的是col_0, col_1这样的通用列名，将其映射到标准列名
+                if 'col_0' in kline_data.columns:
+                    column_mapping = {
+                        'col_0': 'date',
+                        'col_1': 'code',
+                        'col_2': 'open',
+                        'col_3': 'high',
+                        'col_4': 'low',
+                        'col_5': 'close',
+                        'col_6': 'volume'
+                    }
+                    kline_data = kline_data.rename(columns=column_mapping)
+                    
+                # 确保日期列是日期类型
+                if 'date' in kline_data.columns:
+                    kline_data['date'] = pd.to_datetime(kline_data['date'])
             
             return kline_data
             
@@ -174,17 +218,33 @@ class PeriodDataProcessor:
             str: 最早日期，格式YYYYMMDD
         """
         try:
-            # 构建查询语句
+            # 创建周期枚举到level字段值的映射
+            level_map = {
+                KlinePeriod.MIN_15: "15分钟",
+                KlinePeriod.MIN_30: "30分钟", 
+                KlinePeriod.MIN_60: "60分钟",
+                KlinePeriod.DAILY: "日线",
+                KlinePeriod.WEEKLY: "周线",
+                KlinePeriod.MONTHLY: "月线"
+            }
+            
+            # 获取对应的level值
+            level_value = level_map.get(period)
+            if not level_value:
+                logger.error(f"未找到周期 {period.value} 对应的level值")
+                return None
+            
+            # 构建查询语句，使用字符串拼接避免类型转换问题
             sql = f"""
             SELECT MIN(date) as min_date
             FROM stock_info
-            WHERE code = '{stock_code}'
+            WHERE code = '{stock_code}' AND level = '{level_value}'
             """
             
             # 执行查询
             result = self.db.query(sql)
             
-            if not result.empty:
+            if not result.empty and 'min_date' in result.columns:
                 min_date = result.iloc[0]['min_date']
                 return min_date
             
@@ -216,10 +276,27 @@ class PeriodDataProcessor:
                 
             # 确保数据包含必要的列
             required_columns = ['date', 'open', 'high', 'low', 'close', 'volume']
-            for col in required_columns:
-                if col not in data.columns:
-                    logger.error(f"数据缺少必要的列: {col}")
+            missing_columns = [col for col in required_columns if col not in data.columns]
+            if missing_columns:
+                logger.error(f"数据缺少必要的列: {', '.join(missing_columns)}")
+                
+                # 如果缺少date列，无法处理
+                if 'date' in missing_columns:
                     return pd.DataFrame()
+                
+                # 对于其他缺失列，尝试用默认值填充
+                for col in missing_columns:
+                    if col != 'date':
+                        if col == 'volume':
+                            data[col] = 0  # 成交量默认为0
+                        else:
+                            # 价格类列，如果有close列，则使用close值，否则使用1.0
+                            if 'close' in data.columns:
+                                data[col] = data['close']
+                            else:
+                                data[col] = 1.0
+                
+                logger.warning(f"已用默认值填充缺失列: {', '.join(missing_columns)}")
             
             # 使用周期管理器转换周期
             converted_data = self.period_manager.convert_period(data, from_period, to_period)
@@ -232,6 +309,10 @@ class PeriodDataProcessor:
     def _format_date(self, date_str):
         """格式化日期字符串为标准格式"""
         try:
+            # 如果日期为空或无效，返回合理的默认值
+            if not date_str or date_str == '19700101' or date_str == '1970-01-01':
+                return datetime.now().strftime('%Y-%m-%d')
+                
             # 尝试解析YYYYMMDD格式
             if len(date_str) == 8 and date_str.isdigit():
                 return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
@@ -239,10 +320,11 @@ class PeriodDataProcessor:
             elif len(date_str) == 10 and date_str[4] == '-' and date_str[7] == '-':
                 return date_str
             else:
-                raise ValueError(f"不支持的日期格式: {date_str}")
+                logger.warning(f"不支持的日期格式: {date_str}，使用当前日期")
+                return datetime.now().strftime('%Y-%m-%d')
         except Exception as e:
             logger.error(f"日期格式转换错误: {e}")
-            raise
+            return datetime.now().strftime('%Y-%m-%d')
 
     def get_stock_data(self, stock_code, start_date, end_date, period='daily'):
         """获取股票数据"""
@@ -251,25 +333,88 @@ class PeriodDataProcessor:
             start_date = self._format_date(start_date)
             end_date = self._format_date(end_date)
             
-            # 获取数据
-            df = self.db.get_stock_data(stock_code, start_date, end_date, period)
-            if df is None or df.empty:
-                logger.warning(f"未获取到数据: {stock_code} {period} {start_date} {end_date}")
-                return None
+            # 转换周期格式为枚举
+            if isinstance(period, str):
+                period_enum = KlinePeriod.from_string(period)
+            else:
+                period_enum = period
+                
+            # 创建周期枚举到level字段值的映射
+            level_map = {
+                KlinePeriod.MIN_15: "15分钟",
+                KlinePeriod.MIN_30: "30分钟", 
+                KlinePeriod.MIN_60: "60分钟",
+                KlinePeriod.DAILY: "日线",
+                KlinePeriod.WEEKLY: "周线",
+                KlinePeriod.MONTHLY: "月线"
+            }
             
-            return df
+            # 获取对应的level值
+            level_value = level_map.get(period_enum, "日线")
+            
+            # 构建查询，使用字符串拼接
+            query = f"""
+            SELECT 
+                date, code, open, high, low, close, volume
+            FROM 
+                stock_info
+            WHERE 
+                code = '{stock_code}' AND
+                level = '{level_value}' AND
+                date >= '{start_date}' AND
+                date <= '{end_date}'
+            ORDER BY 
+                date
+            """
+            
+            data = self.db.query(query)
+            
+            # 标准化列名
+            if not data.empty:
+                # 如果查询结果返回的是col_0, col_1这样的通用列名，将其映射到标准列名
+                if 'col_0' in data.columns:
+                    column_mapping = {
+                        'col_0': 'date',
+                        'col_1': 'code',
+                        'col_2': 'open',
+                        'col_3': 'high',
+                        'col_4': 'low',
+                        'col_5': 'close',
+                        'col_6': 'volume'
+                    }
+                    data = data.rename(columns=column_mapping)
+                    
+                # 确保日期列是日期类型
+                if 'date' in data.columns:
+                    data['date'] = pd.to_datetime(data['date'])
+            
+            return data
+            
         except Exception as e:
-            logger.error(f"获取K线数据时出错: {e}")
-            return None
-
+            logger.error(f"获取股票数据时出错: {e}")
+            return pd.DataFrame()
+    
     def get_stock_earliest_date(self, stock_code):
-        """获取股票最早日期"""
+        """获取股票最早的数据日期"""
         try:
-            # 从数据库获取最早日期
-            min_date = self.db.get_stock_earliest_date(stock_code)
-            if min_date:
-                return self._format_date(min_date)
-            return None
+            # 构建查询语句，使用字符串拼接避免类型转换问题
+            sql = f"""
+            SELECT MIN(date) as min_date
+            FROM stock_info
+            WHERE code = '{stock_code}'
+            """
+            
+            # 执行查询
+            result = self.db.query(sql)
+            
+            if not result.empty and 'min_date' in result.columns:
+                min_date = result.iloc[0]['min_date']
+                if min_date:
+                    return self._format_date(min_date)
+                    
+            # 默认返回一个较早的日期
+            return "2015-01-01"
+            
         except Exception as e:
             logger.error(f"获取股票最早日期时出错: {e}")
-            return None 
+            return "2015-01-01" 

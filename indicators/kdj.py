@@ -15,7 +15,7 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator, MarketEnvironment
 from indicators.common import crossover, crossunder
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternInfo, get_pattern_registry
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternInfo
 from utils.logger import get_logger
 from utils.decorators import log_calls, error_handling
 from utils.technical_utils import calculate_kdj
@@ -53,98 +53,178 @@ class KDJ(BaseIndicator):
     
     def _register_kdj_patterns(self):
         """注册KDJ指标的所有形态"""
-        # 注册超买形态
-        self.register_pattern(
-            pattern_id="overbought",
-            display_name="KDJ超买",
-            detection_func=self._detect_overbought,
-            score_impact=-15.0
-        )
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
         
-        # 注册超卖形态
-        self.register_pattern(
-            pattern_id="oversold",
-            display_name="KDJ超卖",
-            detection_func=self._detect_oversold,
-            score_impact=15.0
+        # 注册金叉死叉形态
+        pattern_info = {
+            'display_name': "KDJ金叉",
+            'description': "K线从下方穿越D线，看涨信号",
+            'score_impact': 15.0,
+            'signal_type': "bullish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="GOLDEN_CROSS",
+            **pattern_info
         )
+        self._registered_patterns["GOLDEN_CROSS"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_golden_cross,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
-        # 注册金叉形态
-        self.register_pattern(
-            pattern_id="golden_cross",
-            display_name="KDJ金叉",
-            detection_func=self._detect_golden_cross,
-            score_impact=20.0
+        pattern_info = {
+            'display_name': "KDJ死叉",
+            'description': "K线从上方穿越D线，看跌信号",
+            'score_impact': -15.0,
+            'signal_type': "bearish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="DEATH_CROSS",
+            **pattern_info
         )
+        self._registered_patterns["DEATH_CROSS"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_death_cross,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
-        # 注册死叉形态
-        self.register_pattern(
-            pattern_id="death_cross",
-            display_name="KDJ死叉",
-            detection_func=self._detect_death_cross,
-            score_impact=-20.0
+        # 注册超买超卖形态
+        pattern_info = {
+            'display_name': "KDJ超卖",
+            'description': "K和D均低于20，看涨信号",
+            'score_impact': 10.0,
+            'signal_type': "bullish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="OVERSOLD",
+            **pattern_info
         )
+        self._registered_patterns["OVERSOLD"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_oversold,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
-        # 注册底背离形态
-        self.register_pattern(
-            pattern_id="bullish_divergence",
-            display_name="KDJ底背离",
-            detection_func=self._detect_bullish_divergence,
-            score_impact=25.0
+        pattern_info = {
+            'display_name': "KDJ超买",
+            'description': "K和D均高于80，看跌信号",
+            'score_impact': -10.0,
+            'signal_type': "bearish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="OVERBOUGHT",
+            **pattern_info
         )
+        self._registered_patterns["OVERBOUGHT"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_overbought,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
-        # 注册顶背离形态
-        self.register_pattern(
-            pattern_id="bearish_divergence",
-            display_name="KDJ顶背离",
-            detection_func=self._detect_bearish_divergence,
-            score_impact=-25.0
+        # 注册背离形态
+        pattern_info = {
+            'display_name': "KDJ底背离",
+            'description': "价格创新低但KDJ未创新低，看涨信号",
+            'score_impact': 20.0,
+            'signal_type': "bullish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="BULLISH_DIVERGENCE",
+            **pattern_info
         )
+        self._registered_patterns["BULLISH_DIVERGENCE"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_bullish_divergence,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
-        # 注册高位金叉形态
-        self.register_pattern(
-            pattern_id="high_cross",
-            display_name="KDJ高位金叉",
-            detection_func=self._detect_high_cross,
-            score_impact=10.0
+        pattern_info = {
+            'display_name': "KDJ顶背离",
+            'description': "价格创新高但KDJ未创新高，看跌信号",
+            'score_impact': -20.0,
+            'signal_type': "bearish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="BEARISH_DIVERGENCE",
+            **pattern_info
         )
-        
-        # 注册低位死叉形态
-        self.register_pattern(
-            pattern_id="low_cross",
-            display_name="KDJ低位死叉",
-            detection_func=self._detect_low_cross,
-            score_impact=-10.0
-        )
+        self._registered_patterns["BEARISH_DIVERGENCE"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_bearish_divergence,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
         # 注册三线同向上穿形态
-        self.register_pattern(
-            pattern_id="triple_cross",
-            display_name="KDJ三线同向",
-            detection_func=self._detect_triple_cross,
-            score_impact=18.0
+        pattern_info = {
+            'display_name': "KDJ三线同向",
+            'description': "K、D、J三线同时向上穿越，强势看涨信号",
+            'score_impact': 18.0,
+            'signal_type': "bullish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="TRIPLE_CROSS",
+            **pattern_info
         )
+        self._registered_patterns["TRIPLE_CROSS"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_triple_cross,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
         # 注册J线突破形态
-        self.register_pattern(
-            pattern_id="j_breakthrough",
-            display_name="J线向上突破",
-            detection_func=self._detect_j_breakthrough,
-            score_impact=15.0
+        pattern_info = {
+            'display_name': "J线向上突破",
+            'description': "J线向上突破100，看涨信号",
+            'score_impact': 15.0,
+            'signal_type': "bullish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="J_BREAKTHROUGH",
+            **pattern_info
         )
+        self._registered_patterns["J_BREAKTHROUGH"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_j_breakthrough,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
         
         # 注册J线跌破形态
-        self.register_pattern(
-            pattern_id="j_breakdown",
-            display_name="J线向下跌破",
-            detection_func=self._detect_j_breakdown,
-            score_impact=-15.0
+        pattern_info = {
+            'display_name': "J线向下跌破",
+            'description': "J线向下跌破0，看跌信号",
+            'score_impact': -15.0,
+            'signal_type': "bearish"
+        }
+        PatternRegistry.register_indicator_pattern(
+            indicator_type="KDJ",
+            pattern_id="J_BREAKDOWN",
+            **pattern_info
         )
+        self._registered_patterns["J_BREAKDOWN"] = {
+            'display_name': pattern_info['display_name'],
+            'detection_func': self._detect_j_breakdown,
+            'score_impact': pattern_info['score_impact'],
+            'description': pattern_info['description']
+        }
     
     def register_patterns_to_registry(self):
         """将本地注册的形态添加到全局形态注册表"""
-        registry = get_pattern_registry()
-        
         for pattern_id, pattern_info in self._registered_patterns.items():
             # 确定模式类型
             if pattern_info['score_impact'] > 0:
@@ -177,9 +257,10 @@ class KDJ(BaseIndicator):
                 pattern_id=pattern_id,
                 display_name=pattern_info['display_name'],
                 description=pattern_info.get('description', ''),
-                indicator_types=[self.get_indicator_type()],
-                pattern_type=pattern_type.value,
-                signal_type=pattern_info.get('signal_type', 'neutral')
+                indicator_id=self.get_indicator_type(),
+                pattern_type=pattern_type,
+                default_strength=strength,
+                score_impact=pattern_info.get('score_impact', 0.0)
             )
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
@@ -317,40 +398,56 @@ class KDJ(BaseIndicator):
         return k_value < 20.0
     
     def _detect_golden_cross(self, data: pd.DataFrame) -> bool:
-        """检测KDJ金叉形态"""
-        if not self.has_result() or 'K' not in data.columns or 'D' not in data.columns:
+        """
+        检测KDJ金叉形态
+        
+        Args:
+            data: 含有KDJ指标的DataFrame
+            
+        Returns:
+            bool: 是否形成金叉
+        """
+        # 确保DataFrame包含所需的列
+        required_columns = ['K', 'D']
+        if not all(col in data.columns for col in required_columns):
+            logger.warning(f"检测KDJ金叉形态时缺少必要的列: {required_columns}")
             return False
         
-        # 确保数据量足够
-        if len(data) < 2:
-            return False
+        # 检查最近的K线，看K值是否从下往上穿过D值
+        k = data['K']
+        d = data['D']
         
-        # 获取最近两个周期的KD值
-        k = data['K'].iloc[-2:].values
-        d = data['D'].iloc[-2:].values
+        # 使用crossover函数检测金叉
+        golden_cross = crossover(k, d)
         
-        # 金叉条件：当前K在D上方，且前一周期K在D下方
-        golden_cross = k[-1] > d[-1] and k[-2] <= d[-2]
-        
-        return golden_cross
+        # 返回最近5个周期内是否出现金叉
+        return golden_cross.iloc[-5:].any() if len(golden_cross) >= 5 else False
     
     def _detect_death_cross(self, data: pd.DataFrame) -> bool:
-        """检测KDJ死叉形态"""
-        if not self.has_result() or 'K' not in data.columns or 'D' not in data.columns:
+        """
+        检测KDJ死叉形态
+        
+        Args:
+            data: 含有KDJ指标的DataFrame
+            
+        Returns:
+            bool: 是否形成死叉
+        """
+        # 确保DataFrame包含所需的列
+        required_columns = ['K', 'D']
+        if not all(col in data.columns for col in required_columns):
+            logger.warning(f"检测KDJ死叉形态时缺少必要的列: {required_columns}")
             return False
         
-        # 确保数据量足够
-        if len(data) < 2:
-            return False
+        # 检查最近的K线，看K值是否从上往下穿过D值
+        k = data['K']
+        d = data['D']
         
-        # 获取最近两个周期的KD值
-        k = data['K'].iloc[-2:].values
-        d = data['D'].iloc[-2:].values
+        # 使用crossunder函数检测死叉
+        death_cross = crossunder(k, d)
         
-        # 死叉条件：当前K在D下方，且前一周期K在D上方
-        death_cross = k[-1] < d[-1] and k[-2] >= d[-2]
-        
-        return death_cross
+        # 返回最近5个周期内是否出现死叉
+        return death_cross.iloc[-5:].any() if len(death_cross) >= 5 else False
     
     def _detect_bullish_divergence(self, data: pd.DataFrame) -> bool:
         """检测KDJ底背离形态"""
@@ -657,45 +754,87 @@ class KDJ(BaseIndicator):
         计算KDJ指标
         
         Args:
-            data: 输入数据，包含价格数据的DataFrame
-            **kwargs: 其他参数
+            data: 包含OHLC数据的DataFrame
+            **kwargs: 其他参数，可包含n、m1、m2
             
         Returns:
-            pd.DataFrame: 包含KDJ指标的DataFrame
-            
-        Raises:
-            ValueError: 如果输入数据不包含必需的列
+            pd.DataFrame: 包含K、D、J列的DataFrame
         """
-        # 复制输入数据
-        result = data.copy()
-        
-        # 使用统一的公共函数计算KDJ
-        k, d, j = calc_kdj(
-            result['close'].values,
-            result['high'].values,
-            result['low'].values,
-            self.n,
-            self.m1,
-            self.m2
-        )
-        
-        # 设置列名（使用大写字母）
-        k_col = self.get_column_name('K')
-        d_col = self.get_column_name('D')
-        j_col = self.get_column_name('J')
-        
-        # 添加结果列
-        result[k_col] = k
-        result[d_col] = d
-        result[j_col] = j
-        
-        # 添加信号
-        result = self.add_signals(result, k_col, d_col, j_col)
-        
-        # 保存结果
-        self._result = result
-        
-        return result
+        try:
+            # 检查必要的列
+            required_cols = ['high', 'low', 'close']
+            if not all(col in data.columns for col in required_cols):
+                missing = [col for col in required_cols if col not in data.columns]
+                logger.error(f"计算KDJ指标需要 {', '.join(required_cols)} 列，缺少: {', '.join(missing)}")
+                # 创建空的K, D, J列，避免后续错误
+                result = data.copy()
+                result['K'] = np.nan
+                result['D'] = np.nan
+                result['J'] = np.nan
+                return result
+            
+            # 获取参数
+            n = kwargs.get('n', self.n)
+            m1 = kwargs.get('m1', self.m1)
+            m2 = kwargs.get('m2', self.m2)
+            
+            # 确保足够的数据长度
+            if len(data) < n:
+                logger.warning(f"数据长度({len(data)})小于所需的回溯周期({n})，返回原始数据")
+                result = data.copy()
+                result['K'] = np.nan
+                result['D'] = np.nan
+                result['J'] = np.nan
+                return result
+            
+            # 创建结果DataFrame
+            result = data.copy()
+            
+            # 计算RSV
+            high_n = result['high'].rolling(window=n).max()
+            low_n = result['low'].rolling(window=n).min()
+            close = result['close']
+            
+            # 防止除以零
+            rsv_denominator = high_n - low_n
+            rsv = np.where(rsv_denominator != 0, 
+                           100 * (close - low_n) / rsv_denominator, 
+                           0)
+            
+            # 计算K值 - 初始值为50
+            k_values = np.zeros(len(data))
+            k_values[0] = 50
+            
+            # 计算D值 - 初始值为50
+            d_values = np.zeros(len(data))
+            d_values[0] = 50
+            
+            # 计算K和D值
+            for i in range(1, len(data)):
+                if np.isnan(rsv[i]):
+                    k_values[i] = k_values[i-1]
+                    d_values[i] = d_values[i-1]
+                else:
+                    k_values[i] = (m1 * k_values[i-1] + (9 - m1) * rsv[i]) / 9
+                    d_values[i] = (m2 * d_values[i-1] + (9 - m2) * k_values[i]) / 9
+            
+            # 计算J值
+            j_values = 3 * k_values - 2 * d_values
+            
+            # 添加结果
+            result['K'] = k_values
+            result['D'] = d_values
+            result['J'] = j_values
+            
+            return result
+        except Exception as e:
+            logger.error(f"计算KDJ指标时出错: {e}")
+            # 返回原始数据，但添加空的KDJ列
+            result = data.copy()
+            result['K'] = np.nan
+            result['D'] = np.nan
+            result['J'] = np.nan
+            return result
     
     def add_signals(self, data: pd.DataFrame, k_col: str = 'K', 
                    d_col: str = 'D', j_col: str = 'J') -> pd.DataFrame:
@@ -902,67 +1041,74 @@ class KDJ(BaseIndicator):
         # 确保强度在1-5范围内
         return pd.Series(np.clip(strength, 1, 5), index=data.index)
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
         """
         识别KDJ指标形态
         
         Args:
-            data: 输入数据
-            **kwargs: 其他参数
+            data: 包含KDJ指标的DataFrame
             
         Returns:
-            List[str]: 识别出的形态列表
+            List[str]: 形态列表
         """
-        if not self.has_result():
-            self.calculate(data)
+        try:
+            # 检查必要的列
+            if not all(col in data.columns for col in ['K', 'D', 'J']):
+                logger.warning("识别KDJ形态时缺少K、D或J列")
+                return []
             
-        result = self._result
-        patterns = []
-        
-        # 检查各种形态
-        # 1. 金叉和死叉
-        if self._detect_golden_cross(result):
-            patterns.append("KDJ金叉")
+            # 如果数据全是NaN，返回空列表
+            if data['K'].isna().all() or data['D'].isna().all() or data['J'].isna().all():
+                return []
             
-        if self._detect_death_cross(result):
-            patterns.append("KDJ死叉")
-        
-        # 2. 超买和超卖
-        if self._detect_overbought(result):
-            patterns.append("KDJ超买")
+            # 确保足够的数据长度
+            if len(data) < 3:
+                return []
             
-        if self._detect_oversold(result):
-            patterns.append("KDJ超卖")
+            patterns = []
             
-        # 3. 背离
-        divergence = self._detect_divergence(data['close'], result['K'])
-        if divergence == "bearish":
-            patterns.append("KDJ顶背离")
-        elif divergence == "bullish":
-            patterns.append("KDJ底背离")
+            # 获取最新的几个值进行分析
+            # 使用安全的索引方法，避免使用iloc
+            latest_idx = len(data) - 1
+            if latest_idx < 0:
+                return []
             
-        # 4. J值超买超卖
-        if self._detect_j_overbought(result):
-            patterns.append("KDJ_J值超买")
+            # 获取最近几个时间点的KDJ值
+            k_latest = data['K'].values[-3:]
+            d_latest = data['D'].values[-3:]
+            j_latest = data['J'].values[-3:]
             
-        if self._detect_j_oversold(result):
-            patterns.append("KDJ_J值超卖")
+            # 检查超买超卖
+            k_last = k_latest[-1]
+            d_last = d_latest[-1]
             
-        # 5. 三线同向
-        if self._detect_three_line_up(result):
-            patterns.append("KDJ三线同向上升")
+            if k_last > 80 and d_last > 80:
+                patterns.append("overbought")
+            elif k_last < 20 and d_last < 20:
+                patterns.append("oversold")
             
-        if self._detect_three_line_down(result):
-            patterns.append("KDJ三线同向下降")
+            # 检查金叉和死叉
+            if k_latest[-2] < d_latest[-2] and k_latest[-1] > d_latest[-1]:
+                patterns.append("golden_cross")
+            elif k_latest[-2] > d_latest[-2] and k_latest[-1] < d_latest[-1]:
+                patterns.append("death_cross")
             
-        # 6. 特殊形态：高位钝化和低位钝化
-        if self._detect_stagnation(result['K'], result['D'], result['J'], high_threshold=80).iloc[-5:].any():
-            patterns.append("KDJ高位钝化")
+            # 检查J值突破
+            if j_latest[-2] < 100 and j_latest[-1] > 100:
+                patterns.append("j_breakthrough")
+            elif j_latest[-2] > 0 and j_latest[-1] < 0:
+                patterns.append("j_breakdown")
             
-        if self._detect_stagnation(result['K'], result['D'], result['J'], low_threshold=20).iloc[-5:].any():
-            patterns.append("KDJ低位钝化")
+            # 检查形态是否注册
+            valid_patterns = []
+            for pattern in patterns:
+                if pattern in self._registered_patterns:
+                    valid_patterns.append(pattern)
             
-        return patterns
+            return valid_patterns
+        except Exception as e:
+            logger.error(f"识别KDJ形态时出错: {e}")
+            return []
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """

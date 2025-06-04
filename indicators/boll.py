@@ -443,57 +443,77 @@ class BOLL(BaseIndicator):
         计算布林带指标
         
         Args:
-            data: 输入数据，必须包含'close'列
-            args: 位置参数
-            kwargs: 关键字参数，可包含periods和std_dev
+            data: 包含OHLC数据的DataFrame
+            *args, **kwargs: 其他参数
             
         Returns:
-            pd.DataFrame: 包含upper、middle、lower列的DataFrame
+            计算完成的DataFrame，包含中轨、上轨和下轨
         """
-        # 确保数据包含close列
-        self.ensure_columns(data, ['close'])
-        
-        # 获取参数
-        periods = kwargs.get('periods', self.period)
-        std_dev = kwargs.get('std_dev', self.std_dev)
-        adaptive = kwargs.get('adaptive', True)
-        
-        # 如果启用自适应带宽，动态调整标准差倍数
-        if adaptive:
-            adaptive_std_dev = self.adjust_std_multiplier(data['close'])
-            upper, middle, lower = calc_boll(data['close'], periods, adaptive_std_dev)
-        else:
-            upper, middle, lower = calc_boll(data['close'], periods, std_dev)
-        
-        # 构建结果DataFrame
-        result = data.copy()
-        result['upper'] = upper
-        result['middle'] = middle
-        result['lower'] = lower
-        
-        # 计算带宽
-        result['bandwidth'] = (upper - lower) / middle
-        
-        # 分析带宽动态
-        if len(result) >= 20:
-            bandwidth_analysis = self.analyze_bandwidth_dynamics(result)
-            result['bandwidth_expansion'] = bandwidth_analysis['expansion']
-            result['bandwidth_contraction'] = bandwidth_analysis['contraction']
-            result['bandwidth_extreme'] = bandwidth_analysis['extreme']
-            result['bandwidth_trend_prediction'] = bandwidth_analysis['trend_prediction']
-        
-        # 分析中轨支撑阻力
-        if len(result) >= 20:
-            sr_analysis = self.analyze_middle_band_support_resistance(result)
-            result['middle_support'] = sr_analysis['support']
-            result['middle_resistance'] = sr_analysis['resistance']
-            result['middle_strength'] = sr_analysis['strength']
-            result['middle_reversal_probability'] = sr_analysis['reversal_probability']
-        
-        # 保存结果
-        self._result = result
-        
-        return result
+        try:
+            # 检查是否有足够的数据和必要的列
+            if len(data) < self.period:
+                logger.warning(f"数据长度({len(data)})小于所需的回溯周期({self.period})，返回原始数据")
+                result = data.copy()
+                result['middle'] = np.nan
+                result['upper'] = np.nan
+                result['lower'] = np.nan
+                result['bandwidth'] = np.nan
+                result['percent_b'] = np.nan
+                return result
+            
+            if 'close' not in data.columns:
+                logger.error("计算布林带需要'close'列")
+                result = data.copy()
+                result['middle'] = np.nan
+                result['upper'] = np.nan
+                result['lower'] = np.nan
+                result['bandwidth'] = np.nan
+                result['percent_b'] = np.nan
+                return result
+            
+            # 创建数据的副本
+            result = data.copy()
+            
+            # 获取收盘价
+            close = result['close']
+            
+            # 计算移动平均
+            if self.moving_average_type.lower() == 'ema':
+                middle = close.ewm(span=self.period).mean()
+            else:  # 默认使用SMA
+                middle = close.rolling(window=self.period).mean()
+            
+            # 计算标准差
+            rolling_std = close.rolling(window=self.period).std()
+            
+            # 计算上轨和下轨
+            upper = middle + (rolling_std * self.std_dev)
+            lower = middle - (rolling_std * self.std_dev)
+            
+            # 计算带宽
+            bandwidth = (upper - lower) / middle
+            
+            # 计算%B值
+            percent_b = (close - lower) / (upper - lower)
+            
+            # 将结果添加到DataFrame
+            result['middle'] = middle
+            result['upper'] = upper
+            result['lower'] = lower
+            result['bandwidth'] = bandwidth
+            result['percent_b'] = percent_b
+            
+            return result
+        except Exception as e:
+            logger.error(f"计算布林带时出错: {e}")
+            # 返回原始数据，但添加空的布林带列
+            result = data.copy()
+            result['middle'] = np.nan
+            result['upper'] = np.nan
+            result['lower'] = np.nan
+            result['bandwidth'] = np.nan
+            result['percent_b'] = np.nan
+            return result
     
     def adjust_std_multiplier(self, close: pd.Series) -> pd.Series:
         """

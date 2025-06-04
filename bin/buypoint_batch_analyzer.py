@@ -47,6 +47,9 @@ def main():
     # 解析命令行参数
     args = parse_arguments()
     
+    # 确保输出目录存在
+    ensure_dir_exists(args.output)
+    
     # 设置日志
     log_dir = os.path.join(root_dir, 'logs')
     ensure_dir_exists(log_dir)
@@ -57,9 +60,6 @@ def main():
     logger.info("买点批量分析工具启动")
     
     try:
-        # 确保输出目录存在
-        ensure_dir_exists(args.output)
-        
         # 创建分析器实例
         analyzer = BuyPointBatchAnalyzer()
         

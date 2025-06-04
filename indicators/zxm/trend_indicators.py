@@ -3992,3 +3992,53 @@ class ZXMWeeklyMACD(BaseIndicator):
                 pass
         
         return signals
+
+    def _calculate_trend_stability(self, result: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算趋势稳定性
+        
+        Args:
+            result: 包含趋势方向的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 添加了趋势稳定性的DataFrame
+        """
+        try:
+            # 初始化趋势稳定性列
+            result = result.copy()
+            result['TrendStability'] = 0.0
+            
+            if 'TrendDirection' not in result.columns:
+                logger.warning("没有TrendDirection列，无法计算趋势稳定性")
+                return result
+                
+            # 获取趋势方向列
+            trend_direction = result['TrendDirection']
+            
+            # 计算趋势稳定性
+            lookback = 5  # 回看窗口
+            
+            for i in range(lookback, len(result)):
+                # 获取过去n天的趋势方向
+                past_trend = trend_direction.values[i-lookback:i+1]
+                
+                # 计算一致性
+                # 如果全部一致，返回1.0；如果完全相反，返回0.0
+                if np.all(past_trend == 1) or np.all(past_trend == -1):
+                    consistency = 1.0
+                else:
+                    # 计算上升趋势的比例
+                    up_ratio = np.sum(past_trend == 1) / lookback
+                    # 计算下降趋势的比例
+                    down_ratio = np.sum(past_trend == -1) / lookback
+                    # 取主导趋势的比例作为一致性
+                    consistency = max(up_ratio, down_ratio)
+                
+                # 使用loc而不是链式索引，避免SettingWithCopyWarning
+                result.loc[result.index[i], 'TrendStability'] = consistency
+            
+            return result
+        except Exception as e:
+            logger.error(f"计算趋势稳定性时出错: {e}")
+            return result
