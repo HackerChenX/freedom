@@ -751,190 +751,175 @@ class SAR(BaseIndicator):
         """
         from indicators.pattern_registry import PatternRegistry, PatternType
         
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
         # 注册趋势反转形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_BULLISH_REVERSAL",
             display_name="SAR做多信号",
             description="SAR由下降趋势转为上升趋势，产生做多信号",
-            indicator_types=["SAR", "趋势"],
-            score_impact=15.0,
-            pattern_type="reversal",
-            signal_type="bullish"
+            indicator_id="SAR",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_BEARISH_REVERSAL",
             display_name="SAR做空信号",
             description="SAR由上升趋势转为下降趋势，产生做空信号",
-            indicator_types=["SAR", "趋势"],
-            score_impact=-15.0,
-            pattern_type="reversal",
-            signal_type="bearish"
+            indicator_id="SAR",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=-15.0
         )
         
         # 注册趋势持续形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_STRONG_UPTREND",
             display_name="SAR强势上升趋势",
             description="SAR长期保持在价格下方，表示强势上升趋势",
-            indicator_types=["SAR", "趋势"],
-            score_impact=10.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="SAR",
+            pattern_type=PatternType.TREND,
+            score_impact=10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_UPTREND",
             display_name="SAR上升趋势",
             description="SAR保持在价格下方，表示上升趋势",
-            indicator_types=["SAR", "趋势"],
-            score_impact=7.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="SAR",
+            pattern_type=PatternType.TREND,
+            score_impact=7.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_SHORT_UPTREND",
             display_name="SAR短期上升趋势",
             description="SAR刚刚转为上升趋势",
-            indicator_types=["SAR", "趋势"],
-            score_impact=5.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="SAR",
+            pattern_type=PatternType.TREND,
+            score_impact=5.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_STRONG_DOWNTREND",
             display_name="SAR强势下降趋势",
             description="SAR长期保持在价格上方，表示强势下降趋势",
-            indicator_types=["SAR", "趋势"],
-            score_impact=-10.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="SAR",
+            pattern_type=PatternType.TREND,
+            score_impact=-10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_DOWNTREND",
             display_name="SAR下降趋势",
             description="SAR保持在价格上方，表示下降趋势",
-            indicator_types=["SAR", "趋势"],
-            score_impact=-7.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="SAR",
+            pattern_type=PatternType.TREND,
+            score_impact=-7.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_SHORT_DOWNTREND",
             display_name="SAR短期下降趋势",
             description="SAR刚刚转为下降趋势",
-            indicator_types=["SAR", "趋势"],
-            score_impact=-5.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="SAR",
+            pattern_type=PatternType.TREND,
+            score_impact=-5.0
         )
         
         # 注册SAR距离形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_CLOSE_TO_PRICE",
             display_name="SAR接近价格",
             description="SAR与价格距离较近，可能即将反转",
-            indicator_types=["SAR", "趋势"],
-            score_impact=0.0,
-            pattern_type="warning",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.WARNING,
+            score_impact=0.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_MODERATE_DISTANCE",
             display_name="SAR与价格中等距离",
             description="SAR与价格保持中等距离",
-            indicator_types=["SAR", "趋势"],
-            score_impact=5.0,
-            pattern_type="continuation",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.CONTINUATION,
+            score_impact=5.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_FAR_FROM_PRICE",
             display_name="SAR远离价格",
             description="SAR与价格距离较远，趋势强劲",
-            indicator_types=["SAR", "趋势"],
-            score_impact=8.0,
-            pattern_type="trend",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.TREND,
+            score_impact=8.0
         )
         
         # 注册加速因子形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_HIGH_ACCELERATION",
             display_name="SAR高加速趋势",
             description="SAR加速因子较高，趋势强劲",
-            indicator_types=["SAR", "趋势"],
-            score_impact=10.0,
-            pattern_type="momentum",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.MOMENTUM,
+            score_impact=10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_MEDIUM_ACCELERATION",
             display_name="SAR中等加速趋势",
             description="SAR加速因子中等，趋势稳定",
-            indicator_types=["SAR", "趋势"],
-            score_impact=5.0,
-            pattern_type="momentum",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.MOMENTUM,
+            score_impact=5.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_LOW_ACCELERATION",
             display_name="SAR低加速趋势",
             description="SAR加速因子较低，趋势刚开始或较弱",
-            indicator_types=["SAR", "趋势"],
-            score_impact=2.0,
-            pattern_type="momentum",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.MOMENTUM,
+            score_impact=2.0
         )
         
         # 注册趋势稳定性形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_STABLE_TREND",
             display_name="SAR稳定趋势",
             description="SAR趋势稳定，没有频繁转向",
-            indicator_types=["SAR", "趋势"],
-            score_impact=8.0,
-            pattern_type="stability",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.STABILITY,
+            score_impact=8.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_VOLATILE_TREND",
             display_name="SAR波动趋势",
             description="SAR趋势不稳定，频繁转向",
-            indicator_types=["SAR", "趋势"],
-            score_impact=-5.0,
-            pattern_type="stability",
-            signal_type="neutral"
+            indicator_id="SAR",
+            pattern_type=PatternType.STABILITY,
+            score_impact=-5.0
         )
         
         # 注册支撑/阻力形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_AS_SUPPORT",
             display_name="SAR支撑",
             description="SAR作为价格支撑位",
-            indicator_types=["SAR", "趋势"],
-            score_impact=12.0,
-            pattern_type="support_resistance",
-            signal_type="bullish"
+            indicator_id="SAR",
+            pattern_type=PatternType.SUPPORT_RESISTANCE,
+            score_impact=12.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="SAR_AS_RESISTANCE",
             display_name="SAR阻力",
             description="SAR作为价格阻力位",
-            indicator_types=["SAR", "趋势"],
-            score_impact=-12.0,
-            pattern_type="support_resistance",
-            signal_type="bearish"
+            indicator_id="SAR",
+            pattern_type=PatternType.SUPPORT_RESISTANCE,
+            score_impact=-12.0
         )
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
@@ -1341,69 +1326,29 @@ class SAR(BaseIndicator):
         
         return None
 
-
-
-
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
-
-            """
-
-
-            生成交易信号
+        """
+        生成交易信号
         
-
-
-            Args:
-
-
-                data: 输入数据
-
-
-                **kwargs: 额外参数
-            
-
-
-            Returns:
-
-
-                Dict[str, pd.Series]: 包含交易信号的字典
-
-
-            """
-
-
-            # 确保已计算指标
-
-
-            if not self.has_result():
-
-
-                self.calculate(data, **kwargs)
-            
-
-
-            # 初始化信号
-
-
-            signals = {}
-
-
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['signal_strength'] = pd.Series(0, index=data.index)
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
         
-
-
-            # 在这里实现指标特定的信号生成逻辑
-
-
-            # 此处提供默认实现
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
+        # 初始化信号
+        signals = {}
 
-
-            return signals
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+        # 在这里实现指标特定的信号生成逻辑
+        # 此处提供默认实现
+        
+        return signals

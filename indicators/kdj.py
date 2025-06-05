@@ -52,216 +52,88 @@ class KDJ(BaseIndicator):
         self.register_patterns_to_registry()
     
     def _register_kdj_patterns(self):
-        """注册KDJ指标的所有形态"""
+        """将KDJ形态注册到全局形态注册表"""
         from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
         
-        # 注册金叉死叉形态
-        pattern_info = {
-            'display_name': "KDJ金叉",
-            'description': "K线从下方穿越D线，看涨信号",
-            'score_impact': 15.0,
-            'signal_type': "bullish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="GOLDEN_CROSS",
-            **pattern_info
-        )
-        self._registered_patterns["GOLDEN_CROSS"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_golden_cross,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
         
-        pattern_info = {
-            'display_name': "KDJ死叉",
-            'description': "K线从上方穿越D线，看跌信号",
-            'score_impact': -15.0,
-            'signal_type': "bearish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="DEATH_CROSS",
-            **pattern_info
+        # 注册金叉形态
+        registry.register(
+            pattern_id="KDJ_GOLDEN_CROSS",
+            display_name="KDJ金叉",
+            description="K线从下方突破D线，买入信号",
+            indicator_id="KDJ",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=15.0,
+            detection_function=self._detect_golden_cross
         )
-        self._registered_patterns["DEATH_CROSS"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_death_cross,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
         
-        # 注册超买超卖形态
-        pattern_info = {
-            'display_name': "KDJ超卖",
-            'description': "K和D均低于20，看涨信号",
-            'score_impact': 10.0,
-            'signal_type': "bullish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="OVERSOLD",
-            **pattern_info
+        # 注册死叉形态
+        registry.register(
+            pattern_id="KDJ_DEATH_CROSS",
+            display_name="KDJ死叉",
+            description="K线从上方跌破D线，卖出信号",
+            indicator_id="KDJ",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-15.0,
+            detection_function=self._detect_death_cross
         )
-        self._registered_patterns["OVERSOLD"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_oversold,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
         
-        pattern_info = {
-            'display_name': "KDJ超买",
-            'description': "K和D均高于80，看跌信号",
-            'score_impact': -10.0,
-            'signal_type': "bearish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="OVERBOUGHT",
-            **pattern_info
+        # 注册超买形态
+        registry.register(
+            pattern_id="KDJ_OVERBOUGHT",
+            display_name="KDJ超买",
+            description="K值高于80，超买信号",
+            indicator_id="KDJ",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0,
+            detection_function=self._detect_overbought
         )
-        self._registered_patterns["OVERBOUGHT"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_overbought,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
         
-        # 注册背离形态
-        pattern_info = {
-            'display_name': "KDJ底背离",
-            'description': "价格创新低但KDJ未创新低，看涨信号",
-            'score_impact': 20.0,
-            'signal_type': "bullish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="BULLISH_DIVERGENCE",
-            **pattern_info
+        # 注册超卖形态
+        registry.register(
+            pattern_id="KDJ_OVERSOLD",
+            display_name="KDJ超卖",
+            description="K值低于20，超卖信号",
+            indicator_id="KDJ",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0,
+            detection_function=self._detect_oversold
         )
-        self._registered_patterns["BULLISH_DIVERGENCE"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_bullish_divergence,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
         
-        pattern_info = {
-            'display_name': "KDJ顶背离",
-            'description': "价格创新高但KDJ未创新高，看跌信号",
-            'score_impact': -20.0,
-            'signal_type': "bearish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="BEARISH_DIVERGENCE",
-            **pattern_info
+        # 注册看涨背离形态
+        registry.register(
+            pattern_id="KDJ_BULLISH_DIVERGENCE",
+            display_name="KDJ看涨背离",
+            description="价格创新低而KDJ未创新低，底部反转信号",
+            indicator_id="KDJ",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0,
+            detection_function=self._detect_bullish_divergence
         )
-        self._registered_patterns["BEARISH_DIVERGENCE"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_bearish_divergence,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
         
-        # 注册三线同向上穿形态
-        pattern_info = {
-            'display_name': "KDJ三线同向",
-            'description': "K、D、J三线同时向上穿越，强势看涨信号",
-            'score_impact': 18.0,
-            'signal_type': "bullish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="TRIPLE_CROSS",
-            **pattern_info
+        # 注册看跌背离形态
+        registry.register(
+            pattern_id="KDJ_BEARISH_DIVERGENCE",
+            display_name="KDJ看跌背离",
+            description="价格创新高而KDJ未创新高，顶部反转信号",
+            indicator_id="KDJ",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0,
+            detection_function=self._detect_bearish_divergence
         )
-        self._registered_patterns["TRIPLE_CROSS"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_triple_cross,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
-        
-        # 注册J线突破形态
-        pattern_info = {
-            'display_name': "J线向上突破",
-            'description': "J线向上突破100，看涨信号",
-            'score_impact': 15.0,
-            'signal_type': "bullish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="J_BREAKTHROUGH",
-            **pattern_info
-        )
-        self._registered_patterns["J_BREAKTHROUGH"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_j_breakthrough,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
-        
-        # 注册J线跌破形态
-        pattern_info = {
-            'display_name': "J线向下跌破",
-            'description': "J线向下跌破0，看跌信号",
-            'score_impact': -15.0,
-            'signal_type': "bearish"
-        }
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="KDJ",
-            pattern_id="J_BREAKDOWN",
-            **pattern_info
-        )
-        self._registered_patterns["J_BREAKDOWN"] = {
-            'display_name': pattern_info['display_name'],
-            'detection_func': self._detect_j_breakdown,
-            'score_impact': pattern_info['score_impact'],
-            'description': pattern_info['description']
-        }
     
+    # 为了向后兼容，保留此方法
     def register_patterns_to_registry(self):
-        """将本地注册的形态添加到全局形态注册表"""
-        for pattern_id, pattern_info in self._registered_patterns.items():
-            # 确定模式类型
-            if pattern_info['score_impact'] > 0:
-                pattern_type = PatternType.BULLISH
-            elif pattern_info['score_impact'] < 0:
-                pattern_type = PatternType.BEARISH
-            else:
-                pattern_type = PatternType.NEUTRAL
-                
-            # 确定强度
-            score_abs = abs(pattern_info['score_impact'])
-            if score_abs >= 15:
-                strength = PatternStrength.STRONG
-            elif score_abs >= 10:
-                strength = PatternStrength.MEDIUM
-            else:
-                strength = PatternStrength.WEAK
-                
-            # 创建PatternInfo对象
-            pattern = PatternInfo(
-                pattern_id=pattern_id,
-                display_name=pattern_info['display_name'],
-                indicator_id=self.get_indicator_type(),
-                pattern_type=pattern_type,
-                default_strength=strength
-            )
-            
-            # 添加到全局注册表
-            PatternRegistry.register(
-                pattern_id=pattern_id,
-                display_name=pattern_info['display_name'],
-                description=pattern_info.get('description', ''),
-                indicator_id=self.get_indicator_type(),
-                pattern_type=pattern_type,
-                default_strength=strength,
-                score_impact=pattern_info.get('score_impact', 0.0)
-            )
+        """将KDJ形态注册到全局形态注册表（已弃用，保留此方法仅用于兼容性）"""
+        self._register_kdj_patterns()
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
         """
@@ -939,13 +811,8 @@ class KDJ(BaseIndicator):
         }
     
     def get_indicator_type(self) -> str:
-        """
-        获取指标类型
-        
-        Returns:
-            str: 指标类型
-        """
-        return "震荡指标"
+        """获取指标类型"""
+        return "KDJ"
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """

@@ -16,6 +16,7 @@ import warnings
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -1050,76 +1051,115 @@ class VOL(BaseIndicator):
     
     def _register_volume_patterns(self):
         """注册成交量指标的各种形态"""
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
         # 放量突破形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_BREAKOUT",
             display_name="放量突破",
-            detection_func=self._detect_vol_breakout,
-            score_impact=20.0
+            description="价格突破重要阻力位同时成交量明显放大",
+            indicator_id="VOL",
+            pattern_type=PatternType.BREAKOUT,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0,
+            detection_function=self._detect_vol_breakout
         )
         
         # 缩量回调形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_PULLBACK",
             display_name="缩量回调",
-            detection_func=self._detect_vol_pullback,
-            score_impact=15.0
+            description="价格回调但成交量明显萎缩，通常是良好的买入机会",
+            indicator_id="VOL",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0,
+            detection_function=self._detect_vol_pullback
         )
         
         # 巨量异动形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_ABNORMAL",
             display_name="巨量异动",
-            detection_func=self._detect_vol_anomaly,
-            score_impact=-25.0
+            description="成交量突然大幅增加，超出正常范围",
+            indicator_id="VOL",
+            pattern_type=PatternType.VOLATILITY,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-25.0,
+            detection_function=self._detect_vol_anomaly
         )
         
         # 量价背离形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_PRICE_DIVERGENCE",
             display_name="量价背离",
-            detection_func=self._detect_vol_price_divergence,
-            score_impact=-30.0
+            description="价格走势与成交量走势不一致，可能预示趋势反转",
+            indicator_id="VOL",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-30.0,
+            detection_function=self._detect_vol_price_divergence
         )
         
         # 量能蓄势形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_ACCUMULATION",
             display_name="量能蓄势",
-            detection_func=self._detect_vol_accumulation,
-            score_impact=25.0
+            description="成交量在较低价位温和放大，可能是主力吸筹迹象",
+            indicator_id="VOL",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=25.0,
+            detection_function=self._detect_vol_accumulation
         )
         
         # 量能衰竭形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_EXHAUSTION",
             display_name="量能衰竭",
-            detection_func=self._detect_vol_exhaustion,
-            score_impact=-25.0
+            description="价格继续上涨但成交量开始萎缩，可能预示上涨动能耗尽",
+            indicator_id="VOL",
+            pattern_type=PatternType.EXHAUSTION,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-25.0,
+            detection_function=self._detect_vol_exhaustion
         )
         
         # 量价同步形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_PRICE_SYNC",
             display_name="量价同步",
-            detection_func=self._detect_vol_price_sync,
-            score_impact=15.0
+            description="价格与成交量同步上涨，确认趋势有效性",
+            indicator_id="VOL",
+            pattern_type=PatternType.CONTINUATION,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0,
+            detection_function=self._detect_vol_price_sync
         )
         
         # 梯量形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_GRADUAL",
             display_name="梯量",
-            detection_func=self._detect_vol_gradual_change,
-            score_impact=18.0
+            description="成交量逐步放大，显示市场参与度逐渐增加",
+            indicator_id="VOL",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0,
+            detection_function=self._detect_vol_gradual_change
         )
         
         # 量能平台形态
-        self.register_pattern(
+        registry.register(
             pattern_id="VOL_PLATFORM",
             display_name="量能平台",
-            detection_func=self._detect_vol_platform,
-            score_impact=12.0
+            description="成交量在一段时间内保持稳定，市场处于整理阶段",
+            indicator_id="VOL",
+            pattern_type=PatternType.CONSOLIDATION,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0,
+            detection_function=self._detect_vol_platform
         )
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
@@ -1133,60 +1173,63 @@ class VOL(BaseIndicator):
         Returns:
             List[Dict[str, Any]]: 包含形态信息的字典列表
         """
+        from indicators.pattern_registry import PatternRegistry, PatternType
+        
         if not self.has_result():
             self.calculate(data)
             
         result = []
+        registry = PatternRegistry()
         
-        # 检测所有已注册的形态
-        for pattern_id, pattern_info in self._registered_patterns.items():
-            detected = pattern_info['detection_func'](data)
-            if detected:
-                pattern_data = {
-                    'pattern_id': pattern_id,
-                    'display_name': pattern_info['display_name'],
-                    'indicator_id': self.name,
-                    'strength': SignalStrength.MEDIUM.value,  # 默认强度
-                    'duration': 1,  # 默认持续时间
-                    'details': {}
-                }
+        # 获取此指标的所有已注册形态
+        pattern_ids = registry.get_patterns_by_indicator(self.get_indicator_type())
+        
+        # 检测每个形态是否存在
+        for pattern_id in pattern_ids:
+            pattern_info = registry.get_pattern(pattern_id)
+            if not pattern_info or 'detection_function' not in pattern_info:
+                continue
                 
-                # 添加形态细节
-                if 'breakout' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.VERY_STRONG.value
-                    pattern_data['details']['current_vol'] = float(data['volume'].iloc[-1])
-                    pattern_data['details']['avg_vol'] = float(data[f'vol_avg_{self.period}'].iloc[-1])
-                elif 'pullback' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.STRONG.value
-                    pattern_data['details']['current_vol'] = float(data['volume'].iloc[-1])
-                    pattern_data['details']['prev_vol'] = float(data['volume'].iloc[-2])
-                elif 'abnormal' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.VERY_STRONG_NEGATIVE.value
-                    pattern_data['details']['current_vol'] = float(data['volume'].iloc[-1])
-                    pattern_data['details']['std_dev'] = float(data['vol_std_dev'].iloc[-1])
-                elif 'divergence' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.VERY_STRONG_NEGATIVE.value
-                    pattern_data['details']['price_trend'] = float(data['close'].pct_change(5).iloc[-1])
-                    pattern_data['details']['vol_trend'] = float(data['volume'].pct_change(5).iloc[-1])
-                elif 'accumulation' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.VERY_STRONG.value
-                    pattern_data['details']['avg_vol'] = float(data[f'vol_avg_{self.period}'].iloc[-1])
-                    pattern_data['details']['vol_ratio'] = float(data[f'vol_ratio'].iloc[-1])
-                elif 'exhaustion' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.VERY_STRONG_NEGATIVE.value
-                    pattern_data['details']['vol_contraction'] = float(data['volume'].pct_change().iloc[-1])
-                elif 'sync' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.STRONG.value
-                    pattern_data['details']['price_change'] = float(data['close'].pct_change().iloc[-1])
-                    pattern_data['details']['vol_change'] = float(data['volume'].pct_change().iloc[-1])
-                elif 'gradual' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.STRONG.value
-                    pattern_data['details']['vol_change_3d'] = float(data['volume'].pct_change(3).iloc[-1])
-                elif 'platform' in pattern_id.lower():
-                    pattern_data['strength'] = SignalStrength.MODERATE.value
-                    pattern_data['details']['vol_std'] = float(data[f'vol_std_dev'].iloc[-1])
-                
-                result.append(pattern_data)
+            detection_func = pattern_info['detection_function']
+            if detection_func and callable(detection_func):
+                detected = detection_func(data)
+                if detected:
+                    pattern_data = {
+                        'pattern_id': pattern_id,
+                        'display_name': pattern_info.get('display_name', pattern_id),
+                        'indicator_id': self.get_indicator_type(),
+                        'strength': pattern_info.get('default_strength', 3),  # 默认中等强度
+                        'duration': 1,  # 默认持续时间
+                        'details': {}
+                    }
+                    
+                    # 添加形态细节
+                    if 'breakout' in pattern_id.lower():
+                        pattern_data['details']['current_vol'] = float(data['volume'].iloc[-1])
+                        pattern_data['details']['avg_vol'] = float(data[f'vol_avg_{self.period}'].iloc[-1])
+                    elif 'pullback' in pattern_id.lower():
+                        pattern_data['details']['current_vol'] = float(data['volume'].iloc[-1])
+                        pattern_data['details']['prev_vol'] = float(data['volume'].iloc[-2])
+                    elif 'abnormal' in pattern_id.lower():
+                        pattern_data['details']['current_vol'] = float(data['volume'].iloc[-1])
+                        pattern_data['details']['std_dev'] = float(data['vol_std_dev'].iloc[-1])
+                    elif 'divergence' in pattern_id.lower():
+                        pattern_data['details']['price_trend'] = float(data['close'].pct_change(5).iloc[-1])
+                        pattern_data['details']['vol_trend'] = float(data['volume'].pct_change(5).iloc[-1])
+                    elif 'accumulation' in pattern_id.lower():
+                        pattern_data['details']['avg_vol'] = float(data[f'vol_avg_{self.period}'].iloc[-1])
+                        pattern_data['details']['vol_ratio'] = float(data[f'vol_ratio'].iloc[-1])
+                    elif 'exhaustion' in pattern_id.lower():
+                        pattern_data['details']['vol_contraction'] = float(data['volume'].pct_change().iloc[-1])
+                    elif 'sync' in pattern_id.lower():
+                        pattern_data['details']['price_change'] = float(data['close'].pct_change().iloc[-1])
+                        pattern_data['details']['vol_change'] = float(data['volume'].pct_change().iloc[-1])
+                    elif 'gradual' in pattern_id.lower():
+                        pattern_data['details']['vol_change_3d'] = float(data['volume'].pct_change(3).iloc[-1])
+                    elif 'platform' in pattern_id.lower():
+                        pattern_data['details']['vol_std'] = float(data[f'vol_std_dev'].iloc[-1])
+                    
+                    result.append(pattern_data)
         
         return result
 
@@ -1218,68 +1261,220 @@ class VOL(BaseIndicator):
         # 返回最终评分
         return float(np.clip(adjusted_score * confidence, 0, 100))
 
-
-
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
-
-            """
-
-
-            生成交易信号
+        """
+        生成交易信号
         
-
-
-            Args:
-
-
-                data: 输入数据
-
-
-                **kwargs: 额外参数
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
             
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        # 初始化信号
+        signals = {}
+        
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+        # 在这里实现指标特定的信号生成逻辑
+        
+        # 此处提供默认实现
+        
+        return signals
 
-
-            Returns:
-
-
-                Dict[str, pd.Series]: 包含交易信号的字典
-
-
-            """
-
-
-            # 确保已计算指标
-
-
-            if not self.has_result():
-
-
-                self.calculate(data, **kwargs)
+    def _detect_vol_breakout(self, data: pd.DataFrame) -> bool:
+        """检测成交量放量突破形态"""
+        if not self.has_result() or 'volume' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 10:
+            return False
+        
+        # 获取最近的成交量数据
+        volume = data['volume'].iloc[-5:]
+        avg_vol = data[f'vol_avg_{self.period}'].iloc[-5:]
+        
+        # 放量突破条件：最近成交量显著高于平均成交量（至少1.5倍）
+        vol_breakout = volume.iloc[-1] > avg_vol.iloc[-1] * 1.5
+        
+        # 同时需要价格上涨
+        price_up = False
+        if 'close' in data.columns and len(data) >= 2:
+            price_up = data['close'].iloc[-1] > data['close'].iloc[-2]
+        
+        return vol_breakout and price_up
+    
+    def _detect_vol_pullback(self, data: pd.DataFrame) -> bool:
+        """检测成交量缩量回调形态"""
+        if not self.has_result() or 'volume' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 10:
+            return False
+        
+        # 获取最近的成交量数据
+        volume = data['volume'].iloc[-5:]
+        avg_vol = data[f'vol_avg_{self.period}'].iloc[-5:]
+        
+        # 缩量回调条件：最近成交量显著低于平均成交量（不超过0.7倍）
+        vol_pullback = volume.iloc[-1] < avg_vol.iloc[-1] * 0.7
+        
+        # 同时需要价格小幅下跌
+        price_down = False
+        if 'close' in data.columns and len(data) >= 5:
+            # 价格在回调，但跌幅不大（跌幅小于3%）
+            price_change = (data['close'].iloc[-1] / data['close'].iloc[-5] - 1) * 100
+            price_down = -3 < price_change < 0
+        
+        return vol_pullback and price_down
+    
+    def _detect_vol_anomaly(self, data: pd.DataFrame) -> bool:
+        """检测成交量异常形态"""
+        if not self.has_result() or 'volume' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 获取最近的成交量数据
+        volume = data['volume'].iloc[-1]
+        vol_std_dev = data['vol_std_dev'].iloc[-1] if 'vol_std_dev' in data.columns else data['volume'].rolling(window=20).std().iloc[-1]
+        avg_vol = data[f'vol_avg_{self.period}'].iloc[-1]
+        
+        # 异常成交量条件：当日成交量超过平均成交量加上3倍标准差
+        vol_anomaly = volume > (avg_vol + 3 * vol_std_dev)
+        
+        return vol_anomaly
+    
+    def _detect_vol_price_divergence(self, data: pd.DataFrame) -> bool:
+        """检测量价背离形态"""
+        if not self.has_result() or 'volume' not in data.columns or 'close' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 10:
+            return False
+        
+        # 计算价格和成交量的5日变化率
+        price_change = data['close'].pct_change(5).iloc[-1]
+        vol_change = data['volume'].pct_change(5).iloc[-1]
+        
+        # 量价背离条件：价格上涨但成交量下降，或价格下跌但成交量上升
+        divergence = (price_change > 0.03 and vol_change < -0.1) or (price_change < -0.03 and vol_change > 0.1)
+        
+        return divergence
+    
+    def _detect_vol_accumulation(self, data: pd.DataFrame) -> bool:
+        """检测成交量蓄势形态"""
+        if not self.has_result() or 'volume' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 成交量蓄势特征：连续多日成交量保持在均量附近，波动不大
+        recent_vol = data['volume'].iloc[-5:]
+        avg_vol = data[f'vol_avg_{self.period}'].iloc[-5:]
+        vol_ratio = recent_vol / avg_vol
+        
+        # 成交量维持在均量0.8-1.2倍之间视为蓄势
+        accumulation = ((vol_ratio > 0.8) & (vol_ratio < 1.2)).all()
+        
+        # 同时价格保持在一个相对稳定的区间
+        if 'close' in data.columns:
+            close_prices = data['close'].iloc[-5:]
+            price_range = (close_prices.max() - close_prices.min()) / close_prices.mean()
+            price_stable = price_range < 0.03  # 价格波动不超过3%
             
-
-
-            # 初始化信号
-
-
-            signals = {}
-
-
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['signal_strength'] = pd.Series(0, index=data.index)
+            return accumulation and price_stable
         
-
-
-            # 在这里实现指标特定的信号生成逻辑
-
-
-            # 此处提供默认实现
+        return accumulation
+    
+    def _detect_vol_exhaustion(self, data: pd.DataFrame) -> bool:
+        """检测成交量衰竭形态"""
+        if not self.has_result() or 'volume' not in data.columns or 'close' not in data.columns:
+            return False
         
-
-
-            return signals
+        # 确保数据量足够
+        if len(data) < 10:
+            return False
+        
+        # 连续三日成交量萎缩
+        vol_decline = (data['volume'].pct_change().iloc[-3:] < 0).all()
+        
+        # 同时价格持续上涨但上涨动能减弱
+        price_change = data['close'].pct_change().iloc[-3:]
+        price_up = (price_change > 0).all()
+        price_momentum_weakening = price_change.iloc[-1] < price_change.iloc[-3]
+        
+        return vol_decline and price_up and price_momentum_weakening
+    
+    def _detect_vol_price_sync(self, data: pd.DataFrame) -> bool:
+        """检测量价同步形态"""
+        if not self.has_result() or 'volume' not in data.columns or 'close' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 5:
+            return False
+        
+        # 计算价格和成交量的变化率
+        price_change = data['close'].pct_change().iloc[-1]
+        vol_change = data['volume'].pct_change().iloc[-1]
+        
+        # 量价同步条件：价格和成交量变化方向一致，且变化率都显著
+        sync = ((price_change > 0.01 and vol_change > 0.1) or 
+                (price_change < -0.01 and vol_change < -0.1))
+        
+        return sync
+    
+    def _detect_vol_gradual_change(self, data: pd.DataFrame) -> bool:
+        """检测成交量梯量形态"""
+        if not self.has_result() or 'volume' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 5:
+            return False
+        
+        # 获取最近的成交量数据
+        volume = data['volume'].iloc[-5:]
+        
+        # 梯量特征：成交量连续上升或下降
+        vol_increasing = (volume.pct_change().iloc[1:] > 0).all()
+        vol_decreasing = (volume.pct_change().iloc[1:] < 0).all()
+        
+        return vol_increasing or vol_decreasing
+    
+    def _detect_vol_platform(self, data: pd.DataFrame) -> bool:
+        """检测成交量平台形态"""
+        if not self.has_result() or 'volume' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 10:
+            return False
+        
+        # 获取最近的成交量数据
+        volume = data['volume'].iloc[-10:]
+        
+        # 计算成交量的标准差占均值的比例，用于衡量波动程度
+        vol_std = volume.std()
+        vol_mean = volume.mean()
+        vol_cv = vol_std / vol_mean if vol_mean > 0 else float('inf')
+        
+        # 平台特征：成交量波动较小（变异系数小于0.15）
+        vol_platform = vol_cv < 0.15
+        
+        return vol_platform

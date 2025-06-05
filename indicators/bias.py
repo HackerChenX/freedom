@@ -9,12 +9,13 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 from scipy import stats
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -1140,393 +1141,105 @@ class BIAS(BaseIndicator):
         
         return patterns
     
-    def _detect_bias_extreme_patterns(self) -> List[str]:
-        """
-        检测BIAS极值形态
+    def _detect_bias_extreme_patterns(self, data: pd.DataFrame) -> bool:
+        """检测BIAS极值形态"""
+        if not self.has_result():
+            return False
         
-        Returns:
-            List[str]: 极值形态列表
-        """
-        patterns = []
+        # 确保数据量足够
+        if len(self._result) < 20:
+            return False
         
-        for period in self.periods:
-            bias_col = f'BIAS{period}'
-            if bias_col in self._result.columns and len(self._result) >= 60:
-                bias_values = self._result[bias_col]
-                current_bias = bias_values.iloc[-1]
-                
-                if pd.isna(current_bias):
-                    continue
-                
-                # 计算历史分位数
-                recent_60 = bias_values.tail(60)
-                percentile = (current_bias <= recent_60).sum() / len(recent_60) * 100
-                
-                if percentile <= 5:
-                    patterns.append(f"BIAS{period}历史极低位")
-                elif percentile <= 10:
-                    patterns.append(f"BIAS{period}历史低位")
-                elif percentile >= 95:
-                    patterns.append(f"BIAS{period}历史极高位")
-                elif percentile >= 90:
-                    patterns.append(f"BIAS{period}历史高位")
+        # 获取BIAS数据
+        bias = self._result[f'bias_{self.period}'].iloc[-20:]
         
-        return patterns
+        # 计算历史极值
+        bias_max = bias.max()
+        bias_min = bias.min()
+        current_bias = bias.iloc[-1]
+        
+        # 定义极值阈值（可根据具体需求调整）
+        extreme_threshold = 0.8  # 达到历史极值的80%视为接近极值
+        
+        # 检测是否接近历史极值
+        is_high_extreme = current_bias > 0 and current_bias > extreme_threshold * bias_max
+        is_low_extreme = current_bias < 0 and current_bias < extreme_threshold * bias_min
+        
+        return is_high_extreme or is_low_extreme
     
-    def _detect_bias_trend_patterns(self) -> List[str]:
-        """
-        检测BIAS趋势形态
+    def _detect_bias_divergence_patterns(self, data: pd.DataFrame) -> bool:
+        """检测BIAS背离形态"""
+        if not self.has_result() or 'close' not in data.columns:
+            return False
         
-        Returns:
-            List[str]: 趋势形态列表
-        """
-        patterns = []
+        # 确保数据量足够
+        if len(self._result) < 10 or len(data) < 10:
+            return False
         
-        for period in self.periods:
-            bias_col = f'BIAS{period}'
-            if bias_col in self._result.columns and len(self._result) >= 3:
-                bias_values = self._result[bias_col]
-                
-                # 检查最近3个周期的趋势
-                recent_3 = bias_values.tail(3)
-                if len(recent_3) == 3 and not recent_3.isna().any():
-                    if (recent_3.iloc[2] > recent_3.iloc[1] > recent_3.iloc[0]):
-                        patterns.append(f"BIAS{period}连续上升")
-                    elif (recent_3.iloc[2] < recent_3.iloc[1] < recent_3.iloc[0]):
-                        patterns.append(f"BIAS{period}连续下降")
-                
-                # 检查当前趋势
-                if len(bias_values) >= 2:
-                    current_bias = bias_values.iloc[-1]
-                    prev_bias = bias_values.iloc[-2]
-                    
-                    if not pd.isna(current_bias) and not pd.isna(prev_bias):
-                        if current_bias > prev_bias:
-                            patterns.append(f"BIAS{period}上升")
-                        elif current_bias < prev_bias:
-                            patterns.append(f"BIAS{period}下降")
-                        else:
-                            patterns.append(f"BIAS{period}平稳")
+        # 获取BIAS和价格数据
+        bias = self._result[f'bias_{self.period}'].iloc[-10:]
+        price = data['close'].iloc[-10:]
         
-        return patterns
+        # 寻找最近10个周期内的高点和低点
+        bias_max_idx = bias.iloc[:-1].idxmax()
+        bias_min_idx = bias.iloc[:-1].idxmin()
+        price_max_idx = price.iloc[:-1].idxmax()
+        price_min_idx = price.iloc[:-1].idxmin()
+        
+        # 检查是否有顶背离（价格创新高但BIAS未创新高）
+        bearish_divergence = False
+        if price_max_idx > bias_max_idx:
+            if price.iloc[-1] >= price.loc[price_max_idx] and bias.iloc[-1] < bias.loc[bias_max_idx]:
+                bearish_divergence = True
+        
+        # 检查是否有底背离（价格创新低但BIAS未创新低）
+        bullish_divergence = False
+        if price_min_idx > bias_min_idx:
+            if price.iloc[-1] <= price.loc[price_min_idx] and bias.iloc[-1] > bias.loc[bias_min_idx]:
+                bullish_divergence = True
+        
+        return bearish_divergence or bullish_divergence
     
-    def _detect_bias_zero_cross_patterns(self) -> List[str]:
-        """
-        检测BIAS零轴穿越形态
+    def _detect_bias_zero_cross_patterns(self, data: pd.DataFrame) -> bool:
+        """检测BIAS零轴穿越形态"""
+        if not self.has_result():
+            return False
         
-        Returns:
-            List[str]: 零轴穿越形态列表
-        """
-        patterns = []
+        # 确保数据量足够
+        if len(self._result) < 3:
+            return False
         
-        for period in self.periods:
-            bias_col = f'BIAS{period}'
-            if bias_col in self._result.columns:
-                bias_values = self._result[bias_col]
-                
-                # 检查最近的零轴穿越
-                recent_periods = min(5, len(bias_values))
-                recent_bias = bias_values.tail(recent_periods)
-                
-                if crossover(recent_bias, 0).any():
-                    patterns.append(f"BIAS{period}上穿零轴")
-                
-                if crossunder(recent_bias, 0).any():
-                    patterns.append(f"BIAS{period}下穿零轴")
-                
-                # 检查当前位置
-                if len(bias_values) > 0:
-                    current_bias = bias_values.iloc[-1]
-                    if not pd.isna(current_bias):
-                        if current_bias > 0:
-                            patterns.append(f"BIAS{period}零轴上方")
-                        elif current_bias < 0:
-                            patterns.append(f"BIAS{period}零轴下方")
-                        else:
-                            patterns.append(f"BIAS{period}零轴位置")
+        # 获取BIAS数据
+        bias = self._result[f'bias_{self.period}'].iloc[-3:]
         
-        return patterns
-
-    def _detect_bias_multi_period_patterns(self) -> List[str]:
-        """
-        检测多周期BIAS协同形态（增强版）
-        优化实现：提供更精细的多周期BIAS协同性分析，包括趋势一致性、分歧与背离识别
+        # 检测BIAS上穿零轴
+        zero_cross_up = (bias.iloc[-3] < 0) and (bias.iloc[-1] > 0)
         
-        Returns:
-            List[str]: 检测到的多周期协同形态
-        """
-        patterns = []
+        # 检测BIAS下穿零轴
+        zero_cross_down = (bias.iloc[-3] > 0) and (bias.iloc[-1] < 0)
         
-        if len(self.periods) <= 1:
-            return patterns
+        return zero_cross_up or zero_cross_down
+    
+    def _detect_bias_momentum_patterns(self, data: pd.DataFrame) -> bool:
+        """检测BIAS动量形态"""
+        if not self.has_result():
+            return False
         
-        # 按照从短到长排序周期
-        sorted_periods = sorted(self.periods)
+        # 确保数据量足够
+        if len(self._result) < 5:
+            return False
         
-        # 获取最后一个点的BIAS值
-        last_idx = len(self._result) - 1
-        if last_idx < 0:
-            return patterns
+        # 获取BIAS数据
+        bias = self._result[f'bias_{self.period}'].iloc[-5:]
         
-        # 准备各周期的BIAS数据
-        bias_values = {}
-        bias_changes = {}
+        # 计算BIAS的变化率
+        bias_change = bias.diff().dropna()
         
-        for p in sorted_periods:
-            bias_col = f'BIAS{p}'
-            if bias_col in self._result.columns:
-                bias_values[p] = self._result[bias_col].iloc[last_idx]
-                if last_idx > 0:
-                    bias_changes[p] = self._result[bias_col].iloc[last_idx] - self._result[bias_col].iloc[last_idx-1]
+        # 连续上升或下降动量
+        rising_momentum = (bias_change > 0).all()
+        falling_momentum = (bias_change < 0).all()
         
-        # 检查各周期BIAS方向和状态
-        up_count = 0
-        down_count = 0
-        overbought_count = 0
-        oversold_count = 0
-        
-        # 动态阈值计算
-        volatility = {}
-        for p in sorted_periods:
-            bias_col = f'BIAS{p}'
-            if bias_col not in self._result.columns:
-                continue
-        
-            # 计算最近20个点的标准差作为波动率度量
-            lookback = min(20, last_idx)
-            if lookback > 0:
-                volatility[p] = self._result[bias_col].iloc[last_idx-lookback:last_idx].std()
-            else:
-                volatility[p] = 6
-        
-        # 检查各周期BIAS的方向和状态
-        for p in sorted_periods:
-            bias_col = f'BIAS{p}'
-            if bias_col not in self._result.columns:
-                continue
-        
-            # 检查方向
-            if p in bias_changes:
-                if bias_changes[p] > 0:
-                    up_count += 1
-                elif bias_changes[p] < 0:
-                    down_count += 1
-        
-            # 检查超买超卖状态
-            if p in bias_values and p in volatility:
-                current_bias = bias_values[p]
-                overbought_threshold = max(6, volatility[p] * 1.5)
-                oversold_threshold = min(-6, -volatility[p] * 1.5)
-                
-                if current_bias > overbought_threshold:
-                    overbought_count += 1
-                elif current_bias < oversold_threshold:
-                    oversold_count += 1
-        
-        # 1. 分析多周期方向一致性
-        total_periods = len(sorted_periods)
-        
-        # 方向一致性形态
-        if up_count == total_periods:
-            patterns.append("多周期BIAS一致上升")
-        elif down_count == total_periods:
-            patterns.append("多周期BIAS一致下降")
-        elif up_count >= total_periods * 0.7:
-            patterns.append("多周期BIAS多数上升")
-        elif down_count >= total_periods * 0.7:
-            patterns.append("多周期BIAS多数下降")
-        
-        # 2. 分析超买超卖一致性
-        if overbought_count >= total_periods * 0.7:
-            patterns.append("多周期BIAS超买一致")
-        elif oversold_count >= total_periods * 0.7:
-            patterns.append("多周期BIAS超卖一致")
-        
-        # 周期分歧形态
-        if overbought_count > 0 and oversold_count > 0:
-            patterns.append("多周期BIAS超买超卖分歧")
-        
-        # 3. 分析短周期与长周期关系
-        if len(sorted_periods) >= 2:
-            short_p = sorted_periods[0]
-            long_p = sorted_periods[-1]
-            
-            # 确保数据存在
-            if short_p in bias_values and long_p in bias_values and short_p in volatility and long_p in volatility:
-                short_bias = bias_values[short_p]
-                long_bias = bias_values[long_p]
-                
-                # 3.1 短期超买/卖而长期未超买/卖
-                short_overbought = short_bias > max(6, volatility[short_p] * 1.5)
-                long_overbought = long_bias > max(6, volatility[long_p] * 1.5)
-                short_oversold = short_bias < min(-6, -volatility[short_p] * 1.5)
-                long_oversold = long_bias < min(-6, -volatility[long_p] * 1.5)
-                
-                if short_overbought and not long_overbought:
-                    patterns.append("短周期超买长周期正常")
-                elif short_oversold and not long_oversold:
-                    patterns.append("短周期超卖长周期正常")
-                elif long_overbought and not short_overbought:
-                    patterns.append("长周期超买短周期正常")
-                elif long_oversold and not short_oversold:
-                    patterns.append("长周期超卖短周期正常")
-                
-                # 3.2 短周期与长周期方向相反
-                if short_p in bias_changes and long_p in bias_changes:
-                    short_direction = np.sign(bias_changes[short_p])
-                    long_direction = np.sign(bias_changes[long_p])
-                    
-                    if short_direction * long_direction < 0:  # 方向相反
-                        if short_direction > 0:
-                            patterns.append("短周期上升长周期下降")
-                        else:
-                            patterns.append("短周期下降长周期上升")
-        
-        # 4. 高级分析：多周期趋势协同性
-        if len(self._result) >= 10:  # 需要至少10个数据点
-            # 准备各周期最近的趋势数据
-            period_trends = {}
-            
-            for p in sorted_periods:
-                bias_col = f'BIAS{p}'
-                if bias_col in self._result.columns:
-                    # 计算最近10个点的线性回归斜率
-                    recent_bias = self._result[bias_col].iloc[last_idx-9:last_idx+1]
-                    if not recent_bias.isna().any():
-                        x = np.arange(len(recent_bias))
-                        y = recent_bias.values
-                        try:
-                            slope, _, _, _, _ = stats.linregress(x, y)
-                            period_trends[p] = slope
-                        except:
-                            # 如果回归计算失败，使用简单的方向判断
-                            if recent_bias.iloc[-1] > recent_bias.iloc[0]:
-                                period_trends[p] = 1
-                            elif recent_bias.iloc[-1] < recent_bias.iloc[0]:
-                                period_trends[p] = -1
-                            else:
-                                period_trends[p] = 0
-            
-            # 分析趋势一致性
-            if period_trends:
-                up_trend_count = sum(1 for slope in period_trends.values() if slope > 0)
-                down_trend_count = sum(1 for slope in period_trends.values() if slope < 0)
-                
-                if up_trend_count == len(period_trends):
-                    patterns.append("多周期BIAS趋势一致向上")
-                elif down_trend_count == len(period_trends):
-                    patterns.append("多周期BIAS趋势一致向下")
-                
-                # 分析趋势强度
-                trend_strengths = [abs(slope) for slope in period_trends.values()]
-                avg_strength = np.mean(trend_strengths)
-                
-                if avg_strength > 0.5:  # 趋势强
-                    if up_trend_count > down_trend_count:
-                        patterns.append("多周期BIAS强势上行")
-                    elif down_trend_count > up_trend_count:
-                        patterns.append("多周期BIAS强势下行")
-                elif avg_strength < 0.1:  # 趋势弱
-                    patterns.append("多周期BIAS震荡盘整")
-        
-        # 5. 高级分析：多周期背离识别
-        if len(self._result) >= 20:  # 需要足够的历史数据
-            try:
-                # 获取价格数据（假设存在close列）
-                price_data = None
-                for col in ['close', 'Close', 'CLOSE']:
-                    if col in self._result.index.names or col in self._result.columns:
-                        price_data = self._result[col] if col in self._result.columns else self._result.index.get_level_values(col)
-                        break
-                
-                if price_data is not None:
-                    # 检测顶背离和底背离
-                    for p in sorted_periods:
-                        bias_col = f'BIAS{p}'
-                        if bias_col in self._result.columns:
-                            # 获取最近20个点的数据
-                            recent_price = price_data.iloc[last_idx-19:last_idx+1]
-                            recent_bias = self._result[bias_col].iloc[last_idx-19:last_idx+1]
-                            
-                            # 寻找局部极值点
-                            price_highs = []
-                            price_lows = []
-                            bias_highs = []
-                            bias_lows = []
-                            
-                            for i in range(1, len(recent_price)-1):
-                                # 价格局部高点
-                                if recent_price.iloc[i] > recent_price.iloc[i-1] and recent_price.iloc[i] > recent_price.iloc[i+1]:
-                                    price_highs.append((i, recent_price.iloc[i]))
-                                # 价格局部低点
-                                if recent_price.iloc[i] < recent_price.iloc[i-1] and recent_price.iloc[i] < recent_price.iloc[i+1]:
-                                    price_lows.append((i, recent_price.iloc[i]))
-                                
-                                # BIAS局部高点
-                                if recent_bias.iloc[i] > recent_bias.iloc[i-1] and recent_bias.iloc[i] > recent_bias.iloc[i+1]:
-                                    bias_highs.append((i, recent_bias.iloc[i]))
-                                # BIAS局部低点
-                                if recent_bias.iloc[i] < recent_bias.iloc[i-1] and recent_bias.iloc[i] < recent_bias.iloc[i+1]:
-                                    bias_lows.append((i, recent_bias.iloc[i]))
-                            
-                            # 检查最近的两个高点和低点是否形成背离
-                            if len(price_highs) >= 2 and len(bias_highs) >= 2:
-                                # 价格创新高但BIAS没有 = 顶背离
-                                if price_highs[-1][1] > price_highs[-2][1] and bias_highs[-1][1] < bias_highs[-2][1]:
-                                    patterns.append(f"BIAS{p}顶部背离")
-                            
-                            if len(price_lows) >= 2 and len(bias_lows) >= 2:
-                                # 价格创新低但BIAS没有 = 底背离
-                                if price_lows[-1][1] < price_lows[-2][1] and bias_lows[-1][1] > bias_lows[-2][1]:
-                                    patterns.append(f"BIAS{p}底部背离")
-            except:
-                # 背离检测失败时不添加相关形态
-                pass
-        
-        # 6. 分析多周期收敛/发散形态
-        if len(sorted_periods) >= 3 and len(self._result) >= 10:
-            current_spread = max(bias_values.values()) - min(bias_values.values())
-            
-            # 计算5个周期前的BIAS差距
-            past_spread = None
-            if last_idx >= 5:
-                past_values = {}
-                for p in sorted_periods:
-                    bias_col = f'BIAS{p}'
-                    if bias_col in self._result.columns:
-                        past_values[p] = self._result[bias_col].iloc[last_idx-5]
-                
-                if len(past_values) == len(sorted_periods):
-                    past_spread = max(past_values.values()) - min(past_values.values())
-            
-            if past_spread is not None:
-                # 判断BIAS是否收敛或发散
-                if current_spread < past_spread * 0.7:  # 收敛30%以上
-                    patterns.append("多周期BIAS明显收敛")
-                elif current_spread > past_spread * 1.3:  # 发散30%以上
-                    patterns.append("多周期BIAS明显发散")
-        
-        # 7. 分析周期间隐含动能
-        # 短周期BIAS进入超买/超卖区而长周期未进入，可能意味着短暂波动
-        # 长周期BIAS进入超买/超卖区而短周期未进入，可能意味着大趋势变化
-        if len(sorted_periods) >= 2:
-            short_p = sorted_periods[0]
-            mid_p = sorted_periods[len(sorted_periods)//2] if len(sorted_periods) > 2 else None
-            long_p = sorted_periods[-1]
-            
-            if short_p in bias_values and long_p in bias_values:
-                # 判断周期间动量传导
-                if mid_p is not None and mid_p in bias_values:
-                    # 检查是否形成串联动能（短->中->长）
-                    short_mid_same_dir = np.sign(bias_values[short_p]) == np.sign(bias_values[mid_p])
-                    mid_long_same_dir = np.sign(bias_values[mid_p]) == np.sign(bias_values[long_p])
-                    
-                    if short_mid_same_dir and not mid_long_same_dir:
-                        patterns.append("BIAS动能向中周期传导")
-                    elif short_mid_same_dir and mid_long_same_dir:
-                        patterns.append("BIAS动能全周期传导")
-        
-        return patterns
+        return rising_momentum or falling_momentum
 
     def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -1987,11 +1700,35 @@ class BIAS(BaseIndicator):
 
     def _register_bias_patterns(self):
         """注册BIAS特有的形态检测方法"""
-        self.register_pattern(self._detect_bias_extreme, "BIAS极值")
-        self.register_pattern(self._detect_bias_divergence, "BIAS背离")
-    
-    # ... 形态检测方法实现 ...
-    
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册BIAS极值形态
+        registry.register(
+            pattern_id="BIAS_EXTREME",
+            display_name="BIAS极值",
+            description="BIAS达到历史极端值，指示可能的超买或超卖状态",
+            indicator_id="BIAS",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=15.0,
+            detection_function=self._detect_bias_extreme_patterns
+        )
+        
+        # 注册BIAS背离形态
+        registry.register(
+            pattern_id="BIAS_DIVERGENCE",
+            display_name="BIAS背离",
+            description="BIAS指标与价格走势形成背离，可能指示趋势反转",
+            indicator_id="BIAS",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0,
+            detection_function=self._detect_bias_regression_patterns
+        )
+
     def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
         self.ensure_columns(data, ['bias'])
         patterns = []

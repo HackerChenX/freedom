@@ -936,223 +936,203 @@ class EMA(BaseIndicator):
         return signals
         
     def _register_ema_patterns(self):
-        """
-        注册EMA形态
-        """
+        """注册EMA指标的形态"""
         from indicators.pattern_registry import PatternRegistry, PatternType
         
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
         # 注册EMA交叉形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_GOLDEN_CROSS",
             display_name="EMA金叉",
             description="短周期EMA上穿长周期EMA，看涨信号",
-            indicator_types=["EMA", "均线"],
-            score_impact=15.0,
-            pattern_type="reversal",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_DEATH_CROSS",
             display_name="EMA死叉",
             description="短周期EMA下穿长周期EMA，看跌信号",
-            indicator_types=["EMA", "均线"],
-            score_impact=-15.0,
-            pattern_type="reversal",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=-15.0
         )
         
         # 注册EMA排列形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_BULLISH_ALIGNMENT",
             display_name="EMA多头排列",
             description="短周期EMA位于长周期EMA上方，呈阶梯状排列，强势上涨信号",
-            indicator_types=["EMA", "均线"],
-            score_impact=20.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=20.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_BEARISH_ALIGNMENT",
             display_name="EMA空头排列",
             description="短周期EMA位于长周期EMA下方，呈阶梯状排列，强势下跌信号",
-            indicator_types=["EMA", "均线"],
-            score_impact=-20.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=-20.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_INTERWEAVED",
             display_name="EMA交织状态",
             description="各周期EMA交织在一起，表示市场处于震荡整理中",
-            indicator_types=["EMA", "均线"],
-            score_impact=0.0,
-            pattern_type="consolidation",
-            signal_type="neutral"
+            indicator_id="EMA",
+            pattern_type=PatternType.CONSOLIDATION,
+            score_impact=0.0
         )
         
         # 注册价格与EMA关系形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_STRONG_ABOVE_EMA",
             display_name="价格强势突破EMA",
             description="价格远高于多数EMA，表示强势上涨",
-            indicator_types=["EMA", "均线"],
-            score_impact=18.0,
-            pattern_type="momentum",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.MOMENTUM,
+            score_impact=18.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_ABOVE_EMA",
             display_name="价格温和上行EMA",
             description="价格位于多数EMA上方但距离不远",
-            indicator_types=["EMA", "均线"],
-            score_impact=12.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=12.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_STRONG_BELOW_EMA",
             display_name="价格强势跌破EMA",
             description="价格远低于多数EMA，表示强势下跌",
-            indicator_types=["EMA", "均线"],
-            score_impact=-18.0,
-            pattern_type="momentum",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.MOMENTUM,
+            score_impact=-18.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_BELOW_EMA",
             display_name="价格温和下行EMA",
             description="价格位于多数EMA下方但距离不远",
-            indicator_types=["EMA", "均线"],
-            score_impact=-12.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=-12.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_NEAR_EMA",
             display_name="价格EMA附近震荡",
             description="价格在EMA附近波动，表示市场处于震荡状态",
-            indicator_types=["EMA", "均线"],
-            score_impact=0.0,
-            pattern_type="consolidation",
-            signal_type="neutral"
+            indicator_id="EMA",
+            pattern_type=PatternType.CONSOLIDATION,
+            score_impact=0.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_CROSS_ABOVE_EMA",
             display_name="价格上穿EMA",
             description="价格上穿某一周期的EMA，可能是买入信号",
-            indicator_types=["EMA", "均线"],
-            score_impact=15.0,
-            pattern_type="reversal",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_CROSS_BELOW_EMA",
             display_name="价格下穿EMA",
             description="价格下穿某一周期的EMA，可能是卖出信号",
-            indicator_types=["EMA", "均线"],
-            score_impact=-15.0,
-            pattern_type="reversal",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=-15.0
         )
         
         # 注册EMA趋势形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_STRONG_UPTREND",
             display_name="EMA强势上升",
             description="所有周期的EMA都快速上升，表示强势上涨趋势",
-            indicator_types=["EMA", "均线"],
-            score_impact=20.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=20.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_MODERATE_UPTREND",
             display_name="EMA温和上升",
             description="大部分周期的EMA平缓上升",
-            indicator_types=["EMA", "均线"],
-            score_impact=10.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_STRONG_DOWNTREND",
             display_name="EMA强势下降",
             description="所有周期的EMA都快速下降，表示强势下跌趋势",
-            indicator_types=["EMA", "均线"],
-            score_impact=-20.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=-20.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_MODERATE_DOWNTREND",
             display_name="EMA温和下降",
             description="大部分周期的EMA平缓下降",
-            indicator_types=["EMA", "均线"],
-            score_impact=-10.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.TREND,
+            score_impact=-10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_FLAT",
             display_name="EMA盘整",
             description="多数EMA水平移动，表示市场处于盘整状态",
-            indicator_types=["EMA", "均线"],
-            score_impact=0.0,
-            pattern_type="consolidation",
-            signal_type="neutral"
+            indicator_id="EMA",
+            pattern_type=PatternType.CONSOLIDATION,
+            score_impact=0.0
         )
         
         # 注册EMA支撑/阻力形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_SUPPORT",
             display_name="EMA支撑",
             description="EMA作为价格的支撑位，价格触及后反弹",
-            indicator_types=["EMA", "均线"],
-            score_impact=15.0,
-            pattern_type="support",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.SUPPORT,
+            score_impact=15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_RESISTANCE",
             display_name="EMA阻力",
             description="EMA作为价格的阻力位，价格触及后回落",
-            indicator_types=["EMA", "均线"],
-            score_impact=-15.0,
-            pattern_type="resistance",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.RESISTANCE,
+            score_impact=-15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_MULTIPLE_SUPPORT",
             display_name="EMA多重支撑",
             description="多条EMA在相近价位形成支撑带",
-            indicator_types=["EMA", "均线"],
-            score_impact=20.0,
-            pattern_type="support",
-            signal_type="bullish"
+            indicator_id="EMA",
+            pattern_type=PatternType.SUPPORT,
+            score_impact=20.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="EMA_MULTIPLE_RESISTANCE",
             display_name="EMA多重阻力",
             description="多条EMA在相近价位形成阻力带",
-            indicator_types=["EMA", "均线"],
-            score_impact=-20.0,
-            pattern_type="resistance",
-            signal_type="bearish"
+            indicator_id="EMA",
+            pattern_type=PatternType.RESISTANCE,
+            score_impact=-20.0
         )
 

@@ -25,6 +25,19 @@ class PatternType(Enum):
     CONTINUATION = "持续形态"  # 持续形态
     VOLATILITY = "波动形态"  # 波动形态
     OTHER = "其他形态"  # 其他形态
+    # 新增类型，兼容现有代码中的字符串类型
+    TREND = "趋势形态"  # 趋势形态
+    MOMENTUM = "动量形态"  # 动量形态
+    EXHAUSTION = "耗尽形态"  # 耗尽形态
+    SUPPORT = "支撑形态"  # 支撑形态
+    RESISTANCE = "阻力形态"  # 阻力形态
+    CONSOLIDATION = "整理形态"  # 整理形态
+    # SAR指标特有类型
+    STABILITY = "稳定性形态"  # 稳定性形态
+    SUPPORT_RESISTANCE = "支撑阻力形态"  # 支撑阻力形态
+    WARNING = "警告形态"  # 警告形态
+    # BOLL指标特有类型
+    BREAKOUT = "突破形态"  # 突破形态
 
 
 class PatternStrength(Enum):
@@ -303,17 +316,25 @@ class PatternRegistry:
         """
         return self._patterns.get(pattern_id)
         
-    def get_patterns_by_indicator(self, indicator_id: str) -> List[str]:
-        """
-        获取指定指标的所有形态ID
+    @classmethod
+    def get_patterns_by_indicator(cls, indicator_id: str) -> List[str]:
+        """获取适用于指定指标类型的所有形态ID"""
+        instance = cls()
         
-        Args:
-            indicator_id: 指标ID
-            
-        Returns:
-            List[str]: 形态ID列表
-        """
-        return list(self._patterns_by_indicator.get(indicator_id, set()))
+        # 将指标ID转为大写以确保匹配
+        indicator_id_upper = indicator_id.upper()
+        
+        # 检查是否在_patterns_by_indicator中存在
+        if indicator_id_upper in instance._patterns_by_indicator:
+            return list(instance._patterns_by_indicator[indicator_id_upper])
+        
+        # 兼容旧代码：查找所有以该指标ID开头的形态
+        matched_patterns = []
+        for pattern_id in instance._patterns.keys():
+            if pattern_id.startswith(f"{indicator_id_upper}_"):
+                matched_patterns.append(pattern_id)
+        
+        return matched_patterns
     
     @classmethod
     def get_pattern_info(cls, pattern_id: str) -> Optional[Dict[str, Any]]:
@@ -361,14 +382,6 @@ class PatternRegistry:
         instance = cls()
         return [pid for pid, info in instance._patterns.items() 
                 if info.get('signal_type') == signal_type]
-    
-    @classmethod
-    def get_patterns_by_indicator(cls, indicator_type: str) -> List[str]:
-        """获取适用于指定指标类型的所有形态ID"""
-        instance = cls()
-        if indicator_type in instance._patterns_by_indicator:
-            return list(instance._patterns_by_indicator[indicator_type])
-        return []
     
     @classmethod
     def get_all_pattern_ids(cls) -> List[str]:
@@ -447,60 +460,13 @@ class PatternRegistry:
     @classmethod
     def import_patterns_from_indicator(cls, indicator):
         """
-        从指标实例导入形态
+        从指标实例导入形态（已弃用，保留此方法仅用于兼容性）
 
         Args:
-            indicator: 指标实例，必须有_registered_patterns属性
+            indicator: 指标实例
         """
-        instance = cls()
-        if not hasattr(indicator, '_registered_patterns'):
-            logger.warning(f"指标 {indicator.name} 没有_registered_patterns属性")
-            return
-            
-        indicator_type = indicator.name.upper()
-        for pattern_id, pattern_info in indicator._registered_patterns.items():
-            # 如果形态ID已包含指标类型前缀，则直接使用，否则添加前缀
-            if not pattern_id.startswith(f"{indicator_type}_"):
-                full_pattern_id = f"{indicator_type}_{pattern_id}"
-            else:
-                full_pattern_id = pattern_id
-                
-            # 判断形态类型
-            pattern_type = PatternType.NEUTRAL
-            score_impact = pattern_info.get('score_impact', 0.0)
-            if score_impact > 0:
-                pattern_type = PatternType.BULLISH
-            elif score_impact < 0:
-                pattern_type = PatternType.BEARISH
-                
-            # 判断强度
-            default_strength = PatternStrength.MEDIUM
-            abs_impact = abs(score_impact)
-            if abs_impact > 15:
-                default_strength = PatternStrength.STRONG
-            elif abs_impact < 5:
-                default_strength = PatternStrength.WEAK
-                
-            # 注册形态
-            instance.register(
-                pattern_id=full_pattern_id,
-                display_name=pattern_info.get('display_name', pattern_id),
-                indicator_id=indicator_type,
-                pattern_type=pattern_type,
-                default_strength=default_strength,
-                _allow_override=True
-            )
-            
-            # 更新额外信息
-            if full_pattern_id in instance._patterns:
-                instance._patterns[full_pattern_id]['score_impact'] = score_impact
-                # 根据评分影响确定信号类型
-                signal_type = 'neutral'
-                if score_impact > 0:
-                    signal_type = 'bullish'
-                elif score_impact < 0:
-                    signal_type = 'bearish'
-                instance._patterns[full_pattern_id]['signal_type'] = signal_type
+        logger.warning(f"import_patterns_from_indicator 方法已弃用，指标 {indicator.name} 的形态现在直接注册到PatternRegistry")
+        return
     
     @classmethod
     def register_patterns_from_config(cls, config_file: str) -> None:

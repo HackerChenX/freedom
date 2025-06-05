@@ -9,11 +9,12 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -943,91 +944,167 @@ class DMI(BaseIndicator):
 
     def _register_dmi_patterns(self):
         """注册DMI特有的形态检测方法"""
-        self.register_pattern(self._detect_dmi_crossover, "DMI交叉")
-        self.register_pattern(self._detect_adx_rising, "ADX上升")
-    
-    def _detect_dmi_crossover(self, data: pd.DataFrame) -> Optional[PatternResult]:
-        # ... 实现DMI交叉检测逻辑 ...
-        return PatternResult(pattern_name="DMI交叉", strength=strength, duration=duration)
-    
-    def _detect_adx_rising(self, data: pd.DataFrame) -> Optional[PatternResult]:
-        # ... 实现ADX上升检测逻辑 ...
-        return PatternResult(pattern_name="ADX上升", strength=strength, duration=duration)
-    
-    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
-        self.ensure_columns(data, ['pdi', 'mdi', 'adx'])
-        patterns = []
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
         
-        for pattern_func in self._pattern_registry.values():
-            result = pattern_func(data)
-            if result:
-                patterns.append(result)
+        # 注册DMI交叉形态
+        registry.register(
+            pattern_id="DMI_CROSSOVER",
+            display_name="DMI交叉",
+            description="DI+和DI-交叉，指示可能的趋势转变",
+            indicator_id="DMI",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0,
+            detection_function=self._detect_dmi_crossover
+        )
         
-        return patterns
-
-
-
+        # 注册ADX上升形态
+        registry.register(
+            pattern_id="DMI_ADX_RISING",
+            display_name="ADX上升",
+            description="ADX值上升，指示趋势增强",
+            indicator_id="DMI",
+            pattern_type=PatternType.TREND,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0,
+            detection_function=self._detect_adx_rising
+        )
     
+    def _detect_dmi_crossover(self, data: pd.DataFrame) -> bool:
+        """检测DMI交叉形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(self._result) < 3:
+            return False
+        
+        # 获取DI+和DI-数据
+        di_plus = self._result['PDI'].iloc[-3:]
+        di_minus = self._result['MDI'].iloc[-3:]
+        
+        # 检测DI+上穿DI-
+        cross_up = (di_plus.iloc[-3] < di_minus.iloc[-3]) and (di_plus.iloc[-1] > di_minus.iloc[-1])
+        
+        # 检测DI+下穿DI-
+        cross_down = (di_plus.iloc[-3] > di_minus.iloc[-3]) and (di_plus.iloc[-1] < di_minus.iloc[-1])
+        
+        return cross_up or cross_down
+    
+    def _detect_adx_rising(self, data: pd.DataFrame) -> bool:
+        """检测ADX上升形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(self._result) < 5:
+            return False
+        
+        # 获取ADX数据
+        adx = self._result['ADX'].iloc[-5:]
+        
+        # ADX连续上升
+        adx_rising = (adx.diff().dropna() > 0).all()
+        
+        # 强趋势条件：ADX值在上升且大于一定阈值
+        strong_trend = adx.iloc[-1] > 25 and adx_rising
+        
+        return strong_trend
+    
+    def _detect_adx_falling(self, data: pd.DataFrame) -> bool:
+        """检测ADX下降形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(self._result) < 5:
+            return False
+        
+        # 获取ADX数据
+        adx = self._result['ADX'].iloc[-5:]
+        
+        # ADX连续下降
+        adx_falling = (adx.diff().dropna() < 0).all()
+        
+        # 趋势减弱条件：ADX值在下降且之前的值大于一定阈值
+        weakening_trend = adx.iloc[0] > 20 and adx_falling
+        
+        return weakening_trend
+    
+    def _detect_adx_extremes(self, data: pd.DataFrame) -> bool:
+        """检测ADX极值形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(self._result) < 5:
+            return False
+        
+        # 获取ADX数据
+        adx = self._result['ADX'].iloc[-1]
+        
+        # 极强趋势
+        extremely_strong = adx > 45
+        
+        # 无趋势
+        no_trend = adx < 15
+        
+        return extremely_strong or no_trend
+    
+    def _detect_dmi_divergence(self, data: pd.DataFrame) -> bool:
+        """检测DMI背离形态"""
+        if not self.has_result() or 'close' not in data.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(self._result) < 10 or len(data) < 10:
+            return False
+        
+        # 获取DI+和价格数据
+        di_plus = self._result['PDI'].iloc[-10:]
+        price = data['close'].iloc[-10:]
+        
+        # 价格新高但DI+没有新高
+        price_new_high = price.iloc[-1] > price.iloc[:-1].max()
+        di_not_new_high = di_plus.iloc[-1] < di_plus.iloc[:-1].max()
+        
+        bearish_divergence = price_new_high and di_not_new_high
+        
+        # 价格新低但DI-没有新低
+        price_new_low = price.iloc[-1] < price.iloc[:-1].min()
+        
+        # 获取DI-数据
+        di_minus = self._result['MDI'].iloc[-10:]
+        di_not_new_low = di_minus.iloc[-1] < di_minus.iloc[:-1].max()
+        
+        bullish_divergence = price_new_low and di_not_new_low
+        
+        return bearish_divergence or bullish_divergence
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
-    
-            """
-
-    
-            生成交易信号
+        """
+        生成交易信号
         
-
-    
-            Args:
-
-    
-                data: 输入数据
-
-    
-                **kwargs: 额外参数
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
             
-
-    
-            Returns:
-
-    
-                Dict[str, pd.Series]: 包含交易信号的字典
-
-    
-            """
-
-    
-            # 确保已计算指标
-
-    
-            if not self.has_result():
-
-    
-                self.calculate(data, **kwargs)
-            
-
-    
-            # 初始化信号
-
-    
-            signals = {}
-
-    
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-    
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-    
-            signals['signal_strength'] = pd.Series(0, index=data.index)
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
+        # 初始化信号
+        signals = {}
 
-    
-            # 在这里实现指标特定的信号生成逻辑
-
-    
-            # 此处提供默认实现
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
         
-
-    
-            return signals
+        # 在这里实现指标特定的信号生成逻辑
+        # 此处提供默认实现
+        
+        return signals

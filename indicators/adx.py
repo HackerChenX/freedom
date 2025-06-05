@@ -710,119 +710,111 @@ class ADX(BaseIndicator):
         """
         from indicators.pattern_registry import PatternRegistry, PatternType
         
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
         # 注册ADX强度趋势形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_STRONG_RISING",
             display_name="ADX强度上升趋势",
             description="ADX值高于阈值且继续上升，表示强趋势增强",
-            indicator_types=["ADX", "趋势"],
-            score_impact=10.0,
-            pattern_type="trend",
-            signal_type="neutral"
+            indicator_id="ADX",
+            pattern_type=PatternType.TREND,
+            score_impact=10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_STRONG_FALLING",
             display_name="ADX强度下降趋势",
             description="ADX值高于阈值但开始下降，表示强趋势可能减弱",
-            indicator_types=["ADX", "趋势"],
-            score_impact=5.0,
-            pattern_type="trend",
-            signal_type="neutral"
+            indicator_id="ADX",
+            pattern_type=PatternType.TREND,
+            score_impact=5.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_WEAK_TREND",
             display_name="ADX弱趋势",
             description="ADX值低于阈值，表示趋势不明显，可能处于震荡市场",
-            indicator_types=["ADX", "趋势"],
-            score_impact=-5.0,
-            pattern_type="trend",
-            signal_type="neutral"
+            indicator_id="ADX",
+            pattern_type=PatternType.TREND,
+            score_impact=-5.0
         )
         
         # 注册PDI和MDI交叉形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_BULLISH_CROSS",
             display_name="ADX看涨交叉",
             description="+DI上穿-DI，表示可能开始上升趋势",
-            indicator_types=["ADX", "趋势"],
-            score_impact=15.0,
-            pattern_type="reversal",
-            signal_type="bullish"
+            indicator_id="ADX",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_BEARISH_CROSS",
             display_name="ADX看跌交叉",
             description="-DI上穿+DI，表示可能开始下降趋势",
-            indicator_types=["ADX", "趋势"],
-            score_impact=-15.0,
-            pattern_type="reversal",
-            signal_type="bearish"
+            indicator_id="ADX",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=-15.0
         )
         
         # 注册趋势方向形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_UPTREND",
             display_name="ADX上升趋势",
             description="+DI大于-DI，表示处于上升趋势",
-            indicator_types=["ADX", "趋势"],
-            score_impact=8.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="ADX",
+            pattern_type=PatternType.TREND,
+            score_impact=8.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_DOWNTREND",
             display_name="ADX下降趋势",
             description="-DI大于+DI，表示处于下降趋势",
-            indicator_types=["ADX", "趋势"],
-            score_impact=-8.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="ADX",
+            pattern_type=PatternType.TREND,
+            score_impact=-8.0
         )
         
         # 注册ADX趋势反转形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_TREND_STRENGTHENING",
             display_name="ADX趋势增强",
             description="ADX从下降转为上升，表示趋势即将增强",
-            indicator_types=["ADX", "趋势"],
-            score_impact=12.0,
-            pattern_type="continuation",
-            signal_type="neutral"
+            indicator_id="ADX",
+            pattern_type=PatternType.CONTINUATION,
+            score_impact=12.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_TREND_WEAKENING",
             display_name="ADX趋势减弱",
             description="ADX从上升转为下降，表示趋势即将减弱",
-            indicator_types=["ADX", "趋势"],
-            score_impact=-12.0,
-            pattern_type="reversal",
-            signal_type="neutral"
+            indicator_id="ADX",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=-12.0
         )
         
         # 注册极端趋势形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_EXTREME_UPTREND",
             display_name="ADX极端上升趋势",
             description="+DI远大于-DI，表示极端上升趋势，可能即将反转",
-            indicator_types=["ADX", "趋势"],
-            score_impact=5.0,
-            pattern_type="exhaustion",
-            signal_type="bullish"
+            indicator_id="ADX",
+            pattern_type=PatternType.EXHAUSTION,
+            score_impact=5.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="ADX_EXTREME_DOWNTREND",
             display_name="ADX极端下降趋势",
             description="-DI远大于+DI，表示极端下降趋势，可能即将反转",
-            indicator_types=["ADX", "趋势"],
-            score_impact=-5.0,
-            pattern_type="exhaustion",
-            signal_type="bearish"
+            indicator_id="ADX",
+            pattern_type=PatternType.EXHAUSTION,
+            score_impact=-5.0
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

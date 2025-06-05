@@ -7,9 +7,11 @@ TRIX三重指数平滑移动平均线模块
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
+import logging
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, PatternResult
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -218,7 +220,7 @@ class TRIX(BaseIndicator):
         patterns.extend(zero_cross_patterns)
         
         # 4. 检测TRIX背离形态
-        divergence_patterns = self._detect_trix_divergence_patterns(close_price)
+        divergence_patterns = self._detect_trix_divergence_patterns()
         patterns.extend(divergence_patterns)
         
         # 5. 检测TRIX强度形态
@@ -463,79 +465,125 @@ class TRIX(BaseIndicator):
         
         return patterns
     
-    def _detect_trix_zero_cross_patterns(self) -> List[str]:
-        """
-        检测TRIX零轴穿越形态
-        
-        Returns:
-            List[str]: 零轴穿越形态列表
-        """
-        patterns = []
-        
-        if 'TRIX' not in self._result.columns or len(self._result) < 2:
-            return patterns
-        
-        trix_values = self._result['TRIX']
-        zero_line = pd.Series(0.0, index=self._result.index)
-        
-        # 检查最近的零轴穿越
-        recent_periods = min(5, len(trix_values))
-        recent_trix = trix_values.tail(recent_periods)
-        recent_zero = zero_line.tail(recent_periods)
-        
-        if self.crossover(recent_trix, recent_zero).any():
-            patterns.append("TRIX上穿零轴")
-        
-        if self.crossunder(recent_trix, recent_zero).any():
-            patterns.append("TRIX下穿零轴")
-        
-        # 当前位置
-        if len(trix_values) > 0:
-            current_trix = trix_values.iloc[-1]
+    def _detect_trix_zero_cross_patterns(self, data: pd.DataFrame) -> bool:
+        """检测TRIX零轴穿越形态"""
+        if not self.has_result():
+            return False
             
-            if pd.notna(current_trix):
-                if current_trix > 0:
-                    patterns.append("TRIX在零轴上方")
-                else:
-                    patterns.append("TRIX在零轴下方")
+        # 确保数据量足够
+        if len(self._result) < 5:
+            return False
+            
+        # 检查必要的列是否存在
+        if 'trix' not in self._result.columns:
+            logging.warning("检测TRIX零轴穿越形态时缺少必要的列: ['trix']")
+            return False
+            
+        # 获取TRIX和Signal线数据
+        trix = self._result['trix'].iloc[-5:]
         
-        return patterns
+        # 检测是否有零轴穿越
+        zero_cross_up = (trix.iloc[-2] < 0) and (trix.iloc[-1] > 0)
+        zero_cross_down = (trix.iloc[-2] > 0) and (trix.iloc[-1] < 0)
+        
+        return zero_cross_up or zero_cross_down
     
-    def _detect_trix_divergence_patterns(self, close_price: pd.Series) -> List[str]:
-        """
-        检测TRIX背离形态
-        
-        Args:
-            close_price: 收盘价序列
+    def _detect_trix_divergence_patterns(self, data: pd.DataFrame) -> bool:
+        """检测TRIX背离形态"""
+        if not self.has_result() or 'close' not in data.columns:
+            return False
             
-        Returns:
-            List[str]: 背离形态列表
-        """
-        patterns = []
-        
-        if ('TRIX' not in self._result.columns or 
-            len(close_price) < 20):
-            return patterns
-        
-        trix_values = self._result['TRIX']
-        
-        # 检测最近的背离
-        window = 10
-        if len(close_price) >= window:
-            recent_price = close_price.tail(window)
-            recent_trix = trix_values.tail(window)
+        # 确保数据量足够
+        if len(self._result) < 10 or len(data) < 10:
+            return False
             
-            # 顶背离：价格创新高但TRIX未创新高
-            if (recent_price.iloc[-1] == recent_price.max() and 
-                recent_trix.iloc[-1] < recent_trix.max()):
-                patterns.append("TRIX顶背离")
+        # 检查必要的列是否存在
+        if 'trix' not in self._result.columns:
+            logging.warning("检测TRIX背离形态时缺少必要的列: ['trix']")
+            return False
             
-            # 底背离：价格创新低但TRIX未创新低
-            if (recent_price.iloc[-1] == recent_price.min() and 
-                recent_trix.iloc[-1] > recent_trix.min()):
-                patterns.append("TRIX底背离")
+        # 获取近期的价格和TRIX数据
+        prices = data['close'].iloc[-10:]
+        trix_values = self._result['trix'].iloc[-10:]
         
-        return patterns
+        # 查找近期的价格高点和低点
+        price_high_idx = prices.idxmax()
+        price_low_idx = prices.idxmin()
+        
+        # 查找近期的TRIX高点和低点
+        trix_high_idx = trix_values.idxmax()
+        trix_low_idx = trix_values.idxmin()
+        
+        # 检测顶背离：价格创新高，但TRIX未创新高
+        bearish_divergence = (price_high_idx > trix_high_idx) and (prices.iloc[-1] > prices.iloc[-5])
+        
+        # 检测底背离：价格创新低，但TRIX未创新低
+        bullish_divergence = (price_low_idx > trix_low_idx) and (prices.iloc[-1] < prices.iloc[-5])
+        
+        return bearish_divergence or bullish_divergence
+    
+    def _detect_trix_signal_cross_patterns(self, data: pd.DataFrame) -> bool:
+        """检测TRIX与信号线交叉形态"""
+        if not self.has_result():
+            return False
+            
+        # 确保数据量足够
+        if len(self._result) < 5:
+            return False
+            
+        # 获取TRIX和Signal线数据
+        trix = self._result['trix'].iloc[-3:]
+        signal = self._result['signal'].iloc[-3:]
+        
+        # 检测TRIX上穿信号线
+        golden_cross = (trix.iloc[-3] < signal.iloc[-3]) and (trix.iloc[-1] > signal.iloc[-1])
+        
+        # 检测TRIX下穿信号线
+        death_cross = (trix.iloc[-3] > signal.iloc[-3]) and (trix.iloc[-1] < signal.iloc[-1])
+        
+        return golden_cross or death_cross
+    
+    def _detect_trix_trend_change_patterns(self, data: pd.DataFrame) -> bool:
+        """检测TRIX趋势变化形态"""
+        if not self.has_result():
+            return False
+            
+        # 确保数据量足够
+        if len(self._result) < 10:
+            return False
+            
+        # 获取TRIX数据
+        trix = self._result['trix'].iloc[-10:]
+        
+        # 计算TRIX的斜率变化
+        slope_1 = trix.iloc[5] - trix.iloc[0]
+        slope_2 = trix.iloc[-1] - trix.iloc[-6]
+        
+        # 检测趋势变化（斜率从正变负或从负变正）
+        trend_change = (slope_1 * slope_2 < 0)
+        
+        return trend_change
+    
+    def _detect_trix_acceleration_patterns(self, data: pd.DataFrame) -> bool:
+        """检测TRIX加速形态"""
+        if not self.has_result():
+            return False
+            
+        # 确保数据量足够
+        if len(self._result) < 15:
+            return False
+            
+        # 获取TRIX数据
+        trix = self._result['trix'].iloc[-15:]
+        
+        # 计算TRIX的变化率
+        changes = [trix.iloc[i+5] - trix.iloc[i] for i in range(0, 10, 5)]
+        
+        # 加速条件：变化率逐渐增大，且方向一致
+        acceleration = (changes[0] > 0 and changes[1] > changes[0] and changes[2] > changes[1]) or \
+                      (changes[0] < 0 and changes[1] < changes[0] and changes[2] < changes[1])
+        
+        return acceleration
     
     def _detect_trix_strength_patterns(self) -> List[str]:
         """
@@ -802,9 +850,35 @@ class TRIX(BaseIndicator):
 
     def _register_trix_patterns(self):
         """注册TRIX特有的形态检测方法"""
-        self.register_pattern(self._detect_trix_zero_cross, "TRIX零轴穿越")
-        self.register_pattern(self._detect_trix_divergence, "TRIX背离")
-    
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册TRIX零轴穿越形态
+        registry.register(
+            pattern_id="TRIX_ZERO_CROSS",
+            display_name="TRIX零轴穿越",
+            description="TRIX线穿越零轴，指示可能的趋势转变",
+            indicator_id="TRIX",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0,
+            detection_function=self._detect_trix_zero_cross_patterns
+        )
+        
+        # 注册TRIX背离形态
+        registry.register(
+            pattern_id="TRIX_DIVERGENCE",
+            display_name="TRIX背离",
+            description="TRIX指标与价格走势形成背离，可能指示趋势反转",
+            indicator_id="TRIX",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0,
+            detection_function=lambda data: self._detect_trix_divergence_patterns(data['close'])
+        )
+
     def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
         self.ensure_columns(data, ['trix', 'trix_ma'])
         patterns = []

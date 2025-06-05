@@ -85,6 +85,8 @@ class BuyPointBatchAnalyzer:
                 buypoints_df['buypoint_date'] = today
                 logger.warning(f"使用当前日期 {today} 作为所有买点的日期")
             
+            # 如果code不够6位，补齐6位，前面补 0，直到6位
+            buypoints_df['stock_code'] = buypoints_df['stock_code'].astype(str).str.zfill(6)
             logger.info(f"已加载 {len(buypoints_df)} 个买点")
             return buypoints_df
             

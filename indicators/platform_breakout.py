@@ -9,8 +9,9 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 from enum import Enum
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, PatternResult
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -344,8 +345,70 @@ class PlatformBreakout(BaseIndicator):
 
     def _register_breakout_patterns(self):
         """注册平台突破特有的形态检测方法"""
-        self.register_pattern(self._detect_breakout, "平台突破")
-        self.register_pattern(self._detect_false_breakout, "假突破")
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册平台突破形态
+        registry.register(
+            pattern_id="PLATFORM_BREAKOUT",
+            display_name="平台突破",
+            description="价格突破了平台整理区间，指示新趋势可能开始",
+            indicator_id="PLATFORM_BREAKOUT",
+            pattern_type=PatternType.BREAKOUT,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0,
+            detection_function=self._detect_breakout
+        )
+        
+        # 注册假突破形态
+        registry.register(
+            pattern_id="FALSE_BREAKOUT",
+            display_name="假突破",
+            description="价格突破后又回到整理区间，可能是陷阱",
+            indicator_id="PLATFORM_BREAKOUT",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0,
+            detection_function=self._detect_false_breakout
+        )
+        
+        # 注册震荡整理形态
+        registry.register(
+            pattern_id="CONSOLIDATION",
+            display_name="震荡整理",
+            description="价格在一定区间内震荡整理，趋势不明显",
+            indicator_id="PLATFORM_BREAKOUT",
+            pattern_type=PatternType.CONSOLIDATION,
+            default_strength=PatternStrength.WEAK,
+            score_impact=0.0,
+            detection_function=self._detect_consolidation
+        )
+        
+        # 注册强势突破形态
+        registry.register(
+            pattern_id="STRONG_BREAKOUT",
+            display_name="强势突破",
+            description="价格以较大幅度突破平台，成交量放大",
+            indicator_id="PLATFORM_BREAKOUT",
+            pattern_type=PatternType.BREAKOUT,
+            default_strength=PatternStrength.VERY_STRONG,
+            score_impact=30.0,
+            detection_function=self._detect_strong_breakout
+        )
+        
+        # 注册平台回测形态
+        registry.register(
+            pattern_id="PLATFORM_RETEST",
+            display_name="平台回测",
+            description="价格突破后回测平台边界，确认新趋势",
+            indicator_id="PLATFORM_BREAKOUT",
+            pattern_type=PatternType.CONTINUATION,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0,
+            detection_function=self._detect_platform_retest
+        )
     
     def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
         self.ensure_columns(data, ['high', 'low', 'close'])
@@ -515,3 +578,92 @@ class PlatformBreakout(BaseIndicator):
         tr = pd.DataFrame({'tr1': tr1, 'tr2': tr2, 'tr3': tr3}).max(axis=1)
         atr = tr.rolling(period).mean()
         return atr 
+
+    def _detect_breakout(self, data: pd.DataFrame) -> bool:
+        """检测平台突破形态"""
+        if not self.has_result() or 'is_breakout' not in self._result.columns:
+            return False
+        
+        # 检查最近的数据是否有突破信号
+        if len(self._result) < 1:
+            return False
+        
+        # 平台突破的信号
+        return bool(self._result['is_breakout'].iloc[-1])
+    
+    def _detect_false_breakout(self, data: pd.DataFrame) -> bool:
+        """检测假突破形态"""
+        if not self.has_result() or 'is_false_breakout' not in self._result.columns:
+            return False
+        
+        # 检查最近的数据是否有假突破信号
+        if len(self._result) < 1:
+            return False
+        
+        # 假突破的信号
+        return bool(self._result['is_false_breakout'].iloc[-1])
+    
+    def _detect_consolidation(self, data: pd.DataFrame) -> bool:
+        """检测震荡整理形态"""
+        if not self.has_result() or 'is_consolidation' not in self._result.columns:
+            return False
+        
+        # 检查最近的数据是否有震荡整理信号
+        if len(self._result) < 1:
+            return False
+        
+        # 震荡整理的信号
+        return bool(self._result['is_consolidation'].iloc[-1])
+    
+    def _detect_strong_breakout(self, data: pd.DataFrame) -> bool:
+        """检测强势突破形态"""
+        if not self.has_result() or 'is_breakout' not in self._result.columns or 'close' not in data.columns:
+            return False
+        
+        # 检查最近的数据是否有突破信号
+        if len(self._result) < 5 or len(data) < 5:
+            return False
+        
+        # 突破信号
+        is_breakout = bool(self._result['is_breakout'].iloc[-1])
+        
+        if not is_breakout:
+            return False
+        
+        # 强势突破需要检查突破后的成交量和价格变化
+        price_change = data['close'].pct_change().iloc[-1]
+        
+        # 强势突破的条件：价格上涨超过3%
+        strong_breakout = price_change > 0.03
+        
+        # 如果有成交量数据，还可以检查成交量是否放大
+        if 'volume' in data.columns:
+            volume_change = data['volume'].pct_change().iloc[-1]
+            strong_breakout = strong_breakout and volume_change > 0.5  # 成交量放大50%以上
+        
+        return strong_breakout
+    
+    def _detect_platform_retest(self, data: pd.DataFrame) -> bool:
+        """检测平台回测形态"""
+        if not self.has_result() or 'platform_high' not in self._result.columns or 'platform_low' not in self._result.columns:
+            return False
+        
+        # 确保数据量足够
+        if len(self._result) < 5 or len(data) < 5:
+            return False
+        
+        # 获取平台上下边界
+        platform_high = self._result['platform_high'].iloc[-1]
+        platform_low = self._result['platform_low'].iloc[-1]
+        
+        # 价格突破平台后又回到平台区域附近
+        if 'close' in data.columns:
+            close_prices = data['close'].iloc[-5:]
+            
+            # 判断是否之前有突破，然后又回落到平台边界附近
+            has_breakout = any(close_prices.iloc[:-1] > platform_high)
+            near_boundary = abs(close_prices.iloc[-1] - platform_high) / platform_high < 0.02
+            
+            return has_breakout and near_boundary
+        
+        return False 

@@ -11,6 +11,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
 from indicators.common import boll as calc_boll
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -42,92 +43,139 @@ class BOLL(BaseIndicator):
     
     def _register_boll_patterns(self):
         """注册布林带指标的各种形态"""
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
         # 价格触及上轨形态
-        self.register_pattern(
-            pattern_id="BOLL_PRICE_TOUCH_UPPER",
+        registry.register(
+            pattern_id="PRICE_TOUCH_UPPER",
             display_name="布林带价格触及上轨",
-            detection_func=self._detect_price_touch_upper,
-            score_impact=-10.0
+            description="价格触及上轨但未突破，可能是阻力位",
+            indicator_id="BOLL",
+            pattern_type=PatternType.RESISTANCE,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0,
+            detection_function=self._detect_price_touch_upper
         )
         
         # 价格触及下轨形态
-        self.register_pattern(
-            pattern_id="BOLL_PRICE_TOUCH_LOWER",
+        registry.register(
+            pattern_id="PRICE_TOUCH_LOWER",
             display_name="布林带价格触及下轨",
-            detection_func=self._detect_price_touch_lower,
-            score_impact=10.0
+            description="价格触及下轨但未突破，可能是支撑位",
+            indicator_id="BOLL",
+            pattern_type=PatternType.SUPPORT,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0,
+            detection_function=self._detect_price_touch_lower
         )
         
         # 价格突破上轨形态
-        self.register_pattern(
-            pattern_id="BOLL_PRICE_BREAK_UPPER",
+        registry.register(
+            pattern_id="PRICE_BREAK_UPPER",
             display_name="布林带价格突破上轨",
-            detection_func=self._detect_price_break_upper,
-            score_impact=-15.0
+            description="价格突破上轨，可能是强势信号",
+            indicator_id="BOLL",
+            pattern_type=PatternType.BREAKOUT,
+            default_strength=PatternStrength.STRONG,
+            score_impact=15.0,
+            detection_function=self._detect_price_break_upper
         )
         
         # 价格突破下轨形态
-        self.register_pattern(
-            pattern_id="BOLL_PRICE_BREAK_LOWER",
+        registry.register(
+            pattern_id="PRICE_BREAK_LOWER",
             display_name="布林带价格突破下轨",
-            detection_func=self._detect_price_break_lower,
-            score_impact=15.0
+            description="价格突破下轨，可能是弱势信号",
+            indicator_id="BOLL",
+            pattern_type=PatternType.BREAKOUT,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-15.0,
+            detection_function=self._detect_price_break_lower
         )
         
         # 带宽扩大形态
-        self.register_pattern(
-            pattern_id="BOLL_BANDWIDTH_EXPANDING",
-            display_name="布林带带宽扩大",
-            detection_func=self._detect_bandwidth_expanding,
-            score_impact=5.0
+        registry.register(
+            pattern_id="BANDWIDTH_EXPANDING",
+            display_name="布林带宽扩大",
+            description="带宽扩大，波动性增加",
+            indicator_id="BOLL",
+            pattern_type=PatternType.VOLATILITY,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=0.0,
+            detection_function=self._detect_bandwidth_expanding
         )
         
         # 带宽收缩形态
-        self.register_pattern(
-            pattern_id="BOLL_BANDWIDTH_CONTRACTING",
-            display_name="布林带带宽收缩",
-            detection_func=self._detect_bandwidth_contracting,
-            score_impact=-5.0
+        registry.register(
+            pattern_id="BANDWIDTH_CONTRACTING",
+            display_name="布林带宽收缩",
+            description="带宽收缩，波动性减小",
+            indicator_id="BOLL",
+            pattern_type=PatternType.VOLATILITY,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=0.0,
+            detection_function=self._detect_bandwidth_contracting
         )
         
-        # 价格向上突破中轨形态
-        self.register_pattern(
-            pattern_id="BOLL_PRICE_CROSS_UP_MIDDLE",
-            display_name="价格向上突破中轨",
-            detection_func=self._detect_price_cross_up_middle,
-            score_impact=12.0
+        # 价格上穿中轨形态
+        registry.register(
+            pattern_id="PRICE_CROSS_UP_MIDDLE",
+            display_name="价格上穿布林中轨",
+            description="价格从下方穿越中轨，可能是趋势转变信号",
+            indicator_id="BOLL",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=5.0,
+            detection_function=self._detect_price_cross_up_middle
         )
         
-        # 价格向下突破中轨形态
-        self.register_pattern(
-            pattern_id="BOLL_PRICE_CROSS_DOWN_MIDDLE",
-            display_name="价格向下突破中轨",
-            detection_func=self._detect_price_cross_down_middle,
-            score_impact=-12.0
+        # 价格下穿中轨形态
+        registry.register(
+            pattern_id="PRICE_CROSS_DOWN_MIDDLE",
+            display_name="价格下穿布林中轨",
+            description="价格从上方穿越中轨，可能是趋势转变信号",
+            indicator_id="BOLL",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-5.0,
+            detection_function=self._detect_price_cross_down_middle
         )
         
-        # 上下轨平行形态
-        self.register_pattern(
-            pattern_id="BOLL_PARALLEL_BANDS",
-            display_name="布林带上下轨平行",
-            detection_func=self._detect_parallel_bands,
-            score_impact=0.0
+        # 布林带平行形态
+        registry.register(
+            pattern_id="PARALLEL_BANDS",
+            display_name="布林带平行",
+            description="上下轨道平行，趋势稳定",
+            indicator_id="BOLL",
+            pattern_type=PatternType.TREND,
+            default_strength=PatternStrength.WEAK,
+            score_impact=0.0,
+            detection_function=self._detect_parallel_bands
         )
         
         # W底形态
-        self.register_pattern(
-            pattern_id="BOLL_W_BOTTOM",
+        registry.register(
+            pattern_id="W_BOTTOM",
             display_name="布林带W底",
-            detection_func=self._detect_w_bottom,
-            score_impact=20.0
+            description="价格在下轨附近形成W底，看涨信号",
+            indicator_id="BOLL",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0,
+            detection_function=self._detect_w_bottom
         )
         
         # M顶形态
-        self.register_pattern(
-            pattern_id="BOLL_M_TOP",
+        registry.register(
+            pattern_id="M_TOP",
             display_name="布林带M顶",
-            detection_func=self._detect_m_top,
-            score_impact=-20.0
+            description="价格在上轨附近形成M顶，看跌信号",
+            indicator_id="BOLL",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0,
+            detection_function=self._detect_m_top
         )
     
     def _detect_price_touch_upper(self, data: pd.DataFrame) -> bool:

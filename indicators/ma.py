@@ -1517,6 +1517,9 @@ class MA(BaseIndicator):
         """
         from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
         
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
         # 注册MA交叉形态
         PatternRegistry.register_indicator_pattern(
             indicator_type="MA",
@@ -1555,198 +1558,179 @@ class MA(BaseIndicator):
             signal_type="bearish"
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_INTERWEAVED",
             display_name="MA交织状态",
             description="各周期MA交织在一起，表示市场处于震荡整理中",
-            indicator_types=["MA", "均线"],
-            score_impact=0.0,
-            pattern_type="consolidation",
-            signal_type="neutral"
+            indicator_id="MA",
+            pattern_type=PatternType.CONSOLIDATION,
+            score_impact=0.0
         )
         
         # 注册价格与MA关系形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_STRONG_ABOVE_MA",
             display_name="价格强势突破MA",
             description="价格远高于多数MA，表示强势上涨",
-            indicator_types=["MA", "均线"],
-            score_impact=18.0,
-            pattern_type="momentum",
-            signal_type="bullish"
+            indicator_id="MA",
+            pattern_type=PatternType.MOMENTUM,
+            score_impact=18.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_ABOVE_MA",
             display_name="价格温和上行MA",
             description="价格位于多数MA上方但距离不远",
-            indicator_types=["MA", "均线"],
-            score_impact=12.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="MA",
+            pattern_type=PatternType.TREND,
+            score_impact=12.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_STRONG_BELOW_MA",
             display_name="价格强势跌破MA",
             description="价格远低于多数MA，表示强势下跌",
-            indicator_types=["MA", "均线"],
-            score_impact=-18.0,
-            pattern_type="momentum",
-            signal_type="bearish"
+            indicator_id="MA",
+            pattern_type=PatternType.MOMENTUM,
+            score_impact=-18.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_BELOW_MA",
             display_name="价格温和下行MA",
             description="价格位于多数MA下方但距离不远",
-            indicator_types=["MA", "均线"],
-            score_impact=-12.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="MA",
+            pattern_type=PatternType.TREND,
+            score_impact=-12.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_NEAR_MA",
             display_name="价格MA附近震荡",
             description="价格在MA附近波动，表示市场处于震荡状态",
-            indicator_types=["MA", "均线"],
-            score_impact=0.0,
-            pattern_type="consolidation",
-            signal_type="neutral"
+            indicator_id="MA",
+            pattern_type=PatternType.CONSOLIDATION,
+            score_impact=0.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_CROSS_ABOVE_MA",
             display_name="价格上穿MA",
             description="价格上穿某一周期的MA，可能是买入信号",
-            indicator_types=["MA", "均线"],
-            score_impact=15.0,
-            pattern_type="reversal",
-            signal_type="bullish"
+            indicator_id="MA",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="PRICE_CROSS_BELOW_MA",
             display_name="价格下穿MA",
             description="价格下穿某一周期的MA，可能是卖出信号",
-            indicator_types=["MA", "均线"],
-            score_impact=-15.0,
-            pattern_type="reversal",
-            signal_type="bearish"
+            indicator_id="MA",
+            pattern_type=PatternType.REVERSAL,
+            score_impact=-15.0
         )
         
         # 注册MA趋势形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_STRONG_UPTREND",
             display_name="MA强势上升",
             description="所有周期的MA都快速上升，表示强势上涨趋势",
-            indicator_types=["MA", "均线"],
-            score_impact=20.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="MA",
+            pattern_type=PatternType.TREND,
+            score_impact=20.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_MODERATE_UPTREND",
             display_name="MA温和上升",
             description="大部分周期的MA平缓上升",
-            indicator_types=["MA", "均线"],
-            score_impact=10.0,
-            pattern_type="trend",
-            signal_type="bullish"
+            indicator_id="MA",
+            pattern_type=PatternType.TREND,
+            score_impact=10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_STRONG_DOWNTREND",
             display_name="MA强势下降",
             description="所有周期的MA都快速下降，表示强势下跌趋势",
-            indicator_types=["MA", "均线"],
-            score_impact=-20.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="MA",
+            pattern_type=PatternType.TREND,
+            score_impact=-20.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_MODERATE_DOWNTREND",
             display_name="MA温和下降",
             description="大部分周期的MA平缓下降",
-            indicator_types=["MA", "均线"],
-            score_impact=-10.0,
-            pattern_type="trend",
-            signal_type="bearish"
+            indicator_id="MA",
+            pattern_type=PatternType.TREND,
+            score_impact=-10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_FLAT",
             display_name="MA盘整",
             description="多数MA水平移动，表示市场处于盘整状态",
-            indicator_types=["MA", "均线"],
-            score_impact=0.0,
-            pattern_type="consolidation",
-            signal_type="neutral"
+            indicator_id="MA",
+            pattern_type=PatternType.CONSOLIDATION,
+            score_impact=0.0
         )
         
         # 注册MA支撑/阻力形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_SUPPORT",
             display_name="MA支撑",
             description="MA作为价格的支撑位，价格触及后反弹",
-            indicator_types=["MA", "均线"],
-            score_impact=15.0,
-            pattern_type="support",
-            signal_type="bullish"
+            indicator_id="MA",
+            pattern_type=PatternType.SUPPORT,
+            score_impact=15.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="MA_RESISTANCE",
             display_name="MA阻力",
             description="MA作为价格的阻力位，价格触及后回落",
-            indicator_types=["MA", "均线"],
-            score_impact=-15.0,
-            pattern_type="resistance",
-            signal_type="bearish"
+            indicator_id="MA",
+            pattern_type=PatternType.RESISTANCE,
+            score_impact=-15.0
         )
         
         # 注册筹码分布相关形态
-        PatternRegistry.register(
+        registry.register(
             pattern_id="CHIP_COST_SUPPORT",
             display_name="筹码成本支撑",
             description="价格接近筹码平均成本，形成支撑",
-            indicator_types=["MA", "筹码"],
-            score_impact=18.0,
-            pattern_type="support",
-            signal_type="bullish"
+            indicator_id="MA",
+            pattern_type=PatternType.SUPPORT,
+            score_impact=18.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="CHIP_COST_RESISTANCE",
             display_name="筹码成本阻力",
             description="价格接近筹码平均成本，形成阻力",
-            indicator_types=["MA", "筹码"],
-            score_impact=-18.0,
-            pattern_type="resistance",
-            signal_type="bearish"
+            indicator_id="MA",
+            pattern_type=PatternType.RESISTANCE,
+            score_impact=-18.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="CHIP_CONCENTRATION_HIGH",
             display_name="筹码高度集中",
             description="筹码分布高度集中，表明持仓者观点一致",
-            indicator_types=["MA", "筹码"],
-            score_impact=10.0,
-            pattern_type="volatility",
-            signal_type="neutral"
+            indicator_id="MA",
+            pattern_type=PatternType.VOLATILITY,
+            score_impact=10.0
         )
         
-        PatternRegistry.register(
+        registry.register(
             pattern_id="CHIP_CONCENTRATION_LOW",
             display_name="筹码分散",
             description="筹码分布分散，表明持仓者观点分歧",
-            indicator_types=["MA", "筹码"],
-            score_impact=-5.0,
-            pattern_type="volatility",
-            signal_type="neutral"
+            indicator_id="MA",
+            pattern_type=PatternType.VOLATILITY,
+            score_impact=-5.0
         )
 
     def _detect_chip_distribution_patterns(self, data: pd.DataFrame) -> List[Dict[str, Any]]:

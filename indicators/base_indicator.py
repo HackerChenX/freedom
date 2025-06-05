@@ -89,14 +89,13 @@ class BaseIndicator(abc.ABC):
     
     def __init__(self, name: str = "", description: str = "", weight: float = 1.0):
         """
-        初始化技术指标
+        初始化基础技术指标
         
         Args:
-            name: 指标名称，可选参数，如果未提供则使用子类的name属性
+            name: 指标名称，如果不提供则尝试使用类属性
             description: 指标描述
-            weight: 指标权重，用于综合评分
+            weight: 指标权重
         """
-        # 如果未提供name，则尝试使用子类中定义的name属性
         if not name and hasattr(self, 'name'):
             pass  # 已经有name属性，不需要重新赋值
         else:
@@ -108,7 +107,6 @@ class BaseIndicator(abc.ABC):
         self._error = None
         self._score_cache = {}
         self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
-        self._registered_patterns = {}  # 存储已注册的形态
     
     @property
     def result(self) -> Optional[pd.DataFrame]:
@@ -154,11 +152,30 @@ class BaseIndicator(abc.ABC):
             detection_func: 形态检测函数，应接受当前指标数据并返回是否存在该形态
             score_impact: 形态对评分的影响值
         """
-        self._registered_patterns[pattern_id] = {
-            'display_name': display_name,
-            'detection_func': detection_func,
-            'score_impact': score_impact
-        }
+        from indicators.pattern_registry import PatternRegistry, PatternType
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 判断形态类型
+        pattern_type = PatternType.NEUTRAL
+        if score_impact > 0:
+            pattern_type = PatternType.BULLISH
+        elif score_impact < 0:
+            pattern_type = PatternType.BEARISH
+        
+        # 直接调用PatternRegistry的register方法
+        registry.register(
+            pattern_id=pattern_id,
+            display_name=display_name,
+            indicator_id=self.get_indicator_type(),
+            pattern_type=pattern_type,
+            description='',
+            score_impact=score_impact,
+            detection_function=detection_func,
+            _allow_override=True
+        )
+        
         logger.debug(f"指标 {self.name} 注册形态: {display_name}")
     
     def get_registered_patterns(self) -> Dict[str, Dict[str, Any]]:
@@ -168,7 +185,30 @@ class BaseIndicator(abc.ABC):
         Returns:
             Dict[str, Dict[str, Any]]: 已注册形态字典
         """
-        return self._registered_patterns
+        from indicators.pattern_registry import PatternRegistry
+        
+        # 获取指标类型
+        indicator_id = self.get_indicator_type()
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 从PatternRegistry获取该指标的所有形态
+        pattern_ids = registry.get_patterns_by_indicator(indicator_id)
+        
+        # 转换形态信息格式
+        patterns = {}
+        for pattern_id in pattern_ids:
+            pattern_info = registry.get_pattern(pattern_id)
+            if pattern_info:
+                # 转换为兼容格式
+                patterns[pattern_id] = {
+                    'display_name': pattern_info.get('display_name', ''),
+                    'detection_func': pattern_info.get('detection_function'),
+                    'score_impact': pattern_info.get('score_impact', 0.0)
+                }
+        
+        return patterns
     
     def set_market_environment(self, market_env: MarketEnvironment) -> None:
         """
@@ -430,12 +470,15 @@ class BaseIndicator(abc.ABC):
         Returns:
             List[str]: 形态ID列表
         """
-        if not self._registered_patterns:
+        # 获取该指标的所有已注册形态
+        registered_patterns = self.get_registered_patterns()
+        
+        if not registered_patterns:
             return []
         
         matched_patterns = []
         
-        for pattern_id, pattern_info in self._registered_patterns.items():
+        for pattern_id, pattern_info in registered_patterns.items():
             detection_func = pattern_info.get('detection_func')
             
             if detection_func is None:
@@ -480,16 +523,21 @@ class BaseIndicator(abc.ABC):
                 # 基于已识别的形态生成信号
                 patterns = self.identify_patterns(self._result)
                 
+                # 从PatternRegistry获取形态信息
+                from indicators.pattern_registry import PatternRegistry
+                registry = PatternRegistry()
+                
                 # 遍历形态生成信号
-                for pattern in patterns:
-                    pattern_info = self._registered_patterns.get(pattern, {})
-                    score_impact = pattern_info.get('score_impact', 0)
-                    
-                    # 基于得分影响生成信号
-                    if score_impact > 0:  # 正面影响，生成买入信号
-                        signals["buy"].iloc[-1] = True
-                    elif score_impact < 0:  # 负面影响，生成卖出信号
-                        signals["sell"].iloc[-1] = True
+                for pattern_id in patterns:
+                    pattern_info = registry.get_pattern(pattern_id)
+                    if pattern_info:
+                        score_impact = pattern_info.get('score_impact', 0)
+                        
+                        # 基于得分影响生成信号
+                        if score_impact > 0:  # 正面影响，生成买入信号
+                            signals["buy"].iloc[-1] = True
+                        elif score_impact < 0:  # 负面影响，生成卖出信号
+                            signals["sell"].iloc[-1] = True
             except Exception as e:
                 logger.error(f"生成交易信号时出错: {e}")
         
@@ -766,14 +814,18 @@ class BaseIndicator(abc.ABC):
         return adjusted_score.clip(0, 100)
     
     def get_indicator_type(self) -> str:
-        """
-        获取指标类型
+        """获取指标类型（大写）"""
+        # 尝试从类名获取
+        class_name = self.__class__.__name__
+        if class_name:
+            return class_name.upper()
         
-        Returns:
-            str: 指标类型，如趋势指标、震荡指标等
-        """
-        # 子类应该覆盖此方法以提供具体的指标类型
-        return "通用指标"
+        # 尝试从实例名称获取
+        if hasattr(self, 'name'):
+            return self.name.upper()
+        
+        # 默认返回BASE_INDICATOR
+        return "BASE_INDICATOR"
     
     def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """

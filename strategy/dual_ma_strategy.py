@@ -12,6 +12,7 @@ from formula.stock_formula import StockFormula
 from utils.logger import get_logger
 from indicators.ma import MA
 from db.data_manager import DataManager
+from models.stock_info import StockInfo  # 导入StockInfo类
 
 logger = get_logger(__name__)
 
@@ -133,12 +134,12 @@ class DualMAStrategy(BaseStrategy):
                     
                     selected_stocks.append({
                         'code': code,
-                        'name': stock_info['name'] if stock_info else code,
-                        'industry': stock_info['industry'] if stock_info else '',
+                        'name': stock_info.name if stock_info else code,
+                        'industry': stock_info.industry if stock_info else '',
                         'breakout_date': recent_data.index[j].strftime('%Y%m%d')
                     })
                     
-                    logger.info(f"选出股票: {code} {stock_info['name'] if stock_info else ''}")
+                    logger.info(f"选出股票: {code} {stock_info.name if stock_info else ''}")
             
             except Exception as e:
                 logger.error(f"处理股票 {code} 时出错: {e}")

@@ -10,10 +10,12 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
+import logging
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -748,17 +750,155 @@ class WMA(BaseIndicator):
     
     def _register_wma_patterns(self):
         """注册WMA特有的形态检测方法"""
-        super()._register_ma_patterns()
-        self.register_pattern(self._detect_wma_convergence, "WMA收敛")
-        self.register_pattern(self._detect_wma_divergence, "WMA发散")
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册WMA收敛形态
+        registry.register(
+            pattern_id="WMA_CONVERGENCE",
+            display_name="WMA收敛",
+            description="不同周期的WMA线相互靠近，指示潜在趋势变化",
+            indicator_id="WMA",
+            pattern_type=PatternType.CONSOLIDATION,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=5.0,
+            detection_function=self._detect_wma_convergence
+        )
+        
+        # 注册WMA发散形态
+        registry.register(
+            pattern_id="WMA_DIVERGENCE",
+            display_name="WMA发散",
+            description="不同周期的WMA线相互远离，指示趋势加强",
+            indicator_id="WMA",
+            pattern_type=PatternType.TREND,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0,
+            detection_function=self._detect_wma_divergence
+        )
     
-    def _detect_wma_convergence(self, data: pd.DataFrame) -> Optional[PatternResult]:
-        # ... 实现WMA收敛检测逻辑 ...
-        return PatternResult(pattern_name="WMA收敛", strength=strength, duration=duration)
+    def _detect_wma_convergence(self, data: pd.DataFrame) -> bool:
+        """检测WMA收敛形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 检查必要的列是否存在
+        wma_short_col = f'wma_{self.periods[0]}'
+        wma_long_col = f'wma_{self.periods[-1]}'
+        
+        if wma_short_col not in self._result.columns or wma_long_col not in self._result.columns:
+            logging.warning(f"检测WMA收敛形态时缺少必要的列: ['{wma_short_col}', '{wma_long_col}']")
+            return False
+        
+        # 获取短中长周期的WMA数据
+        wma_short = self._result[wma_short_col].iloc[-5:]
+        wma_long = self._result[wma_long_col].iloc[-5:]
+        
+        # 计算WMA线之间的距离变化
+        diff_start = abs(wma_short.iloc[0] - wma_long.iloc[0])
+        diff_end = abs(wma_short.iloc[-1] - wma_long.iloc[-1])
+        
+        # 收敛条件：WMA线之间的距离逐渐减小
+        convergence = diff_end < diff_start * 0.75  # 距离至少减少25%
+        
+        return convergence
     
-    def _detect_wma_divergence(self, data: pd.DataFrame) -> Optional[PatternResult]:
-        # ... 实现WMA发散检测逻辑 ...
-        return PatternResult(pattern_name="WMA发散", strength=strength, duration=duration)
+    def _detect_wma_divergence(self, data: pd.DataFrame) -> bool:
+        """检测WMA发散形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 检查必要的列是否存在
+        wma_short_col = f'wma_{self.periods[0]}'
+        wma_long_col = f'wma_{self.periods[-1]}'
+        
+        if wma_short_col not in self._result.columns or wma_long_col not in self._result.columns:
+            logging.warning(f"检测WMA发散形态时缺少必要的列: ['{wma_short_col}', '{wma_long_col}']")
+            return False
+        
+        # 获取短中长周期的WMA数据
+        wma_short = self._result[wma_short_col].iloc[-5:]
+        wma_long = self._result[wma_long_col].iloc[-5:]
+        
+        # 计算WMA线之间的距离变化
+        diff_start = abs(wma_short.iloc[0] - wma_long.iloc[0])
+        diff_end = abs(wma_short.iloc[-1] - wma_long.iloc[-1])
+        
+        # 发散条件：WMA线之间的距离逐渐增大
+        divergence = diff_end > diff_start * 1.25  # 距离至少增加25%
+        
+        return divergence
+    
+    def _detect_wma_trend_change(self, data: pd.DataFrame) -> bool:
+        """检测WMA趋势变化形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 获取短周期的WMA数据
+        wma_short = self._result[f'wma_{self.periods[0]}'].iloc[-10:]
+        
+        # 计算WMA的斜率变化
+        slope_prev = wma_short.iloc[4] - wma_short.iloc[0]
+        slope_curr = wma_short.iloc[-1] - wma_short.iloc[-5]
+        
+        # 趋势变化条件：斜率从正变负或从负变正
+        trend_change = (slope_prev * slope_curr < 0)
+        
+        return trend_change
+    
+    def _detect_wma_acceleration(self, data: pd.DataFrame) -> bool:
+        """检测WMA加速形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 获取短周期的WMA数据
+        wma_short = self._result[f'wma_{self.periods[0]}'].iloc[-15:]
+        
+        # 计算WMA的变化率
+        changes = [wma_short.iloc[i+5] - wma_short.iloc[i] for i in range(0, 10, 5)]
+        
+        # 加速条件：变化率逐渐增大，且方向一致
+        acceleration = (changes[0] > 0 and changes[1] > changes[0] and changes[2] > changes[1]) or \
+                      (changes[0] < 0 and changes[1] < changes[0] and changes[2] < changes[1])
+        
+        return acceleration
+    
+    def _detect_wma_deceleration(self, data: pd.DataFrame) -> bool:
+        """检测WMA减速形态"""
+        if not self.has_result():
+            return False
+        
+        # 确保数据量足够
+        if len(data) < 20:
+            return False
+        
+        # 获取短周期的WMA数据
+        wma_short = self._result[f'wma_{self.periods[0]}'].iloc[-15:]
+        
+        # 计算WMA的变化率
+        changes = [wma_short.iloc[i+5] - wma_short.iloc[i] for i in range(0, 10, 5)]
+        
+        # 减速条件：变化率逐渐减小，但方向一致
+        deceleration = (changes[0] > 0 and changes[1] > 0 and changes[2] > 0 and changes[1] < changes[0] and changes[2] < changes[1]) or \
+                      (changes[0] < 0 and changes[1] < 0 and changes[2] < 0 and changes[1] > changes[0] and changes[2] > changes[1])
+        
+        return deceleration
 
     def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
         """检测并返回所有识别的形态"""

@@ -297,8 +297,15 @@ class StrategyCombiner:
             return pd.DataFrame()
             
         # 获取所有股票的基本信息
-        stock_info = self.data_manager.get_stock_info_info(list(all_stocks))
-        stock_info_dict = {row["stock_code"]: row for _, row in stock_info.iterrows()}
+        stock_info_dict = {}
+        for stock_code in all_stocks:
+            stock_info = self.data_manager.get_stock_info(stock_code, 'day')
+            if stock_info and stock_info.name:
+                stock_info_dict[stock_code] = {
+                    "stock_code": stock_code,
+                    "stock_name": stock_info.name,
+                    "industry": stock_info.industry
+                }
         
         # 准备合并结果
         combined_data = []
