@@ -67,6 +67,37 @@ class ZXMDailyMACD(BaseIndicator):
         
         return result
 
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM日线MACD指标的原始评分
+        
+        Args:
+            data: 输入数据，包含收盘价数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # MACD为正值加分
+        score[result["MACDPositive"]] += 15
+        
+        # MACD上升趋势加分
+        score[result["MACDRising"]] += 15
+        
+        # 买点满足额外加分
+        score[result["BuyPoint"]] += 20
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
+
 
 class ZXMTurnover(BaseIndicator):
     """
@@ -110,6 +141,37 @@ class ZXMTurnover(BaseIndicator):
         result["XG"] = xg
         
         return result
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM换手率指标的原始评分
+        
+        Args:
+            data: 输入数据，包含换手率数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 换手率活跃加分
+        score[result["ActiveSignal"]] += 15
+        
+        # 换手率相对活跃加分
+        score[result["RelativeActiveSignal"]] += 10
+        
+        # 同时满足两个条件额外加分
+        score[result["ActiveSignal"] & result["RelativeActiveSignal"]] += 15
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
 
 
 class ZXMVolumeShrink(BaseIndicator):
@@ -157,6 +219,41 @@ class ZXMVolumeShrink(BaseIndicator):
         result["XG"] = xg
         
         return result
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM缩量指标的原始评分
+        
+        Args:
+            data: 输入数据，包含成交量数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 日缩量加分
+        score[result["DailyShrink"]] += 10
+        
+        # 低于均量加分
+        score[result["BelowAverage"]] += 10
+        
+        # 连续缩量加分
+        score[result["ConsecutiveShrink"]] += 15
+        
+        # 缩量整理加分（如果有这个指标）
+        if "VolumeShrinkWithStablePrice" in result.columns:
+            score[result["VolumeShrinkWithStablePrice"]] += 15
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
 
 
 class ZXMMACallback(BaseIndicator):
@@ -226,6 +323,40 @@ class ZXMMACallback(BaseIndicator):
         result["XG"] = xg
         
         return result
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM均线回调指标的原始评分
+        
+        Args:
+            data: 输入数据，包含OHLC数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 回调到单个均线加分
+        ma_columns = ["MA5_Callback", "MA10_Callback", "MA20_Callback", "MA30_Callback", "MA60_Callback"]
+        
+        for col in ma_columns:
+            score[result[col]] += 5
+        
+        # 回调到任意均线加分
+        score[result["AnyMA_Callback"]] += 10
+        
+        # 回调到多条均线加分
+        score[result["MultiMA_Callback"]] += 15
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
     
     
 class ZXMBSAbsorb(BaseIndicator):
@@ -334,6 +465,43 @@ class ZXMBSAbsorb(BaseIndicator):
             result.iloc[i] = (m * series.iloc[i] + (n - m) * result.iloc[i-1]) / n
         
         return result
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM庄家吸筹指标的原始评分
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 放量下跌加分（可能是主力出货，评分降低）
+        score[result["VolumeDownDrop"]] -= 10
+        
+        # 横盘震荡但成交量持续放大加分
+        score[result["SidewaysVolumeExpand"]] += 15
+        
+        # 缩量十字星加分
+        score[result["VolumeShrinkDoji"]] += 10
+        
+        # 长下影线加分
+        score[result["LongLowerShadow"]] += 20
+        
+        # 连续横盘整理加分
+        score[result["SidewaysConsolidation"]] += 15
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
 
 
 class BuyPointDetector(BaseIndicator):

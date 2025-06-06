@@ -830,129 +830,164 @@ class EnhancedSTOCHRSI(STOCHRSI):
         计算STOCHRSI综合评分 (0-100)
         
         Args:
-            data: 输入数据，如果未提供则使用上次计算结果
+            data (pd.DataFrame, optional): 价格数据，如果未提供则使用上次计算结果
             
         Returns:
             pd.Series: 评分 (0-100，50为中性)
         """
-        # 确保已计算STOCHRSI
         if self._result is None and data is not None:
             self.calculate(data)
             
         if self._result is None:
             return pd.Series()
-            
+        
         # 获取STOCHRSI数据
         k = self._result['STOCHRSI_K']
         d = self._result['STOCHRSI_D']
+        k_slope = self._result['K_SLOPE']
+        d_slope = self._result['D_SLOPE']
+        
+        # 获取背离分析
+        divergence = self.detect_divergence()
+        
+        # 获取多周期协同分析
+        synergy = self.analyze_multi_period_synergy()
+        
+        # 获取交叉质量评估
+        cross_quality = self.evaluate_cross_quality()
+        
+        # 获取形态识别
+        patterns = self.identify_patterns()
         
         # 基础分数为50（中性）
         score = pd.Series(50, index=self._result.index)
         
-        # 1. 超买超卖区域评分 (±20分)
-        # 超卖区域，看涨加分
-        oversold_score = np.zeros_like(k)
-        extreme_oversold_score = np.zeros_like(k)
+        # 1. K线位置评分 (±15分)
+        # K > 80 看跌，K < 20 看涨
+        score += np.where(k < self.oversold_threshold, 
+                         np.minimum((self.oversold_threshold - k) / 20 * 15, 15),
+                         np.where(k > self.overbought_threshold,
+                                 np.maximum((self.overbought_threshold - k) / 20 * 15, -15),
+                                 (50 - k) / 30 * 7.5))  # 中间区域小幅调整
         
-        for i in range(len(k)):
-            if k.iloc[i] < self.extreme_oversold_threshold:
-                # 极度超卖，加20分
-                extreme_oversold_score[i] = 20
-            elif k.iloc[i] < self.oversold_threshold:
-                # 普通超卖，加分，越低加分越多
-                oversold_score[i] = 15 + (self.oversold_threshold - k.iloc[i]) / self.oversold_threshold * 5
+        # 2. K与D线关系评分 (±10分)
+        # K > D 看涨，K < D 看跌
+        k_vs_d = k - d
+        score += np.where(k_vs_d > 0, 
+                         np.minimum(k_vs_d / 10 * 10, 10),
+                         np.maximum(k_vs_d / 10 * 10, -10))
         
-        # 超买区域，看跌减分
-        overbought_score = np.zeros_like(k)
-        extreme_overbought_score = np.zeros_like(k)
+        # 3. K线斜率评分 (±10分)
+        # 斜率为正看涨，斜率为负看跌
+        score += np.where(k_slope > 0, 
+                         np.minimum(k_slope * 5, 10),
+                         np.maximum(k_slope * 5, -10))
         
-        for i in range(len(k)):
-            if k.iloc[i] > self.extreme_overbought_threshold:
-                # 极度超买，减20分
-                extreme_overbought_score[i] = 20
-            elif k.iloc[i] > self.overbought_threshold:
-                # 普通超买，减分，越高减分越多
-                overbought_score[i] = 15 + (k.iloc[i] - self.overbought_threshold) / (100 - self.overbought_threshold) * 5
+        # 4. K线交叉D线评分 (±15分)
+        if not cross_quality.empty:
+            # 金叉信号（K上穿D）
+            golden_cross = cross_quality.get('golden_cross', pd.Series(False, index=score.index))
+            if isinstance(golden_cross, pd.Series) and not golden_cross.empty:
+                cross_strength = cross_quality.get('cross_strength', pd.Series(0.5, index=score.index))
+                score.loc[golden_cross] += np.minimum(cross_strength.loc[golden_cross] * 30, 15)
+            
+            # 死叉信号（K下穿D）
+            death_cross = cross_quality.get('death_cross', pd.Series(False, index=score.index))
+            if isinstance(death_cross, pd.Series) and not death_cross.empty:
+                cross_strength = cross_quality.get('cross_strength', pd.Series(0.5, index=score.index))
+                score.loc[death_cross] -= np.minimum(cross_strength.loc[death_cross] * 30, 15)
         
-        score = score + extreme_oversold_score + oversold_score - extreme_overbought_score - overbought_score
-        
-        # 2. K和D线交叉评分 (±20分)
-        # 金叉信号，加分
-        golden_cross = self.crossover(k, d)
-        # 死叉信号，减分
-        death_cross = self.crossunder(k, d)
-        
-        # 评估交叉质量
-        cross_quality = self.evaluate_cross_quality()
-        if 'cross_quality_score' in cross_quality.columns:
-            for i in range(len(score)):
-                if golden_cross.iloc[i]:
-                    # 根据交叉质量调整分数
-                    quality = cross_quality.iloc[i, 5] / 100  # cross_quality_score归一化
-                    score.iloc[i] += 15 + quality * 5  # 基础15分 + 最多5分的质量加成
-                elif death_cross.iloc[i]:
-                    # 根据交叉质量调整分数
-                    quality = cross_quality.iloc[i, 5] / 100  # cross_quality_score归一化
-                    score.iloc[i] -= 15 + quality * 5  # 基础15分 + 最多5分的质量加成
-        else:
-            score = score + golden_cross * 20 - death_cross * 20
-        
-        # 3. 中线穿越评分 (±15分)
-        # 中线上穿，加分
-        mid_cross_up = self.crossover(k, 50)
-        # 中线下穿，减分
-        mid_cross_down = self.crossunder(k, 50)
-        
-        score = score + mid_cross_up * 15 - mid_cross_down * 15
-        
-        # 4. K和D线位置评分 (±10分)
-        # K和D都位于50以上，看涨加分
-        above_mid = (k > 50) & (d > 50)
-        # K和D都位于50以下，看跌减分
-        below_mid = (k < 50) & (d < 50)
-        
-        score = score + above_mid * 10 - below_mid * 10
-        
-        # 5. 背离评分 (±25分)
-        divergence = self.detect_divergence()
+        # 5. 背离评分 (±15分)
         if not divergence.empty:
-            # 正背离，加分
-            score += divergence['bullish_divergence'] * 25
-            # 负背离，减分
-            score -= divergence['bearish_divergence'] * 25
-            # 隐藏正背离，加分
-            score += divergence['hidden_bullish_divergence'] * 20
-            # 隐藏负背离，减分
-            score -= divergence['hidden_bearish_divergence'] * 20
+            # 牛市背离
+            bullish_div = divergence.get('bullish_divergence', pd.Series(False, index=score.index))
+            if isinstance(bullish_div, pd.Series) and not bullish_div.empty:
+                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
+                score.loc[bullish_div] += np.minimum(div_strength.loc[bullish_div] * 30, 15)
+            
+            # 熊市背离
+            bearish_div = divergence.get('bearish_divergence', pd.Series(False, index=score.index))
+            if isinstance(bearish_div, pd.Series) and not bearish_div.empty:
+                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
+                score.loc[bearish_div] -= np.minimum(div_strength.loc[bearish_div] * 30, 15)
+            
+            # 隐藏背离也可以加入评分
+            hidden_bullish = divergence.get('hidden_bullish_divergence', pd.Series(False, index=score.index))
+            if isinstance(hidden_bullish, pd.Series) and not hidden_bullish.empty:
+                score.loc[hidden_bullish] += 10
+                
+            hidden_bearish = divergence.get('hidden_bearish_divergence', pd.Series(False, index=score.index))
+            if isinstance(hidden_bearish, pd.Series) and not hidden_bearish.empty:
+                score.loc[hidden_bearish] -= 10
         
         # 6. 多周期协同评分 (±15分)
-        synergy = self.analyze_multi_period_synergy()
         if not synergy.empty:
-            # 计算多周期共识得分
-            consensus_adjustment = (synergy['consensus_score'] - 50) * 0.3  # 0.3 = 15/50
-            score += consensus_adjustment
+            bull_synergy = synergy.get('bullish_agreement', pd.Series(False, index=score.index))
+            if isinstance(bull_synergy, pd.Series) and not bull_synergy.empty:
+                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
+                score.loc[bull_synergy] += np.minimum(synergy_strength.loc[bull_synergy] * 30, 15)
+            
+            bear_synergy = synergy.get('bearish_agreement', pd.Series(False, index=score.index))
+            if isinstance(bear_synergy, pd.Series) and not bear_synergy.empty:
+                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
+                score.loc[bear_synergy] -= np.minimum(synergy_strength.loc[bear_synergy] * 30, 15)
         
-        # 7. 形态识别评分 (±20分)
-        patterns = self.identify_patterns()
-        if 'w_bottom' in patterns.columns:
-            # W底形态，加分
-            score += patterns['w_bottom'] * 20
-        if 'm_top' in patterns.columns:
-            # M顶形态，减分
-            score -= patterns['m_top'] * 20
+        # 7. 特殊形态评分 (±15分)
+        if not patterns.empty:
+            # 看涨形态: W底、低位徘徊突破等
+            for pattern in ['w_bottom', 'oversold_reversal', 'positive_hook']:
+                if pattern in patterns.columns:
+                    pattern_signal = patterns[pattern]
+                    if isinstance(pattern_signal, pd.Series) and not pattern_signal.empty:
+                        score.loc[pattern_signal] += 15
+            
+            # 看跌形态: M顶、高位徘徊突破等
+            for pattern in ['m_top', 'overbought_reversal', 'negative_hook']:
+                if pattern in patterns.columns:
+                    pattern_signal = patterns[pattern]
+                    if isinstance(pattern_signal, pd.Series) and not pattern_signal.empty:
+                        score.loc[pattern_signal] -= 15
         
-        # 8. 市场环境适应评分调整
-        if self.market_environment == 'bull_market':
-            # 牛市中提高看涨信号权重，降低看跌信号权重
+        # 8. 极端区域评分 (±5分)
+        # 在极端区域的额外加减分
+        score += np.where(k < self.extreme_oversold_threshold, 5, 
+                         np.where(k > self.extreme_overbought_threshold, -5, 0))
+        
+        # 9. 市场环境调整
+        if self.market_environment == "bull_market":
+            # 牛市中增强多头信号，弱化空头信号
             bull_adjustment = np.where(score > 50, (score - 50) * 0.2, (score - 50) * 0.1)
             score += bull_adjustment
-        elif self.market_environment == 'bear_market':
-            # 熊市中提高看跌信号权重，降低看涨信号权重
+        elif self.market_environment == "bear_market":
+            # 熊市中增强空头信号，弱化多头信号
             bear_adjustment = np.where(score < 50, (50 - score) * 0.2, (50 - score) * 0.1)
             score -= bear_adjustment
+        elif self.market_environment == "volatile_market":
+            # 高波动市场需要更强的信号
+            vol_adjustment = (score - 50).abs() * 0.3
+            score = np.where(score > 50, 50 + vol_adjustment, 50 - vol_adjustment)
         
-        # 限制得分范围在0-100之间
-        return np.clip(score, 0, 100)
+        # 限制分数范围在0-100之间
+        score = score.clip(0, 100)
+        
+        return score
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算增强型STOCHRSI指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        # 直接使用现有的calculate_score方法
+        if not self.has_result():
+            self.calculate(data)
+        
+        return self.calculate_score()
     
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -1062,6 +1097,7 @@ class EnhancedSTOCHRSI(STOCHRSI):
         signals.loc[sell_signals & patterns.get('strong_bearish_signal', False), 'signal_desc'] = '多周期STOCHRSI共振发出看跌信号'
         
         # 设置趋势方向
+        signals['trend'] = 0  # 默认中性
         signals.loc[buy_signals, 'trend'] = 1  # 上升趋势
         signals.loc[sell_signals, 'trend'] = -1  # 下降趋势
         

@@ -256,7 +256,94 @@ class ZXMPatternIndicator(BaseIndicator):
         
         return result
     
-    def _identify_absorption_patterns(self, 
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM体系买点和吸筹形态指标的原始评分
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 确保数据包含必需的列
+        required_columns = ["open", "high", "low", "close", "volume"]
+        for col in required_columns:
+            if col not in data.columns:
+                return pd.Series(50.0, index=data.index)  # 返回默认中性评分
+        
+        # 计算指标
+        result = self.calculate(
+            data["open"].values, 
+            data["high"].values, 
+            data["low"].values, 
+            data["close"].values, 
+            data["volume"].values
+        )
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50.0, index=data.index)
+        
+        # 买点形态评分
+        for i, idx in enumerate(data.index):
+            current_score = 50.0
+            
+            # 一类买点（最强买点）：+40分
+            if i < len(result.get('class_one_buy', [])) and result['class_one_buy'][i]:
+                current_score += 40
+            
+            # 二类买点（强势回调买点）：+30分
+            elif i < len(result.get('class_two_buy', [])) and result['class_two_buy'][i]:
+                current_score += 30
+            
+            # 三类买点（超跌反弹买点）：+20分
+            elif i < len(result.get('class_three_buy', [])) and result['class_three_buy'][i]:
+                current_score += 20
+            
+            # 其他特殊买点：+15-25分
+            special_buy_signals = [
+                'breakout_pullback_buy',      # 强势突破回踩型：+25分
+                'volume_shrink_platform_buy', # 连续缩量平台型：+20分
+                'long_shadow_support_buy',    # 长下影线支撑型：+15分
+                'ma_converge_diverge_buy'     # 均线粘合发散型：+20分
+            ]
+            
+            for signal_name in special_buy_signals:
+                if signal_name in result and i < len(result[signal_name]) and result[signal_name][i]:
+                    if signal_name == 'breakout_pullback_buy':
+                        current_score += 25
+                    elif signal_name in ['volume_shrink_platform_buy', 'ma_converge_diverge_buy']:
+                        current_score += 20
+                    elif signal_name == 'long_shadow_support_buy':
+                        current_score += 15
+                    break  # 只取最高的一个特殊买点信号
+            
+            # 吸筹形态评分（如果有这些指标）
+            absorption_signals = [
+                'large_scale_absorption',     # 大级别吸筹：+15分
+                'stealth_absorption',         # 隐蔽性吸筹：+10分
+                'repeated_absorption',        # 反复性吸筹：+12分
+                'breakthrough_absorption'     # 突破性吸筹：+18分
+            ]
+            
+            for signal_name in absorption_signals:
+                if signal_name in result and i < len(result[signal_name]) and result[signal_name][i]:
+                    if signal_name == 'large_scale_absorption':
+                        current_score += 15
+                    elif signal_name == 'stealth_absorption':
+                        current_score += 10
+                    elif signal_name == 'repeated_absorption':
+                        current_score += 12
+                    elif signal_name == 'breakthrough_absorption':
+                        current_score += 18
+            
+            score[idx] = min(100, max(0, current_score))  # 确保评分在0-100范围内
+        
+        return score
+    
+def _identify_absorption_patterns(self, 
                                      open_prices: np.ndarray, 
                                      high_prices: np.ndarray, 
                                      low_prices: np.ndarray, 

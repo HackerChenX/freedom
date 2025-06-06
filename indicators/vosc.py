@@ -14,6 +14,7 @@ from typing import Union, List, Dict, Optional, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -630,4 +631,116 @@ class VOSC(BaseIndicator):
         ax.grid(True, alpha=0.3)
         
         return ax
+
+    def _register_vosc_patterns(self):
+        """
+        注册VOSC指标相关形态
+        """
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册VOSC零轴穿越形态
+        registry.register(
+            pattern_id="VOSC_CROSS_ABOVE_ZERO",
+            display_name="VOSC上穿零轴",
+            description="VOSC从下方穿越零轴，表明短期成交量超过长期成交量，看涨信号",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        registry.register(
+            pattern_id="VOSC_CROSS_BELOW_ZERO",
+            display_name="VOSC下穿零轴",
+            description="VOSC从上方穿越零轴，表明短期成交量低于长期成交量，看跌信号",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        # 注册VOSC与信号线交叉形态
+        registry.register(
+            pattern_id="VOSC_GOLDEN_CROSS",
+            display_name="VOSC金叉",
+            description="VOSC上穿信号线，表明成交量动量增强",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="VOSC_DEATH_CROSS",
+            display_name="VOSC死叉",
+            description="VOSC下穿信号线，表明成交量动量减弱",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        # 注册VOSC趋势形态
+        registry.register(
+            pattern_id="VOSC_UPTREND",
+            display_name="VOSC上升趋势",
+            description="VOSC连续上升，表明成交量持续增加",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="VOSC_DOWNTREND",
+            display_name="VOSC下降趋势",
+            description="VOSC连续下降，表明成交量持续萎缩",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
+        
+        # 注册VOSC极值形态
+        registry.register(
+            pattern_id="VOSC_EXTREME_HIGH",
+            display_name="VOSC极高值",
+            description="VOSC值异常高，表明短期成交量远超长期成交量，可能出现爆量",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0
+        )
+        
+        registry.register(
+            pattern_id="VOSC_EXTREME_LOW",
+            display_name="VOSC极低值",
+            description="VOSC值异常低，表明短期成交量远低于长期成交量，可能出现极度萎缩",
+            indicator_id="VOSC",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-18.0
+        )
+        
+        # 注册VOSC与价格关系形态
+        registry.register(
+            pattern_id="VOSC_PRICE_CONFIRMATION",
+            display_name="VOSC价格确认",
+            description="VOSC与价格同向变动，成交量确认价格趋势",
+            indicator_id="VOSC",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="VOSC_PRICE_NON_CONFIRMATION",
+            display_name="VOSC价格不确认",
+            description="VOSC与价格反向变动，成交量不支持价格趋势",
+            indicator_id="VOSC",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
 

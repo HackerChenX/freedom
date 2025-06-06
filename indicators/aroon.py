@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
@@ -36,6 +36,134 @@ class Aroon(BaseIndicator):
         super().__init__(name="Aroon", description="阿隆指标，用于识别趋势的开始和结束")
         self.period = period
         
+        # 注册Aroon形态
+        self._register_aroon_patterns()
+        
+    def _register_aroon_patterns(self):
+        """
+        注册Aroon指标形态
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册Aroon交叉形态
+        registry.register(
+            pattern_id="AROON_BULLISH_CROSS",
+            display_name="Aroon多头交叉",
+            description="Aroon Up上穿Aroon Down，表明上升趋势可能开始",
+            indicator_id="AROON",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        registry.register(
+            pattern_id="AROON_BEARISH_CROSS",
+            display_name="Aroon空头交叉",
+            description="Aroon Down上穿Aroon Up，表明下降趋势可能开始",
+            indicator_id="AROON",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        # 注册Aroon极值形态
+        registry.register(
+            pattern_id="AROON_STRONG_UPTREND",
+            display_name="Aroon强势上涨",
+            description="Aroon Up > 70 且 Aroon Down < 30，表明强势上升趋势",
+            indicator_id="AROON",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="AROON_STRONG_DOWNTREND",
+            display_name="Aroon强势下跌",
+            description="Aroon Down > 70 且 Aroon Up < 30，表明强势下降趋势",
+            indicator_id="AROON",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
+        
+        # 注册Aroon震荡器穿越形态
+        registry.register(
+            pattern_id="AROON_OSC_CROSS_ABOVE_ZERO",
+            display_name="Aroon震荡器上穿零轴",
+            description="Aroon震荡器从下方穿越零轴，表明趋势转为向上",
+            indicator_id="AROON",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="AROON_OSC_CROSS_BELOW_ZERO",
+            display_name="Aroon震荡器下穿零轴",
+            description="Aroon震荡器从上方穿越零轴，表明趋势转为向下",
+            indicator_id="AROON",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        # 注册Aroon震荡器极值形态
+        registry.register(
+            pattern_id="AROON_OSC_EXTREME_BULLISH",
+            display_name="Aroon震荡器极度看涨",
+            description="Aroon震荡器值 > 50，表明极强的上升趋势",
+            indicator_id="AROON",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.VERY_STRONG,
+            score_impact=25.0
+        )
+        
+        registry.register(
+            pattern_id="AROON_OSC_EXTREME_BEARISH",
+            display_name="Aroon震荡器极度看跌",
+            description="Aroon震荡器值 < -50，表明极强的下降趋势",
+            indicator_id="AROON",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.VERY_STRONG,
+            score_impact=-25.0
+        )
+        
+        # 注册Aroon盘整形态
+        registry.register(
+            pattern_id="AROON_CONSOLIDATION",
+            display_name="Aroon盘整",
+            description="Aroon Up和Aroon Down都在30以下，表明市场处于盘整状态",
+            indicator_id="AROON",
+            pattern_type=PatternType.CONSOLIDATION,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=0.0
+        )
+        
+        # 注册Aroon转折形态
+        registry.register(
+            pattern_id="AROON_REVERSAL_BULLISH",
+            display_name="Aroon看涨反转",
+            description="Aroon Down从高位快速下降，同时Aroon Up从低位快速上升",
+            indicator_id="AROON",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0
+        )
+        
+        registry.register(
+            pattern_id="AROON_REVERSAL_BEARISH",
+            display_name="Aroon看跌反转",
+            description="Aroon Up从高位快速下降，同时Aroon Down从低位快速上升",
+            indicator_id="AROON",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-18.0
+        )
+    
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列

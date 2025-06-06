@@ -14,6 +14,7 @@ from typing import Dict, List, Union, Optional, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -659,69 +660,141 @@ class VR(BaseIndicator):
         
         return patterns
 
+    def _register_vr_patterns(self):
+        """
+        注册VR指标相关形态
+        """
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册VR超买超卖形态
+        registry.register(
+            pattern_id="VR_OVERBOUGHT",
+            display_name="VR超买",
+            description="VR值高于超买阈值（通常为160-200），表明市场可能超买",
+            indicator_id="VR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        registry.register(
+            pattern_id="VR_OVERSOLD",
+            display_name="VR超卖",
+            description="VR值低于超卖阈值（通常为40-70），表明市场可能超卖",
+            indicator_id="VR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        # 注册VR趋势形态
+        registry.register(
+            pattern_id="VR_UPTREND",
+            display_name="VR上升趋势",
+            description="VR值连续上升，表明市场活跃度和买盘力量增强",
+            indicator_id="VR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="VR_DOWNTREND",
+            display_name="VR下降趋势",
+            description="VR值连续下降，表明市场活跃度和买盘力量减弱",
+            indicator_id="VR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        # 注册VR与均线交叉形态
+        registry.register(
+            pattern_id="VR_GOLDEN_CROSS",
+            display_name="VR金叉",
+            description="VR上穿其均线，表明买盘力量增强",
+            indicator_id="VR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="VR_DEATH_CROSS",
+            display_name="VR死叉",
+            description="VR下穿其均线，表明卖盘力量增强",
+            indicator_id="VR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
+        
+        # 注册VR稳定性形态
+        registry.register(
+            pattern_id="VR_STABLE_HIGH",
+            display_name="VR高位稳定",
+            description="VR在高位稳定，表明市场买盘持续强势",
+            indicator_id="VR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=8.0
+        )
+        
+        registry.register(
+            pattern_id="VR_STABLE_LOW",
+            display_name="VR低位稳定",
+            description="VR在低位稳定，表明市场卖盘持续强势",
+            indicator_id="VR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-8.0
+        )
+        
+        # 注册VR背离形态
+        registry.register(
+            pattern_id="VR_BULLISH_DIVERGENCE",
+            display_name="VR底背离",
+            description="价格创新低，但VR未创新低，表明下跌动能减弱",
+            indicator_id="VR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="VR_BEARISH_DIVERGENCE",
+            display_name="VR顶背离",
+            description="价格创新高，但VR未创新高，表明上涨动能减弱",
+            indicator_id="VR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
 
-
-    
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
-    
-            """
-
-    
-            生成交易信号
+        """
+        生成交易信号
         
-
-    
-            Args:
-
-    
-                data: 输入数据
-
-    
-                **kwargs: 额外参数
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
             
-
-    
-            Returns:
-
-    
-                Dict[str, pd.Series]: 包含交易信号的字典
-
-    
-            """
-
-    
-            # 确保已计算指标
-
-    
-            if not self.has_result():
-
-    
-                self.calculate(data, **kwargs)
-            
-
-    
-            # 初始化信号
-
-    
-            signals = {}
-
-    
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-    
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-    
-            signals['signal_strength'] = pd.Series(0, index=data.index)
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
-
-    
-            # 在这里实现指标特定的信号生成逻辑
-
-    
-            # 此处提供默认实现
+        # 初始化信号
+        signals = {}
         
-
-    
-            return signals
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+        # 在这里实现指标特定的信号生成逻辑
+        # 此处提供默认实现
+        
+        return signals

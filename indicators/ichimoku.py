@@ -42,6 +42,174 @@ class Ichimoku(BaseIndicator):
         self.senkou_b_period = senkou_b_period
         self.chikou_period = chikou_period
         
+        # 注册Ichimoku形态
+        self._register_ichimoku_patterns()
+        
+    def _register_ichimoku_patterns(self):
+        """
+        注册一目均衡表指标形态
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 转换线和基准线相关形态
+        registry.register(
+            pattern_id="ICHIMOKU_TK_CROSS_BULLISH",
+            display_name="一目均衡表金叉",
+            description="转换线(Tenkan-sen)上穿基准线(Kijun-sen)，看涨信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_TK_CROSS_BEARISH",
+            display_name="一目均衡表死叉",
+            description="转换线(Tenkan-sen)下穿基准线(Kijun-sen)，看跌信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        # 价格与云图关系形态
+        registry.register(
+            pattern_id="ICHIMOKU_PRICE_ABOVE_KUMO",
+            display_name="价格位于云层之上",
+            description="价格位于云层上方，看涨信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_PRICE_BELOW_KUMO",
+            display_name="价格位于云层之下",
+            description="价格位于云层下方，看跌信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_PRICE_IN_KUMO",
+            display_name="价格位于云层之中",
+            description="价格位于云层中，表明市场处于盘整状态",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.WEAK,
+            score_impact=0.0
+        )
+        
+        # 价格突破云层形态
+        registry.register(
+            pattern_id="ICHIMOKU_PRICE_BREAK_KUMO_UP",
+            display_name="价格向上突破云层",
+            description="价格从下方突破云层，强烈看涨信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_PRICE_BREAK_KUMO_DOWN",
+            display_name="价格向下突破云层",
+            description="价格从上方突破云层，强烈看跌信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
+        
+        # 滞后线相关形态
+        registry.register(
+            pattern_id="ICHIMOKU_CHIKOU_ABOVE_PRICE",
+            display_name="滞后线位于价格之上",
+            description="滞后线(Chikou Span)位于价格上方，看涨信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_CHIKOU_BELOW_PRICE",
+            display_name="滞后线位于价格之下",
+            description="滞后线(Chikou Span)位于价格下方，看跌信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
+        
+        # 云层形态
+        registry.register(
+            pattern_id="ICHIMOKU_KUMO_TWIST_BULLISH",
+            display_name="云层看涨翻转",
+            description="先行带A(Senkou Span A)上穿先行带B(Senkou Span B)，云层由红变绿，看涨信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_KUMO_TWIST_BEARISH",
+            display_name="云层看跌翻转",
+            description="先行带A(Senkou Span A)下穿先行带B(Senkou Span B)，云层由绿变红，看跌信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-18.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_KUMO_THICK",
+            display_name="云层加厚",
+            description="云层厚度增加，表明趋势强度增强",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=5.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_KUMO_THIN",
+            display_name="云层变薄",
+            description="云层厚度减少，表明趋势强度减弱",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.WEAK,
+            score_impact=-5.0
+        )
+        
+        # 组合形态
+        registry.register(
+            pattern_id="ICHIMOKU_STRONG_BULLISH",
+            display_name="一目均衡表强烈看涨",
+            description="价格位于云层上方，转换线上穿基准线，滞后线位于价格上方，三重看涨信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.VERY_STRONG,
+            score_impact=25.0
+        )
+        
+        registry.register(
+            pattern_id="ICHIMOKU_STRONG_BEARISH",
+            display_name="一目均衡表强烈看跌",
+            description="价格位于云层下方，转换线下穿基准线，滞后线位于价格下方，三重看跌信号",
+            indicator_id="ICHIMOKU",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.VERY_STRONG,
+            score_impact=-25.0
+        )
+    
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列

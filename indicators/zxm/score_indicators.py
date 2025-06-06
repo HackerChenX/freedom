@@ -90,6 +90,23 @@ class ZXMElasticityScore(BaseIndicator):
         return result
 
 
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM弹性评分指标的原始评分
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 直接使用计算的弹性评分作为原始评分
+        return result["ElasticityScore"]
 class ZXMBuyPointScore(BaseIndicator):
     """
     ZXM买点评分指标
@@ -174,6 +191,23 @@ class ZXMBuyPointScore(BaseIndicator):
         return result
 
 
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM买点评分指标的原始评分
+        
+        Args:
+            data: 输入数据，包含OHLCV数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 直接使用计算的买点评分作为原始评分
+        return result["BuyPointScore"]
 class StockScoreCalculator(BaseIndicator):
     """
     ZXM股票综合评分指标

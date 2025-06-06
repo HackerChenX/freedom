@@ -65,6 +65,37 @@ class ZXMAmplitudeElasticity(BaseIndicator):
         return result
 
 
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM振幅弹性指标的原始评分
+        
+        Args:
+            data: 输入数据，包含OHLC数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 有振幅弹性信号时加分
+        score[result["XG"]] += 40
+        
+        # 根据振幅大小给予额外加分
+        if "Amplitude" in result.columns:
+            # 振幅越大，加分越多（最多额外加10分）
+            amplitude_bonus = result["Amplitude"].apply(lambda x: min(10, max(0, (x - 8.1) / 2)))
+            score += amplitude_bonus
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
 class ZXMRiseElasticity(BaseIndicator):
     """
     ZXM弹性-涨幅指标
@@ -116,6 +147,37 @@ class ZXMRiseElasticity(BaseIndicator):
         return result
 
 
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算ZXM涨幅弹性指标的原始评分
+        
+        Args:
+            data: 输入数据，包含收盘价数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 评分结果，0-100分
+        """
+        # 计算指标
+        result = self.calculate(data)
+        
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 有涨幅弹性信号时加分
+        score[result["XG"]] += 40
+        
+        # 根据涨幅大小给予额外加分
+        if "RiseRatio" in result.columns:
+            # 涨幅越大，加分越多（最多额外加10分）
+            rise_bonus = result["RiseRatio"].apply(lambda x: min(10, max(0, (x - 1.07) * 100)))
+            score += rise_bonus
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
 class ElasticityIndicator(BaseIndicator):
     """
     ZXM弹性指标

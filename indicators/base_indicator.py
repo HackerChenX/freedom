@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple, Callable
 from enum import Enum
+import inspect
 
 from utils.logger import get_logger
 
@@ -107,6 +108,93 @@ class BaseIndicator(abc.ABC):
         self._error = None
         self._score_cache = {}
         self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
+        
+        # 自动注册形态
+        self.register_patterns()
+    
+    def register_patterns(self):
+        """
+        注册指标形态
+        
+        自动查找并调用形态注册方法，标准化形态注册流程
+        """
+        # 获取指标类型（大写）
+        indicator_type = self.get_indicator_type()
+        
+        # 查找所有可能的形态注册方法
+        possible_methods = [
+            f"_register_{indicator_type.lower()}_patterns",  # 如：_register_macd_patterns
+            "_register_patterns",                          # 通用方法
+            f"register_{indicator_type.lower()}_patterns"    # 旧格式
+        ]
+        
+        # 尝试调用形态注册方法
+        for method_name in possible_methods:
+            if hasattr(self, method_name) and callable(getattr(self, method_name)):
+                logger.debug(f"调用 {self.__class__.__name__} 的形态注册方法: {method_name}")
+                try:
+                    getattr(self, method_name)()
+                    # 找到并成功调用一个方法后退出
+                    return
+                except Exception as e:
+                    logger.error(f"调用 {method_name} 注册形态时出错: {e}")
+    
+    def register_pattern_to_registry(self, pattern_id: str, display_name: str, 
+                                   description: str, pattern_type: str,
+                                   default_strength: str = "MEDIUM", 
+                                   score_impact: float = 0.0,
+                                   detection_function=None):
+        """
+        将形态注册到全局形态注册表
+        
+        Args:
+            pattern_id: 形态ID
+            display_name: 显示名称
+            description: 形态描述
+            pattern_type: 形态类型（如 BULLISH, BEARISH, NEUTRAL 等）
+            default_strength: 默认强度（如 VERY_STRONG, STRONG, MEDIUM, WEAK, VERY_WEAK）
+            score_impact: 对评分的影响（-100到100）
+            detection_function: 形态检测函数
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取指标类型
+        indicator_id = self.get_indicator_type()
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 获取PatternType枚举值
+        try:
+            if isinstance(pattern_type, PatternType):
+                pattern_type_enum = pattern_type
+            else:
+                pattern_type_enum = getattr(PatternType, pattern_type.upper())
+        except (AttributeError, KeyError):
+            logger.warning(f"未知的形态类型: {pattern_type}，使用默认NEUTRAL")
+            pattern_type_enum = PatternType.NEUTRAL
+        
+        # 获取PatternStrength枚举值
+        try:
+            if isinstance(default_strength, PatternStrength):
+                strength_enum = default_strength
+            else:
+                strength_enum = getattr(PatternStrength, default_strength.upper())
+        except (AttributeError, KeyError):
+            logger.warning(f"未知的强度类型: {default_strength}，使用默认MEDIUM")
+            strength_enum = PatternStrength.MEDIUM
+        
+        # 注册形态
+        registry.register(
+            pattern_id=pattern_id,
+            display_name=display_name,
+            description=description,
+            indicator_id=indicator_id,
+            pattern_type=pattern_type_enum,
+            default_strength=strength_enum,
+            score_impact=score_impact,
+            detection_function=detection_function
+        )
     
     @property
     def result(self) -> Optional[pd.DataFrame]:
@@ -140,43 +228,6 @@ class BaseIndicator(abc.ABC):
             pd.DataFrame: 计算结果
         """
         pass
-    
-    def register_pattern(self, pattern_id: str, display_name: str, 
-                        detection_func: Callable, score_impact: float) -> None:
-        """
-        注册一个技术形态
-        
-        Args:
-            pattern_id: 形态唯一标识符
-            display_name: 形态显示名称
-            detection_func: 形态检测函数，应接受当前指标数据并返回是否存在该形态
-            score_impact: 形态对评分的影响值
-        """
-        from indicators.pattern_registry import PatternRegistry, PatternType
-        
-        # 获取PatternRegistry实例
-        registry = PatternRegistry()
-        
-        # 判断形态类型
-        pattern_type = PatternType.NEUTRAL
-        if score_impact > 0:
-            pattern_type = PatternType.BULLISH
-        elif score_impact < 0:
-            pattern_type = PatternType.BEARISH
-        
-        # 直接调用PatternRegistry的register方法
-        registry.register(
-            pattern_id=pattern_id,
-            display_name=display_name,
-            indicator_id=self.get_indicator_type(),
-            pattern_type=pattern_type,
-            description='',
-            score_impact=score_impact,
-            detection_function=detection_func,
-            _allow_override=True
-        )
-        
-        logger.debug(f"指标 {self.name} 注册形态: {display_name}")
     
     def get_registered_patterns(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -458,46 +509,76 @@ class BaseIndicator(abc.ABC):
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
-        识别当前数据中存在的技术形态ID列表
-        
-        默认实现是检查所有已注册形态的检测函数，
-        子类可以覆盖此方法以提供更高效的实现
+        识别当前技术形态
         
         Args:
-            data: 输入数据，通常是K线数据
+            data: 输入数据
             **kwargs: 其他参数
             
         Returns:
-            List[str]: 形态ID列表
+            List[str]: 识别的形态ID列表
         """
-        # 获取该指标的所有已注册形态
-        registered_patterns = self.get_registered_patterns()
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
-        if not registered_patterns:
+        if self._result is None:
+            logger.warning(f"指标 {self.name} 未能生成有效结果，无法识别形态")
             return []
         
-        matched_patterns = []
+        # 获取指标类型
+        indicator_id = self.get_indicator_type()
         
-        for pattern_id, pattern_info in registered_patterns.items():
-            detection_func = pattern_info.get('detection_func')
-            
-            if detection_func is None:
-                # 如果没有提供检测函数，尝试查找类方法
-                detection_method_name = f"_detect_{pattern_id}"
-                if hasattr(self, detection_method_name):
-                    detection_func = getattr(self, detection_method_name)
-                else:
-                    logger.warning(f"形态 {pattern_id} 没有检测函数，跳过")
-                    continue
-            
-            try:
-                # 调用检测函数判断是否存在该形态
-                if detection_func(data):
-                    matched_patterns.append(pattern_id)
-            except Exception as e:
-                logger.error(f"检测形态 {pattern_id} 时出错: {e}")
+        # 获取已注册的形态
+        from indicators.pattern_registry import PatternRegistry
+        patterns_by_indicator = PatternRegistry.get_patterns_by_indicator(indicator_id)
         
-        return matched_patterns
+        # 检查是否有相关形态检测方法
+        detected_patterns = []
+        
+        # 1. 尝试调用各个形态的专用检测方法
+        for pattern_id in patterns_by_indicator:
+            pattern_info = PatternRegistry.get_pattern_info(pattern_id)
+            if pattern_info and 'detection_function' in pattern_info and pattern_info['detection_function']:
+                try:
+                    # 调用专门的检测函数
+                    detection_func = pattern_info['detection_function']
+                    if detection_func(data, self._result):
+                        detected_patterns.append(pattern_id)
+                except Exception as e:
+                    logger.error(f"调用形态 {pattern_id} 的检测函数时出错: {e}")
+        
+        # 2. 尝试调用通用的形态检测方法
+        pattern_detection_methods = [
+            f"_detect_{indicator_id.lower()}_patterns",
+            "_detect_patterns"
+        ]
+        
+        for method_name in pattern_detection_methods:
+            if hasattr(self, method_name) and callable(getattr(self, method_name)):
+                try:
+                    # 如果方法需要data参数，传入data
+                    method = getattr(self, method_name)
+                    sig = inspect.signature(method)
+                    
+                    if 'data' in sig.parameters:
+                        patterns_from_method = method(data)
+                    else:
+                        patterns_from_method = method()
+                        
+                    # 合并检测到的形态
+                    if patterns_from_method:
+                        detected_patterns.extend([p for p in patterns_from_method if p not in detected_patterns])
+                    
+                    # 如果找到并成功调用了一个方法，继续尝试其他方法（可能有多个检测方法）
+                except Exception as e:
+                    logger.error(f"调用 {method_name} 检测形态时出错: {e}")
+        
+        # 3. 自动检测基于阈值的简单形态
+        # 这部分可以添加一些通用的形态检测逻辑，如超买超卖、金叉死叉等
+        
+        # 删除重复的形态
+        return list(set(detected_patterns))
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """

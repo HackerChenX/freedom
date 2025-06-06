@@ -35,11 +35,127 @@ class RSI(BaseIndicator):
             overbought: 超买线，默认为70
             oversold: 超卖线，默认为30
         """
-        super().__init__()
         self.name = "RSI"
         self.period = period
         self.overbought = overbought
         self.oversold = oversold
+        
+        # 初始化基类（会自动调用register_patterns方法）
+        super().__init__()
+    
+    def _register_rsi_patterns(self):
+        """
+        注册RSI指标形态
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册RSI超买/超卖形态
+        registry.register(
+            pattern_id="RSI_OVERBOUGHT",
+            display_name="RSI超买",
+            description=f"RSI值高于{self.overbought}，表明市场可能超买，存在回调风险",
+            indicator_id="RSI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        registry.register(
+            pattern_id="RSI_OVERSOLD",
+            display_name="RSI超卖",
+            description=f"RSI值低于{self.oversold}，表明市场可能超卖，存在反弹机会",
+            indicator_id="RSI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        # 注册RSI背离形态
+        registry.register(
+            pattern_id="RSI_BULLISH_DIVERGENCE",
+            display_name="RSI底背离",
+            description="价格创新低，但RSI未创新低，表明下跌动能减弱，可能即将反转向上",
+            indicator_id="RSI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=25.0
+        )
+        
+        registry.register(
+            pattern_id="RSI_BEARISH_DIVERGENCE",
+            display_name="RSI顶背离",
+            description="价格创新高，但RSI未创新高，表明上涨动能减弱，可能即将反转向下",
+            indicator_id="RSI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-25.0
+        )
+        
+        # 注册RSI突破形态
+        registry.register(
+            pattern_id="RSI_BREAKOUT_UP",
+            display_name="RSI向上突破",
+            description=f"RSI突破{self.overbought}水平线，表明强势上涨可能开始",
+            indicator_id="RSI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="RSI_BREAKOUT_DOWN",
+            display_name="RSI向下突破",
+            description=f"RSI跌破{self.oversold}水平线，表明强势下跌可能开始",
+            indicator_id="RSI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
+        
+        # 注册RSI中轴穿越形态
+        registry.register(
+            pattern_id="RSI_CROSS_ABOVE_50",
+            display_name="RSI上穿50",
+            description="RSI从下方穿越50中轴线，表明多头力量增强",
+            indicator_id="RSI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="RSI_CROSS_BELOW_50",
+            display_name="RSI下穿50",
+            description="RSI从上方穿越50中轴线，表明空头力量增强",
+            indicator_id="RSI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        # 注册RSI钝化形态
+        registry.register(
+            pattern_id="RSI_BULLISH_FAILURE_SWING",
+            display_name="RSI看涨钝化",
+            description="RSI在超卖区触底回升后回调，未再次跌入超卖区便重新上升，形成W底",
+            indicator_id="RSI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="RSI_BEARISH_FAILURE_SWING",
+            display_name="RSI看跌钝化",
+            description="RSI在超买区触顶回落后反弹，未再次进入超买区便重新下跌，形成M顶",
+            indicator_id="RSI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
     
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """

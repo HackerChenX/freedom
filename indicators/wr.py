@@ -14,6 +14,7 @@ from typing import Union, List, Dict, Optional, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -470,69 +471,141 @@ class WR(BaseIndicator):
         
         return ax
 
-
-
+    def _register_wr_patterns(self):
+        """
+        注册WR指标相关形态
+        """
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
         
+        # 注册WR超买超卖形态
+        registry.register(
+            pattern_id="WR_OVERBOUGHT",
+            display_name="WR超买",
+            description="WR值高于-20，表明市场可能超买，存在回调风险",
+            indicator_id="WR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        registry.register(
+            pattern_id="WR_OVERSOLD",
+            display_name="WR超卖",
+            description="WR值低于-80，表明市场可能超卖，存在反弹机会",
+            indicator_id="WR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        # 注册WR趋势形态
+        registry.register(
+            pattern_id="WR_UPTREND",
+            display_name="WR上升趋势",
+            description="WR值连续上升，表明价格相对高点接近",
+            indicator_id="WR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="WR_DOWNTREND",
+            display_name="WR下降趋势",
+            description="WR值连续下降，表明价格相对低点接近",
+            indicator_id="WR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        # 注册WR零轴穿越形态
+        registry.register(
+            pattern_id="WR_CROSS_ABOVE_MID",
+            display_name="WR上穿中轴",
+            description="WR从下方穿越-50中轴线，表明买盘力量增强",
+            indicator_id="WR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="WR_CROSS_BELOW_MID",
+            display_name="WR下穿中轴",
+            description="WR从上方穿越-50中轴线，表明卖盘力量增强",
+            indicator_id="WR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
+        
+        # 注册WR背离形态
+        registry.register(
+            pattern_id="WR_BULLISH_DIVERGENCE",
+            display_name="WR底背离",
+            description="价格创新低，但WR未创新低，表明下跌动能减弱",
+            indicator_id="WR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="WR_BEARISH_DIVERGENCE",
+            display_name="WR顶背离",
+            description="价格创新高，但WR未创新高，表明上涨动能减弱",
+            indicator_id="WR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
+        
+        # 注册WR反转形态
+        registry.register(
+            pattern_id="WR_BULLISH_REVERSAL",
+            display_name="WR超卖反转",
+            description="WR在超卖区见底回升，表明可能形成底部",
+            indicator_id="WR",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0
+        )
+        
+        registry.register(
+            pattern_id="WR_BEARISH_REVERSAL",
+            display_name="WR超买反转",
+            description="WR在超买区触顶回落，表明可能形成顶部",
+            indicator_id="WR",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-18.0
+        )
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
+        """
+        生成交易信号
         
-            """
-
-        
-            生成交易信号
-        
-
-        
-            Args:
-
-        
-                data: 输入数据
-
-        
-                **kwargs: 额外参数
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
             
-
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
-            Returns:
-
+        # 初始化信号
+        signals = {}
         
-                Dict[str, pd.Series]: 包含交易信号的字典
-
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
         
-            """
-
+        # 在这里实现指标特定的信号生成逻辑
+        # 此处提供默认实现
         
-            # 确保已计算指标
-
-        
-            if not self.has_result():
-
-        
-                self.calculate(data, **kwargs)
-            
-
-        
-            # 初始化信号
-
-        
-            signals = {}
-
-        
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-        
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-        
-            signals['signal_strength'] = pd.Series(0, index=data.index)
-        
-
-        
-            # 在这里实现指标特定的信号生成逻辑
-
-        
-            # 此处提供默认实现
-        
-
-        
-            return signals
+        return signals

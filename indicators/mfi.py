@@ -816,69 +816,143 @@ class MFI(BaseIndicator):
         
         return signals
 
-
-
+    def _register_mfi_patterns(self):
+        """
+        注册MFI指标相关形态
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册MFI超买超卖形态
+        registry.register(
+            pattern_id="MFI_OVERBOUGHT",
+            display_name="MFI超买",
+            description="MFI值高于80，表明市场可能超买，存在回调风险",
+            indicator_id="MFI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        registry.register(
+            pattern_id="MFI_OVERSOLD",
+            display_name="MFI超卖",
+            description="MFI值低于20，表明市场可能超卖，存在反弹机会",
+            indicator_id="MFI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        # 注册MFI零轴穿越形态
+        registry.register(
+            pattern_id="MFI_CROSS_ABOVE_50",
+            display_name="MFI上穿50",
+            description="MFI从下方穿越50，表明资金流入增加",
+            indicator_id="MFI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="MFI_CROSS_BELOW_50",
+            display_name="MFI下穿50",
+            description="MFI从上方穿越50，表明资金流出增加",
+            indicator_id="MFI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        # 注册MFI背离形态
+        registry.register(
+            pattern_id="MFI_BULLISH_DIVERGENCE",
+            display_name="MFI底背离",
+            description="价格创新低，但MFI未创新低，表明下跌动能减弱",
+            indicator_id="MFI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="MFI_BEARISH_DIVERGENCE",
+            display_name="MFI顶背离",
+            description="价格创新高，但MFI未创新高，表明上涨动能减弱",
+            indicator_id="MFI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
+        
+        # 注册MFI失败摆动形态
+        registry.register(
+            pattern_id="MFI_FAILURE_SWING_BULLISH",
+            display_name="MFI看涨失败摆动",
+            description="MFI在超卖区形成双底但未创新低，看涨信号",
+            indicator_id="MFI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0
+        )
+        
+        registry.register(
+            pattern_id="MFI_FAILURE_SWING_BEARISH",
+            display_name="MFI看跌失败摆动",
+            description="MFI在超买区形成双顶但未创新高，看跌信号",
+            indicator_id="MFI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-18.0
+        )
+        
+        # 注册MFI趋势形态
+        registry.register(
+            pattern_id="MFI_UPTREND",
+            display_name="MFI上升趋势",
+            description="MFI持续上升，表明资金流入增强",
+            indicator_id="MFI",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="MFI_DOWNTREND",
+            display_name="MFI下降趋势",
+            description="MFI持续下降，表明资金流出增强",
+            indicator_id="MFI",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
-
-            """
-
-
-            生成交易信号
+        """
+        生成交易信号
         
-
-
-            Args:
-
-
-                data: 输入数据
-
-
-                **kwargs: 额外参数
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
             
-
-
-            Returns:
-
-
-                Dict[str, pd.Series]: 包含交易信号的字典
-
-
-            """
-
-
-            # 确保已计算指标
-
-
-            if not self.has_result():
-
-
-                self.calculate(data, **kwargs)
-            
-
-
-            # 初始化信号
-
-
-            signals = {}
-
-
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['signal_strength'] = pd.Series(0, index=data.index)
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
+        # 初始化信号
+        signals = {}
 
-
-            # 在这里实现指标特定的信号生成逻辑
-
-
-            # 此处提供默认实现
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
         
+        # 在这里实现指标特定的信号生成逻辑
 
-
-            return signals
+        # 此处提供默认实现
+        return signals

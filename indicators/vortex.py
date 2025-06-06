@@ -14,6 +14,7 @@ from typing import Union, List, Dict, Optional, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -716,3 +717,115 @@ class Vortex(BaseIndicator):
         ax.grid(True, alpha=0.3)
         
         return ax 
+
+    def _register_vortex_patterns(self):
+        """
+        注册Vortex指标相关形态
+        """
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册Vortex交叉形态
+        registry.register(
+            pattern_id="VORTEX_BULLISH_CROSS",
+            display_name="Vortex多头交叉",
+            description="VI+上穿VI-，表明趋势由空转多",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="VORTEX_BEARISH_CROSS",
+            display_name="Vortex空头交叉",
+            description="VI-上穿VI+，表明趋势由多转空",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
+        
+        # 注册Vortex阈值形态
+        registry.register(
+            pattern_id="VORTEX_STRONG_UPTREND",
+            display_name="Vortex强上升趋势",
+            description="VI+高于1.1，表明上升趋势强烈",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0
+        )
+        
+        registry.register(
+            pattern_id="VORTEX_STRONG_DOWNTREND",
+            display_name="Vortex强下降趋势",
+            description="VI-高于1.1，表明下降趋势强烈",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-18.0
+        )
+        
+        # 注册Vortex趋势形态
+        registry.register(
+            pattern_id="VORTEX_UPTREND_STRENGTHENING",
+            display_name="Vortex上升趋势增强",
+            description="VI+与VI-的差值扩大，表明上升趋势增强",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        registry.register(
+            pattern_id="VORTEX_DOWNTREND_STRENGTHENING",
+            display_name="Vortex下降趋势增强",
+            description="VI-与VI+的差值扩大，表明下降趋势增强",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        # 注册Vortex背离形态
+        registry.register(
+            pattern_id="VORTEX_BULLISH_DIVERGENCE",
+            display_name="Vortex底背离",
+            description="价格创新低，但VI-未创新高，表明下跌动能减弱",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="VORTEX_BEARISH_DIVERGENCE",
+            display_name="Vortex顶背离",
+            description="价格创新高，但VI+未创新高，表明上涨动能减弱",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
+        
+        # 注册Vortex强度形态
+        registry.register(
+            pattern_id="VORTEX_HIGH_VOLATILITY",
+            display_name="Vortex高波动",
+            description="VI+和VI-数值同时较高，表明市场波动性增强",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.VOLATILITY,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=0.0
+        )
+        
+        registry.register(
+            pattern_id="VORTEX_LOW_VOLATILITY",
+            display_name="Vortex低波动",
+            description="VI+和VI-数值同时较低，表明市场波动性减弱",
+            indicator_id="VORTEX",
+            pattern_type=PatternType.VOLATILITY,
+            default_strength=PatternStrength.WEAK,
+            score_impact=0.0
+        ) 

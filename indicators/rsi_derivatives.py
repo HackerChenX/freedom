@@ -141,6 +141,70 @@ class STOCHRSI(BaseIndicator):
         
         return result
     
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算StochRSI指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据，包含价格数据
+            **kwargs: 额外参数
+                price_column: 用于计算的价格列名，默认为'close'
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        price_column = kwargs.get('price_column', 'close')
+        
+        # 确保已计算指标
+        if not self.has_result():
+            result = self.calculate(data, price_column)
+            result = self.generate_signals(data, result)
+            self._result = result
+        else:
+            result = self._result
+            
+        # 初始化评分，默认为50分（中性）
+        score = pd.Series(50.0, index=data.index)
+        
+        # 检查结果是否有效
+        if result.empty or 'k' not in result.columns or 'd' not in result.columns:
+            return score
+            
+        # 1. 基于K值的评分 (0-40分)
+        # K < 20 表示超卖，K > 80 表示超买
+        k_values = result['k']
+        
+        # 将K值映射到评分：
+        # K < 20: 评分为 40 - (20 - K) * 1 = K + 20
+        # K > 80: 评分为 40 + (K - 80) * 1 = K - 40
+        # 20 <= K <= 80: 按比例映射到20-60分范围
+        k_score = pd.Series(0.0, index=data.index)
+        k_score[k_values < 20] = k_values[k_values < 20] + 20  # 超卖区域，0-40分
+        k_score[(k_values >= 20) & (k_values <= 80)] = 20 + (k_values[(k_values >= 20) & (k_values <= 80)] - 20) * 0.5  # 中间区域，20-50分
+        k_score[k_values > 80] = 50 + (k_values[k_values > 80] - 80) * 0.5  # 超买区域，50-60分
+        
+        # 2. 基于K和D值相对位置的评分 (0-40分)
+        k_d_diff = result['k'] - result['d']
+        k_d_score = pd.Series(20.0, index=data.index)  # 默认为中性值
+        
+        # K线在D线上方看涨，在D线下方看跌
+        max_diff = 20  # 假设最大差距为20个点
+        k_d_score = 20 + (k_d_diff / max_diff * 20)
+        k_d_score = k_d_score.clip(0, 40)  # 限制在0-40分范围内
+        
+        # 3. 基于买卖信号的评分 (0-20分)
+        signal_score = pd.Series(10.0, index=data.index)  # 默认为中性值
+        
+        if 'buy_signal' in result.columns and 'sell_signal' in result.columns:
+            # 买入信号加分，卖出信号减分
+            signal_score = 10 + result['buy_signal'] * 10 - result['sell_signal'] * 10
+        
+        # 综合评分 (0-100分)
+        final_score = k_score + k_d_score + signal_score
+        final_score = final_score.clip(0, 100)  # 确保最终分数在0-100范围内
+        
+        return final_score
+    
     def plot(self, df: pd.DataFrame, result: pd.DataFrame, ax=None):
         """
         绘制StochRSI指标图表
@@ -242,6 +306,72 @@ class RSIMA(BaseIndicator):
         min_rows = self.rsi_period + max(self.ma_periods)
         if len(df) < min_rows:
             raise ValueError(f"DataFrame至少需要 {min_rows} 行数据，但只有 {len(df)} 行")
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算RSIMA指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据，包含价格数据
+            **kwargs: 额外参数
+                price_column: 用于计算的价格列名，默认为'close'
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        price_column = kwargs.get('price_column', 'close')
+        
+        # 确保已计算指标
+        if not self.has_result():
+            result = self.compute(data, price_column)
+        else:
+            result = self._result
+            
+        # 初始化评分，默认为50分（中性）
+        score = pd.Series(50.0, index=data.index)
+        
+        # 检查结果是否有效
+        if result.empty:
+            return score
+            
+        # 1. 基于RSI值的评分 (0-40分)
+        if 'rsi' in result.columns:
+            rsi_values = result['rsi']
+            # 将RSI映射到评分：RSI < 30看跌，RSI > 70看涨
+            rsi_score = (rsi_values - 30) / 40 * 40  # 将30-70的RSI映射到0-40分
+            rsi_score = rsi_score.clip(0, 40)  # 限制在0-40分范围内
+        else:
+            rsi_score = pd.Series(20.0, index=data.index)  # 默认为中性
+        
+        # 2. 基于RSI均线系统的评分 (0-40分)
+        ma_score = pd.Series(20.0, index=data.index)  # 默认为中性
+        
+        # 如果有多个均线，使用短期均线和长期均线的关系判断趋势
+        available_periods = sorted(self.ma_periods)
+        if len(available_periods) >= 2:
+            short_period = available_periods[0]
+            long_period = available_periods[-1]
+            
+            # 检查短期均线和长期均线是否都存在
+            if f'rsi_ma{short_period}' in result.columns and f'rsi_ma{long_period}' in result.columns:
+                # 短期均线高于长期均线看涨，低于看跌
+                ma_diff = result[f'rsi_ma{short_period}'] - result[f'rsi_ma{long_period}']
+                max_diff = 15  # 假设最大差距为15个点
+                ma_score = 20 + (ma_diff / max_diff * 20)
+                ma_score = ma_score.clip(0, 40)  # 限制在0-40分范围内
+        
+        # 3. 基于买卖信号的评分 (0-20分)
+        signal_score = pd.Series(10.0, index=data.index)  # 默认为中性
+        
+        if 'buy_signal' in result.columns and 'sell_signal' in result.columns:
+            # 买入信号加分，卖出信号减分
+            signal_score = 10 + result['buy_signal'] * 10 - result['sell_signal'] * 10
+        
+        # 综合评分 (0-100分)
+        final_score = rsi_score + ma_score + signal_score
+        final_score = final_score.clip(0, 100)  # 确保最终分数在0-100范围内
+        
+        return final_score
     
     def calculate(self, df: pd.DataFrame, price_column: str = "close") -> pd.DataFrame:
         """

@@ -706,120 +706,154 @@ class EnhancedTRIX(TRIX):
         计算TRIX综合评分 (0-100)
         
         Args:
-            data: 输入数据，如果未提供则使用上次计算结果
+            data (pd.DataFrame, optional): 价格数据，如果未提供则使用上次计算结果
             
         Returns:
             pd.Series: 评分 (0-100，50为中性)
         """
-        # 确保已计算TRIX
         if self._result is None and data is not None:
             self.calculate(data)
             
         if self._result is None:
             return pd.Series()
-            
+        
         # 获取TRIX数据
         trix = self._result['TRIX']
         matrix = self._result['MATRIX']
+        trix_momentum = self._result['trix_momentum']
+        trix_slope = self._result['trix_slope']
+        
+        # 获取背离分析
+        divergence = self.detect_divergence()
+        
+        # 获取零轴交叉质量评估
+        zero_cross = self.evaluate_zero_cross_quality()
+        
+        # 获取形态识别
+        patterns = self.identify_patterns()
+        
+        # 获取多周期协同分析
+        synergy = self.analyze_multi_period_synergy()
         
         # 基础分数为50（中性）
         score = pd.Series(50, index=self._result.index)
         
-        # 1. 零轴位置评分 (±15分)
-        # TRIX > 0，加分
-        above_zero_score = (trix > 0) * 15
-        # TRIX < 0，减分
-        below_zero_score = (trix < 0) * 15
+        # 1. TRIX基础评分 (±20分)
+        # TRIX > 0 看涨，TRIX < 0 看跌
+        score += np.where(trix > 0, np.minimum(trix * 200, 20), np.maximum(trix * 200, -20))
         
-        score = score + above_zero_score - below_zero_score
+        # 2. TRIX与信号线关系评分 (±15分)
+        # TRIX > MATRIX 看涨，TRIX < MATRIX 看跌
+        trix_vs_matrix = trix - matrix
+        normalized_diff = trix_vs_matrix / trix.rolling(window=20).std().replace(0, 0.001)
+        score += np.where(trix_vs_matrix > 0, 
+                        np.minimum(normalized_diff * 5, 15), 
+                        np.maximum(normalized_diff * 5, -15))
         
-        # 2. TRIX与信号线关系评分 (±10分)
-        # TRIX > MATRIX，加分
-        above_signal_score = (trix > matrix) * 10
-        # TRIX < MATRIX，减分
-        below_signal_score = (trix < matrix) * 10
+        # 3. TRIX动量评分 (±10分)
+        # 动量为正看涨，动量为负看跌
+        normalized_momentum = trix_momentum / trix_momentum.rolling(window=20).std().replace(0, 0.001)
+        score += np.where(trix_momentum > 0, 
+                        np.minimum(normalized_momentum * 3, 10), 
+                        np.maximum(normalized_momentum * 3, -10))
         
-        score = score + above_signal_score - below_signal_score
+        # 4. TRIX斜率评分 (±10分)
+        # 斜率为正看涨，斜率为负看跌
+        score += np.where(trix_slope > 0, 
+                        np.minimum(trix_slope * 50, 10), 
+                        np.maximum(trix_slope * 50, -10))
         
-        # 3. TRIX趋势评分 (±10分)
-        # TRIX上升趋势，加分
-        rising_score = (trix > trix.shift(1)) * 10
-        # TRIX下降趋势，减分
-        falling_score = (trix < trix.shift(1)) * 10
+        # 5. 零轴交叉评分 (±15分)
+        if not zero_cross.empty:
+            # 向上交叉零轴
+            upward_cross = zero_cross.get('zero_cross_up', pd.Series(False, index=score.index))
+            if isinstance(upward_cross, pd.Series) and not upward_cross.empty:
+                cross_quality_up = zero_cross.get('cross_quality', pd.Series(50, index=score.index))
+                score.loc[upward_cross] += np.minimum((cross_quality_up.loc[upward_cross] - 50) / 10 * 15, 15)
+            
+            # 向下交叉零轴
+            downward_cross = zero_cross.get('zero_cross_down', pd.Series(False, index=score.index))
+            if isinstance(downward_cross, pd.Series) and not downward_cross.empty:
+                cross_quality_down = zero_cross.get('cross_quality', pd.Series(50, index=score.index))
+                score.loc[downward_cross] -= np.minimum((cross_quality_down.loc[downward_cross] - 50) / 10 * 15, 15)
         
-        score = score + rising_score - falling_score
-        
-        # 4. TRIX交叉信号评分 (±20分)
-        # 金叉信号，加分
-        golden_cross = self.crossover(trix, matrix)
-        # 死叉信号，减分
-        death_cross = self.crossunder(trix, matrix)
-        
-        score = score + golden_cross * 20 - death_cross * 20
-        
-        # 5. 零轴交叉评分 (±25分)
-        # 零轴上穿，加分
-        zero_cross_up = self.crossover(trix, 0)
-        # 零轴下穿，减分
-        zero_cross_down = self.crossunder(trix, 0)
-        
-        # 评估零轴交叉质量
-        zero_cross_quality = self.evaluate_zero_cross_quality()
-        if 'cross_quality_score' in zero_cross_quality.columns:
-            for i in range(len(score)):
-                if zero_cross_up.iloc[i]:
-                    # 根据交叉质量调整分数
-                    quality = zero_cross_quality.iloc[i, 5] / 100  # cross_quality_score归一化
-                    score.iloc[i] += 15 + quality * 10  # 基础15分 + 最多10分的质量加成
-                
-                elif zero_cross_down.iloc[i]:
-                    # 根据交叉质量调整分数
-                    quality = zero_cross_quality.iloc[i, 5] / 100  # cross_quality_score归一化
-                    score.iloc[i] -= 15 + quality * 10  # 基础15分 + 最多10分的质量加成
-        else:
-            score = score + zero_cross_up * 25 - zero_cross_down * 25
-        
-        # 6. 背离评分 (±25分)
-        divergence = self.detect_divergence()
+        # 6. 背离评分 (±15分)
         if not divergence.empty:
-            # 正背离，加分
-            score += divergence['bullish_divergence'] * 25
-            # 负背离，减分
-            score -= divergence['bearish_divergence'] * 25
-            # 隐藏正背离，加分
-            score += divergence['hidden_bullish_divergence'] * 20
-            # 隐藏负背离，减分
-            score -= divergence['hidden_bearish_divergence'] * 20
+            # 牛市背离
+            bullish_div = divergence.get('bullish_divergence', pd.Series(False, index=score.index))
+            if isinstance(bullish_div, pd.Series) and not bullish_div.empty:
+                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
+                score.loc[bullish_div] += np.minimum(div_strength.loc[bullish_div] * 30, 15)
+            
+            # 熊市背离
+            bearish_div = divergence.get('bearish_divergence', pd.Series(False, index=score.index))
+            if isinstance(bearish_div, pd.Series) and not bearish_div.empty:
+                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
+                score.loc[bearish_div] -= np.minimum(div_strength.loc[bearish_div] * 30, 15)
         
         # 7. 多周期协同评分 (±15分)
-        synergy = self.analyze_multi_period_synergy()
         if not synergy.empty:
-            # 计算多周期共识得分
-            consensus_adjustment = (synergy['consensus_score'] - 50) * 0.3  # 0.3 = 15/50
-            score += consensus_adjustment
-        
-        # 8. 加速/减速评分 (±10分)
-        if 'trix_accel' in self._result.columns:
-            # 上升趋势加速，加分
-            accel_up = (trix > 0) & (self._result['trix_accel'] > 0)
-            score += accel_up * 10
+            bull_synergy = synergy.get('bullish_agreement', pd.Series(False, index=score.index))
+            if isinstance(bull_synergy, pd.Series) and not bull_synergy.empty:
+                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
+                score.loc[bull_synergy] += np.minimum(synergy_strength.loc[bull_synergy] * 30, 15)
             
-            # 下降趋势加速，减分
-            accel_down = (trix < 0) & (self._result['trix_accel'] < 0)
-            score -= accel_down * 10
+            bear_synergy = synergy.get('bearish_agreement', pd.Series(False, index=score.index))
+            if isinstance(bear_synergy, pd.Series) and not bear_synergy.empty:
+                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
+                score.loc[bear_synergy] -= np.minimum(synergy_strength.loc[bear_synergy] * 30, 15)
         
-        # 9. 市场环境适应评分调整
-        if self.market_environment == 'bull_market':
-            # 牛市中提高看涨信号权重，降低看跌信号权重
+        # 8. 特殊形态评分 (±10分)
+        if not patterns.empty:
+            # 看涨形态
+            for pattern in ['hook_bottom', 'bottom_reversal', 'breakout_up']:
+                if pattern in patterns.columns:
+                    pattern_signal = patterns[pattern]
+                    if isinstance(pattern_signal, pd.Series) and not pattern_signal.empty:
+                        score.loc[pattern_signal] += 10
+            
+            # 看跌形态
+            for pattern in ['hook_top', 'top_reversal', 'breakout_down']:
+                if pattern in patterns.columns:
+                    pattern_signal = patterns[pattern]
+                    if isinstance(pattern_signal, pd.Series) and not pattern_signal.empty:
+                        score.loc[pattern_signal] -= 10
+        
+        # 9. 市场环境调整
+        if self.market_environment == "bull_market":
+            # 牛市中增强多头信号，弱化空头信号
             bull_adjustment = np.where(score > 50, (score - 50) * 0.2, (score - 50) * 0.1)
             score += bull_adjustment
-        elif self.market_environment == 'bear_market':
-            # 熊市中提高看跌信号权重，降低看涨信号权重
+        elif self.market_environment == "bear_market":
+            # 熊市中增强空头信号，弱化多头信号
             bear_adjustment = np.where(score < 50, (50 - score) * 0.2, (50 - score) * 0.1)
             score -= bear_adjustment
+        elif self.market_environment == "volatile_market":
+            # 高波动市场需要更强的信号
+            vol_adjustment = (score - 50).abs() * 0.3
+            score = np.where(score > 50, 50 + vol_adjustment, 50 - vol_adjustment)
         
-        # 限制得分范围在0-100之间
-        return np.clip(score, 0, 100)
+        # 限制分数范围在0-100之间
+        score = score.clip(0, 100)
+        
+        return score
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算增强型TRIX指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        # 直接使用现有的calculate_score方法
+        if not self.has_result():
+            self.calculate(data)
+        
+        return self.calculate_score()
     
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """

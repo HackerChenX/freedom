@@ -342,122 +342,147 @@ class EnhancedMACD(BaseIndicator):
     
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        生成MACD信号
+        生成交易信号
         
         Args:
-            data: 输入数据，包含价格数据
+            data: 输入数据，包含价格数据的DataFrame
             
         Returns:
             pd.DataFrame: 包含信号的DataFrame
         """
-        # 计算MACD
         if not self.has_result():
-            self.compute(data)
-            
-        if not self.has_result():
-            return pd.DataFrame()
+            self.calculate(data)
         
-        # 获取MACD计算结果
-        macd_data = self._result
-        
-        # 创建信号DataFrame
+        # 复制输入数据
         signals = pd.DataFrame(index=data.index)
+        signals['buy'] = False
+        signals['sell'] = False
+        signals['neutral'] = True
         
-        # 添加基本信号
-        signals['buy_signal'] = False
-        signals['sell_signal'] = False
-        signals['trend'] = 0  # -1表示下降趋势，0表示中性，1表示上升趋势
+        # 检查结果是否有效
+        if self._result is None or len(self._result) == 0:
+            return signals
         
-        # 根据MACD信号判断买入信号
-        # 1. 金叉 + DIF在零轴以下 + 未出现背离
-        basic_buy = (
-            macd_data['golden_cross'] & 
-            (macd_data['DIF'] < 0) & 
-            ~macd_data['bearish_divergence']
-        )
+        # 从计算结果中获取各种信号
+        result = self._result
         
-        # 2. 正背离确认（价格创新低但MACD未创新低）+ DIF上穿DEA
-        divergence_buy = (
-            macd_data['bullish_divergence'] & 
-            macd_data['golden_cross']
-        )
+        # 生成买入信号
+        # 1. 金叉信号（主要买入信号）
+        signals.loc[result['golden_cross'], 'buy'] = True
         
-        # 3. 隐藏正背离确认
-        hidden_buy = macd_data['hidden_bullish_divergence']
+        # 2. DIF上穿零轴且为正值
+        zero_cross_buy = result['DIF_cross_zero_up'] & (result['DEA'] > -0.5 * result['DEA'].rolling(window=10).std())
+        signals.loc[zero_cross_buy, 'buy'] = True
         
-        # 4. 双MACD确认信号（如果启用）
-        dual_buy = pd.Series(False, index=data.index)
-        if self._parameters.get('use_secondary_macd', False) and 'dual_macd_agree_bullish' in macd_data.columns:
-            dual_buy = macd_data['dual_macd_agree_bullish']
+        # 3. 双MACD共振买入信号
+        if 'dual_macd_agree_bullish' in result.columns:
+            signals.loc[result['dual_macd_agree_bullish'], 'buy'] = True
         
-        # 5. 柱状图颜色变化确认（连续两个柱状向上）
-        color_buy = False
-        if 'MACD_up_confirm' in macd_data.columns:
-            color_buy = macd_data['MACD_up_confirm'] & macd_data['MACD_turn_positive']
+        # 4. 柱状图加速放大买入信号
+        if 'MACD_expanding_strong' in result.columns:
+            macd_expand_buy = result['MACD_expanding_strong'] & (result['DIF'] > result['DEA'])
+            signals.loc[macd_expand_buy, 'buy'] = True
         
-        # 组合买入信号
-        signals['buy_signal'] = basic_buy | divergence_buy | hidden_buy | dual_buy | color_buy
+        # 5. 看涨背离买入信号
+        if 'bullish_divergence' in result.columns:
+            signals.loc[result['bullish_divergence'], 'buy'] = True
         
-        # 根据MACD信号判断卖出信号
-        # 1. 死叉 + DIF在零轴以上 + 未出现正背离
-        basic_sell = (
-            macd_data['death_cross'] & 
-            (macd_data['DIF'] > 0) & 
-            ~macd_data['bullish_divergence']
-        )
+        # 生成卖出信号
+        # 1. 死叉信号（主要卖出信号）
+        signals.loc[result['death_cross'], 'sell'] = True
         
-        # 2. 负背离确认（价格创新高但MACD未创新高）+ DIF下穿DEA
-        divergence_sell = (
-            macd_data['bearish_divergence'] & 
-            macd_data['death_cross']
-        )
+        # 2. DIF下穿零轴且为负值
+        zero_cross_sell = result['DIF_cross_zero_down'] & (result['DEA'] < 0.5 * result['DEA'].rolling(window=10).std())
+        signals.loc[zero_cross_sell, 'sell'] = True
         
-        # 3. 隐藏负背离确认
-        hidden_sell = macd_data['hidden_bearish_divergence']
+        # 3. 双MACD共振卖出信号
+        if 'dual_macd_agree_bearish' in result.columns:
+            signals.loc[result['dual_macd_agree_bearish'], 'sell'] = True
         
-        # 4. 双MACD确认信号（如果启用）
-        dual_sell = pd.Series(False, index=data.index)
-        if self._parameters.get('use_secondary_macd', False) and 'dual_macd_agree_bearish' in macd_data.columns:
-            dual_sell = macd_data['dual_macd_agree_bearish']
+        # 4. 柱状图加速缩小卖出信号
+        if 'MACD_contracting_strong' in result.columns:
+            macd_contract_sell = result['MACD_contracting_strong'] & (result['DIF'] < result['DEA'])
+            signals.loc[macd_contract_sell, 'sell'] = True
         
-        # 5. 柱状图颜色变化确认（连续两个柱状向下）
-        color_sell = False
-        if 'MACD_down_confirm' in macd_data.columns:
-            color_sell = macd_data['MACD_down_confirm'] & macd_data['MACD_turn_negative']
+        # 5. 看跌背离卖出信号
+        if 'bearish_divergence' in result.columns:
+            signals.loc[result['bearish_divergence'], 'sell'] = True
         
-        # 组合卖出信号
-        signals['sell_signal'] = basic_sell | divergence_sell | hidden_sell | dual_sell | color_sell
-        
-        # 判断趋势
-        signals['trend'] = 0  # 默认中性
-        signals.loc[macd_data['DIF'] > macd_data['DEA'], 'trend'] = 1  # 上升趋势
-        signals.loc[macd_data['DIF'] < macd_data['DEA'], 'trend'] = -1  # 下降趋势
-        
-        # 双MACD确认趋势（如果启用）
-        if self._parameters.get('use_secondary_macd', False):
-            if 'dual_macd_both_positive' in macd_data.columns:
-                signals.loc[macd_data['dual_macd_both_positive'], 'trend'] = 1  # 强烈上升趋势
-            if 'dual_macd_both_negative' in macd_data.columns:
-                signals.loc[macd_data['dual_macd_both_negative'], 'trend'] = -1  # 强烈下降趋势
-        
-        # 信号强度评分（0-100）
-        signals['score'] = 50  # 默认中性
-        
-        # 上升趋势加分
-        signals.loc[signals['trend'] > 0, 'score'] += 10
-        
-        # 背离加分/减分
-        signals.loc[macd_data['bullish_divergence'], 'score'] += 15
-        signals.loc[macd_data['bearish_divergence'], 'score'] -= 15
-        
-        # 买入/卖出信号加分/减分
-        signals.loc[signals['buy_signal'], 'score'] += 25
-        signals.loc[signals['sell_signal'], 'score'] -= 25
-        
-        # 确保分数在0-100范围内
-        signals['score'] = signals['score'].clip(0, 100)
+        # 设置中性信号（既不是买入也不是卖出）
+        signals['neutral'] = ~(signals['buy'] | signals['sell'])
         
         return signals
+        
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算增强版MACD指标的原始评分
+        
+        Args:
+            data: 输入数据，包含价格数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列，0-100
+        """
+        # 计算指标
+        if not self.has_result():
+            result = self.calculate(data, **kwargs)
+        else:
+            result = self._result.copy()
+            
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 基于DIF和DEA的位置关系计算基础评分
+        # DIF > DEA：看涨，DIF < DEA：看跌
+        score += 20 * np.where(result['DIF'] > result['DEA'], 1, -1)
+        
+        # 调整基于MACD柱状图值和变化率
+        # 柱状图为正值加分，为负值减分
+        macd_factor = result['MACD'] / (result['MACD'].abs().rolling(window=20).max() + 1e-6)
+        score += 10 * macd_factor
+        
+        # 基于MACD柱状图变化率的额外调整
+        if 'MACD_change' in result.columns:
+            # 柱状图增加速度加分/减分
+            change_factor = result['MACD_change'] / (result['MACD_change'].abs().rolling(window=20).max() + 1e-6)
+            score += 5 * change_factor
+        
+        # 特殊信号的得分调整
+        
+        # 金叉信号大幅加分
+        if 'golden_cross' in result.columns:
+            score[result['golden_cross']] += 20
+            
+        # 死叉信号大幅减分
+        if 'death_cross' in result.columns:
+            score[result['death_cross']] -= 20
+        
+        # DIF穿越零轴信号
+        if 'DIF_cross_zero_up' in result.columns:
+            score[result['DIF_cross_zero_up']] += 15
+            
+        if 'DIF_cross_zero_down' in result.columns:
+            score[result['DIF_cross_zero_down']] -= 15
+        
+        # 双MACD共振信号（如果启用）
+        if 'dual_macd_agree_bullish' in result.columns:
+            score[result['dual_macd_agree_bullish']] += 15
+            
+        if 'dual_macd_agree_bearish' in result.columns:
+            score[result['dual_macd_agree_bearish']] -= 15
+        
+        # 背离信号
+        if 'bullish_divergence' in result.columns:
+            score[result['bullish_divergence']] += 15
+            
+        if 'bearish_divergence' in result.columns:
+            score[result['bearish_divergence']] -= 15
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
     
     def plot_macd(self, data: pd.DataFrame, ax=None, show_divergence=True):
         """

@@ -172,7 +172,7 @@ class PatternRegistry:
             logger.warning(f"形态 {normalized_pattern_id} 已存在，将被跳过")
             return
         elif normalized_pattern_id in self._registered_patterns:
-            logger.warning(f"形态 {normalized_pattern_id} 已存在，将被覆盖")
+            logger.debug(f"形态 {normalized_pattern_id} 已存在，将被覆盖")
             
         # 创建形态信息
         pattern_info = {
@@ -196,6 +196,75 @@ class PatternRegistry:
         self._patterns_by_indicator[indicator_id].add(normalized_pattern_id)
         
         logger.debug(f"注册形态: {normalized_pattern_id} ({display_name})")
+    
+    @classmethod
+    def register_all_patterns(cls) -> None:
+        """
+        注册所有常用指标的形态
+        
+        这是一个便利方法，用于一次性注册所有常用指标的形态。
+        注意：继承自BaseIndicator的指标类会在实例化时自动注册其形态，
+        因此此方法主要用于注册那些未通过指标类实例自动注册的形态。
+        """
+        logger.info("开始注册全局形态...")
+        
+        # 这里可以添加那些未通过指标类自动注册的形态
+        # 例如，一些自定义形态或者跨指标的复合形态
+        
+        # 注册一些复合形态或全局形态示例
+        cls._register_global_patterns()
+        
+        # 不再调用各个具体指标的形态注册函数
+        # 所有指标形态现在应通过各自的指标类自动注册
+        
+        logger.info("完成全局形态注册")
+    
+    @classmethod
+    def _register_global_patterns(cls) -> None:
+        """注册全局复合形态或特殊形态"""
+        registry = cls()
+        
+        # 例如：注册跨指标的复合形态
+        registry.register(
+            pattern_id="GLOBAL_MULTI_INDICATOR_BULLISH",
+            display_name="多指标综合看涨",
+            description="多个关键指标同时产生看涨信号",
+            indicator_id="GLOBAL",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.VERY_STRONG,
+            score_impact=30.0
+        )
+        
+        registry.register(
+            pattern_id="GLOBAL_MULTI_INDICATOR_BEARISH",
+            display_name="多指标综合看跌",
+            description="多个关键指标同时产生看跌信号",
+            indicator_id="GLOBAL",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.VERY_STRONG,
+            score_impact=-30.0
+        )
+        
+        # 添加更多全局复合形态
+        registry.register(
+            pattern_id="GLOBAL_TREND_CONFIRMATION",
+            display_name="趋势确认信号",
+            description="多个趋势指标同时确认当前趋势方向",
+            indicator_id="GLOBAL",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=25.0
+        )
+        
+        registry.register(
+            pattern_id="GLOBAL_REVERSAL_SIGNAL",
+            display_name="趋势反转信号",
+            description="多个指标同时显示当前趋势可能反转",
+            indicator_id="GLOBAL",
+            pattern_type=PatternType.REVERSAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=25.0
+        )
     
     @classmethod
     def register_indicator_pattern(cls, indicator_type: str, pattern_id: str, 
@@ -574,244 +643,9 @@ class PatternRegistry:
                 _allow_override=True  # 允许覆盖
             ) 
 
-def register_adx_patterns():
-    """注册ADX指标相关形态"""
-    registry = PatternRegistry()
-    
-    # 强趋势
-    registry.register(
-        pattern_id="ADX_STRONG_RISING",
-        display_name="ADX强度上升",
-        indicator_id="ADX",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ADX_STRONG_FALLING",
-        display_name="ADX强度下降",
-        indicator_id="ADX",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ADX_WEAK_TREND",
-        display_name="ADX弱趋势",
-        indicator_id="ADX",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.WEAK
-    )
-    
-    # 趋势方向
-    registry.register(
-        pattern_id="ADX_BULLISH_CROSS",
-        display_name="ADX多头交叉",
-        indicator_id="ADX",
-        pattern_type=PatternType.BULLISH,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ADX_BEARISH_CROSS",
-        display_name="ADX空头交叉",
-        indicator_id="ADX",
-        pattern_type=PatternType.BEARISH,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ADX_UPTREND",
-        display_name="ADX上升趋势",
-        indicator_id="ADX",
-        pattern_type=PatternType.BULLISH,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ADX_DOWNTREND",
-        display_name="ADX下降趋势",
-        indicator_id="ADX",
-        pattern_type=PatternType.BEARISH,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    # 趋势变化
-    registry.register(
-        pattern_id="ADX_TREND_STRENGTHENING",
-        display_name="ADX趋势增强",
-        indicator_id="ADX",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ADX_TREND_WEAKENING",
-        display_name="ADX趋势减弱",
-        indicator_id="ADX",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.WEAK
-    )
-    
-    # 极端趋势
-    registry.register(
-        pattern_id="ADX_EXTREME_UPTREND",
-        display_name="ADX极端上升趋势",
-        indicator_id="ADX",
-        pattern_type=PatternType.BULLISH,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ADX_EXTREME_DOWNTREND",
-        display_name="ADX极端下降趋势",
-        indicator_id="ADX",
-        pattern_type=PatternType.BEARISH,
-        default_strength=PatternStrength.STRONG
-    ) 
+# 注意：所有具体指标的形态注册函数已移除
+# 各指标类现在负责在自己的类中注册相关形态
 
-def register_atr_patterns():
-    """注册ATR指标相关形态"""
-    registry = PatternRegistry()
-    
-    # 波动性分类
-    registry.register(
-        pattern_id="ATR_HIGH_VOLATILITY",
-        display_name="ATR高波动性",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ATR_LOW_VOLATILITY",
-        display_name="ATR低波动性",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.WEAK
-    )
-    
-    registry.register(
-        pattern_id="ATR_NORMAL_VOLATILITY",
-        display_name="ATR正常波动性",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    # 波动性变化
-    registry.register(
-        pattern_id="ATR_RISING_STRONG",
-        display_name="ATR强烈上升",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ATR_RISING",
-        display_name="ATR上升",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ATR_FALLING_STRONG",
-        display_name="ATR强烈下降",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ATR_FALLING",
-        display_name="ATR下降",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ATR_FLAT",
-        display_name="ATR平稳",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.WEAK
-    )
-    
-    # 特殊形态
-    registry.register(
-        pattern_id="ATR_BREAKOUT",
-        display_name="ATR突破",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ATR_PRICE_VOLATILE",
-        display_name="ATR价格波动",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ATR_PRICE_STABLE",
-        display_name="ATR价格稳定",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.WEAK
-    )
-    
-    # 趋势分析
-    registry.register(
-        pattern_id="ATR_CONVERGENCE",
-        display_name="ATR收敛",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    registry.register(
-        pattern_id="ATR_DIVERGENCE",
-        display_name="ATR发散",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.MEDIUM
-    )
-    
-    # 极端波动
-    registry.register(
-        pattern_id="ATR_VOLATILITY_EXPLOSION",
-        display_name="ATR波动性爆发",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ATR_VOLATILITY_COLLAPSE",
-        display_name="ATR波动性崩塌",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    # 市场状态
-    registry.register(
-        pattern_id="ATR_MARKET_VOLATILE",
-        display_name="ATR市场波动",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.STRONG
-    )
-    
-    registry.register(
-        pattern_id="ATR_MARKET_QUIET",
-        display_name="ATR市场平静",
-        indicator_id="ATR",
-        pattern_type=PatternType.NEUTRAL,
-        default_strength=PatternStrength.WEAK
-    ) 
+if __name__ == "__main__":
+    print("Pattern Registry Utility")
+    print("使用方法: 在代码中导入并使用 PatternRegistry 类来管理技术形态")

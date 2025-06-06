@@ -982,4 +982,21 @@ class EnhancedCCI(BaseIndicator):
         # 限制分数范围在0-100之间
         score = score.clip(0, 100)
         
-        return score 
+        return score
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算增强型CCI指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        # 直接使用现有的calculate_score方法
+        if not self.has_result():
+            self.calculate(data)
+        
+        return self.calculate_score() 

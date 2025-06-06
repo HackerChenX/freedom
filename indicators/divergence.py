@@ -201,28 +201,110 @@ class DIVERGENCE(BaseIndicator):
         result["price_newhigh"] = price_newhigh
         result["indicator_newlow"] = indicator_newlow
         result["indicator_newhigh"] = indicator_newhigh
-        result["positive_divergence"] = positive_divergence  # 正背离（底背离）
-        result["negative_divergence"] = negative_divergence  # 负背离（顶背离）
-        result["hidden_positive_divergence"] = hidden_positive_divergence  # 隐藏正背离
-        result["hidden_negative_divergence"] = hidden_negative_divergence  # 隐藏负背离
+        result["positive_divergence"] = positive_divergence
+        result["negative_divergence"] = negative_divergence
+        result["hidden_positive_divergence"] = hidden_positive_divergence
+        result["hidden_negative_divergence"] = hidden_negative_divergence
         
-        # 计算背离类型
-        divergence_type = np.zeros(len(close), dtype=int)
-        for i in range(len(close)):
-            if positive_divergence[i]:
-                divergence_type[i] = DivergenceType.POSITIVE.value
-            elif negative_divergence[i]:
-                divergence_type[i] = DivergenceType.NEGATIVE.value
-            elif hidden_positive_divergence[i]:
-                divergence_type[i] = DivergenceType.HIDDEN_POSITIVE.value
-            elif hidden_negative_divergence[i]:
-                divergence_type[i] = DivergenceType.HIDDEN_NEGATIVE.value
-            else:
-                divergence_type[i] = DivergenceType.NONE.value
+        # 计算综合背离信号
+        result["any_positive_divergence"] = result["positive_divergence"] | result["hidden_positive_divergence"]
+        result["any_negative_divergence"] = result["negative_divergence"] | result["hidden_negative_divergence"]
+        result["any_divergence"] = result["any_positive_divergence"] | result["any_negative_divergence"]
         
-        result["divergence_type"] = divergence_type
+        # 存储计算结果
+        self._result = result
         
         return result
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算量价背离指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据，包含价格和技术指标数据
+            **kwargs: 额外参数
+                indicator_name: 用于对比的技术指标列名，默认为'macd'
+                lookback_period: 回溯周期，默认为20
+                confirm_period: 确认周期，默认为5
+                
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        # 获取参数
+        indicator_name = kwargs.get('indicator_name', 'macd')
+        lookback_period = kwargs.get('lookback_period', self.lookback_period)
+        confirm_period = kwargs.get('confirm_period', self.confirm_period)
+        
+        # 确保已计算指标
+        if not self.has_result():
+            try:
+                result = self.calculate(data, indicator_name, lookback_period, confirm_period)
+            except Exception as e:
+                logger.error(f"计算背离指标时出错: {e}")
+                return pd.Series(50.0, index=data.index)  # 返回中性评分
+        else:
+            result = self._result
+        
+        # 初始化评分，默认为50分（中性）
+        score = pd.Series(50.0, index=data.index)
+        
+        # 检查结果是否有效
+        if result.empty:
+            return score
+        
+        # 1. 基于正背离的评分 (看涨信号，加分)
+        if "positive_divergence" in result.columns:
+            # 正背离（底背离）加分较多
+            score[result["positive_divergence"]] += 25
+        
+        if "hidden_positive_divergence" in result.columns:
+            # 隐藏正背离加分较少
+            score[result["hidden_positive_divergence"]] += 15
+        
+        # 2. 基于负背离的评分 (看跌信号，减分)
+        if "negative_divergence" in result.columns:
+            # 负背离（顶背离）减分较多
+            score[result["negative_divergence"]] -= 25
+        
+        if "hidden_negative_divergence" in result.columns:
+            # 隐藏负背离减分较少
+            score[result["hidden_negative_divergence"]] -= 15
+        
+        # 3. 背离持续性评分
+        # 检查最近N天内是否有连续背离信号
+        window_size = min(5, len(score))
+        if window_size > 0:
+            for i in range(window_size, len(score)):
+                # 获取最近窗口的背离数据
+                recent_window = result.iloc[i-window_size:i]
+                
+                # 计算正背离和负背离的数量
+                positive_count = 0
+                negative_count = 0
+                
+                if "positive_divergence" in recent_window.columns:
+                    positive_count += recent_window["positive_divergence"].sum()
+                
+                if "hidden_positive_divergence" in recent_window.columns:
+                    positive_count += recent_window["hidden_positive_divergence"].sum()
+                
+                if "negative_divergence" in recent_window.columns:
+                    negative_count += recent_window["negative_divergence"].sum()
+                
+                if "hidden_negative_divergence" in recent_window.columns:
+                    negative_count += recent_window["hidden_negative_divergence"].sum()
+                
+                # 根据背离持续性进行额外评分调整
+                if positive_count > 1:  # 多次正背离，强化看涨信号
+                    score.iloc[i] += positive_count * 2
+                
+                if negative_count > 1:  # 多次负背离，强化看跌信号
+                    score.iloc[i] -= negative_count * 2
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
     
     def macd_divergence(self, data: pd.DataFrame, lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:
         """
@@ -237,25 +319,10 @@ class DIVERGENCE(BaseIndicator):
             pd.DataFrame: 计算结果
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "high", "low"])
+        self.ensure_columns(data, ["close", "high", "low", "macd"])
         
-        # 如果数据中没有MACD，计算MACD
-        if "MACD" not in data.columns:
-            # 计算MACD
-            close = data["close"].values
-            ema12 = self._ema(close, 12)
-            ema26 = self._ema(close, 26)
-            dif = ema12 - ema26
-            dea = self._ema(dif, 9)
-            macd = 2 * (dif - dea)
-            
-            # 添加MACD到数据
-            data_with_macd = data.copy()
-            data_with_macd["MACD"] = macd
-        else:
-            data_with_macd = data
-        
-        return self.calculate(data_with_macd, "MACD", lookback_period, confirm_period)
+        # 调用通用背离计算方法
+        return self.calculate(data, "macd", lookback_period, confirm_period)
     
     def rsi_divergence(self, data: pd.DataFrame, period: int = 14, 
                       lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:
@@ -264,7 +331,7 @@ class DIVERGENCE(BaseIndicator):
         
         Args:
             data: 输入数据，包含价格数据
-            period: RSI周期，默认为14
+            period: RSI计算周期，默认为14
             lookback_period: 回溯周期，默认为20
             confirm_period: 确认周期，默认为5
             

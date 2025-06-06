@@ -13,6 +13,7 @@ from typing import Dict, List, Union, Optional, Any
 
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 
@@ -639,69 +640,162 @@ class OBV(BaseIndicator):
         
         return signals
 
-
-
+    def _register_obv_patterns(self):
+        """
+        注册OBV指标相关形态
+        """
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+        
+        # 注册OBV与均线交叉形态
+        registry.register(
+            pattern_id="OBV_GOLDEN_CROSS",
+            display_name="OBV金叉",
+            description="OBV上穿其均线，表明买盘力量增强",
+            indicator_id="OBV",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=15.0
+        )
+        
+        registry.register(
+            pattern_id="OBV_DEATH_CROSS",
+            display_name="OBV死叉",
+            description="OBV下穿其均线，表明卖盘力量增强",
+            indicator_id="OBV",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-15.0
+        )
+        
+        # 注册OBV趋势形态
+        registry.register(
+            pattern_id="OBV_UPTREND",
+            display_name="OBV上升趋势",
+            description="OBV持续上升，表明资金持续流入",
+            indicator_id="OBV",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=12.0
+        )
+        
+        registry.register(
+            pattern_id="OBV_DOWNTREND",
+            display_name="OBV下降趋势",
+            description="OBV持续下降，表明资金持续流出",
+            indicator_id="OBV",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-12.0
+        )
+        
+        # 注册OBV背离形态
+        registry.register(
+            pattern_id="OBV_BULLISH_DIVERGENCE",
+            display_name="OBV底背离",
+            description="价格创新低，但OBV未创新低，表明卖盘力量减弱",
+            indicator_id="OBV",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0
+        )
+        
+        registry.register(
+            pattern_id="OBV_BEARISH_DIVERGENCE",
+            display_name="OBV顶背离",
+            description="价格创新高，但OBV未创新高，表明买盘力量减弱",
+            indicator_id="OBV",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-20.0
+        )
+        
+        # 注册OBV爆量形态
+        registry.register(
+            pattern_id="OBV_RAPID_INCREASE",
+            display_name="OBV快速上涨",
+            description="OBV短期内快速上涨，表明买盘力量强劲",
+            indicator_id="OBV",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=18.0
+        )
+        
+        registry.register(
+            pattern_id="OBV_RAPID_DECREASE",
+            display_name="OBV快速下跌",
+            description="OBV短期内快速下跌，表明卖盘力量强劲",
+            indicator_id="OBV",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.STRONG,
+            score_impact=-18.0
+        )
+        
+        # 注册OBV稳定形态
+        registry.register(
+            pattern_id="OBV_STABLE_POSITIVE",
+            display_name="OBV稳定正值",
+            description="OBV保持在高位稳定，表明买盘力量持续存在",
+            indicator_id="OBV",
+            pattern_type=PatternType.BULLISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0
+        )
+        
+        registry.register(
+            pattern_id="OBV_STABLE_NEGATIVE",
+            display_name="OBV稳定负值",
+            description="OBV保持在低位稳定，表明卖盘力量持续存在",
+            indicator_id="OBV",
+            pattern_type=PatternType.BEARISH,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-10.0
+        )
+        
+        # 注册OBV量价关系形态
+        registry.register(
+            pattern_id="OBV_PRICE_CONFIRMATION",
+            display_name="OBV量价同步",
+            description="OBV与价格同向变动，确认当前趋势",
+            indicator_id="OBV",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=8.0
+        )
+        
+        registry.register(
+            pattern_id="OBV_PRICE_NON_CONFIRMATION",
+            display_name="OBV量价不同步",
+            description="OBV与价格反向变动，表明当前趋势可能不可靠",
+            indicator_id="OBV",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=-8.0
+        )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
-
-            """
-
-
-            生成交易信号
+        """
+        生成交易信号
         
-
-
-            Args:
-
-
-                data: 输入数据
-
-
-                **kwargs: 额外参数
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
             
-
-
-            Returns:
-
-
-                Dict[str, pd.Series]: 包含交易信号的字典
-
-
-            """
-
-
-            # 确保已计算指标
-
-
-            if not self.has_result():
-
-
-                self.calculate(data, **kwargs)
-            
-
-
-            # 初始化信号
-
-
-            signals = {}
-
-
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-
-            signals['signal_strength'] = pd.Series(0, index=data.index)
+        Returns:
+            Dict[str, pd.Series]: 包含交易信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
-
-
-            # 在这里实现指标特定的信号生成逻辑
-
-
-            # 此处提供默认实现
+        # 初始化信号
+        signals = {}
         
-
-
-            return signals
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
+        
+        # 在这里实现指标特定的信号生成逻辑
+        
+        # 此处提供默认实现
+        return signals

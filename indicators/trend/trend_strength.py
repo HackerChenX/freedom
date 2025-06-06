@@ -126,4 +126,58 @@ class TrendStrength(BaseIndicator):
         # 清理中间计算列
         df.drop(['price_change_pct', 'volatility'], axis=1, inplace=True)
         
-        return df 
+        # 保存结果
+        self._result = df
+        
+        return df
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算趋势强度指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            result = self.calculate(data)
+        else:
+            result = self._result
+        
+        # 初始化评分，默认为50分（中性）
+        score = pd.Series(50.0, index=data.index)
+        
+        # 检查结果是否有效
+        if result.empty or 'trend_strength' not in result.columns or 'trend_direction' not in result.columns:
+            return score
+        
+        # 从结果中提取趋势强度和方向
+        trend_strength = result['trend_strength']
+        trend_direction = result['trend_direction']
+        
+        # 计算评分：
+        # 1. 上升趋势：根据强度映射到50-100分
+        # 2. 下降趋势：根据强度映射到0-50分
+        # 3. 中性：保持50分
+        
+        # 上升趋势评分 (50-100)
+        uptrend_mask = trend_direction == 'uptrend'
+        if uptrend_mask.any():
+            score.loc[uptrend_mask] = 50 + trend_strength.loc[uptrend_mask] / 2
+        
+        # 下降趋势评分 (0-50)
+        downtrend_mask = trend_direction == 'downtrend'
+        if downtrend_mask.any():
+            score.loc[downtrend_mask] = 50 - trend_strength.loc[downtrend_mask] / 2
+        
+        # 处理可能的缺失值
+        score = score.fillna(50.0)
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score 

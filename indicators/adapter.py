@@ -340,7 +340,51 @@ class CompositeIndicator(BaseIndicator):
         # 应用组合函数
         try:
             combined_result = self.combination_func(results, data)
+            self._result = combined_result
             return combined_result
         except Exception as e:
             logger.error(f"应用组合函数时出错: {str(e)}")
-            raise 
+            raise
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算组合指标原始评分
+        
+        Args:
+            data: 输入数据
+            **kwargs: 额外参数
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+            
+        # 检查是否有名为'score'或'composite_score'的列
+        if self._result is not None:
+            if 'score' in self._result.columns:
+                return self._result['score']
+            elif 'composite_score' in self._result.columns:
+                return self._result['composite_score']
+                
+        # 如果没有特定的评分列，尝试从子指标获取评分并平均
+        scores = []
+        
+        for i, adapter in enumerate(self._adapters):
+            if adapter is not None and hasattr(adapter.indicator, 'calculate_raw_score'):
+                try:
+                    score = adapter.indicator.calculate_raw_score(data, **kwargs)
+                    scores.append(score)
+                except Exception as e:
+                    logger.warning(f"获取子指标 {i} 的评分时出错: {str(e)}")
+        
+        # 如果有可用的子指标评分，计算平均值
+        if scores:
+            # 将所有评分堆叠成一个DataFrame
+            all_scores = pd.concat(scores, axis=1)
+            # 计算每行的平均值
+            mean_score = all_scores.mean(axis=1)
+            return mean_score
+        
+        # 如果无法获取评分，返回默认的中性评分
+        return pd.Series(50.0, index=data.index) 

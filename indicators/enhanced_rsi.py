@@ -238,126 +238,143 @@ class EnhancedRSI(BaseIndicator):
     
     def _detect_divergence(self, result: pd.DataFrame, data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
         """
-        检测RSI背离信号
+        检测RSI与价格的背离
         
         Args:
             result: RSI计算结果
-            data: 原始数据
+            data: 输入数据
             params: 参数字典
             
         Returns:
-            pd.DataFrame: 添加了背离信号的结果
+            pd.DataFrame: 添加了背离指标的结果
         """
+        # 检查必要的列是否存在
         price_col = params.get('price_col', 'close')
-        window = params.get('divergence_window', 20)
-        threshold = params.get('divergence_threshold', 0.1)
+        divergence_window = params.get('divergence_window', 20)
+        divergence_threshold = params.get('divergence_threshold', 0.1)
         
-        # 如果未启用多周期，使用第一个周期的RSI
-        if not params.get('use_multi_period', True) or 'RSI_main' not in result.columns:
-            main_rsi_col = f'RSI{params["periods"][0]}'
+        if price_col not in data.columns:
+            return result
+        
+        # 选择主要RSI指标
+        if 'RSI_main' in result.columns:
+            rsi_col = 'RSI_main'
         else:
-            main_rsi_col = 'RSI_main'
+            # 选择第一个RSI列
+            rsi_cols = [col for col in result.columns if col.startswith('RSI') and not col.endswith('_smooth')]
+            if not rsi_cols:
+                return result
+            rsi_col = rsi_cols[0]
         
-        # 初始化背离信号列
-        result['bullish_divergence'] = False  # 价格创新低，但RSI未创新低（看涨）
-        result['bearish_divergence'] = False  # 价格创新高，但RSI未创新高（看跌）
-        result['divergence_strength'] = 0.0  # 背离强度
+        # 初始化背离列
+        result['bullish_divergence'] = False
+        result['bearish_divergence'] = False
         
-        # 计算局部最高点和最低点
-        price = data[price_col].values
-        rsi_values = result[main_rsi_col].values
+        # 至少需要divergence_window个数据点
+        if len(data) < divergence_window:
+            return result
         
-        # 初始化高点和低点数组
-        price_highs = np.zeros_like(price, dtype=bool)
-        price_lows = np.zeros_like(price, dtype=bool)
-        rsi_highs = np.zeros_like(rsi_values, dtype=bool)
-        rsi_lows = np.zeros_like(rsi_values, dtype=bool)
-        
-        # 识别局部高低点
-        for i in range(1, len(price) - 1):
-            # 局部高点：比前后都高
-            if price[i] > price[i-1] and price[i] > price[i+1]:
-                price_highs[i] = True
-            # 局部低点：比前后都低
-            if price[i] < price[i-1] and price[i] < price[i+1]:
-                price_lows[i] = True
-                
-            # RSI局部高点
-            if i < len(rsi_values) - 1 and i > 0:
-                if not np.isnan(rsi_values[i]) and not np.isnan(rsi_values[i-1]) and not np.isnan(rsi_values[i+1]):
-                    if rsi_values[i] > rsi_values[i-1] and rsi_values[i] > rsi_values[i+1]:
-                        rsi_highs[i] = True
-                    # RSI局部低点
-                    if rsi_values[i] < rsi_values[i-1] and rsi_values[i] < rsi_values[i+1]:
-                        rsi_lows[i] = True
-        
-        # 在滑动窗口中查找背离
-        for i in range(window, len(price)):
-            # 获取窗口数据
-            window_start = max(0, i - window + 1)
-            window_price = price[window_start:i+1]
-            window_rsi = rsi_values[window_start:i+1]
-            window_price_highs = price_highs[window_start:i+1]
-            window_price_lows = price_lows[window_start:i+1]
-            window_rsi_highs = rsi_highs[window_start:i+1]
-            window_rsi_lows = rsi_lows[window_start:i+1]
+        # 遍历时间序列
+        for i in range(divergence_window, len(data)):
+            # 检查价格是否创新低而RSI未创新低 -> 看涨背离
+            price_window = data[price_col].iloc[i-divergence_window:i+1]
+            rsi_window = result[rsi_col].iloc[i-divergence_window:i+1]
             
-            # 查找窗口内最近的两个价格高点
-            price_high_indices = np.where(window_price_highs)[0]
-            if len(price_high_indices) >= 2:
-                last_high_idx = price_high_indices[-1]
-                prev_high_idx = price_high_indices[-2]
+            if not pd.isna(price_window.iloc[-1]) and not pd.isna(rsi_window.iloc[-1]):
+                # 获取最近的最低点
+                min_price_idx = price_window.idxmin()
+                min_rsi_idx = rsi_window.idxmin()
                 
-                # 比较最近的两个价格高点和对应的RSI值
-                if window_price[last_high_idx] > window_price[prev_high_idx]:
-                    # 价格创新高
-                    last_high_rsi_idx = min(len(window_rsi) - 1, last_high_idx)
-                    prev_high_rsi_idx = min(len(window_rsi) - 1, prev_high_idx)
+                # 如果最低价是最新的，但RSI不是
+                if min_price_idx == price_window.index[-1] and min_rsi_idx != rsi_window.index[-1]:
+                    # 计算RSI低点之间的差异
+                    rsi_current = rsi_window.iloc[-1]
+                    rsi_prev_min = rsi_window.min()
                     
-                    if not np.isnan(window_rsi[last_high_rsi_idx]) and not np.isnan(window_rsi[prev_high_rsi_idx]):
-                        if window_rsi[last_high_rsi_idx] < window_rsi[prev_high_rsi_idx]:
-                            # 价格创新高但RSI未创新高 -> 看跌背离
-                            result.loc[result.index[i], 'bearish_divergence'] = True
-                            
-                            # 计算背离强度
-                            price_change = (window_price[last_high_idx] - window_price[prev_high_idx]) / window_price[prev_high_idx]
-                            rsi_change = (window_rsi[last_high_rsi_idx] - window_rsi[prev_high_rsi_idx]) / window_rsi[prev_high_rsi_idx]
-                            
-                            # 背离强度：价格变化与RSI变化的差异
-                            strength = abs(price_change - rsi_change)
-                            result.loc[result.index[i], 'divergence_strength'] = strength
-            
-            # 查找窗口内最近的两个价格低点
-            price_low_indices = np.where(window_price_lows)[0]
-            if len(price_low_indices) >= 2:
-                last_low_idx = price_low_indices[-1]
-                prev_low_idx = price_low_indices[-2]
+                    # 如果当前RSI高于先前的最低点一定比例，确认看涨背离
+                    if rsi_current > rsi_prev_min * (1 + divergence_threshold):
+                        result.loc[price_window.index[-1], 'bullish_divergence'] = True
                 
-                # 比较最近的两个价格低点和对应的RSI值
-                if window_price[last_low_idx] < window_price[prev_low_idx]:
-                    # 价格创新低
-                    last_low_rsi_idx = min(len(window_rsi) - 1, last_low_idx)
-                    prev_low_rsi_idx = min(len(window_rsi) - 1, prev_low_idx)
+                # 获取最近的最高点
+                max_price_idx = price_window.idxmax()
+                max_rsi_idx = rsi_window.idxmax()
+                
+                # 如果最高价是最新的，但RSI不是
+                if max_price_idx == price_window.index[-1] and max_rsi_idx != rsi_window.index[-1]:
+                    # 计算RSI高点之间的差异
+                    rsi_current = rsi_window.iloc[-1]
+                    rsi_prev_max = rsi_window.max()
                     
-                    if not np.isnan(window_rsi[last_low_rsi_idx]) and not np.isnan(window_rsi[prev_low_rsi_idx]):
-                        if window_rsi[last_low_rsi_idx] > window_rsi[prev_low_rsi_idx]:
-                            # 价格创新低但RSI未创新低 -> 看涨背离
-                            result.loc[result.index[i], 'bullish_divergence'] = True
-                            
-                            # 计算背离强度
-                            price_change = (window_price[last_low_idx] - window_price[prev_low_idx]) / window_price[prev_low_idx]
-                            rsi_change = (window_rsi[last_low_rsi_idx] - window_rsi[prev_low_rsi_idx]) / window_rsi[prev_low_rsi_idx]
-                            
-                            # 背离强度：价格变化与RSI变化的差异
-                            strength = abs(price_change - rsi_change)
-                            result.loc[result.index[i], 'divergence_strength'] = strength
-        
-        # 过滤掉弱背离信号
-        for col in ['bullish_divergence', 'bearish_divergence']:
-            mask = result[col] & (result['divergence_strength'] < threshold)
-            result.loc[mask, col] = False
+                    # 如果当前RSI低于先前的最高点一定比例，确认看跌背离
+                    if rsi_current < rsi_prev_max * (1 - divergence_threshold):
+                        result.loc[price_window.index[-1], 'bearish_divergence'] = True
         
         return result
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算增强版RSI指标的原始评分
+        
+        Args:
+            data: 输入数据，包含价格数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列，0-100
+        """
+        # 计算指标
+        if not self.has_result():
+            result = self.calculate(data, **kwargs)
+        else:
+            result = self._result.copy()
+            
+        # 初始化评分为基础分50分（中性）
+        score = pd.Series(50, index=data.index)
+        
+        # 获取RSI参数
+        params = self.parameters
+        overbought = params.get('overbought_threshold', self.OVERBOUGHT_THRESHOLD)
+        oversold = params.get('oversold_threshold', self.OVERSOLD_THRESHOLD)
+        
+        # 确定使用哪个RSI列进行评分
+        if 'RSI_main' in result.columns:
+            rsi_col = 'RSI_main'
+        else:
+            # 选择周期最接近14的RSI列（标准RSI周期）
+            rsi_cols = [col for col in result.columns if col.startswith('RSI') and not '_' in col]
+            if not rsi_cols:
+                return score
+                
+            # 找到最接近14的周期
+            periods = [int(col.replace('RSI', '')) for col in rsi_cols]
+            closest_period = min(periods, key=lambda x: abs(x - 14))
+            rsi_col = f'RSI{closest_period}'
+        
+        # 获取RSI值
+        rsi_values = result[rsi_col]
+        
+        # 基于RSI值计算评分
+        # RSI接近30以下，看涨评分
+        score = 50 + (50 - rsi_values)  # RSI=0 -> 评分=100, RSI=50 -> 评分=50, RSI=100 -> 评分=0
+        
+        # 额外的信号加成
+        
+        # 背离加分
+        if 'bullish_divergence' in result.columns:
+            score[result['bullish_divergence']] += 15
+        
+        if 'bearish_divergence' in result.columns:
+            score[result['bearish_divergence']] -= 15
+        
+        # 多周期协同加分
+        if 'RSI_consensus' in result.columns:
+            score[result['RSI_consensus'] == 1] += 10
+            score[result['RSI_consensus'] == -1] -= 10
+        
+        # 确保评分在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
     
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """

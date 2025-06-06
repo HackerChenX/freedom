@@ -190,6 +190,69 @@ class RSIMA(BaseIndicator):
                 df_copy.iloc[i, df_copy.columns.get_loc('rsima_sell_signal')] = 1
         
         return df_copy
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算RSIMA指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据，包含RSIMA指标
+            **kwargs: 额外参数
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            result = self.calculate(data)
+        else:
+            result = self._result
+            
+        # 初始化评分，默认为50分（中性）
+        score = pd.Series(50.0, index=data.index)
+        
+        # 检查结果是否有效
+        if result.empty or 'rsi' not in result.columns:
+            return score
+            
+        # 1. 基于RSI值本身的评分 (0-40分)
+        # RSI > 70 看涨，RSI < 30 看跌
+        rsi_values = result['rsi']
+        rsi_score = 40 * (rsi_values - 30) / 40  # 将30-70的RSI映射到0-40分
+        rsi_score = rsi_score.clip(0, 40)  # 限制在0-40分范围内
+        
+        # 2. 基于RSI均线系统的评分 (0-40分)
+        ma_score = pd.Series(20.0, index=data.index)  # 默认为中性值
+        
+        available_periods = getattr(self, '_available_periods', [])
+        if len(available_periods) >= 2:
+            # 按周期排序
+            periods = sorted(available_periods)
+            short_period = periods[0]
+            long_period = periods[-1]
+            
+            # 短期均线高于长期均线，看涨
+            short_ma = result[f'rsi_ma{short_period}']
+            long_ma = result[f'rsi_ma{long_period}']
+            
+            # 计算短期均线与长期均线的差距，映射到0-40的分数
+            ma_diff = short_ma - long_ma
+            max_diff = 10  # 假设最大差距为10个点
+            ma_score = 20 + (ma_diff / max_diff * 20)
+            ma_score = ma_score.clip(0, 40)  # 限制在0-40分范围内
+        
+        # 3. 基于买卖信号的评分 (0-20分)
+        signal_score = pd.Series(10.0, index=data.index)  # 默认为中性值
+        
+        if 'rsima_buy_signal' in result.columns and 'rsima_sell_signal' in result.columns:
+            # 买入信号加分，卖出信号减分
+            signal_score = 10 + result['rsima_buy_signal'] * 10 - result['rsima_sell_signal'] * 10
+        
+        # 综合评分 (0-100分)
+        final_score = rsi_score + ma_score + signal_score
+        final_score = final_score.clip(0, 100)  # 确保最终分数在0-100范围内
+        
+        return final_score
         
     def plot(self, df: pd.DataFrame, ax=None, **kwargs):
         """

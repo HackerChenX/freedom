@@ -9,14 +9,10 @@ from typing import Dict, Any, Optional, Type
 from indicators.base_indicator import BaseIndicator
 from indicators.enhanced_macd import EnhancedMACD
 from indicators.enhanced_rsi import EnhancedRSI
-from indicators.oscillator.enhanced_kdj import EnhancedKDJ
-from indicators.trend.enhanced_boll import EnhancedBOLL
-from indicators.trend.enhanced_ma import EnhancedMA
-from indicators.trend.enhanced_dmi import EnhancedDMI
-from indicators.volume.enhanced_obv import EnhancedOBV
+from indicators.trend.enhanced_macd import EnhancedMACD as TrendEnhancedMACD
 from indicators.trend.enhanced_cci import EnhancedCCI
-from indicators.oscillator.enhanced_wr import EnhancedWR
 from indicators.trend.enhanced_trix import EnhancedTRIX
+from indicators.psy import PSY
 
 
 class EnhancedIndicatorFactory:
@@ -28,15 +24,11 @@ class EnhancedIndicatorFactory:
     
     _indicator_classes: Dict[str, Type[BaseIndicator]] = {
         "MACD": EnhancedMACD,
+        "TREND_MACD": TrendEnhancedMACD,
         "RSI": EnhancedRSI,
-        "KDJ": EnhancedKDJ,
-        "BOLL": EnhancedBOLL,
-        "MA": EnhancedMA,
-        "DMI": EnhancedDMI,
-        "OBV": EnhancedOBV,
         "CCI": EnhancedCCI,
-        "WR": EnhancedWR,
         "TRIX": EnhancedTRIX,
+        "PSY": PSY,  # 使用合并后的PSY类
     }
     
     @classmethod
@@ -53,6 +45,9 @@ class EnhancedIndicatorFactory:
         """
         indicator_class = cls._indicator_classes.get(name.upper())
         if indicator_class:
+            # 对于PSY指标，自动添加enhanced=True参数
+            if name.upper() == "PSY":
+                kwargs["enhanced"] = True
             return indicator_class(**kwargs)
         return None
     

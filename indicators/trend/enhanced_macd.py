@@ -124,6 +124,291 @@ class EnhancedMACD(MACD):
         
         return result
     
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算增强型MACD指标原始评分 (0-100分)
+        
+        Args:
+            data: 输入数据，包含OHLC和成交量数据
+            **kwargs: 额外参数
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            result = self.calculate(data)
+        else:
+            result = self._result
+        
+        # 初始化评分，默认为50分（中性）
+        score = pd.Series(50.0, index=data.index)
+        
+        # 检查结果是否有效
+        if result.empty or 'macd' not in result.columns:
+            return score
+        
+        # 1. 基础MACD指标评分 (0-30分)
+        macd_score = self._calculate_basic_macd_score(result)
+        
+        # 2. 多周期MACD一致性评分 (0-20分)
+        multi_period_score = self._calculate_multi_period_consistency_score(result)
+        
+        # 3. 趋势强度评分 (0-20分)
+        trend_strength_score = self._calculate_trend_strength_score(result)
+        
+        # 4. 柱状体变化率评分 (0-15分)
+        hist_change_score = self._calculate_hist_change_score(result)
+        
+        # 5. 交叉角度和偏离度评分 (0-15分)
+        cross_angle_score = self._calculate_cross_angle_score(result)
+        
+        # 综合评分
+        final_score = macd_score + multi_period_score + trend_strength_score + hist_change_score + cross_angle_score
+        
+        # 确保评分在0-100范围内
+        final_score = final_score.clip(0, 100)
+        
+        return final_score
+    
+    def _calculate_basic_macd_score(self, result: pd.DataFrame) -> pd.Series:
+        """
+        计算基础MACD指标评分
+        
+        Args:
+            result: 包含MACD指标的DataFrame
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-30
+        """
+        # 初始化评分
+        score = pd.Series(15.0, index=result.index)  # 默认中性分数
+        
+        # MACD值与信号线的相对位置
+        macd = result['macd']
+        signal = result['macd_signal']
+        hist = result['macd_hist']
+        
+        # MACD > 信号线，看涨 (15-30分)
+        # MACD < 信号线，看跌 (0-15分)
+        for i in range(len(score)):
+            if hist.iloc[i] > 0:  # MACD > 信号线
+                # MACD和信号线都 > 0，强烈看涨
+                if macd.iloc[i] > 0 and signal.iloc[i] > 0:
+                    score.iloc[i] = 25 + min(5, hist.iloc[i] * 50)  # 最高30分
+                # MACD和信号线都 < 0，但MACD > 信号线，弱看涨
+                elif macd.iloc[i] < 0 and signal.iloc[i] < 0:
+                    score.iloc[i] = 15 + min(5, hist.iloc[i] * 50)  # 最高20分
+                # 其他情况，中等看涨
+                else:
+                    score.iloc[i] = 20 + min(5, hist.iloc[i] * 50)  # 最高25分
+            else:  # MACD < 信号线
+                # MACD和信号线都 < 0，强烈看跌
+                if macd.iloc[i] < 0 and signal.iloc[i] < 0:
+                    score.iloc[i] = 5 - min(5, -hist.iloc[i] * 50)  # 最低0分
+                # MACD和信号线都 > 0，但MACD < 信号线，弱看跌
+                elif macd.iloc[i] > 0 and signal.iloc[i] > 0:
+                    score.iloc[i] = 15 - min(5, -hist.iloc[i] * 50)  # 最低10分
+                # 其他情况，中等看跌
+                else:
+                    score.iloc[i] = 10 - min(5, -hist.iloc[i] * 50)  # 最低5分
+        
+        # 检测金叉和死叉
+        for i in range(1, len(score)):
+            # 金叉：MACD从下方穿过信号线
+            if macd.iloc[i-1] < signal.iloc[i-1] and macd.iloc[i] >= signal.iloc[i]:
+                score.iloc[i] = min(30, score.iloc[i] + 10)  # 加分，但不超过30分
+            # 死叉：MACD从上方穿过信号线
+            elif macd.iloc[i-1] > signal.iloc[i-1] and macd.iloc[i] <= signal.iloc[i]:
+                score.iloc[i] = max(0, score.iloc[i] - 10)  # 减分，但不低于0分
+        
+        return score
+    
+    def _calculate_multi_period_consistency_score(self, result: pd.DataFrame) -> pd.Series:
+        """
+        计算多周期MACD一致性评分
+        
+        Args:
+            result: 包含多周期MACD指标的DataFrame
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-20
+        """
+        # 初始化评分
+        score = pd.Series(10.0, index=result.index)  # 默认中性分数
+        
+        # 获取所有周期的MACD柱状图列
+        hist_columns = [col for col in result.columns if col.startswith('macd_hist_') or col == 'macd_hist']
+        
+        if len(hist_columns) <= 1:
+            return score  # 如果没有多周期数据，返回默认分数
+        
+        # 计算各周期MACD柱状图的一致性
+        for i in range(len(score)):
+            positive_count = 0
+            negative_count = 0
+            
+            # 统计各周期MACD柱状图的正负值
+            for col in hist_columns:
+                if result[col].iloc[i] > 0:
+                    positive_count += 1
+                elif result[col].iloc[i] < 0:
+                    negative_count += 1
+            
+            total_periods = len(hist_columns)
+            
+            # 计算一致性比例
+            if positive_count > negative_count:
+                consistency_ratio = positive_count / total_periods
+                # 看涨一致性评分 (10-20分)
+                score.iloc[i] = 10 + consistency_ratio * 10
+            elif negative_count > positive_count:
+                consistency_ratio = negative_count / total_periods
+                # 看跌一致性评分 (0-10分)
+                score.iloc[i] = 10 - consistency_ratio * 10
+            # 如果正负相等，保持中性评分10分
+        
+        return score
+    
+    def _calculate_trend_strength_score(self, result: pd.DataFrame) -> pd.Series:
+        """
+        计算趋势强度评分
+        
+        Args:
+            result: 包含趋势强度指标的DataFrame
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-20
+        """
+        # 初始化评分
+        score = pd.Series(10.0, index=result.index)  # 默认中性分数
+        
+        if 'trend_strength' not in result.columns or 'macd_hist' not in result.columns:
+            return score
+        
+        trend_strength = result['trend_strength']
+        hist = result['macd_hist']
+        
+        # 基于趋势强度和柱状图方向评分
+        for i in range(len(score)):
+            # 归一化趋势强度到0-10
+            normalized_strength = min(1.0, trend_strength.iloc[i] / 0.5) * 10
+            
+            if hist.iloc[i] > 0:  # 柱状图为正，上升趋势
+                # 趋势强度评分 (10-20分)
+                score.iloc[i] = 10 + normalized_strength
+            else:  # 柱状图为负，下降趋势
+                # 趋势强度评分 (0-10分)
+                score.iloc[i] = 10 - normalized_strength
+        
+        return score
+    
+    def _calculate_hist_change_score(self, result: pd.DataFrame) -> pd.Series:
+        """
+        计算柱状体变化率评分
+        
+        Args:
+            result: 包含柱状体变化率的DataFrame
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-15
+        """
+        # 初始化评分
+        score = pd.Series(7.5, index=result.index)  # 默认中性分数
+        
+        if 'hist_change_rate' not in result.columns or 'macd_hist' not in result.columns:
+            return score
+        
+        change_rate = result['hist_change_rate']
+        hist = result['macd_hist']
+        
+        # 柱状体变化率评分
+        for i in range(len(score)):
+            # 归一化变化率到0-7.5
+            normalized_change = min(1.0, abs(change_rate.iloc[i]) / 0.2) * 7.5
+            
+            if hist.iloc[i] > 0 and change_rate.iloc[i] > 0:  # 正柱状体且增长
+                # 强烈看涨 (7.5-15分)
+                score.iloc[i] = 7.5 + normalized_change
+            elif hist.iloc[i] < 0 and change_rate.iloc[i] < 0:  # 负柱状体且减小
+                # 强烈看跌 (0-7.5分)
+                score.iloc[i] = 7.5 - normalized_change
+            elif hist.iloc[i] > 0 and change_rate.iloc[i] < 0:  # 正柱状体但减小
+                # 弱看涨 (7.5-11.25分)
+                score.iloc[i] = 7.5 + normalized_change / 2
+            elif hist.iloc[i] < 0 and change_rate.iloc[i] > 0:  # 负柱状体但增长
+                # 弱看跌 (3.75-7.5分)
+                score.iloc[i] = 7.5 - normalized_change / 2
+        
+        return score
+    
+    def _calculate_cross_angle_score(self, result: pd.DataFrame) -> pd.Series:
+        """
+        计算交叉角度和偏离度评分
+        
+        Args:
+            result: 包含交叉角度和偏离度的DataFrame
+            
+        Returns:
+            pd.Series: 评分序列，取值范围0-15
+        """
+        # 初始化评分
+        score = pd.Series(7.5, index=result.index)  # 默认中性分数
+        
+        required_columns = ['zero_cross_angle', 'signal_cross_angle', 'macd_deviation', 'macd_hist']
+        if not all(col in result.columns for col in required_columns):
+            return score
+        
+        zero_cross_angle = result['zero_cross_angle']
+        signal_cross_angle = result['signal_cross_angle']
+        macd_deviation = result['macd_deviation']
+        hist = result['macd_hist']
+        
+        # 交叉角度和偏离度评分
+        for i in range(len(score)):
+            # 角度分数 (0-7.5分)
+            normalized_zero_angle = min(1.0, abs(zero_cross_angle.iloc[i]) / 45) * 3.75
+            normalized_signal_angle = min(1.0, abs(signal_cross_angle.iloc[i]) / 45) * 3.75
+            
+            # 偏离度分数 (0-7.5分)
+            normalized_deviation = min(1.0, abs(macd_deviation.iloc[i]) / 0.5) * 7.5
+            
+            # 根据柱状体方向和各指标方向计算分数
+            if hist.iloc[i] > 0:  # 柱状体为正，看涨
+                # 计算加权平均分数 (7.5-15分)
+                angle_score = 7.5
+                if zero_cross_angle.iloc[i] > 0:
+                    angle_score += normalized_zero_angle
+                if signal_cross_angle.iloc[i] > 0:
+                    angle_score += normalized_signal_angle
+                
+                deviation_score = 7.5
+                if macd_deviation.iloc[i] > 0:
+                    deviation_score += normalized_deviation
+                else:
+                    deviation_score -= normalized_deviation
+                
+                # 综合分数
+                score.iloc[i] = (angle_score + deviation_score) / 2
+            else:  # 柱状体为负，看跌
+                # 计算加权平均分数 (0-7.5分)
+                angle_score = 7.5
+                if zero_cross_angle.iloc[i] < 0:
+                    angle_score -= normalized_zero_angle
+                if signal_cross_angle.iloc[i] < 0:
+                    angle_score -= normalized_signal_angle
+                
+                deviation_score = 7.5
+                if macd_deviation.iloc[i] < 0:
+                    deviation_score -= normalized_deviation
+                else:
+                    deviation_score += normalized_deviation
+                
+                # 综合分数
+                score.iloc[i] = (angle_score + deviation_score) / 2
+        
+        return score
+    
     def _calculate_macd(self, data: pd.DataFrame, fast_period: int, slow_period: int, signal_period: int) -> None:
         """
         计算MACD指标
