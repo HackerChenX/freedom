@@ -42,6 +42,8 @@ class EnhancedRSI(BaseIndicator):
             price_col: 价格列名
         """
         super().__init__(name, description)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.indicator_type = name.upper()
         
         # 设置参数
         self._parameters = {
@@ -93,7 +95,7 @@ class EnhancedRSI(BaseIndicator):
         periods = params.get('periods', [6, 14, 21])
         smooth_period = params.get('smooth_period', 3)
         
-        # 确保数据包含价格列
+        # 验证必需的列是否存在
         self.ensure_columns(data, [price_col])
         
         # 如果periods是单个值，转换为列表
@@ -101,7 +103,7 @@ class EnhancedRSI(BaseIndicator):
             periods = [periods]
         
         # 复制输入数据
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算各周期的RSI
         for period in periods:

@@ -19,6 +19,7 @@ class EnhancedDMI(BaseIndicator):
     """
 
     def __init__(self, period: int = 14, adx_period: int = 14, adaptive: bool = True):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化增强型DMI指标
         

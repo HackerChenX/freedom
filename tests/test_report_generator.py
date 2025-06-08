@@ -5,20 +5,16 @@
 """
 
 import os
-import sys
 import json
 import time
-import datetime
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 import unittest
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import coverage
 from xml.etree import ElementTree as ET
-
-# 添加项目根目录到路径
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(root_dir)
 
 from utils.path_utils import get_result_dir
 from utils.logger import get_logger, setup_logger
@@ -39,7 +35,7 @@ class TestReportGenerator:
         os.makedirs(self.report_dir, exist_ok=True)
         
         # 测试运行时间
-        self.run_timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.run_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         # 覆盖率对象
         self.cov = coverage.Coverage(
@@ -207,7 +203,7 @@ class TestReportGenerator:
         """
         # 创建报告数据
         summary = {
-            'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'test_results': {
                 'total': test_results.testsRun,
                 'failures': len(test_results.failures),

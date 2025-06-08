@@ -33,6 +33,7 @@ class MA(BaseIndicator):
     MA_TYPE_CHIP_WEIGHTED = 'chip_weighted'  # 筹码加权移动平均
     
     def __init__(self, name: str = "MA", description: str = "移动平均线指标", periods: List[int] = None):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化移动平均线指标
         
@@ -107,7 +108,7 @@ class MA(BaseIndicator):
             periods = [periods]
         
         # 初始化结果DataFrame
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 处理不同类型的MA计算
         if ma_type == self.MA_TYPE_ADAPTIVE or adaptive:

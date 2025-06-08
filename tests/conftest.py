@@ -5,18 +5,17 @@
 """
 
 import os
-import sys
 import pytest
 import tempfile
 import shutil
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(root_dir)
 
 from utils.logger import setup_logger
 from utils.path_utils import get_config_dir
+from db.clickhouse_db import ClickhouseDB
 
 
 # 设置测试日志级别
@@ -56,4 +55,12 @@ def test_result_dir(temp_test_dir):
     """创建测试结果目录"""
     result_dir = os.path.join(temp_test_dir, "result")
     os.makedirs(result_dir, exist_ok=True)
-    yield result_dir 
+    yield result_dir
+
+
+@pytest.fixture(scope="session")
+def db_connection():
+    # 在这里添加 fixture 的实现
+    mock_db = MagicMock(spec=ClickhouseDB)
+    mock_db.get_conn.return_value = MagicMock()
+    return mock_db 

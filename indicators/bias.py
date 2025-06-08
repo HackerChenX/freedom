@@ -28,18 +28,23 @@ class BIAS(BaseIndicator):
     描述：(收盘价-MA)/MA×100%
     """
     
-    def __init__(self, period: int = 14, periods: List[int] = None):
+    def __init__(self, name: str = "BIAS", description: str = "均线多空指标",
+                 period: int = 14, periods: List[int] = None):
         """
         初始化均线多空指标(BIAS)指标
         
         Args:
+            name: 指标名称
+            description: 指标描述
             period: 计算周期，默认为14
             periods: 多个计算周期，如果提供，将计算多个周期的BIAS
         """
-        super().__init__()
-        self.period = period
+        super().__init__(name, description)
         self.periods = periods if periods is not None else [period]
-        self.name = "BIAS"
+        self.indicator_type = "BIAS"
+        
+        # 定义必需的列
+        self.REQUIRED_COLUMNS = ['close', 'high', 'low']
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -77,7 +82,8 @@ class BIAS(BaseIndicator):
         required_columns = ['close', 'high', 'low']
         self._validate_dataframe(df, required_columns)
         
-        df_copy = df.copy()
+        self.data = df.copy()
+        df_copy = self.data
         
         # 计算不同周期的BIAS
         for p in self.periods:
@@ -87,21 +93,13 @@ class BIAS(BaseIndicator):
             # 计算BIAS
             df_copy[f'BIAS{p}'] = (df_copy['close'] - ma) / ma * 100
         
+        # 为了兼容性，将主周期的BIAS值存储在名为'bias'的列中
+        if self.periods:
+            main_period = self.periods[0]
+            df_copy['bias'] = df_copy[f'BIAS{main_period}']
+        
         # 存储结果
         self._result = df_copy[[f'BIAS{p}' for p in self.periods]]
-        
-        # 如果有多个周期，自动进行多周期协同评估
-        if len(self.periods) > 1:
-            multi_period_result = self.evaluate_multi_period_bias(df_copy)
-            # 合并多周期评估结果到返回数据中
-            for col in multi_period_result.columns:
-                df_copy[f'BIAS_MP_{col}'] = multi_period_result[col]
-        
-        # 自动进行回归速率分析
-        regression_result = self.analyze_regression_rate(df_copy)
-        # 合并回归分析结果到返回数据中
-        for col in regression_result.columns:
-            df_copy[f'BIAS_REG_{col}'] = regression_result[col]
         
         return df_copy
         
@@ -347,7 +345,7 @@ class BIAS(BaseIndicator):
         patterns.extend(regression_patterns)
         
         # 3. 检测极值形态
-        extreme_patterns = self._detect_bias_extreme_patterns()
+        extreme_patterns = self._detect_bias_extreme_patterns(data)
         patterns.extend(extreme_patterns)
         
         # 4. 检测趋势形态
@@ -1384,18 +1382,18 @@ class BIAS(BaseIndicator):
 
     def evaluate_multi_period_bias(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        分析不同周期BIAS的协同关系，提供高级多周期协同评估
+        评估BIAS指标的多周期协同性
         
         Args:
-            data: 输入数据
+            data: 输入数据 (当前未使用，依赖于self._result)
             
         Returns:
             pd.DataFrame: 多周期协同评估结果
         """
-        # 确保已计算BIAS
-        if not self.has_result():
-            self.calculate(data)
-        
+        if self._result is None:
+            logger.warning("evaluate_multi_period_bias called before calculate, _result is None.")
+            return pd.DataFrame()
+
         if len(self.periods) <= 1:
             return pd.DataFrame(index=self._result.index)
         

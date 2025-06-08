@@ -22,6 +22,7 @@ class ZXMAmplitudeElasticity(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM弹性-振幅指标"""
         super().__init__(name="ZXMAmplitudeElasticity", description="ZXM弹性-振幅指标，判断近期是否有较大振幅")
     
@@ -43,7 +44,7 @@ class ZXMAmplitudeElasticity(BaseIndicator):
         self.ensure_columns(data, ["high", "low"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算日振幅
         amplitude = 100 * (data["high"] - data["low"]) / data["low"]
@@ -104,6 +105,7 @@ class ZXMRiseElasticity(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM弹性-涨幅指标"""
         super().__init__(name="ZXMRiseElasticity", description="ZXM弹性-涨幅指标，判断近期是否有较大涨幅")
     
@@ -125,7 +127,7 @@ class ZXMRiseElasticity(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算日涨幅
         rise_ratio = data["close"] / data["close"].shift(1)
@@ -186,6 +188,7 @@ class ElasticityIndicator(BaseIndicator):
     """
     
     def __init__(self, period: int = 20):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ZXM弹性指标
         
@@ -209,7 +212,7 @@ class ElasticityIndicator(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算价格变动幅度
         price_change = data["close"].pct_change()
@@ -522,6 +525,7 @@ class BounceDetector(BaseIndicator):
     """
     
     def __init__(self, short_period: int = 5, long_period: int = 20):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ZXM反弹检测器
         
@@ -547,7 +551,7 @@ class BounceDetector(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算基础价格指标
         # 1. 计算短期和长期最低价

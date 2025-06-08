@@ -47,6 +47,7 @@ class ElliottWave(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化艾略特波浪理论分析指标"""
         super().__init__(name="ElliottWave", description="艾略特波浪理论分析指标，识别和分析价格波浪结构")
     
@@ -67,7 +68,7 @@ class ElliottWave(BaseIndicator):
         self.ensure_columns(data, ["high", "low", "close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 识别摆动点
         swing_points = self._identify_swing_points(data, min_wave_height)

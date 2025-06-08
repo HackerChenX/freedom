@@ -5,20 +5,15 @@
 """
 
 import unittest
-import os
-import sys
 import time
-from datetime import datetime
+import cProfile
+import pstats
 from unittest.mock import patch, MagicMock
 
 import pandas as pd
 import numpy as np
 
-# 添加项目根目录到路径
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(root_dir)
-
-from db.data_manager import DataManager
+from data.data_manager import DataManager
 from enums.period import Period
 from utils.logger import get_logger, setup_logger
 
@@ -26,7 +21,7 @@ logger = get_logger(__name__)
 
 
 class TestDataManagerPerformance(unittest.TestCase):
-    """数据管理器性能测试类"""
+    """测试数据管理器的性能"""
     
     @classmethod
     def setUpClass(cls):

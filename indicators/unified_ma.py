@@ -51,6 +51,7 @@ class UnifiedMA(BaseIndicator):
             ma_type: 移动平均线类型，可选值为simple, ema, wma, ama, hma
         """
         super().__init__(name, description)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
         # 设置默认参数
         self._parameters = {
@@ -117,7 +118,7 @@ class UnifiedMA(BaseIndicator):
             periods = [periods]
         
         # 计算各周期的移动平均线
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         for period in periods:
             # 根据MA类型计算

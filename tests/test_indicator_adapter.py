@@ -9,17 +9,13 @@ import unittest
 import pandas as pd
 import numpy as np
 import os
-import sys
 
-# 添加项目根目录到Python路径
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(root_dir)
-
-from indicators.adapter import (IndicatorAdapter, register_indicator, 
-                             get_indicator, calculate_indicator, list_all_indicators)
+from indicators.adapter import (IndicatorAdapter, register_indicator,
+                            get_indicator, calculate_indicator, list_all_indicators)
 from indicators.composite import TechnicalComposite, technical_composite
 from indicators.macd import MACD
 from indicators.rsi import RSI
+from indicators.ma import MA
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

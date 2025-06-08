@@ -36,6 +36,7 @@ class VShapedReversal(BaseIndicator):
             rebound_threshold: 反弹阈值，默认为5%
         """
         super().__init__(name="VShapedReversal", description="V形反转指标，识别急速下跌后快速反弹的形态")
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.decline_period = decline_period
         self.rebound_period = rebound_period
         self.decline_threshold = decline_threshold
@@ -67,7 +68,7 @@ class VShapedReversal(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算各周期的价格变化率
         result["decline_rate"] = data["close"].pct_change(periods=self.decline_period)

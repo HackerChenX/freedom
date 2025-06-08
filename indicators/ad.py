@@ -3,10 +3,11 @@
 
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Any
 import logging
 from .base_indicator import BaseIndicator
 from utils.signal_utils import crossover, crossunder
+from enums.signal_strength import SignalStrength
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +21,11 @@ class AD(BaseIndicator):
     该指标常用于判断价格趋势的强弱，特别是通过量价背离来预测价格可能的反转。
     """
     
-    def __init__(self):
+    def __init__(self, name: str = "AD", description: str = "累积/派发线指标"):
         """初始化AD指标"""
-        super().__init__()
+        super().__init__(name, description)
+        self.indicator_type = "AD"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self._result = None
         
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -63,7 +66,7 @@ class AD(BaseIndicator):
         self._result = df_copy
         return df_copy
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取AD指标的所有形态信息
         
@@ -72,7 +75,7 @@ class AD(BaseIndicator):
             **kwargs: 其他参数
             
         Returns:
-            List[Dict[str, Any]]: 包含形态信息的字典列表
+            pd.DataFrame: 包含形态信息的DataFrame
         """
         if not self.has_result():
             self.calculate(data)
@@ -186,7 +189,7 @@ class AD(BaseIndicator):
                 }
                 result.append(pattern_data)
         
-        return result
+        return pd.DataFrame(result)
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
         """

@@ -230,6 +230,45 @@ class PatternRecognitionAnalyzer:
         self.periods.append(period)
         logger.info(f"已添加周期 {period} 到分析器")
     
+    def identify_patterns(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        """
+        使用 TA-Lib 识别所有支持的K线形态
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, pd.DataFrame]: 包含所有已识别形态的字典，
+                                     键是形态名称，值是包含形态信息的DataFrame
+        """
+        if not all(col in data.columns for col in ['open', 'high', 'low', 'close']):
+            logger.error("输入数据缺少OHLC列，无法进行形态识别")
+            return {}
+
+        all_patterns = {}
+        # 确保列是小写的，以匹配talib的要求
+        df = data.rename(columns=str.lower)
+
+        for pattern_name, pattern_func in self.talib_patterns.items():
+            try:
+                # 调用TA-Lib函数进行形态识别
+                result = pattern_func(df['open'], df['high'], df['low'], df['close'])
+                
+                # 找出形态出现的位置
+                pattern_dates = result[result != 0].index
+                
+                if not pattern_dates.empty:
+                    # 获取形态出现日期的原始数据行
+                    pattern_data = data.loc[pattern_dates].copy()
+                    pattern_data['pattern_name'] = pattern_name
+                    pattern_data['strength'] = result.loc[pattern_dates]
+                    all_patterns[pattern_name] = pattern_data
+
+            except Exception as e:
+                logger.error(f"识别形态 {pattern_name} 时出错: {e}")
+        
+        return all_patterns
+    
     def get_indicator_instance(self, indicator_type: str) -> Optional[BaseIndicator]:
         """
         获取指标实例

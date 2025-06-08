@@ -27,6 +27,7 @@ class SelectionModel(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM选股模型"""
         super().__init__(name="SelectionModel", description="ZXM选股模型，整合多个指标的选股系统")
         
@@ -53,7 +54,7 @@ class SelectionModel(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         try:
             # 1. 计算趋势指标

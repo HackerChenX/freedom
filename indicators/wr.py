@@ -28,6 +28,7 @@ class WR(BaseIndicator):
     """
     
     def __init__(self, period: int = 14):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化威廉指标(WR)指标
         

@@ -76,6 +76,7 @@ class GannTools(BaseIndicator):
     }
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化江恩理论工具指标"""
         super().__init__(name="GannTools", description="江恩理论工具指标，计算角度线和时间周期")
     
@@ -109,7 +110,7 @@ class GannTools(BaseIndicator):
             price_unit = pivot_price * 0.001
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算角度线
         result = self._calculate_angle_lines(data, result, pivot_idx, pivot_price, price_unit, time_unit)

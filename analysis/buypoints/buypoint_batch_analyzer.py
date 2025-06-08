@@ -60,7 +60,7 @@ class BuyPointBatchAnalyzer:
             # 确保日期格式正确
             try:
                 # 尝试转换日期格式
-                buypoints_df['buypoint_date'] = pd.to_datetime(buypoints_df['buypoint_date'], errors='coerce')
+                buypoints_df['buypoint_date'] = pd.to_datetime(buypoints_df['buypoint_date'], format='%Y%m%d', errors='coerce')
                 
                 # 检查是否有无效日期（NaT）
                 invalid_dates = buypoints_df['buypoint_date'].isna()
@@ -181,53 +181,51 @@ class BuyPointBatchAnalyzer:
             if df is None or df.empty:
                 logger.warning("输入数据为空，无法准备数据")
                 # 创建空的DataFrame但包含所有需要的列
-                empty_df = pd.DataFrame(columns=required_columns)
-                return empty_df
+                return pd.DataFrame(columns=required_columns)
             
             # 检查必要的列是否存在
             missing_cols = [col for col in required_columns if col not in df.columns]
+            
+            result = df.copy()
+
             if missing_cols:
-                logger.warning(f"数据缺少所需的列: {missing_cols}")
+                logger.warning(f"数据 {list(df.columns)} 缺少所需的列: {missing_cols}")
                 
+                # 检查核心价格列是否完全缺失
+                price_cols = ['open', 'high', 'low', 'close']
+                if all(col not in result.columns for col in price_cols):
+                    logger.error("核心价格数据 (open, high, low, close) 完全缺失，无法继续分析")
+                    return pd.DataFrame(columns=required_columns)
+
                 # 为缺失的列创建默认值
-                result = df.copy()
                 for col in missing_cols:
-                    if col in ['open', 'high', 'low', 'close']:
-                        # 如果有close列，使用close值填充
-                        if 'close' in df.columns:
-                            result[col] = df['close']
-                        # 如果有其他价格列，使用它们
-                        elif 'open' in df.columns:
-                            result[col] = df['open']
-                        elif 'high' in df.columns:
-                            result[col] = df['high']
-                        elif 'low' in df.columns:
-                            result[col] = df['low']
+                    if col in price_cols:
+                        # 如果有其他价格列，使用它们填充
+                        existing_price_col = next((p for p in price_cols if p in result.columns), None)
+                        if existing_price_col:
+                            result[col] = result[existing_price_col]
                         else:
-                            # 没有价格列，使用0填充
-                            result[col] = 0
+                            result[col] = 0 # 理论上不会执行到这里
                     elif col == 'volume':
-                        # 成交量列使用0填充
                         result[col] = 0
                     else:
-                        # 其他列使用NaN填充
                         result[col] = np.nan
-                
-                # 填充NaN值
-                result = result.ffill()  # 向前填充
-                result = result.bfill()  # 向后填充
-                
-                return result
-            else:
-                # 所有必要的列都存在，只需处理NaN值
-                result = df.copy()
-                result = result.ffill()  # 向前填充
-                result = result.bfill()  # 向后填充
-                return result
+            
+            # 填充可能存在的NaN值
+            result = result.ffill().bfill()
+            
+            # 确保所有列都存在
+            final_missing = [col for col in required_columns if col not in result.columns]
+            if final_missing:
+                for col in final_missing:
+                    result[col] = 0
+            
+            return result[required_columns] # 确保返回的DataFrame包含所有必需的列并按正确顺序排列
+
         except Exception as e:
             logger.error(f"准备数据时出错: {e}")
-            # 返回原始数据
-            return df
+            # 返回包含所需列的空DataFrame
+            return pd.DataFrame(columns=required_columns)
     
     def analyze_batch_buypoints(self, 
                              buypoints_df: pd.DataFrame) -> List[Dict[str, Any]]:

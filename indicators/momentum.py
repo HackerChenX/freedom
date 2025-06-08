@@ -27,6 +27,7 @@ class Momentum(BaseIndicator):
     """
     
     def __init__(self, period: int = 10, signal_period: int = 6, calculation_method: str = "difference"):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化动量指标(Momentum)
         

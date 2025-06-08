@@ -10,6 +10,53 @@
 import numpy as np
 import pandas as pd
 from typing import List, Dict, Any, Optional, Union, Tuple
+from scipy.signal import find_peaks as scipy_find_peaks
+
+def find_peaks(series: Union[pd.Series, np.ndarray],
+               height: Optional[Union[float, np.ndarray]] = None,
+               threshold: Optional[Union[float, np.ndarray]] = None,
+               distance: Optional[int] = None,
+               prominence: Optional[Union[float, np.ndarray]] = None,
+               width: Optional[Union[float, np.ndarray]] = None,
+               wlen: Optional[int] = None,
+               rel_height: Optional[float] = 0.5) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    """
+    在序列中寻找峰值 (scipy.signal.find_peaks的封装)
+
+    Args:
+        series: 包含数据的一维序列
+        height: 峰值的最小高度
+        threshold: 峰值与其邻近样本之间的最小垂直距离
+        distance: 峰值之间的最小水平距离（样本数）
+        prominence: 峰值的最小凸起程度
+        width: 峰值的最小宽度
+        wlen: 用于计算峰值凸起度的窗口大小
+        rel_height: 用于计算峰值宽度的相对高度
+
+    Returns:
+        Tuple[np.ndarray, Dict[str, np.ndarray]]:
+            - 峰值索引数组
+            - 包含峰值属性的字典
+    """
+    if isinstance(series, pd.Series):
+        series = series.values
+
+    # 确保series是一维的
+    if series.ndim > 1:
+        raise ValueError("输入序列必须是一维的")
+
+    # 调用scipy的find_peaks函数
+    peaks, properties = scipy_find_peaks(
+        series,
+        height=height,
+        threshold=threshold,
+        distance=distance,
+        prominence=prominence,
+        width=width,
+        wlen=wlen,
+        rel_height=rel_height
+    )
+    return peaks, properties
 
 def detect_cross_over(series1: np.ndarray, series2: np.ndarray) -> List[int]:
     """

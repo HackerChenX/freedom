@@ -28,6 +28,7 @@ class DMI(BaseIndicator):
     """
     
     def __init__(self, period: int = 14, adx_period: int = 14):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化趋向指标(DMI)指标
         

@@ -33,6 +33,7 @@ class SentimentAnalysis(BaseIndicator):
     """
     
     def __init__(self, params: Dict[str, Any] = None):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化市场情绪分析
         

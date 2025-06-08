@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Union, Optional
 import logging
-from .base_indicator import BaseIndicator
+from typing import Dict, List
+
+import numpy as np
+import pandas as pd
+from indicators.indicator_registry import IndicatorEnum
+
+from enums.indicator_types import TrendType, CrossType
 from utils.signal_utils import crossover, crossunder
-from enums.trend_types import TrendType
-from enums.cross_types import CrossType
+from .base_indicator import BaseIndicator
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +32,16 @@ class CMO(BaseIndicator):
         overbought: 超买阈值，默认为40
     """
     
-    def __init__(self, period: int = 14, oversold: float = -40, overbought: float = 40):
+    def __init__(self, name: str = "CMO", description: str = "钱德动量摆动指标",
+                 period: int = 14, oversold: float = -40, overbought: float = 40):
         """初始化CMO指标"""
-        super().__init__()
+        super().__init__(name, description)
+        self.indicator_type = IndicatorEnum.CMO.name
         self.period = period
         self.oversold = oversold
         self.overbought = overbought
         self._result = None
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """

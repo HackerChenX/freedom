@@ -32,6 +32,7 @@ class CrossOver(BaseIndicator):
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.fast_line = fast_line
         self.slow_line = slow_line
         
@@ -210,6 +211,7 @@ class KDJCondition(BaseIndicator):
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.line = line.upper()
         self.operator = operator
         self.value = value
@@ -393,6 +395,7 @@ class MACDCondition(BaseIndicator):
     """
     
     def __init__(self, line: str = "MACD", operator: str = ">", value: float = 0, **kwargs):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化MACD条件指标
         
@@ -626,6 +629,7 @@ class MACondition(BaseIndicator):
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.ma_type = ma_type.upper()
         self.ma_period = ma_period
         self.operator = operator
@@ -902,6 +906,7 @@ class GenericCondition(BaseIndicator):
     """
     
     def __init__(self, condition: str = "", **kwargs):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化通用条件指标
         

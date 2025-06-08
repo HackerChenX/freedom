@@ -4,8 +4,11 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple, Union, Optional
+import logging
 
 from indicators.base_indicator import BaseIndicator
+
+logger = logging.getLogger(__name__)
 
 class ZXMMarketBreadth(BaseIndicator):
     """
@@ -15,11 +18,11 @@ class ZXMMarketBreadth(BaseIndicator):
     通过计算涨跌家数比例、主要指数相对强度等方式评估市场健康度。
     """
     
-    def __init__(self):
+    def __init__(self, name: str = "ZXMMarketBreadth", description: str = "ZXM市场宽度指标"):
         """初始化ZXM市场宽度指标"""
-        super().__init__()
-        self.name = "ZXM市场宽度指标"
-        self.description = "分析市场整体状况和板块轮动的综合指标"
+        super().__init__(name, description)
+        self.indicator_type = "ZXM_MARKET_BREADTH"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
         # 市场宽度评估指标权重
         self.breadth_weights = {
@@ -56,9 +59,10 @@ class ZXMMarketBreadth(BaseIndicator):
         ma_periods = kwargs.get('ma_periods', [20, 50, 200])
         index_code = kwargs.get('index_code', None)
         
-        # 检查数据结构
+        # 检查数据结构，如果不是多层索引，则无法计算，返回空DataFrame
         if not isinstance(data.index, pd.MultiIndex):
-            raise ValueError("数据必须是多层索引DataFrame，第一级是日期，第二级是股票代码")
+            logger.warning(f"{self.name}: 输入数据不是多层索引DataFrame，无法计算市场宽度指标。")
+            return pd.DataFrame(index=data.index)
             
         # 获取唯一的日期列表
         dates = data.index.get_level_values(0).unique()

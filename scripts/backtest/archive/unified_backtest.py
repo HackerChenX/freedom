@@ -1052,13 +1052,8 @@ class UnifiedBacktest:
                 
             # 计算ZXM买点-换手率指标
             try:
-                # 检查是否有capital列，如果没有，尝试添加模拟值
-                data_with_capital = data.copy()
-                if 'capital' not in data.columns and 'volume' in data.columns:
-                    data_with_capital['capital'] = data['volume'] * 100
-                
                 zxm_turnover = IndicatorFactory.create_indicator("ZXM_TURNOVER")
-                zxm_turnover_result = zxm_turnover.compute(data_with_capital)
+                zxm_turnover_result = zxm_turnover.compute(data)
                 
                 turnover = zxm_turnover_result['Turnover'].values if 'Turnover' in zxm_turnover_result.columns else np.zeros(len(data))
                 xg = zxm_turnover_result['XG'].values if 'XG' in zxm_turnover_result.columns else np.zeros(len(data), dtype=bool)

@@ -32,6 +32,7 @@ class ZXMWashPlate(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM洗盘形态识别指标"""
         super().__init__(name="ZXMWashPlate", description="ZXM洗盘形态识别指标，识别ZXM体系中各种洗盘形态")
     
@@ -49,7 +50,7 @@ class ZXMWashPlate(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算横盘震荡洗盘
         result = self._calculate_shock_wash(data, result)

@@ -28,6 +28,7 @@ class VOSC(BaseIndicator):
     """
     
     def __init__(self, short_period: int = 12, long_period: int = 26):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化成交量震荡指标(VOSC)指标
         

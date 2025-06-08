@@ -18,6 +18,7 @@ class ZXMPatternIndicator(BaseIndicator):
     """ZXM体系买点和吸筹形态识别指标"""
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM体系模式识别指标"""
         super().__init__(indicator_type=IndicatorType.CUSTOM)
         self.name = "ZXMPattern"

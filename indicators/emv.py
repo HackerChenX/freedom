@@ -33,6 +33,7 @@ class EMV(BaseIndicator):
     """
     
     def __init__(self, volume_divisor: float = 10000, period: int = 14):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化EMV指标"""
         super().__init__(name="EMV", description="指数平均数指标，评估价格上涨下跌的难易程度")
         self.volume_divisor = volume_divisor

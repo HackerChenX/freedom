@@ -42,6 +42,7 @@ class EnhancedMACD(MACD):
             volume_weighted: 是否使用成交量加权，默认为False
             adapt_to_volatility: 是否根据波动率自适应调整参数，默认为True
         """
+        self.indicator_type = "trend"  # 指标类型：趋势类
         super().__init__(fast_period=fast_period, slow_period=slow_period, signal_period=signal_period)
         self.name = "EnhancedMACD"
         self.description = "增强型MACD指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
@@ -49,7 +50,6 @@ class EnhancedMACD(MACD):
         self.multi_periods = multi_periods or [(8, 17, 9), (12, 26, 9), (24, 52, 18)]
         self.volume_weighted = volume_weighted
         self.adapt_to_volatility = adapt_to_volatility
-        self.indicator_type = "trend"  # 指标类型：趋势类
     
     def get_indicator_type(self) -> str:
         """
@@ -759,4 +759,22 @@ class EnhancedMACD(MACD):
         # 计算偏离度（标准化）
         deviation = diff / (std + 1e-10)
         
-        return deviation 
+        return deviation
+
+    def identify_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        识别MACD相关形态
+        
+        当前版本暂未实现详细的形态识别，返回一个空的DataFrame。
+        后续可在此基础上扩展，如识别金叉、死叉、背离等。
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.DataFrame: 形态识别结果
+        """
+        raise ValueError("This is a test to see if this method is called.")
+        if self._result is not None:
+            return pd.DataFrame(index=self._result.index)
+        return pd.DataFrame(index=data.index) 

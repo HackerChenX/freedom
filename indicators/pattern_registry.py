@@ -169,7 +169,6 @@ class PatternRegistry:
             
         # 检查形态是否已存在
         if normalized_pattern_id in self._registered_patterns and not _allow_override:
-            logger.warning(f"形态 {normalized_pattern_id} 已存在，将被跳过")
             return
         elif normalized_pattern_id in self._registered_patterns:
             logger.debug(f"形态 {normalized_pattern_id} 已存在，将被覆盖")

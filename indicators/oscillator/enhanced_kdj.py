@@ -28,7 +28,13 @@ class EnhancedKDJ(KDJ):
                 m2: int = 3,
                 sensitivity: float = 1.0,
                 multi_periods: List[int] = None,
-                j_weight: float = 1.0):
+                j_weight: float = 1.0,
+                smoothing_period_d: int = 3,
+                adaptive_params: bool = True,
+                volatility_lookback: int = 20,
+                secondary_n: int = 6,
+                use_smoothed_kdj: bool = True,
+                smoothing_period: int = 3):
         """
         初始化增强型KDJ指标
         
@@ -39,14 +45,26 @@ class EnhancedKDJ(KDJ):
             sensitivity: 灵敏度参数，控制对价格变化的响应程度，默认为1.0
             multi_periods: 多周期分析参数，默认为[5, 9, 14]
             j_weight: J线权重，用于调整J线在信号生成中的重要性，默认为1.0
+            smoothing_period_d: D值平滑周期，默认为3
+            adaptive_params: 是否使用自适应参数，默认为True
+            volatility_lookback: 波动性回看周期，默认为20
+            secondary_n: 次要周期，默认为6
+            use_smoothed_kdj: 是否使用平滑后的KDJ，默认为True
+            smoothing_period: 平滑周期，默认为3
         """
         super().__init__(n=n, m1=m1, m2=m2)
         self.name = "EnhancedKDJ"
+        self.indicator_type = "ENHANCEDKDJ"
         self.description = "增强型随机指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
         self.sensitivity = sensitivity
         self.multi_periods = multi_periods or [5, 9, 14]
         self.j_weight = j_weight
-        self.indicator_type = "oscillator"  # 指标类型：震荡类
+        self.smoothing_period_d = smoothing_period_d
+        self.adaptive_params = adaptive_params
+        self.volatility_lookback = volatility_lookback
+        self.secondary_n = secondary_n
+        self.use_smoothed_kdj = use_smoothed_kdj
+        self.smoothing_period = smoothing_period
     
     def get_indicator_type(self) -> str:
         """

@@ -5,11 +5,10 @@
 """
 
 import unittest
+from unittest.mock import patch, MagicMock
+import pandas as pd
 import os
 import sys
-from unittest.mock import patch, MagicMock
-
-import pandas as pd
 import numpy as np
 from datetime import datetime
 

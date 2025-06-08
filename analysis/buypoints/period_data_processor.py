@@ -230,7 +230,6 @@ class PeriodDataProcessor:
                 level=period_enum,
                 start_date=start_date,
                 end_date=end_date,
-                fields=["date", "code", "open", "high", "low", "close", "volume"],
                 order_by="date"
             )
             

@@ -336,7 +336,55 @@ class IndicatorScoreManager:
         """
         self.indicators.append(indicator)
         self.weights[indicator.name] = weight
+        logger.info(f"已添加指标: {indicator.name}，权重: {weight}")
         
+    def score_pattern(self, pattern_name: str, pattern_data: Dict[str, Any]) -> float:
+        """
+        为单个形态评分
+        
+        Args:
+            pattern_name: 形态名称
+            pattern_data: 形态相关数据
+            
+        Returns:
+            float: 形态得分
+        """
+        # 内置评分规则，可以扩展
+        pattern_scores = {
+            # K线形态
+            'bullish_engulfing': 75,
+            'hammer': 70,
+            'morning_star': 80,
+            'bearish_engulfing': 25,
+            'hanging_man': 30,
+            'evening_star': 20,
+            # 指标交叉
+            'AD_GOLDEN_CROSS': 70,
+            'AD_DEATH_CROSS': 30,
+            'MACD_GOLDEN_CROSS': 75,
+            'MACD_DEATH_CROSS': 25,
+            # 背离
+            'POSITIVE_DIVERGENCE': 85,
+            'NEGATIVE_DIVERGENCE': 15,
+            'HIDDEN_POSITIVE_DIVERGENCE': 80,
+            'HIDDEN_NEGATIVE_DIVERGENCE': 20,
+        }
+        
+        # 移除指标名称前缀，如 'CDLHAMMER' -> 'HAMMER'
+        clean_pattern_name = pattern_name.upper().replace('CDL', '')
+        
+        score = pattern_scores.get(clean_pattern_name, 50.0) # 默认为中性分
+        
+        # 可以根据pattern_data中的详细信息进行微调
+        # 例如，如果形态强度很高，可以增加分数
+        if 'strength' in pattern_data and pattern_data['strength'] > 0.8:
+            if score > 50:
+                score = min(100, score + 10)
+            else:
+                score = max(0, score - 10)
+        
+        return score
+    
     def set_weight(self, indicator_name: str, weight: float) -> None:
         """
         设置指标权重

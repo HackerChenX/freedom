@@ -34,7 +34,9 @@ class EnhancedWR(WR):
                  secondary_period: int = 28,
                  multi_periods: List[int] = None,
                  adaptive_threshold: bool = True,
-                 volatility_lookback: int = 20):
+                 volatility_lookback: int = 20,
+                 use_smoothed_wr: bool = True,
+                 smoothing_period: int = 3):
         """
         初始化增强型威廉指标
         
@@ -44,7 +46,10 @@ class EnhancedWR(WR):
             multi_periods: 多周期分析参数，默认为[6, 14, 28, 56]
             adaptive_threshold: 是否启用自适应阈值，默认为True
             volatility_lookback: 波动率计算回溯期，默认为20
+            use_smoothed_wr: 是否使用平滑后的WR
+            smoothing_period: 平滑周期数
         """
+        self.indicator_type = "ENHANCEDWR"
         super().__init__(period=period)
         self.name = "EnhancedWR"
         self.description = "增强型威廉指标，优化超买超卖判断，增加多周期协同分析和市场环境感知"
@@ -52,7 +57,6 @@ class EnhancedWR(WR):
         self.multi_periods = multi_periods or [6, 14, 28, 56]
         self.adaptive_threshold = adaptive_threshold
         self.volatility_lookback = volatility_lookback
-        self.indicator_type = "oscillator"  # 指标类型：震荡类
         self.market_environment = "normal"
         
         # 动态阈值
@@ -65,6 +69,10 @@ class EnhancedWR(WR):
         self._secondary_wr = None
         self._multi_period_wr = {}
         self._price_data = None
+        
+        # 平滑参数
+        self.use_smoothed_wr = use_smoothed_wr
+        self.smoothing_period = smoothing_period
         
     def get_indicator_type(self) -> str:
         """
@@ -214,11 +222,9 @@ class EnhancedWR(WR):
         divergence['divergence_strength'] = 0.0
         
         # 查找价格和WR的高点和低点
-        price_peaks = find_peaks_and_troughs(price, window=10, peak_type='peak')
-        price_troughs = find_peaks_and_troughs(price, window=10, peak_type='trough')
+        price_peaks, price_troughs = find_peaks_and_troughs(price.values, window=10)
         # 注意WR是反向指标，低点对应价格高点，高点对应价格低点
-        wr_peaks = find_peaks_and_troughs(wr, window=10, peak_type='peak')  # WR高点(对应价格低点)
-        wr_troughs = find_peaks_and_troughs(wr, window=10, peak_type='trough')  # WR低点(对应价格高点)
+        wr_peaks, wr_troughs = find_peaks_and_troughs(wr.values, window=10)  # WR高点(对应价格低点)
         
         # 最小背离长度(防止检测到太短的背离)
         min_divergence_length = 5
@@ -631,7 +637,7 @@ class EnhancedWR(WR):
             self.calculate(data)
             
         if self._result is None:
-            return pd.Series()
+            return pd.Series(dtype=np.float64)
         
         # 获取WR数据
         wr = self._result['wr']
@@ -648,108 +654,87 @@ class EnhancedWR(WR):
         # 获取形态识别
         patterns = self.identify_patterns()
         
-        # 基础分数为50（中性）
-        score = pd.Series(50, index=self._result.index)
-        
         # 1. WR基础评分 (±20分)
         # WR是反向指标，越低越看涨，越高越看跌
         normalized_wr = (wr - self.oversold_threshold) / (self.overbought_threshold - self.oversold_threshold)
-        base_score = 50 + (0.5 - normalized_wr) * 40  # 映射到30-70区间
-        score = base_score
+        score = 50 + (0.5 - normalized_wr) * 40  # 映射到30-70区间
         
         # 2. 超买超卖评分 (±15分)
-        # 超买区域（wr > overbought_threshold）额外减分
-        score = np.where(wr > self.overbought_threshold, 
-                        score - np.minimum((wr - self.overbought_threshold) / 20 * 15, 15),
-                        score)
+        overbought_condition = wr > self.overbought_threshold
+        oversold_condition = wr < self.oversold_threshold
         
-        # 超卖区域（wr < oversold_threshold）额外加分
-        score = np.where(wr < self.oversold_threshold, 
-                        score + np.minimum((self.oversold_threshold - wr) / 20 * 15, 15),
-                        score)
-        
+        score.loc[overbought_condition] -= np.minimum((wr[overbought_condition] - self.overbought_threshold) / 20 * 15, 15)
+        score.loc[oversold_condition] += np.minimum((self.oversold_threshold - wr[oversold_condition]) / 20 * 15, 15)
+
         # 3. WR动量评分 (±10分)
         if 'wr_momentum' in self._result.columns:
             wr_momentum = self._result['wr_momentum']
-            # WR动量为负（WR下降，看涨）时加分
-            score += np.where(wr_momentum < 0, 
-                           np.minimum(-wr_momentum / 20 * 10, 10),
-                           np.maximum(-wr_momentum / 20 * 10, -10))
+            momentum_bullish = wr_momentum < 0
+            score.loc[momentum_bullish] += np.minimum(-wr_momentum[momentum_bullish] / 20 * 10, 10)
+            score.loc[~momentum_bullish] += np.maximum(-wr_momentum[~momentum_bullish] / 20 * 10, -10)
         
         # 4. 背离评分 (±15分)
-        if not divergence.empty:
-            # 牛市背离（价格创新低，WR未创新高）
+        if divergence is not None and not divergence.empty:
             bullish_div = divergence.get('bullish_divergence', pd.Series(False, index=score.index))
-            if isinstance(bullish_div, pd.Series) and not bullish_div.empty:
+            if bullish_div.any():
                 div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
                 score.loc[bullish_div] += np.minimum(div_strength.loc[bullish_div] * 30, 15)
             
-            # 熊市背离（价格创新高，WR未创新低）
             bearish_div = divergence.get('bearish_divergence', pd.Series(False, index=score.index))
-            if isinstance(bearish_div, pd.Series) and not bearish_div.empty:
+            if bearish_div.any():
                 div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
                 score.loc[bearish_div] -= np.minimum(div_strength.loc[bearish_div] * 30, 15)
             
-            # 隐藏背离也可以加入评分
             hidden_bullish = divergence.get('hidden_bullish_divergence', pd.Series(False, index=score.index))
-            if isinstance(hidden_bullish, pd.Series) and not hidden_bullish.empty:
+            if hidden_bullish.any():
                 score.loc[hidden_bullish] += 10
                 
             hidden_bearish = divergence.get('hidden_bearish_divergence', pd.Series(False, index=score.index))
-            if isinstance(hidden_bearish, pd.Series) and not hidden_bearish.empty:
+            if hidden_bearish.any():
                 score.loc[hidden_bearish] -= 10
         
         # 5. 多周期协同评分 (±15分)
-        if not synergy.empty:
+        if synergy is not None and not synergy.empty:
             bull_synergy = synergy.get('bullish_agreement', pd.Series(False, index=score.index))
-            if isinstance(bull_synergy, pd.Series) and not bull_synergy.empty:
+            if bull_synergy.any():
                 synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
                 score.loc[bull_synergy] += np.minimum(synergy_strength.loc[bull_synergy] * 30, 15)
             
             bear_synergy = synergy.get('bearish_agreement', pd.Series(False, index=score.index))
-            if isinstance(bear_synergy, pd.Series) and not bear_synergy.empty:
+            if bear_synergy.any():
                 synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
                 score.loc[bear_synergy] -= np.minimum(synergy_strength.loc[bear_synergy] * 30, 15)
         
         # 6. 震荡带评分 (±10分)
-        if not oscillation_band.empty:
+        if oscillation_band is not None and not oscillation_band.empty:
             breakout_up = oscillation_band.get('breakout_up', pd.Series(False, index=score.index))
-            if isinstance(breakout_up, pd.Series) and not breakout_up.empty:
+            if breakout_up.any():
                 score.loc[breakout_up] += 10
                 
             breakout_down = oscillation_band.get('breakout_down', pd.Series(False, index=score.index))
-            if isinstance(breakout_down, pd.Series) and not breakout_down.empty:
+            if breakout_down.any():
                 score.loc[breakout_down] -= 10
         
         # 7. 特殊形态评分 (±15分)
         if not patterns.empty:
-            # 看涨形态: W底、超卖回升等
             for pattern in ['w_bottom', 'oversold_reversal', 'positive_failure_swing']:
-                if pattern in patterns.columns:
-                    pattern_signal = patterns[pattern]
-                    if isinstance(pattern_signal, pd.Series) and not pattern_signal.empty:
-                        score.loc[pattern_signal] += 15
+                if pattern in patterns.columns and patterns[pattern].any():
+                    score.loc[patterns[pattern]] += 15
             
-            # 看跌形态: M顶、超买回落等
             for pattern in ['m_top', 'overbought_reversal', 'negative_failure_swing']:
-                if pattern in patterns.columns:
-                    pattern_signal = patterns[pattern]
-                    if isinstance(pattern_signal, pd.Series) and not pattern_signal.empty:
-                        score.loc[pattern_signal] -= 15
+                if pattern in patterns.columns and patterns[pattern].any():
+                    score.loc[patterns[pattern]] -= 15
         
         # 8. 市场环境调整
         if self.market_environment == "bull_market":
-            # 牛市中增强多头信号，弱化空头信号
-            bull_adjustment = np.where(score > 50, (score - 50) * 0.2, (score - 50) * 0.1)
+            bull_adjustment = pd.Series(np.where(score > 50, (score - 50) * 0.2, (score - 50) * 0.1), index=score.index)
             score += bull_adjustment
         elif self.market_environment == "bear_market":
-            # 熊市中增强空头信号，弱化多头信号
-            bear_adjustment = np.where(score < 50, (50 - score) * 0.2, (50 - score) * 0.1)
+            bear_adjustment = pd.Series(np.where(score < 50, (50 - score) * 0.2, (50 - score) * 0.1), index=score.index)
             score -= bear_adjustment
         elif self.market_environment == "volatile_market":
-            # 高波动市场需要更强的信号
             vol_adjustment = (score - 50).abs() * 0.3
-            score = np.where(score > 50, 50 + vol_adjustment, 50 - vol_adjustment)
+            score = pd.Series(np.where(score > 50, 50 + vol_adjustment, 50 - vol_adjustment), index=score.index)
         
         # 限制分数范围在0-100之间
         score = score.clip(0, 100)
@@ -758,20 +743,52 @@ class EnhancedWR(WR):
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算增强型威廉指标原始评分 (0-100分)
+        计算增强型WR原始评分
         
         Args:
             data: 输入数据
-            **kwargs: 额外参数
+            **kwargs: 其他参数
             
         Returns:
-            pd.Series: 评分序列，取值范围0-100
+            pd.Series: 原始评分序列（0-100分）
         """
-        # 直接使用现有的calculate_score方法
         if not self.has_result():
-            self.calculate(data)
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+
+        score = pd.Series(50.0, index=data.index)
+        wr = self._result['wr']
+
+        # 1. 超买超卖区域评分
+        score += ((wr < self.overbought_threshold) & (wr > self.extreme_overbought_threshold)) * -15
+        score += (wr < self.extreme_overbought_threshold) * -25
+        score += ((wr > self.oversold_threshold) & (wr < self.extreme_oversold_threshold)) * 15
+        score += (wr > self.extreme_oversold_threshold) * 25
         
-        return self.calculate_score()
+        # 2. 背离评分
+        divergence = self.detect_enhanced_divergence()
+        if not divergence.empty:
+            bullish_div = divergence.get('bullish_divergence', pd.Series(False, index=score.index))
+            bearish_div = divergence.get('bearish_divergence', pd.Series(False, index=score.index))
+            score += bullish_div * 20
+            score -= bearish_div * 20
+
+        # 3. 多周期协同评分
+        synergy = self.analyze_multi_period_synergy()
+        if not synergy.empty:
+            score += synergy.get('synergy_score', pd.Series(0.0, index=score.index)) * 0.1
+
+        # 4. 形态评分
+        patterns = self.identify_patterns()
+        if not patterns.empty:
+            w_bottom = patterns.get('w_bottom', pd.Series(False, index=score.index))
+            m_top = patterns.get('m_top', pd.Series(False, index=score.index))
+            score += w_bottom * 20
+            score -= m_top * 20
+
+        return np.clip(score, 0, 100)
     
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """

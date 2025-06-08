@@ -7,36 +7,16 @@
 测试指标系统、回测系统和选股系统的功能
 """
 
-import sys
-import os
-import time
-import json
-import pandas as pd
-import numpy as np
 import unittest
+import pandas as pd
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional
-# 单独导入Any类型
-from typing import Any
-
-# 添加项目根目录到Python路径
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, root_dir)
 
 from db.clickhouse_db import get_clickhouse_db
 from indicators.factory import IndicatorFactory
-from scripts.backtest.consolidated_backtest import ConsolidatedBacktest
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
-from enums.period import Period
-from utils.logger import get_logger
-
-# 获取日志记录器
-logger = get_logger(__name__)
-
+from strategy.backtester import Backtester, Signal
 
 class TestIndicatorsAndBacktest(unittest.TestCase):
-    """测试指标系统、回测系统和选股系统的功能"""
+    """集成测试：测试指标计算和回测"""
 
     @classmethod
     def setUpClass(cls):
@@ -79,12 +59,12 @@ class TestIndicatorsAndBacktest(unittest.TestCase):
         
         try:
             # 获取该股票的日线数据
-            stock_data = self.db.get_kline_data(
+            stock_data = self.db.get_stock_info(
                 stock_code=stock_code,
                 start_date=self.date_90_days_ago,
                 end_date=self.latest_trade_date,
-                period='day'
-            )
+                level='day'
+            ).to_dataframe()
             
             logger.info(f"获取股票 {stock_code} 数据，数据长度: {len(stock_data)}")
             

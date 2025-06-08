@@ -27,6 +27,7 @@ class RSIMA(BaseIndicator):
     """
     
     def __init__(self, rsi_period: int = 14, ma_periods: List[int] = None):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化RSI均线系统(RSIMA)指标
         

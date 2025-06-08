@@ -49,14 +49,17 @@ class EnhancedSTOCHRSI(STOCHRSI):
             adaptive_threshold: 是否启用自适应阈值，默认为True
             volatility_lookback: 波动率计算回溯期，默认为20
         """
-        super().__init__(n=n, m=m, p=p)
+        self.indicator_type = "oscillator"  # 必须在super().__init__()之前定义
+        super().__init__(rsi_period=n, k_period=m, d_period=p)
+        self.n = n
+        self.m = m
+        self.p = p
         self.name = "EnhancedSTOCHRSI"
         self.description = "增强型随机相对强弱指标，优化参数自适应性，增加多周期协同分析和市场环境感知"
         self.secondary_n = secondary_n
         self.multi_periods = multi_periods or [7, 14, 28, 56]
         self.adaptive_threshold = adaptive_threshold
         self.volatility_lookback = volatility_lookback
-        self.indicator_type = "oscillator"  # 指标类型：震荡类
         self.market_environment = "normal"
         
         # 动态阈值
@@ -113,13 +116,19 @@ class EnhancedSTOCHRSI(STOCHRSI):
             self._adjust_thresholds_by_market(data)
         
         # 调用父类方法计算基础STOCHRSI
-        result = super().calculate(data, self.n, self.m, self.p)
-        
+        result = super().calculate(data)
+        if 'stochrsi_k' in result.columns:
+            result.rename(columns={'stochrsi_k': 'STOCHRSI_K', 'stochrsi_d': 'STOCHRSI_D'}, inplace=True)
+
         # 计算次要周期STOCHRSI
         secondary_stochrsi = STOCHRSI(n=self.secondary_n, m=self.m, p=self.p)
         secondary_result = secondary_stochrsi.calculate(data)
-        result['STOCHRSI_K_SECONDARY'] = secondary_result['STOCHRSI_K']
-        result['STOCHRSI_D_SECONDARY'] = secondary_result['STOCHRSI_D']
+        if 'stochrsi_k' in secondary_result.columns:
+            result['STOCHRSI_K_SECONDARY'] = secondary_result['stochrsi_k']
+            result['STOCHRSI_D_SECONDARY'] = secondary_result['stochrsi_d']
+        else:
+            result['STOCHRSI_K_SECONDARY'] = np.nan
+            result['STOCHRSI_D_SECONDARY'] = np.nan
         self._secondary_stochrsi = (result['STOCHRSI_K_SECONDARY'], result['STOCHRSI_D_SECONDARY'])
         
         # 计算多周期STOCHRSI
@@ -127,9 +136,13 @@ class EnhancedSTOCHRSI(STOCHRSI):
             if period != self.n and period != self.secondary_n:
                 multi_stochrsi = STOCHRSI(n=period, m=self.m, p=self.p)
                 multi_result = multi_stochrsi.calculate(data)
-                result[f'STOCHRSI_K_{period}'] = multi_result['STOCHRSI_K']
-                result[f'STOCHRSI_D_{period}'] = multi_result['STOCHRSI_D']
-                self._multi_period_stochrsi[period] = (result[f'STOCHRSI_K_{period}'], result[f'STOCHRSI_D_{period}'])
+                if 'stochrsi_k' in multi_result.columns:
+                    result[f'STOCHRSI_K_{period}'] = multi_result['stochrsi_k']
+                    result[f'STOCHRSI_D_{period}'] = multi_result['stochrsi_d']
+                else:
+                    result[f'STOCHRSI_K_{period}'] = np.nan
+                    result[f'STOCHRSI_D_{period}'] = np.nan
+                self._multi_period_stochrsi[period] = (result.get(f'STOCHRSI_K_{period}'), result.get(f'STOCHRSI_D_{period}'))
         
         # 计算STOCHRSI的动态特性
         # 计算斜率（变化速率）
@@ -264,10 +277,8 @@ class EnhancedSTOCHRSI(STOCHRSI):
         divergence['divergence_strength'] = 0.0
         
         # 查找价格和STOCHRSI的高点和低点
-        price_peaks = find_peaks_and_troughs(price, window=10, peak_type='peak')
-        price_troughs = find_peaks_and_troughs(price, window=10, peak_type='trough')
-        stochrsi_peaks = find_peaks_and_troughs(stochrsi_k, window=5, peak_type='peak')
-        stochrsi_troughs = find_peaks_and_troughs(stochrsi_k, window=5, peak_type='trough')
+        price_peaks, price_troughs = find_peaks_and_troughs(price.values, window=10)
+        stochrsi_peaks, stochrsi_troughs = find_peaks_and_troughs(stochrsi_k.values, window=5)
         
         # 最小背离长度(防止检测到太短的背离)
         min_divergence_length = 5

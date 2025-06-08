@@ -507,4 +507,46 @@ def log_calls(level: int = logging.DEBUG, args: bool = True, result: bool = Fals
             return func_result
         
         return wrapper
-    return decorator 
+    return decorator
+
+def universal_method(func):
+    """
+    通用方法装饰器
+    
+    用于指标计算方法的装饰器，提供标准化的输入/输出处理和错误捕获
+    
+    Args:
+        func: 要装饰的函数
+        
+    Returns:
+        装饰后的函数
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            # 提取self参数
+            self = args[0]
+            
+            # 记录方法调用
+            logger.debug(f"调用指标方法 {self.__class__.__name__}.{func.__name__}")
+            
+            # 执行原始方法
+            result = func(*args, **kwargs)
+            
+            # 如果结果是DataFrame，确保索引是正确的
+            if hasattr(result, 'index') and hasattr(result, 'columns'):
+                # 保留原始索引
+                if hasattr(args[1], 'index'):
+                    result.index = args[1].index
+            
+            return result
+            
+        except Exception as e:
+            # 记录错误信息
+            logger.error(f"指标方法 {func.__name__} 执行出错: {str(e)}")
+            logger.debug(f"错误详情: {traceback.format_exc()}")
+            
+            # 抛出异常以便上层处理
+            raise
+    
+    return wrapper 

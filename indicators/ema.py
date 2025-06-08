@@ -28,6 +28,7 @@ class EMA(BaseIndicator):
     """
     
     def __init__(self, name: str = "EMA", description: str = "指数移动平均线", periods: List[int] = None):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化指数移动平均线(EMA)指标
         

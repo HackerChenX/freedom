@@ -23,6 +23,7 @@ class VolumeScore(IndicatorScoreBase, PatternRecognitionMixin):
     """
     
     def __init__(self, period: int = 20, weight: float = 1.0):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化成交量评分指标
         

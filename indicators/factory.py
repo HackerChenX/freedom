@@ -4,16 +4,20 @@
 提供统一的指标创建接口
 """
 
-from typing import Dict, Type, Any, Optional, List, Union
-import pandas as pd
 import importlib
 import inspect
 import os
 import sys
-import pkgutil
+from typing import Dict, Type, Any, Optional, List
 
-from enums.indicator_types import IndicatorType
 from indicators.base_indicator import BaseIndicator
+from indicators.boll import BOLL
+from indicators.enhanced_macd import EnhancedMACD
+from indicators.enhanced_rsi import EnhancedRSI
+from indicators.kdj import KDJ
+# 导入常用指标类，以便手动注册
+from indicators.macd import MACD
+from indicators.rsi import RSI
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,6 +33,14 @@ class IndicatorFactory:
     # 指标类型映射表
     _indicators: Dict[str, callable] = {}
     _has_auto_registered = False  # 标记是否已经执行过自动注册
+    
+    # 手动注册常用指标
+    _indicators['MACD'] = MACD
+    _indicators['RSI'] = RSI
+    _indicators['KDJ'] = KDJ
+    _indicators['BOLL'] = BOLL
+    _indicators['ENHANCEDMACD'] = EnhancedMACD
+    _indicators['ENHANCEDRSI'] = EnhancedRSI
     
     @classmethod
     def create(cls, indicator_type: str, **params) -> Optional[BaseIndicator]:
@@ -68,9 +80,9 @@ class IndicatorFactory:
             indicator_type: 指标类型
             indicator_class: 指标类
         """
-        # 使用lambda创建工厂函数
+        # 使用直接赋值而非lambda，简化创建过程
         if indicator_type not in cls._indicators:
-            cls._indicators[indicator_type] = lambda **params: indicator_class(**params)
+            cls._indicators[indicator_type] = indicator_class
             logger.info(f"已注册指标: {indicator_type}")
         else:
             logger.debug(f"指标 {indicator_type} 已存在，跳过重复注册")
@@ -125,6 +137,30 @@ class IndicatorFactory:
         except Exception as e:
             logger.error(f"创建指标实例失败: {e}")
             return None
+    
+    @classmethod
+    def create_indicator_from_config(cls, config: Dict[str, Any]) -> Optional[BaseIndicator]:
+        """
+        从配置创建指标实例
+        
+        Args:
+            config: 配置字典，至少包含'name'键
+            
+        Returns:
+            Optional[BaseIndicator]: 指标实例，如果创建失败则返回None
+        """
+        # 提取指标类型名称
+        indicator_type = config.get('name')
+        if not indicator_type:
+            logger.error("配置中缺少'name'字段")
+            return None
+        
+        # 复制配置，移除名称
+        params = config.copy()
+        params.pop('name', None)
+        
+        # 创建指标
+        return cls.create_indicator(indicator_type, **params)
         
     @classmethod
     def get_supported_indicators(cls) -> list:
@@ -138,6 +174,32 @@ class IndicatorFactory:
         cls._ensure_auto_registered()
             
         return list(cls._indicators.keys())
+    
+    @classmethod
+    def get_registered_indicators(cls) -> List[str]:
+        """
+        获取所有已注册的指标类型名称
+        
+        Returns:
+            List[str]: 指标类型名称列表
+        """
+        # 确保已经自动注册所有指标
+        cls._ensure_auto_registered()
+            
+        return list(cls._indicators.keys())
+    
+    @classmethod
+    def is_registered(cls, indicator_type: str) -> bool:
+        """
+        检查指标类型是否已注册
+        
+        Args:
+            indicator_type: 指标类型名称
+            
+        Returns:
+            bool: 是否已注册
+        """
+        return indicator_type in cls._indicators
     
     @classmethod
     def _ensure_auto_registered(cls) -> None:
@@ -162,76 +224,50 @@ class IndicatorFactory:
             return
             
         indicators_path = os.path.dirname(indicators_pkg.__file__)
-        
+        package_name = indicators_pkg.__name__
+
         # 记录已注册的指标数量
         registered_count = 0
         
         # 遍历indicators包及其子包
-        for _, module_name, is_pkg in pkgutil.iter_modules([indicators_path]):
-            if module_name in ['__pycache__', 'base_indicator', 'factory', 'indicator_registry', 'common']:
-                continue
-                
-            try:
-                # 导入模块
-                module = importlib.import_module(f'indicators.{module_name}')
-                
-                # 从模块中找出所有继承自BaseIndicator的类
-                for name, obj in inspect.getmembers(module):
-                    if (inspect.isclass(obj) and 
-                        issubclass(obj, BaseIndicator) and 
-                        obj != BaseIndicator):
-                        
-                        # 使用类名的大写作为指标ID
-                        indicator_id = name.upper()
-                        
-                        # 注册指标
-                        if indicator_id not in cls._indicators:
-                            cls.register_indicator(indicator_id, obj)
-                            registered_count += 1
-                            
-            except Exception as e:
-                logger.error(f"注册模块 {module_name} 中的指标时出错: {e}")
-        
-        # 处理子包
-        for _, pkg_name, is_pkg in pkgutil.iter_modules([indicators_path]):
-            if not is_pkg or pkg_name == '__pycache__':
-                continue
-                
-            try:
-                # 导入子包
-                pkg = importlib.import_module(f'indicators.{pkg_name}')
-                pkg_path = os.path.dirname(pkg.__file__)
-                
-                # 遍历子包中的模块
-                for _, module_name, _ in pkgutil.iter_modules([pkg_path]):
-                    if module_name in ['__pycache__', '__init__']:
-                        continue
-                        
+        for root, _, files in os.walk(indicators_path):
+            for file in files:
+                if file.endswith('.py') and file != '__init__.py':
+                    module_name = file[:-3]
+                    
+                    # 构建模块的完整导入路径
+                    relative_path = os.path.relpath(root, indicators_path)
+                    if relative_path == '.':
+                        full_module_name = f"{package_name}.{module_name}"
+                    else:
+                        sub_package = relative_path.replace(os.sep, '.')
+                        full_module_name = f"{package_name}.{sub_package}.{module_name}"
+
+                    if full_module_name in sys.modules:
+                        continue # 跳过已导入的模块
+
                     try:
                         # 导入模块
-                        module = importlib.import_module(f'indicators.{pkg_name}.{module_name}')
+                        module = importlib.import_module(full_module_name)
                         
                         # 从模块中找出所有继承自BaseIndicator的类
                         for name, obj in inspect.getmembers(module):
                             if (inspect.isclass(obj) and 
                                 issubclass(obj, BaseIndicator) and 
-                                obj != BaseIndicator):
+                                obj is not BaseIndicator and 
+                                not inspect.isabstract(obj)):
                                 
                                 # 使用类名的大写作为指标ID
                                 indicator_id = name.upper()
                                 
                                 # 注册指标
-                                if indicator_id not in cls._indicators:
-                                    cls.register_indicator(indicator_id, obj)
-                                    registered_count += 1
-                                    
+                                cls.register_indicator(indicator_id, obj)
+                                registered_count += 1
+                                
                     except Exception as e:
-                        logger.error(f"注册模块 indicators.{pkg_name}.{module_name} 中的指标时出错: {e}")
-                        
-            except Exception as e:
-                logger.error(f"处理子包 {pkg_name} 时出错: {e}")
+                        logger.error(f"导入或注册指标模块 {full_module_name} 时出错: {e}")
         
-        logger.info(f"自动注册完成，共注册了 {registered_count} 个指标")
+        logger.info(f"自动注册完成，共注册 {registered_count} 个新指标。")
         
         # 设置标记，避免重复注册
         cls._has_auto_registered = True

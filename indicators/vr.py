@@ -27,6 +27,7 @@ class VR(BaseIndicator):
     """
     
     def __init__(self, period: int = 26, ma_period: int = 6):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化VR指标
         
@@ -52,7 +53,7 @@ class VR(BaseIndicator):
         self.ensure_columns(data, ["close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 判断价格变动方向
         price_direction = np.zeros(len(data))

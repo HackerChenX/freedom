@@ -16,10 +16,10 @@ class ZXMDiagnostics(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM智能诊断器"""
-        super().__init__()
-        self.name = "ZXM智能诊断器"
-        self.description = "智能分析股票技术状态的综合诊断工具"
+        super().__init__(name="ZXMDiagnostics", description="智能分析股票技术状态的综合诊断工具")
+        self.indicator_type = "ZXM_DIAGNOSTICS"
         
         # 健康度评估指标权重
         self.health_weights = {
@@ -533,6 +533,70 @@ class ZXMDiagnostics(BaseIndicator):
         
         return result 
 
+    def _analyze_volume_health(self, data: pd.DataFrame, lookback_period: int) -> Dict[str, pd.Series]:
+        """
+        分析成交量健康度
+        """
+        volume_health = {}
+        
+        # 1. 量价关系
+        price_change = data['close'].pct_change()
+        volume_change = data['volume'].pct_change()
+        
+        # 量价配合度 (价格上涨，成交量放大)
+        volume_health['volume_price_coordination'] = (price_change > 0) & (volume_change > 0)
+        
+        # 2. 成交量激增
+        avg_volume = data['volume'].rolling(window=lookback_period).mean()
+        volume_health['volume_surge'] = data['volume'] > (avg_volume * 2)
+        
+        return volume_health
+        
+    def _analyze_volatility_health(self, data: pd.DataFrame, lookback_period: int) -> Dict[str, pd.Series]:
+        """分析波动率健康度"""
+        result = {}
+        
+        high = data['high']
+        low = data['low']
+        close = data['close']
+        
+        # 1. 计算ATR (Average True Range)
+        tr1 = high - low
+        tr2 = abs(high - close.shift(1))
+        tr3 = abs(low - close.shift(1))
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        atr = tr.rolling(window=14).mean()
+        result['atr'] = atr
+        
+        # 2. 计算布林带宽度 (Bollinger Band Width)
+        ma20 = close.rolling(window=20).mean()
+        std20 = close.rolling(window=20).std()
+        upper_band = ma20 + (2 * std20)
+        lower_band = ma20 - (2 * std20)
+        bbw = (upper_band - lower_band) / ma20
+        result['bbw'] = bbw
+        
+        # 3. 波动率水平 (0到1，相对于近期)
+        min_atr = atr.rolling(window=lookback_period).min()
+        max_atr = atr.rolling(window=lookback_period).max()
+        # 避免除以零
+        atr_range = max_atr - min_atr
+        atr_range[atr_range == 0] = 1 
+        volatility_level = (atr - min_atr) / atr_range
+        result['level'] = volatility_level.fillna(0.5).clip(0, 1)
+        
+        # 4. 波动率健康度 (0到100)
+        health = pd.Series(50.0, index=data.index)
+        # 极低或极高的波动率都会降低健康度
+        # 适中的波动率被认为是健康的
+        # abs(volatility_level - 0.5) 是一个 V 形函数，在0.5处为0，在0和1处为0.5
+        # 乘以100，将其惩罚范围扩大到0-50分
+        penalty = abs(result['level'] - 0.5) * 100 
+        health -= penalty
+        result['health'] = health.fillna(50.0).clip(0, 100)
+        
+        return result
+    
     def analyze_indicators_result(self, result, title="ZXM体系指标分析结果"):
         """
         分析ZXM体系指标结果

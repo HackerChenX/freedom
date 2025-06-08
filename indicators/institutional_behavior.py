@@ -30,6 +30,7 @@ class InstitutionalBehavior(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化主力行为分析指标"""
         super().__init__(name="InstitutionalBehavior", description="主力行为模式分析指标")
         self.chip_distribution = ChipDistribution()
@@ -48,7 +49,7 @@ class InstitutionalBehavior(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算筹码分布相关指标
         chip_result = self.chip_distribution.identify_institutional_chips(data)

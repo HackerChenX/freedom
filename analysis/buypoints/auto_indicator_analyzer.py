@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Any, Tuple, Optional, Union, Set
 from datetime import datetime
+import logging
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -184,7 +185,7 @@ class AutoIndicatorAnalyzer:
                 
                 # 识别形态
                 indicator_hits = self._analyze_indicator_patterns(
-                    indicator_name, 
+                    indicator,
                     indicator_df, 
                     target_idx
                 )
@@ -194,7 +195,11 @@ class AutoIndicatorAnalyzer:
                     hit_indicators.extend(indicator_hits)
                     
             except Exception as e:
-                logger.error(f"分析指标 {indicator_name} 时出错: {e}")
+                err_msg = str(e)
+                if "输入数据缺少" in err_msg or "DataFrame必须包含" in err_msg or "输入数据缺少所需的列" in err_msg:
+                    logger.warning(f"分析指标 {indicator_name} 时因数据缺失而跳过: {err_msg}")
+                else:
+                    logger.error(f"分析指标 {indicator_name} 时出错: {e}")
                 continue
                 
         return hit_indicators
@@ -269,98 +274,94 @@ class AutoIndicatorAnalyzer:
             return []
     
     def _analyze_indicator_patterns(self, 
-                                indicator_name: str, 
-                                indicator_df: pd.DataFrame, 
-                                target_idx: int) -> List[Dict[str, Any]]:
+                                   indicator: BaseIndicator,
+                                   indicator_df: pd.DataFrame, 
+                                   target_idx: int) -> List[Dict[str, Any]]:
         """
-        分析指标形态
+        分析具体指标的形态
         
         Args:
-            indicator_name: 指标名称
-            indicator_df: 指标计算结果
+            indicator: 指标实例
+            indicator_df: 包含指标值的DataFrame
             target_idx: 目标行索引
             
         Returns:
             List[Dict[str, Any]]: 命中的形态列表
         """
         hit_patterns = []
+        indicator_name = indicator.name
         
-        # 获取指标实例
-        indicator = self._get_indicator_instance(indicator_name)
-        if indicator is None:
-            return []
-        
-        # 尝试使用identify_patterns方法识别形态
         try:
-            # 尝试调用identify_patterns方法
-            patterns = []
-            try:
-                # 尝试直接传递数据
-                patterns = indicator.identify_patterns(indicator_df)
-            except TypeError as e:
-                # 处理参数不匹配的情况
-                if "takes 1 positional argument but 2 were given" in str(e):
-                    # 如果方法不接受数据参数，直接调用无参方法
-                    try:
-                        patterns = indicator.identify_patterns()
-                    except Exception as inner_e:
-                        logger.warning(f"使用 identify_patterns 方法分析指标 {indicator_name} 形态时出错: {inner_e}")
-                else:
-                    logger.warning(f"使用 identify_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
+            # 获取指标的所有形态
+            patterns_result = indicator.get_patterns(indicator_df)
             
-            # 处理结果
-            if patterns:
-                for pattern in patterns:
-                    # 计算形态得分
-                    score = self.score_manager.score_pattern(pattern, {})
+            # 如果返回的是布尔型DataFrame
+            if isinstance(patterns_result, pd.DataFrame) and not patterns_result.empty:
+                # 提取目标行的形态
+                target_patterns = patterns_result.iloc[target_idx]
+                
+                # 筛选出值为True的形态
+                hit_pattern_ids = target_patterns[target_patterns == True].index.tolist()
+                
+                # 获取命中的形态信息
+                for pattern_id in hit_pattern_ids:
+                    # 获取形态的详细信息
+                    pattern_info = indicator.get_pattern_info(pattern_id)
                     
                     hit_patterns.append({
-                        'indicator': indicator_name,
-                        'pattern_id': pattern,
-                        'display_name': self._get_pattern_display_name(pattern),
-                        'score_impact': score,
-                        'date_diff': 0,  # 当前日期的形态
-                        'type': 'indicator'
+                        "type": "indicator",
+                        "indicator_name": indicator_name,
+                        "pattern_id": pattern_id,
+                        "pattern_name": pattern_info.get('name', pattern_id),
+                        "description": pattern_info.get('description', ''),
+                        "pattern_type": pattern_info.get('type', 'UNKNOWN')
                     })
+
+            # 如果返回的是列表（已弃用的旧格式）
+            elif isinstance(patterns_result, list) and patterns_result:
+                logging.warning(f"指标 {indicator_name} 正在使用已弃用的列表格式返回形态，影响性能且不规范。请计划将其重构为返回布尔型DataFrame的新标准。")
+                
+                # 获取目标日期
+                target_date = pd.to_datetime(indicator_df.index[target_idx])
+                
+                # 遍历所有历史形态，只选择在目标日期命中的
+                for pattern_dict in patterns_result:
+                    pattern_start_date = pattern_dict.get('start_date') or pattern_dict.get('date')
+                    pattern_end_date = pattern_dict.get('end_date') or pattern_dict.get('date')
+
+                    if not pattern_start_date:
+                        continue
+                        
+                    # 转换日期为datetime对象
+                    start_dt = pd.to_datetime(pattern_start_date)
+                    end_dt = pd.to_datetime(pattern_end_date) if pattern_end_date else start_dt
+
+                    # 检查目标日期是否在形态有效期内
+                    if start_dt <= target_date <= end_dt:
+                        # 确保返回格式统一
+                        pattern_info = indicator.get_pattern_info(pattern_dict.get('id'))
+                        hit_patterns.append({
+                            "type": "indicator",
+                            "indicator_name": indicator_name,
+                            "pattern_id": pattern_dict.get('id'),
+                            "pattern_name": pattern_dict.get('name') or pattern_info.get('name'),
+                            "description": pattern_dict.get('description') or pattern_info.get('description'),
+                            "pattern_type": pattern_dict.get('type') or pattern_info.get('type', 'UNKNOWN'),
+                            "details": pattern_dict # 保留原始信息
+                        })
+
         except Exception as e:
-            logger.error(f"使用 identify_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
-        
-        # 尝试使用get_patterns方法获取更详细的形态信息
-        try:
-            # 检查数据是否足够
-            if indicator_df.empty or target_idx >= len(indicator_df):
-                return hit_patterns
+            logger.error(f"分析指标 {indicator_name} 形态时出错: {e}")
             
-            # 尝试调用get_patterns方法
-            detailed_patterns = []
-            try:
-                # 尝试直接传递数据
-                detailed_patterns = indicator.get_patterns(indicator_df)
-            except TypeError as e:
-                # 处理参数不匹配的情况
-                if "takes 1 positional argument but 2 were given" in str(e):
-                    # 如果方法不接受数据参数，直接调用无参方法
-                    try:
-                        detailed_patterns = indicator.get_patterns()
-                    except Exception as inner_e:
-                        logger.warning(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {inner_e}")
-                else:
-                    logger.warning(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
-            except Exception as e:
-                logger.warning(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
-            
-            # 处理详细形态
-            if detailed_patterns:
-                for pattern in detailed_patterns:
-                    # 添加指标名称
-                    pattern['indicator'] = indicator_name
-                    # 添加到结果
-                    hit_patterns.append(pattern)
-        except Exception as e:
-            logger.error(f"使用 get_patterns 方法分析指标 {indicator_name} 形态时出错: {e}")
-        
         return hit_patterns
-    
+
+    def _get_pattern_display_name(self, pattern_id: str) -> str:
+        """
+        获取形态的显示名称（如果可用）
+        """
+        # 此处可以添加逻辑，将形态ID映射到更友好的显示名称
+        return pattern_id.replace('_', ' ').title()
+
     def _get_indicator_instance(self, indicator_name: str) -> Optional[BaseIndicator]:
         """
         获取指标实例

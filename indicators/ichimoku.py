@@ -27,6 +27,7 @@ class Ichimoku(BaseIndicator):
     """
     
     def __init__(self, tenkan_period: int = 9, kijun_period: int = 26, senkou_b_period: int = 52, chikou_period: int = 26):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化一目均衡表指标(Ichimoku)
         

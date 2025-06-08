@@ -28,6 +28,7 @@ class Vortex(BaseIndicator):
     """
     
     def __init__(self, period: int = 14):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化涡流指标(Vortex Indicator)
         

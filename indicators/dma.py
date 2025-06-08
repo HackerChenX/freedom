@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Union, Optional
 import logging
-from .base_indicator import BaseIndicator
+from typing import Dict, List
+
+import numpy as np
+import pandas as pd
+
+from enums.indicator_types import TrendType, CrossType
+from indicators.indicator_registry import IndicatorEnum
 from utils.signal_utils import crossover, crossunder
-from enums.trend_types import TrendType
-from enums.cross_types import CrossType
+from .base_indicator import BaseIndicator
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +27,16 @@ class DMA(BaseIndicator):
         ama_period: 差值平均线周期，默认为10
     """
     
-    def __init__(self, fast_period: int = 10, slow_period: int = 50, ama_period: int = 10):
+    def __init__(self, name: str = "DMA", description: str = "轨道线指标",
+                 fast_period: int = 10, slow_period: int = 50, ama_period: int = 10):
         """初始化DMA指标"""
-        super().__init__()
+        super().__init__(name, description)
+        self.indicator_type = IndicatorEnum.DMA.name
         self.fast_period = fast_period
         self.slow_period = slow_period
         self.ama_period = ama_period
         self._result = None
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """

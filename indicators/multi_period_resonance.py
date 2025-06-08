@@ -32,6 +32,7 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化多周期共振分析指标"""
         super().__init__(name="MULTI_PERIOD_RESONANCE", description="多周期共振分析指标")
     
@@ -211,7 +212,7 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
             pd.DataFrame: 计算结果
         """
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算不同指标的信号
         # 1. MA金叉信号

@@ -39,6 +39,7 @@ class FibonacciTools(BaseIndicator):
     TIME_SERIES = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144]
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化斐波那契工具指标"""
         super().__init__(name="FibonacciTools", description="斐波那契工具指标，计算回调线、扩展线和时间序列")
     
@@ -101,7 +102,7 @@ class FibonacciTools(BaseIndicator):
             swing_high_idx, swing_low_idx = swing_low_idx, swing_high_idx
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 记录起止点
         result["swing_high"] = np.nan
@@ -144,7 +145,7 @@ class FibonacciTools(BaseIndicator):
             is_bullish = False
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 记录起止点
         result["swing_high"] = np.nan
@@ -177,7 +178,7 @@ class FibonacciTools(BaseIndicator):
             pd.DataFrame: 时间序列点
         """
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 记录起始点
         result["fib_time_start"] = np.nan

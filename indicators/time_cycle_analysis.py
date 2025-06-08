@@ -40,6 +40,7 @@ class TimeCycleAnalysis(BaseIndicator):
             n_cycles: 检测的主要周期数量，默认为5
         """
         super().__init__(name="TimeCycleAnalysis", description="时间周期分析指标，识别不同级别的循环规律")
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.min_cycle_days = min_cycle_days
         self.max_cycle_days = max_cycle_days
         self.n_cycles = n_cycles
@@ -58,7 +59,7 @@ class TimeCycleAnalysis(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 使用价格数据进行周期分析
         price_series = data["close"].values

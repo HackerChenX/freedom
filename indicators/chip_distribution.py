@@ -29,6 +29,7 @@ class ChipDistribution(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化筹码分布指标"""
         super().__init__(name="ChipDistribution", description="筹码分布指标，分析各价位持仓情况")
     
@@ -59,7 +60,7 @@ class ChipDistribution(BaseIndicator):
                 data["turnover_rate"] = data["volume"] / data["volume"].rolling(window=20).mean() * 5
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算价格网格
         min_price = data["low"].min() * 0.9  # 留有余量

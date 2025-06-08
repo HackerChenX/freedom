@@ -34,6 +34,7 @@ class MACDScore(IndicatorScoreBase, PatternRecognitionMixin):
             weight: 指标权重
         """
         super().__init__(name="MACD", weight=weight)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.fast_period = fast_period
         self.slow_period = slow_period
         self.signal_period = signal_period

@@ -24,6 +24,7 @@ class ZXMElasticityScore(BaseIndicator):
     """
     
     def __init__(self, threshold: float = 75):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ZXM弹性评分指标
         
@@ -48,7 +49,7 @@ class ZXMElasticityScore(BaseIndicator):
             pd.DataFrame: 计算结果，包含弹性评分和信号
         """
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算振幅弹性
         try:
@@ -115,6 +116,7 @@ class ZXMBuyPointScore(BaseIndicator):
     """
     
     def __init__(self, threshold: float = 75):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ZXM买点评分指标
         
@@ -140,7 +142,7 @@ class ZXMBuyPointScore(BaseIndicator):
             pd.DataFrame: 计算结果，包含买点评分和信号
         """
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算MACD买点
         try:
@@ -216,6 +218,7 @@ class StockScoreCalculator(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM股票综合评分指标"""
         super().__init__(name="StockScoreCalculator", description="ZXM股票综合评分指标，计算股票的综合评分")
     
@@ -233,7 +236,7 @@ class StockScoreCalculator(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算各类评分
         

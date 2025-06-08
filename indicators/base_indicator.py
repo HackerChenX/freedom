@@ -443,142 +443,88 @@ class BaseIndicator(abc.ABC):
     @abc.abstractmethod
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算原始评分（0-100分制）
+        计算指标的原始评分
         
         Args:
             data: 输入数据
-            **kwargs: 其他参数
+            **kwargs: 额外参数
             
         Returns:
-            pd.Series: 原始评分序列，取值范围0-100
+            pd.Series: 评分序列，取值范围0-100
         """
         pass
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
         """
-        获取当前数据中存在的技术形态
-        
-        Args:
-            data: 输入数据，通常是K线数据
-            **kwargs: 其他参数
-            
-        Returns:
-            List[Dict[str, Any]]: 形态列表，每个形态包含pattern_id、display_name、strength等属性
-        """
-        if self._result is None and not self.has_result():
-            self.calculate(data)
-        
-        patterns = []
-        
-        # 调用identify_patterns方法获取存在的形态ID列表
-        pattern_ids = self.identify_patterns(data, **kwargs)
-        
-        for pattern_id in pattern_ids:
-            if pattern_id in self._registered_patterns:
-                pattern_info = self._registered_patterns[pattern_id]
-                
-                # 计算形态强度 (默认为中等强度50)
-                strength = 50.0
-                if hasattr(self, f"_calculate_{pattern_id}_strength"):
-                    strength_func = getattr(self, f"_calculate_{pattern_id}_strength")
-                    try:
-                        strength = strength_func(data)
-                    except Exception as e:
-                        logger.warning(f"计算形态 {pattern_id} 强度时出错: {e}")
-                
-                # 形成标准格式的形态字典
-                pattern = {
-                    'pattern_id': pattern_id,
-                    'display_name': pattern_info['display_name'],
-                    'strength': strength,
-                    'indicator_id': self.get_indicator_type(),
-                    'score_impact': pattern_info.get('score_impact', 0.0),
-                    'details': {
-                        'detected_at': data.index[-1] if isinstance(data.index, pd.DatetimeIndex) else str(data.index[-1]),
-                        'indicator_values': {
-                            col: float(self._result[col].iloc[-1]) 
-                            for col in self._result.columns 
-                            if col in self._result
-                        } if self._result is not None else {}
-                    }
-                }
-                
-                patterns.append(pattern)
-        
-        return patterns
+        获取指标的所有形态。
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
-        """
-        识别当前技术形态
-        
+        此方法作为形态识别的主要入口。它首先尝试调用子类中可能实现的
+        `identify_patterns` 方法。如果 `identify_patterns` 未实现或未返回结果，
+        则会使用在 `PatternRegistry` 中注册的 `detection_function` 来自动检测形态。
+
+        [!!] 标准返回格式 (推荐):
+        pd.DataFrame: 索引为日期，列为形态ID（如 'GOLDEN_CROSS'），值为布尔值。
+                      这种格式性能更优，且与上层分析器兼容性最好。
+
+        [!!] 已弃用的返回格式 (不推荐):
+        List[Dict[str, Any]]: 包含历史上所有形态的字典列表。
+                               此格式仅为向后兼容保留，存在性能问题，
+                               并可能在未来的版本中被移除。
+
         Args:
-            data: 输入数据
-            **kwargs: 其他参数
-            
+            data (pd.DataFrame): 包含指标计算值的DataFrame。
+            **kwargs: 其他可能的参数。
+
         Returns:
-            List[str]: 识别的形态ID列表
+            Union[pd.DataFrame, List[Dict[str, Any]]]: 识别出的形态。
+                                                      优先返回DataFrame。
         """
-        # 确保已计算指标
-        if not self.has_result():
-            self.calculate(data, **kwargs)
+        # 优先尝试调用子类实现的 identify_patterns 方法
+        if hasattr(self, 'identify_patterns') and callable(getattr(self, 'identify_patterns')):
+            try:
+                patterns = self.identify_patterns(data, **kwargs)
+                if patterns is not None and (isinstance(patterns, pd.DataFrame) or patterns):
+                    return patterns
+            except Exception as e:
+                logger.error(f"调用 {self.name} 的 identify_patterns 方法时出错: {e}")
         
-        if self._result is None:
-            logger.warning(f"指标 {self.name} 未能生成有效结果，无法识别形态")
-            return []
-        
-        # 获取指标类型
-        indicator_id = self.get_indicator_type()
-        
-        # 获取已注册的形态
-        from indicators.pattern_registry import PatternRegistry
-        patterns_by_indicator = PatternRegistry.get_patterns_by_indicator(indicator_id)
-        
-        # 检查是否有相关形态检测方法
-        detected_patterns = []
-        
-        # 1. 尝试调用各个形态的专用检测方法
-        for pattern_id in patterns_by_indicator:
-            pattern_info = PatternRegistry.get_pattern_info(pattern_id)
-            if pattern_info and 'detection_function' in pattern_info and pattern_info['detection_function']:
-                try:
-                    # 调用专门的检测函数
-                    detection_func = pattern_info['detection_function']
-                    if detection_func(data, self._result):
-                        detected_patterns.append(pattern_id)
-                except Exception as e:
-                    logger.error(f"调用形态 {pattern_id} 的检测函数时出错: {e}")
-        
-        # 2. 尝试调用通用的形态检测方法
-        pattern_detection_methods = [
-            f"_detect_{indicator_id.lower()}_patterns",
-            "_detect_patterns"
-        ]
-        
-        for method_name in pattern_detection_methods:
-            if hasattr(self, method_name) and callable(getattr(self, method_name)):
-                try:
-                    # 如果方法需要data参数，传入data
-                    method = getattr(self, method_name)
-                    sig = inspect.signature(method)
-                    
-                    if 'data' in sig.parameters:
-                        patterns_from_method = method(data)
-                    else:
-                        patterns_from_method = method()
-                        
-                    # 合并检测到的形态
-                    if patterns_from_method:
-                        detected_patterns.extend([p for p in patterns_from_method if p not in detected_patterns])
-                    
-                    # 如果找到并成功调用了一个方法，继续尝试其他方法（可能有多个检测方法）
-                except Exception as e:
-                    logger.error(f"调用 {method_name} 检测形态时出错: {e}")
-        
-        # 3. 自动检测基于阈值的简单形态
-        # 这部分可以添加一些通用的形态检测逻辑，如超买超卖、金叉死叉等
-        
-        # 删除重复的形态
-        return list(set(detected_patterns))
+        # 如果 identify_patterns 不可用或无返回，则使用注册的检测函数
+        return self._detect_patterns_from_registry(data)
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> Optional[Union[pd.DataFrame, List[str], List[Dict]]]:
+        """
+        识别指标的特定形态（由子类实现）。
+
+        子类应重写此方法以提供自定义的、复杂的形态识别逻辑。
+
+        [!!] 标准返回格式 (推荐):
+        pd.DataFrame: 索引为日期，列为形态ID，值为布尔值。
+
+        [!!] 已弃用的返回格式 (不推荐):
+        List[str] 或 List[Dict]: 包含形态ID的列表或形态详情的字典列表。
+                                  此格式仅为向后兼容保留。
+
+        Args:
+            data (pd.DataFrame): 包含指标计算值的DataFrame。
+            **kwargs: 其他可能的参数。
+
+        Returns:
+            Optional[Union[pd.DataFrame, List[str], List[Dict]]]: 
+                识别出的形态。如果未实现，应返回None。
+        """
+        return None
+    
+    def _detect_patterns_from_registry(self, data: pd.DataFrame) -> Optional[pd.DataFrame]:
+        """
+        使用在 PatternRegistry 中注册的检测函数来识别形态。
+
+        Args:
+            data (pd.DataFrame): 包含指标计算值的DataFrame。
+
+        Returns:
+            Optional[pd.DataFrame]: 识别出的形态。如果未实现，应返回None。
+        """
+        return None
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
@@ -1043,29 +989,28 @@ class BaseIndicator(abc.ABC):
         Returns:
             str: 指标列名
         """
-        if suffix:
-            return f"{self.name.lower()}_{suffix}"
-        return self.name.lower()
+        return f"{self.name.lower()}{'_' + suffix if suffix else ''}"
     
     @staticmethod
-    def ensure_columns(data: pd.DataFrame, required_columns: List[str]) -> bool:
+    def ensure_columns(data: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        确保DataFrame包含所需的列
-        
+        确保DataFrame中包含所有必需的列
+
         Args:
-            data: 输入数据
-            required_columns: 所需的列名列表
-            
-        Returns:
-            bool: 是否包含所有所需的列
-            
+            data: 输入的DataFrame
+            required_columns: 必需的列名列表
+
         Raises:
-            ValueError: 如果缺少所需的列
+            ValueError: 如果缺少任何必需的列
         """
-        missing = [col for col in required_columns if col not in data.columns]
-        if missing:
-            raise ValueError(f"输入数据缺少所需的列: {', '.join(missing)}")
-        return True
+        if not required_columns:
+            return
+
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            error_message = f"输入数据缺少所需的列: {', '.join(missing_columns)}"
+            logger.error(error_message)
+            raise ValueError(error_message)
     
     @staticmethod
     def crossover(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
@@ -1216,4 +1161,4 @@ class BaseIndicator(abc.ABC):
     
     def __repr__(self) -> str:
         """表示对象的字符串"""
-        return self.__str__() 
+        return self.__str__()

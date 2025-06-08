@@ -35,6 +35,7 @@ class IndicatorAdapter:
         Args:
             indicator: 要适配的指标对象
         """
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.indicator = indicator
         self.name = indicator.name
         self.description = indicator.description
@@ -148,6 +149,7 @@ class IndicatorRegistry:
     
     def __init__(self):
         """初始化指标注册表"""
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.adapters = {}
     
     def register(self, indicator: BaseIndicator, name: Optional[str] = None) -> None:
@@ -274,27 +276,27 @@ def list_all_indicators() -> List[str]:
 
 class CompositeIndicator(BaseIndicator):
     """
-    组合指标
+    复合指标
     
-    将多个指标组合成一个复合指标，以创建更复杂的分析逻辑
+    组合多个指标的结果，生成一个综合性指标
     """
-    
     def __init__(self, name: str, indicators: List[Union[str, BaseIndicator]], 
                  combination_func: Callable[[List[pd.DataFrame], pd.DataFrame], pd.DataFrame],
                  description: str = ""):
         """
-        初始化组合指标
+        初始化复合指标
         
         Args:
-            name: 指标名称
-            indicators: 要组合的指标列表，可以是指标名称或指标对象
-            combination_func: 组合函数，接受指标结果列表和原始数据，返回组合结果
+            name: 复合指标的名称
+            indicators: 指标列表，可以是指标名称或指标对象
+            combination_func: 组合函数，用于将多个指标结果合并
             description: 指标描述
         """
-        super().__init__(name=name, description=description or f"组合指标: {name}")
-        self.indicator_refs = indicators
-        self.combination_func = combination_func
-        self._adapters = []
+        super().__init__(name=name, description=description)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        
+        # 验证并初始化指标列表
+        self.indicators = []
         
         # 解析指标引用，获取适配器
         for indicator_ref in indicators:
@@ -303,10 +305,10 @@ class CompositeIndicator(BaseIndicator):
                 adapter = get_indicator(indicator_ref)
                 if adapter is None:
                     logger.warning(f"未找到名为 {indicator_ref} 的指标适配器，将在计算时尝试再次获取")
-                self._adapters.append(adapter)
+                self.indicators.append(adapter)
             else:
                 # 为指标对象创建新的适配器
-                self._adapters.append(IndicatorAdapter(indicator_ref))
+                self.indicators.append(IndicatorAdapter(indicator_ref))
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -322,16 +324,16 @@ class CompositeIndicator(BaseIndicator):
         # 计算所有子指标
         results = []
         
-        for i, indicator_ref in enumerate(self.indicator_refs):
+        for i, indicator_ref in enumerate(self.indicators):
             # 如果适配器为None，尝试再次获取
-            if self._adapters[i] is None and isinstance(indicator_ref, str):
-                self._adapters[i] = get_indicator(indicator_ref)
-                if self._adapters[i] is None:
+            if indicator_ref is None and isinstance(indicator_ref, str):
+                self.indicators[i] = get_indicator(indicator_ref)
+                if self.indicators[i] is None:
                     raise ValueError(f"未找到名为 {indicator_ref} 的指标适配器")
             
             # 计算子指标
             try:
-                result = self._adapters[i].adapt(data, **kwargs)
+                result = self.indicators[i].adapt(data, **kwargs)
                 results.append(result)
             except Exception as e:
                 logger.error(f"计算子指标 {i} 时出错: {str(e)}")
@@ -370,7 +372,7 @@ class CompositeIndicator(BaseIndicator):
         # 如果没有特定的评分列，尝试从子指标获取评分并平均
         scores = []
         
-        for i, adapter in enumerate(self._adapters):
+        for i, adapter in enumerate(self.indicators):
             if adapter is not None and hasattr(adapter.indicator, 'calculate_raw_score'):
                 try:
                     score = adapter.indicator.calculate_raw_score(data, **kwargs)

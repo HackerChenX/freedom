@@ -34,7 +34,9 @@ class EnhancedTRIX(TRIX):
                  secondary_n: int = 24,
                  multi_periods: List[int] = None,
                  adaptive_period: bool = True,
-                 volatility_lookback: int = 20):
+                 volatility_lookback: int = 20,
+                 use_smoothed_trix: bool = True,
+                 smoothing_period: int = 3):
         """
         初始化增强型TRIX指标
         
@@ -45,7 +47,10 @@ class EnhancedTRIX(TRIX):
             multi_periods: 多周期分析参数，默认为[6, 12, 24, 48]
             adaptive_period: 是否启用自适应周期，默认为True
             volatility_lookback: 波动率计算回溯期，默认为20
+            use_smoothed_trix: 是否使用平滑后的TRIX
+            smoothing_period: 平滑周期，默认为3
         """
+        self.indicator_type = "ENHANCEDTRIX"
         super().__init__(n=n, m=m)
         self.name = "EnhancedTRIX"
         self.description = "增强型TRIX三重指数平滑移动平均线，优化参数自适应性，增加多周期协同分析和市场环境感知"
@@ -53,8 +58,8 @@ class EnhancedTRIX(TRIX):
         self.multi_periods = multi_periods or [6, 12, 24, 48]
         self.adaptive_period = adaptive_period
         self.volatility_lookback = volatility_lookback
-        self.indicator_type = "trend"  # 指标类型：趋势类
         self.market_environment = "normal"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
         # 内部变量
         self._secondary_trix = None
@@ -239,10 +244,8 @@ class EnhancedTRIX(TRIX):
         divergence['divergence_strength'] = 0.0
         
         # 查找价格和TRIX的高点和低点
-        price_peaks = find_peaks_and_troughs(price, window=10, peak_type='peak')
-        price_troughs = find_peaks_and_troughs(price, window=10, peak_type='trough')
-        trix_peaks = find_peaks_and_troughs(trix, window=10, peak_type='peak')
-        trix_troughs = find_peaks_and_troughs(trix, window=10, peak_type='trough')
+        price_peaks, price_troughs = find_peaks_and_troughs(price.values, window=10)
+        trix_peaks, trix_troughs = find_peaks_and_troughs(trix.values, window=10)
         
         # 最小背离长度(防止检测到太短的背离)
         min_divergence_length = 5

@@ -300,7 +300,7 @@ class EnhancedMFI(MFI):
             self.calculate(data)
         
         # 初始化结果DataFrame
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         result["synergy_score"] = 0
         
         # 获取MFI数据

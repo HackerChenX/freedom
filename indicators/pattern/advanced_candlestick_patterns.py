@@ -64,6 +64,7 @@ class AdvancedCandlestickPatterns(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化高级K线形态识别指标"""
         super().__init__(name="AdvancedCandlestickPatterns", description="高级K线形态识别指标，识别更复杂的组合K线形态和复合形态")
         self.basic_patterns = CandlestickPatterns()
@@ -113,7 +114,7 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         basic_patterns = self.basic_patterns.calculate(data)
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算三星形态
         result = self._calculate_three_star_patterns(data, result)

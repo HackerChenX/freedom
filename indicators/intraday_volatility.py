@@ -25,6 +25,7 @@ class IntradayVolatility(BaseIndicator):
     """
     
     def __init__(self, smooth_period: int = 5):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化日内波动率指标
         
@@ -48,7 +49,7 @@ class IntradayVolatility(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算日内波动范围
         intraday_range = data["high"] - data["low"]

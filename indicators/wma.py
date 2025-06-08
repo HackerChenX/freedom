@@ -29,6 +29,7 @@ class WMA(BaseIndicator):
     """
     
     def __init__(self, period: int = 14, periods: List[int] = None):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化加权移动平均线(WMA)指标
         

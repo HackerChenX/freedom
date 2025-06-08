@@ -26,6 +26,7 @@ class Fibonacci(BaseIndicator):
     """
     
     def __init__(self, retracement_levels: List[float] = None, extension_levels: List[float] = None):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化斐波那契指标
         

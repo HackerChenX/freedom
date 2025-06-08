@@ -27,6 +27,7 @@ class Chaikin(BaseIndicator):
     """
     
     def __init__(self, fast_period: int = 3, slow_period: int = 10):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化蔡金指标(Chaikin)
         

@@ -31,6 +31,7 @@ class VolumeRatio(BaseIndicator):
     """
     
     def __init__(self, reference_period: int = 5, ma_period: int = 3):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化量比指标
         

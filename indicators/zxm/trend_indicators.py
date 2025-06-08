@@ -11,6 +11,7 @@ from scipy.stats import linregress
 
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
+from indicators.score_manager import IndicatorScoreManager
 
 logger = get_logger(__name__)
 
@@ -23,6 +24,7 @@ class ZXMDailyTrendUp(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势-日线上移指标"""
         super().__init__(name="ZXMDailyTrendUp", description="ZXM趋势-日线上移指标，判断日线均线是否向上")
     
@@ -45,7 +47,7 @@ class ZXMDailyTrendUp(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算60日均线和120日均线
         ma60 = data["close"].rolling(window=60).mean()
@@ -278,6 +280,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势-周线上移指标"""
         super().__init__(name="ZXMWeeklyTrendUp", description="ZXM趋势-周线上移指标，判断周线均线是否向上")
     
@@ -301,7 +304,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算10周、20周和30周均线
         ma10 = data["close"].rolling(window=10).mean()
@@ -603,6 +606,7 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势-月KDJ·D及K上移指标"""
         super().__init__(name="ZXMMonthlyKDJTrendUp", description="ZXM趋势-月KDJ·D及K上移指标，判断月线KDJ·D和K值是否向上")
     
@@ -627,7 +631,7 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         self.ensure_columns(data, ["close", "high", "low"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算KDJ指标
         low_9 = data["low"].rolling(window=9).min()
@@ -951,6 +955,7 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势-周KDJ·D/DEA上移指标"""
         super().__init__(name="ZXMWeeklyKDJDOrDEATrendUp", description="ZXM趋势-周KDJ·D/DEA上移指标，判断周线KDJ·D或DEA值是否向上")
     
@@ -977,7 +982,7 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         self.ensure_columns(data, ["close", "high", "low"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算KDJ指标
         low_9 = data["low"].rolling(window=9).min()
@@ -1304,6 +1309,7 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势-周KDJ·D上移指标"""
         super().__init__(name="ZXMWeeklyKDJDTrendUp", description="ZXM趋势-周KDJ·D上移指标，判断周线KDJ·D值是否向上")
     
@@ -1328,7 +1334,7 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         self.ensure_columns(data, ["close", "high", "low"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算KDJ指标
         low_9 = data["low"].rolling(window=9).min()
@@ -1610,6 +1616,7 @@ class ZXMMonthlyMACD(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势-月MACD指标"""
         super().__init__(name="ZXMMonthlyMACD", description="ZXM趋势-月MACD指标，判断月线MACD金叉")
     
@@ -1633,7 +1640,7 @@ class ZXMMonthlyMACD(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算MACD指标
         ema12 = data["close"].ewm(span=12, adjust=False).mean()
@@ -2260,6 +2267,7 @@ class TrendDetector(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势检测器"""
         super().__init__(name="TrendDetector", description="ZXM趋势检测器，识别价格趋势的方向和强度")
     
@@ -2276,7 +2284,7 @@ class TrendDetector(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 复制数据，避免修改原始数据
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算短期和长期移动平均线
         result['MA20'] = data['close'].rolling(window=20).mean()
@@ -2637,6 +2645,7 @@ class TrendStrength(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势强度指标"""
         super().__init__(name="TrendStrength", description="ZXM趋势强度指标，分析价格趋势的强度和持续性")
     
@@ -2653,7 +2662,7 @@ class TrendStrength(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 复制数据，避免修改原始数据
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算多个周期的移动平均线
         ma_periods = [5, 10, 20, 60]
@@ -3043,6 +3052,7 @@ class TrendDuration(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM趋势持续性指标"""
         super().__init__(name="TrendDuration", description="ZXM趋势持续性指标，分析价格趋势的持续时间和生命周期特征")
     
@@ -3059,7 +3069,7 @@ class TrendDuration(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 复制数据，避免修改原始数据
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算多个周期的移动平均线
         result['MA10'] = data['close'].rolling(window=10).mean()
@@ -3586,9 +3596,11 @@ class ZXMWeeklyMACD(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         super().__init__()
         self.name = "ZXM周线MACD指标"
         self.description = "基于周线数据的MACD指标，用于检测中期趋势变化"
+        self.score_manager = IndicatorScoreManager()
     
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """

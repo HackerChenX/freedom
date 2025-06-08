@@ -7,7 +7,6 @@
 运行所有测试并生成回顾分析报告
 """
 
-import sys
 import os
 import time
 import unittest
@@ -16,12 +15,7 @@ import logging
 import json
 import importlib.util
 from typing import List, Dict, Any
-
-# 添加项目根目录到Python路径
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, root_dir)
-
-from utils.logger import get_logger
+from BeautifulReport import BeautifulReport
 
 # 获取日志记录器
 logger = get_logger("system_review")

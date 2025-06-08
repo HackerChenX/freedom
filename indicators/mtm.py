@@ -27,6 +27,7 @@ class MTM(BaseIndicator):
     """
     
     def __init__(self, period: int = 10, ma_period: int = 6, overbought: float = 0, oversold: float = 0):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化MTM指标
         

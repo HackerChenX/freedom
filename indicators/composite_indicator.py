@@ -44,6 +44,7 @@ class CompositeIndicator(BaseIndicator):
             weights: 各指标的权重字典，键为指标名，值为权重
         """
         super().__init__(name=name, description=description)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
         self.indicators = indicators or []
         self.weights = weights or {}

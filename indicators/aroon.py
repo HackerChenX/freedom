@@ -9,7 +9,7 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
@@ -27,6 +27,7 @@ class Aroon(BaseIndicator):
     """
     
     def __init__(self, period: int = 14):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化阿隆指标(Aroon)
         

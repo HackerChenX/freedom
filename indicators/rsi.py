@@ -27,6 +27,7 @@ class RSI(BaseIndicator):
     """
     
     def __init__(self, period: int = 14, overbought: float = 70, oversold: float = 30):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化RSI指标
         
@@ -203,170 +204,88 @@ class RSI(BaseIndicator):
         
         return df_copy
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取RSI相关形态
-        
+        获取RSI相关形态。
+
+        此方法遵循新的指标开发规范，通过向量化操作识别所有形态，
+        并返回一个标准的布尔型DataFrame。
+
         Args:
-            data: 输入数据
-            **kwargs: 其他参数
-            
+            data: 输入数据，可以是原始K线数据或已计算RSI的DataFrame。
+            **kwargs: 其他参数。
+
         Returns:
-            List[Dict[str, Any]]: 识别的形态列表
+            pd.DataFrame: 索引为日期，列为形态ID，值为布尔值的形态矩阵。
         """
-        patterns = []
-        
         # 确保已计算指标
-        if not self.has_result():
-            self.calculate(data, **kwargs)
+        if not self.has_result() or 'rsi' not in data.columns:
+            indicator_df = self.calculate(data, **kwargs)
+        else:
+            indicator_df = data
+
+        if indicator_df is None or 'rsi' not in indicator_df.columns:
+            return pd.DataFrame()
+
+        patterns_df = pd.DataFrame(index=indicator_df.index)
+        rsi = indicator_df['rsi']
+        close = indicator_df['close']
+
+        # 1. 超买/超卖
+        patterns_df['RSI_OVERBOUGHT'] = rsi > self.overbought
+        patterns_df['RSI_OVERSOLD'] = rsi < self.oversold
+
+        # 2. 中轴穿越
+        patterns_df['RSI_CROSS_ABOVE_50'] = self.crossover(rsi, 50)
+        patterns_df['RSI_CROSS_BELOW_50'] = self.crossunder(rsi, 50)
+
+        # 3. 向上/向下突破
+        patterns_df['RSI_BREAKOUT_UP'] = self.crossover(rsi, self.overbought)
+        patterns_df['RSI_BREAKOUT_DOWN'] = self.crossunder(rsi, self.oversold)
         
-        if self._result is None or 'rsi' not in self._result.columns:
-            return patterns
+        # 4. 背离形态
+        # 注意：向量化背离检测相对复杂，这里提供一个简化的实现。
+        # 更精确的实现可能需要更复杂的逻辑，例如使用 argrelextrema。
+        bullish_div, bearish_div = self._detect_divergence(close, rsi, window=self.period)
+        patterns_df['RSI_BULLISH_DIVERGENCE'] = bullish_div
+        patterns_df['RSI_BEARISH_DIVERGENCE'] = bearish_div
         
-        # 获取RSI值
-        rsi_values = self._result['rsi']
-        dates = self._result.index
-        
-        # 1. 识别RSI超买
-        for i in range(len(rsi_values)):
-            if rsi_values[i] > self.overbought:
-                # 计算持续时间
-                duration = 1
-                for j in range(i+1, len(rsi_values)):
-                    if rsi_values[j] > self.overbought:
-                        duration += 1
-                    else:
-                        break
-                
-                # 如果持续时间足够长，添加形态
-                if duration >= 2:
-                    pattern = {
-                        "name": "RSI超买",
-                        "start_date": dates[i],
-                        "end_date": dates[min(i+duration-1, len(dates)-1)],
-                        "duration": duration,
-                        "strength": (rsi_values[i] - self.overbought) / (100 - self.overbought),  # 归一化强度
-                        "description": f"RSI在{self.overbought}以上持续{duration}天，表明市场可能超买",
-                        "type": "bearish"  # 超买是看跌信号
-                    }
-                    patterns.append(pattern)
-                
-                # 跳过已经识别的区域
-                i += duration - 1
-        
-        # 2. 识别RSI超卖
-        for i in range(len(rsi_values)):
-            if rsi_values[i] < self.oversold:
-                # 计算持续时间
-                duration = 1
-                for j in range(i+1, len(rsi_values)):
-                    if rsi_values[j] < self.oversold:
-                        duration += 1
-                    else:
-                        break
-                
-                # 如果持续时间足够长，添加形态
-                if duration >= 2:
-                    pattern = {
-                        "name": "RSI超卖",
-                        "start_date": dates[i],
-                        "end_date": dates[min(i+duration-1, len(dates)-1)],
-                        "duration": duration,
-                        "strength": (self.oversold - rsi_values[i]) / self.oversold,  # 归一化强度
-                        "description": f"RSI在{self.oversold}以下持续{duration}天，表明市场可能超卖",
-                        "type": "bullish"  # 超卖是看涨信号
-                    }
-                    patterns.append(pattern)
-                
-                # 跳过已经识别的区域
-                i += duration - 1
-        
-        # 3. 识别RSI背离
-        # 这里需要同时分析价格和RSI
-        if 'close' in self._result.columns:
-            # 价格新高但RSI没有新高 - 顶背离
-            for i in range(20, len(rsi_values)):
-                if i < 5:
-                    continue
-                
-                # 获取近期价格和RSI
-                recent_prices = self._result['close'].iloc[i-20:i+1]
-                recent_rsi = rsi_values.iloc[i-20:i+1]
-                
-                # 判断价格是否创新高
-                if recent_prices.iloc[-1] > recent_prices.iloc[:-1].max():
-                    # 检查RSI是否没有同步创新高
-                    if recent_rsi.iloc[-1] < recent_rsi.iloc[:-1].max():
-                        strength = self._calculate_divergence_strength(
-                            recent_prices.iloc[-1], recent_prices.iloc[:-1].max(),
-                            recent_rsi.iloc[-1], recent_rsi.iloc[:-1].max()
-                        )
-                        
-                        pattern = {
-                            "name": "RSI顶背离",
-                            "start_date": dates[i-5],  # 使用适当的起始日期
-                            "end_date": dates[i],
-                            "duration": 5,  # 使用固定值表示背离形态
-                            "strength": strength,
-                            "description": "价格创新高但RSI未同步创新高，可能暗示上涨动能减弱",
-                            "type": "bearish"  # 顶背离是看跌信号
-                        }
-                        patterns.append(pattern)
-            
-            # 价格新低但RSI没有新低 - 底背离
-            for i in range(20, len(rsi_values)):
-                if i < 5:
-                    continue
-                
-                # 获取近期价格和RSI
-                recent_prices = self._result['close'].iloc[i-20:i+1]
-                recent_rsi = rsi_values.iloc[i-20:i+1]
-                
-                # 判断价格是否创新低
-                if recent_prices.iloc[-1] < recent_prices.iloc[:-1].min():
-                    # 检查RSI是否没有同步创新低
-                    if recent_rsi.iloc[-1] > recent_rsi.iloc[:-1].min():
-                        strength = self._calculate_divergence_strength(
-                            recent_prices.iloc[-1], recent_prices.iloc[:-1].min(),
-                            recent_rsi.iloc[-1], recent_rsi.iloc[:-1].min()
-                        )
-                        
-                        pattern = {
-                            "name": "RSI底背离",
-                            "start_date": dates[i-5],  # 使用适当的起始日期
-                            "end_date": dates[i],
-                            "duration": 5,  # 使用固定值表示背离形态
-                            "strength": strength,
-                            "description": "价格创新低但RSI未同步创新低，可能暗示下跌动能减弱",
-                            "type": "bullish"  # 底背离是看涨信号
-                        }
-                        patterns.append(pattern)
-        
-        return patterns
-    
-    def _calculate_divergence_strength(self, current_price, previous_price, current_rsi, previous_rsi):
+        return patterns_df
+
+    def _detect_divergence(self, price: pd.Series, indicator: pd.Series, window: int = 14) -> Tuple[pd.Series, pd.Series]:
         """
-        计算背离强度
-        
+        Using an improved (but still approximate) vectorized method to detect divergence.
+
+        Logic:
+        - Bullish Divergence: Price hits a new rolling low, but the indicator's value
+          is higher than its rolling low from the previous period, suggesting indicator lows are rising.
+        - Bearish Divergence: Price hits a new rolling high, but the indicator's value
+          is lower than its rolling high from the previous period, suggesting indicator highs are falling.
+
         Args:
-            current_price: 当前价格
-            previous_price: 之前价格
-            current_rsi: 当前RSI
-            previous_rsi: 之前RSI
-            
+            price: Price series ('close').
+            indicator: Indicator series ('rsi').
+            window: The lookback window for detecting divergence.
+
         Returns:
-            float: 背离强度，范围0-1
+            A tuple of (bullish_divergence, bearish_divergence) boolean Series.
         """
-        # 计算价格变化百分比
-        price_change = abs(current_price - previous_price) / previous_price
-        
-        # 计算RSI变化百分比
-        rsi_change = abs(current_rsi - previous_rsi) / 100
-        
-        # 计算背离强度：价格变化和RSI变化的不一致程度
-        # 背离越明显，强度越大
-        return min(price_change / max(rsi_change, 1e-6), 1.0)
-    
+        # Calculate rolling minimums and maximums
+        price_low = price.rolling(window=window).min()
+        indicator_low = indicator.rolling(window=window).min()
+        price_high = price.rolling(window=window).max()
+        indicator_high = indicator.rolling(window=window).max()
+
+        # Bullish divergence: price hits a new low, but the indicator's value is higher than its previous rolling low.
+        bullish_div = (price == price_low) & (price < price.shift(1)) & \
+                      (indicator > indicator_low.shift(1))
+
+        # Bearish divergence: price hits a new high, but the indicator's value is lower than its previous rolling high.
+        bearish_div = (price == price_high) & (price > price.shift(1)) & \
+                      (indicator < indicator_high.shift(1))
+
+        return bullish_div.fillna(False), bearish_div.fillna(False)
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号

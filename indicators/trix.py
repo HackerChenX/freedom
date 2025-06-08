@@ -25,6 +25,7 @@ class TRIX(BaseIndicator):
     """
     
     def __init__(self, n: int = 12, m: int = 9):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化TRIX指标
         
@@ -97,7 +98,7 @@ class TRIX(BaseIndicator):
         close = data["close"].values
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算TR = EMA(EMA(EMA(Close, N), N), N)
         ema1 = self._ema(close, n)

@@ -31,6 +31,7 @@ class PlatformBreakout(BaseIndicator):
     """
     
     def __init__(self, platform_period: int = 20, max_volatility: float = 0.05):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化平台突破指标
         
@@ -56,7 +57,7 @@ class PlatformBreakout(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算平台特征
         result = self._detect_platforms(data, result)

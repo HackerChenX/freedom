@@ -39,6 +39,8 @@ class EnhancedMACD(BaseIndicator):
             secondary_signal: 第二组MACD的信号线周期
         """
         super().__init__(name, description)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.indicator_type = name.upper()
         
         # 设置主MACD参数
         self._parameters = {
@@ -101,7 +103,7 @@ class EnhancedMACD(BaseIndicator):
         self.ensure_columns(data, [price_col])
         
         # 复制输入数据
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算主MACD指标
         dif, dea, macd_hist = calc_macd(

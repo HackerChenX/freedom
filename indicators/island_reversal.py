@@ -25,6 +25,7 @@ class IslandReversal(BaseIndicator):
     """
     
     def __init__(self, gap_threshold: float = 0.01, island_max_days: int = 5):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化岛型反转指标
         
@@ -50,7 +51,7 @@ class IslandReversal(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 初始化跳空和岛型反转标记
         result["up_gap"] = False  # 向上跳空

@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Union, Optional
 import logging
-from .base_indicator import BaseIndicator
+from typing import Dict, List
+
+import numpy as np
+import pandas as pd
+
+from enums.indicator_types import TrendType, CrossType
+from indicators.indicator_registry import IndicatorEnum
 from utils.signal_utils import crossover, crossunder
-from enums.trend_types import TrendType
-from enums.cross_types import CrossType
+from .base_indicator import BaseIndicator
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +27,16 @@ class KC(BaseIndicator):
         multiplier: ATR倍数，默认为2
     """
     
-    def __init__(self, ema_period: int = 20, atr_period: int = 10, multiplier: float = 2):
+    def __init__(self, name: str = "KC", description: str = "肯特纳通道指标",
+                 ema_period: int = 20, atr_period: int = 10, multiplier: float = 2):
         """初始化肯特纳通道指标"""
-        super().__init__()
+        super().__init__(name, description)
+        self.indicator_type = IndicatorEnum.KC.name
         self.ema_period = ema_period
         self.atr_period = atr_period
         self.multiplier = multiplier
         self._result = None
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """

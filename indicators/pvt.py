@@ -27,6 +27,7 @@ class PVT(BaseIndicator):
     """
     
     def __init__(self, ma_period: int = 12):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化价格成交量趋势指标(PVT)指标
         

@@ -61,6 +61,7 @@ class CandlestickPatterns(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化K线形态识别指标"""
         super().__init__(name="CandlestickPatterns", description="K线形态识别指标，识别各种单日和组合K线形态")
     
@@ -78,7 +79,7 @@ class CandlestickPatterns(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算单日K线形态
         result = self._calculate_single_patterns(data, result)

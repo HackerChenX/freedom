@@ -8,24 +8,33 @@
 import unittest
 import pandas as pd
 import numpy as np
-import os
-import sys
 
-# 添加项目根目录到Python路径
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(root_dir)
-
+from indicators.base_indicator import BaseIndicator
+from indicators.ma import MA
+from indicators.rsi import RSI
+from indicators.boll import BOLL
+from indicators.macd import MACD
+from indicators.kdj import KDJ
+from indicators.cci import CCI
+from indicators.dmi import DMI
+from indicators.bias import BIAS
+from indicators.trix import TRIX
 from indicators.stock_vix import StockVIX
+from indicators.emv import EMV
+from indicators.intraday_volatility import IntradayVolatility
 from indicators.fibonacci import Fibonacci
 from indicators.sentiment_analysis import SentimentAnalysis
-from indicators.bias import BIAS
+from strategy.base_strategy import BaseStrategy
+from db.data_manager import DataManager
+from utils.date_utils import get_current_date
+from utils.stock_utils import get_stock_list
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 class TestNewIndicators(unittest.TestCase):
-    """测试新实现的指标功能"""
+    """测试新指标和增强功能"""
     
     def setUp(self):
         """初始化测试环境"""
@@ -141,6 +150,27 @@ class TestNewIndicators(unittest.TestCase):
         if len(multi_period_result.columns) > 0:
             self.assertIn('correlation_6_12', multi_period_result.columns)
             self.assertIn('divergence_score', multi_period_result.columns)
+
+    def test_emv(self):
+        """测试EMV指标"""
+        # 使用正确的 'period' 参数初始化EMV
+        emv = EMV(period=14)
+        emv_result = emv.calculate(self.data)
+        self.assertIn('EMV', emv_result.columns)
+        self.assertIn('EMV_MA', emv_result.columns)
+        
+        signals = emv.generate_signals(self.data)
+        self.assertIn('buy_signal', signals.columns)
+        self.assertIn('sell_signal', signals.columns)
+
+    def test_boll_bandwidth(self):
+        """测试BOLL带宽分析"""
+        # 使用正确的 'period' 参数初始化BOLL
+        boll = BOLL(period=20)
+        bandwidth_dynamics = boll.analyze_bandwidth_dynamics(self.data)
+        self.assertIn('bandwidth', bandwidth_dynamics)
+        self.assertIn('bandwidth_expanding', bandwidth_dynamics)
+        self.assertIn('bandwidth_contracting', bandwidth_dynamics)
 
 
 if __name__ == '__main__':

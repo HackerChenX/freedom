@@ -22,6 +22,7 @@ class ZXM_ABSORB(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM核心吸筹指标"""
         super().__init__(name="ZXM_ABSORB", description="ZXM核心吸筹指标，用于识别主力低位吸筹动作")
     
@@ -74,7 +75,7 @@ class ZXM_ABSORB(BaseIndicator):
         low = data["low"].values
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算V11 - KDJ衍生指标
         llv_55 = self._llv(low, 55)

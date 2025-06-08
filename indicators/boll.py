@@ -24,6 +24,7 @@ class BOLL(BaseIndicator):
     """
     
     def __init__(self, period: int = 20, std_dev: float = 2.0, moving_average_type: str = 'sma'):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化布林带指标
         
@@ -1355,7 +1356,19 @@ class BOLL(BaseIndicator):
         if len(self.result) < 2:
             return result
         
-        return result
+        # 遍历所有已注册的形态并检测
+        detected_patterns = []
+        for pattern_id in all_patterns:
+            pattern_info = registry.get_pattern(pattern_id)
+            if not pattern_info:
+                continue
+
+            detection_func = pattern_info.get("detection_function")
+            if detection_func and callable(detection_func):
+                if detection_func(self._result):
+                    detected_patterns.append(pattern_info)
+        
+        return detected_patterns
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """

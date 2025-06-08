@@ -23,6 +23,7 @@ class KDJScore(IndicatorScoreBase, PatternRecognitionMixin):
     """
     
     def __init__(self, n: int = 9, m1: int = 3, m2: int = 3, weight: float = 1.0):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化KDJ评分指标
         

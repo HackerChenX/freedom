@@ -27,7 +27,9 @@ class EnhancedCCI(BaseIndicator):
     EXTREME_OVERSOLD = -200  # 极度超卖
 
     def __init__(self, period: int = 20, factor: float = 0.015, 
-                 secondary_period: int = 40, adaptive: bool = True):
+                 secondary_period: int = 40, adaptive: bool = True,
+                 smoothing_period: int = 3,
+                 trend_period: int = 50):
         """
         初始化增强型CCI指标
         
@@ -36,8 +38,13 @@ class EnhancedCCI(BaseIndicator):
             factor (float): CCI计算因子，标准为0.015
             secondary_period (int): 二级CCI周期，用于周期协同分析
             adaptive (bool): 是否启用自适应周期
+            smoothing_period (int): 平滑周期
+            trend_period (int): 趋势周期
         """
-        super().__init__()
+        super().__init__(name="EnhancedCCI", description="增强版商品路径指标")
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.indicator_type = "ENHANCEDCCI"
+
         self.base_period = period
         self.factor = factor
         self.secondary_period = secondary_period
@@ -463,259 +470,125 @@ class EnhancedCCI(BaseIndicator):
     
     def identify_patterns(self) -> pd.DataFrame:
         """
-        识别CCI形态
+        识别CCI指标的特定形态
         
         Returns:
             pd.DataFrame: 包含形态识别结果的DataFrame
         """
         if self._result is None:
             return pd.DataFrame()
-        
-        cci = self._result['cci']
-        
-        # 创建形态DataFrame
-        patterns = pd.DataFrame(index=cci.index)
-        
-        # 1. 钩子形态（Hook）：CCI在超买/超卖区域形成拐点
-        # 超买区域钩子（看跌）
-        overbought_hook = (
-            (cci.shift(2) > self.OVERBOUGHT) &
-            (cci.shift(1) > self.OVERBOUGHT) &
-            (cci > self.OVERBOUGHT) &
-            (cci.shift(1) > cci.shift(2)) &  # 上升
-            (cci < cci.shift(1))             # 然后下降
-        )
-        
-        # 超卖区域钩子（看涨）
-        oversold_hook = (
-            (cci.shift(2) < self.OVERSOLD) &
-            (cci.shift(1) < self.OVERSOLD) &
-            (cci < self.OVERSOLD) &
-            (cci.shift(1) < cci.shift(2)) &  # 下降
-            (cci > cci.shift(1))             # 然后上升
-        )
-        
-        patterns['overbought_hook'] = overbought_hook
-        patterns['oversold_hook'] = oversold_hook
-        
-        # 2. 零轴穿越失败（Zero-line Rejection）：尝试穿越零轴但失败
-        zero_rejection_bull = (
-            (cci.shift(3) < -50) &
-            (cci.shift(2) < -20) &
-            (cci.shift(1) > -10) & (cci.shift(1) < 10) &  # 接近零轴
-            (cci < cci.shift(1)) &                       # 未能突破
-            (cci > -30)                                  # 但没有深度回落
-        )
-        
-        zero_rejection_bear = (
-            (cci.shift(3) > 50) &
-            (cci.shift(2) > 20) &
-            (cci.shift(1) < 10) & (cci.shift(1) > -10) &  # 接近零轴
-            (cci > cci.shift(1)) &                       # 未能突破
-            (cci < 30)                                   # 但没有深度回落
-        )
-        
-        patterns['zero_rejection_bull'] = zero_rejection_bull
-        patterns['zero_rejection_bear'] = zero_rejection_bear
-        
-        # 3. 头肩顶/底形态
-        # 使用find_peaks_and_troughs函数查找峰谷
-        peaks = find_peaks_and_troughs(cci, window=5, peak_type='peak')
-        troughs = find_peaks_and_troughs(cci, window=5, peak_type='trough')
-        
-        # 初始化头肩顶/底
-        head_shoulders_top = pd.Series(False, index=cci.index)
-        head_shoulders_bottom = pd.Series(False, index=cci.index)
-        
-        # 检测头肩顶
-        for i in range(len(peaks)-2):
-            if i+2 >= len(peaks):
-                continue
-                
-            left_shoulder_idx = peaks[i]
-            head_idx = peaks[i+1]
-            right_shoulder_idx = peaks[i+2]
             
-            # 确保存在两个谷（颈线）
-            neck_indices = [j for j in troughs if left_shoulder_idx < j < head_idx]
-            if not neck_indices:
-                continue
-            left_neck_idx = neck_indices[-1]
-            
-            neck_indices = [j for j in troughs if head_idx < j < right_shoulder_idx]
-            if not neck_indices:
-                continue
-            right_neck_idx = neck_indices[0]
-            
-            # 验证形态
-            if (left_shoulder_idx < head_idx < right_shoulder_idx and
-                cci.iloc[head_idx] > cci.iloc[left_shoulder_idx] and
-                cci.iloc[head_idx] > cci.iloc[right_shoulder_idx] and
-                abs(cci.iloc[left_shoulder_idx] - cci.iloc[right_shoulder_idx]) < 0.2 * cci.iloc[head_idx] and
-                abs(cci.iloc[left_neck_idx] - cci.iloc[right_neck_idx]) < 0.1 * cci.iloc[head_idx]):
-                
-                head_shoulders_top.iloc[right_shoulder_idx] = True
+        cci = self._result['cci'].dropna()
+        if cci.empty:
+            return pd.DataFrame()
+
+        patterns = pd.DataFrame(index=self._result.index)
         
-        # 检测头肩底
-        for i in range(len(troughs)-2):
-            if i+2 >= len(troughs):
-                continue
-                
-            left_shoulder_idx = troughs[i]
-            head_idx = troughs[i+1]
-            right_shoulder_idx = troughs[i+2]
-            
-            # 确保存在两个峰（颈线）
-            neck_indices = [j for j in peaks if left_shoulder_idx < j < head_idx]
-            if not neck_indices:
-                continue
-            left_neck_idx = neck_indices[-1]
-            
-            neck_indices = [j for j in peaks if head_idx < j < right_shoulder_idx]
-            if not neck_indices:
-                continue
-            right_neck_idx = neck_indices[0]
-            
-            # 验证形态
-            if (left_shoulder_idx < head_idx < right_shoulder_idx and
-                cci.iloc[head_idx] < cci.iloc[left_shoulder_idx] and
-                cci.iloc[head_idx] < cci.iloc[right_shoulder_idx] and
-                abs(cci.iloc[left_shoulder_idx] - cci.iloc[right_shoulder_idx]) < 0.2 * abs(cci.iloc[head_idx]) and
-                abs(cci.iloc[left_neck_idx] - cci.iloc[right_neck_idx]) < 0.1 * abs(cci.iloc[head_idx])):
-                
-                head_shoulders_bottom.iloc[right_shoulder_idx] = True
+        # 1. 零轴穿越
+        patterns['zero_cross_up'] = self.crossover(self._result['cci'], 0)
+        patterns['zero_cross_down'] = self.crossunder(self._result['cci'], 0)
         
-        patterns['head_shoulders_top'] = head_shoulders_top
-        patterns['head_shoulders_bottom'] = head_shoulders_bottom
+        # 2. CCI背离 (价格与CCI走势不一致)
+        divergence = self.detect_divergence()
+        if not divergence.empty:
+            patterns = patterns.join(divergence)
+
+        # 3. CCI W底和M顶
+        peaks, troughs = find_peaks_and_troughs(cci.values, window=5)
         
-        # 4. 平台突破
-        # 寻找CCI在较窄范围内波动然后突破的情况
-        for i in range(20, len(cci)):
-            # 检查前10个周期的波动范围
-            range_window = cci.iloc[i-10:i]
-            range_high = range_window.max()
-            range_low = range_window.min()
-            range_width = range_high - range_low
-            
-            # 判断是否为窄幅震荡
-            is_narrow_range = range_width < self._result['cci_volatility'].iloc[i] * 0.5
-            
-            if is_narrow_range:
-                # 向上突破
-                if cci.iloc[i] > range_high + range_width * 0.3:
-                    patterns.loc[cci.index[i], 'platform_breakout_up'] = True
-                # 向下突破
-                elif cci.iloc[i] < range_low - range_width * 0.3:
-                    patterns.loc[cci.index[i], 'platform_breakout_down'] = True
-                else:
-                    patterns.loc[cci.index[i], 'platform_breakout_up'] = False
-                    patterns.loc[cci.index[i], 'platform_breakout_down'] = False
-            else:
-                patterns.loc[cci.index[i], 'platform_breakout_up'] = False
-                patterns.loc[cci.index[i], 'platform_breakout_down'] = False
-        
-        # 5. 背离
-        patterns['bullish_divergence'] = self._detect_divergence(bullish=True)
-        patterns['bearish_divergence'] = self._detect_divergence(bullish=False)
-        
-        return patterns
+        # W底
+        w_bottom = np.zeros(len(cci), dtype=bool)
+        if len(troughs) >= 2:
+            for i in range(1, len(troughs)):
+                # 两个连续的低谷，且第二个比第一个高
+                if cci.iloc[troughs[i]] > cci.iloc[troughs[i-1]]:
+                    # 检查中间是否有高点
+                    middle_peaks = [p for p in peaks if troughs[i-1] < p < troughs[i]]
+                    if middle_peaks:
+                        w_bottom[troughs[i]] = True
+        patterns['w_bottom'] = pd.Series(w_bottom, index=cci.index)
+
+        # M顶
+        m_top = np.zeros(len(cci), dtype=bool)
+        if len(peaks) >= 2:
+            for i in range(1, len(peaks)):
+                # 两个连续的高点，且第二个比第一个低
+                if cci.iloc[peaks[i]] < cci.iloc[peaks[i-1]]:
+                    # 检查中间是否有低谷
+                    middle_troughs = [t for t in troughs if peaks[i-1] < t < peaks[i]]
+                    if middle_troughs:
+                        m_top[peaks[i]] = True
+        patterns['m_top'] = pd.Series(m_top, index=cci.index)
+
+        return patterns.reindex(self._result.index).fillna(False)
     
-    def _detect_divergence(self, bullish: bool = True) -> pd.Series:
+    def detect_divergence(self) -> pd.DataFrame:
         """
         检测CCI与价格之间的背离
         
-        Args:
-            bullish (bool): 是否检测看涨背离
-            
         Returns:
-            pd.Series: 背离检测结果
+            pd.DataFrame: 背离检测结果
         """
         if self._result is None or self._price_data is None:
-            return pd.Series()
-        
-        cci = self._result['cci']
-        price = self._price_data
-        
-        # 寻找CCI和价格的高点和低点
-        if bullish:
-            # 看涨背离：价格创新低但CCI未创新低
-            price_lows = find_peaks_and_troughs(price, window=10, peak_type='trough')
-            cci_lows = find_peaks_and_troughs(cci, window=10, peak_type='trough')
-        else:
-            # 看跌背离：价格创新高但CCI未创新高
-            price_highs = find_peaks_and_troughs(price, window=10, peak_type='peak')
-            cci_highs = find_peaks_and_troughs(cci, window=10, peak_type='peak')
-        
-        divergence = pd.Series(False, index=cci.index)
-        
-        if bullish:
-            for i in range(1, len(price_lows)):
-                if i >= len(price) or i >= len(price_lows):
-                    continue
-                    
-                current_idx = price_lows[i]
-                prev_idx = price_lows[i-1]
-                
-                # 检查价格是否创新低
-                if price.iloc[current_idx] < price.iloc[prev_idx]:
-                    # 寻找对应的CCI低点
-                    # 在价格低点附近查找CCI低点
-                    window_start = max(0, current_idx - 5)
-                    window_end = min(len(cci), current_idx + 5)
-                    window_indices = list(range(window_start, window_end))
-                    
-                    cci_low_indices = [idx for idx in cci_lows if idx in window_indices]
-                    
-                    if cci_low_indices:
-                        cci_current_idx = cci_low_indices[-1]
-                        
-                        # 寻找前一个对应的CCI低点
-                        prev_window_start = max(0, prev_idx - 5)
-                        prev_window_end = min(len(cci), prev_idx + 5)
-                        prev_window_indices = list(range(prev_window_start, prev_window_end))
-                        
-                        cci_prev_indices = [idx for idx in cci_lows if idx in prev_window_indices]
-                        
-                        if cci_prev_indices:
-                            cci_prev_idx = cci_prev_indices[-1]
-                            
-                            # 检查CCI是否未创新低
-                            if cci.iloc[cci_current_idx] > cci.iloc[cci_prev_idx]:
-                                divergence.iloc[current_idx] = True
-        else:
-            for i in range(1, len(price_highs)):
-                if i >= len(price) or i >= len(price_highs):
-                    continue
-                    
-                current_idx = price_highs[i]
-                prev_idx = price_highs[i-1]
-                
-                # 检查价格是否创新高
-                if price.iloc[current_idx] > price.iloc[prev_idx]:
-                    # 寻找对应的CCI高点
-                    # 在价格高点附近查找CCI高点
-                    window_start = max(0, current_idx - 5)
-                    window_end = min(len(cci), current_idx + 5)
-                    window_indices = list(range(window_start, window_end))
-                    
-                    cci_high_indices = [idx for idx in cci_highs if idx in window_indices]
-                    
-                    if cci_high_indices:
-                        cci_current_idx = cci_high_indices[-1]
-                        
-                        # 寻找前一个对应的CCI高点
-                        prev_window_start = max(0, prev_idx - 5)
-                        prev_window_end = min(len(cci), prev_idx + 5)
-                        prev_window_indices = list(range(prev_window_start, prev_window_end))
-                        
-                        cci_prev_indices = [idx for idx in cci_highs if idx in prev_window_indices]
-                        
-                        if cci_prev_indices:
-                            cci_prev_idx = cci_prev_indices[-1]
-                            
-                            # 检查CCI是否未创新高
-                            if cci.iloc[cci_current_idx] < cci.iloc[cci_prev_idx]:
-                                divergence.iloc[current_idx] = True
+            return pd.DataFrame()
+            
+        price = self._price_data.dropna()
+        cci = self._result['cci'].dropna()
+
+        if price.empty or cci.empty:
+            return pd.DataFrame()
+
+        divergence = pd.DataFrame({
+            'bullish_divergence': np.zeros(len(self._result), dtype=bool),
+            'bearish_divergence': np.zeros(len(self._result), dtype=bool),
+            'hidden_bullish_divergence': np.zeros(len(self._result), dtype=bool),
+            'hidden_bearish_divergence': np.zeros(len(self._result), dtype=bool)
+        }, index=self._result.index)
+
+        price_aligned, cci_aligned = price.align(cci, join='inner')
+
+        if len(price_aligned) < 10:
+            return divergence
+
+        # 查找价格和CCI的峰值和谷值
+        price_peaks, price_troughs = find_peaks_and_troughs(price_aligned.values, window=10)
+        cci_peaks, cci_troughs = find_peaks_and_troughs(cci_aligned.values, window=10)
+
+        # 看涨背离：价格创新低，CCI未创新低
+        if len(price_troughs) > 1 and len(cci_troughs) > 1:
+            for i in range(1, len(price_troughs)):
+                if price_aligned.iloc[price_troughs[i]] < price_aligned.iloc[price_troughs[i-1]]:
+                    corresponding_cci_trough = -1
+                    for t in cci_troughs:
+                        if abs(t - price_troughs[i]) < 5:
+                            corresponding_cci_trough = t
+                            break
+                    if corresponding_cci_trough != -1:
+                        prev_cci_trough = -1
+                        for t in cci_troughs:
+                            if abs(t - price_troughs[i-1]) < 5:
+                                prev_cci_trough = t
+                                break
+                        if prev_cci_trough != -1 and cci_aligned.iloc[corresponding_cci_trough] > cci_aligned.iloc[prev_cci_trough]:
+                            divergence.loc[price_aligned.index[price_troughs[i]], 'bullish_divergence'] = True
+
+        # 看跌背离：价格创新高，CCI未创新高
+        if len(price_peaks) > 1 and len(cci_peaks) > 1:
+            for i in range(1, len(price_peaks)):
+                if price_aligned.iloc[price_peaks[i]] > price_aligned.iloc[price_peaks[i-1]]:
+                    corresponding_cci_peak = -1
+                    for p in cci_peaks:
+                        if abs(p - price_peaks[i]) < 5:
+                            corresponding_cci_peak = p
+                            break
+                    if corresponding_cci_peak != -1:
+                        prev_cci_peak = -1
+                        for p in cci_peaks:
+                            if abs(p - price_peaks[i-1]) < 5:
+                                prev_cci_peak = p
+                                break
+                        if prev_cci_peak != -1 and cci_aligned.iloc[corresponding_cci_peak] < cci_aligned.iloc[prev_cci_peak]:
+                            divergence.loc[price_aligned.index[price_peaks[i]], 'bearish_divergence'] = True
         
         return divergence
     

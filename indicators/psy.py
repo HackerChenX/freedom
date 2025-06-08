@@ -50,6 +50,7 @@ class PSY(BaseIndicator):
             enhanced: 是否启用增强功能，默认为False
         """
         super().__init__(name="PSY", description="心理线指标，计算一段时间内上涨日所占百分比，判断市场情绪")
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.period = period
         self.secondary_period = secondary_period
         self.multi_periods = multi_periods or [6, 12, 24, 48]
@@ -93,7 +94,7 @@ class PSY(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 如果启用增强模式且启用自适应周期，则调整参数
         if self.enhanced and self.adaptive_period:

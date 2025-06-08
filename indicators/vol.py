@@ -33,6 +33,7 @@ class VOL(BaseIndicator):
     """
     
     def __init__(self, period: int = 14, enable_cycles_analysis: bool = True, enable_standardization: bool = True):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化成交量(VOL)指标
         

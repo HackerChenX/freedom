@@ -27,6 +27,7 @@ class SAR(BaseIndicator):
     """
     
     def __init__(self, acceleration: float = 0.02, maximum: float = 0.2):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化抛物线转向系统(SAR)指标
         

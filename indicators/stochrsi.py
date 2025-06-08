@@ -31,7 +31,8 @@ class STOCHRSI(BaseIndicator):
         D_period: 随机值D周期，默认为3
     """
     
-    def __init__(self, rsi_period: int = 14, k_period: int = 3, d_period: int = 3, overbought: float = 80, oversold: float = 20):
+    def __init__(self, rsi_period: int = 14, k_period: int = 3, d_period: int = 3, overbought: float = 80, oversold: float = 20, **kwargs):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化StochRSI指标
         

@@ -7,13 +7,24 @@
 运行指定的测试文件或测试套件
 """
 
-import os
-import sys
 import unittest
+import os
+from HTMLTestRunner import HTMLTestRunner
 
-# 将项目根目录添加到Python路径
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_root)
+def run_all_tests():
+    # ...
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    discover = unittest.defaultTestLoader.discover(test_dir, pattern='test_*.py')
+    
+    report_dir = os.path.join(os.path.dirname(test_dir), 'reports')
+    os.makedirs(report_dir, exist_ok=True)
+    report_path = os.path.join(report_dir, 'test_report.html')
+    
+    with open(report_path, 'wb') as f:
+        runner = HTMLTestRunner(stream=f,
+                                title='Test Report',
+                                description='This is a test report.')
+        runner.run(discover)
 
 def run_test(test_path):
     """

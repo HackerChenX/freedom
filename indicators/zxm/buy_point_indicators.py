@@ -22,6 +22,7 @@ class ZXMDailyMACD(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-日MACD指标"""
         super().__init__(name="ZXMDailyMACD", description="ZXM买点-日MACD指标，判断日线MACD值是否小于0.9")
     
@@ -45,7 +46,7 @@ class ZXMDailyMACD(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算MACD指标
         ema12 = data["close"].ewm(span=12, adjust=False).mean()
@@ -107,6 +108,7 @@ class ZXMTurnover(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-换手率指标"""
         super().__init__(name="ZXMTurnover", description="ZXM买点-换手率指标，判断日线换手率是否大于0.7%")
     
@@ -115,23 +117,23 @@ class ZXMTurnover(BaseIndicator):
         计算ZXM买点-换手率指标
         
         Args:
-            data: 输入数据，包含成交量和流通股本数据
+            data: 输入数据，包含成交量和换手率数据
             
         Returns:
             pd.DataFrame: 计算结果，包含买点信号
             
         公式说明：
-        换手:=VOL*100/CAPITAL>0.7;
+        换手率>0.7;
         xg:换手;
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["volume", "capital"])
+        self.ensure_columns(data, ["turnover_rate"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
-        # 计算换手率
-        turnover = data["volume"] * 100 / data["capital"]
+        # 直接使用数据库提供的换手率
+        turnover = data["turnover_rate"]
         
         # 计算买点信号
         xg = turnover > 0.7
@@ -182,6 +184,7 @@ class ZXMVolumeShrink(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-缩量指标"""
         super().__init__(name="ZXMVolumeShrink", description="ZXM买点-缩量指标，判断成交量是否明显缩量")
     
@@ -202,7 +205,7 @@ class ZXMVolumeShrink(BaseIndicator):
         self.ensure_columns(data, ["volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算2日均量
         ma_vol_2 = data["volume"].rolling(window=2).mean()
@@ -264,6 +267,7 @@ class ZXMMACallback(BaseIndicator):
     """
     
     def __init__(self, callback_percent: float = 4.0):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ZXM买点-回踩均线指标
         
@@ -294,7 +298,7 @@ class ZXMMACallback(BaseIndicator):
         self.ensure_columns(data, ["close"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算各均线
         ma20 = data["close"].rolling(window=20).mean()
@@ -367,6 +371,7 @@ class ZXMBSAbsorb(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-BS吸筹指标"""
         super().__init__(name="ZXMBSAbsorb", description="ZXM买点-BS吸筹指标，判断60分钟级别是否存在低位吸筹特征")
     
@@ -393,7 +398,7 @@ class ZXMBSAbsorb(BaseIndicator):
         self.ensure_columns(data, ["close", "high", "low"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算LLV和HHV
         llv_55 = data["low"].rolling(window=55).min()
@@ -512,6 +517,7 @@ class BuyPointDetector(BaseIndicator):
     """
     
     def __init__(self):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点检测指标"""
         super().__init__(name="BuyPointDetector", description="ZXM买点检测指标，检测多种买点形态")
         
@@ -529,7 +535,7 @@ class BuyPointDetector(BaseIndicator):
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算各种买点
         

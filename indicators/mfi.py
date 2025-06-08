@@ -26,6 +26,7 @@ class MFI(BaseIndicator):
     """
     
     def __init__(self, period: int = 14):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化MFI指标
         
@@ -49,7 +50,7 @@ class MFI(BaseIndicator):
         self.ensure_columns(data, ["high", "low", "close", "volume"])
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算典型价格: (high + low + close) / 3
         typical_price = (data["high"] + data["low"] + data["close"]) / 3

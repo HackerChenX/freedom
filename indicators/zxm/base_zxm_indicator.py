@@ -19,6 +19,7 @@ class BaseZXMIndicator(BaseIndicator, ABC):
     """张新民指标基类"""
     
     def __init__(self, name: str, **kwargs):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ZXM指标基类
         

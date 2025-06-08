@@ -7,29 +7,13 @@
 专门测试系统的形态识别功能
 """
 
-import sys
-import os
-import time
-import json
+import unittest
 import pandas as pd
 import numpy as np
-import unittest
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional
-# 单独导入Any类型
-from typing import Any
 
-# 添加项目根目录到Python路径
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, root_dir)
-
-from db.clickhouse_db import get_clickhouse_db
-from indicators.factory import IndicatorFactory
-from utils.logger import get_logger
-
-# 获取日志记录器
-logger = get_logger(__name__)
-
+from indicators.pattern_recognition import PatternRecognition
+from indicators.ma import MA
+from indicators.macd import MACD
 
 class TestPatternRecognition(unittest.TestCase):
     """测试形态识别功能"""

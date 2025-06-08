@@ -4,113 +4,81 @@ MACD指标单元测试
 
 import unittest
 import pandas as pd
-import numpy as np
 
-from indicators import MACD
+from indicators.macd import MACD
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
 
 
-class TestMACD(unittest.TestCase):
-    """MACD指标单元测试类"""
-    
+class TestMACD(unittest.TestCase, IndicatorTestMixin):
+    """MACD指标单元测试类，继承自TestCase和IndicatorTestMixin。"""
+
     def setUp(self):
-        """准备测试数据"""
-        # 创建一个简单的测试数据集
-        data = {
-            'date': pd.date_range(start='2023-01-01', periods=100),
-            'close': np.random.normal(100, 10, 100)  # 生成随机价格数据
-        }
-        self.df = pd.DataFrame(data)
-        self.df.set_index('date', inplace=True)
+        """
+        为所有测试准备数据和指标实例。
+        这个方法在每个测试方法运行前都会被调用。
+        """
+        # 指标实例
+        self.indicator = MACD(fast_period=12, slow_period=26, signal_period=9)
         
-        # 创建MACD实例
-        self.macd = MACD()
-    
-    def test_calculate(self):
-        """测试计算方法"""
-        # 调用计算方法
-        result = self.macd.calculate(self.df)
+        # 定义预期输出列，供基类测试使用
+        self.expected_columns = ['macd_line', 'macd_signal', 'macd_histogram']
         
-        # 验证结果DataFrame包含所需的列
-        self.assertIn('macd_line', result.columns)
-        self.assertIn('macd_signal', result.columns)
-        self.assertIn('macd_histogram', result.columns)
+        # 生成并赋值通用测试数据，供基类测试使用
+        # 使用一个包含多种形态的复杂序列
+        self.data = TestDataGenerator.generate_price_sequence([
+            {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 30},
+            {'type': 'v_shape', 'start_price': 100, 'bottom_price': 90, 'periods': 40},
+            {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 10},
+            {'type': 'm_shape', 'start_price': 100, 'top_price': 110, 'periods': 40},
+        ])
+
+    def test_golden_cross_pattern(self):
+        """测试金叉形态的精确定位"""
+        # 为金叉场景生成特定数据
+        data = TestDataGenerator.generate_price_sequence([
+            {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 30}, # 稳定EMA
+            {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 10},  # 快速下跌
+            {'type': 'trend', 'start_price': 90, 'end_price': 105, 'periods': 20}  # 快速反弹
+        ])
+        patterns = self.indicator.get_patterns(data)
         
-        # 验证结果长度正确
-        self.assertEqual(len(result), len(self.df))
+        self.assertGreaterEqual(patterns['MACD_GOLDEN_CROSS'].sum(), 1, "金叉信号未被检测到")
         
-        # 验证前几个值为NaN（因为需要足够的数据来计算移动平均）
-        self.assertTrue(pd.isna(result['macd_line'].iloc[0]))
+        # 交叉点应该在反弹开始之后
+        first_cross_date = patterns[patterns['MACD_GOLDEN_CROSS']].index[0]
+        rebound_start_date = data.index[40]
+        self.assertGreater(first_cross_date, rebound_start_date, "金叉发生在预期时间之前")
+
+    def test_death_cross_pattern(self):
+        """测试死叉形态的精确定位"""
+        # 为死叉场景生成特定数据
+        data = TestDataGenerator.generate_price_sequence([
+            {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 30}, # 稳定EMA
+            {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 10}, # 快速上涨
+            {'type': 'trend', 'start_price': 110, 'end_price': 95, 'periods': 20}   # 快速下跌
+        ])
+        patterns = self.indicator.get_patterns(data)
+
+        self.assertGreaterEqual(patterns['MACD_DEATH_CROSS'].sum(), 1, "死叉信号未被检测到")
+
+        first_cross_date = patterns[patterns['MACD_DEATH_CROSS']].index[0]
+        decline_start_date = data.index[40]
+        self.assertGreater(first_cross_date, decline_start_date, "死叉发生在预期时间之前")
+
+    def test_bullish_divergence_pattern(self):
+        """测试底背离形态的检测"""
+        # 为底背离场景生成特定数据
+        data = TestDataGenerator.generate_price_sequence([
+            {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 70}, # 稳定EMA
+            {'type': 'trend', 'start_price': 100, 'end_price': 95, 'periods': 10},  # 第一个低点
+            {'type': 'trend', 'start_price': 95, 'end_price': 98, 'periods': 5},    # 小幅反弹
+            {'type': 'trend', 'start_price': 98, 'end_price': 94, 'periods': 10}   # 第二个更低的低点
+        ])
+        patterns = self.indicator.get_patterns(data)
         
-        # 验证最后一个值不为NaN
-        self.assertFalse(pd.isna(result['macd_line'].iloc[-1]))
-    
-    def test_with_custom_params(self):
-        """测试自定义参数"""
-        # 创建自定义参数的MACD实例
-        custom_macd = MACD(fast_period=5, slow_period=10, signal_period=3)
-        
-        # 调用计算方法
-        result = custom_macd.calculate(self.df)
-        
-        # 验证结果DataFrame包含所需的列
-        self.assertIn('macd_line', result.columns)
-        self.assertIn('macd_signal', result.columns)
-        self.assertIn('macd_histogram', result.columns)
-        
-        # 验证自定义参数的影响（例如更快的参数应该减少NaN值）
-        standard_result = self.macd.calculate(self.df)
-        
-        # 计算非NaN值的数量，自定义参数应该有更多非NaN值
-        custom_valid_count = result['macd_signal'].notna().sum()
-        standard_valid_count = standard_result['macd_signal'].notna().sum()
-        
-        self.assertGreaterEqual(custom_valid_count, standard_valid_count)
-    
-    def test_get_buy_signal(self):
-        """测试买入信号"""
-        # 首先计算MACD
-        result = self.macd.calculate(self.df)
-        
-        # 获取买入信号
-        buy_signal = self.macd.get_buy_signal(result)
-        
-        # 验证买入信号是布尔类型的Series
-        self.assertIsInstance(buy_signal, pd.Series)
-        self.assertEqual(buy_signal.dtype, bool)
-        
-        # 验证买入信号的长度正确
-        self.assertEqual(len(buy_signal), len(self.df))
-    
-    def test_get_sell_signal(self):
-        """测试卖出信号"""
-        # 首先计算MACD
-        result = self.macd.calculate(self.df)
-        
-        # 获取卖出信号
-        sell_signal = self.macd.get_sell_signal(result)
-        
-        # 验证卖出信号是布尔类型的Series
-        self.assertIsInstance(sell_signal, pd.Series)
-        self.assertEqual(sell_signal.dtype, bool)
-        
-        # 验证卖出信号的长度正确
-        self.assertEqual(len(sell_signal), len(self.df))
-    
-    def test_add_signals(self):
-        """测试添加信号"""
-        # 首先计算MACD
-        result = self.macd.calculate(self.df)
-        
-        # 添加信号
-        result_with_signals = self.macd.add_signals(result)
-        
-        # 验证结果DataFrame包含信号列
-        self.assertIn('macd_buy_signal', result_with_signals.columns)
-        self.assertIn('macd_sell_signal', result_with_signals.columns)
-        
-        # 验证信号列是布尔类型
-        self.assertEqual(result_with_signals['macd_buy_signal'].dtype, bool)
-        self.assertEqual(result_with_signals['macd_sell_signal'].dtype, bool)
+        divergence_range = patterns.iloc[85:95]
+        self.assertTrue(divergence_range['MACD_BULLISH_DIVERGENCE'].any(), "在预设区间未检测到底背离")
 
 
 if __name__ == '__main__':

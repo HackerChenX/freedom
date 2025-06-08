@@ -27,6 +27,7 @@ class VIX(BaseIndicator):
     """
     
     def __init__(self, period: int = 10, smooth_period: int = 5):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化VIX恐慌指数指标
         

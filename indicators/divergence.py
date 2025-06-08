@@ -32,6 +32,7 @@ class DIVERGENCE(BaseIndicator):
     """
     
     def __init__(self, lookback_period: int = 20, confirm_period: int = 5):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化量价背离指标
         
@@ -100,7 +101,7 @@ class DIVERGENCE(BaseIndicator):
         
         return result
     
-    def calculate(self, data: pd.DataFrame, indicator_name: str, 
+    def calculate(self, data: pd.DataFrame, indicator_name: str = None, 
                   lookback_period: int = 20, confirm_period: int = 5, 
                   *args, **kwargs) -> pd.DataFrame:
         """
@@ -108,7 +109,7 @@ class DIVERGENCE(BaseIndicator):
         
         Args:
             data: 输入数据，包含价格和技术指标数据
-            indicator_name: 用于对比的技术指标列名
+            indicator_name: 用于对比的技术指标列名。如果为None，则默认计算价格与成交量的背离。
             lookback_period: 回溯周期，默认为20
             confirm_period: 确认周期，默认为5
             
@@ -124,6 +125,10 @@ class DIVERGENCE(BaseIndicator):
         MACD_NO_NEWHIGH:=MACD<HHV(MACD,N);
         NEGATIVE_DIVERGENCE:=PRICE_NEWHIGH AND MACD_NO_NEWHIGH;
         """
+        # 如果没有提供指标名称，则默认计算价格与成交量的背离
+        if indicator_name is None:
+            return self.price_volume_divergence(data, lookback_period, confirm_period)
+        
         # 确保数据包含必需的列
         self.ensure_columns(data, ["close", "high", "low", indicator_name])
         
@@ -134,7 +139,7 @@ class DIVERGENCE(BaseIndicator):
         indicator = data[indicator_name].values
         
         # 初始化结果数据框
-        result = pd.DataFrame(index=data.index)
+        result = data.copy()
         
         # 计算价格新高新低
         price_newlow = np.zeros(len(close), dtype=bool)

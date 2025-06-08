@@ -29,7 +29,9 @@ class EnhancedOBV(OBV):
                 noise_filter: float = 0.005,
                 multi_periods: List[int] = None,
                 smooth_period: int = 5,
-                adaptive: bool = True):
+                adaptive: bool = True,
+                use_smoothed_obv: bool = True,
+                smoothing_period: int = 5):
         """
         初始化增强型OBV指标
         
@@ -40,17 +42,23 @@ class EnhancedOBV(OBV):
             multi_periods: 多周期分析参数，默认为[5, 10, 20, 60]
             smooth_period: 平滑周期
             adaptive: 是否启用自适应模式
+            use_smoothed_obv: 是否使用平滑后的OBV
+            smoothing_period: 平滑周期
         """
-        super().__init__(ma_period=ma_period)
+        self.indicator_type = "ENHANCEDOBV"
+        super().__init__()
         self.name = "EnhancedOBV"
-        self.description = "增强型能量潮指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
+        self.description = "增强型OBV指标"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.ma_period = ma_period
         self.sensitivity = sensitivity
         self.noise_filter = noise_filter
         self.multi_periods = multi_periods or [5, 10, 20, 60]
-        self.indicator_type = "volume"  # 指标类型：量价类
         self.smooth_period = smooth_period
         self.adaptive = adaptive
         self.market_environment = "normal"
+        self.use_smoothed_obv = use_smoothed_obv
+        self.smoothing_period = smoothing_period
         
         # 内部参数
         self._result = None
@@ -80,24 +88,31 @@ class EnhancedOBV(OBV):
         
         # 复制输入数据
         result = data.copy()
+        self._price_data = data['close']
         
         # 计算增强型OBV - 使用修正的价格变动方向，增加灵敏度和噪声过滤
         obv = self._calculate_enhanced_obv(result)
         result["obv"] = obv
+
+        # 如果启用，计算平滑后的OBV
+        if self.use_smoothed_obv:
+            result['obv_smooth'] = obv.rolling(window=self.smoothing_period).mean()
+        else:
+            result['obv_smooth'] = obv
         
         # 计算OBV均线
-        result["obv_ma"] = pd.Series(obv).rolling(window=self.ma_period).mean().values
+        result["obv_ma"] = pd.Series(result['obv_smooth']).rolling(window=self.ma_period).mean()
         
         # 计算多周期OBV均线
         for period in self.multi_periods:
             if period != self.ma_period:  # 避免重复计算
-                result[f"obv_ma{period}"] = pd.Series(obv).rolling(window=period).mean().values
+                result[f"obv_ma{period}"] = pd.Series(result['obv_smooth']).rolling(window=period).mean()
         
         # 计算OBV动量 - 衡量OBV的变化速率
-        result["obv_momentum"] = self._calculate_obv_momentum(obv)
+        result["obv_momentum"] = self._calculate_obv_momentum(result['obv_smooth'])
         
         # 计算OBV变化率 - 相对变化百分比
-        result["obv_rate"] = obv.pct_change(periods=5).fillna(0) * 100
+        result["obv_rate"] = result['obv_smooth'].pct_change(periods=5).fillna(0) * 100
         
         # 计算量价相关性
         result["volume_price_corr"] = self._calculate_volume_price_correlation(data, window=20)
@@ -160,7 +175,7 @@ class EnhancedOBV(OBV):
             pd.Series: OBV动量序列
         """
         # 计算OBV变化率
-        obv_change = obv - obv.shift(period)
+        obv_change = obv.diff(period)
         
         # 标准化动量（除以OBV绝对值的移动平均，避免除以零）
         obv_abs_ma = obv.abs().rolling(window=period).mean()
@@ -168,7 +183,7 @@ class EnhancedOBV(OBV):
         
         obv_momentum = obv_change / obv_abs_ma
         
-        return obv_momentum
+        return obv_momentum.fillna(0)
     
     def _calculate_volume_price_correlation(self, data: pd.DataFrame, window: int = 20) -> pd.Series:
         """
@@ -186,13 +201,7 @@ class EnhancedOBV(OBV):
         volume_change = data['volume'].pct_change()
         
         # 使用滚动窗口计算相关性
-        corr = pd.Series(index=data.index)
-        
-        for i in range(window, len(data)):
-            if i >= window:
-                window_price_change = price_change.iloc[i-window+1:i+1]
-                window_volume_change = volume_change.iloc[i-window+1:i+1]
-                corr.iloc[i] = window_price_change.corr(window_volume_change)
+        corr = price_change.rolling(window=window).corr(volume_change).fillna(0)
         
         return corr
     
@@ -216,14 +225,14 @@ class EnhancedOBV(OBV):
         
         score = pd.Series(50.0, index=data.index)  # 基础分50分
         
-        obv = self._result['obv']
+        obv_smooth = self._result['obv_smooth']
         obv_ma = self._result['obv_ma']
         close = self._result['close']
         obv_momentum = self._result['obv_momentum']
         volume_price_corr = self._result['volume_price_corr']
         
         # 1. OBV趋势与价格趋势一致性评分 (权重提高)
-        obv_trend = obv > obv.shift(5)  # OBV上升趋势
+        obv_trend = obv_smooth > obv_smooth.shift(5)  # OBV上升趋势
         price_trend = close > close.shift(5)  # 价格上升趋势
         
         # 趋势一致+20分 (原来是+15分)
@@ -231,7 +240,7 @@ class EnhancedOBV(OBV):
         score += trend_consistency * 20
         
         # 2. 优化后的OBV背离评分
-        divergence_score = self._calculate_enhanced_divergence(close, obv)
+        divergence_score = self._calculate_enhanced_divergence(close, obv_smooth)
         score += divergence_score
         
         # 3. 多周期OBV趋势一致性评分 (新增)
@@ -252,18 +261,18 @@ class EnhancedOBV(OBV):
         
         # 6. OBV均线交叉评分 (根据市场环境调整)
         # OBV上穿均线信号
-        obv_cross_up_ma = self.crossover(obv, obv_ma)
+        obv_cross_up_ma = self.crossover(obv_smooth, obv_ma)
         # OBV下穿均线信号
-        obv_cross_down_ma = self.crossunder(obv, obv_ma)
+        obv_cross_down_ma = self.crossunder(obv_smooth, obv_ma)
         
         # 7. 市场环境感知评分调整
-        market_env = self.get_market_environment()
+        market_env = self.market_environment
         
-        if market_env == MarketEnvironment.BULL_MARKET:
+        if market_env == 'bull_market':
             # 牛市中，上穿信号更重要
             score += obv_cross_up_ma * 20
             score -= obv_cross_down_ma * 10
-        elif market_env == MarketEnvironment.BEAR_MARKET:
+        elif market_env == 'bear_market':
             # 熊市中，下穿信号更重要
             score += obv_cross_up_ma * 10
             score -= obv_cross_down_ma * 20
@@ -290,79 +299,55 @@ class EnhancedOBV(OBV):
         
         if len(price) < 20:
             return divergence_score
+            
+        price = price.dropna()
+        obv = obv.dropna()
         
+        if len(price) < 20 or len(obv) < 20:
+            return divergence_score
+
         # 使用局部极值点寻找更准确的背离
-        price_highs = []
-        price_lows = []
-        obv_highs = []
-        obv_lows = []
-        
-        # 寻找局部极值点
-        window = 5
-        for i in range(window, len(price) - window):
-            # 价格高点
-            if price.iloc[i] > price.iloc[i-1] and price.iloc[i] > price.iloc[i+1] and \
-               price.iloc[i] == price.iloc[i-window:i+window+1].max():
-                price_highs.append(i)
-                
-            # 价格低点
-            if price.iloc[i] < price.iloc[i-1] and price.iloc[i] < price.iloc[i+1] and \
-               price.iloc[i] == price.iloc[i-window:i+window+1].min():
-                price_lows.append(i)
-                
-            # OBV高点
-            if obv.iloc[i] > obv.iloc[i-1] and obv.iloc[i] > obv.iloc[i+1] and \
-               obv.iloc[i] == obv.iloc[i-window:i+window+1].max():
-                obv_highs.append(i)
-                
-            # OBV低点
-            if obv.iloc[i] < obv.iloc[i-1] and obv.iloc[i] < obv.iloc[i+1] and \
-               obv.iloc[i] == obv.iloc[i-window:i+window+1].min():
-                obv_lows.append(i)
-        
+        price_peaks, price_troughs = find_peaks_and_troughs(price.values, window=10)
+        obv_peaks, obv_troughs = find_peaks_and_troughs(obv.values, window=10)
+
         # 检查顶背离（价格创新高，OBV未创新高）
-        for i in price_highs:
-            if i > window * 2:
-                # 获取之前的高点
-                prev_highs = [ph for ph in price_highs if ph < i and i - ph <= 20]
-                if prev_highs:
-                    prev_high = prev_highs[-1]
-                    # 价格创新高
-                    if price.iloc[i] > price.iloc[prev_high]:
-                        # 检查OBV是否也创新高
-                        obv_new_high = False
-                        for oh in obv_highs:
-                            if abs(oh - i) <= window:  # OBV高点与价格高点接近
-                                obv_new_high = True
-                                # 检查OBV是否相对之前高点更高
-                                prev_obv_highs = [povh for povh in obv_highs if povh < oh and oh - povh <= 20]
-                                if prev_obv_highs and obv.iloc[oh] <= obv.iloc[prev_obv_highs[-1]]:
-                                    # OBV未创新高，顶背离
-                                    divergence_score.iloc[i:i+15] -= 30
-                                break
+        for i in range(1, len(price_peaks)):
+            if i >= len(price_peaks) or price_peaks[i] >= len(price): continue
+            
+            current_price_peak_idx = price_peaks[i]
+            prev_price_peak_idx = price_peaks[i-1]
+            
+            if price.iloc[current_price_peak_idx] > price.iloc[prev_price_peak_idx]:
+                # 寻找对应的OBV高点
+                current_obv_peak_idx = -1
+                prev_obv_peak_idx = -1
+                for p in obv_peaks:
+                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p
+                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p
+                
+                if current_obv_peak_idx != -1 and prev_obv_peak_idx != -1:
+                    if obv.iloc[current_obv_peak_idx] < obv.iloc[prev_obv_peak_idx]:
+                        divergence_score.iloc[current_price_peak_idx:] -= 30
         
         # 检查底背离（价格创新低，OBV未创新低）
-        for i in price_lows:
-            if i > window * 2:
-                # 获取之前的低点
-                prev_lows = [pl for pl in price_lows if pl < i and i - pl <= 20]
-                if prev_lows:
-                    prev_low = prev_lows[-1]
-                    # 价格创新低
-                    if price.iloc[i] < price.iloc[prev_low]:
-                        # 检查OBV是否也创新低
-                        obv_new_low = False
-                        for ol in obv_lows:
-                            if abs(ol - i) <= window:  # OBV低点与价格低点接近
-                                obv_new_low = True
-                                # 检查OBV是否相对之前低点更低
-                                prev_obv_lows = [povl for povl in obv_lows if povl < ol and ol - povl <= 20]
-                                if prev_obv_lows and obv.iloc[ol] >= obv.iloc[prev_obv_lows[-1]]:
-                                    # OBV未创新低，底背离
-                                    divergence_score.iloc[i:i+15] += 30
-                                break
-        
-        return divergence_score
+        for i in range(1, len(price_troughs)):
+            if i >= len(price_troughs) or price_troughs[i] >= len(price): continue
+
+            current_price_trough_idx = price_troughs[i]
+            prev_price_trough_idx = price_troughs[i-1]
+
+            if price.iloc[current_price_trough_idx] < price.iloc[prev_price_trough_idx]:
+                current_obv_trough_idx = -1
+                prev_obv_trough_idx = -1
+                for t in obv_troughs:
+                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t
+                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t
+
+                if current_obv_trough_idx != -1 and prev_obv_trough_idx != -1:
+                    if obv.iloc[current_obv_trough_idx] > obv.iloc[prev_obv_trough_idx]:
+                        divergence_score.iloc[current_price_trough_idx:] += 30
+
+        return divergence_score.clip(-30, 30)
     
     def _calculate_multi_period_consistency(self, data: pd.DataFrame) -> pd.Series:
         """
@@ -379,19 +364,19 @@ class EnhancedOBV(OBV):
         
         score = pd.Series(0.0, index=data.index)
         
-        obv = self._result['obv']
+        obv_smooth = self._result['obv_smooth']
         
         # 不同周期的OBV趋势
         trends = {}
         
         # 计算各周期趋势
         for period in self.multi_periods:
-            trends[period] = obv > obv.shift(period)
+            trends[period] = obv_smooth > obv_smooth.shift(period)
         
         # 检查趋势一致性
         if len(trends) >= 2:
             # 计算趋势一致的比例
-            trend_agreement = pd.Series(0, index=data.index)
+            trend_agreement = pd.Series(0, index=data.index, dtype=float)
             
             for i in range(len(data)):
                 up_trends = sum(1 for period in self.multi_periods if i >= period and trends[period].iloc[i])
@@ -463,7 +448,9 @@ class EnhancedOBV(OBV):
             self.calculate(data, *args, **kwargs)
             
         result = self._result.copy()
-        
+        obv_smooth = result['obv_smooth']
+        obv_ma = result['obv_ma']
+
         # 创建信号DataFrame
         signals = pd.DataFrame(index=result.index)
         signals['obv'] = result['obv']
@@ -476,22 +463,22 @@ class EnhancedOBV(OBV):
         # 生成买入信号
         buy_signal = (
             (signals['score'] > 70) |  # 评分高于70
-            (self.crossover(result['obv'], result['obv_ma']))  # OBV上穿均线
+            (self.crossover(obv_smooth, obv_ma))  # OBV上穿均线
         )
         
         # 生成卖出信号
         sell_signal = (
             (signals['score'] < 30) |  # 评分低于30
-            (self.crossunder(result['obv'], result['obv_ma']))  # OBV下穿均线
+            (self.crossunder(obv_smooth, obv_ma))  # OBV下穿均线
         )
         
         # 应用市场环境调整
-        market_env = self.get_market_environment()
-        if market_env == MarketEnvironment.BULL_MARKET:
+        market_env = self.market_environment
+        if market_env == 'bull_market':
             # 牛市中降低买入门槛，提高卖出门槛
             buy_signal = buy_signal | (signals['score'] > 65)
             sell_signal = sell_signal & (signals['score'] < 25)
-        elif market_env == MarketEnvironment.BEAR_MARKET:
+        elif market_env == 'bear_market':
             # 熊市中提高买入门槛，降低卖出门槛
             buy_signal = buy_signal & (signals['score'] > 75)
             sell_signal = sell_signal | (signals['score'] < 35)
@@ -577,7 +564,7 @@ class EnhancedOBV(OBV):
             return pd.DataFrame()
         
         obv = self._result['obv']
-        obv_smooth = self._result['obv_smooth']
+        obv_smooth = self._result.get('obv_smooth', obv) # 兼容未平滑的情况
         
         # 计算梯度 (一阶导数)
         gradient = obv_smooth.diff()
@@ -586,13 +573,11 @@ class EnhancedOBV(OBV):
         acceleration = gradient.diff()
         
         # 归一化处理
-        gradient_std = gradient.rolling(20).std()
-        normalized_gradient = gradient / gradient_std
-        normalized_gradient = normalized_gradient.fillna(0)
+        gradient_std = gradient.rolling(20).std().replace(0, 1)
+        normalized_gradient = (gradient / gradient_std).fillna(0)
         
-        acceleration_std = acceleration.rolling(20).std()
-        normalized_acceleration = acceleration / acceleration_std
-        normalized_acceleration = normalized_acceleration.fillna(0)
+        acceleration_std = acceleration.rolling(20).std().replace(0, 1)
+        normalized_acceleration = (acceleration / acceleration_std).fillna(0)
         
         # 创建结果DataFrame
         flow_gradient = pd.DataFrame({
@@ -621,14 +606,21 @@ class EnhancedOBV(OBV):
         if self._result is None or self._price_data is None:
             return pd.DataFrame()
         
-        obv = self._result['obv_smooth'].fillna(method='ffill')
+        obv = self._result.get('obv_smooth', self._result['obv']).fillna(method='ffill')
         price = self._price_data
         
+        if len(price) < 20 or len(obv) < 20:
+             return pd.DataFrame(columns=[
+                'bullish_divergence',
+                'bearish_divergence',
+                'hidden_bullish_divergence',
+                'hidden_bearish_divergence',
+                'divergence_strength'
+             ])
+
         # 查找高点和低点
-        price_peaks = find_peaks_and_troughs(price, window=10, peak_type='peak')
-        price_troughs = find_peaks_and_troughs(price, window=10, peak_type='trough')
-        obv_peaks = find_peaks_and_troughs(obv, window=10, peak_type='peak')
-        obv_troughs = find_peaks_and_troughs(obv, window=10, peak_type='trough')
+        price_peaks, price_troughs = find_peaks_and_troughs(price.values, window=10)
+        obv_peaks, obv_troughs = find_peaks_and_troughs(obv.values, window=10)
         
         # 创建结果DataFrame
         divergence = pd.DataFrame(0, index=price.index, columns=[
@@ -641,57 +633,82 @@ class EnhancedOBV(OBV):
         
         # 检测常规背离
         for i in range(1, len(price_peaks)):
-            if i >= len(price) or i >= len(obv_peaks):
-                continue
+            if i >= len(price_peaks) or price_peaks[i] >= len(price): continue
+            current_price_peak_idx = price_peaks[i]
+            prev_price_peak_idx = price_peaks[i-1]
+            
+            if price.iloc[current_price_peak_idx] > price.iloc[prev_price_peak_idx]:
+                current_obv_peak_idx = -1
+                prev_obv_peak_idx = -1
+                for p in obv_peaks:
+                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p
+                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p
                 
-            # 看跌背离：价格创新高但OBV未创新高
-            if (price.iloc[price_peaks[i]] > price.iloc[price_peaks[i-1]] and 
-                obv.iloc[obv_peaks[i]] < obv.iloc[obv_peaks[i-1]]):
-                
-                # 计算背离强度
-                price_change = (price.iloc[price_peaks[i]] / price.iloc[price_peaks[i-1]]) - 1
-                obv_change = (obv.iloc[obv_peaks[i]] / obv.iloc[obv_peaks[i-1]]) - 1
-                strength = abs(price_change - obv_change) / max(abs(price_change), abs(obv_change))
-                
-                divergence.loc[price.index[price_peaks[i]], 'bearish_divergence'] = 1
-                divergence.loc[price.index[price_peaks[i]], 'divergence_strength'] = strength
-        
+                if current_obv_peak_idx != -1 and prev_obv_peak_idx != -1 and prev_obv_peak_idx < current_obv_peak_idx:
+                    if obv.iloc[current_obv_peak_idx] < obv.iloc[prev_obv_peak_idx]:
+                        # 计算背离强度
+                        price_change = (price.iloc[current_price_peak_idx] / price.iloc[prev_price_peak_idx]) - 1
+                        with np.errstate(divide='ignore', invalid='ignore'):
+                            obv_change = (obv.iloc[current_obv_peak_idx] / obv.iloc[prev_obv_peak_idx]) - 1
+                        strength = abs(price_change - obv_change) / max(abs(price_change), abs(obv_change), 1e-9)
+                        
+                        divergence.loc[price.index[current_price_peak_idx], 'bearish_divergence'] = 1
+                        divergence.loc[price.index[current_price_peak_idx], 'divergence_strength'] = strength
+
         for i in range(1, len(price_troughs)):
-            if i >= len(price) or i >= len(obv_troughs):
-                continue
-                
-            # 看涨背离：价格创新低但OBV未创新低
-            if (price.iloc[price_troughs[i]] < price.iloc[price_troughs[i-1]] and 
-                obv.iloc[obv_troughs[i]] > obv.iloc[obv_troughs[i-1]]):
-                
-                # 计算背离强度
-                price_change = (price.iloc[price_troughs[i]] / price.iloc[price_troughs[i-1]]) - 1
-                obv_change = (obv.iloc[obv_troughs[i]] / obv.iloc[obv_troughs[i-1]]) - 1
-                strength = abs(price_change - obv_change) / max(abs(price_change), abs(obv_change))
-                
-                divergence.loc[price.index[price_troughs[i]], 'bullish_divergence'] = 1
-                divergence.loc[price.index[price_troughs[i]], 'divergence_strength'] = strength
-        
+            if i >= len(price_troughs) or price_troughs[i] >= len(price): continue
+            current_price_trough_idx = price_troughs[i]
+            prev_price_trough_idx = price_troughs[i-1]
+
+            if price.iloc[current_price_trough_idx] < price.iloc[prev_price_trough_idx]:
+                current_obv_trough_idx = -1
+                prev_obv_trough_idx = -1
+                for t in obv_troughs:
+                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t
+                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t
+
+                if current_obv_trough_idx != -1 and prev_obv_trough_idx != -1 and prev_obv_trough_idx < current_obv_trough_idx:
+                    if obv.iloc[current_obv_trough_idx] > obv.iloc[prev_obv_trough_idx]:
+                        price_change = (price.iloc[current_price_trough_idx] / price.iloc[prev_price_trough_idx]) - 1
+                        with np.errstate(divide='ignore', invalid='ignore'):
+                            obv_change = (obv.iloc[current_obv_trough_idx] / obv.iloc[prev_obv_trough_idx]) - 1
+                        strength = abs(price_change - obv_change) / max(abs(price_change), abs(obv_change), 1e-9)
+                        
+                        divergence.loc[price.index[current_price_trough_idx], 'bullish_divergence'] = 1
+                        divergence.loc[price.index[current_price_trough_idx], 'divergence_strength'] = strength
+
         # 检测隐藏背离
         for i in range(1, len(price_peaks)):
-            if i >= len(price) or i >= len(obv_peaks):
-                continue
-                
-            # 隐藏看跌背离：价格高点下降但OBV高点上升
-            if (price.iloc[price_peaks[i]] < price.iloc[price_peaks[i-1]] and 
-                obv.iloc[obv_peaks[i]] > obv.iloc[obv_peaks[i-1]]):
-                
-                divergence.loc[price.index[price_peaks[i]], 'hidden_bearish_divergence'] = 1
-        
+            if i >= len(price_peaks) or price_peaks[i] >= len(price): continue
+            current_price_peak_idx = price_peaks[i]
+            prev_price_peak_idx = price_peaks[i-1]
+
+            if price.iloc[current_price_peak_idx] < price.iloc[prev_price_peak_idx]:
+                current_obv_peak_idx = -1
+                prev_obv_peak_idx = -1
+                for p in obv_peaks:
+                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p
+                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p
+
+                if current_obv_peak_idx != -1 and prev_obv_peak_idx != -1 and prev_obv_peak_idx < current_obv_peak_idx:
+                    if obv.iloc[current_obv_peak_idx] > obv.iloc[prev_obv_peak_idx]:
+                        divergence.loc[price.index[current_price_peak_idx], 'hidden_bearish_divergence'] = 1
+
         for i in range(1, len(price_troughs)):
-            if i >= len(price) or i >= len(obv_troughs):
-                continue
-                
-            # 隐藏看涨背离：价格低点上升但OBV低点下降
-            if (price.iloc[price_troughs[i]] > price.iloc[price_troughs[i-1]] and 
-                obv.iloc[obv_troughs[i]] < obv.iloc[obv_troughs[i-1]]):
-                
-                divergence.loc[price.index[price_troughs[i]], 'hidden_bullish_divergence'] = 1
+            if i >= len(price_troughs) or price_troughs[i] >= len(price): continue
+            current_price_trough_idx = price_troughs[i]
+            prev_price_trough_idx = price_troughs[i-1]
+
+            if price.iloc[current_price_trough_idx] > price.iloc[prev_price_trough_idx]:
+                current_obv_trough_idx = -1
+                prev_obv_trough_idx = -1
+                for t in obv_troughs:
+                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t
+                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t
+
+                if current_obv_trough_idx != -1 and prev_obv_trough_idx != -1 and prev_obv_trough_idx < current_obv_trough_idx:
+                    if obv.iloc[current_obv_trough_idx] < obv.iloc[prev_obv_trough_idx]:
+                        divergence.loc[price.index[current_price_trough_idx], 'hidden_bullish_divergence'] = 1
         
         return divergence
     
@@ -705,7 +722,7 @@ class EnhancedOBV(OBV):
         if self._result is None or self._price_data is None:
             return pd.DataFrame()
         
-        obv = self._result['obv']
+        obv = self._result['obv_smooth']
         price = self._price_data
         
         # 计算价格变化率
@@ -764,9 +781,7 @@ class EnhancedOBV(OBV):
         if self._result is None:
             return pd.DataFrame()
         
-        obv = self._result['obv_smooth']
-        obv_ma10 = self._result['obv_ma10']
-        obv_ma20 = self._result['obv_ma20']
+        obv = self._result.get('obv_smooth', self._result['obv'])
         
         # 获取资金流向数据
         flow = self.calculate_flow_gradient()

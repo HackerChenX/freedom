@@ -31,6 +31,7 @@ class KDJ(BaseIndicator):
     """
     
     def __init__(self, n: int = 9, m1: int = 3, m2: int = 3):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化KDJ指标
         
@@ -44,12 +45,6 @@ class KDJ(BaseIndicator):
         self.m1 = m1
         self.m2 = m2
         self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
-        
-        # 注册KDJ指标形态
-        self._register_kdj_patterns()
-        
-        # 注册形态到全局注册表
-        self.register_patterns_to_registry()
     
     def _register_kdj_patterns(self):
         """将KDJ形态注册到全局形态注册表"""
@@ -133,9 +128,9 @@ class KDJ(BaseIndicator):
     # 为了向后兼容，保留此方法
     def register_patterns_to_registry(self):
         """将KDJ形态注册到全局形态注册表（已弃用，保留此方法仅用于兼容性）"""
-        self._register_kdj_patterns()
+        pass
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> Optional[pd.DataFrame]:
         """
         获取KDJ指标的技术形态
         
@@ -144,72 +139,27 @@ class KDJ(BaseIndicator):
             **kwargs: 其他参数
             
         Returns:
-            List[Dict[str, Any]]: 形态列表
+            Optional[pd.DataFrame]: 形态DataFrame，如果无形态则为None
         """
         # 确保已计算KDJ指标
-        if self._result is None:
-            self.calculate(data)
-        
+        if 'K' not in data.columns or 'D' not in data.columns or 'J' not in data.columns:
+            logger.warning("识别KDJ形态时缺少K、D或J列")
+            # 如果是原始数据，先计算指标
+            if all(col in data.columns for col in self.REQUIRED_COLUMNS):
+                 data = self.calculate(data)
+            else:
+                return pd.DataFrame()
+
         # 调用父类方法获取基础形态
-        patterns = super().get_patterns(data, **kwargs)
+        patterns_df = super().get_patterns(data, **kwargs)
         
-        # KDJ特有的形态处理逻辑
-        for pattern in patterns:
-            # 添加KDJ特有的详细信息
-            if self._result is not None and not self._result.empty:
-                latest_idx = self._result.index[-1]
-                pattern['details'].update({
-                    'k_value': float(self._result['K'].iloc[-1]),
-                    'd_value': float(self._result['D'].iloc[-1]),
-                    'j_value': float(self._result['J'].iloc[-1]),
-                    'is_overbought': bool(self._result['K'].iloc[-1] > 80),
-                    'is_oversold': bool(self._result['K'].iloc[-1] < 20)
-                })
-                
-                # 根据形态类型增强强度计算
-                if pattern['pattern_id'] == 'golden_cross':
-                    # 金叉强度与K线和D线的位置相关
-                    k_value = self._result['K'].iloc[-1]
-                    d_value = self._result['D'].iloc[-1]
-                    j_value = self._result['J'].iloc[-1]
-                    
-                    # 低位金叉强度更高
-                    if k_value < 30:
-                        pattern['strength'] = 80 + min(20, (30 - k_value))
-                    else:
-                        pattern['strength'] = 60 - min(30, (k_value - 30) * 0.6)
-                        
-                elif pattern['pattern_id'] == 'death_cross':
-                    # 死叉强度与K线和D线的位置相关
-                    k_value = self._result['K'].iloc[-1]
-                    d_value = self._result['D'].iloc[-1]
-                    j_value = self._result['J'].iloc[-1]
-                    
-                    # 高位死叉强度更高
-                    if k_value > 70:
-                        pattern['strength'] = 80 + min(20, (k_value - 70) * 0.6)
-                    else:
-                        pattern['strength'] = 60 - min(30, (70 - k_value) * 0.6)
-                        
-                elif pattern['pattern_id'] in ['bullish_divergence', 'bearish_divergence']:
-                    # 背离强度与价格和KDJ的差异程度相关
-                    pattern['strength'] = self._calculate_divergence_strength(
-                        data['close'], 
-                        self._result['K'],
-                        is_bullish=(pattern['pattern_id'] == 'bullish_divergence')
-                    )
-                    
-                elif pattern['pattern_id'] == 'overbought':
-                    # 超买强度与K值相关
-                    k_value = self._result['K'].iloc[-1]
-                    pattern['strength'] = min(100, 60 + (k_value - 80) * 2)
-                    
-                elif pattern['pattern_id'] == 'oversold':
-                    # 超卖强度与K值相关
-                    k_value = self._result['K'].iloc[-1]
-                    pattern['strength'] = min(100, 60 + (20 - k_value) * 2)
+        if patterns_df is None or patterns_df.empty:
+            return pd.DataFrame()
+            
+        # KDJ特有的形态处理逻辑 (这部分逻辑在当前框架下难以实现，暂时简化)
+        # 可以在未来的版本中，通过修改get_patterns的返回类型或处理方式来增强
         
-        return patterns
+        return patterns_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
         """
@@ -269,7 +219,7 @@ class KDJ(BaseIndicator):
         # 超卖条件：K值小于20
         return k_value < 20.0
     
-    def _detect_golden_cross(self, data: pd.DataFrame) -> bool:
+    def _detect_golden_cross(self, data: pd.DataFrame) -> pd.Series:
         """
         检测KDJ金叉形态
         
@@ -277,25 +227,18 @@ class KDJ(BaseIndicator):
             data: 含有KDJ指标的DataFrame
             
         Returns:
-            bool: 是否形成金叉
+            pd.Series: 标记金叉发生位置的布尔序列
         """
-        # 确保DataFrame包含所需的列
         required_columns = ['K', 'D']
         if not all(col in data.columns for col in required_columns):
             logger.warning(f"检测KDJ金叉形态时缺少必要的列: {required_columns}")
-            return False
+            return pd.Series([False] * len(data), index=data.index)
         
-        # 检查最近的K线，看K值是否从下往上穿过D值
         k = data['K']
         d = data['D']
-        
-        # 使用crossover函数检测金叉
-        golden_cross = crossover(k, d)
-        
-        # 返回最近5个周期内是否出现金叉
-        return golden_cross.iloc[-5:].any() if len(golden_cross) >= 5 else False
+        return crossover(k, d)
     
-    def _detect_death_cross(self, data: pd.DataFrame) -> bool:
+    def _detect_death_cross(self, data: pd.DataFrame) -> pd.Series:
         """
         检测KDJ死叉形态
         
@@ -303,26 +246,19 @@ class KDJ(BaseIndicator):
             data: 含有KDJ指标的DataFrame
             
         Returns:
-            bool: 是否形成死叉
+            pd.Series: 标记死叉发生位置的布尔序列
         """
-        # 确保DataFrame包含所需的列
         required_columns = ['K', 'D']
         if not all(col in data.columns for col in required_columns):
             logger.warning(f"检测KDJ死叉形态时缺少必要的列: {required_columns}")
-            return False
-        
-        # 检查最近的K线，看K值是否从上往下穿过D值
+            return pd.Series([False] * len(data), index=data.index)
+
         k = data['K']
         d = data['D']
-        
-        # 使用crossunder函数检测死叉
-        death_cross = crossunder(k, d)
-        
-        # 返回最近5个周期内是否出现死叉
-        return death_cross.iloc[-5:].any() if len(death_cross) >= 5 else False
+        return crossunder(k, d)
     
     def _detect_bullish_divergence(self, data: pd.DataFrame) -> bool:
-        """检测KDJ底背离形态"""
+        """检测KDJ看涨背离形态"""
         if not self.has_result() or 'K' not in data.columns or 'close' not in data.columns:
             return False
         
@@ -603,22 +539,22 @@ class KDJ(BaseIndicator):
     
     def calculate(self, *args, **kwargs) -> pd.DataFrame:
         """
-        计算KDJ指标，支持多种参数格式
+        计算KDJ指标
+
+        Args:
+            *args: 如果第一个参数是DataFrame，则使用它
+            **kwargs: 应该包含一个名为`data`的DataFrame
+        
+        Returns:
+            pd.DataFrame: 包含K, D, J线的DataFrame
         """
-        # 如果第一个参数是DataFrame，直接用
-        if len(args) == 1 and isinstance(args[0], pd.DataFrame):
+        if args and isinstance(args[0], pd.DataFrame):
             data = args[0]
-        # 如果传递了open, high, low, close, volume等序列，组装为DataFrame
-        elif len(args) >= 4:
-            columns = ['open', 'high', 'low', 'close', 'volume']
-            data_dict = {}
-            for i, col in enumerate(columns):
-                if i < len(args):
-                    data_dict[col] = args[i]
-            data = pd.DataFrame(data_dict)
+        elif 'data' in kwargs and isinstance(kwargs['data'], pd.DataFrame):
+            data = kwargs['data']
         else:
-            raise ValueError('参数格式不支持')
-        # 兼容原有参数
+            raise ValueError("calculate()需要一个DataFrame作为输入，通过'data'关键字参数或作为第一个位置参数提供")
+        
         return self._calculate_kdj(data, **kwargs)
 
     def _calculate_kdj(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -1241,6 +1177,7 @@ class KDJ(BaseIndicator):
 class KDJIndicator:
     """KDJ指标分析器（简化版，仅用于形态识别）"""
     def __init__(self, k_period: int = 9, d_period: int = 3, j_period: int = 3):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.k_period = k_period
         self.d_period = d_period
         self.j_period = j_period

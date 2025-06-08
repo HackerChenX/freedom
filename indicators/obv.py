@@ -26,6 +26,7 @@ class OBV(BaseIndicator):
     """
     
     def __init__(self, ma_period: int = 30):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化OBV指标
         

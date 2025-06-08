@@ -27,6 +27,7 @@ class ROC(BaseIndicator):
     """
     
     def __init__(self, period: int = 12, ma_period: int = 6, overbought: float = 8.0, oversold: float = -8.0):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ROC指标
         

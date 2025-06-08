@@ -23,6 +23,7 @@ class BOLLScore(IndicatorScoreBase, PatternRecognitionMixin):
     """
     
     def __init__(self, period: int = 20, std_dev: float = 2.0, weight: float = 1.0):
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化BOLL评分指标
         
