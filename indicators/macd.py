@@ -259,79 +259,94 @@ class MACD(BaseIndicator):
             if key in self._parameters:
                 self._parameters[key] = value
                 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算MACD指标
         
         Args:
-            data: 输入数据
-            
+            data: 包含价格数据的DataFrame
+            **kwargs: 额外参数，可以包含:
+                - price_column: 用于计算的价格列，默认为'close'
+                
         Returns:
-            pd.DataFrame: 包含MACD计算结果的DataFrame
+            pd.DataFrame: 添加了MACD指标的DataFrame
         """
-        # 确保数据中包含所需列
-        self.ensure_columns(data, self.REQUIRED_COLUMNS)
-
-        # 动态获取参数
-        price_col = self._parameters.get('price_col', 'close')
-        fast_period = self._parameters.get('fast_period', 12)
-        slow_period = self._parameters.get('slow_period', 26)
-        signal_period = self._parameters.get('signal_period', 9)
-
-        # 调用工具函数计算MACD
-        dif, dea, hist = calculate_macd(
-            data[price_col],
-            fast_period=fast_period,
-            slow_period=slow_period,
-            signal_period=signal_period
-        )
+        if data.empty:
+            return data
+            
+        # 获取参数
+        price_column = kwargs.get('price_column', 'close')
         
-        # 创建结果DataFrame
-        result = pd.DataFrame({
-            'macd_line': dif,
-            'macd_signal': dea,
-            'macd_histogram': hist
-        }, index=data.index)
+        # 验证输入
+        if price_column not in data.columns:
+            raise ValueError(f"数据中不存在'{price_column}'列")
         
-        # 存储结果
-        self._result = result
+        df = data.copy()
         
-        return result
+        # 计算快速EMA
+        df['ema_fast'] = df[price_column].ewm(span=self.fast_period, adjust=False).mean()
+        
+        # 计算慢速EMA
+        df['ema_slow'] = df[price_column].ewm(span=self.slow_period, adjust=False).mean()
+        
+        # 计算DIF (MACD线)
+        df['dif'] = df['ema_fast'] - df['ema_slow']
+        
+        # 计算DEA (MACD信号线)
+        df['dea'] = df['dif'].ewm(span=self.signal_period, adjust=False).mean()
+        
+        # 计算MACD柱状体
+        df['macd'] = (df['dif'] - df['dea']) * 2
+        
+        # 保存结果
+        self._result = df
+        
+        # 确保基础数据列被保留
+        df = self._preserve_base_columns(data, df)
+        
+        return df
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        识别所有MACD形态，并以标准的布尔型DataFrame格式返回。
-        """
-        # 首先，基于输入数据计算或重新计算指标值
-        indicator_df = self.calculate(data, **kwargs)
-
-        if indicator_df is None or 'macd_line' not in indicator_df.columns:
-            return pd.DataFrame(index=data.index)
-
-        patterns_df = pd.DataFrame(index=indicator_df.index)
-        dif = indicator_df['macd_line']
-        dea = indicator_df['macd_signal']
-        hist = indicator_df['macd_histogram']
-        close = data['close'] # 使用原始数据中的收盘价
-
-        # 1. 金叉/死叉
-        patterns_df['MACD_GOLDEN_CROSS'] = self._detect_robust_crossover(dif, dea, window=3, cross_type='above')
-        patterns_df['MACD_DEATH_CROSS'] = self._detect_robust_crossover(dif, dea, window=3, cross_type='below')
-
-        # 2. 零轴穿越
-        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self.crossover(dif, 0)
-        patterns_df['MACD_ZERO_CROSS_BELOW'] = self.crossunder(dif, 0)
+        获取MACD形态
         
-        # 3. 柱状图扩张/收缩
-        patterns_df['MACD_HISTOGRAM_EXPANDING'] = ((hist > hist.shift(1)) & (hist > 0)) | ((hist < hist.shift(1)) & (hist < 0))
-        patterns_df['MACD_HISTOGRAM_CONTRACTING'] = ((hist < hist.shift(1)) & (hist > 0)) | ((hist > hist.shift(1)) & (hist < 0))
+        Args:
+            data: 输入数据
+        
+        Returns:
+            pd.DataFrame: 包含MACD形态的DataFrame
+        """
+        macd_columns = ['macd_line', 'macd_signal', 'macd_histogram']
+        # 检查是否已计算MACD，如果未计算，则进行计算
+        if not all(col in data.columns for col in macd_columns):
+            indicator_df = self.calculate(data, **kwargs)
+        else:
+            indicator_df = data
 
-        # 4. 背离检测
-        bullish_div, bearish_div = self._detect_divergence(close, dif)
+        # 检测金叉和死叉
+        golden_cross = crossover(indicator_df['macd_line'], indicator_df['macd_signal'])
+        death_cross = crossunder(indicator_df['macd_line'], indicator_df['macd_signal'])
+
+        # 创建结果DataFrame
+        patterns_df = pd.DataFrame(index=indicator_df.index)
+        patterns_df['MACD_GOLDEN_CROSS'] = golden_cross
+        patterns_df['MACD_DEATH_CROSS'] = death_cross
+
+        # 检测零轴穿越
+        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self.crossover(indicator_df['macd_line'], 0)
+        patterns_df['MACD_ZERO_CROSS_BELOW'] = self.crossunder(indicator_df['macd_line'], 0)
+
+        # 检测柱状图扩张/收缩
+        patterns_df['MACD_HISTOGRAM_EXPANDING'] = ((indicator_df['macd_histogram'] > indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] > 0)) | ((indicator_df['macd_histogram'] < indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] < 0))
+        patterns_df['MACD_HISTOGRAM_CONTRACTING'] = ((indicator_df['macd_histogram'] < indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] > 0)) | ((indicator_df['macd_histogram'] > indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] < 0))
+
+        # 检测背离
+        bullish_div, bearish_div = self._detect_divergence(data['close'], indicator_df['macd_line'])
         patterns_df['MACD_BULLISH_DIVERGENCE'] = bullish_div
         patterns_df['MACD_BEARISH_DIVERGENCE'] = bearish_div
 
-        return patterns_df
+        # 合并形态列到指标数据中并返回
+        return pd.concat([indicator_df, patterns_df], axis=1)
 
     def get_indicator_type(self) -> str:
         """获取指标类型"""

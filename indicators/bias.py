@@ -42,6 +42,7 @@ class BIAS(BaseIndicator):
         super().__init__(name, description)
         self.periods = periods if periods is not None else [period]
         self.indicator_type = "BIAS"
+        self._pattern_registry = {}
         
         # 定义必需的列
         self.REQUIRED_COLUMNS = ['close', 'high', 'low']

@@ -27,8 +27,8 @@ class DMA(BaseIndicator):
         ama_period: 差值平均线周期，默认为10
     """
     
-    def __init__(self, name: str = "DMA", description: str = "轨道线指标",
-                 fast_period: int = 10, slow_period: int = 50, ama_period: int = 10):
+    def __init__(self, fast_period: int = 10, slow_period: int = 50, ama_period: int = 10,
+                 name: str = "DMA", description: str = "轨道线指标"):
         """初始化DMA指标"""
         super().__init__(name, description)
         self.indicator_type = IndicatorEnum.DMA.name
@@ -64,7 +64,12 @@ class DMA(BaseIndicator):
         result['AMA'] = result['DMA'].rolling(window=self.ama_period).mean()
         
         # 计算FASTMA与SLOWMA的百分比差值
-        result['DMA_PCT'] = (result['FAST_MA'] / result['SLOW_MA'] - 1) * 100
+        # 避免除以零
+        result['DMA_PCT'] = np.where(
+            result['SLOW_MA'] > 0,
+            (result['FAST_MA'] / result['SLOW_MA'] - 1) * 100,
+            0
+        )
         
         # 计算FASTMA的变化率
         result['FAST_MA_CHG'] = result['FAST_MA'].pct_change(periods=5) * 100
@@ -249,121 +254,123 @@ class DMA(BaseIndicator):
             data: 包含OHLCV数据的DataFrame
             
         Returns:
-            包含每个时间点评分的Series
+            包含评分的Series，范围0-100
         """
-        result = self.calculate(data)
+        # 确保已计算指标
+        if not isinstance(data, pd.DataFrame) or 'DMA' not in data.columns:
+            data = self.calculate(data)
         
-        # 初始化评分Series
-        scores = pd.Series(index=result.index, data=50.0)
+        # 获取DMA指标值
+        dma = data['DMA']
+        ama = data['AMA']
+        dma_pct = data['DMA_PCT']
         
-        # 基于DMA和AMA关系计算评分
-        for i in range(len(result)):
-            if i < self.slow_period:
-                continue
-                
-            # 获取当前数据
-            row = result.iloc[i]
-            dma = row['DMA']
-            ama = row['AMA']
-            dma_pct = row['DMA_PCT']
-            
-            # 基础评分
-            base_score = 50
-            
-            # DMA和AMA关系评分
-            if dma > ama:
-                cross_score = 10
-            elif dma < ama:
-                cross_score = -10
-            else:
-                cross_score = 0
-                
-            # DMA绝对水平评分
-            if dma > 0:
-                level_score = min(20, dma_pct * 2)
-            else:
-                level_score = max(-20, dma_pct * 2)
-                
-            # 交叉信号评分
-            if i > 0:
-                prev_row = result.iloc[i-1]
-                if prev_row['DMA'] <= prev_row['AMA'] and dma > ama:
-                    cross_signal_score = 20  # 上穿
-                elif prev_row['DMA'] >= prev_row['AMA'] and dma < ama:
-                    cross_signal_score = -20  # 下穿
-                else:
-                    cross_signal_score = 0
-            else:
-                cross_signal_score = 0
-                
-            # 计算最终评分
-            final_score = base_score + cross_score + level_score + cross_signal_score
-            
-            # 限制评分范围
-            scores.iloc[i] = np.clip(final_score, 0, 100)
-            
-        return scores
+        # 初始化评分
+        score = pd.Series(50, index=data.index)  # 默认中性评分
         
+        # 计算趋势强度
+        # 1. 上升趋势 (DMA > 0 且 DMA > AMA)
+        uptrend_mask = (dma > 0) & (dma > ama)
+        score[uptrend_mask] = 60 + np.minimum(30, dma_pct[uptrend_mask] * 1.5)
+        
+        # 2. 下降趋势 (DMA < 0 且 DMA < AMA)
+        downtrend_mask = (dma < 0) & (dma < ama)
+        score[downtrend_mask] = 40 - np.minimum(30, np.abs(dma_pct[downtrend_mask] * 1.5))
+        
+        # 3. 弱势多头 (DMA > 0 且 AMA > 0)
+        weak_up_mask = (dma > 0) & (ama > 0) & ~uptrend_mask
+        score[weak_up_mask] = 55
+        
+        # 4. 弱势空头 (DMA < 0 且 AMA < 0)
+        weak_down_mask = (dma < 0) & (ama < 0) & ~downtrend_mask
+        score[weak_down_mask] = 45
+        
+        # 考虑交叉情况
+        if len(data) >= 2:
+            # DMA上穿AMA
+            cross_up_mask = (data['DMA'].shift(1) <= data['AMA'].shift(1)) & (data['DMA'] > data['AMA'])
+            score[cross_up_mask] = 70
+            
+            # DMA下穿AMA
+            cross_down_mask = (data['DMA'].shift(1) >= data['AMA'].shift(1)) & (data['DMA'] < data['AMA'])
+            score[cross_down_mask] = 30
+        
+        # 考虑快速均线变化率
+        fast_ma_chg = data['FAST_MA_CHG']
+        # 快速上涨
+        score[fast_ma_chg > 2] += 5
+        # 快速下跌
+        score[fast_ma_chg < -2] -= 5
+        
+        # 确保分数在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
-        识别技术形态
+        识别DMA指标形态
         
         Args:
             data: 包含OHLCV数据的DataFrame
             
         Returns:
-            识别出的形态列表
+            形态描述列表
         """
-        result = self.calculate(data)
+        # 确保已计算指标
+        if not isinstance(data, pd.DataFrame) or 'DMA' not in data.columns:
+            data = self.calculate(data)
+            
+        # 获取DMA数据
+        dma = data['DMA']
+        ama = data['AMA']
+        
         patterns = []
         
-        # 确保有足够的数据
-        if len(result) < self.slow_period + 5:
-            return patterns
+        # 检查趋势状态
+        if dma.iloc[-1] > 0 and dma.iloc[-1] > ama.iloc[-1]:
+            patterns.append("DMA多头趋势")
+        elif dma.iloc[-1] < 0 and dma.iloc[-1] < ama.iloc[-1]:
+            patterns.append("DMA空头趋势")
+        elif dma.iloc[-1] > 0 and ama.iloc[-1] > 0:
+            patterns.append("DMA弱势多头")
+        elif dma.iloc[-1] < 0 and ama.iloc[-1] < 0:
+            patterns.append("DMA弱势空头")
+        else:
+            patterns.append("DMA震荡整理")
             
-        # 获取最新数据
-        latest = result.iloc[-1]
-        
-        # 识别形态
-        
-        # 1. DMA和AMA交叉
-        if crossover(result['DMA'], result['AMA']):
-            patterns.append("DMA金叉AMA")
-        elif crossunder(result['DMA'], result['AMA']):
-            patterns.append("DMA死叉AMA")
-            
-        # 2. DMA零轴穿越
-        if crossover(result['DMA'], 0):
-            patterns.append("DMA上穿零轴")
-        elif crossunder(result['DMA'], 0):
-            patterns.append("DMA下穿零轴")
-            
-        # 3. DMA趋势
-        if latest['DMA'] > 0 and latest['AMA'] > 0:
-            patterns.append("DMA多头排列")
-        elif latest['DMA'] < 0 and latest['AMA'] < 0:
-            patterns.append("DMA空头排列")
-            
-        # 4. DMA背离
-        if len(result) >= 20:
-            # 检查最近20个交易日内的高点和低点
-            high_idx = result['close'].iloc[-20:].idxmax()
-            low_idx = result['close'].iloc[-20:].idxmin()
-            
-            # 价格创新高但DMA没有创新高 - 顶背离
-            if high_idx == result.index[-1] and result['DMA'].iloc[-1] < result['DMA'].iloc[-20:-1].max():
-                patterns.append("DMA顶背离")
+        # 检查交叉
+        if len(data) >= 2:
+            if dma.iloc[-2] <= ama.iloc[-2] and dma.iloc[-1] > ama.iloc[-1]:
+                patterns.append("DMA金叉")
+            elif dma.iloc[-2] >= ama.iloc[-2] and dma.iloc[-1] < ama.iloc[-1]:
+                patterns.append("DMA死叉")
                 
-            # 价格创新低但DMA没有创新低 - 底背离
-            if low_idx == result.index[-1] and result['DMA'].iloc[-1] > result['DMA'].iloc[-20:-1].min():
-                patterns.append("DMA底背离")
+        # 检查零轴交叉
+        if len(data) >= 2:
+            if dma.iloc[-2] <= 0 and dma.iloc[-1] > 0:
+                patterns.append("DMA上穿零轴")
+            elif dma.iloc[-2] >= 0 and dma.iloc[-1] < 0:
+                patterns.append("DMA下穿零轴")
                 
-        # 5. DMA百分比水平
-        if latest['DMA_PCT'] > 5:
-            patterns.append("DMA强势多头区域")
-        elif latest['DMA_PCT'] < -5:
-            patterns.append("DMA强势空头区域")
-        elif -1 < latest['DMA_PCT'] < 1:
-            patterns.append("DMA中性区域")
+        # 检查DMA与AMA距离
+        dma_ama_diff = abs(dma.iloc[-1] - ama.iloc[-1])
+        avg_close = data['close'].mean()
+        diff_pct = dma_ama_diff / avg_close * 100
+        
+        if diff_pct > 5:
+            if dma.iloc[-1] > ama.iloc[-1]:
+                patterns.append("DMA与AMA大幅偏离(看涨)")
+            else:
+                patterns.append("DMA与AMA大幅偏离(看跌)")
+                
+        # 检查DMA走势
+        if len(data) >= 10:
+            dma_trend = dma.iloc[-10:].diff().mean()
             
+            if dma_trend > 0.1:
+                patterns.append("DMA上升加速")
+            elif dma_trend < -0.1:
+                patterns.append("DMA下降加速")
+                
         return patterns 

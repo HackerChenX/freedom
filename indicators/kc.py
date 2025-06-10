@@ -16,23 +16,23 @@ logger = logging.getLogger(__name__)
 
 class KC(BaseIndicator):
     """
-    肯特纳通道指标 (Keltner Channels)
+    肯特纳通道指标 (Keltner Channel)
     
-    肯特纳通道是一种结合了移动平均线和波动率的技术指标，由中轨(EMA)、上轨(EMA + ATR倍数)和下轨(EMA - ATR倍数)组成。
-    与布林带相似，肯特纳通道可用于识别趋势方向、判断突破信号和市场波动情况。
+    肯特纳通道是一种波动通道指标，由中轨(通常为EMA)加减一定倍数的ATR形成上下轨。
+    相比于布林带使用标准差，肯特纳通道使用ATR衡量波动性，对价格突破和异常波动的反应更平滑。
     
     参数:
-        ema_period: EMA周期，默认为20
-        atr_period: ATR周期，默认为10
-        multiplier: ATR倍数，默认为2
+        period: 中轨移动平均周期，默认为20
+        atr_period: ATR计算周期，默认为10
+        multiplier: ATR乘数，用于计算通道宽度，默认为2.0
     """
     
-    def __init__(self, name: str = "KC", description: str = "肯特纳通道指标",
-                 ema_period: int = 20, atr_period: int = 10, multiplier: float = 2):
-        """初始化肯特纳通道指标"""
+    def __init__(self, period: int = 20, atr_period: int = 10, multiplier: float = 2.0,
+                 name: str = "KC", description: str = "肯特纳通道指标"):
+        """初始化KC指标"""
         super().__init__(name, description)
         self.indicator_type = IndicatorEnum.KC.name
-        self.ema_period = ema_period
+        self.period = period
         self.atr_period = atr_period
         self.multiplier = multiplier
         self._result = None
@@ -40,44 +40,58 @@ class KC(BaseIndicator):
         
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        计算肯特纳通道指标
+        计算KC指标
         
         Args:
-            df: 包含high, low, close列的DataFrame
+            df: 包含OHLCV数据的DataFrame
             
         Returns:
-            包含KC_Upper, KC_Middle, KC_Lower列的DataFrame
+            包含KC_UPPER, KC_MIDDLE, KC_LOWER列的DataFrame
         """
         if self._result is not None:
             return self._result
             
         result = df.copy()
         
-        # 计算EMA作为中轨
-        result['KC_Middle'] = result['close'].ewm(span=self.ema_period, adjust=False).mean()
+        # 计算中轨(EMA)
+        result['KC_MIDDLE'] = result['close'].ewm(span=self.period, adjust=False).mean()
+        
+        # 计算真实波幅(TR)
+        result['TR'] = np.maximum(
+            result['high'] - result['low'],
+            np.maximum(
+                np.abs(result['high'] - result['close'].shift(1)),
+                np.abs(result['low'] - result['close'].shift(1))
+            )
+        )
+        
+        # 填充NaN值
+        result['TR'] = result['TR'].fillna(result['high'] - result['low'])
         
         # 计算ATR
-        result['tr'] = np.maximum(
-            np.maximum(
-                result['high'] - result['low'],
-                np.abs(result['high'] - result['close'].shift())
-            ),
-            np.abs(result['low'] - result['close'].shift())
-        )
-        result['atr'] = result['tr'].rolling(window=self.atr_period).mean()
+        result['ATR'] = result['TR'].rolling(window=self.atr_period).mean()
         
         # 计算上下轨
-        result['KC_Upper'] = result['KC_Middle'] + self.multiplier * result['atr']
-        result['KC_Lower'] = result['KC_Middle'] - self.multiplier * result['atr']
+        result['KC_UPPER'] = result['KC_MIDDLE'] + self.multiplier * result['ATR']
+        result['KC_LOWER'] = result['KC_MIDDLE'] - self.multiplier * result['ATR']
         
-        # 计算带宽
-        result['KC_Width'] = (result['KC_Upper'] - result['KC_Lower']) / result['KC_Middle'] * 100
+        # 计算通道宽度百分比(相对于中轨价格)
+        result['KC_WIDTH'] = (result['KC_UPPER'] - result['KC_LOWER']) / result['KC_MIDDLE'] * 100
         
-        # 计算价格相对位置
-        result['KC_Position'] = (result['close'] - result['KC_Lower']) / (result['KC_Upper'] - result['KC_Lower'])
+        # 计算价格相对于通道的位置(0-100%)，0表示在下轨，100表示在上轨
+        channel_range = result['KC_UPPER'] - result['KC_LOWER']
+        # 避免除以零的情况
+        result['KC_POSITION'] = np.where(
+            channel_range > 0,
+            (result['close'] - result['KC_LOWER']) / channel_range * 100,
+            50  # 默认为中间位置
+        )
         
-        # 删除临时列
-        result = result.drop(['tr', 'atr'], axis=1)
+        # 计算通道宽度变化率
+        result['KC_WIDTH_CHG'] = result['KC_WIDTH'].pct_change(periods=5) * 100
+        
+        # 删除临时计算列
+        result = result.drop(['TR', 'ATR'], axis=1)
         
         self._result = result
         return result
@@ -96,7 +110,7 @@ class KC(BaseIndicator):
         result = self.calculate(df)
         
         # 确保有足够的数据
-        if len(result) < self.ema_period + 5:
+        if len(result) < self.period + 5:
             return signals
             
         # 获取最新数据
@@ -106,23 +120,21 @@ class KC(BaseIndicator):
         # 当前价格
         current_price = latest['close']
         
-        # 通道状态
-        kc_upper = latest['KC_Upper']
-        kc_middle = latest['KC_Middle']
-        kc_lower = latest['KC_Lower']
-        kc_width = latest['KC_Width']
-        kc_position = latest['KC_Position']
-        
-        # 计算通道宽度变化率
-        width_change = (kc_width / result['KC_Width'].iloc[-5:].mean() - 1) * 100
+        # KC指标状态
+        kc_middle = latest['KC_MIDDLE']
+        kc_upper = latest['KC_UPPER']
+        kc_lower = latest['KC_LOWER']
+        kc_position = latest['KC_POSITION']
+        kc_width = latest['KC_WIDTH']
+        kc_width_chg = latest['KC_WIDTH_CHG']
         
         # 判断趋势方向
-        if kc_middle > result['KC_Middle'].shift(5).iloc[-1]:
+        if current_price > kc_middle:
             trend = TrendType.UPTREND
-            trend_strength = min(100, 50 + width_change * 0.5)
-        elif kc_middle < result['KC_Middle'].shift(5).iloc[-1]:
+            trend_strength = 50 + kc_position * 0.5  # 50-100
+        elif current_price < kc_middle:
             trend = TrendType.DOWNTREND
-            trend_strength = min(100, 50 + width_change * 0.5)
+            trend_strength = 50 - (100 - kc_position) * 0.5  # 0-50
         else:
             trend = TrendType.SIDEWAYS
             trend_strength = 50
@@ -130,68 +142,70 @@ class KC(BaseIndicator):
         # 基础信号评分(0-100)
         score = 50  # 中性分值
         
-        # 判断价格相对位置
-        if current_price > kc_upper:  # 突破上轨
-            position_score = 80
-            signal_type = "突破上轨"
-            signal_desc = "价格突破上轨，可能处于强势上涨"
-            cross_type = CrossType.PRICE_CROSS_UPPER
-        elif current_price < kc_lower:  # 突破下轨
-            position_score = 20
-            signal_type = "突破下轨"
-            signal_desc = "价格突破下轨，可能处于强势下跌"
-            cross_type = CrossType.PRICE_CROSS_LOWER
-        elif kc_position > 0.8:  # 接近上轨
-            position_score = 70
-            signal_type = "接近上轨"
-            signal_desc = "价格接近上轨，上涨动能较强"
-            cross_type = CrossType.APPROACHING_UPPER
-        elif kc_position < 0.2:  # 接近下轨
-            position_score = 30
-            signal_type = "接近下轨"
-            signal_desc = "价格接近下轨，下跌动能较强"
-            cross_type = CrossType.APPROACHING_LOWER
-        elif crossover(result['close'], result['KC_Middle']):  # 向上穿越中轨
-            position_score = 65
-            signal_type = "穿越中轨"
-            signal_desc = "价格向上穿越中轨，转为偏多"
+        # 判断价格与通道的关系
+        if crossover(result['close'], result['KC_UPPER']):  # 价格上穿上轨
+            signal_type = "上穿上轨"
+            signal_desc = "价格上穿肯特纳通道上轨，显示强势突破"
             cross_type = CrossType.CROSS_OVER
-        elif crossunder(result['close'], result['KC_Middle']):  # 向下穿越中轨
-            position_score = 35
-            signal_type = "穿越中轨"
-            signal_desc = "价格向下穿越中轨，转为偏空"
+            score = 80
+        elif crossunder(result['close'], result['KC_LOWER']):  # 价格下穿下轨
+            signal_type = "下穿下轨"
+            signal_desc = "价格下穿肯特纳通道下轨，显示弱势突破"
             cross_type = CrossType.CROSS_UNDER
-        else:  # 在通道内
-            position_score = 40 + kc_position * 20
-            signal_type = "通道内运行"
-            signal_desc = "价格在通道内运行"
+            score = 20
+        elif current_price > kc_upper:  # 价格在上轨之上
+            signal_type = "上轨之上"
+            signal_desc = "价格位于肯特纳通道上轨之上，显示超买状态"
             cross_type = CrossType.NO_CROSS
-        
-        # 结合趋势和位置调整最终评分
-        if trend == TrendType.UPTREND:
-            score = position_score * 1.1
-        elif trend == TrendType.DOWNTREND:
-            score = position_score * 0.9
-        else:
-            score = position_score
+            score = 70 + (current_price - kc_upper) / kc_upper * 100  # 根据超出程度增加评分
+        elif current_price < kc_lower:  # 价格在下轨之下
+            signal_type = "下轨之下"
+            signal_desc = "价格位于肯特纳通道下轨之下，显示超卖状态"
+            cross_type = CrossType.NO_CROSS
+            score = 30 - (kc_lower - current_price) / kc_lower * 100  # 根据超出程度减少评分
+        elif crossover(result['close'], result['KC_MIDDLE']):  # 价格上穿中轨
+            signal_type = "上穿中轨"
+            signal_desc = "价格上穿肯特纳通道中轨，显示由弱转强"
+            cross_type = CrossType.CROSS_OVER
+            score = 60
+        elif crossunder(result['close'], result['KC_MIDDLE']):  # 价格下穿中轨
+            signal_type = "下穿中轨"
+            signal_desc = "价格下穿肯特纳通道中轨，显示由强转弱"
+            cross_type = CrossType.CROSS_UNDER
+            score = 40
+        elif current_price > kc_middle:  # 价格在中轨和上轨之间
+            signal_type = "中上区域"
+            signal_desc = "价格位于肯特纳通道中轨和上轨之间，显示温和强势"
+            cross_type = CrossType.NO_CROSS
+            score = 55 + kc_position * 0.15  # 根据位置线性调整55-70
+        elif current_price < kc_middle:  # 价格在中轨和下轨之间
+            signal_type = "中下区域"
+            signal_desc = "价格位于肯特纳通道中轨和下轨之间，显示温和弱势"
+            cross_type = CrossType.NO_CROSS
+            score = 45 - (100 - kc_position) * 0.15  # 根据位置线性调整30-45
+        else:  # 价格在中轨上
+            signal_type = "中轨位置"
+            signal_desc = "价格位于肯特纳通道中轨，显示中性"
+            cross_type = CrossType.NO_CROSS
+            score = 50
             
-        # 通道收缩/扩张判断
-        if width_change > 20:
-            width_signal = "通道扩张"
-            width_desc = "通道宽度扩大，波动性增强"
-            if score > 50:  # 偏多时
+        # 考虑通道宽度变化
+        if kc_width_chg > 10:
+            if current_price > kc_middle:
                 score += 5
-            else:  # 偏空时
+                signal_desc += f"，通道宽度扩大({kc_width_chg:.2f}%)，上升波动加剧"
+            else:
                 score -= 5
-        elif width_change < -20:
-            width_signal = "通道收缩"
-            width_desc = "通道宽度收缩，波动性降低，可能蓄势待发"
-            # 通道收缩时，评分向中性靠拢
-            score = 50 + (score - 50) * 0.7
-        else:
-            width_signal = "通道正常"
-            width_desc = "通道宽度正常"
-        
+                signal_desc += f"，通道宽度扩大({kc_width_chg:.2f}%)，下降波动加剧"
+        elif kc_width_chg < -10:
+            signal_desc += f"，通道宽度收窄({kc_width_chg:.2f}%)，波动减弱，可能酝酿大行情"
+            
+        # 考虑通道宽度绝对水平
+        if kc_width > 10:
+            signal_desc += f"，当前通道宽度较大({kc_width:.2f}%)，市场波动性高"
+        elif kc_width < 3:
+            signal_desc += f"，当前通道宽度较小({kc_width:.2f}%)，市场波动性低，可能即将爆发"
+            
         # 计算建议仓位(0-100%)
         if score >= 70:
             position_pct = min(100, score)
@@ -212,31 +226,30 @@ class KC(BaseIndicator):
             sell_signal = False
             
         # 计算置信度(0-100%)
-        if cross_type in [CrossType.PRICE_CROSS_UPPER, CrossType.PRICE_CROSS_LOWER]:
-            confidence = min(90, 70 + width_change * 0.5)
-        elif cross_type in [CrossType.APPROACHING_UPPER, CrossType.APPROACHING_LOWER]:
-            confidence = 75
-        elif cross_type in [CrossType.CROSS_OVER, CrossType.CROSS_UNDER]:
-            confidence = 70
+        if cross_type in [CrossType.CROSS_OVER, CrossType.CROSS_UNDER]:
+            if current_price > kc_upper or current_price < kc_lower:
+                confidence = 85  # 突破外轨的交叉信号
+            else:
+                confidence = 75  # 内部的交叉信号
+        elif current_price > kc_upper or current_price < kc_lower:
+            confidence = 80  # 持续在外轨
         else:
-            confidence = 60
-            
-        # 调整置信度根据通道宽度变化
-        if abs(width_change) > 30:
-            confidence = max(50, confidence - 10)
+            confidence = 60 + abs(kc_position - 50) * 0.4  # 根据位置调整
             
         # 风险等级(1-5)
         risk_level = 3
-        if score > 80 or score < 20:
-            risk_level = 4
-        elif width_change > 30:
-            risk_level = 5
+        if kc_width > 8:
+            risk_level = 4  # 通道宽度大，波动性高
+        elif kc_width < 3:
+            risk_level = 2  # 通道宽度小，波动性低
             
         # 止损计算
         if buy_signal:
-            stop_loss = kc_lower
+            # 止损设为通道下轨或最近5天最低价，取较高者
+            stop_loss = max(kc_lower, df['low'].iloc[-5:].min())
         elif sell_signal:
-            stop_loss = kc_upper
+            # 止损设为通道上轨或最近5天最高价，取较低者
+            stop_loss = min(kc_upper, df['high'].iloc[-5:].max())
         else:
             stop_loss = None
             
@@ -257,17 +270,13 @@ class KC(BaseIndicator):
             "position_pct": position_pct,
             "stop_loss": stop_loss,
             "additional_info": {
-                "kc_upper": kc_upper,
                 "kc_middle": kc_middle,
+                "kc_upper": kc_upper,
                 "kc_lower": kc_lower,
-                "kc_width": kc_width,
                 "kc_position": kc_position,
-                "width_change": width_change,
-                "width_signal": width_signal,
-                "width_desc": width_desc
-            },
-            "market_environment": self.detect_market_environment(df).value if hasattr(self, 'detect_market_environment') else None,
-            "volume_confirmation": self.check_volume_confirmation(df) if hasattr(self, 'check_volume_confirmation') else None
+                "kc_width": kc_width,
+                "kc_width_chg": kc_width_chg
+            }
         }
         
         signals.append(signal)
@@ -281,129 +290,147 @@ class KC(BaseIndicator):
             data: 包含OHLCV数据的DataFrame
             
         Returns:
-            包含每个时间点评分的Series
+            包含评分的Series，范围0-100
         """
-        result = self.calculate(data)
+        # 确保已计算指标
+        if not isinstance(data, pd.DataFrame) or 'KC_MIDDLE' not in data.columns:
+            data = self.calculate(data)
         
-        # 初始化评分Series
-        scores = pd.Series(index=result.index, data=50.0)
+        # 获取KC指标值
+        close = data['close']
+        middle = data['KC_MIDDLE']
+        upper = data['KC_UPPER']
+        lower = data['KC_LOWER']
+        position = data['KC_POSITION']
         
-        # 基于价格相对位置计算评分
-        for i in range(len(result)):
-            if i < self.ema_period:
-                continue
-                
-            # 获取当前数据
-            row = result.iloc[i]
-            position = row['KC_Position']
-            
-            # 基础评分
-            base_score = 50
-            
-            # 根据价格位置调整评分
-            if row['close'] > row['KC_Upper']:
-                position_score = 80
-            elif row['close'] < row['KC_Lower']:
-                position_score = 20
-            else:
-                position_score = 40 + position * 20
-                
-            # 考虑通道斜率
-            if i >= 5:
-                slope = (row['KC_Middle'] - result['KC_Middle'].iloc[i-5]) / result['KC_Middle'].iloc[i-5] * 100
-                if slope > 1:
-                    slope_score = min(15, slope * 3)
-                elif slope < -1:
-                    slope_score = max(-15, slope * 3)
-                else:
-                    slope_score = 0
-            else:
-                slope_score = 0
-                
-            # 考虑通道宽度变化
-            if i >= 5:
-                width_now = row['KC_Width']
-                width_prev = result['KC_Width'].iloc[i-5]
-                width_change = (width_now / width_prev - 1) * 100
-                
-                if width_change > 20:
-                    width_score = 5
-                elif width_change < -20:
-                    width_score = -5
-                else:
-                    width_score = 0
-            else:
-                width_score = 0
-                
-            # 计算最终评分
-            final_score = base_score + (position_score - 50) + slope_score + width_score
-            
-            # 限制评分范围
-            scores.iloc[i] = np.clip(final_score, 0, 100)
-            
-        return scores
+        # 初始化评分
+        score = pd.Series(50, index=data.index)  # 默认中性评分
         
+        # 价格位置评分
+        # 1. 价格在上轨之上
+        above_upper_mask = close > upper
+        score[above_upper_mask] = 70 + (close[above_upper_mask] - upper[above_upper_mask]) / upper[above_upper_mask] * 100
+        
+        # 2. 价格在下轨之下
+        below_lower_mask = close < lower
+        score[below_lower_mask] = 30 - (lower[below_lower_mask] - close[below_lower_mask]) / lower[below_lower_mask] * 100
+        
+        # 3. 价格在中轨和上轨之间
+        between_mid_upper_mask = (close >= middle) & (close <= upper)
+        score[between_mid_upper_mask] = 55 + position[between_mid_upper_mask] * 0.15
+        
+        # 4. 价格在中轨和下轨之间
+        between_mid_lower_mask = (close <= middle) & (close >= lower)
+        score[between_mid_lower_mask] = 45 - (100 - position[between_mid_lower_mask]) * 0.15
+        
+        # 考虑交叉情况
+        if len(data) >= 2:
+            # 价格上穿上轨
+            cross_up_upper_mask = (data['close'].shift(1) <= data['KC_UPPER'].shift(1)) & (data['close'] > data['KC_UPPER'])
+            score[cross_up_upper_mask] = 80
+            
+            # 价格下穿下轨
+            cross_down_lower_mask = (data['close'].shift(1) >= data['KC_LOWER'].shift(1)) & (data['close'] < data['KC_LOWER'])
+            score[cross_down_lower_mask] = 20
+            
+            # 价格上穿中轨
+            cross_up_middle_mask = (data['close'].shift(1) <= data['KC_MIDDLE'].shift(1)) & (data['close'] > data['KC_MIDDLE'])
+            score[cross_up_middle_mask] = 60
+            
+            # 价格下穿中轨
+            cross_down_middle_mask = (data['close'].shift(1) >= data['KC_MIDDLE'].shift(1)) & (data['close'] < data['KC_MIDDLE'])
+            score[cross_down_middle_mask] = 40
+            
+        # 考虑通道宽度变化
+        width_chg = data['KC_WIDTH_CHG']
+        # 通道扩大，上升波动
+        up_vol_mask = (width_chg > 10) & (close > middle)
+        score[up_vol_mask] += 5
+        
+        # 通道扩大，下降波动
+        down_vol_mask = (width_chg > 10) & (close < middle)
+        score[down_vol_mask] -= 5
+        
+        # 确保分数在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
-        识别技术形态
+        识别KC指标形态
         
         Args:
             data: 包含OHLCV数据的DataFrame
             
         Returns:
-            识别出的形态列表
+            形态描述列表
         """
-        result = self.calculate(data)
+        # 确保已计算指标
+        if not isinstance(data, pd.DataFrame) or 'KC_MIDDLE' not in data.columns:
+            data = self.calculate(data)
+            
+        # 获取KC数据
+        close = data['close']
+        middle = data['KC_MIDDLE']
+        upper = data['KC_UPPER']
+        lower = data['KC_LOWER']
+        width = data['KC_WIDTH']
+        width_chg = data['KC_WIDTH_CHG']
+        
         patterns = []
         
-        # 确保有足够的数据
-        if len(result) < self.ema_period + 5:
-            return patterns
+        # 检查价格位置
+        if close.iloc[-1] > upper.iloc[-1]:
+            patterns.append("KC超买区域")
+        elif close.iloc[-1] < lower.iloc[-1]:
+            patterns.append("KC超卖区域")
+        elif close.iloc[-1] > middle.iloc[-1]:
+            patterns.append("KC上行区域")
+        elif close.iloc[-1] < middle.iloc[-1]:
+            patterns.append("KC下行区域")
             
-        # 获取最新数据
-        latest = result.iloc[-1]
-        
-        # 通道宽度变化率
-        width_change = (latest['KC_Width'] / result['KC_Width'].iloc[-10:-5].mean() - 1) * 100
-        
-        # 识别形态
-        
-        # 1. 通道突破
-        if latest['close'] > latest['KC_Upper']:
-            patterns.append("上轨突破")
-        elif latest['close'] < latest['KC_Lower']:
-            patterns.append("下轨突破")
-            
-        # 2. 通道收缩/扩张
-        if width_change < -30:
-            patterns.append("通道极度收缩")
-        elif width_change < -20:
-            patterns.append("通道收缩")
-        elif width_change > 50:
-            patterns.append("通道极度扩张")
-        elif width_change > 30:
-            patterns.append("通道扩张")
-            
-        # 3. 价格与中轨关系
-        if crossover(result['close'], result['KC_Middle']):
-            patterns.append("向上穿越中轨")
-        elif crossunder(result['close'], result['KC_Middle']):
-            patterns.append("向下穿越中轨")
-            
-        # 4. 通道方向
-        slope = (latest['KC_Middle'] - result['KC_Middle'].iloc[-6]) / result['KC_Middle'].iloc[-6] * 100
-        if slope > 2:
-            patterns.append("通道上升")
-        elif slope < -2:
-            patterns.append("通道下降")
-        else:
-            patterns.append("通道平行")
-            
-        # 5. 反弹/回调到中轨
-        if 0.45 < latest['KC_Position'] < 0.55:
-            if result['KC_Position'].iloc[-5] > 0.7:
-                patterns.append("从上轨回调至中轨")
-            elif result['KC_Position'].iloc[-5] < 0.3:
-                patterns.append("从下轨反弹至中轨")
+        # 检查交叉
+        if len(data) >= 2:
+            if close.iloc[-2] <= upper.iloc[-2] and close.iloc[-1] > upper.iloc[-1]:
+                patterns.append("KC上穿上轨")
+            elif close.iloc[-2] >= lower.iloc[-2] and close.iloc[-1] < lower.iloc[-1]:
+                patterns.append("KC下穿下轨")
+            elif close.iloc[-2] <= middle.iloc[-2] and close.iloc[-1] > middle.iloc[-1]:
+                patterns.append("KC上穿中轨")
+            elif close.iloc[-2] >= middle.iloc[-2] and close.iloc[-1] < middle.iloc[-1]:
+                patterns.append("KC下穿中轨")
                 
+        # 检查通道宽度
+        if width.iloc[-1] > 10:
+            patterns.append("KC通道宽度大")
+        elif width.iloc[-1] < 3:
+            patterns.append("KC通道宽度小")
+            
+        if width_chg.iloc[-1] > 10:
+            patterns.append("KC通道扩张")
+        elif width_chg.iloc[-1] < -10:
+            patterns.append("KC通道收缩")
+            
+        # 检查价格在通道内的行为模式
+        # 通道内震荡
+        if (close.iloc[-5:] < upper.iloc[-5:]).all() and (close.iloc[-5:] > lower.iloc[-5:]).all():
+            crossing_middle = False
+            for i in range(1, 5):
+                if ((close.iloc[-i-1] < middle.iloc[-i-1]) and (close.iloc[-i] > middle.iloc[-i])) or \
+                   ((close.iloc[-i-1] > middle.iloc[-i-1]) and (close.iloc[-i] < middle.iloc[-i])):
+                    crossing_middle = True
+                    break
+                    
+            if crossing_middle:
+                patterns.append("KC通道内震荡")
+                
+        # 连续触及上轨但未突破
+        if ((close.iloc[-3:] <= upper.iloc[-3:]) & (close.iloc[-3:] >= upper.iloc[-3:] * 0.99)).any():
+            patterns.append("KC顶部测试")
+            
+        # 连续触及下轨但未突破
+        if ((close.iloc[-3:] >= lower.iloc[-3:]) & (close.iloc[-3:] <= lower.iloc[-3:] * 1.01)).any():
+            patterns.append("KC底部测试")
+            
         return patterns 

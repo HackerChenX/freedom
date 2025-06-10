@@ -18,6 +18,7 @@ from indicators.kdj import KDJ
 # 导入常用指标类，以便手动注册
 from indicators.macd import MACD
 from indicators.rsi import RSI
+from indicators.adx import ADX
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -41,6 +42,7 @@ class IndicatorFactory:
     _indicators['BOLL'] = BOLL
     _indicators['ENHANCEDMACD'] = EnhancedMACD
     _indicators['ENHANCEDRSI'] = EnhancedRSI
+    _indicators['ADX'] = ADX
     
     @classmethod
     def create(cls, indicator_type: str, **params) -> Optional[BaseIndicator]:

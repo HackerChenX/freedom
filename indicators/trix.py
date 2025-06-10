@@ -881,12 +881,33 @@ class TRIX(BaseIndicator):
         )
 
     def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
-        self.ensure_columns(data, ['trix', 'trix_ma'])
-        patterns = []
-        
-        for pattern_func in self._pattern_registry.values():
-            result = pattern_func(data)
-            if result:
-                patterns.append(result)
-        
-        return patterns 
+        """
+        识别TRIX技术形态，并以DataFrame格式返回
+        """
+        # 确保已计算TRIX
+        if not self.has_result():
+            self.calculate(data, n=self.n, m=self.m)
+
+        # 检查'TRIX'列是否存在，如果不存在，则尝试从'trix'列获取
+        trix_col_name = 'TRIX' if 'TRIX' in self._result.columns else 'trix'
+        matrix_col_name = 'MATRIX' if 'MATRIX' in self._result.columns else 'trix_ma'
+
+        if trix_col_name not in self._result.columns:
+             # 如果两者都不存在，返回空DataFrame
+            return pd.DataFrame()
+            
+        patterns_df = pd.DataFrame(index=data.index)
+        patterns_df['TRIX_GOLDEN_CROSS'] = self._detect_golden_cross(self._result[trix_col_name], self._result[matrix_col_name])
+        patterns_df['TRIX_DEATH_CROSS'] = self._detect_death_cross(self._result[trix_col_name], self._result[matrix_col_name])
+
+        return patterns_df
+
+    def _detect_golden_cross(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
+        """检测金叉"""
+        from indicators.common import crossover
+        return pd.Series(crossover(series1.values, series2.values), index=series1.index)
+
+    def _detect_death_cross(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
+        """检测死叉"""
+        from indicators.common import crossunder
+        return pd.Series(crossunder(series1.values, series2.values), index=series1.index) 

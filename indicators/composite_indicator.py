@@ -48,6 +48,8 @@ class CompositeIndicator(BaseIndicator):
         
         self.indicators = indicators or []
         self.weights = weights or {}
+        self.custom_columns = {}  # 自定义列计算函数
+        self.calculate_score_automatically = True  # 是否自动计算评分
         
         # 为未指定权重的指标设置默认权重
         for indicator in self.indicators:
@@ -83,56 +85,70 @@ class CompositeIndicator(BaseIndicator):
     
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
-        计算组合指标
+        计算复合指标
         
         Args:
-            data: 输入K线数据
-            args: 位置参数
-            kwargs: 关键字参数
+            data: 包含价格数据的DataFrame
+            *args: 位置参数
+            **kwargs: 关键字参数
             
         Returns:
-            包含组合指标计算结果的DataFrame
+            pd.DataFrame: 添加了指标的DataFrame
         """
-        if not self.indicators:
-            logger.warning("没有指标可供组合")
-            return data.copy()
-        
-        # 创建结果DataFrame
+        if data.empty:
+            return data
+            
         result = data.copy()
         
-        # 存储各指标的计算结果
-        indicator_results = {}
-        
-        # 计算每个指标
+        # 计算每个子指标
         for indicator in self.indicators:
             try:
-                indicator_result = indicator.calculate(data, *args, **kwargs)
-                indicator_results[indicator.name] = indicator_result
+                # 计算指标
+                indicator_result = indicator.calculate(result, *args, **kwargs)
                 
-                # 将指标结果合并到结果DataFrame
-                # 为避免列名冲突，添加指标名前缀
-                for col in indicator_result.columns:
-                    if col not in data.columns:  # 避免覆盖原始数据列
-                        result[f"{indicator.name}_{col}"] = indicator_result[col]
+                # 合并结果
+                if indicator_result is not None:
+                    # 使用indicator_result作为结果，但保留result中的列
+                    for col in result.columns:
+                        if col not in indicator_result.columns:
+                            indicator_result[col] = result[col]
+                    
+                    result = indicator_result
             except Exception as e:
                 logger.error(f"计算指标 {indicator.name} 时出错: {e}")
         
-        # 计算组合指标评分
-        self._calculate_composite_score(result, indicator_results)
+        # 添加自定义列
+        for name, func in self.custom_columns.items():
+            try:
+                result[name] = func(result)
+            except Exception as e:
+                logger.error(f"计算自定义列 {name} 时出错: {e}")
         
-        # 存储结果
+        # 计算复合指标评分
+        if self.calculate_score_automatically:
+            try:
+                result['composite_score'] = self.calculate_composite_score(result)
+            except Exception as e:
+                logger.error(f"计算复合指标评分时出错: {e}")
+        
+        # 保存结果
         self._result = result
+        
+        # 确保基础数据列被保留
+        result = self._preserve_base_columns(data, result)
         
         return result
     
     def _calculate_composite_score(self, result: pd.DataFrame, 
-                                   indicator_results: Dict[str, pd.DataFrame]):
+                                   indicator_results: Dict[str, pd.DataFrame],
+                                   data: pd.DataFrame):
         """
         计算组合指标评分
         
         Args:
             result: 结果DataFrame
             indicator_results: 各指标的计算结果
+            data: 输入K线数据
         """
         # 创建组合评分列
         result['composite_score'] = 0.0
@@ -143,8 +159,20 @@ class CompositeIndicator(BaseIndicator):
         # 计算每个指标的评分并加权
         for indicator in self.indicators:
             try:
+                # 为每个指标的评分计算准备一个合并了原始数据和该指标结果的DataFrame
+                indicator_specific_data = data.copy()
+                indicator_result_df = indicator_results.get(indicator.name)
+                
+                if indicator_result_df is not None:
+                    # 合并时要处理重复列，以指标自己的结果为准
+                    # 使用 update 和 concat 确保所有列都被添加
+                    indicator_specific_data.update(indicator_result_df)
+                    for col in indicator_result_df.columns:
+                         if col not in indicator_specific_data.columns:
+                            indicator_specific_data[col] = indicator_result_df[col]
+
                 # 获取指标评分
-                raw_score = indicator.calculate_raw_score(indicator_results.get(indicator.name, result))
+                raw_score = indicator.calculate_raw_score(indicator_specific_data)
                 weight = self.weights.get(indicator.name, 1.0)
                 
                 # 存储指标评分
@@ -481,6 +509,39 @@ class CompositeIndicator(BaseIndicator):
         composite_score = np.clip(composite_score, 0, 100)
         
         return composite_score
+    
+    def calculate_composite_score(self, data: pd.DataFrame) -> pd.Series:
+        """
+        计算组合指标的综合评分
+        
+        Args:
+            data: 包含指标数据的DataFrame
+            
+        Returns:
+            pd.Series: 综合评分
+        """
+        # 初始化评分为零
+        score = pd.Series(0.0, index=data.index)
+        total_weight = 0.0
+        
+        # 收集每个指标的评分
+        for indicator in self.indicators:
+            try:
+                # 获取指标评分
+                raw_score = indicator.calculate_raw_score(data)
+                weight = self.weights.get(indicator.name, 1.0)
+                
+                # 加权累加到组合评分
+                score += raw_score * weight
+                total_weight += weight
+            except Exception as e:
+                logger.error(f"计算指标 {indicator.name} 评分时出错: {e}")
+        
+        # 标准化评分
+        if total_weight > 0:
+            score = score / total_weight
+            
+        return score
     
     def _register_composite_patterns(self):
         """

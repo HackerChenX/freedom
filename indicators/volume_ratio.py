@@ -12,6 +12,30 @@ from typing import Optional, Union, List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
 
+class VR(BaseIndicator):
+    """
+    一个骨架实现的VR指标，用于解决导入错误。
+    FIXME: 需要补充完整的计算逻辑。
+    """
+    def __init__(self, period: int = 26):
+        """
+        初始化指标
+        """
+        super().__init__()
+        self.period = period
+        self.name = f"VR({self.period})"
+        self.description = f"成交量比率 (周期: {self.period}) - 骨架实现"
+
+    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        计算指标。
+        这是一个临时的骨架实现。
+        """
+        # 为了让指标能工作，我们至少返回一个占位符列
+        result_df = pd.DataFrame(index=data.index)
+        result_df['vr'] = 100.0  # 返回一个全为100的列作为占位符
+        return result_df
+
 class VolumeRatio(BaseIndicator):
     """
     量比指标(VOLUME_RATIO)

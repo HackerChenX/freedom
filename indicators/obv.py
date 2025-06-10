@@ -36,47 +36,71 @@ class OBV(BaseIndicator):
         super().__init__(name="OBV", description="能量潮指标，根据价格变动方向，计算成交量的累计值")
         self.ma_period = ma_period
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算OBV指标
         
         Args:
-            data: 输入数据，包含价格和成交量数据
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
             
         Returns:
-            pd.DataFrame: 计算结果，包含OBV及其均线
+            添加了OBV指标列的DataFrame
         """
-        # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "volume"])
+        if data.empty:
+            return data
+            
+        # 确保数据包含必要的列
+        required_columns = ['close', 'volume']
         
-        # 复制输入数据
-        result = data.copy()
+        # 验证输入数据
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"输入数据缺少所需的列: {', '.join(missing_columns)}")
         
-        # 价格变动方向
-        price_direction = np.zeros(len(data))
-        price_direction[1:] = np.sign(data["close"].values[1:] - data["close"].values[:-1])
+        df = data.copy()
         
-        # 计算OBV
-        obv = np.zeros(len(data))
+        # 基础OBV计算
+        df['price_change'] = df['close'].diff()
+        df['obv'] = 0.0
         
-        for i in range(1, len(data)):
-            if price_direction[i] > 0:  # 价格上涨
-                obv[i] = obv[i-1] + data["volume"].iloc[i]
-            elif price_direction[i] < 0:  # 价格下跌
-                obv[i] = obv[i-1] - data["volume"].iloc[i]
-            else:  # 价格不变
-                obv[i] = obv[i-1]
+        # 第一个值设为0
+        df.loc[df.index[0], 'obv'] = 0
         
-        # 添加到结果
-        result["obv"] = obv
+        # 迭代计算OBV
+        for i in range(1, len(df)):
+            if df['price_change'].iloc[i] > 0:
+                df.loc[df.index[i], 'obv'] = df['obv'].iloc[i-1] + df['volume'].iloc[i]
+            elif df['price_change'].iloc[i] < 0:
+                df.loc[df.index[i], 'obv'] = df['obv'].iloc[i-1] - df['volume'].iloc[i]
+            else:
+                df.loc[df.index[i], 'obv'] = df['obv'].iloc[i-1]
         
         # 计算OBV均线
-        result["obv_ma"] = pd.Series(obv).rolling(window=self.ma_period).mean().values
+        df['obv_ma'] = df['obv'].rolling(window=self.ma_period).mean()
+        
+        # 计算OBV相对强弱
+        if not df['obv'].empty and df['obv'].max() != df['obv'].min():
+            df['obv_norm'] = (df['obv'] - df['obv'].min()) / (df['obv'].max() - df['obv'].min()) * 100
+        else:
+            df['obv_norm'] = 50.0  # 默认中性值
+        
+        # 计算OBV动量
+        df['obv_momentum'] = df['obv'].diff(self.ma_period)
+        
+        # 计算OBV相对于均线的位置
+        df['obv_position'] = df['obv'] - df['obv_ma']
+        
+        # OBV背离标志
+        df['obv_divergence'] = 0
         
         # 保存结果
-        self._result = result
+        self._result = df
         
-        return result
+        # 确保基础数据列被保留
+        df = self._preserve_base_columns(data, df)
+        
+        return df
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -800,3 +824,19 @@ class OBV(BaseIndicator):
         
         # 此处提供默认实现
         return signals
+
+    def _calculate_divergence(self, df: pd.DataFrame) -> pd.Series:
+        """
+        计算OBV与价格的背离
+        
+        Args:
+            df: 包含OBV和价格数据的DataFrame
+            
+        Returns:
+            pd.Series: 背离指示器，1表示看涨背离，-1表示看跌背离，0表示无背离
+        """
+        # 简单实现，实际应用中可能需要更复杂的逻辑
+        divergence = pd.Series(0, index=df.index)
+        
+        # 这里只是一个占位符，未来可以实现完整的背离检测算法
+        return divergence

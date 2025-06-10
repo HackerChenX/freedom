@@ -41,6 +41,7 @@ class WMA(BaseIndicator):
         self.period = period
         self.periods = periods if periods is not None else [period]
         self.name = "WMA"
+        self._pattern_registry = {}
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """

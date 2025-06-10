@@ -93,7 +93,7 @@ class AD(BaseIndicator):
         # 检测金叉形态
         if len(ad_data) >= 2:
             cross_over = crossover(ad_data.iloc[-2:], ad_ma_data.iloc[-2:])
-            if cross_over.iloc[-1]:
+            if cross_over.any():
                 pattern_data = {
                     'pattern_id': "AD_GOLDEN_CROSS",
                     'display_name': "AD金叉",
@@ -110,7 +110,7 @@ class AD(BaseIndicator):
         # 检测死叉形态
         if len(ad_data) >= 2:
             cross_under = crossunder(ad_data.iloc[-2:], ad_ma_data.iloc[-2:])
-            if cross_under.iloc[-1]:
+            if cross_under.any():
                 pattern_data = {
                     'pattern_id': "AD_DEATH_CROSS",
                     'display_name': "AD死叉",
@@ -181,7 +181,7 @@ class AD(BaseIndicator):
                     'pattern_id': "AD_RAPID_DECREASE",
                     'display_name': "AD快速下跌",
                     'indicator_id': self.name,
-                    'strength': SignalStrength.MODERATE_NEGATIVE.value,
+                    'strength': SignalStrength.SELL.value,
                     'duration': 2,
                     'details': {
                         'change_rate': float(ad_change)
