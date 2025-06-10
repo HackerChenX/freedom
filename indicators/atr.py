@@ -66,7 +66,7 @@ class ATR(BaseIndicator):
         # 注册ATR形态
         self._register_atr_patterns()
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ATR指标
         

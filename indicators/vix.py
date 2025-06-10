@@ -52,7 +52,7 @@ class VIX(BaseIndicator):
         """
         return self.calculate(df)
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算VIX恐慌指数指标
         

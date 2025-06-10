@@ -21,7 +21,7 @@ class PatternCombination(BaseIndicator):
         """初始化形态组合指标"""
         super().__init__(name="PatternCombination", description="形态组合分析指标，分析多种技术形态的组合关系")
     
-    def calculate(self, data):
+    def _calculate(self, data):
         """
         计算形态组合
         

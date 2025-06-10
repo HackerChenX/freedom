@@ -45,7 +45,7 @@ class TimeCycleAnalysis(BaseIndicator):
         self.max_cycle_days = max_cycle_days
         self.n_cycles = n_cycles
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算时间周期分析指标
         

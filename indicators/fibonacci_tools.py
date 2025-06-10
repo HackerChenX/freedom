@@ -43,7 +43,7 @@ class FibonacciTools(BaseIndicator):
         """初始化斐波那契工具指标"""
         super().__init__(name="FibonacciTools", description="斐波那契工具指标，计算回调线、扩展线和时间序列")
     
-    def calculate(self, data: pd.DataFrame, swing_high_idx: int = None, swing_low_idx: int = None, 
+    def _calculate(self, data: pd.DataFrame, swing_high_idx: int = None, swing_low_idx: int = None, 
                 fib_type: FibonacciType = FibonacciType.RETRACEMENT, *args, **kwargs) -> pd.DataFrame:
         """
         计算斐波那契工具

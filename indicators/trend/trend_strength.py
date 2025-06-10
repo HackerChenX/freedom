@@ -52,7 +52,7 @@ class TrendStrength(BaseIndicator):
         if params:
             self.params.update(params)
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算趋势强度指标
         

@@ -220,6 +220,7 @@ class ClickHouseDBConnection:
         self.manager = manager
         self.conn_key = conn_key
         self.client = manager._connections[conn_key]['client']
+        self._database_created = False # 用于确保数据库只创建一次
 
     def __enter__(self) -> 'ClickHouseDBConnection':
         """
@@ -288,6 +289,24 @@ class ClickHouseDBConnection:
             logger.error(f"执行查询失败: {query}, 错误: {e}")
             raise
 
+    def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        执行查询并返回Pandas DataFrame
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        try:
+            return self.client.query_dataframe(query, params)
+        except Exception as e:
+            logger.error(f"查询DataFrame失败: {query}, 错误: {e}")
+            # 返回一个空的DataFrame以保持类型一致性
+            return pd.DataFrame()
+
 
 class ClickHouseDB:
     """
@@ -303,6 +322,7 @@ class ClickHouseDB:
         """
         self.config = config or get_default_config()
         self.manager = ClickHouseDBManager.get_instance()
+        self.db_connection = self.manager.get_connection(self.config)
 
     def __enter__(self) -> 'ClickHouseDB':
         """
@@ -311,7 +331,6 @@ class ClickHouseDB:
         Returns:
             ClickHouseDB: 数据库操作对象自身
         """
-        self.connection = self.manager.get_connection(self.config)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -337,7 +356,7 @@ class ClickHouseDB:
 
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
-        执行查询并返回结果
+        执行查询并返回Pandas DataFrame
         
         Args:
             query: SQL查询语句
@@ -345,12 +364,8 @@ class ClickHouseDB:
             
         Returns:
             pd.DataFrame: 查询结果
-            
-        Raises:
-            Exception: 执行失败时抛出
         """
-        with self.manager.get_connection(self.config) as conn:
-            return conn.query(query, params)
+        return self.db_connection.query_dataframe(query, params)
 
     def get_stock_info(self,
                        stock_code: Union[str, List[str]] = None,
@@ -1363,6 +1378,89 @@ class ClickHouseDB:
 
         # 其他类型，尝试转换为字符串
         return str(date_param)
+
+    def init_database(self):
+        """
+        初始化数据库和表
+        """
+        logger.info("开始数据库初始化...")
+        try:
+            self._create_database()
+            self._run_ddl_scripts()
+            logger.info("数据库初始化成功完成。")
+            return True
+        except Exception as e:
+            logger.error(f"数据库初始化过程中发生错误: {e}", exc_info=True)
+            return False
+
+    def _create_database(self):
+        """
+        如果数据库不存在，则创建它
+        """
+        database_name = self.db_connection.client.database
+        if not database_name:
+            logger.warning("未配置数据库名称，跳过数据库创建。")
+            return
+            
+        try:
+            logger.info(f"检查并创建数据库: {database_name}")
+            self.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+            logger.info(f"数据库 {database_name} 已存在或已成功创建。")
+        except Exception as e:
+            logger.error(f"创建数据库 {database_name} 失败: {e}")
+            raise
+
+    def _execute_sql_from_file(self, file_path: str):
+        """
+        执行单个SQL文件中的所有语句
+        
+        Args:
+            file_path: SQL文件的路径
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                sql_script = f.read()
+            
+            # ClickHouse客户端可以一次执行多个语句
+            if sql_script.strip():
+                logger.info(f"正在执行SQL文件: {os.path.basename(file_path)}")
+                self.execute(sql_script)
+                logger.info(f"成功执行SQL文件: {os.path.basename(file_path)}")
+        except FileNotFoundError:
+            logger.error(f"SQL文件未找到: {file_path}")
+            raise
+        except Exception as e:
+            logger.error(f"执行SQL文件 {file_path} 失败: {e}")
+            raise
+
+    def _run_ddl_scripts(self):
+        """
+        运行 `sql/ddl` 目录中的所有SQL脚本
+        """
+        # 获取项目根目录
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        ddl_dir = os.path.join(project_root, 'sql', 'ddl')
+        
+        if not os.path.isdir(ddl_dir):
+            logger.warning(f"DDL目录不存在，跳过脚本执行: {ddl_dir}")
+            return
+            
+        logger.info(f"开始从目录执行DDL脚本: {ddl_dir}")
+        
+        # 获取所有.sql文件并排序
+        try:
+            sql_files = sorted([f for f in os.listdir(ddl_dir) if f.endswith('.sql')])
+        except FileNotFoundError:
+            logger.warning(f"DDL目录不存在或无法访问: {ddl_dir}")
+            return
+            
+        if not sql_files:
+            logger.info("在DDL目录中未找到可执行的SQL脚本。")
+            return
+            
+        for sql_file in sql_files:
+            file_path = os.path.join(ddl_dir, sql_file)
+            self._execute_sql_from_file(file_path)
 
 
 def get_clickhouse_db(config: Optional[Dict[str, Any]] = None) -> ClickHouseDB:

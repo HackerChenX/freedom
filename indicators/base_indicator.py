@@ -243,20 +243,53 @@ class BaseIndicator(abc.ABC):
         
         return result_df
     
-    @abc.abstractmethod
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
-        计算指标
+        计算指标的模板方法，包含列保护和错误处理
         
         Args:
-            data: 包含价格数据的DataFrame
+            data: 输入数据
+            *args: 位置参数
+            **kwargs: 关键字参数
+        
+        Returns:
+            pd.DataFrame: 包含指标和原始基础列的结果
+        """
+        try:
+            # 执行核心计算
+            result_df = self._calculate(data, *args, **kwargs)
+            
+            # 保护基础列
+            final_df = self._preserve_base_columns(data, result_df)
+            
+            # 缓存结果
+            self._result = final_df
+            self._error = None
+            
+            return final_df
+            
+        except Exception as e:
+            logger.error(f"计算指标 {self.name} 时出错: {e}")
+            self._error = e
+            # 在出错时返回一个包含错误信息的空DataFrame
+            error_df = pd.DataFrame(index=data.index)
+            error_df['error'] = str(e)
+            return self._preserve_base_columns(data, error_df)
+
+    @abc.abstractmethod
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        计算指标的核心逻辑
+        
+        Args:
+            data: 输入数据
             *args: 位置参数
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 添加了指标列的DataFrame
+            pd.DataFrame: 指标计算结果
         """
-        pass
+        raise NotImplementedError("子类必须实现 _calculate 方法")
     
     def get_registered_patterns(self) -> Dict[str, Dict[str, Any]]:
         """

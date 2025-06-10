@@ -39,7 +39,7 @@ class Fibonacci(BaseIndicator):
         self.retracement_levels = retracement_levels or [0.236, 0.382, 0.5, 0.618, 0.786]
         self.extension_levels = extension_levels or [1.27, 1.618, 2.0, 2.618]
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算斐波那契指标
         

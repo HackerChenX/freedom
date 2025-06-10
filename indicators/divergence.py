@@ -101,7 +101,7 @@ class DIVERGENCE(BaseIndicator):
         
         return result
     
-    def calculate(self, data: pd.DataFrame, indicator_name: str = None, 
+    def _calculate(self, data: pd.DataFrame, indicator_name: str = None, 
                   lookback_period: int = 20, confirm_period: int = 5, 
                   *args, **kwargs) -> pd.DataFrame:
         """

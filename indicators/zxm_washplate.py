@@ -36,7 +36,7 @@ class ZXMWashPlate(BaseIndicator):
         """初始化ZXM洗盘形态识别指标"""
         super().__init__(name="ZXMWashPlate", description="ZXM洗盘形态识别指标，识别ZXM体系中各种洗盘形态")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         识别ZXM洗盘形态
         

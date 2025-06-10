@@ -26,7 +26,7 @@ class ZXMAmplitudeElasticity(BaseIndicator):
         """初始化ZXM弹性-振幅指标"""
         super().__init__(name="ZXMAmplitudeElasticity", description="ZXM弹性-振幅指标，判断近期是否有较大振幅")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM弹性-振幅指标
         
@@ -109,7 +109,7 @@ class ZXMRiseElasticity(BaseIndicator):
         """初始化ZXM弹性-涨幅指标"""
         super().__init__(name="ZXMRiseElasticity", description="ZXM弹性-涨幅指标，判断近期是否有较大涨幅")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM弹性-涨幅指标
         
@@ -198,7 +198,7 @@ class ElasticityIndicator(BaseIndicator):
         super().__init__(name="ElasticityIndicator", description="ZXM弹性指标，检测股价弹性和反弹力度")
         self.period = period
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM弹性指标
         
@@ -537,7 +537,7 @@ class BounceDetector(BaseIndicator):
         self.short_period = short_period
         self.long_period = long_period
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM反弹检测指标
         

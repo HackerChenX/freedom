@@ -61,7 +61,7 @@ class RSIMA(BaseIndicator):
         if len(df) < min_rows:
             raise ValueError(f"DataFrame至少需要 {min_rows} 行数据才能计算RSI，但只有 {len(df)} 行")
     
-    def calculate(self, df: pd.DataFrame, price_column: str = "close") -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame, price_column: str = "close") -> pd.DataFrame:
         """
         计算RSI均线系统
         

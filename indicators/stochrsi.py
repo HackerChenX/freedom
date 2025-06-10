@@ -51,7 +51,7 @@ class STOCHRSI(BaseIndicator):
         self.overbought = overbought
         self.oversold = oversold
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算StochRSI指标
         

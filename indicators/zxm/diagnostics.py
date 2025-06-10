@@ -41,7 +41,7 @@ class ZXMDiagnostics(BaseIndicator):
             'divergence_signals': 0.15    # 背离信号
         } 
 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算股票诊断指标
         

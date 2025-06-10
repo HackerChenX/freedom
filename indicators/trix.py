@@ -74,7 +74,7 @@ class TRIX(BaseIndicator):
         
         return result
     
-    def calculate(self, data: pd.DataFrame, n: int = 12, m: int = 9, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, n: int = 12, m: int = 9, *args, **kwargs) -> pd.DataFrame:
         """
         计算TRIX指标
         

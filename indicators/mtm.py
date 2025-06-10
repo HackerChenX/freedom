@@ -45,7 +45,7 @@ class MTM(BaseIndicator):
         self.oversold = oversold
         self._auto_threshold = (overbought == 0 and oversold == 0)
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算MTM指标
         

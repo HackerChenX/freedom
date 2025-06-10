@@ -38,7 +38,7 @@ class KC(BaseIndicator):
         self._result = None
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算KC指标
         

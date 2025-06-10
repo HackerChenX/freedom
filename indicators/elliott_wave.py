@@ -51,7 +51,7 @@ class ElliottWave(BaseIndicator):
         """初始化艾略特波浪理论分析指标"""
         super().__init__(name="ElliottWave", description="艾略特波浪理论分析指标，识别和分析价格波浪结构")
     
-    def calculate(self, data: pd.DataFrame, min_wave_height: float = 0.03, 
+    def _calculate(self, data: pd.DataFrame, min_wave_height: float = 0.03, 
                 max_wave_count: int = 9, *args, **kwargs) -> pd.DataFrame:
         """
         分析艾略特波浪结构

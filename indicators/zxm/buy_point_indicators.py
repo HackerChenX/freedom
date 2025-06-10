@@ -26,7 +26,7 @@ class ZXMDailyMACD(BaseIndicator):
         """初始化ZXM买点-日MACD指标"""
         super().__init__(name="ZXMDailyMACD", description="ZXM买点-日MACD指标，判断日线MACD值是否小于0.9")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点-日MACD指标
         
@@ -112,7 +112,7 @@ class ZXMTurnover(BaseIndicator):
         """初始化ZXM买点-换手率指标"""
         super().__init__(name="ZXMTurnover", description="ZXM买点-换手率指标，判断日线换手率是否大于0.7%")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点-换手率指标
         
@@ -188,7 +188,7 @@ class ZXMVolumeShrink(BaseIndicator):
         """初始化ZXM买点-缩量指标"""
         super().__init__(name="ZXMVolumeShrink", description="ZXM买点-缩量指标，判断成交量是否明显缩量")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点-缩量指标
         
@@ -277,7 +277,7 @@ class ZXMMACallback(BaseIndicator):
         super().__init__(name="ZXMMACallback", description="ZXM买点-回踩均线指标，判断价格是否回踩至关键均线附近")
         self.callback_percent = callback_percent
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点-回踩均线指标
         
@@ -375,7 +375,7 @@ class ZXMBSAbsorb(BaseIndicator):
         """初始化ZXM买点-BS吸筹指标"""
         super().__init__(name="ZXMBSAbsorb", description="ZXM买点-BS吸筹指标，判断60分钟级别是否存在低位吸筹特征")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点-BS吸筹指标
         
@@ -521,7 +521,7 @@ class BuyPointDetector(BaseIndicator):
         """初始化ZXM买点检测指标"""
         super().__init__(name="BuyPointDetector", description="ZXM买点检测指标，检测多种买点形态")
         
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点指标
         

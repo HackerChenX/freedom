@@ -28,7 +28,7 @@ class ZXMDailyTrendUp(BaseIndicator):
         """初始化ZXM趋势-日线上移指标"""
         super().__init__(name="ZXMDailyTrendUp", description="ZXM趋势-日线上移指标，判断日线均线是否向上")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM趋势-日线上移指标
         
@@ -284,7 +284,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         """初始化ZXM趋势-周线上移指标"""
         super().__init__(name="ZXMWeeklyTrendUp", description="ZXM趋势-周线上移指标，判断周线均线是否向上")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM趋势-周线上移指标
         
@@ -610,7 +610,7 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         """初始化ZXM趋势-月KDJ·D及K上移指标"""
         super().__init__(name="ZXMMonthlyKDJTrendUp", description="ZXM趋势-月KDJ·D及K上移指标，判断月线KDJ·D和K值是否向上")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM趋势-月KDJ·D及K上移指标
         
@@ -959,7 +959,7 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         """初始化ZXM趋势-周KDJ·D/DEA上移指标"""
         super().__init__(name="ZXMWeeklyKDJDOrDEATrendUp", description="ZXM趋势-周KDJ·D/DEA上移指标，判断周线KDJ·D或DEA值是否向上")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM趋势-周KDJ·D/DEA上移指标
         
@@ -1313,7 +1313,7 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         """初始化ZXM趋势-周KDJ·D上移指标"""
         super().__init__(name="ZXMWeeklyKDJDTrendUp", description="ZXM趋势-周KDJ·D上移指标，判断周线KDJ·D值是否向上")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM趋势-周KDJ·D上移指标
         
@@ -1620,7 +1620,7 @@ class ZXMMonthlyMACD(BaseIndicator):
         """初始化ZXM趋势-月MACD指标"""
         super().__init__(name="ZXMMonthlyMACD", description="ZXM趋势-月MACD指标，判断月线MACD金叉")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM趋势-月MACD指标
         
@@ -2271,7 +2271,7 @@ class TrendDetector(BaseIndicator):
         """初始化ZXM趋势检测器"""
         super().__init__(name="TrendDetector", description="ZXM趋势检测器，识别价格趋势的方向和强度")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算趋势检测结果
         
@@ -2649,7 +2649,7 @@ class TrendStrength(BaseIndicator):
         """初始化ZXM趋势强度指标"""
         super().__init__(name="TrendStrength", description="ZXM趋势强度指标，分析价格趋势的强度和持续性")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算趋势强度指标
         
@@ -3056,7 +3056,7 @@ class TrendDuration(BaseIndicator):
         """初始化ZXM趋势持续性指标"""
         super().__init__(name="TrendDuration", description="ZXM趋势持续性指标，分析价格趋势的持续时间和生命周期特征")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算趋势持续性指标
         
@@ -3602,7 +3602,7 @@ class ZXMWeeklyMACD(BaseIndicator):
         self.description = "基于周线数据的MACD指标，用于检测中期趋势变化"
         self.score_manager = IndicatorScoreManager()
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算周线MACD指标
         

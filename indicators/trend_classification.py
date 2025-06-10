@@ -67,7 +67,7 @@ class TrendClassification(BaseIndicator):
         self.trend_strength_period = self._params.get('trend_strength_period', 10)
         self.consolidation_threshold = self._params.get('consolidation_threshold', 0.03)
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算趋势分类
         

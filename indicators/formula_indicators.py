@@ -36,7 +36,7 @@ class CrossOver(BaseIndicator):
         self.fast_line = fast_line
         self.slow_line = slow_line
         
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
         
@@ -221,7 +221,7 @@ class KDJCondition(BaseIndicator):
         self.m1 = kwargs.get('m1', 3)
         self.m2 = kwargs.get('m2', 3)
         
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
         
@@ -415,7 +415,7 @@ class MACDCondition(BaseIndicator):
         self.slow_period = kwargs.get('slow_period', 26)
         self.signal_period = kwargs.get('signal_period', 9)
         
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
         
@@ -635,7 +635,7 @@ class MACondition(BaseIndicator):
         self.operator = operator
         self.compare_value = compare_value
         
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
         
@@ -917,7 +917,7 @@ class GenericCondition(BaseIndicator):
         super().__init__(**kwargs)
         self.condition = condition
         
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
         

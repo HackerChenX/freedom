@@ -67,7 +67,7 @@ class VOSC(BaseIndicator):
         """
         return self.calculate(df)
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算成交量震荡指标(VOSC)指标
         

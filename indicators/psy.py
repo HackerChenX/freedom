@@ -80,7 +80,7 @@ class PSY(BaseIndicator):
         
         self.market_environment = environment
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算PSY指标
         

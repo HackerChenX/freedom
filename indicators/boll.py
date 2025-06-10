@@ -487,7 +487,7 @@ class BOLL(BaseIndicator):
         
         return pd.Series(final_score, index=data.index)
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算布林带指标
         

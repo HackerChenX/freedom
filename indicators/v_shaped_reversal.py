@@ -54,7 +54,7 @@ class VShapedReversal(BaseIndicator):
         """
         return self.calculate(df)
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算V形反转指标
         

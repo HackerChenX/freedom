@@ -84,7 +84,7 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         识别高级K线形态
         

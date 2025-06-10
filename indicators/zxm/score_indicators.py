@@ -38,7 +38,7 @@ class ZXMElasticityScore(BaseIndicator):
         self.amplitude_elasticity = ZXMAmplitudeElasticity()
         self.rise_elasticity = ZXMRiseElasticity()
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM弹性评分
         
@@ -131,7 +131,7 @@ class ZXMBuyPointScore(BaseIndicator):
         self.turnover = ZXMTurnover()
         self.ma_callback = ZXMMACallback()
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点评分
         
@@ -222,7 +222,7 @@ class StockScoreCalculator(BaseIndicator):
         """初始化ZXM股票综合评分指标"""
         super().__init__(name="StockScoreCalculator", description="ZXM股票综合评分指标，计算股票的综合评分")
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM股票综合评分
         

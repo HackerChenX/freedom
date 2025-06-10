@@ -91,7 +91,7 @@ class EnhancedDMI(BaseIndicator):
             
         return adjusted_period
     
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算DMI指标
         

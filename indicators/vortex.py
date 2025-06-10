@@ -65,7 +65,7 @@ class Vortex(BaseIndicator):
         """
         return self.calculate(df)
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算涡流指标(Vortex Indicator)
         

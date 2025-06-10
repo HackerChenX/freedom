@@ -46,7 +46,7 @@ class ZXM_ABSORB(BaseIndicator):
             
         return result
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM核心吸筹指标
         

@@ -280,22 +280,14 @@ class IndicatorTestMixin(LogCaptureMixin):
     
     def test_no_errors_during_calculation(self):
         """测试计算过程中没有错误日志"""
-        self.setup_log_capture()
-        try:
-            result = self.indicator.calculate(self.data)
-            self.assert_no_errors(f"指标 {self.indicator.__class__.__name__} 计算过程中出现错误")
-        finally:
-            self.teardown_log_capture()
+        result = self.indicator.calculate(self.data)
+        self.assert_no_error_logs()
     
     def test_no_errors_during_pattern_detection(self):
         """测试形态检测过程中没有错误日志"""
         if not hasattr(self.indicator, 'get_patterns'):
             self.skipTest(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
         
-        self.setup_log_capture()
-        try:
-            calculated_data = self.indicator.calculate(self.data)
-            patterns = self.indicator.get_patterns(self.data)
-            self.assert_no_errors(f"指标 {self.indicator.__class__.__name__} 形态检测过程中出现错误")
-        finally:
-            self.teardown_log_capture() 
+        calculated_data = self.indicator.calculate(self.data)
+        patterns = self.indicator.get_patterns(self.data)
+        self.assert_no_error_logs() 

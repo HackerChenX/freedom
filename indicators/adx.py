@@ -30,7 +30,6 @@ class ADX(BaseIndicator):
     """
     
     def __init__(self, params: Dict[str, Any] = None):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ADX指标
         
@@ -39,6 +38,7 @@ class ADX(BaseIndicator):
                 - period: ADX计算周期，默认为14
                 - strong_trend: 强趋势阈值，默认为25
         """
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         super().__init__(name="ADX", description="平均方向指数指标")
         
         # 设置默认参数
@@ -54,7 +54,7 @@ class ADX(BaseIndicator):
         # 注册ADX形态
         self._register_adx_patterns()
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ADX指标
         
@@ -195,7 +195,7 @@ class ADX(BaseIndicator):
         """
         # 确保已计算ADX指标
         if not self.has_result():
-            self.calculate(data)
+            self._calculate(data)
         
         # 获取DMI相关值
         pdi = self._result['PDI']
@@ -452,7 +452,7 @@ class ADX(BaseIndicator):
         """
         # 确保已计算ADX
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self._calculate(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -493,7 +493,7 @@ class ADX(BaseIndicator):
         # 确保评分在0-100范围内
         return score.clip(0, 100)
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取ADX形态列表
         
@@ -502,20 +502,20 @@ class ADX(BaseIndicator):
             **kwargs: 其他参数
             
         Returns:
-            List[Dict[str, Any]]: 形态识别结果列表
+            pd.DataFrame: 形态识别结果DataFrame
         """
         from indicators.base_indicator import PatternResult, SignalStrength
         from indicators.pattern_registry import PatternRegistry, PatternType
         
         # 确保已计算ADX
         if not self.has_result():
-            self.calculate(data)
+            self._calculate(data)
         
         patterns = []
         
-        # 如果没有结果或数据不足，返回空列表
+        # 如果没有结果或数据不足，返回空DataFrame
         if self._result is None or len(self._result) < 2:
-            return patterns
+            return pd.DataFrame(columns=['pattern_id', 'display_name', 'strength', 'duration', 'details'])
         
         # 提取参数
         period = self.params["period"]
@@ -678,7 +678,11 @@ class ADX(BaseIndicator):
                         details={"pdi_mdi_ratio": pdi_mdi_ratio}
                     ).to_dict())
         
-        return patterns
+        # 将结果转换为DataFrame
+        if not patterns:
+            return pd.DataFrame(columns=['pattern_id', 'display_name', 'strength', 'duration', 'details'])
+            
+        return pd.DataFrame(patterns)
 
     def _detect_pattern_duration(self, condition_series: pd.Series) -> int:
         """
@@ -831,7 +835,7 @@ class ADX(BaseIndicator):
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self._calculate(data, **kwargs)
         
         # 初始化信号
         signals = {}

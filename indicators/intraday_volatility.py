@@ -35,7 +35,7 @@ class IntradayVolatility(BaseIndicator):
         super().__init__(name="IntradayVolatility", description="日内波动率指标，评估价格日内波动幅度")
         self.smooth_period = smooth_period
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算日内波动率指标
         

@@ -538,7 +538,7 @@ class KDJ(BaseIndicator):
             logger.warning(f"判断市场环境出错: {e}")
             return MarketEnvironment.SIDEWAYS_MARKET
     
-    def calculate(self, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, *args, **kwargs) -> pd.DataFrame:
         """
         计算KDJ指标
 
@@ -1195,7 +1195,7 @@ class KDJIndicator:
             }
         }
 
-    def calculate(self, high: pd.Series, low: pd.Series, close: pd.Series) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    def _calculate(self, high: pd.Series, low: pd.Series, close: pd.Series) -> Tuple[pd.Series, pd.Series, pd.Series]:
         return calculate_kdj(high, low, close, self.k_period, self.d_period, self.j_period)
 
     def analyze_pattern(self, pattern_id: str, data: pd.DataFrame) -> List[Dict]:

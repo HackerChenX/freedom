@@ -74,7 +74,7 @@ class EnhancedMACD(BaseIndicator):
             if key in self._parameters:
                 self._parameters[key] = value
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强版MACD指标
         

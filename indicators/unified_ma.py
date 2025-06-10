@@ -90,7 +90,7 @@ class UnifiedMA(BaseIndicator):
             logger.warning(f"不支持的MA类型: {params['ma_type']}，将使用默认类型: {self.MA_TYPE_SIMPLE}")
             self._parameters['ma_type'] = self.MA_TYPE_SIMPLE
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算移动平均线指标
         

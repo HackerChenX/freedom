@@ -64,7 +64,7 @@ class PVT(BaseIndicator):
         """
         return self.calculate(df)
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算价格成交量趋势指标(PVT)指标
         

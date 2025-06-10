@@ -35,7 +35,7 @@ class InstitutionalBehavior(BaseIndicator):
         super().__init__(name="InstitutionalBehavior", description="主力行为模式分析指标")
         self.chip_distribution = ChipDistribution()
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算主力行为模式指标
         

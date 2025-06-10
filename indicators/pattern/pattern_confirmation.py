@@ -21,7 +21,7 @@ class PatternConfirmation(BaseIndicator):
         """初始化形态确认指标"""
         super().__init__(name="PatternConfirmation", description="形态确认指标，验证形态的有效性和可靠性")
     
-    def calculate(self, data):
+    def _calculate(self, data):
         """
         计算形态确认
         

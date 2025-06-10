@@ -24,7 +24,7 @@ class ZXMPatternIndicator(BaseIndicator):
         self.name = "ZXMPattern"
         self.description = "基于ZXM体系的买点和吸筹形态识别指标"
     
-    def calculate(self, 
+    def _calculate(self, 
                   open_prices: np.ndarray, 
                   high_prices: np.ndarray, 
                   low_prices: np.ndarray, 

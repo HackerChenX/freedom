@@ -43,7 +43,7 @@ class PlatformBreakout(BaseIndicator):
         self.platform_period = platform_period
         self.max_volatility = max_volatility
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算平台突破指标
         

@@ -58,7 +58,7 @@ class EMV(BaseIndicator):
         if df['volume'].isnull().all():
             raise ValueError("所有成交量数据都是缺失的")
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算EMV指标
         

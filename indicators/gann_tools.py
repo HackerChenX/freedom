@@ -80,7 +80,7 @@ class GannTools(BaseIndicator):
         """初始化江恩理论工具指标"""
         super().__init__(name="GannTools", description="江恩理论工具指标，计算角度线和时间周期")
     
-    def calculate(self, data: pd.DataFrame, pivot_idx: int = None, price_unit: float = None, 
+    def _calculate(self, data: pd.DataFrame, pivot_idx: int = None, price_unit: float = None, 
                 time_unit: int = 1, *args, **kwargs) -> pd.DataFrame:
         """
         计算江恩理论工具

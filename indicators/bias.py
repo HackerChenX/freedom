@@ -62,7 +62,7 @@ class BIAS(BaseIndicator):
         if missing_columns:
             raise ValueError(f"DataFrame缺少必要的列: {', '.join(missing_columns)}")
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算均线多空指标(BIAS)指标
         

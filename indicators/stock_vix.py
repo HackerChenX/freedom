@@ -59,7 +59,7 @@ class StockVIX(BaseIndicator):
         self._parameters = default_params
         self.atr = ATR()
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算个股VIX指标
         

@@ -65,7 +65,7 @@ class WR(BaseIndicator):
         """
         return self.calculate(df)
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算威廉指标(WR)指标
         

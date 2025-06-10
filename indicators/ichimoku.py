@@ -238,7 +238,7 @@ class Ichimoku(BaseIndicator):
         """
         return self.calculate(df)
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算一目均衡表指标(Ichimoku)
         

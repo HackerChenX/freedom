@@ -58,7 +58,7 @@ class WMA(BaseIndicator):
         if missing_columns:
             raise ValueError(f"DataFrame缺少必要的列: {', '.join(missing_columns)}")
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算加权移动平均线(WMA)指标
         

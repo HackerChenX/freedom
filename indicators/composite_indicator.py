@@ -83,7 +83,7 @@ class CompositeIndicator(BaseIndicator):
             for name in self.weights:
                 self.weights[name] /= total_weight
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算复合指标
         

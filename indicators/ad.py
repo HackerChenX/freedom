@@ -28,7 +28,7 @@ class AD(BaseIndicator):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self._result = None
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算AD指标
         

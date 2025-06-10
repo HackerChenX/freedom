@@ -26,7 +26,7 @@ class VR(BaseIndicator):
         self.name = f"VR({self.period})"
         self.description = f"成交量比率 (周期: {self.period}) - 骨架实现"
 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算指标。
         这是一个临时的骨架实现。
@@ -84,7 +84,7 @@ class VolumeRatio(BaseIndicator):
         if df['volume'].isnull().all():
             raise ValueError("所有成交量数据都是缺失的")
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算量比指标
         

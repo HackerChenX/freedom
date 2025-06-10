@@ -74,7 +74,7 @@ class SentimentAnalysis(BaseIndicator):
         self.vr = VR()
         self.vosc = VOSC()
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算市场情绪指标
         

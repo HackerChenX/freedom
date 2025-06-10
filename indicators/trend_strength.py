@@ -18,7 +18,7 @@ class TrendStrength(BaseIndicator):
         self.name = f"TrendStrength({self.period})"
         self.description = f"趋势强度指标 (周期: {self.period}) - 骨架实现"
 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算指标。
         这是一个临时的骨架实现。

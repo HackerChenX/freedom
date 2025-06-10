@@ -1,4 +1,4 @@
-CREATE TABLE stock.stock_info_new (
+CREATE TABLE stock.stock_info (
     code String,
     name String,
     date Date,

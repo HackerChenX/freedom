@@ -40,7 +40,7 @@ class SelectionModel(BaseIndicator):
         self.buy_point_detector = BuyPointDetector()
         self.wash_plate_detector = ZXMWashPlate()
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM选股模型
         

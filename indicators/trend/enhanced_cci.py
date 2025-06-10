@@ -72,7 +72,7 @@ class EnhancedCCI(BaseIndicator):
         
         self.market_environment = environment
     
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算CCI指标
         

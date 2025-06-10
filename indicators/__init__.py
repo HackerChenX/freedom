@@ -23,7 +23,7 @@ from .pvt import PVT
 from .vr import VR
 from .mfi import MFI
 from .vosc import VOSC
-from .vol import VOL
+from .volume.vol import VOL
 from .mtm import MTM
 from .roc import ROC
 from .wr import WR

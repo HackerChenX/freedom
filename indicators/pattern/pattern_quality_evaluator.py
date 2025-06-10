@@ -21,7 +21,7 @@ class PatternQualityEvaluator(BaseIndicator):
         """初始化形态质量评估指标"""
         super().__init__(name="PatternQualityEvaluator", description="形态质量评估指标，评估技术形态的质量和可靠性")
     
-    def calculate(self, data):
+    def _calculate(self, data):
         """
         计算形态质量评估
         

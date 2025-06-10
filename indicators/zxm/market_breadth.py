@@ -34,7 +34,7 @@ class ZXMMarketBreadth(BaseIndicator):
             'momentum_breadth': 0.15      # 动量宽度
         }
         
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算市场宽度指标
         

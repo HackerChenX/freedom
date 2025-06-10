@@ -77,7 +77,7 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
         
         return result
     
-    def calculate(self, data: Union[pd.DataFrame, Dict[KlinePeriod, pd.DataFrame]], 
+    def _calculate(self, data: Union[pd.DataFrame, Dict[KlinePeriod, pd.DataFrame]], 
                   signal_func: Callable[[pd.DataFrame], np.ndarray] = None, 
                   periods: List[KlinePeriod] = None, 
                   *args, **kwargs) -> pd.DataFrame:

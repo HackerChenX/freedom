@@ -196,7 +196,7 @@ class IndicatorRegistry:
         """
         return list(self.adapters.keys())
     
-    def calculate(self, name: str, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate(self, name: str, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         使用指定名称的指标适配器计算指标
         
@@ -310,7 +310,7 @@ class CompositeIndicator(BaseIndicator):
                 # 为指标对象创建新的适配器
                 self.indicators.append(IndicatorAdapter(indicator_ref))
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算组合指标
         

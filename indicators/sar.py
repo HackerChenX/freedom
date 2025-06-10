@@ -58,7 +58,7 @@ class SAR(BaseIndicator):
         if missing_columns:
             raise ValueError(f"DataFrame缺少所需的列: {missing_columns}")
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算抛物线转向系统(SAR)指标
         

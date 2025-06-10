@@ -33,7 +33,7 @@ class ChipDistribution(BaseIndicator):
         """初始化筹码分布指标"""
         super().__init__(name="ChipDistribution", description="筹码分布指标，分析各价位持仓情况")
     
-    def calculate(self, data: pd.DataFrame, half_life: int = 60, price_precision: float = 0.01, 
+    def _calculate(self, data: pd.DataFrame, half_life: int = 60, price_precision: float = 0.01, 
                  use_precision_cost: bool = True, *args, **kwargs) -> pd.DataFrame:
         """
         计算筹码分布指标

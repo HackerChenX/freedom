@@ -37,7 +37,7 @@ class IslandReversal(BaseIndicator):
         self.gap_threshold = gap_threshold
         self.island_max_days = island_max_days
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算岛型反转指标
         
