@@ -20,7 +20,7 @@ class ZXMPatternIndicator(BaseIndicator):
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM体系模式识别指标"""
-        super().__init__(indicator_type=IndicatorType.CUSTOM)
+        super().__init__()
         self.name = "ZXMPattern"
         self.description = "基于ZXM体系的买点和吸筹形态识别指标"
     
@@ -221,7 +221,7 @@ class ZXMPatternIndicator(BaseIndicator):
         
         # ZXM特有买点：长下影线支撑型
         long_shadow_support_buy = np.zeros(length, dtype=bool)
-        for i in range(5, length):
+        for i in range(20, length):
             if i < length - 1:  # 确保我们可以看到下一天的数据
                 # 在支撑位附近
                 near_support = (low_prices[i] <= ma60[i] * 1.02 and close_prices[i] > ma60[i]) or \
@@ -344,7 +344,7 @@ class ZXMPatternIndicator(BaseIndicator):
         
         return score
     
-def _identify_absorption_patterns(self, 
+    def _identify_absorption_patterns(self, 
                                      open_prices: np.ndarray, 
                                      high_prices: np.ndarray, 
                                      low_prices: np.ndarray, 

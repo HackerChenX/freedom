@@ -20,6 +20,15 @@ from indicators.rsi_score import RSIScore
 from indicators.boll_score import BOLLScore
 from indicators.scoring_framework import IndicatorScoreBase, IndicatorScoreManager
 from indicators.volume_score import VolumeScore
+from indicators.trend_strength import TrendStrength
+from indicators.unified_ma import UnifiedMA
+from indicators.vol import VOL
+from indicators.vosc import VOSC
+from indicators.volume_ratio import VR
+from indicators.vol import VOL as Volume
+from indicators.vortex import Vortex
+from indicators.wma import WMA
+from indicators.wr import WR
 
 logger = get_logger(__name__)
 

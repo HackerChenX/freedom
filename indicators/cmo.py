@@ -32,8 +32,8 @@ class CMO(BaseIndicator):
         overbought: 超买阈值，默认为40
     """
     
-    def __init__(self, name: str = "CMO", description: str = "钱德动量摆动指标",
-                 period: int = 14, oversold: float = -40, overbought: float = 40):
+    def __init__(self, period: int = 14, oversold: float = -40, overbought: float = 40,
+                 name: str = "CMO", description: str = "钱德动量摆动指标"):
         """初始化CMO指标"""
         super().__init__(name, description)
         self.indicator_type = IndicatorEnum.CMO.name
@@ -69,8 +69,14 @@ class CMO(BaseIndicator):
         result['up_sum'] = result['up'].rolling(window=self.period).sum()
         result['down_sum'] = result['down'].rolling(window=self.period).sum()
         
-        # 计算CMO
-        result['CMO'] = 100 * ((result['up_sum'] - result['down_sum']) / (result['up_sum'] + result['down_sum']))
+        # 计算CMO，避免除以零的情况
+        up_down_sum = result['up_sum'] + result['down_sum']
+        # 处理可能的零除情况
+        result['CMO'] = np.where(
+            up_down_sum > 0,
+            100 * ((result['up_sum'] - result['down_sum']) / up_down_sum),
+            0  # 如果分母为零，则返回0
+        )
         
         # 删除临时列
         result = result.drop(['price_change', 'up', 'down', 'up_sum', 'down_sum'], axis=1)
@@ -248,10 +254,6 @@ class CMO(BaseIndicator):
             
         # 风险等级(1-5)
         risk_level = 3
-        if abs(cmo) > 80:
-            risk_level = 5  # 极端值，较高风险
-        elif abs(cmo) > 60:
-            risk_level = 4  # 高值，中高风险
             
         # 止损计算
         if buy_signal:
@@ -281,11 +283,9 @@ class CMO(BaseIndicator):
             "stop_loss": stop_loss,
             "additional_info": {
                 "cmo": cmo,
-                "overbought": self.overbought,
-                "oversold": self.oversold
-            },
-            "market_environment": self.detect_market_environment(df).value if hasattr(self, 'detect_market_environment') else None,
-            "volume_confirmation": self.check_volume_confirmation(df) if hasattr(self, 'check_volume_confirmation') else None
+                "oversold": self.oversold,
+                "overbought": self.overbought
+            }
         }
         
         signals.append(signal)
@@ -299,127 +299,120 @@ class CMO(BaseIndicator):
             data: 包含OHLCV数据的DataFrame
             
         Returns:
-            包含每个时间点评分的Series
+            包含评分的Series，范围0-100
         """
-        result = self.calculate(data)
+        # 确保已计算指标
+        if not isinstance(data, pd.DataFrame) or 'CMO' not in data.columns:
+            data = self.calculate(data)
         
-        # 初始化评分Series
-        scores = pd.Series(index=result.index, data=50.0)
+        # 获取CMO值
+        cmo = data['CMO']
         
-        # 计算评分
-        for i in range(len(result)):
-            if i < self.period:
-                continue
-                
-            # 获取当前数据
-            cmo = result['CMO'].iloc[i]
+        # 初始化评分
+        score = pd.Series(50, index=data.index)  # 默认中性评分
+        
+        # CMO大于0为看涨，小于0为看跌
+        bullish_mask = cmo > 0
+        bearish_mask = cmo < 0
+        
+        # 超买区域
+        overbought_mask = cmo > self.overbought
+        # 超卖区域
+        oversold_mask = cmo < self.oversold
+        
+        # 设置基础分
+        # 1. 超买区域：反转思路，分数越高越看跌
+        score[overbought_mask] = 100 - (cmo[overbought_mask] - self.overbought) * 0.5
+        # 2. 超卖区域：反转思路，分数越低越看涨
+        score[oversold_mask] = 0 + (cmo[oversold_mask] - self.oversold) * 0.5
+        # 3. 中性区域看涨
+        neutral_bullish_mask = ~(overbought_mask | oversold_mask) & bullish_mask
+        score[neutral_bullish_mask] = 50 + cmo[neutral_bullish_mask] * 0.5
+        # 4. 中性区域看跌
+        neutral_bearish_mask = ~(overbought_mask | oversold_mask) & bearish_mask
+        score[neutral_bearish_mask] = 50 + cmo[neutral_bearish_mask] * 0.5
+        
+        # 考虑CMO斜率
+        if len(data) >= 5:
+            # 计算5日CMO变化率
+            cmo_change = data['CMO'] - data['CMO'].shift(5)
             
-            # 基础评分
-            base_score = 50
+            # 上升动量加分
+            up_momentum_mask = cmo_change > 3
+            score[up_momentum_mask] += 5
             
-            # CMO位置评分
-            position_score = 50 + cmo * 0.5  # 将-100到100的CMO值映射到0-100的评分
+            # 下降动量减分
+            down_momentum_mask = cmo_change < -3
+            score[down_momentum_mask] -= 5
             
-            # 交叉信号评分
-            cross_score = 0
-            if i > 0:
-                prev_cmo = result['CMO'].iloc[i-1]
-                
-                # 零轴交叉
-                if (prev_cmo <= 0 and cmo > 0):  # 上穿零轴
-                    cross_score = 15
-                elif (prev_cmo >= 0 and cmo < 0):  # 下穿零轴
-                    cross_score = -15
-                    
-                # 超买超卖线交叉
-                elif (prev_cmo <= self.oversold and cmo > self.oversold):  # 上穿超卖线
-                    cross_score = 10
-                elif (prev_cmo >= self.overbought and cmo < self.overbought):  # 下穿超买线
-                    cross_score = -10
-                elif (prev_cmo <= self.overbought and cmo > self.overbought):  # 上穿超买线
-                    cross_score = 5
-                elif (prev_cmo >= self.oversold and cmo < self.oversold):  # 下穿超卖线
-                    cross_score = -5
-            
-            # 计算最终评分
-            final_score = base_score + (position_score - 50) + cross_score
-            
-            # 限制评分范围
-            scores.iloc[i] = np.clip(final_score, 0, 100)
-            
-        return scores
+        # 确保分数在0-100范围内
+        score = score.clip(0, 100)
+        
+        return score
         
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
-        识别技术形态
+        识别CMO指标的技术形态
         
         Args:
             data: 包含OHLCV数据的DataFrame
             
         Returns:
-            识别出的形态列表
+            形态描述列表
         """
-        result = self.calculate(data)
+        # 确保已计算指标
+        if not isinstance(data, pd.DataFrame) or 'CMO' not in data.columns:
+            data = self.calculate(data)
+            
+        # 获取CMO数据
+        cmo = data['CMO']
+        close = data['close']
+        
         patterns = []
         
-        # 确保有足够的数据
-        if len(result) < self.period + 5:
-            return patterns
+        # 检查超买/超卖条件
+        if cmo.iloc[-1] > self.overbought:
+            patterns.append("CMO超买")
             
-        # 获取最新数据
-        latest = result.iloc[-1]
-        cmo = latest['CMO']
-        
-        # 识别形态
-        
-        # 1. CMO区域
-        if cmo > self.overbought:
-            patterns.append("CMO超买区域")
-        elif cmo < self.oversold:
-            patterns.append("CMO超卖区域")
-        elif cmo > 0:
-            patterns.append("CMO正区域")
-        else:
-            patterns.append("CMO负区域")
+        if cmo.iloc[-1] < self.oversold:
+            patterns.append("CMO超卖")
             
-        # 2. CMO交叉
-        if crossover(result['CMO'], 0):
-            patterns.append("CMO上穿零轴")
-        elif crossunder(result['CMO'], 0):
-            patterns.append("CMO下穿零轴")
-        elif crossover(result['CMO'], self.oversold):
-            patterns.append("CMO上穿超卖线")
-        elif crossunder(result['CMO'], self.overbought):
-            patterns.append("CMO下穿超买线")
-            
-        # 3. CMO走势
-        if len(result) >= 10:
-            cmo_trend = result['CMO'].iloc[-10:].diff().mean()
-            if cmo_trend > 1:
-                patterns.append("CMO上升趋势")
-            elif cmo_trend < -1:
-                patterns.append("CMO下降趋势")
-            else:
-                patterns.append("CMO横盘整理")
+        # 检查零线交叉
+        if len(data) >= 2:
+            if cmo.iloc[-2] <= 0 and cmo.iloc[-1] > 0:
+                patterns.append("CMO上穿零线")
                 
-        # 4. CMO背离
-        if len(result) >= 20:
-            # 检查最近20个交易日内的高点和低点
-            price_high_idx = data['close'].iloc[-20:].idxmax()
-            price_low_idx = data['close'].iloc[-20:].idxmin()
-            cmo_high_idx = result['CMO'].iloc[-20:].idxmax()
-            cmo_low_idx = result['CMO'].iloc[-20:].idxmin()
-            
-            # 检查是否出现顶背离 - 价格新高但CMO未创新高
-            if price_high_idx == result.index[-1] and cmo_high_idx != result.index[-1]:
-                patterns.append("CMO顶背离")
+            if cmo.iloc[-2] >= 0 and cmo.iloc[-1] < 0:
+                patterns.append("CMO下穿零线")
                 
-            # 检查是否出现底背离 - 价格新低但CMO未创新低
-            if price_low_idx == result.index[-1] and cmo_low_idx != result.index[-1]:
-                patterns.append("CMO底背离")
+        # 检查超买/超卖区域的离开
+        if len(data) >= 2:
+            if cmo.iloc[-2] >= self.overbought and cmo.iloc[-1] < self.overbought:
+                patterns.append("CMO离开超买区")
                 
-        # 5. CMO极值
-        if abs(cmo) > 80:
-            patterns.append("CMO极值区域")
+            if cmo.iloc[-2] <= self.oversold and cmo.iloc[-1] > self.oversold:
+                patterns.append("CMO离开超卖区")
+                
+        # 检查背离
+        if len(data) >= 20:
+            # 找出最近20天的最高价和最低价
+            last_20_high_idx = close.iloc[-20:].idxmax()
+            last_20_low_idx = close.iloc[-20:].idxmin()
             
+            # 检查顶背离：价格创新高，但CMO未创新高
+            if last_20_high_idx == data.index[-1]:  # 最新价格是20天内最高
+                cmo_at_price_high = cmo.iloc[-1]
+                max_cmo_in_period = cmo.iloc[-20:].max()
+                
+                if cmo_at_price_high < max_cmo_in_period * 0.9:  # CMO比之前最高点低10%以上
+                    patterns.append("CMO顶背离")
+                    
+            # 检查底背离：价格创新低，但CMO未创新低
+            if last_20_low_idx == data.index[-1]:  # 最新价格是20天内最低
+                cmo_at_price_low = cmo.iloc[-1]
+                min_cmo_in_period = cmo.iloc[-20:].min()
+                
+                if cmo_at_price_low > min_cmo_in_period * 0.9:  # CMO比之前最低点高10%以上
+                    patterns.append("CMO底背离")
+                    
         return patterns 

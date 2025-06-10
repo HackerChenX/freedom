@@ -45,6 +45,7 @@ class KDJ(BaseIndicator):
         self.m1 = m1
         self.m2 = m2
         self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
+        self._registered_patterns = False
     
     def _register_kdj_patterns(self):
         """将KDJ形态注册到全局形态注册表"""

@@ -9,5 +9,10 @@
 # from indicators.volume.enhanced_mfi import EnhancedMFI
 # from indicators.volume.enhanced_vr import EnhancedVR
 
+# 导入VOL类作为Volume
+from indicators.vol import VOL as Volume
+
 # 版本信息
 __version__ = '0.1.0' 
+
+__all__ = ['Volume'] 

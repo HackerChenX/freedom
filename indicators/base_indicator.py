@@ -15,6 +15,9 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# 定义基础数据列
+BASE_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+
 
 class MarketEnvironment(Enum):
     """市场环境枚举"""
@@ -198,34 +201,60 @@ class BaseIndicator(abc.ABC):
     
     @property
     def result(self) -> Optional[pd.DataFrame]:
-        """获取计算结果"""
+        """
+        获取指标计算结果
+        
+        Returns:
+            Optional[pd.DataFrame]: 指标计算结果，如果尚未计算则返回None
+        """
         return self._result
     
     @property
     def error(self) -> Optional[Exception]:
-        """获取错误信息"""
+        """获取指标计算错误"""
         return self._error
     
     def has_result(self) -> bool:
-        """检查是否有计算结果"""
+        """是否已经计算出结果"""
         return self._result is not None
     
     def has_error(self) -> bool:
-        """检查是否有错误"""
+        """是否有计算错误"""
         return self._error is not None
+    
+    def _preserve_base_columns(self, source_df: pd.DataFrame, result_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        在计算结果中保留基础数据列，确保链式计算能够正常进行
+        
+        Args:
+            source_df: 源数据DataFrame
+            result_df: 计算结果DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含原始基础列的结果DataFrame
+        """
+        # 检查源数据中有哪些基础列
+        available_columns = [col for col in BASE_COLUMNS if col in source_df.columns]
+        
+        # 如果结果中缺少这些列，则从源数据中复制
+        for col in available_columns:
+            if col not in result_df.columns:
+                result_df[col] = source_df[col]
+        
+        return result_df
     
     @abc.abstractmethod
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
-        计算技术指标
+        计算指标
         
         Args:
-            data: 输入数据，通常是K线数据
-            args: 位置参数
-            kwargs: 关键字参数
+            data: 包含价格数据的DataFrame
+            *args: 位置参数
+            **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 计算结果
+            pd.DataFrame: 添加了指标列的DataFrame
         """
         pass
     
