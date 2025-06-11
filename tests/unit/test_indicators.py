@@ -24,6 +24,7 @@ from indicators.trix import TRIX
 from indicators.vr import VR
 from indicators.wr import WR
 from indicators.factory import IndicatorFactory
+from indicators.ema import EMA  # 导入EMA类
 
 
 class TestIndicators(unittest.TestCase):
@@ -53,32 +54,35 @@ class TestIndicators(unittest.TestCase):
     
     def test_ma_calculation(self):
         """测试MA计算"""
-        # 使用通用函数计算
-        ma_5 = ma(self.test_data['close'].values, 5)
-        ma_10 = ma(self.test_data['close'].values, 10)
+        # 使用MA指标类计算
+        ma_indicator = MA(periods=[5, 10])
+        result = ma_indicator.calculate(self.test_data)
+        ma_5 = result['MA5']
         
         # 检查结果长度
         self.assertEqual(len(ma_5), len(self.test_data))
         
         # 检查前N-1个值为NaN
-        self.assertTrue(np.isnan(ma_5[0]))
-        self.assertTrue(np.isnan(ma_5[3]))
-        self.assertFalse(np.isnan(ma_5[4]))
+        self.assertTrue(np.isnan(ma_5.iloc[0]))
+        self.assertTrue(np.isnan(ma_5.iloc[3]))
+        self.assertFalse(np.isnan(ma_5.iloc[4]))
         
         # 检查计算结果
-        expected_ma5 = self.test_data['close'].rolling(5).mean().values
-        np.testing.assert_allclose(ma_5, expected_ma5)
+        expected_ma5 = self.test_data['close'].rolling(5).mean()
+        np.testing.assert_allclose(ma_5.dropna(), expected_ma5.dropna())
     
     def test_ema_calculation(self):
         """测试EMA计算"""
-        # 使用通用函数计算
-        ema_12 = ema(self.test_data['close'].values, 12)
+        # 使用EMA指标类计算
+        ema_indicator = EMA(periods=[12])
+        result = ema_indicator.calculate(self.test_data)
+        ema_12 = result['EMA12']
         
         # 检查结果长度
         self.assertEqual(len(ema_12), len(self.test_data))
         
         # 检查计算结果
-        expected_ema12 = self.test_data['close'].ewm(span=12, adjust=False).mean().values
+        expected_ema12 = self.test_data['close'].ewm(span=12, adjust=False).mean()
         np.testing.assert_allclose(ema_12, expected_ema12)
     
     def test_macd_indicator(self):

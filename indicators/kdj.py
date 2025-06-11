@@ -47,6 +47,11 @@ class KDJ(BaseIndicator):
         self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
         self._registered_patterns = False
     
+    def set_parameters(self, **kwargs):
+        """设置指标参数的存根方法"""
+        # 此方法旨在满足基类接口要求，具体参数设置逻辑可在未来实现
+        pass
+    
     def _register_kdj_patterns(self):
         """将KDJ形态注册到全局形态注册表"""
         from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength

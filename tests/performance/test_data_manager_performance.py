@@ -13,9 +13,10 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import numpy as np
 
-from data.data_manager import DataManager
+from db.data_manager import DataManager
 from enums.period import Period
 from utils.logger import get_logger, setup_logger
+from tests.helper.data_generator import TestDataGenerator
 
 logger = get_logger(__name__)
 

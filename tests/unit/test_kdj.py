@@ -27,6 +27,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin):
         ])
         calculated_data = self.indicator.calculate(data)
         patterns = self.indicator.get_patterns(calculated_data)
+        self.assertIn('KDJ_GOLDEN_CROSS', patterns.columns, "模式结果中缺少 KDJ_GOLDEN_CROSS 列")
         self.assertGreater(patterns['KDJ_GOLDEN_CROSS'].sum(), 0, "未检测到KDJ金叉")
 
     def test_death_cross(self):
@@ -38,6 +39,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin):
         ])
         calculated_data = self.indicator.calculate(data)
         patterns = self.indicator.get_patterns(calculated_data)
+        self.assertIn('KDJ_DEATH_CROSS', patterns.columns, "模式结果中缺少 KDJ_DEATH_CROSS 列")
         self.assertGreater(patterns['KDJ_DEATH_CROSS'].sum(), 0, "未检测到KDJ死叉")
 
     def test_j_value_overbought(self):

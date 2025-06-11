@@ -47,6 +47,11 @@ class EMA(BaseIndicator):
         # 注册EMA形态
         self._register_ema_patterns()
         
+    def set_parameters(self, **kwargs):
+        """设置指标参数的存根方法"""
+        # 此方法旨在满足基类接口要求，具体参数设置逻辑可在未来实现
+        pass
+        
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列

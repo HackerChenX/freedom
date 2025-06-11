@@ -31,7 +31,17 @@ class RSI(BaseIndicator):
         self.overbought = overbought
         self.oversold = oversold
 
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def set_parameters(self, period: int = 14, overbought: float = 70.0, oversold: float = 30.0, **kwargs):
+        """
+        设置RSI指标的参数
+        """
+        self.period = period
+        self.overbought = overbought
+        self.oversold = oversold
+        if 'ma_periods' in kwargs:
+            self.ma_periods = kwargs['ma_periods']
+
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算RSI指标，并包含均线和信号
         
@@ -41,17 +51,17 @@ class RSI(BaseIndicator):
         Returns:
             pd.DataFrame: 添加了RSI指标的DataFrame
         """
-        if df.empty:
-            return df
+        if data.empty:
+            return data
             
         # 确保数据包含所需的列
-        if 'close' not in df.columns:
+        if 'close' not in data.columns:
             raise ValueError("输入数据必须包含'close'列")
             
-        result_df = pd.DataFrame(index=df.index)
+        result_df = pd.DataFrame(index=data.index)
         
         # 计算价格变动
-        delta = df['close'].diff()
+        delta = data['close'].diff()
         
         # 计算上涨和下跌
         gain = delta.where(delta > 0, 0).ewm(span=self.period, adjust=False).mean()
@@ -74,7 +84,7 @@ class RSI(BaseIndicator):
         result_df['rsi_overbought'] = result_df['rsi'] > self.overbought
         result_df['rsi_oversold'] = result_df['rsi'] < self.oversold
 
-        return df.join(result_df)
+        return data.join(result_df)
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

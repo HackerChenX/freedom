@@ -33,6 +33,12 @@ class BIAS(BaseIndicator):
         self.periods = periods if periods is not None else [period]
         self.indicator_type = "BIAS"
         
+    def set_parameters(self, period: int = 14, **kwargs):
+        """
+        设置BIAS指标的参数
+        """
+        self.periods = kwargs.get('periods', [period])
+
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列
@@ -41,22 +47,22 @@ class BIAS(BaseIndicator):
         if missing_columns:
             raise ValueError(f"DataFrame缺少必要的列: {', '.join(missing_columns)}")
     
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算均线多空指标(BIAS)指标
         """
-        if df.empty:
-            return df
+        if data.empty:
+            return data
             
-        self._validate_dataframe(df, ['close'])
+        self._validate_dataframe(data, ['close'])
         
         # 创建一个临时的DataFrame来存储新计算的列
-        result_df = pd.DataFrame(index=df.index)
+        result_df = pd.DataFrame(index=data.index)
         
         # 计算所有周期的BIAS
         for p in self.periods:
-            ma = df['close'].rolling(window=p, min_periods=1).mean()
-            result_df[f'BIAS{p}'] = (df['close'] - ma) / ma * 100
+            ma = data['close'].rolling(window=p, min_periods=1).mean()
+            result_df[f'BIAS{p}'] = (data['close'] - ma) / ma * 100
         
         # 为主周期创建 'BIAS' 和 'BIAS_MA' 列，以供形态识别使用
         if self.periods:
@@ -67,7 +73,7 @@ class BIAS(BaseIndicator):
                 result_df['BIAS_MA'] = result_df['BIAS'].rolling(window=main_period, min_periods=1).mean()
 
         # 将新计算的列与原始DataFrame合并，避免重复列
-        return df.join(result_df, how='left')
+        return data.join(result_df, how='left')
 
     def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
         """

@@ -54,6 +54,11 @@ class ADX(BaseIndicator):
         # 注册ADX形态
         self._register_adx_patterns()
     
+    def set_parameters(self, **kwargs):
+        """设置指标参数的存根方法"""
+        # 此方法旨在满足基类接口要求，具体参数设置逻辑可在未来实现
+        pass
+    
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ADX指标

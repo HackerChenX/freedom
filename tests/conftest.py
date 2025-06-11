@@ -9,9 +9,11 @@ import pytest
 import tempfile
 import shutil
 from unittest.mock import patch, MagicMock
+import sys
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
 
 from utils.logger import setup_logger
 from utils.path_utils import get_config_dir

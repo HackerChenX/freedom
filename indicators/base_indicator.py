@@ -506,34 +506,22 @@ class BaseIndicator(abc.ABC):
     @abc.abstractmethod
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算指标的原始评分
+        计算原始评分，这是所有指标评分的基础
         
         Args:
-            data: 输入数据
-            **kwargs: 额外参数
+            data (pd.DataFrame): 包含K线数据和基础指标的DataFrame
+            **kwargs: 其他可能的参数
             
         Returns:
-            pd.Series: 评分序列，取值范围0-100
+            pd.Series: 原始评分序列
         """
-        pass
+        raise NotImplementedError("子类必须实现 calculate_raw_score 方法")
     
+    @abc.abstractmethod
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
         """
-        获取指标的所有形态。
-
-        此方法作为形态识别的主要入口。它首先尝试调用子类中可能实现的
-        `identify_patterns` 方法。如果 `identify_patterns` 未实现或未返回结果，
-        则会使用在 `PatternRegistry` 中注册的 `detection_function` 来自动检测形态。
-
-        [!!] 标准返回格式 (推荐):
-        pd.DataFrame: 索引为日期，列为形态ID（如 'GOLDEN_CROSS'），值为布尔值。
-                      这种格式性能更优，且与上层分析器兼容性最好。
-
-        [!!] 已弃用的返回格式 (不推荐):
-        List[Dict[str, Any]]: 包含历史上所有形态的字典列表。
-                               此格式仅为向后兼容保留，存在性能问题，
-                               并可能在未来的版本中被移除。
-
+        识别并返回指标相关的形态
+        
         Args:
             data (pd.DataFrame): 包含指标计算值的DataFrame。
             **kwargs: 其他可能的参数。
@@ -542,24 +530,7 @@ class BaseIndicator(abc.ABC):
             Union[pd.DataFrame, List[Dict[str, Any]]]: 识别出的形态。
                                                       优先返回DataFrame。
         """
-        patterns = None
-        # 优先尝试调用子类实现的 identify_patterns 方法
-        if hasattr(self, 'identify_patterns') and callable(getattr(self, 'identify_patterns')):
-            try:
-                patterns = self.identify_patterns(data, **kwargs)
-                if patterns is not None and (isinstance(patterns, pd.DataFrame) or patterns):
-                    return patterns
-            except Exception as e:
-                logger.error(f"调用 {self.name} 的 identify_patterns 方法时出错: {e}")
-        
-        # 如果 identify_patterns 不可用或无返回，则使用注册的检测函数
-        if patterns is None:
-            patterns = self._detect_patterns_from_registry(data)
-
-        if patterns is None:
-            return pd.DataFrame(index=data.index)
-
-        return patterns
+        raise NotImplementedError("子类必须实现 get_patterns 方法")
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> Optional[Union[pd.DataFrame, List[str], List[Dict]]]:
         """
@@ -1251,24 +1222,29 @@ class BaseIndicator(abc.ABC):
     
     def to_dict(self) -> Dict[str, Any]:
         """
-        将指标转换为字典表示
+        将指标实例转换为字典表示
         
         Returns:
-            Dict[str, Any]: 指标的字典表示
+            Dict[str, Any]: 指标信息的字典
         """
         return {
             'name': self.name,
             'description': self.description,
-            'weight': self.weight,
-            'has_result': self.has_result(),
-            'has_error': self.has_error(),
-            'error': str(self._error) if self._error else None,
-            'market_environment': self._market_environment.value if self._market_environment else None,
-            'indicator_type': self.get_indicator_type()
+            'weight': self.weight
         }
     
+    @abc.abstractmethod
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 指标所需的参数
+        """
+        raise NotImplementedError("子类必须实现 set_parameters 方法")
+
     def __str__(self) -> str:
-        """字符串表示"""
+        """返回指标的字符串表示"""
         return f"{self.name}({self.description})"
     
     def __repr__(self) -> str:
