@@ -9,6 +9,7 @@ import unittest
 import pandas as pd
 import numpy as np
 import os
+import sys
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

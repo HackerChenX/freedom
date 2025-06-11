@@ -93,12 +93,16 @@ def test_indicator_scoring(indicator, data, indicator_name):
     try:
         # 计算指标
         result = indicator.calculate(data)
+        if result is None:
+            print(f"✗ {indicator_name} 指标计算返回 None")
+            return
+
         print(f"✓ {indicator_name} 指标计算成功，数据形状: {result.shape}")
         
         # 计算评分
         score_result = indicator.calculate_score(data)
         
-        if score_result and 'final_score' in score_result:
+        if score_result and score_result.get('final_score') is not None:
             final_score = score_result['final_score']
             raw_score = score_result['raw_score']
             patterns = score_result['patterns']
@@ -134,7 +138,7 @@ def test_indicator_scoring(indicator, data, indicator_name):
                   f"范围=[{score_stats['min']:.2f}, {score_stats['max']:.2f}]")
             
         else:
-            print(f"✗ {indicator_name} 评分计算失败")
+            print(f"✗ {indicator_name} 评分计算失败或返回空结果")
             
     except Exception as e:
         print(f"✗ {indicator_name} 测试失败: {str(e)}")
@@ -246,16 +250,19 @@ def test_scoring_consistency():
     scores = []
     for i in range(3):
         score_result = boll.calculate_score(data)
-        if score_result:
+        if score_result and score_result.get('final_score') is not None:
             scores.append(score_result['final_score'].iloc[-1])
+        else:
+            print(f"第 {i+1} 次评分计算失败，跳过")
     
-    if len(scores) == 3:
-        score_diff = max(scores) - min(scores)
-        print(f"  - 多次计算评分差异: {score_diff:.6f}")
-        assert score_diff < 0.001, "评分一致性测试失败"
-        print("✓ 评分一致性测试通过")
+    if len(scores) > 1:
+        is_consistent = all(abs(s - scores[0]) < 1e-9 for s in scores)
+        print(f"✓ 多次计算评分一致性: {'通过' if is_consistent else '失败'}")
+        if not is_consistent:
+            print(f"  - 分数: {scores}")
+        assert is_consistent, "评分不一致"
     else:
-        print("✗ 评分一致性测试失败")
+        print("✗ 未能完成足够多的评分计算以进行一致性测试")
 
 
 def test_edge_cases():
@@ -299,6 +306,12 @@ def test_edge_cases():
         print("✓ 异常数据处理正常")
     except Exception as e:
         print(f"✓ 异常数据异常处理正常: {str(e)}")
+    
+    # 3. 包含NaN值的数据
+    nan_data = generate_test_data(100)
+    nan_data.iloc[10:20, 0] = np.nan  # 在open列中引入NaN
+    test_indicator_scoring(BOLL(), nan_data, "BOLL (with NaN)")
+    test_indicator_scoring(OBV(), nan_data, "OBV (with NaN)")
 
 
 def main():

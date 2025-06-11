@@ -141,10 +141,12 @@ class GannTools(BaseIndicator):
         
         # 初始化角度线列
         for angle in GannAngle:
-            result[angle.value] = np.nan
+            column_name = f"gann_{angle.name.lower().replace('angle_', '')}"
+            result[column_name] = np.nan
         
         # 计算每个角度线
         for angle, (price_ratio, time_ratio) in self.ANGLE_RATIOS.items():
+            column_name = f"gann_{angle.name.lower().replace('angle_', '')}"
             # 计算角度线的斜率
             slope = (price_ratio * price_unit) / (time_ratio * time_unit)
             
@@ -162,7 +164,7 @@ class GannTools(BaseIndicator):
                     angle_price = pivot_price - slope * abs(time_diff)
                 
                 # 添加到结果
-                result.iloc[i, result.columns.get_loc(angle.value)] = angle_price
+                result.iloc[i, result.columns.get_loc(column_name)] = angle_price
         
         return result
     

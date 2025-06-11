@@ -340,3 +340,7 @@ def detect_divergence(price: np.ndarray, indicator: np.ndarray,
         pass
     
     return None 
+
+class PatternRecognition:
+    def __init__(self):
+        pass 

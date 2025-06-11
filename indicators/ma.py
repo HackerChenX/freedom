@@ -1280,242 +1280,54 @@ class MA(BaseIndicator):
         
         return patterns
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取MA形态列表
-        
+        识别所有已定义的MA形态，并以DataFrame形式返回
+
         Args:
-            data: 输入K线数据
+            data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
-            List[Dict[str, Any]]: 形态识别结果列表
+            pd.DataFrame: 包含所有形态信号的DataFrame
         """
-        from indicators.base_indicator import PatternResult, SignalStrength
-        from indicators.pattern_registry import PatternRegistry, PatternType
-        import re
-        
-        # 确保已计算MA
         if not self.has_result():
-            self.calculate(data)
+            self.calculate(data, **kwargs)
+
+        result = self._result
+        if result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns_df = pd.DataFrame(index=result.index)
+        periods = self._parameters.get('periods', [5, 10, 20, 30, 60])
         
-        patterns = []
+        # 金叉/死叉
+        if len(periods) >= 2:
+            for i in range(len(periods) - 1):
+                short_period = periods[i]
+                long_period = periods[i+1]
+                if f'MA{short_period}' in result.columns and f'MA{long_period}' in result.columns:
+                    patterns_df[f'MA_GOLDEN_CROSS_{short_period}_{long_period}'] = self.is_golden_cross(short_period, long_period)
+                    patterns_df[f'MA_DEATH_CROSS_{short_period}_{long_period}'] = self.is_death_cross(short_period, long_period)
+
+        # 多头排列/空头排列
+        patterns_df['MA_MULTI_UPTREND'] = self.is_multi_uptrend(periods)
         
-        # 如果没有结果或数据不足，返回空列表
-        if self._result is None or len(self._result) < 5:
-            return patterns
-        
-        # 获取参数
-        periods = self._parameters['periods']
+        # 价格与均线关系
         close_price = data['close']
-        
-        # 1. MA交叉形态
-        cross_patterns = self._detect_ma_cross_patterns(periods)
-        for pattern in cross_patterns:
-            if "上穿" in pattern:
-                # MA金叉
-                periods_match = re.findall(r'MA(\d+)', pattern)
-                if len(periods_match) >= 2:
-                    short_period, long_period = int(periods_match[0]), int(periods_match[1])
-                    patterns.append(PatternResult(
-                        pattern_id="MA_GOLDEN_CROSS",
-                        display_name=f"MA{short_period}上穿MA{long_period}",
-                        strength=80,
-                        duration=3,
-                        details={"short_period": short_period, "long_period": long_period}
-                    ).to_dict())
-            elif "下穿" in pattern:
-                # MA死叉
-                periods_match = re.findall(r'MA(\d+)', pattern)
-                if len(periods_match) >= 2:
-                    short_period, long_period = int(periods_match[0]), int(periods_match[1])
-                    patterns.append(PatternResult(
-                        pattern_id="MA_DEATH_CROSS",
-                        display_name=f"MA{short_period}下穿MA{long_period}",
-                        strength=80,
-                        duration=3,
-                        details={"short_period": short_period, "long_period": long_period}
-                    ).to_dict())
-        
-        # 2. MA排列形态
-        arrangement_patterns = self._detect_ma_arrangement_patterns(periods)
-        for pattern in arrangement_patterns:
-            if "多头排列" in pattern:
-                # 多头排列
-                patterns.append(PatternResult(
-                    pattern_id="MA_BULLISH_ALIGNMENT",
-                    display_name="MA多头排列",
-                    strength=85,
-                    duration=5,
-                    details={"periods": periods}
-                ).to_dict())
-            elif "空头排列" in pattern:
-                # 空头排列
-                patterns.append(PatternResult(
-                    pattern_id="MA_BEARISH_ALIGNMENT",
-                    display_name="MA空头排列",
-                    strength=85,
-                    duration=5,
-                    details={"periods": periods}
-                ).to_dict())
-            elif "交织状态" in pattern:
-                # MA交织
-                patterns.append(PatternResult(
-                    pattern_id="MA_INTERWEAVED",
-                    display_name="MA交织状态",
-                    strength=60,
-                    duration=3,
-                    details={"periods": periods}
-                ).to_dict())
-        
-        # 3. 价格与MA关系形态
-        price_ma_patterns = self._detect_price_ma_patterns(close_price, periods)
-        for pattern in price_ma_patterns:
-            if "价格强势突破MA" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="PRICE_STRONG_ABOVE_MA",
-                    display_name="价格强势突破MA",
-                    strength=90,
-                    duration=2,
-                    details={"price": close_price.iloc[-1]}
-                ).to_dict())
-            elif "价格温和上行MA" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="PRICE_ABOVE_MA",
-                    display_name="价格温和上行MA",
-                    strength=70,
-                    duration=2,
-                    details={"price": close_price.iloc[-1]}
-                ).to_dict())
-            elif "价格强势跌破MA" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="PRICE_STRONG_BELOW_MA",
-                    display_name="价格强势跌破MA",
-                    strength=90,
-                    duration=2,
-                    details={"price": close_price.iloc[-1]}
-                ).to_dict())
-            elif "价格温和下行MA" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="PRICE_BELOW_MA",
-                    display_name="价格温和下行MA",
-                    strength=70,
-                    duration=2,
-                    details={"price": close_price.iloc[-1]}
-                ).to_dict())
-            elif "价格MA附近震荡" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="PRICE_NEAR_MA",
-                    display_name="价格MA附近震荡",
-                    strength=60,
-                    duration=2,
-                    details={"price": close_price.iloc[-1]}
-                ).to_dict())
-            elif "价格上穿MA" in pattern:
-                period_match = re.search(r'MA(\d+)', pattern)
-                if period_match:
-                    period = int(period_match.group(1))
-                    patterns.append(PatternResult(
-                        pattern_id="PRICE_CROSS_ABOVE_MA",
-                        display_name=f"价格上穿MA{period}",
-                        strength=85,
-                        duration=1,
-                        details={"period": period, "price": close_price.iloc[-1]}
-                    ).to_dict())
-            elif "价格下穿MA" in pattern:
-                period_match = re.search(r'MA(\d+)', pattern)
-                if period_match:
-                    period = int(period_match.group(1))
-                    patterns.append(PatternResult(
-                        pattern_id="PRICE_CROSS_BELOW_MA",
-                        display_name=f"价格下穿MA{period}",
-                        strength=85,
-                        duration=1,
-                        details={"period": period, "price": close_price.iloc[-1]}
-                    ).to_dict())
-        
-        # 4. MA趋势形态
-        trend_patterns = self._detect_ma_trend_patterns(periods)
-        for pattern in trend_patterns:
-            if "MA强势上升" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="MA_STRONG_UPTREND",
-                    display_name="MA强势上升",
-                    strength=90,
-                    duration=5,
-                    details={"strength": "strong_up"}
-                ).to_dict())
-            elif "MA温和上升" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="MA_MODERATE_UPTREND",
-                    display_name="MA温和上升",
-                    strength=70,
-                    duration=5,
-                    details={"strength": "moderate_up"}
-                ).to_dict())
-            elif "MA强势下降" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="MA_STRONG_DOWNTREND",
-                    display_name="MA强势下降",
-                    strength=90,
-                    duration=5,
-                    details={"strength": "strong_down"}
-                ).to_dict())
-            elif "MA温和下降" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="MA_MODERATE_DOWNTREND",
-                    display_name="MA温和下降",
-                    strength=70,
-                    duration=5,
-                    details={"strength": "moderate_down"}
-                ).to_dict())
-            elif "MA盘整" in pattern:
-                patterns.append(PatternResult(
-                    pattern_id="MA_FLAT",
-                    display_name="MA盘整",
-                    strength=50,
-                    duration=5,
-                    details={"strength": "flat"}
-                ).to_dict())
-        
-        # 5. MA支撑/阻力形态
-        support_resistance_patterns = self._detect_support_resistance_patterns(close_price, periods)
-        for pattern in support_resistance_patterns:
-            if "MA形成支撑" in pattern:
-                period_match = re.search(r'MA(\d+)', pattern)
-                if period_match:
-                    period = int(period_match.group(1))
-                    patterns.append(PatternResult(
-                        pattern_id="MA_SUPPORT",
-                        display_name=f"MA{period}形成支撑",
-                        strength=80,
-                        duration=3,
-                        details={"period": period, "type": "support"}
-                    ).to_dict())
-            elif "MA形成阻力" in pattern:
-                period_match = re.search(r'MA(\d+)', pattern)
-                if period_match:
-                    period = int(period_match.group(1))
-                    patterns.append(PatternResult(
-                        pattern_id="MA_RESISTANCE",
-                        display_name=f"MA{period}形成阻力",
-                        strength=80,
-                        duration=3,
-                        details={"period": period, "type": "resistance"}
-                    ).to_dict())
-        
-        # 6. 筹码分布相关形态（如果启用了筹码加权）
-        if self._parameters['chip_weighted'] and 'chip_avg_cost' in self._result.columns:
-            # 添加筹码分布形态检测逻辑
-            chip_patterns = self._detect_chip_distribution_patterns(data)
-            patterns.extend(chip_patterns)
-        
-        return patterns
-    
+        for period in periods:
+            ma_col = f'MA{period}'
+            if ma_col in result.columns:
+                ma_line = result[ma_col]
+                patterns_df[f'PRICE_ABOVE_{ma_col}'] = close_price > ma_line
+                patterns_df[f'PRICE_BELOW_{ma_col}'] = close_price < ma_line
+
+        return patterns_df
+
     def _register_ma_patterns(self):
-        """
-        注册MA形态
-        """
+        """注册MA相关形态"""
+        
+        # 1. 均线交叉形态
         from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
         
         # 获取PatternRegistry实例

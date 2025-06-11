@@ -42,14 +42,18 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin):
 
     def test_j_value_overbought(self):
         """测试J值超买"""
-        data = TestDataGenerator.generate_steady_trend(start_price=100, end_price=120, periods=30)
+        data = TestDataGenerator.generate_price_sequence([
+            {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30}
+        ])
         result = self.indicator.calculate(data)
         # J值在持续上涨后应超过100
         self.assertTrue((result['J'].iloc[-10:] > 100).any(), "J值未进入超买区")
 
     def test_j_value_oversold(self):
         """测试J值超卖"""
-        data = TestDataGenerator.generate_steady_trend(start_price=100, end_price=80, periods=30)
+        data = TestDataGenerator.generate_price_sequence([
+            {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 30}
+        ])
         result = self.indicator.calculate(data)
         # J值在持续下跌后应低于0
         self.assertTrue((result['J'].iloc[-10:] < 0).any(), "J值未进入超卖区")

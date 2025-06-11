@@ -34,6 +34,7 @@ class InstitutionalBehavior(BaseIndicator):
         """初始化主力行为分析指标"""
         super().__init__(name="InstitutionalBehavior", description="主力行为模式分析指标")
         self.chip_distribution = ChipDistribution()
+        self.volume_quantile = 0.85  # 新增：定义成交量分位数阈值
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """

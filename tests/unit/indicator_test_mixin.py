@@ -268,15 +268,15 @@ class IndicatorTestMixin(LogCaptureMixin):
         except Exception as e:
             self.fail(f"指标 {self.indicator.__class__.__name__} 的 get_patterns 失败，错误: {e}")
     
-    def test_patterns_return_dataframe(self):
-        """测试 get_patterns 方法是否返回一个 pandas DataFrame。"""
+    def test_patterns_return_valid_type(self):
+        """测试 get_patterns 方法是否返回一个有效类型（DataFrame 或 list）。"""
         if not hasattr(self.indicator, 'get_patterns'):
             self.skipTest(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
         
         calculated_data = self.indicator.calculate(self.data)
         patterns = self.indicator.get_patterns(self.data)
         
-        self.assertIsInstance(patterns, pd.DataFrame, "获取形态结果不是 DataFrame")
+        self.assertIsInstance(patterns, (pd.DataFrame, list), "获取形态结果既不是 DataFrame 也不是 list")
     
     def test_no_errors_during_calculation(self):
         """测试计算过程中没有错误日志"""

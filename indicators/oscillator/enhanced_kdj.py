@@ -66,15 +66,6 @@ class EnhancedKDJ(KDJ):
         self.use_smoothed_kdj = use_smoothed_kdj
         self.smoothing_period = smoothing_period
     
-    def get_indicator_type(self) -> str:
-        """
-        获取指标类型
-        
-        Returns:
-            str: 指标类型
-        """
-        return self.indicator_type
-    
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型KDJ指标

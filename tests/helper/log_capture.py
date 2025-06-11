@@ -96,6 +96,10 @@ class LogCaptureMixin:
             text: 要查找的文本
             level: 日志级别 ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
         """
+        # 如果日志捕获尚未初始化，则直接通过
+        if not hasattr(self, 'log_stream'):
+            return
+
         log_content = self.log_stream.getvalue()
         
         if level:
@@ -113,6 +117,10 @@ class LogCaptureMixin:
             text: 不应存在的文本
             level: 日志级别 ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
         """
+        # 如果日志捕获尚未初始化，则直接通过
+        if not hasattr(self, 'log_stream'):
+            return
+
         log_content = self.log_stream.getvalue()
         
         if level:

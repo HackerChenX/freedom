@@ -12,7 +12,7 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.signal_utils import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -41,7 +41,7 @@ class SAR(BaseIndicator):
         self.name = "SAR"
         
         # 注册SAR形态
-        self._register_sar_patterns()
+        # self._register_sar_patterns()
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """

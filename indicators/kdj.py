@@ -131,7 +131,7 @@ class KDJ(BaseIndicator):
         """将KDJ形态注册到全局形态注册表（已弃用，保留此方法仅用于兼容性）"""
         pass
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> Optional[pd.DataFrame]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取KDJ指标的技术形态
         
@@ -140,25 +140,16 @@ class KDJ(BaseIndicator):
             **kwargs: 其他参数
             
         Returns:
-            Optional[pd.DataFrame]: 形态DataFrame，如果无形态则为None
+            pd.DataFrame: 包含形态信号的DataFrame
         """
-        # 确保已计算KDJ指标
-        if 'K' not in data.columns or 'D' not in data.columns or 'J' not in data.columns:
-            logger.warning("识别KDJ形态时缺少K、D或J列")
-            # 如果是原始数据，先计算指标
-            if all(col in data.columns for col in self.REQUIRED_COLUMNS):
-                 data = self.calculate(data)
-            else:
-                return pd.DataFrame()
+        if 'K' not in data.columns or 'D' not in data.columns:
+            calculated_data = self._calculate_kdj(data)
+        else:
+            calculated_data = data
 
-        # 调用父类方法获取基础形态
-        patterns_df = super().get_patterns(data, **kwargs)
-        
-        if patterns_df is None or patterns_df.empty:
-            return pd.DataFrame()
-            
-        # KDJ特有的形态处理逻辑 (这部分逻辑在当前框架下难以实现，暂时简化)
-        # 可以在未来的版本中，通过修改get_patterns的返回类型或处理方式来增强
+        patterns_df = pd.DataFrame(index=calculated_data.index)
+        patterns_df['KDJ_GOLDEN_CROSS'] = self._detect_golden_cross(calculated_data)
+        patterns_df['KDJ_DEATH_CROSS'] = self._detect_death_cross(calculated_data)
         
         return patterns_df
 
@@ -845,74 +836,45 @@ class KDJ(BaseIndicator):
         # 确保强度在1-5范围内
         return pd.Series(np.clip(strength, 1, 5), index=data.index)
     
-    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+    def identify_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        识别KDJ指标形态
+        识别KDJ指标的所有技术形态
         
         Args:
-            data: 包含KDJ指标的DataFrame
+            data: 包含价格和KDJ指标的DataFrame
             
         Returns:
-            List[str]: 形态列表
+            pd.DataFrame: 包含所有已识别形态的DataFrame，每列代表一种形态
         """
-        try:
-            # 检查必要的列
-            if not all(col in data.columns for col in ['K', 'D', 'J']):
-                logger.warning("识别KDJ形态时缺少K、D或J列")
-                return []
-            
-            # 如果数据全是NaN，返回空列表
-            if data['K'].isna().all() or data['D'].isna().all() or data['J'].isna().all():
-                return []
-            
-            # 确保足够的数据长度
-            if len(data) < 3:
-                return []
-            
-            patterns = []
-            
-            # 获取最新的几个值进行分析
-            # 使用安全的索引方法，避免使用iloc
-            latest_idx = len(data) - 1
-            if latest_idx < 0:
-                return []
-            
-            # 获取最近几个时间点的KDJ值
-            k_latest = data['K'].values[-3:]
-            d_latest = data['D'].values[-3:]
-            j_latest = data['J'].values[-3:]
-            
-            # 检查超买超卖
-            k_last = k_latest[-1]
-            d_last = d_latest[-1]
-            
-            if k_last > 80 and d_last > 80:
-                patterns.append("overbought")
-            elif k_last < 20 and d_last < 20:
-                patterns.append("oversold")
-            
-            # 检查金叉和死叉
-            if k_latest[-2] < d_latest[-2] and k_latest[-1] > d_latest[-1]:
-                patterns.append("golden_cross")
-            elif k_latest[-2] > d_latest[-2] and k_latest[-1] < d_latest[-1]:
-                patterns.append("death_cross")
-            
-            # 检查J值突破
-            if j_latest[-2] < 100 and j_latest[-1] > 100:
-                patterns.append("j_breakthrough")
-            elif j_latest[-2] > 0 and j_latest[-1] < 0:
-                patterns.append("j_breakdown")
-            
-            # 检查形态是否注册
-            valid_patterns = []
-            for pattern in patterns:
-                if pattern in self._registered_patterns:
-                    valid_patterns.append(pattern)
-            
-            return valid_patterns
-        except Exception as e:
-            logger.error(f"识别KDJ形态时出错: {e}")
-            return []
+        # 确保KDJ值已计算
+        if not all(col in data.columns for col in ['K', 'D', 'J']):
+             data = self.calculate(data)
+
+        patterns = pd.DataFrame(index=data.index)
+        
+        # 使用已注册的检测函数
+        registry = PatternRegistry()
+        kdj_patterns = registry.get_patterns_by_indicator('KDJ')
+        
+        for pattern_id in kdj_patterns:
+            pattern_info = registry.get_pattern(pattern_id)
+            if pattern_info and 'detection_function' in pattern_info and callable(pattern_info['detection_function']):
+                try:
+                    # 调用检测函数
+                    detection_result = pattern_info['detection_function'](data)
+                    
+                    # 将结果添加到DataFrame
+                    if isinstance(detection_result, pd.Series):
+                        patterns[pattern_info['display_name']] = detection_result
+                    elif isinstance(detection_result, bool):
+                        # 如果是布尔值，则在最后一行标记
+                        if detection_result:
+                            patterns.loc[patterns.index[-1], pattern_info['display_name']] = True
+                            
+                except Exception as e:
+                    logger.warning(f"为形态 '{pattern_info['display_name']}' 调用检测函数失败: {e}")
+
+        return patterns
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """

@@ -860,20 +860,37 @@ class EMA(BaseIndicator):
         
         return signals
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取检测到的所有形态
-        
+        识别所有已定义的EMA形态，并以DataFrame形式返回
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
-            List[Dict[str, Any]]: 形态列表
+            pd.DataFrame: 包含所有形态信号的DataFrame
         """
-        patterns = []
-        return patterns
+        if not self.has_result():
+            self.calculate(data, **kwargs)
         
+        result = self._result
+        if result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns_df = pd.DataFrame(index=result.index)
+        
+        close_prices = data['close']
+        
+        for period in self.periods:
+            ema_col = f'EMA{period}'
+            if ema_col in result.columns:
+                ema_line = result[ema_col]
+                patterns_df[f'PRICE_CROSS_ABOVE_EMA{period}'] = crossover(close_prices, ema_line)
+                patterns_df[f'PRICE_CROSS_BELOW_EMA{period}'] = crossunder(close_prices, ema_line)
+
+        return patterns_df
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号

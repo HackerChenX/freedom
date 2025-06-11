@@ -9,6 +9,7 @@
 
 import unittest
 import os
+import sys
 from HTMLTestRunner import HTMLTestRunner
 
 def run_all_tests():

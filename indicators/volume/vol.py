@@ -739,7 +739,8 @@ class VOL(BaseIndicator):
         
         # 获取已注册的形态
         registry = PatternRegistry()
-        vol_patterns = {p['display_name']: p for p in registry.get_by_indicator('VOL')}
+        vol_pattern_ids = registry.get_patterns_by_indicator('VOL')
+        vol_patterns = {p['display_name']: p for p_id in vol_pattern_ids if (p := registry.get_pattern(p_id))}
 
         for pattern_name in identified_pattern_names:
             if pattern_name in vol_patterns:

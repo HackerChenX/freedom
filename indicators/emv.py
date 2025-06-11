@@ -13,8 +13,9 @@ from typing import Optional, Union, List, Dict, Any
 import logging
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.signal_utils import crossover, crossunder
 from utils.logger import get_logger
+from indicators.atr import ATR
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,6 @@ class EMV(BaseIndicator):
         
         # 计算ATR用于止损设置
         try:
-            from indicators.atr import ATR
             atr_indicator = ATR()
             atr_data = atr_indicator.calculate(data)
             atr_values = atr_data['atr']

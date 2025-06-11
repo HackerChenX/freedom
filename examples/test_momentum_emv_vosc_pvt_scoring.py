@@ -113,41 +113,12 @@ def test_momentum_scoring():
 
 
 def test_emv_scoring():
-    """测试EMV指标评分功能"""
-    print("\n" + "=" * 60)
-    print("测试EMV指标评分功能")
-    print("=" * 60)
-    
-    # 生成测试数据
-    data = generate_test_data(100)
-    
-    # 创建EMV指标实例
-    emv = EMV(period=14, volume_scale=10000)
-    
-    # 计算指标
-    result = emv.calculate(data)
-    print(f"EMV指标计算完成，数据长度: {len(result)}")
-    
-    # 测试评分功能
-    scores = emv.calculate_raw_score(data)
-    print(f"评分计算完成，评分范围: {scores.min():.2f} - {scores.max():.2f}")
-    print(f"平均评分: {scores.mean():.2f}")
-    print(f"评分标准差: {scores.std():.2f}")
-    
-    # 测试形态识别
-    patterns = emv.identify_patterns(data)
-    print(f"识别到的形态数量: {len(patterns)}")
-    print("识别到的形态:")
-    for pattern in patterns:
-        print(f"  - {pattern}")
-    
-    # 显示最近几个评分
-    print("\n最近5个交易日的评分:")
-    recent_scores = scores.tail(5)
-    for date, score in recent_scores.items():
-        print(f"  {date.strftime('%Y-%m-%d')}: {score:.2f}")
-    
-    return True
+    """测试EMV指标评分"""
+    return test_single_indicator_scoring(
+        indicator_class=EMV,
+        indicator_name="EMV",
+        params={'period': 14, 'volume_divisor': 100000}
+    )
 
 
 def test_vosc_scoring():
@@ -238,7 +209,7 @@ def test_all_indicators_summary():
     # 创建所有指标实例
     indicators = {
         'Momentum': Momentum(period=10, signal_period=6),
-        'EMV': EMV(period=14, volume_scale=10000),
+        'EMV': EMV(period=14, volume_divisor=10000),
         'VOSC': VOSC(short_period=12, long_period=26),
         'PVT': PVT(ma_period=12)
     }

@@ -2,7 +2,7 @@
 成交量指标单元测试
 """
 import unittest
-from indicators.vol import VOL
+from indicators.volume.vol import VOL
 from indicators.obv import OBV
 from indicators.mfi import MFI
 from indicators.ad import AD

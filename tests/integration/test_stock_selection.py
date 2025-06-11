@@ -18,6 +18,7 @@ from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
 from db.data_manager import DataManager
 from indicators.factory import IndicatorFactory
+from strategy.selector import StockSelector
 
 
 class TestStockSelectionWorkflow(unittest.TestCase):
@@ -150,6 +151,12 @@ class TestStockSelectionWorkflow(unittest.TestCase):
             'MA_CROSS': self.mock_ma_cross,
             'RSI_OVERSOLD': self.mock_rsi_oversold
         }
+        
+        self.mock_db_conn = MagicMock()
+        self.data_manager = DataManager()
+        self.data_manager.db_conn = self.mock_db_conn
+        self.strategy_manager = MagicMock()
+        self.stock_selector = StockSelector(self.data_manager, self.strategy_manager)
         
     def tearDown(self):
         """测试后清理"""

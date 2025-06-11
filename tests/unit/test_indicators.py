@@ -8,11 +8,22 @@ import unittest
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-
-from indicators import (
-    BaseIndicator, MACD, RSI, KDJ, IndicatorFactory,
-    ma, ema, macd_func, rsi_func, kdj_func
-)
+from unittest.mock import MagicMock, patch
+from indicators.macd import MACD
+from indicators.rsi import RSI
+from indicators.boll import BOLL
+from indicators.kdj import KDJ
+from indicators.ma import MA
+from indicators.bias import BIAS
+from indicators.atr import ATR
+from indicators.cci import CCI
+from indicators.dmi import DMI
+from indicators.obv import OBV
+from indicators.roc import ROC
+from indicators.trix import TRIX
+from indicators.vr import VR
+from indicators.wr import WR
+from indicators.factory import IndicatorFactory
 
 
 class TestIndicators(unittest.TestCase):

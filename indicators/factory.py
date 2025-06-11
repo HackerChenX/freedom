@@ -11,15 +11,8 @@ import sys
 from typing import Dict, Type, Any, Optional, List
 
 from indicators.base_indicator import BaseIndicator
-from indicators.boll import BOLL
-from indicators.enhanced_macd import EnhancedMACD
-from indicators.enhanced_rsi import EnhancedRSI
-from indicators.kdj import KDJ
-# 导入常用指标类，以便手动注册
-from indicators.macd import MACD
-from indicators.rsi import RSI
-from indicators.adx import ADX
 from utils.logger import get_logger
+from utils.exceptions import IndicatorNotFoundError, IndicatorError
 
 logger = get_logger(__name__)
 
@@ -34,15 +27,6 @@ class IndicatorFactory:
     # 指标类型映射表
     _indicators: Dict[str, callable] = {}
     _has_auto_registered = False  # 标记是否已经执行过自动注册
-    
-    # 手动注册常用指标
-    _indicators['MACD'] = MACD
-    _indicators['RSI'] = RSI
-    _indicators['KDJ'] = KDJ
-    _indicators['BOLL'] = BOLL
-    _indicators['ENHANCEDMACD'] = EnhancedMACD
-    _indicators['ENHANCEDRSI'] = EnhancedRSI
-    _indicators['ADX'] = ADX
     
     @classmethod
     def create(cls, indicator_type: str, **params) -> Optional[BaseIndicator]:
@@ -114,12 +98,14 @@ class IndicatorFactory:
         Returns:
             Optional[BaseIndicator]: 指标实例，如果创建失败则返回None
         """
+        # 确保已经自动注册所有指标
+        cls._ensure_auto_registered()
+        indicator_class = None  # 确保在try块外可见
         try:
             # 获取指标类
             indicator_class = cls._indicators.get(indicator_type)
             if indicator_class is None:
-                logger.error(f"未找到指标类型: {indicator_type}")
-                return None
+                raise IndicatorNotFoundError(f"未找到指标类型: {indicator_type}")
             
             # 检查是否是抽象类且有未实现的抽象方法
             if hasattr(indicator_class, "__abstractmethods__"):
@@ -136,9 +122,15 @@ class IndicatorFactory:
                 indicator.register_patterns()
             
             return indicator
+        except IndicatorNotFoundError:
+            # 直接重新引发，以便上层可以专门捕获
+            raise
         except Exception as e:
-            logger.error(f"创建指标实例失败: {e}")
-            return None
+            error_msg = f"创建指标 '{indicator_type}' 实例失败"
+            if indicator_class:
+                error_msg += f" (类: {indicator_class.__name__})"
+            logger.error(f"{error_msg}: {e}", exc_info=True)
+            raise IndicatorError(error_msg) from e
     
     @classmethod
     def create_indicator_from_config(cls, config: Dict[str, Any]) -> Optional[BaseIndicator]:
@@ -244,9 +236,6 @@ class IndicatorFactory:
                     else:
                         sub_package = relative_path.replace(os.sep, '.')
                         full_module_name = f"{package_name}.{sub_package}.{module_name}"
-
-                    if full_module_name in sys.modules:
-                        continue # 跳过已导入的模块
 
                     try:
                         # 导入模块

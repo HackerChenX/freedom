@@ -12,7 +12,7 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.signal_utils import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

@@ -47,7 +47,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin):
 class TestVR(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         self.indicator = VR(period=26, ma_period=6)
-        self.expected_columns = ['VR', 'VR_MA']
+        self.expected_columns = ['vr', 'vr_ma']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'sideways', 'price': 100, 'periods': 50}
         ])
@@ -55,7 +55,7 @@ class TestVR(unittest.TestCase, IndicatorTestMixin):
 class TestAD(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         self.indicator = AD()
-        self.expected_columns = ['ad']
+        self.expected_columns = ['AD', 'AD_MA']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 50}
         ])

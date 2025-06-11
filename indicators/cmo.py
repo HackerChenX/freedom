@@ -6,7 +6,7 @@ from typing import Dict, List
 
 import numpy as np
 import pandas as pd
-from indicators.indicator_registry import IndicatorEnum
+from enums.indicator_enum import IndicatorEnum
 
 from enums.indicator_types import TrendType, CrossType
 from utils.signal_utils import crossover, crossunder
@@ -72,7 +72,7 @@ class CMO(BaseIndicator):
         # 计算CMO，避免除以零的情况
         up_down_sum = result['up_sum'] + result['down_sum']
         # 处理可能的零除情况
-        result['CMO'] = np.where(
+        result['cmo'] = np.where(
             up_down_sum > 0,
             100 * ((result['up_sum'] - result['down_sum']) / up_down_sum),
             0  # 如果分母为零，则返回0
@@ -109,18 +109,18 @@ class CMO(BaseIndicator):
         current_price = latest['close']
         
         # CMO值
-        cmo = latest['CMO']
-        prev_cmo = prev['CMO']
+        cmo = latest['cmo']
+        prev_cmo = prev['cmo']
         
         # 判断趋势方向
         if cmo > 0:
-            trend = TrendType.UPTREND
+            trend = TrendType.UP
             trend_strength = min(100, 50 + cmo * 0.5)
         elif cmo < 0:
-            trend = TrendType.DOWNTREND
+            trend = TrendType.DOWN
             trend_strength = min(100, 50 - cmo * 0.5)
         else:
-            trend = TrendType.SIDEWAYS
+            trend = TrendType.FLAT
             trend_strength = 50
         
         # 基础信号评分(0-100)
@@ -153,25 +153,25 @@ class CMO(BaseIndicator):
                 cross_type = CrossType.CROSS_UNDER
                 position_score = 25
                 
-        elif crossover(result['CMO'], 0):  # 上穿零轴
+        elif crossover(result['cmo'], 0):  # 上穿零轴
             position_score = 65
             signal_type = "上穿零轴"
             signal_desc = "CMO上穿零轴，动量由负转正，看涨信号"
             cross_type = CrossType.CROSS_OVER
             
-        elif crossunder(result['CMO'], 0):  # 下穿零轴
+        elif crossunder(result['cmo'], 0):  # 下穿零轴
             position_score = 35
             signal_type = "下穿零轴"
             signal_desc = "CMO下穿零轴，动量由正转负，看跌信号"
             cross_type = CrossType.CROSS_UNDER
             
-        elif crossover(result['CMO'], self.oversold):  # 上穿超卖线
+        elif crossover(result['cmo'], self.oversold):  # 上穿超卖线
             position_score = 60
             signal_type = "离开超卖区域"
             signal_desc = f"CMO上穿超卖线({self.oversold})，下跌动能减弱，可能反弹"
             cross_type = CrossType.CROSS_OVER
             
-        elif crossunder(result['CMO'], self.overbought):  # 下穿超买线
+        elif crossunder(result['cmo'], self.overbought):  # 下穿超买线
             position_score = 40
             signal_type = "离开超买区域"
             signal_desc = f"CMO下穿超买线({self.overbought})，上涨动能减弱，可能回调"
@@ -193,7 +193,7 @@ class CMO(BaseIndicator):
             
         # 考虑CMO斜率调整评分
         if len(result) >= 5:
-            cmo_slope = (cmo - result['CMO'].iloc[-5]) / 5
+            cmo_slope = (cmo - result['cmo'].iloc[-5]) / 5
             
             if abs(cmo_slope) > 3:  # 快速变化
                 if cmo_slope > 0:
@@ -211,7 +211,7 @@ class CMO(BaseIndicator):
         if len(result) >= 20:
             # 价格创新高但CMO没有创新高 - 顶背离
             price_high = df['close'].iloc[-20:].max() == current_price
-            cmo_high = result['CMO'].iloc[-20:].max() == cmo
+            cmo_high = result['cmo'].iloc[-20:].max() == cmo
             
             if price_high and not cmo_high and cmo > 0:
                 score -= 10
@@ -219,7 +219,7 @@ class CMO(BaseIndicator):
                 
             # 价格创新低但CMO没有创新低 - 底背离
             price_low = df['close'].iloc[-20:].min() == current_price
-            cmo_low = result['CMO'].iloc[-20:].min() == cmo
+            cmo_low = result['cmo'].iloc[-20:].min() == cmo
             
             if price_low and not cmo_low and cmo < 0:
                 score += 10
@@ -302,11 +302,11 @@ class CMO(BaseIndicator):
             包含评分的Series，范围0-100
         """
         # 确保已计算指标
-        if not isinstance(data, pd.DataFrame) or 'CMO' not in data.columns:
+        if not isinstance(data, pd.DataFrame) or 'cmo' not in data.columns:
             data = self.calculate(data)
         
         # 获取CMO值
-        cmo = data['CMO']
+        cmo = data['cmo']
         
         # 初始化评分
         score = pd.Series(50, index=data.index)  # 默认中性评分
@@ -335,7 +335,7 @@ class CMO(BaseIndicator):
         # 考虑CMO斜率
         if len(data) >= 5:
             # 计算5日CMO变化率
-            cmo_change = data['CMO'] - data['CMO'].shift(5)
+            cmo_change = data['cmo'] - data['cmo'].shift(5)
             
             # 上升动量加分
             up_momentum_mask = cmo_change > 3
@@ -361,11 +361,11 @@ class CMO(BaseIndicator):
             形态描述列表
         """
         # 确保已计算指标
-        if not isinstance(data, pd.DataFrame) or 'CMO' not in data.columns:
+        if not isinstance(data, pd.DataFrame) or 'cmo' not in data.columns:
             data = self.calculate(data)
             
         # 获取CMO数据
-        cmo = data['CMO']
+        cmo = data['cmo']
         close = data['close']
         
         patterns = []

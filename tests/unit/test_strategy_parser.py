@@ -97,7 +97,7 @@ class TestStrategyParser(unittest.TestCase):
             self.assertEqual(result["name"], "测试策略")
             self.assertEqual(len(result["conditions"]), 3)
             self.assertEqual(result["conditions"][0]["indicator_id"], "MA_CROSS")
-            self.assertEqual(result["conditions"][0]["period"], "DAILY")
+            self.assertEqual(result["conditions"][0]["period"], "日线")
             self.assertEqual(result["conditions"][1]["indicator_id"], "RSI_OVERSOLD")
             self.assertEqual(result["conditions"][2]["type"], "logic")
             self.assertEqual(result["conditions"][2]["value"], "AND")
@@ -221,8 +221,10 @@ class TestStrategyParser(unittest.TestCase):
             }
         }
         
-        with self.assertRaises(StrategyValidationError) as context:
-            self.parser.parse_strategy(invalid_strategy)
+        # 模拟指标创建，使其不抛出异常，以便测试周期验证
+        with patch.object(IndicatorFactory, 'create', return_value=MagicMock()):
+            with self.assertRaises(StrategyValidationError) as context:
+                self.parser.parse_strategy(invalid_strategy)
         
         self.assertIn("不支持的周期类型", str(context.exception))
     

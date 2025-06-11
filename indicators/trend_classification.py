@@ -229,7 +229,7 @@ class TrendClassification(BaseIndicator):
             )
         
         # 调整趋势强度，使其与方向一致
-        result_df['trend_strength'] = result_df['trend_strength'] * np.sign(result_df['trend_direction'])
+        # result_df['trend_strength'] = result_df['trend_strength'] * np.sign(result_df['trend_direction'])
         
         return result_df
     
@@ -249,154 +249,152 @@ class TrendClassification(BaseIndicator):
         result_df['trend_type'] = None
         result_df['trend_type_value'] = np.nan
         
-        # 基于趋势方向和强度分类趋势
-        for i in range(len(result_df)):
-            direction = result_df.iloc[i]['trend_direction'] if 'trend_direction' in result_df.columns else 0
-            strength = result_df.iloc[i]['trend_strength'] if 'trend_strength' in result_df.columns else 0
-            
-            # 检查盘整条件
-            is_consolidation = False
-            
-            # 如果有足够的历史数据，检查价格是否在狭窄范围内震荡
-            if i >= 20:
-                price_range = (result_df.iloc[i-20:i]['high'].max() - result_df.iloc[i-20:i]['low'].min()) / result_df.iloc[i]['close']
-                if price_range < self.consolidation_threshold:
-                    is_consolidation = True
-            
-            # 趋势分类逻辑
-            if is_consolidation or abs(direction) < 0.2:
-                # 盘整
-                trend_type = TrendType.CONSOLIDATION
-                trend_value = 2
-            elif direction > 0:
-                # 上涨趋势
-                if strength > 0.7:
-                    trend_type = TrendType.STRONG_UPTREND
-                    trend_value = 5
-                elif strength > 0.3:
-                    trend_type = TrendType.UPTREND
-                    trend_value = 4
-                else:
-                    trend_type = TrendType.WEAK_UPTREND
-                    trend_value = 3
-            else:
-                # 下跌趋势
-                if strength < -0.7:
-                    trend_type = TrendType.STRONG_DOWNTREND
-                    trend_value = -1
-                elif strength < -0.3:
-                    trend_type = TrendType.DOWNTREND
-                    trend_value = 0
-                else:
-                    trend_type = TrendType.WEAK_DOWNTREND
-                    trend_value = 1
-            
-            # 更新趋势类型
-            result_df.at[result_df.index[i], 'trend_type'] = trend_type.name
-            result_df.at[result_df.index[i], 'trend_type_value'] = trend_value
+        # 定义趋势分类条件
+        conditions = [
+            # 强势上涨
+            (result_df['trend_direction'] > 1.0) & (result_df['trend_strength'] > 0.7),
+            # 普通上涨
+            (result_df['trend_direction'] > 0.3),
+            # 弱势上涨
+            (result_df['trend_direction'] > 0.1),
+            # 强势下跌
+            (result_df['trend_direction'] < -1.0) & (result_df['trend_strength'] > 0.7),
+            # 普通下跌
+            (result_df['trend_direction'] < -0.3),
+            # 弱势下跌
+            (result_df['trend_direction'] < -0.1)
+        ]
         
-        # 添加趋势持续天数
-        result_df['trend_duration'] = 1  # 默认为1天
+        choices_text = [
+            'strong_uptrend', 'uptrend', 'weak_uptrend',
+            'strong_downtrend', 'downtrend', 'weak_downtrend'
+        ]
         
-        for i in range(1, len(result_df)):
-            curr_type = result_df.iloc[i]['trend_type_value']
-            prev_type = result_df.iloc[i-1]['trend_type_value']
-            
-            # 如果当前趋势类型与前一天相同，增加持续天数
-            if curr_type == prev_type:
-                result_df.at[result_df.index[i], 'trend_duration'] = result_df.iloc[i-1]['trend_duration'] + 1
+        choices_value = [
+            TrendType.STRONG_UPTREND.value, TrendType.UPTREND.value, TrendType.WEAK_UPTREND.value,
+            TrendType.STRONG_DOWNTREND.value, TrendType.DOWNTREND.value, TrendType.WEAK_DOWNTREND.value
+        ]
         
-        # 添加趋势改变标志
-        result_df['trend_change'] = False
-        for i in range(1, len(result_df)):
-            curr_type = result_df.iloc[i]['trend_type_value']
-            prev_type = result_df.iloc[i-1]['trend_type_value']
-            
-            if curr_type != prev_type:
-                result_df.at[result_df.index[i], 'trend_change'] = True
+        # 应用分类
+        result_df['trend_type'] = np.select(conditions, choices_text, default='sideways')
+        result_df['trend_type_value'] = np.select(conditions, choices_value, default=TrendType.CONSOLIDATION.value)
+        
+        # 将细分类映射为简化的三大类，以满足大多数上层用例
+        result_df['trend_type'] = result_df['trend_type'].replace({
+            'strong_uptrend': 'uptrend',
+            'weak_uptrend': 'uptrend',
+            'strong_downtrend': 'downtrend',
+            'weak_downtrend': 'downtrend'
+        })
         
         return result_df
     
     def get_signals(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        根据趋势变化生成交易信号
-        
-        Args:
-            df: 输入DataFrame，需包含趋势分类结果
-            
-        Returns:
-            添加了交易信号的DataFrame
-        """
-        result_df = df.copy()
-        
-        # 初始化信号列
-        result_df['trend_signal'] = 0
-        
-        # 生成趋势信号
-        for i in range(1, len(result_df)):
-            curr_type = result_df.iloc[i]['trend_type_value'] if 'trend_type_value' in result_df.columns else 0
-            prev_type = result_df.iloc[i-1]['trend_type_value'] if 'trend_type_value' in result_df.columns else 0
-            
-            # 趋势改变信号
-            if curr_type != prev_type:
-                # 转为上升趋势（买入信号）
-                if curr_type >= 3 and prev_type < 3:
-                    result_df.at[result_df.index[i], 'trend_signal'] = 1
-                
-                # 转为下降趋势（卖出信号）
-                elif curr_type <= 1 and prev_type > 1:
-                    result_df.at[result_df.index[i], 'trend_signal'] = -1
-        
-        return result_df 
-
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算指标原始评分
-        
-        Args:
-            data: 输入数据
-            **kwargs: 其他参数
-            
-        Returns:
-            pd.Series: 评分(0-100)
-        """
-        # 确保已计算指标
-        if not self.has_result():
-            self.calculate(data, **kwargs)
-        
-        if self._result is None:
-            return pd.Series(50.0, index=data.index)
-        
-        # 初始化评分
-        score = pd.Series(50.0, index=data.index)
-    
-        # 在这里实现指标特定的评分逻辑
-        # 此处提供默认实现
-    
-        return score
-        
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """
         生成交易信号
         
         Args:
-            data: 输入数据
-            **kwargs: 额外参数
+            df: 包含趋势分类结果的DataFrame
             
         Returns:
-            Dict[str, pd.Series]: 包含交易信号的字典
+            包含交易信号的DataFrame
         """
-        # 确保已计算指标
-        if not self.has_result():
-            self.calculate(data, **kwargs)
+        signals = pd.DataFrame(index=df.index)
+        signals['signal'] = 0
         
-        # 初始化信号
-        signals = {}
-        signals['buy_signal'] = pd.Series(False, index=data.index)
-        signals['sell_signal'] = pd.Series(False, index=data.index)
-        signals['signal_strength'] = pd.Series(0, index=data.index)
-    
-        # 在这里实现指标特定的信号生成逻辑
-        # 此处提供默认实现
-    
+        # 趋势反转信号
+        # 从盘整/下跌转为上涨
+        signals.loc[
+            (df['trend_type_value'].shift(1) <= TrendType.CONSOLIDATION.value) &
+            (df['trend_type_value'] >= TrendType.WEAK_UPTREND.value),
+            'signal'
+        ] = 1  # 买入信号
+        
+        # 从上涨转为盘整/下跌
+        signals.loc[
+            (df['trend_type_value'].shift(1) >= TrendType.WEAK_UPTREND.value) &
+            (df['trend_type_value'] <= TrendType.CONSOLIDATION.value),
+            'signal'
+        ] = -1  # 卖出信号
+        
+        # 趋势延续信号
+        # 上涨趋势持续
+        signals.loc[
+            (df['trend_type_value'] >= TrendType.WEAK_UPTREND.value) &
+            (df['trend_type_value'].shift(1) >= TrendType.WEAK_UPTREND.value),
+            'signal'
+        ] = 2  # 持有/加仓
+        
+        # 下跌趋势持续
+        signals.loc[
+            (df['trend_type_value'] <= TrendType.WEAK_DOWNTREND.value) &
+            (df['trend_type_value'].shift(1) <= TrendType.WEAK_DOWNTREND.value),
+            'signal'
+        ] = -2  # 空仓/减仓
+        
         return signals
+
+    def get_patterns(self, data: pd.DataFrame = None) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
+        """
+        识别趋势形态。
+        
+        目前返回一个空的DataFrame以满足接口要求。
+        
+        Args:
+            data: 输入数据，可选。
+            
+        Returns:
+            一个空的DataFrame。
+        """
+        return pd.DataFrame(columns=['pattern_id', 'start_index', 'end_index'])
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算原始评分
+        
+        评分逻辑：
+        - 强势上涨：100
+        - 上涨：80
+        - 弱势上涨：60
+        - 盘整：40
+        - 弱势下跌：20
+        - 下跌：10
+        - 强势下跌：0
+        """
+        if self.indicator_data is None:
+            self.indicator_data = self.calculate(data)
+        
+        score_map = {
+            'strong_uptrend': 100,
+            'uptrend': 80,
+            'weak_uptrend': 60,
+            'sideways': 40,
+            'weak_downtrend': 20,
+            'downtrend': 10,
+            'strong_downtrend': 0
+        }
+        
+        raw_score = self.indicator_data['trend_type'].map(score_map).fillna(40)
+        return raw_score
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成交易信号字典
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            信号字典
+        """
+        if self.indicator_data is None:
+            self.indicator_data = self.calculate(data)
+            
+        signals_df = self.get_signals(self.indicator_data)
+        
+        return {
+            'buy_signal': signals_df['signal'] == 1,
+            'sell_signal': signals_df['signal'] == -1,
+            'hold_signal': signals_df['signal'] == 2,
+            'short_signal': signals_df['signal'] == -2
+        }

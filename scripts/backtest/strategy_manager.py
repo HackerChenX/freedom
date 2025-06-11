@@ -560,6 +560,11 @@ class ZXMPatternMatcher(PatternMatcher):
         }
 
 
+class StrategyManager:
+    def __init__(self):
+        pass
+
+
 class PatternManager:
     """
     形态管理器

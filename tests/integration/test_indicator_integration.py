@@ -63,7 +63,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         self.assertIsInstance(result_df, pd.DataFrame)
         
         # 验证是否包含了所有子指标的列
-        expected_macd_cols = ['dif', 'dea', 'macd']
+        expected_macd_cols = ['macd_line', 'macd_signal', 'macd_histogram']
         expected_rsi_cols = ['rsi']
         expected_boll_cols = ['upper', 'middle', 'lower']
         
@@ -130,7 +130,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         # 验证结果
         self.assertIsInstance(result, pd.DataFrame)
         expected_cols = [
-            'dif', 'dea', 'macd',
+            'macd_line', 'macd_signal', 'macd_histogram',
             'obv'
         ]
         
@@ -153,24 +153,15 @@ class TestIndicatorIntegration(unittest.TestCase):
         if hasattr(macd, 'get_patterns') and hasattr(kdj, 'get_patterns'):
             try:
                 # 获取MACD形态
-                # 修复列名：使用新的列名格式
-                if 'dif' in macd_result.columns and 'dea' in macd_result.columns:
-                    # 将列名映射为get_patterns期望的列名
-                    macd_result.rename(columns={
-                        'dif': 'macd_line',
-                        'dea': 'macd_signal',
-                        'macd': 'macd_histogram'
-                    }, inplace=True)
-                
                 macd_patterns = macd.get_patterns(macd_result)
-                self.assertIsInstance(macd_patterns, list)
+                self.assertIsInstance(macd_patterns, pd.DataFrame)
                 
                 # 获取KDJ形态
                 kdj_patterns = kdj.get_patterns(self.data.copy())
-                self.assertIsInstance(kdj_patterns, list)
+                self.assertIsInstance(kdj_patterns, pd.DataFrame)
                 
                 # 验证至少有一些形态被识别
-                self.assertTrue(len(macd_patterns) > 0 or len(kdj_patterns) > 0, 
+                self.assertTrue(len(macd_patterns.columns) > 0 or len(kdj_patterns.columns) > 0, 
                                 "没有识别出任何形态")
             except Exception as e:
                 self.skipTest(f"形态识别测试失败: {e}")
@@ -190,10 +181,10 @@ class TestIndicatorIntegration(unittest.TestCase):
         try:
             # 基于指标结果创建信号
             # 例如：MACD金叉信号
-            if 'macd' in macd_result.columns:
+            if 'macd_histogram' in macd_result.columns:
                 macd_signals = pd.Series(0, index=macd_result.index)
-                macd_signals[macd_result['macd'] > 0] = 1
-                macd_signals[macd_result['macd'] < 0] = -1
+                macd_signals[macd_result['macd_histogram'] > 0] = 1
+                macd_signals[macd_result['macd_histogram'] < 0] = -1
             
             # RSI超买超卖信号
             if 'rsi' in rsi_result.columns:
@@ -258,7 +249,7 @@ class TestIndicatorIntegration(unittest.TestCase):
             # 验证结果包含各个指标的关键列
             indicator_key_cols = {
                 'MA': ['MA5', 'MA10', 'MA20'],
-                'MACD': ['dif', 'dea', 'macd'],
+                'MACD': ['macd_line', 'macd_signal', 'macd_histogram'],
                 'RSI': ['rsi'],
                 'BOLL': ['upper', 'middle', 'lower']
             }

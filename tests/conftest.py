@@ -15,11 +15,10 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.logger import setup_logger
 from utils.path_utils import get_config_dir
-from db.clickhouse_db import ClickhouseDB
 
 
 # 设置测试日志级别
-setup_logger(level="INFO")
+setup_logger(log_level="INFO")
 
 
 @pytest.fixture(scope="session")
@@ -60,7 +59,8 @@ def test_result_dir(temp_test_dir):
 
 @pytest.fixture(scope="session")
 def db_connection():
-    # 在这里添加 fixture 的实现
-    mock_db = MagicMock(spec=ClickhouseDB)
-    mock_db.get_conn.return_value = MagicMock()
-    return mock_db 
+    """模拟数据库连接"""
+    with patch('db.clickhouse_db.get_clickhouse_db') as mock_get_db:
+        mock_db_instance = MagicMock()
+        mock_get_db.return_value = mock_db_instance
+        yield mock_db_instance 

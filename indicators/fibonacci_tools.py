@@ -44,7 +44,7 @@ class FibonacciTools(BaseIndicator):
         super().__init__(name="FibonacciTools", description="斐波那契工具指标，计算回调线、扩展线和时间序列")
     
     def _calculate(self, data: pd.DataFrame, swing_high_idx: int = None, swing_low_idx: int = None, 
-                fib_type: FibonacciType = FibonacciType.RETRACEMENT, *args, **kwargs) -> pd.DataFrame:
+                fib_type: Union[FibonacciType, str] = FibonacciType.RETRACEMENT, *args, **kwargs) -> pd.DataFrame:
         """
         计算斐波那契工具
         
@@ -57,6 +57,13 @@ class FibonacciTools(BaseIndicator):
         Returns:
             pd.DataFrame: 计算结果，包含斐波那契水平线
         """
+        if isinstance(fib_type, str):
+            try:
+                fib_type = FibonacciType[fib_type.upper()]
+            except KeyError:
+                logger.warning(f"不支持的斐波那契工具类型: {fib_type}")
+                return pd.DataFrame(index=data.index)
+
         # 确保数据包含必需的列
         self.ensure_columns(data, ["high", "low", "close"])
         
@@ -112,7 +119,7 @@ class FibonacciTools(BaseIndicator):
         
         # 计算回调线
         for level in self.RETRACEMENT_LEVELS:
-            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            level_name = f"fib_{(level * 1000):.0f}"
             level_price = low_price + price_range * level
             result[level_name] = level_price
         
@@ -155,7 +162,7 @@ class FibonacciTools(BaseIndicator):
         
         # 计算扩展线
         for level in self.EXTENSION_LEVELS:
-            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            level_name = f"fib_ext_{(level * 1000):.0f}".replace('.', '_')
             if is_bullish:
                 # 看涨扩展：从低点开始向上扩展
                 level_price = high_price + price_range * level
@@ -260,11 +267,11 @@ class FibonacciTools(BaseIndicator):
             # 绘制斐波那契水平线
             if fib_type == FibonacciType.RETRACEMENT:
                 levels = self.RETRACEMENT_LEVELS
-                prefix = "fib_retracement_"
+                prefix = "fib_"
                 colors = ['red', 'orange', 'gold', 'green', 'blue', 'purple', 'black']
             elif fib_type == FibonacciType.EXTENSION:
                 levels = self.EXTENSION_LEVELS
-                prefix = "fib_extension_"
+                prefix = "fib_ext_"
                 colors = ['red', 'orange', 'gold', 'green', 'blue', 'purple']
             else:
                 # 时间序列不绘制水平线
@@ -329,7 +336,7 @@ class FibonacciTools(BaseIndicator):
         key_levels = [0.236, 0.382, 0.5, 0.618, 0.786]
         
         for level in key_levels:
-            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            level_name = f"fib_{(level * 1000):.0f}"
             if level_name in retracement_result.columns:
                 level_price = retracement_result[level_name].iloc[0]
                 
@@ -360,7 +367,7 @@ class FibonacciTools(BaseIndicator):
         extension_levels = [0.618, 1.0, 1.618]
         
         for level in extension_levels:
-            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            level_name = f"fib_ext_{(level * 1000):.0f}".replace('.', '_')
             if level_name in extension_result.columns:
                 level_price = extension_result[level_name].iloc[0]
                 
@@ -382,12 +389,12 @@ class FibonacciTools(BaseIndicator):
         
         # 收集所有斐波那契水平
         for level in key_levels:
-            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            level_name = f"fib_{(level * 1000):.0f}"
             if level_name in retracement_result.columns:
                 fib_levels.append(retracement_result[level_name].iloc[0])
         
         for level in extension_levels:
-            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            level_name = f"fib_ext_{(level * 1000):.0f}".replace('.', '_')
             if level_name in extension_result.columns:
                 fib_levels.append(extension_result[level_name].iloc[0])
         
@@ -425,7 +432,7 @@ class FibonacciTools(BaseIndicator):
             recent_closes = close_price.iloc[-5:]
             
             for level in [0.382, 0.5, 0.618]:
-                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                level_name = f"fib_{(level * 1000):.0f}"
                 if level_name in retracement_result.columns:
                     level_price = retracement_result[level_name].iloc[0]
                     
@@ -456,7 +463,7 @@ class FibonacciTools(BaseIndicator):
             near_important_level = False
             
             for level in [0.382, 0.5, 0.618]:
-                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                level_name = f"fib_{(level * 1000):.0f}"
                 if level_name in retracement_result.columns:
                     level_price = retracement_result[level_name].iloc[0]
                     price_distance = abs(latest_close - level_price) / latest_close
@@ -481,7 +488,7 @@ class FibonacciTools(BaseIndicator):
             if latest_close > latest_ma20 * 1.02:  # 上升趋势
                 # 在上升趋势中，斐波那契支撑位更重要
                 for level in [0.382, 0.5, 0.618]:
-                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    level_name = f"fib_{(level * 1000):.0f}"
                     if level_name in retracement_result.columns:
                         level_price = retracement_result[level_name].iloc[0]
                         
@@ -495,7 +502,7 @@ class FibonacciTools(BaseIndicator):
             elif latest_close < latest_ma20 * 0.98:  # 下降趋势
                 # 在下降趋势中，斐波那契阻力位更重要
                 for level in [0.382, 0.5, 0.618]:
-                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    level_name = f"fib_{(level * 1000):.0f}"
                     if level_name in retracement_result.columns:
                         level_price = retracement_result[level_name].iloc[0]
                         
@@ -542,7 +549,7 @@ class FibonacciTools(BaseIndicator):
         key_levels = [0.236, 0.382, 0.5, 0.618, 0.786]
         
         for level in key_levels:
-            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            level_name = f"fib_{(level * 1000):.0f}"
             if level_name in retracement_result.columns:
                 level_price = retracement_result[level_name].iloc[0]
                 price_distance = abs(latest_close - level_price) / latest_close
@@ -565,7 +572,7 @@ class FibonacciTools(BaseIndicator):
         extension_levels = [0.618, 1.0, 1.618, 2.618]
         
         for level in extension_levels:
-            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            level_name = f"fib_ext_{(level * 1000):.0f}".replace('.', '_')
             if level_name in extension_result.columns:
                 level_price = extension_result[level_name].iloc[0]
                 price_distance = abs(latest_close - level_price) / latest_close
@@ -584,13 +591,13 @@ class FibonacciTools(BaseIndicator):
         
         # 收集所有斐波那契水平
         for level in key_levels:
-            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            level_name = f"fib_{(level * 1000):.0f}"
             if level_name in retracement_result.columns:
                 fib_levels.append(retracement_result[level_name].iloc[0])
                 level_names.append(f"回调{level:.3f}")
         
         for level in extension_levels:
-            level_name = f"fib_extension_{level:.3f}".replace(".", "_")
+            level_name = f"fib_ext_{(level * 1000):.0f}".replace('.', '_')
             if level_name in extension_result.columns:
                 fib_levels.append(extension_result[level_name].iloc[0])
                 level_names.append(f"扩展{level:.3f}")
@@ -629,7 +636,7 @@ class FibonacciTools(BaseIndicator):
             recent_closes = close_price.iloc[-5:]
             
             for level in [0.382, 0.5, 0.618]:
-                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                level_name = f"fib_{(level * 1000):.0f}"
                 if level_name in retracement_result.columns:
                     level_price = retracement_result[level_name].iloc[0]
                     
@@ -652,7 +659,7 @@ class FibonacciTools(BaseIndicator):
         if len(data) >= 10:
             # 检查是否在斐波那契水平附近发生反弹或回调
             for level in [0.382, 0.5, 0.618]:
-                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                level_name = f"fib_{(level * 1000):.0f}"
                 if level_name in retracement_result.columns:
                     level_price = retracement_result[level_name].iloc[0]
                     
@@ -689,7 +696,7 @@ class FibonacciTools(BaseIndicator):
             important_level_name = ""
             
             for level in [0.382, 0.5, 0.618]:
-                level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                level_name = f"fib_{(level * 1000):.0f}"
                 if level_name in retracement_result.columns:
                     level_price = retracement_result[level_name].iloc[0]
                     price_distance = abs(latest_close - level_price) / latest_close
@@ -715,7 +722,7 @@ class FibonacciTools(BaseIndicator):
                 
                 # 检查是否在关键支撑位上方
                 for level in [0.382, 0.5, 0.618]:
-                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    level_name = f"fib_{(level * 1000):.0f}"
                     if level_name in retracement_result.columns:
                         level_price = retracement_result[level_name].iloc[0]
                         
@@ -730,7 +737,7 @@ class FibonacciTools(BaseIndicator):
                 
                 # 检查是否在关键阻力位下方
                 for level in [0.382, 0.5, 0.618]:
-                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    level_name = f"fib_{(level * 1000):.0f}"
                     if level_name in retracement_result.columns:
                         level_price = retracement_result[level_name].iloc[0]
                         
@@ -825,7 +832,7 @@ class FibonacciTools(BaseIndicator):
         
         # 生成斐波那契水平突破信号
         for level in [0.382, 0.5, 0.618]:
-            level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+            level_name = f"fib_{(level * 1000):.0f}"
             if level_name in retracement_result.columns:
                 level_prices = retracement_result[level_name].values
                 
@@ -997,7 +1004,7 @@ class FibonacciTools(BaseIndicator):
             if signals['buy_signal'].iloc[i]:
                 # 买入信号的止损：使用下方最近的斐波那契水平
                 for level in [0.618, 0.5, 0.382]:
-                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    level_name = f"fib_{(level * 1000):.0f}"
                     if level_name in retracement_result.columns:
                         level_price = retracement_result[level_name].iloc[0]
                         if level_price < close_price[i]:
@@ -1007,7 +1014,7 @@ class FibonacciTools(BaseIndicator):
             elif signals['sell_signal'].iloc[i]:
                 # 卖出信号的止损：使用上方最近的斐波那契水平
                 for level in [0.382, 0.5, 0.618]:
-                    level_name = f"fib_retracement_{level:.3f}".replace(".", "_")
+                    level_name = f"fib_{(level * 1000):.0f}"
                     if level_name in retracement_result.columns:
                         level_price = retracement_result[level_name].iloc[0]
                         if level_price > close_price[i]:

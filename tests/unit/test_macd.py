@@ -68,6 +68,9 @@ class TestMACD(unittest.TestCase, IndicatorTestMixin):
         ])
         result_df = self.indicator.get_patterns(data)
 
+        self.assertIn('MACD_DEATH_CROSS', result_df.columns)
+        self.assertGreaterEqual(result_df['MACD_DEATH_CROSS'].sum(), 1, "死叉信号未被检测到")
+
         # 新的测试逻辑：不依赖精确的交叉点检测，而是验证交叉前后的状态
         decline_start_index = 80 # 50 + 30
 
@@ -78,6 +81,22 @@ class TestMACD(unittest.TestCase, IndicatorTestMixin):
         # 在下跌后足够长的时间，DIF应该在DEA下方
         after_decline_state = result_df.iloc[-1]
         self.assertLess(after_decline_state['macd_line'], after_decline_state['macd_signal'], "死叉后，DIF应小于DEA")
+
+    def test_bearish_divergence_pattern(self):
+        """测试顶背离形态的检测"""
+        # 为顶背离场景生成特定数据
+        data = TestDataGenerator.generate_price_sequence([
+            {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 70},  # 稳定EMA
+            {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 10},  # 第一个高点
+            {'type': 'trend', 'start_price': 105, 'end_price': 102, 'periods': 5},    # 小幅回调
+            {'type': 'trend', 'start_price': 102, 'end_price': 106, 'periods': 10}   # 第二个更高的高点
+        ])
+        result_df = self.indicator.get_patterns(data)
+
+        self.assertIn('MACD_BEARISH_DIVERGENCE', result_df.columns)
+        # 顶背离通常发生在第二个高点形成之后
+        divergence_range = result_df.iloc[85:95]
+        self.assertTrue(divergence_range['MACD_BEARISH_DIVERGENCE'].any(), "在预设区间未检测到顶背离")
 
     def test_bullish_divergence_pattern(self):
         """测试底背离形态的检测"""

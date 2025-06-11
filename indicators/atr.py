@@ -442,31 +442,25 @@ class ATR(BaseIndicator):
         
         return "横盘整理"
     
-    def _detect_atr_breakout(self, atr: pd.Series, direction: str) -> bool:
+    def _detect_atr_breakout(self, atr: pd.Series, direction: str, period: int = 20) -> pd.Series:
         """
-        检测ATR突破
-        
+        检测ATR突破信号
+
         Args:
             atr: ATR序列
-            direction: 突破方向 ('up' 或 'down')
-            
+            direction: 'up' 或 'down'
+            period: 突破检测周期
+
         Returns:
-            bool: 是否突破
+            pd.Series: 布尔型突破信号序列
         """
-        if len(atr) < 20:
-            return False
-        
-        current_atr = atr.iloc[-1]
-        historical_atr = atr.iloc[:-5]  # 排除最近5天
-        
         if direction == 'up':
-            # 突破历史高点
-            return current_atr > historical_atr.max()
+            breakout_level = atr.rolling(window=period).max().shift(1)
+            return atr > breakout_level
         elif direction == 'down':
-            # 跌破历史低点
-            return current_atr < historical_atr.min()
-        
-        return False
+            breakout_level = atr.rolling(window=period).min().shift(1)
+            return atr < breakout_level
+        return pd.Series(False, index=atr.index)
     
     def _detect_atr_convergence_pattern(self, atr: pd.Series) -> Optional[str]:
         """
@@ -638,218 +632,56 @@ class ATR(BaseIndicator):
             logger.error(f"计算ATR指标时出错: {e}")
             return df
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        识别ATR技术形态
-        
+        识别所有已定义的ATR形态，并以DataFrame形式返回
+
         Args:
-            data: 包含OHLCV数据的DataFrame
-            **kwargs: 额外参数
-            
+            data: 输入数据
+            **kwargs: 其他参数
+
         Returns:
-            List[Dict[str, Any]]: 识别出的形态列表
+            pd.DataFrame: 包含所有形态信号的DataFrame
         """
-        from indicators.base_indicator import PatternResult
-        
-        patterns = []
-        
-        # 确保已计算ATR
         if not self.has_result():
-            self.calculate(data)
-        
-        if self._result is None or len(self._result) < 5:
-            return patterns
-        
-        # 提取参数
-        period = self.params["period"]
-        high_volatility = self.params["high_volatility_threshold"]
-        
-        # 获取ATR数据
-        atr = self._result[f'ATR{period}']
-        atr_pct = self._result[f'ATR_pct{period}']
-        vol_ratio = self._result[f'volatility_ratio_{period}']
-        high_vol_signal = self._result[f'high_volatility_{period}']
-        close = data['close']
-        
-        # 1. 波动性水平形态
-        current_atr_pct = atr_pct.iloc[-1]
-        avg_atr_pct = atr_pct.rolling(window=20).mean().iloc[-1]
-        
-        # 获取当前波动性水平
-        current_vol_ratio = vol_ratio.iloc[-1]
-        
-        if pd.notna(current_vol_ratio) and current_vol_ratio > high_volatility:
-            # 高波动性
-            strength = min(90, 50 + (current_vol_ratio - high_volatility) * 20)
-            patterns.append(PatternResult(
-                pattern_id="ATR_HIGH_VOLATILITY",
-                display_name="ATR高波动性",
-                strength=strength,
-                duration=self._detect_pattern_duration(high_vol_signal),
-                details={"volatility_ratio": current_vol_ratio, "atr_pct": current_atr_pct}
-            ).to_dict())
-        elif pd.notna(current_vol_ratio) and current_vol_ratio < 0.5:
-            # 低波动性
-            strength = min(80, 40 + (0.5 - current_vol_ratio) * 30)
-            patterns.append(PatternResult(
-                pattern_id="ATR_LOW_VOLATILITY",
-                display_name="ATR低波动性",
-                strength=strength,
-                duration=self._detect_pattern_duration(vol_ratio < 0.5),
-                details={"volatility_ratio": current_vol_ratio, "atr_pct": current_atr_pct}
-            ).to_dict())
-        else:
-            # 正常波动性
-            patterns.append(PatternResult(
-                pattern_id="ATR_NORMAL_VOLATILITY",
-                display_name="ATR正常波动性",
-                strength=50,
-                duration=self._detect_pattern_duration((vol_ratio >= 0.5) & (vol_ratio <= high_volatility)),
-                details={"volatility_ratio": current_vol_ratio, "atr_pct": current_atr_pct}
-            ).to_dict())
-        
-        # 2. ATR趋势形态
-        atr_trend = self._detect_atr_trend(atr)
-        if atr_trend == "RISING_STRONG":
-            patterns.append(PatternResult(
-                pattern_id="ATR_RISING_STRONG",
-                display_name="ATR快速上升",
-                strength=85,
-                duration=3,
-                details={"atr_change_pct": (atr.iloc[-1] / atr.iloc[-5] - 1) * 100}
-            ).to_dict())
-        elif atr_trend == "RISING":
-            patterns.append(PatternResult(
-                pattern_id="ATR_RISING",
-                display_name="ATR上升",
-                strength=75,
-                duration=3,
-                details={"atr_change_pct": (atr.iloc[-1] / atr.iloc[-5] - 1) * 100}
-            ).to_dict())
-        elif atr_trend == "FALLING_STRONG":
-            patterns.append(PatternResult(
-                pattern_id="ATR_FALLING_STRONG",
-                display_name="ATR快速下降",
-                strength=85,
-                duration=3,
-                details={"atr_change_pct": (atr.iloc[-5] / atr.iloc[-1] - 1) * 100}
-            ).to_dict())
-        elif atr_trend == "FALLING":
-            patterns.append(PatternResult(
-                pattern_id="ATR_FALLING",
-                display_name="ATR下降",
-                strength=75,
-                duration=3,
-                details={"atr_change_pct": (atr.iloc[-5] / atr.iloc[-1] - 1) * 100}
-            ).to_dict())
-        elif atr_trend == "FLAT":
-            patterns.append(PatternResult(
-                pattern_id="ATR_FLAT",
-                display_name="ATR平稳",
-                strength=50,
-                duration=3,
-                details={"atr_change_pct": (atr.iloc[-1] / atr.iloc[-5] - 1) * 100}
-            ).to_dict())
-        
-        # 3. ATR突破形态
-        atr_breakout = self._detect_atr_breakout(atr)
-        if atr_breakout:
-            patterns.append(PatternResult(
-                pattern_id="ATR_BREAKOUT",
-                display_name="ATR突破",
-                strength=90,
-                duration=1,
-                details={"breakout_pct": (atr.iloc[-1] / atr.iloc[-2] - 1) * 100}
-            ).to_dict())
-        
-        # 4. ATR与价格的关系
-        if len(close) >= 20:
-            # 计算价格波动和ATR的比率
-            price_range_20d = close.rolling(window=20).max() - close.rolling(window=20).min()
-            current_price_range = price_range_20d.iloc[-1]
-            current_atr = atr.iloc[-1]
+            self.calculate(data, **kwargs)
             
-            if pd.notna(current_price_range) and pd.notna(current_atr) and current_price_range > 0:
-                price_atr_ratio = current_price_range / (current_atr * 20)
-                
-                if price_atr_ratio > 1.5:
-                    # 价格波动大于ATR预期
-                    patterns.append(PatternResult(
-                        pattern_id="ATR_PRICE_VOLATILE",
-                        display_name="价格波动超ATR预期",
-                        strength=75,
-                        duration=1,
-                        details={"price_atr_ratio": price_atr_ratio}
-                    ).to_dict())
-                elif price_atr_ratio < 0.5:
-                    # 价格波动小于ATR预期
-                    patterns.append(PatternResult(
-                        pattern_id="ATR_PRICE_STABLE",
-                        display_name="价格波动低于ATR预期",
-                        strength=75,
-                        duration=1,
-                        details={"price_atr_ratio": price_atr_ratio}
-                    ).to_dict())
+        result = self._result
+        if result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns_df = pd.DataFrame(index=result.index)
+        atr_series = result[f'ATR{self.params["period"]}']
         
-        # 5. ATR收敛/发散模式
-        convergence_pattern = self._detect_atr_convergence_pattern(atr)
-        if convergence_pattern == "CONVERGENCE":
-            patterns.append(PatternResult(
-                pattern_id="ATR_CONVERGENCE",
-                display_name="ATR收敛",
-                strength=80,
-                duration=5,
-                details={"convergence_pct": (1 - atr.iloc[-1] / atr.iloc[-10]) * 100 if len(atr) >= 10 else 0}
-            ).to_dict())
-        elif convergence_pattern == "DIVERGENCE":
-            patterns.append(PatternResult(
-                pattern_id="ATR_DIVERGENCE",
-                display_name="ATR发散",
-                strength=80,
-                duration=5,
-                details={"divergence_pct": (atr.iloc[-1] / atr.iloc[-10] - 1) * 100 if len(atr) >= 10 else 0}
-            ).to_dict())
+        # 使用辅助函数检测各种形态
+        patterns_df['ATR_UPWARD_BREAKOUT'] = self._detect_atr_breakout(atr_series, direction='up')
+        patterns_df['ATR_DOWNWARD_BREAKOUT'] = self._detect_atr_breakout(atr_series, direction='down')
         
-        # 6. 市场状态形态
-        market_state = self._detect_market_state(atr_pct)
-        if market_state == "VOLATILITY_EXPLOSION":
-            patterns.append(PatternResult(
-                pattern_id="ATR_VOLATILITY_EXPLOSION",
-                display_name="ATR波动爆发",
-                strength=95,
-                duration=1,
-                details={"atr_pct": current_atr_pct, "avg_atr_pct": avg_atr_pct}
-            ).to_dict())
-        elif market_state == "VOLATILITY_COLLAPSE":
-            patterns.append(PatternResult(
-                pattern_id="ATR_VOLATILITY_COLLAPSE",
-                display_name="ATR波动崩塌",
-                strength=95,
-                duration=1,
-                details={"atr_pct": current_atr_pct, "avg_atr_pct": avg_atr_pct}
-            ).to_dict())
-        elif market_state == "HIGH_VOLATILITY":
-            patterns.append(PatternResult(
-                pattern_id="ATR_MARKET_VOLATILE",
-                display_name="ATR高波动市场",
-                strength=85,
-                duration=self._detect_pattern_duration(atr_pct > avg_atr_pct * 1.5),
-                details={"atr_pct": current_atr_pct, "avg_atr_pct": avg_atr_pct}
-            ).to_dict())
-        elif market_state == "LOW_VOLATILITY":
-            patterns.append(PatternResult(
-                pattern_id="ATR_MARKET_QUIET",
-                display_name="ATR低波动市场",
-                strength=85,
-                duration=self._detect_pattern_duration(atr_pct < avg_atr_pct * 0.5),
-                details={"atr_pct": current_atr_pct, "avg_atr_pct": avg_atr_pct}
-            ).to_dict())
+        # 波动性压缩
+        patterns_df['VOLATILITY_COMPRESSION'] = self._detect_volatility_compression(atr_series)
         
-        return patterns
+        # 波动性扩张
+        patterns_df['VOLATILITY_EXPANSION'] = self._detect_volatility_expansion(atr_series)
+
+        return patterns_df
+
+    def _detect_volatility_compression(self, atr: pd.Series, period: int = 20, threshold_quantile: float = 0.1) -> pd.Series:
+        """
+        检测波动性压缩（ATR处于近期低位）
+        """
+        low_threshold = atr.rolling(window=period * 2).quantile(threshold_quantile)
+        return atr < low_threshold
+
+    def _detect_volatility_expansion(self, atr: pd.Series, period: int = 20, threshold_quantile: float = 0.9) -> pd.Series:
+        """
+        检测波动性扩张（ATR处于近期高位）
+        """
+        high_threshold = atr.rolling(window=period * 2).quantile(threshold_quantile)
+        return atr > high_threshold
     
     def _detect_pattern_duration(self, condition_series: pd.Series) -> int:
         """
-        检测形态持续的天数
+        计算形态的持续时间
         
         Args:
             condition_series: 条件序列

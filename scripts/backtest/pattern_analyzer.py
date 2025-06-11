@@ -23,10 +23,15 @@ from utils.logger import get_logger
 from utils.decorators import performance_monitor, time_it
 from utils.technical_utils import (
     calculate_ma, calculate_ema, calculate_macd,
-    calculate_kdj, calculate_rsi, calculate_bollinger_bands
+    calculate_kdj, calculate_rsi, calculate_bollinger_bands,
+    find_peaks_and_troughs, linear_regression
 )
-from indicators.macd import MACDIndicator
-from indicators.kdj import KDJIndicator
+from indicators.kdj import KDJ
+from indicators.boll import BOLL
+from indicators.atr import ATR
+from indicators.macd import MACD
+from indicators.ma import MA
+from indicators.rsi import RSI
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -43,8 +48,8 @@ class PatternAnalyzer:
         """初始化形态分析器"""
         # 注册形态分析器
         self.pattern_analyzers = {
-            "macd": MACDIndicator(),
-            "kdj": KDJIndicator()
+            "macd": MACD(),
+            "kdj": KDJ()
         }
         
         # 形态定义

@@ -248,10 +248,7 @@ def average_directional_index(high: np.ndarray, low: np.ndarray, close: np.ndarr
     tr[0] = high[0] - low[0]  # 第一个值
     
     for i in range(1, len(close)):
-        hl = high[i] - low[i]
-        hc = abs(high[i] - close[i-1])
-        lc = abs(low[i] - close[i-1])
-        tr[i] = max(hl, hc, lc)
+        tr[i] = max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1]))
     
     # 计算方向性指标
     up_move = np.zeros(len(close))
@@ -319,10 +316,7 @@ def average_true_range(high: np.ndarray, low: np.ndarray, close: np.ndarray, per
     tr[0] = high[0] - low[0]  # 第一个值
     
     for i in range(1, len(close)):
-        hl = high[i] - low[i]
-        hc = abs(high[i] - close[i-1])
-        lc = abs(low[i] - close[i-1])
-        tr[i] = max(hl, hc, lc)
+        tr[i] = max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1]))
     
     # 计算ATR
     atr = np.full_like(close, np.nan, dtype=float)
@@ -775,4 +769,62 @@ def calculate_bollinger_bands(data: pd.Series, period: int = 20,
     upper_band = middle_band + (std * num_std)
     lower_band = middle_band - (std * num_std)
     
-    return middle_band, upper_band, lower_band 
+    return middle_band, upper_band, lower_band
+
+def find_local_extrema(data: np.ndarray, window: int = 5) -> Tuple[List[int], List[int]]:
+    """
+    查找局部极值点 (波峰和波谷)
+    
+    Args:
+        data: 数据序列
+        window: 窗口大小，用于判断极值
+        
+    Returns:
+        Tuple[List[int], List[int]]: (波峰索引列表, 波谷索引列表)
+    """
+    peaks = []
+    troughs = []
+    
+    # 确保窗口大小为奇数
+    if window % 2 == 0:
+        window += 1
+        
+    half_window = window // 2
+    
+    for i in range(half_window, len(data) - half_window):
+        # 当前点
+        current_point = data[i]
+        
+        # 窗口内的数据
+        window_data = data[i-half_window:i+half_window+1]
+        
+        # 判断是否为波峰
+        if current_point == np.max(window_data):
+            peaks.append(i)
+        
+        # 判断是否为波谷
+        if current_point == np.min(window_data):
+            troughs.append(i)
+            
+    return peaks, troughs
+
+def calculate_slope(points: List[Tuple[int, float]]) -> float:
+    """
+    计算一系列点的斜率
+    
+    Args:
+        points: 点的列表，每个点是(索引, 值)的元组
+        
+    Returns:
+        float: 斜率
+    """
+    if len(points) < 2:
+        return 0.0
+        
+    x = np.array([p[0] for p in points])
+    y = np.array([p[1] for p in points])
+    
+    # 使用线性回归计算斜率
+    slope, _, _, _, _ = np.polyfit(x, y, 1, full=True)
+    
+    return slope[0] 

@@ -22,13 +22,12 @@ from indicators.scoring_framework import IndicatorScoreBase, IndicatorScoreManag
 from indicators.volume_score import VolumeScore
 from indicators.trend_strength import TrendStrength
 from indicators.unified_ma import UnifiedMA
-from indicators.vol import VOL
 from indicators.vosc import VOSC
 from indicators.volume_ratio import VR
-from indicators.vol import VOL as Volume
 from indicators.vortex import Vortex
 from indicators.wma import WMA
 from indicators.wr import WR
+from enums.indicator_enum import IndicatorEnum
 
 logger = get_logger(__name__)
 
@@ -228,7 +227,7 @@ def create_indicator_score_manager(indicators=None, weights=None, market_environ
     return manager
 
 # 定义指标常量枚举
-class IndicatorEnum(str, Enum):
+class IndicatorEnum_DEPRECATED(str, Enum):
     """指标常量枚举"""
     
     # ZXM系列指标
@@ -259,44 +258,44 @@ class IndicatorEnum(str, Enum):
 
 # 定义标准指标参数映射
 STANDARD_PARAMETER_MAPPING = {
-    IndicatorEnum.ZXM_TURNOVER: {
+    IndicatorEnum_DEPRECATED.ZXM_TURNOVER: {
         "turnover_threshold": "threshold"
     },
-    IndicatorEnum.ZXM_DAILY_MACD: {
+    IndicatorEnum_DEPRECATED.ZXM_DAILY_MACD: {
         "macd_threshold": "threshold"
     },
-    IndicatorEnum.ZXM_MA_CALLBACK: {
+    IndicatorEnum_DEPRECATED.ZXM_MA_CALLBACK: {
         "ma_periods": "periods"
     },
-    IndicatorEnum.ZXM_RISE_ELASTICITY: {
+    IndicatorEnum_DEPRECATED.ZXM_RISE_ELASTICITY: {
         "threshold": "rise_threshold"
     },
-    IndicatorEnum.ZXM_AMPLITUDE_ELASTICITY: {
+    IndicatorEnum_DEPRECATED.ZXM_AMPLITUDE_ELASTICITY: {
         "threshold": "amplitude_threshold"
     },
-    IndicatorEnum.ZXM_ABSORB: {
+    IndicatorEnum_DEPRECATED.ZXM_ABSORB: {
         "threshold": "absorb_threshold"
     },
-    IndicatorEnum.ZXM_ELASTICITY_SCORE: {
+    IndicatorEnum_DEPRECATED.ZXM_ELASTICITY_SCORE: {
         "threshold": "threshold"
     },
-    IndicatorEnum.ZXM_BUYPOINT_SCORE: {
+    IndicatorEnum_DEPRECATED.ZXM_BUYPOINT_SCORE: {
         "threshold": "threshold"
     },
     # 新增增强指标参数映射
-    IndicatorEnum.UNIFIED_MA: {
+    IndicatorEnum_DEPRECATED.UNIFIED_MA: {
         "periods": "periods",
         "ma_type": "ma_type",
         "price_column": "price_col"
     },
-    IndicatorEnum.ENHANCED_MACD: {
+    IndicatorEnum_DEPRECATED.ENHANCED_MACD: {
         "fast_period": "fast_period",
         "slow_period": "slow_period",
         "signal_period": "signal_period",
         "price_column": "price_col",
         "use_dual_macd": "use_secondary_macd"
     },
-    IndicatorEnum.ENHANCED_RSI: {
+    IndicatorEnum_DEPRECATED.ENHANCED_RSI: {
         "periods": "periods",
         "price_column": "price_col",
         "use_multi_period": "use_multi_period"

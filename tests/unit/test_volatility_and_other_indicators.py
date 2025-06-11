@@ -9,7 +9,7 @@ from indicators.factory import IndicatorFactory
 class TestIntradayVolatility(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         self.indicator = IndicatorFactory.create_indicator('INTRADAYVOLATILITY')
-        self.expected_columns = ['intraday_volatility']
+        self.expected_columns = ['volatility', 'volatility_ma', 'relative_volatility']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'sideways', 'price': 100, 'periods': 100}
         ])
@@ -42,7 +42,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin):
 class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         self.indicator = IndicatorFactory.create_indicator('UNIFIEDMA')
-        self.expected_columns = ['unified_ma']
+        self.expected_columns = ['MA5', 'MA10', 'MA20', 'MA30', 'MA60']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'sideways', 'price': 100, 'periods': 100}
         ])

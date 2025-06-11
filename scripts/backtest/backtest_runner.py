@@ -497,6 +497,11 @@ class PatternScanner:
         return result
 
 
+class BacktestRunner:
+    def __init__(self):
+        pass
+
+
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="技术形态分析系统")

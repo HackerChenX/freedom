@@ -48,6 +48,18 @@ def get_output_dir() -> str:
     return output_dir
 
 
+def get_config_dir() -> str:
+    """
+    获取配置目录路径
+    
+    Returns:
+        str: 配置目录路径
+    """
+    config_dir = os.path.join(get_project_root(), 'config')
+    ensure_dir(config_dir)
+    return config_dir
+
+
 def get_doc_dir() -> str:
     """
     获取文档目录路径

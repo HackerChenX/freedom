@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from enums.indicator_types import TrendType, CrossType
-from indicators.indicator_registry import IndicatorEnum
+from enums.indicator_enum import IndicatorEnum
 from utils.signal_utils import crossover, crossunder
 from .base_indicator import BaseIndicator
 
@@ -46,7 +46,7 @@ class KC(BaseIndicator):
             df: 包含OHLCV数据的DataFrame
             
         Returns:
-            包含KC_UPPER, KC_MIDDLE, KC_LOWER列的DataFrame
+            包含kc_upper, kc_middle, kc_lower列的DataFrame
         """
         if self._result is not None:
             return self._result
@@ -54,7 +54,7 @@ class KC(BaseIndicator):
         result = df.copy()
         
         # 计算中轨(EMA)
-        result['KC_MIDDLE'] = result['close'].ewm(span=self.period, adjust=False).mean()
+        result['kc_middle'] = result['close'].ewm(span=self.period, adjust=False).mean()
         
         # 计算真实波幅(TR)
         result['TR'] = np.maximum(
@@ -72,23 +72,23 @@ class KC(BaseIndicator):
         result['ATR'] = result['TR'].rolling(window=self.atr_period).mean()
         
         # 计算上下轨
-        result['KC_UPPER'] = result['KC_MIDDLE'] + self.multiplier * result['ATR']
-        result['KC_LOWER'] = result['KC_MIDDLE'] - self.multiplier * result['ATR']
+        result['kc_upper'] = result['kc_middle'] + self.multiplier * result['ATR']
+        result['kc_lower'] = result['kc_middle'] - self.multiplier * result['ATR']
         
         # 计算通道宽度百分比(相对于中轨价格)
-        result['KC_WIDTH'] = (result['KC_UPPER'] - result['KC_LOWER']) / result['KC_MIDDLE'] * 100
+        result['kc_width'] = (result['kc_upper'] - result['kc_lower']) / result['kc_middle'] * 100
         
         # 计算价格相对于通道的位置(0-100%)，0表示在下轨，100表示在上轨
-        channel_range = result['KC_UPPER'] - result['KC_LOWER']
+        channel_range = result['kc_upper'] - result['kc_lower']
         # 避免除以零的情况
-        result['KC_POSITION'] = np.where(
+        result['kc_position'] = np.where(
             channel_range > 0,
-            (result['close'] - result['KC_LOWER']) / channel_range * 100,
+            (result['close'] - result['kc_lower']) / channel_range * 100,
             50  # 默认为中间位置
         )
         
         # 计算通道宽度变化率
-        result['KC_WIDTH_CHG'] = result['KC_WIDTH'].pct_change(periods=5) * 100
+        result['kc_width_chg'] = result['kc_width'].pct_change(periods=5) * 100
         
         # 删除临时计算列
         result = result.drop(['TR', 'ATR'], axis=1)
@@ -121,34 +121,34 @@ class KC(BaseIndicator):
         current_price = latest['close']
         
         # KC指标状态
-        kc_middle = latest['KC_MIDDLE']
-        kc_upper = latest['KC_UPPER']
-        kc_lower = latest['KC_LOWER']
-        kc_position = latest['KC_POSITION']
-        kc_width = latest['KC_WIDTH']
-        kc_width_chg = latest['KC_WIDTH_CHG']
+        kc_middle = latest['kc_middle']
+        kc_upper = latest['kc_upper']
+        kc_lower = latest['kc_lower']
+        kc_position = latest['kc_position']
+        kc_width = latest['kc_width']
+        kc_width_chg = latest['kc_width_chg']
         
         # 判断趋势方向
         if current_price > kc_middle:
-            trend = TrendType.UPTREND
+            trend = TrendType.UP
             trend_strength = 50 + kc_position * 0.5  # 50-100
         elif current_price < kc_middle:
-            trend = TrendType.DOWNTREND
+            trend = TrendType.DOWN
             trend_strength = 50 - (100 - kc_position) * 0.5  # 0-50
         else:
-            trend = TrendType.SIDEWAYS
+            trend = TrendType.FLAT
             trend_strength = 50
         
         # 基础信号评分(0-100)
         score = 50  # 中性分值
         
         # 判断价格与通道的关系
-        if crossover(result['close'], result['KC_UPPER']):  # 价格上穿上轨
+        if crossover(result['close'], result['kc_upper']):  # 价格上穿上轨
             signal_type = "上穿上轨"
             signal_desc = "价格上穿肯特纳通道上轨，显示强势突破"
             cross_type = CrossType.CROSS_OVER
             score = 80
-        elif crossunder(result['close'], result['KC_LOWER']):  # 价格下穿下轨
+        elif crossunder(result['close'], result['kc_lower']):  # 价格下穿下轨
             signal_type = "下穿下轨"
             signal_desc = "价格下穿肯特纳通道下轨，显示弱势突破"
             cross_type = CrossType.CROSS_UNDER
@@ -163,12 +163,12 @@ class KC(BaseIndicator):
             signal_desc = "价格位于肯特纳通道下轨之下，显示超卖状态"
             cross_type = CrossType.NO_CROSS
             score = 30 - (kc_lower - current_price) / kc_lower * 100  # 根据超出程度减少评分
-        elif crossover(result['close'], result['KC_MIDDLE']):  # 价格上穿中轨
+        elif crossover(result['close'], result['kc_middle']):  # 价格上穿中轨
             signal_type = "上穿中轨"
             signal_desc = "价格上穿肯特纳通道中轨，显示由弱转强"
             cross_type = CrossType.CROSS_OVER
             score = 60
-        elif crossunder(result['close'], result['KC_MIDDLE']):  # 价格下穿中轨
+        elif crossunder(result['close'], result['kc_middle']):  # 价格下穿中轨
             signal_type = "下穿中轨"
             signal_desc = "价格下穿肯特纳通道中轨，显示由强转弱"
             cross_type = CrossType.CROSS_UNDER
@@ -293,15 +293,15 @@ class KC(BaseIndicator):
             包含评分的Series，范围0-100
         """
         # 确保已计算指标
-        if not isinstance(data, pd.DataFrame) or 'KC_MIDDLE' not in data.columns:
+        if not isinstance(data, pd.DataFrame) or 'kc_middle' not in data.columns:
             data = self.calculate(data)
         
         # 获取KC指标值
         close = data['close']
-        middle = data['KC_MIDDLE']
-        upper = data['KC_UPPER']
-        lower = data['KC_LOWER']
-        position = data['KC_POSITION']
+        middle = data['kc_middle']
+        upper = data['kc_upper']
+        lower = data['kc_lower']
+        position = data['kc_position']
         
         # 初始化评分
         score = pd.Series(50, index=data.index)  # 默认中性评分
@@ -326,23 +326,23 @@ class KC(BaseIndicator):
         # 考虑交叉情况
         if len(data) >= 2:
             # 价格上穿上轨
-            cross_up_upper_mask = (data['close'].shift(1) <= data['KC_UPPER'].shift(1)) & (data['close'] > data['KC_UPPER'])
+            cross_up_upper_mask = (data['close'].shift(1) <= data['kc_upper'].shift(1)) & (data['close'] > data['kc_upper'])
             score[cross_up_upper_mask] = 80
             
             # 价格下穿下轨
-            cross_down_lower_mask = (data['close'].shift(1) >= data['KC_LOWER'].shift(1)) & (data['close'] < data['KC_LOWER'])
+            cross_down_lower_mask = (data['close'].shift(1) >= data['kc_lower'].shift(1)) & (data['close'] < data['kc_lower'])
             score[cross_down_lower_mask] = 20
             
             # 价格上穿中轨
-            cross_up_middle_mask = (data['close'].shift(1) <= data['KC_MIDDLE'].shift(1)) & (data['close'] > data['KC_MIDDLE'])
+            cross_up_middle_mask = (data['close'].shift(1) <= data['kc_middle'].shift(1)) & (data['close'] > data['kc_middle'])
             score[cross_up_middle_mask] = 60
             
             # 价格下穿中轨
-            cross_down_middle_mask = (data['close'].shift(1) >= data['KC_MIDDLE'].shift(1)) & (data['close'] < data['KC_MIDDLE'])
+            cross_down_middle_mask = (data['close'].shift(1) >= data['kc_middle'].shift(1)) & (data['close'] < data['kc_middle'])
             score[cross_down_middle_mask] = 40
             
         # 考虑通道宽度变化
-        width_chg = data['KC_WIDTH_CHG']
+        width_chg = data['kc_width_chg']
         # 通道扩大，上升波动
         up_vol_mask = (width_chg > 10) & (close > middle)
         score[up_vol_mask] += 5
@@ -367,16 +367,16 @@ class KC(BaseIndicator):
             形态描述列表
         """
         # 确保已计算指标
-        if not isinstance(data, pd.DataFrame) or 'KC_MIDDLE' not in data.columns:
+        if not isinstance(data, pd.DataFrame) or 'kc_middle' not in data.columns:
             data = self.calculate(data)
             
         # 获取KC数据
         close = data['close']
-        middle = data['KC_MIDDLE']
-        upper = data['KC_UPPER']
-        lower = data['KC_LOWER']
-        width = data['KC_WIDTH']
-        width_chg = data['KC_WIDTH_CHG']
+        middle = data['kc_middle']
+        upper = data['kc_upper']
+        lower = data['kc_lower']
+        width = data['kc_width']
+        width_chg = data['kc_width_chg']
         
         patterns = []
         

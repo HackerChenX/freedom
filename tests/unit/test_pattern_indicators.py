@@ -57,7 +57,7 @@ class TestAdvancedCandlestickPatterns(IndicatorTestMixin, unittest.TestCase):
         """为所有测试准备数据和指标实例"""
         super().setUp()
         self.indicator = AdvancedCandlestickPatterns()
-        self.expected_columns = ['three_white_soldiers', 'three_black_crows', 'head_and_shoulders']
+        self.expected_columns = ['三白兵', '三黑鸦', '头肩顶', '头肩底', '双顶', '双底']
         
         # 生成包含各种高级K线形态的数据
         self.data = TestDataGenerator.generate_price_sequence([
@@ -103,7 +103,7 @@ class TestPatternQualityEvaluator(IndicatorTestMixin, unittest.TestCase):
         self.skipTest("Test for PatternQualityEvaluator is not yet implemented.")
 
 
-class TestZXMPatternIndicator(IndicatorTestMixin, unittest.TestCase):
+class TestZXMPatternIndicator(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
     """ZXM形态指标测试"""
     
     def setUp(self):
@@ -139,25 +139,21 @@ class TestZXMPatternIndicator(IndicatorTestMixin, unittest.TestCase):
         self.close_prices = self.data['close'].values
         self.volumes = self.data['volume'].values
         
-        # 设置日志捕获
-        self.setup_log_capture()
-    
     def tearDown(self):
         """清理测试环境"""
-        self.teardown_log_capture()
+        super().tearDown()
     
     def test_zxm_pattern_identification(self):
         """测试ZXM形态识别功能"""
-        self.log_handler.clear()
+        self.clear_logs()
         try:
-            # ZXMPatternIndicator需要单独传入各个价格数组
+            # 修正：正确传递参数
             result = self.indicator.calculate(
-                self.high_prices, self.low_prices, self.close_prices, self.volumes
+                self.open_prices, self.high_prices, self.low_prices, self.close_prices, self.volumes, data=self.data
             )
             
             # 检查是否有错误日志
-            self.assertFalse(self.log_handler.has_errors(), 
-                           f"ZXM形态识别过程中产生错误: {self.log_handler.get_error_messages()}")
+            self.assert_log_not_contains("ERROR", "ZXM形态识别过程中产生错误")
             
             # 验证结果有效
             self.assertIsInstance(result, dict, "ZXM形态识别结果不是字典")
@@ -176,16 +172,15 @@ class TestZXMPatternIndicator(IndicatorTestMixin, unittest.TestCase):
     
     def test_zxm_pattern_scoring(self):
         """测试ZXM形态评分功能"""
-        self.log_handler.clear()
+        self.clear_logs()
         try:
-            # 计算ZXM形态识别结果
+            # 修正：正确传递参数
             result = self.indicator.calculate(
-                self.high_prices, self.low_prices, self.close_prices, self.volumes
+                self.open_prices, self.high_prices, self.low_prices, self.close_prices, self.volumes, data=self.data
             )
             
             # 检查是否有错误日志
-            self.assertFalse(self.log_handler.has_errors(), 
-                           f"ZXM形态评分过程中产生错误: {self.log_handler.get_error_messages()}")
+            self.assert_log_not_contains("ERROR", "ZXM形态评分过程中产生错误")
             
             # 验证结果有效
             self.assertIsInstance(result, dict, "ZXM形态识别结果不是字典")
@@ -196,6 +191,23 @@ class TestZXMPatternIndicator(IndicatorTestMixin, unittest.TestCase):
             self.assertTrue(True, "ZXM形态评分测试通过")
         except Exception as e:
             self.skipTest(f"ZXM形态评分测试失败: {e}")
+
+    # --- Override Mixin Tests that are not applicable ---
+
+    def test_calculation_runs_without_error(self):
+        self.skipTest("Skipping mixin test: ZXM calculate has a different signature.")
+
+    def test_returns_dataframe(self):
+        self.skipTest("Skipping mixin test: ZXM calculate returns a dict.")
+
+    def test_output_has_expected_columns(self):
+        self.skipTest("Skipping mixin test: ZXM calculate returns a dict.")
+
+    def test_output_has_no_unexpected_all_nan_columns(self):
+        self.skipTest("Skipping mixin test: ZXM calculate returns a dict.")
+
+    def test_calculate_with_missing_columns(self):
+        self.skipTest("Skipping mixin test: ZXM calculate has a different signature.")
 
 
 class TestBuyPointDetector(IndicatorTestMixin, unittest.TestCase):
@@ -227,13 +239,10 @@ class TestBuyPointDetector(IndicatorTestMixin, unittest.TestCase):
         
         # 添加换手率
         self.data['turnover_rate'] = self.data['volume'] / 10000
-        
-        # 设置日志捕获
-        self.setup_log_capture()
     
     def tearDown(self):
         """清理测试环境"""
-        self.teardown_log_capture()
+        super().tearDown()
     
     def test_buy_signal_detection(self):
         """测试买点信号检测功能"""

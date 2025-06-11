@@ -11,7 +11,6 @@ import logging
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
 logger = get_logger(__name__)
 

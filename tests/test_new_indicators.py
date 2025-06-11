@@ -9,7 +9,8 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from indicators.base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator, PatternResult
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 from indicators.ma import MA
 from indicators.rsi import RSI
 from indicators.boll import BOLL
@@ -26,7 +27,7 @@ from indicators.fibonacci import Fibonacci
 from indicators.sentiment_analysis import SentimentAnalysis
 from strategy.base_strategy import BaseStrategy
 from db.data_manager import DataManager
-from utils.date_utils import get_current_date
+from utils.date_utils import get_today
 from utils.stock_utils import get_stock_list
 from utils.logger import get_logger
 

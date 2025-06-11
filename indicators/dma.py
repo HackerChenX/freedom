@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from enums.indicator_types import TrendType, CrossType
-from indicators.indicator_registry import IndicatorEnum
+from enums.indicator_enum import IndicatorEnum
 from utils.signal_utils import crossover, crossunder
 from .base_indicator import BaseIndicator
 
@@ -112,13 +112,13 @@ class DMA(BaseIndicator):
         
         # 判断趋势方向
         if dma > 0 and dma > ama:
-            trend = TrendType.UPTREND
+            trend = TrendType.UP
             trend_strength = min(100, 50 + dma_pct * 2)
         elif dma < 0 and dma < ama:
-            trend = TrendType.DOWNTREND
+            trend = TrendType.DOWN
             trend_strength = min(100, 50 - dma_pct * 2)
         else:
-            trend = TrendType.SIDEWAYS
+            trend = TrendType.FLAT
             trend_strength = 50
         
         # 基础信号评分(0-100)

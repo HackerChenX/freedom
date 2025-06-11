@@ -882,35 +882,67 @@ class WMA(BaseIndicator):
         return acceleration
     
     def _detect_wma_deceleration(self, data: pd.DataFrame) -> bool:
-        """检测WMA减速形态"""
-        if not self.has_result():
+        """
+        检测WMA减速
+        """
+        if len(self._result) < self.period:
             return False
         
-        # 确保数据量足够
-        if len(data) < 20:
-            return False
+        wma_series = self._result[f'WMA{self.period}']
         
-        # 获取短周期的WMA数据
-        wma_short = self._result[f'wma_{self.periods[0]}'].iloc[-15:]
+        # 计算WMA的二阶导数（变化率的变化）
+        wma_change = wma_series.diff()
+        wma_acceleration = wma_change.diff()
         
-        # 计算WMA的变化率
-        changes = [wma_short.iloc[i+5] - wma_short.iloc[i] for i in range(0, 10, 5)]
-        
-        # 减速条件：变化率逐渐减小，但方向一致
-        deceleration = (changes[0] > 0 and changes[1] > 0 and changes[2] > 0 and changes[1] < changes[0] and changes[2] < changes[1]) or \
-                      (changes[0] < 0 and changes[1] < 0 and changes[2] < 0 and changes[1] > changes[0] and changes[2] > changes[1])
-        
-        return deceleration
+        # 如果近期加速度为负，表示减速
+        if wma_acceleration.iloc[-1] < 0 and wma_acceleration.iloc[-2] < 0:
+            return True
+            
+        return False
 
-    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
-        """检测并返回所有识别的形态"""
-        self.ensure_columns(data, ['close'] + [f'WMA{period}' for period in self.periods])
-        patterns = []
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        识别所有已定义的WMA形态，并以DataFrame形式返回
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含所有形态信号的DataFrame
+        """
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        result = self._result
+        if result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns_df = pd.DataFrame(index=result.index)
         
-        for pattern_func in self._pattern_registry.values():
-            result = pattern_func(data)
-            if result:
-                patterns.append(result)
+        close_price = data['close']
         
-        return patterns
+        # 价格与WMA线交叉
+        for period in self.periods:
+            wma_col = f'WMA{period}'
+            if wma_col in result.columns:
+                wma_line = result[wma_col]
+                patterns_df[f'PRICE_CROSS_ABOVE_{wma_col}'] = crossover(close_price, wma_line)
+                patterns_df[f'PRICE_CROSS_BELOW_{wma_col}'] = crossunder(close_price, wma_line)
+
+        # WMA线之间交叉
+        if len(self.periods) >= 2:
+            for i in range(len(self.periods) - 1):
+                short_period = self.periods[i]
+                long_period = self.periods[i+1]
+                short_wma_col = f'WMA{short_period}'
+                long_wma_col = f'WMA{long_period}'
+                
+                if short_wma_col in result.columns and long_wma_col in result.columns:
+                    short_wma = result[short_wma_col]
+                    long_wma = result[long_wma_col]
+                    patterns_df[f'WMA_GOLDEN_CROSS_{short_period}_{long_period}'] = crossover(short_wma, long_wma)
+                    patterns_df[f'WMA_DEATH_CROSS_{short_period}_{long_period}'] = crossunder(short_wma, long_wma)
+
+        return patterns_df
 

@@ -42,6 +42,13 @@ class BOLL(BaseIndicator):
         # 注册布林带指标形态
         self._register_boll_patterns()
     
+    def set_parameters(self, period: int = None, std_dev: float = None):
+        """设置指标参数"""
+        if period is not None:
+            self.period = period
+        if std_dev is not None:
+            self.std_dev = std_dev
+    
     def _register_boll_patterns(self):
         """注册布林带指标的各种形态"""
         # 获取PatternRegistry实例

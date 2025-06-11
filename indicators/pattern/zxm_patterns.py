@@ -111,6 +111,11 @@ class ZXMPatternIndicator(BaseIndicator):
         result = {}
         length = len(close_prices)
         
+        # Pre-calculate highest and lowest values to avoid recalculation in loop
+        highest_20_close = highest(close_prices, 20)
+        highest_20_high = highest(high_prices, 20)
+        lowest_60_low = lowest(low_prices, 60)
+
         # 一类买点：主升浪启动
         class_one_buy = np.zeros(length, dtype=bool)
         for i in range(10, length):
@@ -126,7 +131,7 @@ class ZXMPatternIndicator(BaseIndicator):
             # KDJ三线金叉
             kdj_golden_cross = k[i] > d[i] and j[i] > k[i] and k[i-1] <= d[i-1]
             # 价格突破前期高点
-            price_breakout = close_prices[i] > highest(close_prices[:i], 20)[-1]
+            price_breakout = close_prices[i] > highest_20_close[i-1]
             
             # 组合条件判断一类买点
             if (is_sideways and volume_breakout and 
@@ -152,7 +157,7 @@ class ZXMPatternIndicator(BaseIndicator):
             # KDJ超卖回转
             kdj_oversold_turn = k[i] < 30 and k[i] > k[i-1] and k[i-1] < k[i-2]
             # 回调幅度控制在30%以内
-            max_high = highest(high_prices[i-20:i], 20)[0]
+            max_high = highest_20_high[i-1]
             pullback_range = (max_high - low_prices[i]) / max_high < 0.3
             
             # 组合条件判断二类买点
@@ -175,7 +180,7 @@ class ZXMPatternIndicator(BaseIndicator):
             # 成交量见底回升
             volume_bounce = volumes[i] > volumes[i-1] and volumes[i-1] < vol_ma5[i-1]
             # 股价接近前期大底
-            near_bottom = low_prices[i] <= lowest(low_prices[:i], 60)[-1] * 1.05
+            near_bottom = low_prices[i] <= lowest_60_low[i-1]
             
             # 组合条件判断三类买点
             if (down_trend and (long_lower_shadow or oversold_bounce) and 

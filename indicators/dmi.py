@@ -1109,3 +1109,41 @@ class DMI(BaseIndicator):
         # 此处提供默认实现
         
         return signals
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        识别所有已定义的DMI形态，并以DataFrame形式返回
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含所有形态信号的DataFrame
+        """
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+            
+        result = self._result
+        if result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns_df = pd.DataFrame(index=result.index)
+        
+        pdi = result['PDI']
+        mdi = result['MDI']
+        adx = result['ADX']
+
+        # DI线金叉/死叉
+        patterns_df['DMI_GOLDEN_CROSS'] = crossover(pdi, mdi)
+        patterns_df['DMI_DEATH_CROSS'] = crossunder(pdi, mdi)
+
+        # ADX趋势强度
+        patterns_df['ADX_STRONG_TREND'] = adx > 25
+        patterns_df['ADX_WEAK_TREND'] = adx < 20
+        
+        # ADX上升/下降
+        patterns_df['ADX_RISING'] = adx > adx.shift(1)
+        patterns_df['ADX_FALLING'] = adx < adx.shift(1)
+
+        return patterns_df

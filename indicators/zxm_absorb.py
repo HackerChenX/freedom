@@ -8,13 +8,14 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
+from enums.indicator_enum import IndicatorEnum
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class ZXM_ABSORB(BaseIndicator):
+class ZXMAbsorb(BaseIndicator):
     """
     ZXM核心吸筹公式指标
     

@@ -12,6 +12,7 @@ from enum import Enum
 import inspect
 
 from utils.logger import get_logger
+from indicators.pattern_registry import PatternRegistry
 
 logger = get_logger(__name__)
 
@@ -541,6 +542,7 @@ class BaseIndicator(abc.ABC):
             Union[pd.DataFrame, List[Dict[str, Any]]]: 识别出的形态。
                                                       优先返回DataFrame。
         """
+        patterns = None
         # 优先尝试调用子类实现的 identify_patterns 方法
         if hasattr(self, 'identify_patterns') and callable(getattr(self, 'identify_patterns')):
             try:
@@ -551,7 +553,13 @@ class BaseIndicator(abc.ABC):
                 logger.error(f"调用 {self.name} 的 identify_patterns 方法时出错: {e}")
         
         # 如果 identify_patterns 不可用或无返回，则使用注册的检测函数
-        return self._detect_patterns_from_registry(data)
+        if patterns is None:
+            patterns = self._detect_patterns_from_registry(data)
+
+        if patterns is None:
+            return pd.DataFrame(index=data.index)
+
+        return patterns
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> Optional[Union[pd.DataFrame, List[str], List[Dict]]]:
         """
@@ -576,17 +584,59 @@ class BaseIndicator(abc.ABC):
         """
         return None
     
-    def _detect_patterns_from_registry(self, data: pd.DataFrame) -> Optional[pd.DataFrame]:
+    def _detect_patterns_from_registry(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        使用在 PatternRegistry 中注册的检测函数来识别形态。
-
+        从形态注册表中检测所有与当前指标相关的形态。
+        
         Args:
-            data (pd.DataFrame): 包含指标计算值的DataFrame。
-
+            data (pd.DataFrame): 输入的K线数据。
+            
         Returns:
-            Optional[pd.DataFrame]: 识别出的形态。如果未实现，应返回None。
+            pd.DataFrame: 包含所有已识别形态的DataFrame，每列代表一种形态。
+                          如果指标ID无效或没有注册形态，则返回一个空的DataFrame。
         """
-        return None
+        registry = PatternRegistry()
+        indicator_id = self.name.upper()
+        
+        # 检查指标是否已在注册表中，如果不在则直接返回空DataFrame
+        if indicator_id not in registry._patterns_by_indicator:
+            return pd.DataFrame(index=data.index)
+            
+        # 获取该指标的所有已注册形态ID
+        pattern_ids = registry.get_patterns_by_indicator(indicator_id)
+        if not pattern_ids:
+            return pd.DataFrame(index=data.index)
+
+        # 创建一个空的DataFrame来存储所有形态结果
+        all_patterns_df = pd.DataFrame(index=data.index)
+        
+        # 遍历所有形态ID并调用其检测函数
+        for pattern_id in pattern_ids:
+            pattern_info = registry.get_pattern(pattern_id)
+            if pattern_info and 'detection_function' in pattern_info and callable(pattern_info['detection_function']):
+                try:
+                    # 调用检测函数
+                    detected_series = pattern_info['detection_function'](data)
+                    
+                    # 确保返回的是Series且与data的索引一致
+                    if isinstance(detected_series, pd.Series) and detected_series.index.equals(data.index):
+                        all_patterns_df[pattern_id] = detected_series
+                    else:
+                         # 如果返回的是DataFrame，尝试取第一列
+                        if isinstance(detected_series, pd.DataFrame) and not detected_series.empty:
+                             all_patterns_df[pattern_id] = detected_series.iloc[:, 0]
+                        else:
+                            logger.warning(
+                                f"形态检测函数 '{pattern_id}' for '{indicator_id}' "
+                                f"未返回有效的pandas Series或DataFrame。"
+                            )
+                except Exception as e:
+                    logger.error(
+                        f"在为指标 '{indicator_id}' 执行形态检测函数 '{pattern_id}' 时发生错误: {e}",
+                        exc_info=True
+                    )
+                    
+        return all_patterns_df
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """

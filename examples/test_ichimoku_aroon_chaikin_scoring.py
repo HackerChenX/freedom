@@ -12,6 +12,7 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -88,8 +89,13 @@ def test_ichimoku_scoring():
     
     # 计算评分
     score_result = ichimoku.calculate_score(data)
-    scores = score_result['final_score']
-    patterns = score_result['patterns']
+    
+    if not score_result:
+        print("Ichimoku 评分计算失败")
+        return None, None
+
+    scores = score_result.get('final_score')
+    patterns = score_result.get('patterns', set())
     
     # 输出结果
     print(f"数据周期: {len(data)}天")
@@ -98,9 +104,9 @@ def test_ichimoku_scoring():
     print(f"平均评分: {scores.mean():.2f}")
     print(f"最终评分: {scores.iloc[-1]:.2f}")
     print(f"识别形态数量: {len(patterns)}")
-    print(f"识别的形态: {', '.join(patterns)}")
-    print(f"市场环境: {score_result['market_environment'].value}")
-    print(f"置信度: {score_result['confidence']:.2f}")
+    print(f"识别的形态: {', '.join(list(patterns))}")
+    print(f"市场环境: {score_result.get('market_environment').value}")
+    print(f"置信度: {score_result.get('confidence', 0):.2f}")
     
     # 显示最近几天的详细数据
     print("\n最近5天的指标数据:")
@@ -132,8 +138,13 @@ def test_aroon_scoring():
     
     # 计算评分
     score_result = aroon.calculate_score(data)
-    scores = score_result['final_score']
-    patterns = score_result['patterns']
+    
+    if not score_result:
+        print("Aroon 评分计算失败")
+        return None, None
+
+    scores = score_result.get('final_score')
+    patterns = score_result.get('patterns', set())
     
     # 输出结果
     print(f"数据周期: {len(data)}天")
@@ -142,9 +153,9 @@ def test_aroon_scoring():
     print(f"平均评分: {scores.mean():.2f}")
     print(f"最终评分: {scores.iloc[-1]:.2f}")
     print(f"识别形态数量: {len(patterns)}")
-    print(f"识别的形态: {', '.join(patterns)}")
-    print(f"市场环境: {score_result['market_environment'].value}")
-    print(f"置信度: {score_result['confidence']:.2f}")
+    print(f"识别的形态: {', '.join(list(patterns))}")
+    print(f"市场环境: {score_result.get('market_environment').value}")
+    print(f"置信度: {score_result.get('confidence', 0):.2f}")
     
     # 显示最近几天的详细数据
     print("\n最近5天的指标数据:")
@@ -176,8 +187,13 @@ def test_chaikin_scoring():
     
     # 计算评分
     score_result = chaikin.calculate_score(data)
-    scores = score_result['final_score']
-    patterns = score_result['patterns']
+
+    if not score_result:
+        print("Chaikin 评分计算失败")
+        return None, None
+
+    scores = score_result.get('final_score')
+    patterns = score_result.get('patterns', set())
     
     # 输出结果
     print(f"数据周期: {len(data)}天")
@@ -186,9 +202,9 @@ def test_chaikin_scoring():
     print(f"平均评分: {scores.mean():.2f}")
     print(f"最终评分: {scores.iloc[-1]:.2f}")
     print(f"识别形态数量: {len(patterns)}")
-    print(f"识别的形态: {', '.join(patterns)}")
-    print(f"市场环境: {score_result['market_environment'].value}")
-    print(f"置信度: {score_result['confidence']:.2f}")
+    print(f"识别的形态: {', '.join(list(patterns))}")
+    print(f"市场环境: {score_result.get('market_environment').value}")
+    print(f"置信度: {score_result.get('confidence', 0):.2f}")
     
     # 显示最近几天的详细数据
     print("\n最近5天的指标数据:")
@@ -231,14 +247,19 @@ def test_comprehensive_scoring():
             
             # 计算评分
             score_result = indicator.calculate_score(data)
-            scores = score_result['final_score']
-            patterns = score_result['patterns']
+            
+            if not score_result:
+                print(f"{name}: 评分计算失败")
+                continue
+
+            scores = score_result.get('final_score')
+            patterns = score_result.get('patterns', set())
             
             all_scores[name] = scores
             all_patterns[name] = patterns
             all_score_results[name] = score_result
             
-            print(f"{name}: 评分 {scores.iloc[-1]:.2f}, 形态 {len(patterns)}个, 置信度 {score_result['confidence']:.2f}")
+            print(f"{name}: 评分 {scores.iloc[-1]:.2f}, 形态 {len(patterns)}个, 置信度 {score_result.get('confidence', 0):.2f}")
             
         except Exception as e:
             print(f"{name}: 计算失败 - {str(e)}")
@@ -270,7 +291,7 @@ def test_comprehensive_scoring():
         # 显示市场环境分析
         print(f"\n市场环境分析:")
         for name, score_result in all_score_results.items():
-            print(f"{name}: {score_result['market_environment'].value}")
+            print(f"{name}: {score_result.get('market_environment').value}")
         
         return combined_scores, total_patterns
     

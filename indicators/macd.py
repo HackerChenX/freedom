@@ -290,13 +290,13 @@ class MACD(BaseIndicator):
         df['ema_slow'] = df[price_column].ewm(span=self.slow_period, adjust=False).mean()
         
         # 计算DIF (MACD线)
-        df['dif'] = df['ema_fast'] - df['ema_slow']
+        df['macd_line'] = df['ema_fast'] - df['ema_slow']
         
         # 计算DEA (MACD信号线)
-        df['dea'] = df['dif'].ewm(span=self.signal_period, adjust=False).mean()
+        df['macd_signal'] = df['macd_line'].ewm(span=self.signal_period, adjust=False).mean()
         
         # 计算MACD柱状体
-        df['macd'] = (df['dif'] - df['dea']) * 2
+        df['macd_histogram'] = (df['macd_line'] - df['macd_signal']) * 2
         
         # 保存结果
         self._result = df
@@ -575,23 +575,28 @@ class MACD(BaseIndicator):
         Returns:
             List[Dict]: 金叉形态识别结果列表
         """
-        dif, dea, macd = self.calculate(data['close'])
+        indicator_df = self.calculate(data)
         results = []
         
         # 寻找金叉
-        for i in range(1, len(data)):
-            if dif.iloc[i-1] < dea.iloc[i-1] and dif.iloc[i] > dea.iloc[i]:
+        for i in range(1, len(indicator_df)):
+            if indicator_df['macd_line'].iloc[i-1] < indicator_df['macd_signal'].iloc[i-1] and \
+               indicator_df['macd_line'].iloc[i] > indicator_df['macd_signal'].iloc[i]:
                 # 计算形态强度
-                strength = min(1.0, abs(dif.iloc[i] - dea.iloc[i]) / abs(dif.iloc[i-1] - dea.iloc[i-1]))
-                
+                prev_diff = abs(indicator_df['macd_line'].iloc[i-1] - indicator_df['macd_signal'].iloc[i-1])
+                if prev_diff == 0:
+                    strength = 1.0
+                else:
+                    strength = min(1.0, abs(indicator_df['macd_line'].iloc[i] - indicator_df['macd_signal'].iloc[i]) / prev_diff)
+
                 results.append({
-                    'date': data.index[i],
+                    'date': indicator_df.index[i],
                     'pattern': 'macd_golden_cross',
                     'strength': strength,
-                    'price': data['close'].iloc[i],
-                    'dif': dif.iloc[i],
-                    'dea': dea.iloc[i],
-                    'macd': macd.iloc[i]
+                    'price': indicator_df['close'].iloc[i],
+                    'macd_line': indicator_df['macd_line'].iloc[i],
+                    'macd_signal': indicator_df['macd_signal'].iloc[i],
+                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
                 })
         
         return results
@@ -606,25 +611,30 @@ class MACD(BaseIndicator):
         Returns:
             List[Dict]: 死叉形态识别结果列表
         """
-        dif, dea, macd = self.calculate(data['close'])
+        indicator_df = self.calculate(data)
         results = []
-        
+
         # 寻找死叉
-        for i in range(1, len(data)):
-            if dif.iloc[i-1] > dea.iloc[i-1] and dif.iloc[i] < dea.iloc[i]:
+        for i in range(1, len(indicator_df)):
+            if indicator_df['macd_line'].iloc[i-1] > indicator_df['macd_signal'].iloc[i-1] and \
+               indicator_df['macd_line'].iloc[i] < indicator_df['macd_signal'].iloc[i]:
                 # 计算形态强度
-                strength = min(1.0, abs(dif.iloc[i] - dea.iloc[i]) / abs(dif.iloc[i-1] - dea.iloc[i-1]))
-                
+                prev_diff = abs(indicator_df['macd_line'].iloc[i-1] - indicator_df['macd_signal'].iloc[i-1])
+                if prev_diff == 0:
+                    strength = 1.0
+                else:
+                    strength = min(1.0, abs(indicator_df['macd_line'].iloc[i] - indicator_df['macd_signal'].iloc[i]) / prev_diff)
+
                 results.append({
-                    'date': data.index[i],
+                    'date': indicator_df.index[i],
                     'pattern': 'macd_death_cross',
                     'strength': strength,
-                    'price': data['close'].iloc[i],
-                    'dif': dif.iloc[i],
-                    'dea': dea.iloc[i],
-                    'macd': macd.iloc[i]
+                    'price': indicator_df['close'].iloc[i],
+                    'macd_line': indicator_df['macd_line'].iloc[i],
+                    'macd_signal': indicator_df['macd_signal'].iloc[i],
+                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
                 })
-        
+
         return results
     
     def _analyze_divergence(self, data: pd.DataFrame) -> List[Dict]:
@@ -637,49 +647,61 @@ class MACD(BaseIndicator):
         Returns:
             List[Dict]: 背离形态识别结果列表
         """
-        dif, dea, macd = self.calculate(data['close'])
+        indicator_df = self.calculate(data)
         results = []
         
         # 寻找顶背离
-        for i in range(2, len(data)):
+        for i in range(2, len(indicator_df)):
             # 价格创新高但MACD未创新高
-            if (data['high'].iloc[i] > data['high'].iloc[i-1] and 
-                data['high'].iloc[i-1] > data['high'].iloc[i-2] and
-                macd.iloc[i] < macd.iloc[i-1] and 
-                macd.iloc[i-1] < macd.iloc[i-2]):
+            if (indicator_df['high'].iloc[i] > indicator_df['high'].iloc[i-1] and 
+                indicator_df['high'].iloc[i-1] > indicator_df['high'].iloc[i-2] and
+                indicator_df['macd_histogram'].iloc[i] < indicator_df['macd_histogram'].iloc[i-1] and 
+                indicator_df['macd_histogram'].iloc[i-1] < indicator_df['macd_histogram'].iloc[i-2]):
                 
                 # 计算形态强度
-                price_change = (data['high'].iloc[i] - data['high'].iloc[i-2]) / data['high'].iloc[i-2]
-                macd_change = (macd.iloc[i] - macd.iloc[i-2]) / abs(macd.iloc[i-2])
+                price_change = (indicator_df['high'].iloc[i] - indicator_df['high'].iloc[i-2]) / indicator_df['high'].iloc[i-2]
+                macd_hist_prev = indicator_df['macd_histogram'].iloc[i-2]
+                if abs(macd_hist_prev) < 1e-9: # 避免除以零
+                    macd_change = 0
+                else:
+                    macd_change = (indicator_df['macd_histogram'].iloc[i] - macd_hist_prev) / abs(macd_hist_prev)
                 strength = min(1.0, abs(price_change * macd_change))
                 
                 results.append({
-                    'date': data.index[i],
+                    'date': indicator_df.index[i],
                     'pattern': 'macd_divergence',
                     'type': 'top',
                     'strength': strength,
-                    'price': data['high'].iloc[i],
-                    'macd': macd.iloc[i]
+                    'price': indicator_df['high'].iloc[i],
+                    'macd_line': indicator_df['macd_line'].iloc[i],
+                    'macd_signal': indicator_df['macd_signal'].iloc[i],
+                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
                 })
             
             # 价格创新低但MACD未创新低
-            elif (data['low'].iloc[i] < data['low'].iloc[i-1] and 
-                  data['low'].iloc[i-1] < data['low'].iloc[i-2] and
-                  macd.iloc[i] > macd.iloc[i-1] and 
-                  macd.iloc[i-1] > macd.iloc[i-2]):
+            elif (indicator_df['low'].iloc[i] < indicator_df['low'].iloc[i-1] and 
+                  indicator_df['low'].iloc[i-1] < indicator_df['low'].iloc[i-2] and
+                  indicator_df['macd_histogram'].iloc[i] > indicator_df['macd_histogram'].iloc[i-1] and 
+                  indicator_df['macd_histogram'].iloc[i-1] > indicator_df['macd_histogram'].iloc[i-2]):
                 
                 # 计算形态强度
-                price_change = (data['low'].iloc[i] - data['low'].iloc[i-2]) / data['low'].iloc[i-2]
-                macd_change = (macd.iloc[i] - macd.iloc[i-2]) / abs(macd.iloc[i-2])
+                price_change = (indicator_df['low'].iloc[i] - indicator_df['low'].iloc[i-2]) / indicator_df['low'].iloc[i-2]
+                macd_hist_prev = indicator_df['macd_histogram'].iloc[i-2]
+                if abs(macd_hist_prev) < 1e-9: # 避免除以零
+                    macd_change = 0
+                else:
+                    macd_change = (indicator_df['macd_histogram'].iloc[i] - macd_hist_prev) / abs(macd_hist_prev)
                 strength = min(1.0, abs(price_change * macd_change))
                 
                 results.append({
-                    'date': data.index[i],
+                    'date': indicator_df.index[i],
                     'pattern': 'macd_divergence',
                     'type': 'bottom',
                     'strength': strength,
-                    'price': data['low'].iloc[i],
-                    'macd': macd.iloc[i]
+                    'price': indicator_df['low'].iloc[i],
+                    'macd_line': indicator_df['macd_line'].iloc[i],
+                    'macd_signal': indicator_df['macd_signal'].iloc[i],
+                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
                 })
         
         return results
@@ -694,15 +716,12 @@ class MACD(BaseIndicator):
         Returns:
             List[Dict]: 双顶双底形态识别结果列表
         """
-        # 确保已计算MACD
-        if not self.has_result():
-            self.calculate(data)
-            
-        result = self._result if self._result is not None else data
+        # 首先获取形态，确保双顶/双底列存在
+        result = self.get_patterns(data)
         results = []
         
         # 检查双顶
-        double_tops = result[result['MACD_DOUBLE_TOP']].index
+        double_tops = result[result['MACD_DOUBLE_TOP']].index if 'MACD_DOUBLE_TOP' in result.columns else []
         for idx in double_tops:
             i = result.index.get_loc(idx)
             if i >= 2:
@@ -710,13 +729,15 @@ class MACD(BaseIndicator):
                     'date': idx,
                     'pattern': 'macd_double_top',
                     'strength': 0.8,  # 固定强度
-                    'price': data['close'].iloc[i],
-                    'macd': result['macd_line'].iloc[i],
+                    'price': result['close'].iloc[i],
+                    'macd_line': result['macd_line'].iloc[i],
+                    'macd_signal': result['macd_signal'].iloc[i],
+                    'macd_histogram': result['macd_histogram'].iloc[i],
                     'description': 'MACD双顶形态，可能的看跌信号'
                 })
         
         # 检查双底
-        double_bottoms = result[result['MACD_DOUBLE_BOTTOM']].index
+        double_bottoms = result[result['MACD_DOUBLE_BOTTOM']].index if 'MACD_DOUBLE_BOTTOM' in result.columns else []
         for idx in double_bottoms:
             i = result.index.get_loc(idx)
             if i >= 2:
@@ -724,9 +745,11 @@ class MACD(BaseIndicator):
                     'date': idx,
                     'pattern': 'macd_double_bottom',
                     'strength': 0.8,  # 固定强度
-                    'price': data['close'].iloc[i],
-                    'macd': result['macd_line'].iloc[i],
+                    'price': result['close'].iloc[i],
+                    'macd_line': result['macd_line'].iloc[i],
+                    'macd_signal': result['macd_signal'].iloc[i],
+                    'macd_histogram': result['macd_histogram'].iloc[i],
                     'description': 'MACD双底形态，可能的看涨信号'
                 })
                 
-        return results
+        return results 

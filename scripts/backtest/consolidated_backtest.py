@@ -26,6 +26,7 @@ from scripts.backtest.backtest_runner import BacktestRunner
 from scripts.backtest.data_manager import BacktestDataManager
 from scripts.backtest.pattern_analyzer import PatternAnalyzer
 from scripts.backtest.strategy_manager import StrategyManager
+from scripts.backtest.report_generator import ReportGenerator
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -322,6 +323,19 @@ def main():
     
     else:
         print("未指定有效的命令，使用 -h 查看帮助")
+
+
+class ConsolidatedBacktest:
+    def __init__(self):
+        pass
+
+
+class BacktestSuite:
+    """
+    回测套件
+    """
+    def __init__(self):
+        pass
 
 
 if __name__ == "__main__":
