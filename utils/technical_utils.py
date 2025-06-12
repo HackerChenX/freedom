@@ -43,23 +43,13 @@ def exponential_moving_average(data: np.ndarray, window: int) -> np.ndarray:
     Returns:
         np.ndarray: 指数移动平均线
     """
+    data = np.asarray(data, dtype=float)
     if len(data) < window:
-        return np.full_like(data, np.nan, dtype=float)
-    
-    # 指数衰减因子
-    alpha = 2 / (window + 1)
-    
-    # 初始化EMA数组，前window-1个值为NaN
-    ema = np.full_like(data, np.nan, dtype=float)
-    
-    # 初始值使用window个数据的简单平均
-    ema[window-1] = np.mean(data[:window])
-    
-    # 计算后续值
-    for i in range(window, len(data)):
-        ema[i] = alpha * data[i] + (1 - alpha) * ema[i-1]
-    
-    return ema
+        return np.full(len(data), np.nan)
+        
+    df = pd.DataFrame(data)
+    ema = df.ewm(span=window, adjust=False, min_periods=window).mean()
+    return ema.values.flatten()
 
 def weighted_moving_average(data: np.ndarray, window: int) -> np.ndarray:
     """

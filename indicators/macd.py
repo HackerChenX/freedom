@@ -4,12 +4,15 @@ MACD指标分析模块
 提供MACD指标的计算和分析功能
 """
 
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Union
 import pandas as pd
 import numpy as np
-from utils.technical_utils import calculate_macd
+from utils.logger import get_logger
+from utils.technical_utils import calculate_macd, crossover, crossunder
 from indicators.base_indicator import BaseIndicator
-from utils.signal_utils import crossover, crossunder
+from indicators.pattern_registry import PatternRegistry
+
+logger = get_logger(__name__)
 
 class MACD(BaseIndicator):
     """MACD指标"""
@@ -81,7 +84,6 @@ class MACD(BaseIndicator):
         self._registered_patterns = False
         
         # 设置形态注册表允许覆盖，避免警告
-        from indicators.pattern_registry import PatternRegistry
         PatternRegistry.set_allow_override(True)
         
         # 初始化基类（会自动调用register_patterns方法）
@@ -260,519 +262,502 @@ class MACD(BaseIndicator):
         计算MACD指标
         
         Args:
-            data: 输入数据
-            **kwargs: 其他参数
-        
+            data: 输入数据，必须包含 'close' 列
+            
         Returns:
-            pd.DataFrame: 计算结果，包含 'macd', 'signal', 'hist' 列
+            pd.DataFrame: 包含MACD线、信号线和柱状图的DataFrame
         """
-        # 提取参数
-        price_col = self._parameters.get('price_col', 'close')
-        fast_period = self._parameters.get('fast_period', 12)
-        slow_period = self._parameters.get('slow_period', 26)
-        signal_period = self._parameters.get('signal_period', 9)
-
-        # 检查输入数据
-        if price_col not in data.columns:
-            raise ValueError(f"输入数据中缺少 '{price_col}' 列")
-
-        # 计算EMA
-        ema_fast = data[price_col].ewm(span=fast_period, adjust=False).mean()
-        ema_slow = data[price_col].ewm(span=slow_period, adjust=False).mean()
+        price_col = self._parameters['price_col']
         
-        # 计算MACD线
-        macd_line = ema_fast - ema_slow
+        # 计算MACD
+        macd_line, macd_signal, macd_histogram = calculate_macd(
+            data[price_col],
+            fast_period=self.fast_period,
+            slow_period=self.slow_period,
+            signal_period=self.signal_period
+        )
         
-        # 计算信号线
-        signal_line = macd_line.ewm(span=signal_period, adjust=False).mean()
-        
-        # 计算柱状图
-        histogram = macd_line - signal_line
-        
-        # 创建结果DataFrame
+        # 统一列名
         result_df = pd.DataFrame({
-            'macd': macd_line,
-            'signal': signal_line,
-            'hist': histogram
+            'macd_line': macd_line,
+            'macd_signal': macd_signal,
+            'macd_histogram': macd_histogram
         }, index=data.index)
         
-        return result_df
+        return self._preserve_base_columns(data, result_df)
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取所有MACD形态
-        
-        Args:
-            data: 输入数据
-        
-        Returns:
-            pd.DataFrame: 包含MACD形态的DataFrame
         """
-        macd_columns = ['macd', 'signal', 'hist']
-        # 检查是否已计算MACD，如果未计算，则进行计算
-        if not all(col in data.columns for col in macd_columns):
-            indicator_df = self.calculate(data, **kwargs)
-        else:
-            indicator_df = data
+        # 首先，调用 _calculate 来获取基础指标列
+        calculated_data = self._calculate(data)
+        
+        # 在计算后的数据上检测形态
+        # 金叉和死叉
+        golden_cross = self._detect_robust_crossover(calculated_data['macd_line'], calculated_data['macd_signal'], cross_type='above')
+        death_cross = self._detect_robust_crossover(calculated_data['macd_line'], calculated_data['macd_signal'], cross_type='below')
+        
+        # 背离
+        bullish_divergence, bearish_divergence = self._detect_divergence(calculated_data['close'], calculated_data['macd_line'])
 
-        # 检测金叉和死叉
-        golden_cross = crossover(indicator_df['macd'], indicator_df['signal'])
-        death_cross = crossunder(indicator_df['macd'], indicator_df['signal'])
-
-        # 创建结果DataFrame
-        patterns_df = pd.DataFrame(index=indicator_df.index)
-        patterns_df['MACD_GOLDEN_CROSS'] = golden_cross
-        patterns_df['MACD_DEATH_CROSS'] = death_cross
-
-        # 检测零轴穿越
-        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self.crossover(indicator_df['macd'], 0)
-        patterns_df['MACD_ZERO_CROSS_BELOW'] = self.crossunder(indicator_df['macd'], 0)
-
-        # 检测柱状图扩张/收缩
-        patterns_df['MACD_HISTOGRAM_EXPANDING'] = ((indicator_df['hist'] > indicator_df['hist'].shift(1)) & (indicator_df['hist'] > 0)) | ((indicator_df['hist'] < indicator_df['hist'].shift(1)) & (indicator_df['hist'] < 0))
-        patterns_df['MACD_HISTOGRAM_CONTRACTING'] = ((indicator_df['hist'] < indicator_df['hist'].shift(1)) & (indicator_df['hist'] > 0)) | ((indicator_df['hist'] > indicator_df['hist'].shift(1)) & (indicator_df['hist'] < 0))
-
-        # 检测背离
-        bullish_div, bearish_div = self._detect_divergence(data['close'], indicator_df['macd'])
-        patterns_df['MACD_BULLISH_DIVERGENCE'] = bullish_div
-        patterns_df['MACD_BEARISH_DIVERGENCE'] = bearish_div
-
-        # 合并形态列到指标数据中并返回
-        return pd.concat([indicator_df, patterns_df], axis=1)
+        # 零轴穿越
+        zero_cross_above = self._detect_robust_crossover(calculated_data['macd_line'], 0, cross_type='above')
+        zero_cross_below = self._detect_robust_crossover(calculated_data['macd_line'], 0, cross_type='below')
+        
+        # 柱状图扩张和收缩
+        histogram = calculated_data['macd_histogram']
+        histogram_expanding = pd.Series(False, index=data.index)
+        histogram_contracting = pd.Series(False, index=data.index)
+        
+        # 检测连续3个柱状图扩张或收缩
+        for i in range(3, len(histogram)):
+            # 扩张: 连续3个柱状图变大
+            if (histogram.iloc[i] > histogram.iloc[i-1] > histogram.iloc[i-2] > histogram.iloc[i-3]) and histogram.iloc[i] > 0:
+                histogram_expanding.iloc[i] = True
+            # 收缩: 连续3个柱状图变小
+            elif (histogram.iloc[i] < histogram.iloc[i-1] < histogram.iloc[i-2] < histogram.iloc[i-3]) and histogram.iloc[i] < 0:
+                histogram_contracting.iloc[i] = True
+        
+        # 双顶和双底形态
+        double_top = pd.Series(False, index=data.index)
+        double_bottom = pd.Series(False, index=data.index)
+        
+        # 使用简化的双顶双底检测逻辑
+        from scipy.signal import find_peaks
+        
+        # 双顶
+        macd_peaks, _ = find_peaks(calculated_data['macd_line'].values, distance=10, prominence=0.1)
+        if len(macd_peaks) >= 2:
+            for i in range(1, len(macd_peaks)):
+                idx = macd_peaks[i]
+                if idx < len(double_top):
+                    double_top.iloc[idx] = True
+        
+        # 双底
+        macd_bottoms, _ = find_peaks(-calculated_data['macd_line'].values, distance=10, prominence=0.1)
+        if len(macd_bottoms) >= 2:
+            for i in range(1, len(macd_bottoms)):
+                idx = macd_bottoms[i]
+                if idx < len(double_bottom):
+                    double_bottom.iloc[idx] = True
+        
+        # 将所有形态信号合并到一个DataFrame
+        patterns_df = pd.DataFrame({
+            'MACD_GOLDEN_CROSS': golden_cross,
+            'MACD_DEATH_CROSS': death_cross,
+            'MACD_BULLISH_DIVERGENCE': bullish_divergence,
+            'MACD_BEARISH_DIVERGENCE': bearish_divergence,
+            'MACD_ZERO_CROSS_ABOVE': zero_cross_above,
+            'MACD_ZERO_CROSS_BELOW': zero_cross_below,
+            'MACD_HISTOGRAM_EXPANDING': histogram_expanding,
+            'MACD_HISTOGRAM_CONTRACTING': histogram_contracting,
+            'MACD_DOUBLE_TOP': double_top,
+            'MACD_DOUBLE_BOTTOM': double_bottom
+        }, index=data.index)
+        
+        # 合并基础计算结果和形态结果
+        final_df = pd.concat([calculated_data, patterns_df], axis=1)
+        
+        return final_df
 
     def get_indicator_type(self) -> str:
-        """获取指标类型"""
+        """
+        获取指标类型
+        
+        Returns:
+            str: 指标类型字符串
+        """
         return "MACD"
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算MACD指标的原始评分（0-100分制）
-
-        评分逻辑:
-        - 金叉/死叉: 对评分有显著影响
-        - 零轴位置: DIF在零轴上方为多头市场，下方为空头市场
-        - 柱状图: 柱状图的值和变化趋势反映了动能
-        - 背离: 强烈的反转信号
-        """
-        # 获取形态
-        patterns = self.get_patterns(data, **kwargs)
+        计算MACD的原始得分
         
-        # 获取指标值
-        indicator_df = self.result if self.has_result() else self.calculate(data, **kwargs)
-        dif = indicator_df['macd']
-        hist = indicator_df['hist']
-
-        # 基础分
-        score = pd.Series(50.0, index=data.index)
-
-        # 1. 零轴位置影响 (基础趋势判断)
-        score[dif > 0] += 10
-        score[dif < 0] -= 10
-
-        # 2. 柱状图影响 (动能判断)
-        # 将柱状图归一化到-20到20的范围
-        # 使用最近252个交易日（约一年）的数据进行归一化，避免受极值影响过大
-        hist_norm = (hist / (hist.rolling(252).std().replace(0, 1))) * 5
-        score += hist_norm.clip(-20, 20)
-        
-        # 3. 形态影响 (事件驱动)
-        score[patterns['MACD_GOLDEN_CROSS']] += 15
-        score[patterns['MACD_DEATH_CROSS']] -= 15
-        score[patterns['MACD_BULLISH_DIVERGENCE']] += 25
-        score[patterns['MACD_BEARISH_DIVERGENCE']] -= 25
-        
-        # 确保评分在0-100范围内
-        return score.clip(0, 100)
-
-    def _detect_robust_crossover(self, series1: pd.Series, series2: pd.Series, window: int = 3, cross_type: str = 'above') -> pd.Series:
-        """
-        检测鲁棒的交叉信号，过滤掉短暂的缠绕和抖动。
-
         Args:
-            series1: 第一个序列 (e.g., DIF)
-            series2: 第二个序列 (e.g., DEA)
-            window: 交叉后状态需要维持的窗口期
-            cross_type: 'above' (上穿/金叉) 或 'below' (下穿/死叉)
-
+            data: 输入数据
+            
         Returns:
-            pd.Series: 布尔型序列，标记有效交叉点
+            pd.Series: MACD得分
         """
-        if cross_type == 'above':
-            initial_cross = self.crossover(series1, series2)
-            state_maintained = (series1 > series2).rolling(window=window).sum() == window
-        elif cross_type == 'below':
-            initial_cross = self.crossunder(series1, series2)
-            state_maintained = (series1 < series2).rolling(window=window).sum() == window
-        else:
-            raise ValueError("cross_type must be 'above' or 'below'")
-
-        # 信号必须是初始交叉点，并且在该点之后的状态得以维持
-        # 我们需要将 state_maintained 的结果向后移动一个位置，因为我们要检查交叉 *之后* 的窗口
-        robust_cross = initial_cross & state_maintained.shift(-(window-1))
+        # 首先获取所有形态
+        patterns_df = self.get_patterns(data)
         
-        return robust_cross.fillna(False)
+        # 初始化得分
+        total_score = pd.Series(0.0, index=data.index)
+        
+        # 定义各形态的得分权重
+        pattern_scores = {
+            'MACD_GOLDEN_CROSS': 20.0,
+            'MACD_DEATH_CROSS': -20.0,
+            'MACD_BULLISH_DIVERGENCE': 25.0,
+            'MACD_BEARISH_DIVERGENCE': -25.0,
+            'MACD_ZERO_CROSS_ABOVE': 15.0,
+            'MACD_ZERO_CROSS_BELOW': -15.0,
+            'MACD_HISTOGRAM_EXPANDING': 10.0,
+            'MACD_HISTOGRAM_CONTRACTING': -10.0,
+            'MACD_DOUBLE_BOTTOM': 22.0,
+            'MACD_DOUBLE_TOP': -22.0
+        }
+        
+        # 计算各形态得分并累加
+        for pattern, score in pattern_scores.items():
+            if pattern in patterns_df.columns:
+                # 将布尔列转换为0/1
+                pattern_signal = patterns_df[pattern].astype(int)
+                # 计算并累加得分
+                total_score += pattern_signal * score
+        
+        # 基于MACD线和信号线的相对位置添加额外分数
+        if 'macd_line' in patterns_df.columns and 'macd_signal' in patterns_df.columns:
+            # 当MACD线在信号线上方，给予正分
+            macd_above_signal = (patterns_df['macd_line'] > patterns_df['macd_signal']).astype(int) * 5.0
+            # 当MACD线在信号线下方，给予负分
+            macd_below_signal = (patterns_df['macd_line'] < patterns_df['macd_signal']).astype(int) * -5.0
+            # 累加得分
+            total_score += macd_above_signal + macd_below_signal
+        
+        # 基于MACD线相对于零轴的位置添加额外分数
+        if 'macd_line' in patterns_df.columns:
+            # 当MACD线在零轴上方，给予正分
+            macd_above_zero = (patterns_df['macd_line'] > 0).astype(int) * 5.0
+            # 当MACD线在零轴下方，给予负分
+            macd_below_zero = (patterns_df['macd_line'] < 0).astype(int) * -5.0
+            # 累加得分
+            total_score += macd_above_zero + macd_below_zero
+        
+        return total_score
+
+    def _detect_robust_crossover(self, series1: pd.Series, series2: Union[pd.Series, float, int], window: int = 3, cross_type: str = 'above') -> pd.Series:
+        """
+        更稳健的交叉检测，考虑交叉后的持续性
+        
+        Args:
+            series1: 第一个序列 (例如, DIF)
+            series2: 第二个序列 (例如, DEA 或一个常数)
+            window: 确认交叉的窗口期
+            cross_type: 'above' (金叉) 或 'below' (死叉)
+            
+        Returns:
+            pd.Series: 交叉信号
+        """
+        # 初始化结果
+        result = pd.Series(False, index=series1.index)
+        
+        # 数据不足以计算交叉
+        if len(series1) < 3:
+            return result
+            
+        # 如果series2是标量，将其转换为Series便于处理
+        if isinstance(series2, (int, float)):
+            series2 = pd.Series(series2, index=series1.index)
+            
+        # 计算前后位置关系
+        if cross_type == 'above':
+            # 查找从下向上穿越的点（金叉）
+            # 前一点，series1低于或等于series2
+            condition_before = series1.shift(1) <= series2.shift(1)
+            # 当前点，series1高于series2
+            condition_after = series1 > series2
+            # 结合两个条件找到交叉点
+            cross_points = condition_before & condition_after
+        else:
+            # 查找从上向下穿越的点（死叉）
+            # 前一点，series1高于或等于series2
+            condition_before = series1.shift(1) >= series2.shift(1)
+            # 当前点，series1低于series2
+            condition_after = series1 < series2
+            # 结合两个条件找到交叉点
+            cross_points = condition_before & condition_after
+            
+        # 找到所有潜在交叉点的索引
+        cross_indices = np.where(cross_points)[0]
+        
+        # 没有发现交叉点，返回全False序列
+        if len(cross_indices) == 0:
+            return result
+            
+        # 对每个交叉点应用更严格的确认
+        for idx in cross_indices:
+            # 跳过开始的点，确保有前置数据
+            if idx < 2:
+                continue
+                
+            # 跳过结尾的点，确保有后续数据用于确认
+            if idx >= len(series1) - window:
+                continue
+                
+            # 确认交叉点前后的趋势方向
+            if cross_type == 'above':
+                # 金叉：确保交叉前series1一直低于series2，交叉后一直高于
+                before_cross = series1.iloc[idx-window:idx] < series2.iloc[idx-window:idx]
+                after_cross = series1.iloc[idx:idx+window] > series2.iloc[idx:idx+window]
+                
+                # 至少有window/2个点满足条件
+                if before_cross.sum() >= window/2 and after_cross.sum() >= window/2:
+                    result.iloc[idx] = True
+            else:
+                # 死叉：确保交叉前series1一直高于series2，交叉后一直低于
+                before_cross = series1.iloc[idx-window:idx] > series2.iloc[idx-window:idx]
+                after_cross = series1.iloc[idx:idx+window] < series2.iloc[idx:idx+window]
+                
+                # 至少有window/2个点满足条件
+                if before_cross.sum() >= window/2 and after_cross.sum() >= window/2:
+                    result.iloc[idx] = True
+                    
+        return result
 
     def _detect_divergence(self, price: pd.Series, indicator: pd.Series, window: int = 14) -> Tuple[pd.Series, pd.Series]:
         """
-        使用改进的向量化方法检测背离
+        检测价格与指标之间的背离
+        
+        Args:
+            price: 价格序列 (例如, 'close')
+            indicator: 指标序列 (例如, 'macd')
+            window: 检测窗口
+            
+        Returns:
+            Tuple[pd.Series, pd.Series]: (底背离信号, 顶背离信号)
         """
-        # 计算滚动最低/最高价
-        price_low = price.rolling(window=window).min()
-        indicator_low = indicator.rolling(window=window).min()
-        price_high = price.rolling(window=window).max()
-        indicator_high = indicator.rolling(window=window).max()
+        # 初始化信号序列
+        bullish_divergence = pd.Series(False, index=price.index)
+        bearish_divergence = pd.Series(False, index=price.index)
+        
+        # 如果数据太短，直接返回
+        if len(price) < window * 2:
+            return bullish_divergence, bearish_divergence
+        
+        # 寻找价格和指标的局部高点和低点
+        from scipy.signal import find_peaks
+        
+        # 使用更敏感的参数来找到足够的峰和谷
+        price_peaks, _ = find_peaks(price.values, distance=window//2, prominence=0.01)
+        price_troughs, _ = find_peaks(-price.values, distance=window//2, prominence=0.01)
+        
+        indicator_peaks, _ = find_peaks(indicator.values, distance=window//2, prominence=0.01)
+        indicator_troughs, _ = find_peaks(-indicator.values, distance=window//2, prominence=0.01)
+        
+        # 确保我们找到了足够的峰和谷
+        if len(price_peaks) < 2 or len(indicator_peaks) < 2:
+            # 使用更宽松的参数再试一次
+            price_peaks, _ = find_peaks(price.values, distance=window//3, prominence=0.005)
+            indicator_peaks, _ = find_peaks(indicator.values, distance=window//3, prominence=0.005)
+            
+        if len(price_troughs) < 2 or len(indicator_troughs) < 2:
+            # 使用更宽松的参数再试一次
+            price_troughs, _ = find_peaks(-price.values, distance=window//3, prominence=0.005)
+            indicator_troughs, _ = find_peaks(-indicator.values, distance=window//3, prominence=0.005)
+        
+        # 检测顶背离 (价格新高，指标未新高)
+        if len(price_peaks) >= 2 and len(indicator_peaks) >= 2:
+            for i in range(1, len(price_peaks)):
+                p_peak1_idx, p_peak2_idx = price_peaks[i-1], price_peaks[i]
+                
+                # 找到与价格高点对应的指标高点
+                # 选择靠近价格高点的指标高点
+                ind_peaks_between = [idx for idx in indicator_peaks if 
+                                    max(0, p_peak1_idx - window//2) <= idx <= min(len(indicator)-1, p_peak2_idx + window//2)]
+                
+                if len(ind_peaks_between) >= 2:
+                    ind_peak1_idx, ind_peak2_idx = ind_peaks_between[0], ind_peaks_between[-1]
+                    
+                    # 判断顶背离条件：价格创新高，但指标未创新高
+                    if (price.iloc[p_peak2_idx] > price.iloc[p_peak1_idx] and 
+                        indicator.iloc[ind_peak2_idx] < indicator.iloc[ind_peak1_idx]):
+                        bearish_divergence.iloc[p_peak2_idx] = True
 
-        # 底背离: 价格创新低，但指标未创新低
-        bullish_div = (price == price_low) & (price < price.shift(1)) & \
-                      (indicator > indicator_low.shift(1))
+        # 检测底背离 (价格新低，指标未新低)
+        if len(price_troughs) >= 2 and len(indicator_troughs) >= 2:
+            for i in range(1, len(price_troughs)):
+                p_trough1_idx, p_trough2_idx = price_troughs[i-1], price_troughs[i]
+                
+                # 找到与价格低点对应的指标低点
+                # 选择靠近价格低点的指标低点
+                ind_troughs_between = [idx for idx in indicator_troughs if 
+                                     max(0, p_trough1_idx - window//2) <= idx <= min(len(indicator)-1, p_trough2_idx + window//2)]
+                
+                if len(ind_troughs_between) >= 2:
+                    ind_trough1_idx, ind_trough2_idx = ind_troughs_between[0], ind_troughs_between[-1]
+                    
+                    # 判断底背离条件：价格创新低，但指标未创新低
+                    if (price.iloc[p_trough2_idx] < price.iloc[p_trough1_idx] and 
+                        indicator.iloc[ind_trough2_idx] > indicator.iloc[ind_trough1_idx]):
+                        bullish_divergence.iloc[p_trough2_idx] = True
+                    
+        return bullish_divergence, bearish_divergence
 
-        # 顶背离: 价格创新高，但指标未创新高
-        bearish_div = (price == price_high) & (price > price.shift(1)) & \
-                      (indicator < indicator_high.shift(1))
-
-        return bullish_div.fillna(False), bearish_div.fillna(False)
-    
     def get_signals(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
-        获取MACD信号
+        生成买入/卖出信号
         
         Args:
-            data: 包含MACD指标的DataFrame
+            data: 输入数据
             
         Returns:
-            包含信号的字典
+            Dict[str, Any]: 包含买卖信号和其他分析结果的字典
         """
-        # 确保已计算MACD指标和增强特征
-        if not self.has_result():
-            self.calculate(data)
-            result = self._result
-        else:
-            result = data if 'macd' in data.columns else self._result
+        # 首先，获取包含所有形态的DataFrame
+        patterns_df = self.get_patterns(data)
         
-        # 计算所有形态
-        patterns = self.get_patterns(data)
-        
-        # 定义买入和卖出信号的构成
-        buy_conditions = [
-            'MACD_GOLDEN_CROSS',
-            'MACD_BULLISH_DIVERGENCE',
-            'MACD_ZERO_CROSS_ABOVE',
-            'MACD_DOUBLE_BOTTOM'
-        ]
-        
-        sell_conditions = [
-            'MACD_DEATH_CROSS',
-            'MACD_BEARISH_DIVERGENCE',
-            'MACD_ZERO_CROSS_BELOW',
-            'MACD_DOUBLE_TOP'
-        ]
-
-        # 初始化信号Series
-        buy_signal = pd.Series(False, index=data.index)
-        sell_signal = pd.Series(False, index=data.index)
-
-        # 聚合信号
-        for col in buy_conditions:
-            if col in patterns.columns:
-                buy_signal |= patterns[col]
-        
-        for col in sell_conditions:
-            if col in patterns.columns:
-                sell_signal |= patterns[col]
-
-        # 准备最终的信号字典
+        # 初始化信号字典
         signals = {
-            'buy_signal': buy_signal,
-            'sell_signal': sell_signal
+            'buy_signal': pd.Series(False, index=data.index),
+            'sell_signal': pd.Series(False, index=data.index),
+            'signals_details': []
         }
         
-        # 添加其他详细信号，供深入分析
-        for col in patterns.columns:
-            if col not in ['buy_signal', 'sell_signal']:
-                signals[col.lower()] = patterns[col]
-
-        return signals
+        # 定义买入和卖出形态
+        buy_patterns = ["MACD_GOLDEN_CROSS", "MACD_BULLISH_DIVERGENCE", "MACD_ZERO_CROSS_ABOVE", "MACD_DOUBLE_BOTTOM"]
+        sell_patterns = ["MACD_DEATH_CROSS", "MACD_BEARISH_DIVERGENCE", "MACD_ZERO_CROSS_BELOW", "MACD_DOUBLE_TOP"]
         
+        # 聚合买入信号
+        for pattern in buy_patterns:
+            if pattern in patterns_df.columns:
+                signals['buy_signal'] |= patterns_df[pattern]
+        
+        # 聚合卖出信号
+        for pattern in sell_patterns:
+            if pattern in patterns_df.columns:
+                signals['sell_signal'] |= patterns_df[pattern]
+        
+        # 可以在这里添加更复杂的信号逻辑，例如组合多个形态
+        
+        # 记录详细信号
+        for idx in data.index:
+            triggered_patterns = []
+            for col in patterns_df.columns:
+                # 检查列是否存在且值为True
+                if col in patterns_df and patterns_df.at[idx, col]:
+                    triggered_patterns.append(col)
+            
+            if triggered_patterns:
+                signals['signals_details'].append({
+                    'date': idx,
+                    'patterns': triggered_patterns
+                })
+                
+        return signals
+
     def get_score(self, data: pd.DataFrame) -> float:
         """
-        计算MACD得分
+        计算MACD指标在最后一个时间点的综合得分
         
         Args:
-            data: 包含MACD指标的DataFrame
+            data: 输入数据
             
         Returns:
-            MACD得分 (0-1)
+            float: 最后一个时间点的综合得分
         """
-        if len(data) < 2:
+        raw_score_series = self.calculate_raw_score(data)
+        
+        if raw_score_series.empty:
             return 0.0
             
-        score = 0.0
-        signals = self.get_signals(data)
+        # 返回最后一个非空值
+        last_score = raw_score_series.replace(0, pd.NA).ffill().iloc[-1]
         
-        # 根据信号计算得分
-        if signals['buy_signal']:
-            score += 0.4
-        elif signals['sell_signal']:
-            score -= 0.4
-            
-        # 归一化得分到0-1范围
-        return max(0.0, min(1.0, (score + 1.0) / 2.0))
-    
+        return last_score if pd.notna(last_score) else 0.0
+
     def analyze_pattern(self, pattern_id: str, data: pd.DataFrame) -> List[Dict]:
         """
-        分析指定形态
+        对指定的形态进行深入分析
         
         Args:
-            pattern_id: 形态ID
-            data: 包含OHLCV数据的DataFrame
+            pattern_id: 形态ID (例如, "MACD_GOLDEN_CROSS")
+            data: 输入数据
             
         Returns:
-            List[Dict]: 形态识别结果列表
+            List[Dict]: 包含该形态发生详情的列表
         """
-        if pattern_id not in self.patterns:
-            raise ValueError(f"不支持的MACD形态: {pattern_id}")
+        # 获取所有形态
+        patterns_df = self.get_patterns(data)
+        
+        # 检查形态ID是否存在
+        if pattern_id not in patterns_df.columns:
+            logger.warning(f"形态 '{pattern_id}' 未在结果中找到。")
+            return []
             
-        return self.patterns[pattern_id]['analyzer'](data)
-    
+        # 查找形态发生的时间点
+        event_dates = patterns_df[patterns_df[pattern_id]].index
+        
+        analysis_results = []
+        for date in event_dates:
+            result = {
+                'date': date,
+                'pattern_id': pattern_id,
+                'message': f"在 {date.strftime('%Y-%m-%d')} 检测到形态 '{pattern_id}'。",
+                'context': {
+                    'macd_line': patterns_df.at[date, 'macd_line'],
+                    'macd_signal': patterns_df.at[date, 'macd_signal'],
+                    'macd_histogram': patterns_df.at[date, 'macd_histogram'],
+                    'close_price': data.at[date, 'close']
+                }
+            }
+            analysis_results.append(result)
+            
+        return analysis_results
+
     def _analyze_golden_cross(self, data: pd.DataFrame) -> List[Dict]:
         """
-        分析MACD金叉形态
-        
-        Args:
-            data: 包含OHLCV数据的DataFrame
-            
-        Returns:
-            List[Dict]: 金叉形态识别结果列表
+        分析金叉形态的具体情况
         """
-        indicator_df = self.calculate(data)
-        results = []
-        
-        # 寻找金叉
-        for i in range(1, len(indicator_df)):
-            if indicator_df['macd'].iloc[i-1] < indicator_df['signal'].iloc[i-1] and \
-               indicator_df['macd'].iloc[i] > indicator_df['signal'].iloc[i]:
-                # 计算形态强度
-                prev_diff = abs(indicator_df['macd'].iloc[i-1] - indicator_df['signal'].iloc[i-1])
-                if prev_diff == 0:
-                    strength = 1.0
-                else:
-                    strength = min(1.0, abs(indicator_df['macd'].iloc[i] - indicator_df['signal'].iloc[i]) / prev_diff)
+        # ... 实现金叉的详细分析 ...
+        # 此处可以返回更丰富的上下文信息
+        return self.analyze_pattern("MACD_GOLDEN_CROSS", data)
 
-                results.append({
-                    'date': indicator_df.index[i],
-                    'pattern': 'macd_golden_cross',
-                    'strength': strength,
-                    'price': indicator_df['close'].iloc[i],
-                    'macd': indicator_df['macd'].iloc[i],
-                    'signal': indicator_df['signal'].iloc[i],
-                    'hist': indicator_df['hist'].iloc[i]
-                })
-        
-        return results
-    
     def _analyze_death_cross(self, data: pd.DataFrame) -> List[Dict]:
         """
-        分析MACD死叉形态
-        
-        Args:
-            data: 包含OHLCV数据的DataFrame
-            
-        Returns:
-            List[Dict]: 死叉形态识别结果列表
+        分析死叉形态的具体情况
         """
-        indicator_df = self.calculate(data)
-        results = []
+        # ... 实现死叉的详细分析 ...
+        return self.analyze_pattern("MACD_DEATH_CROSS", data)
 
-        # 寻找死叉
-        for i in range(1, len(indicator_df)):
-            if indicator_df['macd'].iloc[i-1] > indicator_df['signal'].iloc[i-1] and \
-               indicator_df['macd'].iloc[i] < indicator_df['signal'].iloc[i]:
-                # 计算形态强度
-                prev_diff = abs(indicator_df['macd'].iloc[i-1] - indicator_df['signal'].iloc[i-1])
-                if prev_diff == 0:
-                    strength = 1.0
-                else:
-                    strength = min(1.0, abs(indicator_df['macd'].iloc[i] - indicator_df['signal'].iloc[i]) / prev_diff)
-
-                results.append({
-                    'date': indicator_df.index[i],
-                    'pattern': 'macd_death_cross',
-                    'strength': strength,
-                    'price': indicator_df['close'].iloc[i],
-                    'macd': indicator_df['macd'].iloc[i],
-                    'signal': indicator_df['signal'].iloc[i],
-                    'hist': indicator_df['hist'].iloc[i]
-                })
-
-        return results
-    
     def _analyze_divergence(self, data: pd.DataFrame) -> List[Dict]:
         """
-        分析MACD背离形态
-        
-        Args:
-            data: 包含OHLCV数据的DataFrame
-            
-        Returns:
-            List[Dict]: 背离形态识别结果列表
+        分析背离形态的具体情况
         """
-        indicator_df = self.calculate(data)
-        results = []
-        
-        # 寻找顶背离
-        for i in range(2, len(indicator_df)):
-            # 价格创新高但MACD未创新高
-            if (indicator_df['high'].iloc[i] > indicator_df['high'].iloc[i-1] and 
-                indicator_df['high'].iloc[i-1] > indicator_df['high'].iloc[i-2] and
-                indicator_df['hist'].iloc[i] < indicator_df['hist'].iloc[i-1] and 
-                indicator_df['hist'].iloc[i-1] < indicator_df['hist'].iloc[i-2]):
-                
-                # 计算形态强度
-                price_change = (indicator_df['high'].iloc[i] - indicator_df['high'].iloc[i-2]) / indicator_df['high'].iloc[i-2]
-                hist_prev = indicator_df['hist'].iloc[i-2]
-                if abs(hist_prev) < 1e-9: # 避免除以零
-                    hist_change = 0
-                else:
-                    hist_change = (indicator_df['hist'].iloc[i] - hist_prev) / abs(hist_prev)
-                strength = min(1.0, abs(price_change * hist_change))
-                
-                results.append({
-                    'date': indicator_df.index[i],
-                    'pattern': 'macd_divergence',
-                    'type': 'top',
-                    'strength': strength,
-                    'price': indicator_df['high'].iloc[i],
-                    'macd': indicator_df['macd'].iloc[i],
-                    'signal': indicator_df['signal'].iloc[i],
-                    'hist': indicator_df['hist'].iloc[i]
-                })
-            
-            # 价格创新低但MACD未创新低
-            elif (indicator_df['low'].iloc[i] < indicator_df['low'].iloc[i-1] and 
-                  indicator_df['low'].iloc[i-1] < indicator_df['low'].iloc[i-2] and
-                  indicator_df['hist'].iloc[i] > indicator_df['hist'].iloc[i-1] and 
-                  indicator_df['hist'].iloc[i-1] > indicator_df['hist'].iloc[i-2]):
-                
-                # 计算形态强度
-                price_change = (indicator_df['low'].iloc[i] - indicator_df['low'].iloc[i-2]) / indicator_df['low'].iloc[i-2]
-                hist_prev = indicator_df['hist'].iloc[i-2]
-                if abs(hist_prev) < 1e-9: # 避免除以零
-                    hist_change = 0
-                else:
-                    hist_change = (indicator_df['hist'].iloc[i] - hist_prev) / abs(hist_prev)
-                strength = min(1.0, abs(price_change * hist_change))
-                
-                results.append({
-                    'date': indicator_df.index[i],
-                    'pattern': 'macd_divergence',
-                    'type': 'bottom',
-                    'strength': strength,
-                    'price': indicator_df['low'].iloc[i],
-                    'macd': indicator_df['macd'].iloc[i],
-                    'signal': indicator_df['signal'].iloc[i],
-                    'hist': indicator_df['hist'].iloc[i]
-                })
-        
-        return results
-    
+        # ... 实现背离的详细分析 ...
+        bullish_results = self.analyze_pattern("MACD_BULLISH_DIVERGENCE", data)
+        bearish_results = self.analyze_pattern("MACD_BEARISH_DIVERGENCE", data)
+        return bullish_results + bearish_results
+
     def _analyze_double_patterns(self, data: pd.DataFrame) -> List[Dict]:
         """
-        分析MACD双顶双底形态
-        
-        Args:
-            data: 包含MACD指标的DataFrame
-            
-        Returns:
-            List[Dict]: 双顶双底形态识别结果列表
+        分析双顶/双底形态的具体情况
         """
-        # 首先获取形态，确保双顶/双底列存在
-        result = self.get_patterns(data)
-        results = []
-        
-        # 检查双顶
-        double_tops = result[result['MACD_DOUBLE_TOP']].index if 'MACD_DOUBLE_TOP' in result.columns else []
-        for idx in double_tops:
-            i = result.index.get_loc(idx)
-            if i >= 2:
-                results.append({
-                    'date': idx,
-                    'pattern': 'macd_double_top',
-                    'strength': 0.8,  # 固定强度
-                    'price': result['close'].iloc[i],
-                    'macd': result['macd'].iloc[i],
-                    'signal': result['signal'].iloc[i],
-                    'hist': result['hist'].iloc[i],
-                    'description': 'MACD双顶形态，可能的看跌信号'
-                })
-        
-        # 检查双底
-        double_bottoms = result[result['MACD_DOUBLE_BOTTOM']].index if 'MACD_DOUBLE_BOTTOM' in result.columns else []
-        for idx in double_bottoms:
-            i = result.index.get_loc(idx)
-            if i >= 2:
-                results.append({
-                    'date': idx,
-                    'pattern': 'macd_double_bottom',
-                    'strength': 0.8,  # 固定强度
-                    'price': result['close'].iloc[i],
-                    'macd': result['macd'].iloc[i],
-                    'signal': result['signal'].iloc[i],
-                    'hist': result['hist'].iloc[i],
-                    'description': 'MACD双底形态，可能的看涨信号'
-                })
-                
-        return results
+        # ... 实现双顶/双底的详细分析 ...
+        top_results = self.analyze_pattern("MACD_DOUBLE_TOP", data)
+        bottom_results = self.analyze_pattern("MACD_DOUBLE_BOTTOM", data)
+        return top_results + bottom_results
 
     def calculate_confidence(self, score: pd.Series, patterns: list, signals: dict) -> float:
         """
-        计算MACD指标的置信度。
-
-        置信度基于以下因素：
-        1.  MACD柱(hist)的绝对值：柱子越长，动能越强，信号越可信。
-        2.  DIF和DEA的位置：两者均在零轴同侧时，趋势更明确。
-        3.  DIF和DEA的间距：间距越大，趋势越强。
-        4.  近期交叉频率：如果DIF/DEA近期频繁交叉，市场可能处于震荡，信号可靠性降低。
-
+        计算指标的置信度
+        
         Args:
-            score: 原始评分序列 (当前未使用)
-            patterns: 形态列表 (当前未使用)
-            signals: 信号字典 (当前未使用)
-
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+            
         Returns:
-            float: 置信度 (0.0 - 1.0)
+            float: 置信度分数 (0-1)
         """
-        if not self.has_result() or len(self.result) < 20:
-            return 0.5 # 数据不足，返回中性置信度
-
-        latest_macd = self.result.iloc[-1]
-        dif, dea, hist = latest_macd['macd'], latest_macd['signal'], latest_macd['hist']
+        # 一个简单的置信度计算示例
+        # 1. 得分的绝对值越大，置信度越高
+        last_score = abs(score.iloc[-1])
         
-        # 获取收盘价的平均值，用于标准化hist和dif-dea的距离
-        avg_price = self.result['close'].mean() if 'close' in self.result and self.result['close'].mean() > 0 else 100
+        # 2. 检测到的形态越多，置信度越高
+        num_patterns = len(patterns)
         
-        confidence = 0.5 # 基础置信度
-
-        # 1. MACD柱(hist)强度
-        # 将hist的绝对值标准化为价格的百分比，假设2%已经是一个很强的动能
-        hist_strength = min(abs(hist) / avg_price / 0.02, 1.0)
-        confidence += hist_strength * 0.3 # 最大贡献+0.3
-
-        # 2. DIF和DEA的位置
-        if (dif > 0 and dea > 0) or (dif < 0 and dea < 0):
-            confidence += 0.1 # 同在零轴一侧，趋势明确，贡献+0.1
-
-        # 3. DIF和DEA的间距
-        # 标准化间距
-        spread_strength = min(abs(dif - dea) / avg_price / 0.02, 1.0)
-        confidence += spread_strength * 0.2 # 最大贡献+0.2
-
-        # 4. 近期交叉频率
-        # 检查最近20个周期内的交叉次数
-        recent_hist = self.result['hist'].iloc[-20:]
-        # 符号变化次数约等于交叉次数
-        crosses = (np.sign(recent_hist) * np.sign(recent_hist.shift(1)) < 0).sum()
-        if crosses > 2: # 20天内交叉超过2次，认为震荡
-            confidence -= (crosses - 2) * 0.05 # 每多一次交叉，略微降低信心
-
-        # 确保置信度在0到1之间
-        return max(0.0, min(1.0, confidence)) 
+        # 3. 信号越强（例如，金叉后价格确实上涨），置信度越高
+        
+        # 归一化得分
+        normalized_score = min(last_score / 50, 1.0) # 假设50是高分
+        
+        # 归一化形态数量
+        normalized_patterns = min(num_patterns / 5, 1.0) # 假设5个形态是很多了
+        
+        # 综合置信度
+        confidence = (normalized_score * 0.6) + (normalized_patterns * 0.4)
+        
+        return min(confidence, 1.0) 

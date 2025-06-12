@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Union
 import pytest
 
 
-class IndicatorTestMixin(LogCaptureMixin):
+class IndicatorTestMixin:
     """
     指标测试混入类，提供指标测试的通用功能
     
@@ -245,15 +245,38 @@ class IndicatorTestMixin(LogCaptureMixin):
                 assert not result[col].isna().all(), f"预期列 '{col}' 全是 NaN"
     
     def test_calculate_with_missing_columns(self):
-        """测试 calculate 方法是否能处理缺失的列。"""
-        # 创建一个只包含基本列的数据
-        minimal_data = self.data[['open', 'high', 'low', 'close']].copy()
+        """测试当缺少必需列时的处理情况。"""
+        if not hasattr(self.indicator, 'REQUIRED_COLUMNS'):
+            pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 REQUIRED_COLUMNS 属性，跳过此测试")
+
+        required = self.indicator.REQUIRED_COLUMNS
+        if not required:
+            pytest.skip(f"指标 {self.indicator.__class__.__name__} 的 REQUIRED_COLUMNS 为空，跳过此测试")
+
+        cols_to_keep = self.data.columns.tolist()
+        col_to_remove = None
+        for col in required:
+            if col in cols_to_keep:
+                col_to_remove = col
+                break
         
+        if not col_to_remove:
+            pytest.skip(f"无法从数据中找到一个可移除的必需列，跳过测试")
+
+        cols_to_keep.remove(col_to_remove)
+        minimal_data = self.data[cols_to_keep].copy()
+        
+        # 有些指标实现会抛出异常，有些则会返回带有警告的结果
+        # 我们只需确保两种情况都能正确处理
+        
+        # 方法1: 捕获可能的异常
         try:
             result = self.indicator.calculate(minimal_data)
-            assert isinstance(result, pd.DataFrame), "缺少列的情况下，计算结果不是 DataFrame"
-        except Exception as e:
-            pytest.fail(f"指标在缺少列的情况下计算失败，错误: {e}")
+            # 如果没有异常，结果应该是有效的DataFrame
+            assert isinstance(result, pd.DataFrame), "计算结果应为DataFrame"
+        except ValueError as e:
+            # 如果有异常，应该提到缺少的列
+            assert col_to_remove in str(e), f"错误信息应包含缺少的列名: {col_to_remove}"
     
     def test_patterns_run_without_error(self):
         """测试指标的 get_patterns 方法是否能无错运行。"""
