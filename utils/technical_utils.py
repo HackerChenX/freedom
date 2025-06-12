@@ -809,22 +809,87 @@ def find_local_extrema(data: np.ndarray, window: int = 5) -> Tuple[List[int], Li
     return peaks, troughs
 
 def calculate_slope(points: List[Tuple[int, float]]) -> float:
+    """计算一系列点的斜率"""
+    n = len(points)
+    if n < 2:
+        return 0.0
+    
+    x_sum = sum(p[0] for p in points)
+    y_sum = sum(p[1] for p in points)
+    xy_sum = sum(p[0] * p[1] for p in points)
+    x_sq_sum = sum(p[0]**2 for p in points)
+    
+    numerator = n * xy_sum - x_sum * y_sum
+    denominator = n * x_sq_sum - x_sum**2
+    
+    return numerator / denominator if denominator != 0 else 0.0
+
+# === 从 BaseIndicator 迁移的通用函数 ===
+
+def crossover(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
     """
-    计算一系列点的斜率
+    判断series1上穿series2
+    """
+    return (series1 > series2) & (series1.shift(1) <= series2)
+
+
+def crossunder(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
+    """
+    判断series1下穿series2
+    """
+    return (series1 < series2) & (series1.shift(1) >= series2)
+
+
+def sma(series: pd.Series, periods: int) -> pd.Series:
+    """
+    计算简单移动平均 (SMA)
+    """
+    return series.rolling(window=periods, min_periods=periods).mean()
+
+
+def ema(series: pd.Series, periods: int) -> pd.Series:
+    """
+    计算指数移动平均 (EMA)
+    """
+    return series.ewm(span=periods, adjust=False).mean()
+
+
+def highest(series: pd.Series, periods: int) -> pd.Series:
+    """
+    获取N周期内的最高价
+    """
+    return series.rolling(window=periods, min_periods=periods).max()
+
+
+def lowest(series: pd.Series, periods: int) -> pd.Series:
+    """
+    获取N周期内的最低价
+    """
+    return series.rolling(window=periods, min_periods=periods).min()
+
+
+def atr(high: pd.Series, low: pd.Series, close: pd.Series, periods: int) -> pd.Series:
+    """
+    计算平均真实波幅 (ATR)
+    """
+    tr1 = high - low
+    tr2 = abs(high - close.shift(1))
+    tr3 = abs(low - close.shift(1))
+    tr = pd.DataFrame({'tr1': tr1, 'tr2': tr2, 'tr3': tr3}).max(axis=1)
+    return ema(tr, periods)
+
+
+def ensure_columns(data: pd.DataFrame, required_columns: List[str]) -> None:
+    """
+    确保DataFrame中存在所需的列
     
     Args:
-        points: 点的列表，每个点是(索引, 值)的元组
+        data: 输入的DataFrame
+        required_columns: 必需的列名列表
         
-    Returns:
-        float: 斜率
+    Raises:
+        ValueError: 如果缺少任何必需的列
     """
-    if len(points) < 2:
-        return 0.0
-        
-    x = np.array([p[0] for p in points])
-    y = np.array([p[1] for p in points])
-    
-    # 使用线性回归计算斜率
-    slope, _, _, _, _ = np.polyfit(x, y, 1, full=True)
-    
-    return slope[0] 
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"数据中缺少以下必需列: {', '.join(missing_columns)}") 

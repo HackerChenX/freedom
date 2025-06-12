@@ -39,6 +39,21 @@ class VR(BaseIndicator):
         self.period = period
         self.ma_period = ma_period
     
+    def set_parameters(self, period: int = None, ma_period: int = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
+        if ma_period is not None:
+            self.ma_period = ma_period
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取VR指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)
+
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算VR指标

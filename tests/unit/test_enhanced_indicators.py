@@ -7,8 +7,8 @@ import numpy as np
 
 from indicators.trend.enhanced_cci import EnhancedCCI
 from indicators.volume.enhanced_obv import EnhancedOBV
-from indicators.oscillator.enhanced_stochrsi import EnhancedSTOCHRSI
-from indicators.oscillator.enhanced_wr import EnhancedWR
+from indicators.enhanced_stochrsi import EnhancedSTOCHRSI
+from indicators.enhanced_wr import EnhancedWR
 from indicators.trend.enhanced_trix import EnhancedTRIX
 from indicators.trend.enhanced_macd import EnhancedMACD
 from tests.helper.data_generator import TestDataGenerator

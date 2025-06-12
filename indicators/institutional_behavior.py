@@ -36,6 +36,29 @@ class InstitutionalBehavior(BaseIndicator):
         self.chip_distribution = ChipDistribution()
         self.volume_quantile = 0.85  # 新增：定义成交量分位数阈值
     
+    def set_parameters(self, volume_quantile: float = None, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            volume_quantile: 成交量分位数阈值
+        """
+        if volume_quantile is not None:
+            self.volume_quantile = volume_quantile
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        主力行为模式的形态识别（默认不实现）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            list: 空列表
+        """
+        return []
+    
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算主力行为模式指标

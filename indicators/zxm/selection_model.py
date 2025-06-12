@@ -9,12 +9,14 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
-from indicators.zxm.trend_indicators import TrendDetector, TrendStrength
-from indicators.zxm.elasticity_indicators import ElasticityIndicator, BounceDetector
-from indicators.zxm.score_indicators import StockScoreCalculator
-from indicators.zxm.buy_point_indicators import BuyPointDetector
-from indicators.zxm_washplate import ZXMWashPlate
 from utils.logger import get_logger
+from utils.decorators import log_calls, error_handling
+
+from indicators.zxm.trend_indicators import TrendDetector
+from indicators.zxm.elasticity_indicators import Elasticity, AmplitudeElasticity, BounceDetector
+from indicators.zxm.buy_point_indicators import BuyPointDetector
+from indicators.zxm.score_indicators import StockScoreCalculator
+from indicators.zxm_washplate import ZXMWashPlate
 
 logger = get_logger(__name__)
 
@@ -33,8 +35,8 @@ class SelectionModel(BaseIndicator):
         
         # 初始化各子指标
         self.trend_detector = TrendDetector()
-        self.trend_strength = TrendStrength()
-        self.elasticity_indicator = ElasticityIndicator()
+        self.elasticity_indicator = Elasticity()
+        self.amplitude_elasticity_indicator = AmplitudeElasticity()
         self.bounce_detector = BounceDetector()
         self.score_calculator = StockScoreCalculator()
         self.buy_point_detector = BuyPointDetector()
@@ -60,18 +62,16 @@ class SelectionModel(BaseIndicator):
             # 1. 计算趋势指标
             trend_result = self.trend_detector.calculate(data)
             result["TrendDirection"] = trend_result["TrendDirection"]
-            result["TrendStrength"] = trend_result["TrendStrength"]
             
-            # 2. 计算趋势强度指标
-            strength_result = self.trend_strength.calculate(data)
-            result["TrendType"] = strength_result["TrendType"]
-            result["TrendStrengthScore"] = strength_result["TrendStrength"]
-            
-            # 3. 计算弹性指标
+            # 2. 计算弹性指标
             elasticity_result = self.elasticity_indicator.calculate(data)
             result["ElasticityRatio"] = elasticity_result["ElasticityRatio"]
             result["BounceStrength"] = elasticity_result["BounceStrength"]
             result["ElasticityBuySignal"] = elasticity_result["BuySignal"]
+            
+            # 3. 计算幅度弹性指标
+            amplitude_elasticity_result = self.amplitude_elasticity_indicator.calculate(data)
+            result["AmplitudeElasticityRatio"] = amplitude_elasticity_result["AmplitudeElasticityRatio"]
             
             # 4. 计算反弹检测指标
             bounce_result = self.bounce_detector.calculate(data)
@@ -123,7 +123,7 @@ class SelectionModel(BaseIndicator):
             
             # 8. 计算整合选股信号
             # a. 强趋势上涨股
-            strong_uptrend = (result["TrendDirection"] == 1) & (result["TrendStrength"] >= 70)
+            strong_uptrend = (result["TrendDirection"] == 1)
             
             # b. 放量突破股
             volume_breakout = result["BreakoutBuyPoint"] & (result["VolumeScore"] >= 70)
@@ -180,9 +180,9 @@ class SelectionModel(BaseIndicator):
                 
                 # 趋势强度加减分
                 if result["TrendDirection"].iloc[i] == 1:
-                    trend_bonus = min(15, result["TrendStrength"].iloc[i] / 5)
+                    trend_bonus = 15
                 elif result["TrendDirection"].iloc[i] == -1:
-                    trend_bonus = -min(15, result["TrendStrength"].iloc[i] / 5)
+                    trend_bonus = -15
                 else:
                     trend_bonus = 0
                 
@@ -304,9 +304,9 @@ class SelectionModel(BaseIndicator):
             # 详细技术形态
             # 趋势状态
             if last_row["TrendDirection"] == 1:
-                if last_row["TrendStrength"] >= 80:
+                if last_row["TrendDirection"] == 1:
                     patterns.append("超强上升趋势")
-                elif last_row["TrendStrength"] >= 60:
+                elif last_row["TrendDirection"] == 0:
                     patterns.append("强上升趋势")
                 else:
                     patterns.append("温和上升趋势")

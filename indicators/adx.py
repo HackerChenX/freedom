@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 import warnings
+import talib
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -55,9 +56,10 @@ class ADX(BaseIndicator):
         self._register_adx_patterns()
     
     def set_parameters(self, **kwargs):
-        """设置指标参数的存根方法"""
-        # 此方法旨在满足基类接口要求，具体参数设置逻辑可在未来实现
-        pass
+        """设置指标参数，可设置 'period', 'strong_trend'"""
+        for key, value in kwargs.items():
+            if key in self.params:
+                self.params[key] = value
     
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

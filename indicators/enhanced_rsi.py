@@ -1,575 +1,639 @@
 """
-增强版RSI指标模块
+增强型相对强弱指标(RSI)模块
 
-扩展标准RSI指标功能，增加多周期协同判断、中枢识别和背离分析
+实现改进版的RSI指标，优化计算方法和信号质量，增加多周期适应能力和市场环境感知
 """
 
-import pandas as pd
 import numpy as np
-from typing import Dict, List, Union, Optional, Any, Tuple, Literal
+import pandas as pd
+from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator
-from indicators.common import rsi as calc_rsi
+from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
+from indicators.rsi import RSI
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnhancedRSI(BaseIndicator):
+class EnhancedRSI(RSI):
     """
-    增强版RSI指标
+    增强型相对强弱指标(RSI)
     
-    在标准RSI基础上增加多周期协同判断、中枢识别和背离分析
+    在标准RSI基础上增加了动态超买超卖阈值、多周期分析、形态识别和背离检测等功能
     """
     
-    # RSI超买超卖阈值
-    OVERBOUGHT_THRESHOLD = 70
-    OVERSOLD_THRESHOLD = 30
-    
-    # RSI中枢区域
-    CENTER_LOW = 40
-    CENTER_HIGH = 60
-    
-    def __init__(self, name: str = "EnhancedRSI", description: str = "增强版RSI指标",
-                 periods: List[int] = None, price_col: str = 'close'):
+    def __init__(self, 
+                period: int = 14, 
+                sensitivity: float = 1.0,
+                multi_periods: List[int] = None):
         """
-        初始化增强版RSI指标
+        初始化增强型RSI指标
         
         Args:
-            name: 指标名称
-            description: 指标描述
-            periods: RSI周期列表，默认为[6, 14, 21]
-            price_col: 价格列名
+            period: RSI计算周期，默认为14
+            sensitivity: 灵敏度参数，控制对价格变化的响应程度，默认为1.0
+            multi_periods: 多周期分析参数，默认为[9, 14, 21]
         """
-        super().__init__(name, description)
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        self.indicator_type = name.upper()
-        
-        # 设置参数
-        self._parameters = {
-            'periods': periods or [6, 14, 21],
-            'price_col': price_col,
-            'overbought_threshold': self.OVERBOUGHT_THRESHOLD,
-            'oversold_threshold': self.OVERSOLD_THRESHOLD,
-            'center_low': self.CENTER_LOW,
-            'center_high': self.CENTER_HIGH,
-            'smooth_period': 3,
-            'divergence_window': 20,
-            'divergence_threshold': 0.1,
-            'use_multi_period': True
-        }
+        self.indicator_type = "oscillator"  # 指标类型：震荡类
+        super().__init__(period=period)
+        self.name = "EnhancedRSI"
+        self.description = "增强型相对强弱指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
+        self.sensitivity = sensitivity
+        self.multi_periods = multi_periods or [9, 14, 21]
     
-    @property
-    def parameters(self) -> Dict[str, Any]:
-        """获取参数"""
-        return self._parameters.copy()
-    
-    def set_parameters(self, params: Dict[str, Any]) -> None:
+    def get_indicator_type(self) -> str:
         """
-        设置参数
+        获取指标类型
         
-        Args:
-            params: 参数字典
-        """
-        for key, value in params.items():
-            if key in self._parameters:
-                self._parameters[key] = value
-    
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
-        """
-        计算增强版RSI指标
-        
-        Args:
-            data: 输入数据，包含价格数据的DataFrame
-            args: 位置参数
-            kwargs: 关键字参数
-            
         Returns:
-            pd.DataFrame: 包含增强版RSI指标的DataFrame
+            str: 指标类型
         """
-        # 处理输入参数
-        params = self._parameters.copy()
-        params.update(kwargs)
+        return self.indicator_type
         
-        price_col = params.get('price_col', 'close')
-        periods = params.get('periods', [6, 14, 21])
-        smooth_period = params.get('smooth_period', 3)
-        
-        # 验证必需的列是否存在
-        self.ensure_columns(data, [price_col])
-        
-        # 如果periods是单个值，转换为列表
-        if not isinstance(periods, list):
-            periods = [periods]
-        
-        # 复制输入数据
-        result = data.copy()
-        
-        # 计算各周期的RSI
-        for period in periods:
-            # 计算单一周期的RSI
-            rsi_values = calc_rsi(data[price_col].values, period)
-            
-            # 确保前N个值为NaN，其中N = period
-            rsi_values[:period] = np.nan
-            
-            # 添加RSI结果列
-            result[f'RSI{period}'] = rsi_values
-            
-            # 计算平滑后的RSI
-            if smooth_period > 0:
-                result[f'RSI{period}_smooth'] = pd.Series(rsi_values).rolling(window=smooth_period).mean().values
-        
-        # 如果使用多周期协同
-        if params.get('use_multi_period', True) and len(periods) >= 2:
-            # 计算主周期RSI（取中间值）
-            main_period_idx = len(periods) // 2
-            main_period = periods[main_period_idx]
-            result['RSI_main'] = result[f'RSI{main_period}']
-            
-            # 计算周期间的协同指标
-            result = self._calculate_multi_period_indicators(result, periods)
-        
-        # 计算RSI的状态和区域
-        result = self._calculate_rsi_states(result, params)
-        
-        # 检测背离
-        result = self._detect_divergence(result, data, params)
-        
-        return result
-    
-    def _calculate_multi_period_indicators(self, result: pd.DataFrame, periods: List[int]) -> pd.DataFrame:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算多周期RSI协同指标
-        
-        Args:
-            result: RSI计算结果
-            periods: 周期列表
-            
-        Returns:
-            pd.DataFrame: 添加了多周期协同指标的结果
-        """
-        if len(periods) < 2:
-            return result
-        
-        # 获取短期、中期和长期RSI（如果有）
-        short_period = periods[0]
-        mid_period = periods[len(periods) // 2] if len(periods) > 2 else periods[1]
-        long_period = periods[-1]
-        
-        # 添加短中长期RSI列
-        result['RSI_short'] = result[f'RSI{short_period}']
-        result['RSI_mid'] = result[f'RSI{mid_period}']
-        result['RSI_long'] = result[f'RSI{long_period}']
-        
-        # 计算RSI动量（短期RSI与长期RSI的差值）
-        result['RSI_momentum'] = result['RSI_short'] - result['RSI_long']
-        
-        # 计算RSI趋势一致性（短中长期RSI是否同向变化）
-        result['RSI_short_change'] = result['RSI_short'].diff().apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))
-        result['RSI_mid_change'] = result['RSI_mid'].diff().apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))
-        result['RSI_long_change'] = result['RSI_long'].diff().apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))
-        
-        # 一致性指标：1表示一致上升，-1表示一致下降，0表示不一致
-        result['RSI_consensus'] = 0
-        result.loc[(result['RSI_short_change'] > 0) & (result['RSI_mid_change'] > 0) & (result['RSI_long_change'] > 0), 'RSI_consensus'] = 1
-        result.loc[(result['RSI_short_change'] < 0) & (result['RSI_mid_change'] < 0) & (result['RSI_long_change'] < 0), 'RSI_consensus'] = -1
-        
-        # 计算多周期RSI强度（加权平均）
-        weights = np.array([0.5, 0.3, 0.2])  # 短中长期权重
-        result['RSI_strength'] = 0
-        
-        for i, period in enumerate(periods[:3]):  # 最多使用前3个周期
-            if i < len(weights):
-                result['RSI_strength'] += weights[i] * result[f'RSI{period}']
-        
-        return result
-    
-    def _calculate_rsi_states(self, result: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
-        """
-        计算RSI状态
-        
-        Args:
-            result: RSI计算结果
-            params: 参数字典
-            
-        Returns:
-            pd.DataFrame: 添加了RSI状态的结果
-        """
-        # 获取主要RSI列
-        rsi_cols = [col for col in result.columns if col.startswith('RSI') and not col.endswith('_smooth')]
-        
-        # 获取超买超卖阈值
-        overbought = params.get('overbought_threshold', self.OVERBOUGHT_THRESHOLD)
-        oversold = params.get('oversold_threshold', self.OVERSOLD_THRESHOLD)
-        center_low = params.get('center_low', self.CENTER_LOW)
-        center_high = params.get('center_high', self.CENTER_HIGH)
-        
-        # 对每个RSI列计算状态
-        for col in rsi_cols:
-            # 计算超买超卖状态
-            result[f'{col}_overbought'] = result[col] > overbought
-            result[f'{col}_oversold'] = result[col] < oversold
-            
-            # 计算RSI所在区域：1=超买区，-1=超卖区，0=中枢区
-            result[f'{col}_zone'] = 0
-            result.loc[result[col] > center_high, f'{col}_zone'] = 1
-            result.loc[result[col] < center_low, f'{col}_zone'] = -1
-            
-            # 计算RSI突破信号
-            result[f'{col}_cross_up_{oversold}'] = self.crossover(result[col], pd.Series(oversold, index=result.index))
-            result[f'{col}_cross_down_{overbought}'] = self.crossunder(result[col], pd.Series(overbought, index=result.index))
-            
-            # 计算RSI突破中枢信号
-            result[f'{col}_cross_up_center'] = self.crossover(result[col], pd.Series(center_high, index=result.index))
-            result[f'{col}_cross_down_center'] = self.crossunder(result[col], pd.Series(center_low, index=result.index))
-        
-        # 如果有多个RSI周期，计算它们的共同状态
-        if len(rsi_cols) > 1:
-            # 计算所有RSI是否同时超买
-            result['all_overbought'] = True
-            for col in rsi_cols:
-                result['all_overbought'] &= result[f'{col}_overbought']
-            
-            # 计算所有RSI是否同时超卖
-            result['all_oversold'] = True
-            for col in rsi_cols:
-                result['all_oversold'] &= result[f'{col}_oversold']
-        
-        return result
-    
-    def _detect_divergence(self, result: pd.DataFrame, data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
-        """
-        检测RSI与价格的背离
-        
-        Args:
-            result: RSI计算结果
-            data: 输入数据
-            params: 参数字典
-            
-        Returns:
-            pd.DataFrame: 添加了背离指标的结果
-        """
-        # 检查必要的列是否存在
-        price_col = params.get('price_col', 'close')
-        divergence_window = params.get('divergence_window', 20)
-        divergence_threshold = params.get('divergence_threshold', 0.1)
-        
-        if price_col not in data.columns:
-            return result
-        
-        # 选择主要RSI指标
-        if 'RSI_main' in result.columns:
-            rsi_col = 'RSI_main'
-        else:
-            # 选择第一个RSI列
-            rsi_cols = [col for col in result.columns if col.startswith('RSI') and not col.endswith('_smooth')]
-            if not rsi_cols:
-                return result
-            rsi_col = rsi_cols[0]
-        
-        # 初始化背离列
-        result['bullish_divergence'] = False
-        result['bearish_divergence'] = False
-        
-        # 至少需要divergence_window个数据点
-        if len(data) < divergence_window:
-            return result
-        
-        # 遍历时间序列
-        for i in range(divergence_window, len(data)):
-            # 检查价格是否创新低而RSI未创新低 -> 看涨背离
-            price_window = data[price_col].iloc[i-divergence_window:i+1]
-            rsi_window = result[rsi_col].iloc[i-divergence_window:i+1]
-            
-            if not pd.isna(price_window.iloc[-1]) and not pd.isna(rsi_window.iloc[-1]):
-                # 获取最近的最低点
-                min_price_idx = price_window.idxmin()
-                min_rsi_idx = rsi_window.idxmin()
-                
-                # 如果最低价是最新的，但RSI不是
-                if min_price_idx == price_window.index[-1] and min_rsi_idx != rsi_window.index[-1]:
-                    # 计算RSI低点之间的差异
-                    rsi_current = rsi_window.iloc[-1]
-                    rsi_prev_min = rsi_window.min()
-                    
-                    # 如果当前RSI高于先前的最低点一定比例，确认看涨背离
-                    if rsi_current > rsi_prev_min * (1 + divergence_threshold):
-                        result.loc[price_window.index[-1], 'bullish_divergence'] = True
-                
-                # 获取最近的最高点
-                max_price_idx = price_window.idxmax()
-                max_rsi_idx = rsi_window.idxmax()
-                
-                # 如果最高价是最新的，但RSI不是
-                if max_price_idx == price_window.index[-1] and max_rsi_idx != rsi_window.index[-1]:
-                    # 计算RSI高点之间的差异
-                    rsi_current = rsi_window.iloc[-1]
-                    rsi_prev_max = rsi_window.max()
-                    
-                    # 如果当前RSI低于先前的最高点一定比例，确认看跌背离
-                    if rsi_current < rsi_prev_max * (1 - divergence_threshold):
-                        result.loc[price_window.index[-1], 'bearish_divergence'] = True
-        
-        return result
+        获取RSI指标的形态信号
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算增强版RSI指标的原始评分
-        
         Args:
-            data: 输入数据，包含价格数据的DataFrame
+            data: 输入数据，通常是已经调用 _calculate 方法计算过的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
-            pd.Series: 原始评分序列，0-100
+            pd.DataFrame: 包含各种形态信号的DataFrame
         """
-        # 计算指标
-        if not self.has_result():
-            result = self.calculate(data, **kwargs)
-        else:
-            result = self._result.copy()
+        if not hasattr(self, '_result') or self._result is None:
+            self.calculate(data)
+
+        # 定义所有可能的形态信号列
+        pattern_cols = [col for col in self._result.columns if
+                        ('overbought' in col or
+                         'oversold' in col or
+                         'cross_up' in col or
+                         'cross_down' in col or
+                         'divergence' in col) and isinstance(self._result[col].iloc[0], (bool, np.bool_))]
+
+        # 筛选出data中存在的形态列
+        existing_patterns = [col for col in pattern_cols if col in self._result.columns]
+        
+        if not existing_patterns:
+            logger.warning("未在输入数据中找到任何形态信号，请先运行 a.calculate(df)")
+            return pd.DataFrame(index=data.index)
             
-        # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
-        
-        # 获取RSI参数
-        params = self.parameters
-        overbought = params.get('overbought_threshold', self.OVERBOUGHT_THRESHOLD)
-        oversold = params.get('oversold_threshold', self.OVERSOLD_THRESHOLD)
-        
-        # 确定使用哪个RSI列进行评分
-        if 'RSI_main' in result.columns:
-            rsi_col = 'RSI_main'
-        else:
-            # 选择周期最接近14的RSI列（标准RSI周期）
-            rsi_cols = [col for col in result.columns if col.startswith('RSI') and not '_' in col]
-            if not rsi_cols:
-                return score
-                
-            # 找到最接近14的周期
-            periods = [int(col.replace('RSI', '')) for col in rsi_cols]
-            closest_period = min(periods, key=lambda x: abs(x - 14))
-            rsi_col = f'RSI{closest_period}'
-        
-        # 获取RSI值
-        rsi_values = result[rsi_col]
-        
-        # 基于RSI值计算评分
-        # RSI接近30以下，看涨评分
-        score = 50 + (50 - rsi_values)  # RSI=0 -> 评分=100, RSI=50 -> 评分=50, RSI=100 -> 评分=0
-        
-        # 额外的信号加成
-        
-        # 背离加分
-        if 'bullish_divergence' in result.columns:
-            score[result['bullish_divergence']] += 15
-        
-        if 'bearish_divergence' in result.columns:
-            score[result['bearish_divergence']] -= 15
-        
-        # 多周期协同加分
-        if 'RSI_consensus' in result.columns:
-            score[result['RSI_consensus'] == 1] += 10
-            score[result['RSI_consensus'] == -1] -= 10
-        
-        # 确保评分在0-100范围内
-        score = score.clip(0, 100)
-        
-        return score
+        return self._result[existing_patterns].copy()
     
-    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
-        生成RSI信号
+        计算增强型RSI指标
         
         Args:
             data: 输入数据，包含价格数据
             
         Returns:
-            pd.DataFrame: 包含信号的DataFrame
+            pd.DataFrame: 计算结果，包含RSI及其多周期指标
         """
-        # 计算RSI
-        if not self.has_result():
-            self.compute(data)
-            
-        if not self.has_result():
-            return pd.DataFrame()
+        # 调用父类的_calculate方法，只获取指标列
+        indicator_data = super()._calculate(data, *args, **kwargs)
+
+        # 将指标列与原始数据合并
+        result = data.join(indicator_data)
+
+        # 确保数据包含必需的列
+        self.ensure_columns(result, ["close", f"rsi_{self.period}"])
         
-        # 获取RSI计算结果
-        rsi_data = self._result
+        # 获取标准RSI结果
+        rsi = result[f"rsi_{self.period}"]
         
-        # 创建信号DataFrame
-        signals = pd.DataFrame(index=data.index)
+        # 计算多周期RSI
+        for period in self.multi_periods:
+            if period != self.period:  # 避免重复计算
+                # 注意：这里我们假设父类的calculate已经处理了RSI的计算
+                # 如果需要不同的RSI计算方式，需要单独调用
+                rsi_period = self._calculate_rsi(result["close"], period)
+                result[f"rsi_{period}"] = rsi_period
+
+        # 计算RSI动量 - 衡量RSI的变化速率
+        result["rsi_momentum"] = self._calculate_rsi_momentum(rsi)
         
-        # 添加基本信号
-        signals['buy_signal'] = False
-        signals['sell_signal'] = False
-        signals['trend'] = 0  # -1表示下降趋势，0表示中性，1表示上升趋势
+        # 计算RSI变化率 - 相对变化百分比
+        result["rsi_rate"] = rsi.diff(periods=1).fillna(0)
         
-        # 主要RSI列
-        if 'RSI_main' in rsi_data.columns:
-            main_rsi_col = 'RSI_main'
-        else:
-            # 使用第一个周期的RSI
-            period = self._parameters['periods'][0]
-            main_rsi_col = f'RSI{period}'
+        # 计算动态超买超卖阈值
+        thresholds = self._calculate_dynamic_thresholds(data)
+        result["oversold_threshold"] = thresholds["oversold"]
+        result["overbought_threshold"] = thresholds["overbought"]
         
-        # 超买超卖阈值
-        oversold = self._parameters.get('oversold_threshold', self.OVERSOLD_THRESHOLD)
-        overbought = self._parameters.get('overbought_threshold', self.OVERBOUGHT_THRESHOLD)
+        # 保存结果
+        self._result = result
         
-        # 1. 超卖反弹信号
-        oversold_rebound = rsi_data[f'{main_rsi_col}_cross_up_{oversold}']
-        
-        # 2. 超买回落信号
-        overbought_fallback = rsi_data[f'{main_rsi_col}_cross_down_{overbought}']
-        
-        # 3. 背离信号
-        bullish_divergence = rsi_data['bullish_divergence']
-        bearish_divergence = rsi_data['bearish_divergence']
-        
-        # 4. 多周期协同信号（如果可用）
-        multi_period_buy = pd.Series(False, index=data.index)
-        multi_period_sell = pd.Series(False, index=data.index)
-        
-        if 'RSI_consensus' in rsi_data.columns:
-            # 买入：多周期RSI一致上升 + 处于超卖区域恢复
-            multi_period_buy = (rsi_data['RSI_consensus'] > 0) & (rsi_data[f'{main_rsi_col}_zone'] == -1)
-            
-            # 卖出：多周期RSI一致下降 + 处于超买区域回落
-            multi_period_sell = (rsi_data['RSI_consensus'] < 0) & (rsi_data[f'{main_rsi_col}_zone'] == 1)
-        
-        # 组合买入信号
-        signals['buy_signal'] = (
-            oversold_rebound | 
-            bullish_divergence | 
-            multi_period_buy
-        )
-        
-        # 组合卖出信号
-        signals['sell_signal'] = (
-            overbought_fallback | 
-            bearish_divergence | 
-            multi_period_sell
-        )
-        
-        # 判断趋势
-        signals['trend'] = 0  # 默认中性
-        
-        # 使用RSI区域判断趋势
-        signals.loc[rsi_data[f'{main_rsi_col}_zone'] > 0, 'trend'] = 1  # 上升趋势
-        signals.loc[rsi_data[f'{main_rsi_col}_zone'] < 0, 'trend'] = -1  # 下降趋势
-        
-        # 如果有多周期一致性指标，使用它来加强趋势判断
-        if 'RSI_consensus' in rsi_data.columns:
-            signals.loc[rsi_data['RSI_consensus'] > 0, 'trend'] = 1  # 强化上升趋势
-            signals.loc[rsi_data['RSI_consensus'] < 0, 'trend'] = -1  # 强化下降趋势
-        
-        # 信号强度评分（0-100）
-        signals['score'] = 50  # 默认中性
-        
-        # 趋势加分/减分
-        signals.loc[signals['trend'] > 0, 'score'] += 10
-        signals.loc[signals['trend'] < 0, 'score'] -= 10
-        
-        # 背离加分/减分
-        signals.loc[rsi_data['bullish_divergence'], 'score'] += 15
-        signals.loc[rsi_data['bearish_divergence'], 'score'] -= 15
-        
-        # RSI位置加分/减分
-        signals.loc[rsi_data[f'{main_rsi_col}'] < oversold, 'score'] += 20
-        signals.loc[rsi_data[f'{main_rsi_col}'] > overbought, 'score'] -= 20
-        
-        # 买入/卖出信号加分/减分
-        signals.loc[signals['buy_signal'], 'score'] += 15
-        signals.loc[signals['sell_signal'], 'score'] -= 15
-        
-        # 确保分数在0-100范围内
-        signals['score'] = signals['score'].clip(0, 100)
-        
-        return signals
+        return result
     
-    def plot_rsi(self, data: pd.DataFrame, ax=None, show_divergence=True):
+    def _calculate_rsi(self, price_series: pd.Series, period: int) -> pd.Series:
         """
-        绘制RSI图表
+        计算RSI
+        
+        Args:
+            price_series: 价格序列
+            period: 计算周期
+            
+        Returns:
+            pd.Series: RSI序列
+        """
+        # 计算价格变化
+        delta = price_series.diff()
+        
+        # 分离上涨和下跌
+        gain = delta.where(delta > 0, 0.0)
+        loss = -delta.where(delta < 0, 0.0)
+        
+        # 应用灵敏度调整
+        if self.sensitivity != 1.0:
+            gain = gain * self.sensitivity
+            loss = loss * self.sensitivity
+        
+        # 使用 ewm 来保持与父类一致的计算方式，避免前导 NaN
+        avg_gain = gain.ewm(span=period, adjust=False).mean()
+        avg_loss = loss.ewm(span=period, adjust=False).mean()
+        
+        # 处理零除情况
+        rs = pd.Series(0.0, index=price_series.index)
+        valid_idx = avg_loss > 0
+        rs[valid_idx] = avg_gain[valid_idx] / avg_loss[valid_idx]
+        
+        # 计算RSI
+        rsi = 100 - (100 / (1 + rs))
+        
+        return rsi
+    
+    def _calculate_rsi_momentum(self, rsi: pd.Series, period: int = 5) -> pd.Series:
+        """
+        计算RSI动量
+        
+        Args:
+            rsi: RSI序列
+            period: 计算周期
+            
+        Returns:
+            pd.Series: RSI动量序列
+        """
+        # 计算RSI变化率
+        rsi_change = rsi - rsi.shift(period)
+        
+        # 标准化动量
+        rsi_momentum = rsi_change / period
+        
+        return rsi_momentum
+    
+    def _calculate_dynamic_thresholds(self, data: pd.DataFrame) -> Dict[str, pd.Series]:
+        """
+        计算动态超买超卖阈值
         
         Args:
             data: 输入数据
-            ax: matplotlib轴对象
-            show_divergence: 是否显示背离标记
             
         Returns:
-            matplotlib轴对象
+            Dict[str, pd.Series]: 包含超买超卖阈值的字典
         """
-        try:
-            import matplotlib.pyplot as plt
+        # 正确且高效的向量化实现
+        # 直接在原始数据帧上计算波动率，让pandas处理索引对齐
+        data['volatility'] = data['close'].pct_change().rolling(window=20).std(ddof=0) * np.sqrt(252)
+
+        # 设置默认阈值
+        oversold = pd.Series(30.0, index=data.index)
+        overbought = pd.Series(70.0, index=data.index)
+
+        # 根据波动率向量化地调整阈值
+        overbought = overbought.where(data['volatility'] <= 0.3, 75.0)
+        overbought = overbought.where(data['volatility'] >= 0.15, 65.0)
+        
+        oversold = oversold.where(data['volatility'] <= 0.3, 25.0)
+        oversold = oversold.where(data['volatility'] >= 0.15, 35.0)
+        
+        # 考虑市场环境调整阈值
+        market_env = self.get_market_environment()
+        
+        if market_env == MarketEnvironment.BULL_MARKET:
+            # 牛市中提高超买阈值，降低超卖阈值
+            overbought = overbought + 5
+            oversold = oversold - 2
+        elif market_env == MarketEnvironment.BEAR_MARKET:
+            # 熊市中降低超买阈值，提高超卖阈值
+            overbought = overbought - 5
+            oversold = oversold + 2
+        
+        return {"oversold": oversold, "overbought": overbought}
+    
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别RSI指标形态
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
             
-            # 计算RSI
-            if not self.has_result():
-                self.compute(data)
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        if not self.has_result():
+            self.calculate(data)
+            
+        patterns = []
+        rsi = self._result[f"rsi_{self.period}"]
+        
+        # 1. 超买超卖区域判断
+        oversold = self._result["oversold_threshold"]
+        overbought = self._result["overbought_threshold"]
+        
+        if rsi.iloc[-1] < oversold.iloc[-1]:
+            patterns.append("超卖区域")
+        elif rsi.iloc[-1] > overbought.iloc[-1]:
+            patterns.append("超买区域")
+            
+        # 2. W底/M顶形态检测
+        if len(rsi) >= 20:
+            if self._detect_w_bottom(rsi.iloc[-20:]):
+                patterns.append("W底形态")
+            if self._detect_m_top(rsi.iloc[-20:]):
+                patterns.append("M顶形态")
                 
-            if not self.has_result():
-                logger.error("没有RSI计算结果可供绘图")
-                return None
+        # 3. 背离检测
+        if len(data) >= 30:
+            divergence = self._detect_divergence(data["close"], rsi)
+            if divergence == "bullish":
+                patterns.append("RSI正背离")
+            elif divergence == "bearish":
+                patterns.append("RSI负背离")
             
-            # 创建图表
-            if ax is None:
-                fig, ax = plt.subplots(figsize=(12, 6))
+        # 4. 失败摆动形态
+        if len(rsi) >= 15:
+            if self._detect_failure_swing(rsi.iloc[-15:], "bullish"):
+                patterns.append("看涨失败摆动")
+            elif self._detect_failure_swing(rsi.iloc[-15:], "bearish"):
+                patterns.append("看跌失败摆动")
+        
+        return patterns
+    
+    def _detect_w_bottom(self, rsi_series: pd.Series) -> bool:
+        """
+        检测W底形态
+        
+        Args:
+            rsi_series: RSI序列
             
-            # 获取所有RSI列
-            rsi_cols = [col for col in self._result.columns if col.startswith('RSI') and 
-                       not col.endswith(('_overbought', '_oversold', '_zone', '_cross_up', '_cross_down', '_change'))]
+        Returns:
+            bool: 是否检测到W底
+        """
+        # W底要求：两次探底，第二次低点不低于第一次，中间有反弹
+        if len(rsi_series) < 5:
+            return False
             
-            # 绘制各周期RSI线
-            for col in rsi_cols:
-                if col.startswith('RSI_') and col != 'RSI_main':
-                    continue  # 跳过辅助列
-                ax.plot(self._result.index, self._result[col], label=col)
+        # 寻找两个低点和一个高点
+        low1_idx = rsi_series.idxmin()
+        high_idx = rsi_series.loc[low1_idx:].idxmax()
+        low2_idx = rsi_series.loc[high_idx:].idxmin()
+        
+        if low1_idx is None or high_idx is None or low2_idx is None:
+            return False
             
-            # 绘制超买超卖阈值
-            overbought = self._parameters.get('overbought_threshold', self.OVERBOUGHT_THRESHOLD)
-            oversold = self._parameters.get('oversold_threshold', self.OVERSOLD_THRESHOLD)
-            ax.axhline(y=overbought, color='r', linestyle='--', alpha=0.5, label=f'超买({overbought})')
-            ax.axhline(y=oversold, color='g', linestyle='--', alpha=0.5, label=f'超卖({oversold})')
+        low1 = rsi_series[low1_idx]
+        high = rsi_series[high_idx]
+        low2 = rsi_series[low2_idx]
+        
+        # 条件：两个低点均在超卖区，第二个低点高于或等于第一个低点
+        # 中间高点不应过高（例如不超过50）
+        if low1 < 30 and low2 < 30 and low2 >= low1 and high < 50:
+            return True
             
-            # 绘制中枢区域
-            center_low = self._parameters.get('center_low', self.CENTER_LOW)
-            center_high = self._parameters.get('center_high', self.CENTER_HIGH)
-            ax.axhspan(center_low, center_high, alpha=0.1, color='gray', label='中枢区域')
+        return False
+
+    def _detect_m_top(self, rsi_series: pd.Series) -> bool:
+        """
+        检测M顶形态
+        
+        Args:
+            rsi_series: RSI序列
             
-            # 标记背离
-            if show_divergence:
-                if 'bullish_divergence' in self._result.columns:
-                    bull_div_idx = self._result[self._result['bullish_divergence']].index
-                    if len(bull_div_idx) > 0 and 'RSI_main' in self._result.columns:
-                        ax.scatter(bull_div_idx, self._result.loc[bull_div_idx, 'RSI_main'], 
-                                marker='*', color='lime', s=100, label='看涨背离')
-                    elif len(bull_div_idx) > 0:
-                        # 使用第一个周期的RSI
-                        period = self._parameters['periods'][0]
-                        ax.scatter(bull_div_idx, self._result.loc[bull_div_idx, f'RSI{period}'], 
-                                marker='*', color='lime', s=100, label='看涨背离')
+        Returns:
+            bool: 是否检测到M顶
+        """
+        # M顶要求：两次冲顶，第二次高点不高于第一次，中间有回调
+        if len(rsi_series) < 5:
+            return False
+            
+        # 寻找两个高点和一个低点
+        high1_idx = rsi_series.idxmax()
+        low_idx = rsi_series.loc[high1_idx:].idxmin()
+        high2_idx = rsi_series.loc[low_idx:].idxmax()
+        
+        if high1_idx is None or low_idx is None or high2_idx is None:
+            return False
+            
+        high1 = rsi_series[high1_idx]
+        low = rsi_series[low_idx]
+        high2 = rsi_series[high2_idx]
+        
+        # 条件：两个高点均在超买区，第二个高点低于或等于第一个高点
+        # 中间低点不应过低（例如不低于50）
+        if high1 > 70 and high2 > 70 and high2 <= high1 and low > 50:
+            return True
+            
+        return False
+        
+    def _detect_failure_swing(self, rsi_series: pd.Series, direction: str) -> bool:
+        """
+        检测失败摆动形态
+        
+        Args:
+            rsi_series: RSI序列
+            direction: 'bullish' (看涨) or 'bearish' (看跌)
+            
+        Returns:
+            bool: 是否检测到失败摆动
+        """
+        if direction == "bullish":
+            # 看涨失败摆动：RSI跌破超卖线，反弹后再下跌，但未创新低
+            if len(rsi_series) < 4:
+                return False
                 
-                if 'bearish_divergence' in self._result.columns:
-                    bear_div_idx = self._result[self._result['bearish_divergence']].index
-                    if len(bear_div_idx) > 0 and 'RSI_main' in self._result.columns:
-                        ax.scatter(bear_div_idx, self._result.loc[bear_div_idx, 'RSI_main'], 
-                                marker='*', color='orangered', s=100, label='看跌背离')
-                    elif len(bear_div_idx) > 0:
-                        # 使用第一个周期的RSI
-                        period = self._parameters['periods'][0]
-                        ax.scatter(bear_div_idx, self._result.loc[bear_div_idx, f'RSI{period}'], 
-                                marker='*', color='orangered', s=100, label='看跌背离')
+            # 找到第一个低于30的点
+            oversold_points = rsi_series[rsi_series < 30]
+            if oversold_points.empty:
+                return False
+                
+            first_dip_idx = oversold_points.index[0]
             
-            # 添加图例和标题
-            ax.legend(loc='best')
-            ax.set_title('Enhanced RSI')
-            ax.set_ylabel('RSI')
-            ax.set_ylim(0, 100)
-            ax.grid(True, alpha=0.3)
+            # 在第一个低点之后寻找反弹点
+            rebound_slice = rsi_series.loc[first_dip_idx:]
+            rebound_high_idx = rebound_slice.idxmax()
             
-            return ax
+            # 在反弹高点之后寻找第二个低点
+            second_dip_slice = rebound_slice.loc[rebound_high_idx:]
+            if second_dip_slice.empty:
+                return False
+                
+            second_dip_idx = second_dip_slice.idxmin()
             
-        except ImportError:
-            logger.warning("缺少matplotlib库，无法绘图")
-            return None 
+            # 条件：第一个低点<30, 第二个低点>30
+            if rsi_series[first_dip_idx] < 30 and rsi_series[second_dip_idx] > 30:
+                return True
+                
+        elif direction == "bearish":
+            # 看跌失败摆动：RSI突破超买线，回调后再上涨，但未创新高
+            if len(rsi_series) < 4:
+                return False
+                
+            # 找到第一个高于70的点
+            overbought_points = rsi_series[rsi_series > 70]
+            if overbought_points.empty:
+                return False
+                
+            first_peak_idx = overbought_points.index[0]
+            
+            # 在第一个高点之后寻找回调点
+            pullback_slice = rsi_series.loc[first_peak_idx:]
+            pullback_low_idx = pullback_slice.idxmin()
+            
+            # 在回调低点之后寻找第二个高点
+            second_peak_slice = pullback_slice.loc[pullback_low_idx:]
+            if second_peak_slice.empty:
+                return False
+                
+            second_peak_idx = second_peak_slice.idxmax()
+            
+            # 条件：第一个高点>70, 第二个高点<70
+            if rsi_series[first_peak_idx] > 70 and rsi_series[second_peak_idx] < 70:
+                return True
+                
+        return False
+
+    def _detect_divergence(self, price: pd.Series, rsi: pd.Series) -> Optional[str]:
+        """
+        检测价格与RSI的背离
+        
+        Args:
+            price: 价格序列
+            rsi: RSI序列
+            
+        Returns:
+            Optional[str]: 'bullish' (正背离), 'bearish' (负背离), or None
+        """
+        # 寻找最近的两个价格低点和RSI低点
+        price_low1_idx = price.iloc[-30:-15].idxmin()
+        price_low2_idx = price.iloc[-15:].idxmin()
+        
+        rsi_low1 = rsi[price_low1_idx]
+        rsi_low2 = rsi[price_low2_idx]
+        
+        # 正背离：价格创新低，RSI未创新低
+        if price[price_low2_idx] < price[price_low1_idx] and rsi_low2 > rsi_low1:
+            return "bullish"
+            
+        # 寻找最近的两个价格高点和RSI高点
+        price_high1_idx = price.iloc[-30:-15].idxmax()
+        price_high2_idx = price.iloc[-15:].idxmax()
+        
+        rsi_high1 = rsi[price_high1_idx]
+        rsi_high2 = rsi[price_high2_idx]
+        
+        # 负背离：价格创新高，RSI未创新高
+        if price[price_high2_idx] > price[price_high1_idx] and rsi_high2 < rsi_high1:
+            return "bearish"
+            
+        return None
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算RSI的原始评分
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.Series: RSI评分 (0-100)
+        """
+        if not self.has_result():
+            self.calculate(data)
+            
+        result = self._result
+        
+        # 1. RSI位置评分
+        rsi = result[f"rsi_{self.period}"]
+        position_score = rsi.copy()
+        
+        # 2. 多周期一致性评分
+        consistency_score = self._calculate_multi_period_consistency()
+        
+        # 3. 形态评分
+        pattern_score = self._calculate_pattern_score(data)
+        
+        # 4. RSI动量评分
+        momentum_score = result["rsi_momentum"].apply(lambda x: 50 + x * 10).clip(0, 100)
+        
+        # 综合评分
+        # 权重可以根据策略调整
+        weights = {
+            "position": 0.4,
+            "consistency": 0.3,
+            "pattern": 0.2,
+            "momentum": 0.1
+        }
+        
+        raw_score = (
+            position_score * weights["position"] +
+            consistency_score * weights["consistency"] +
+            pattern_score * weights["pattern"] +
+            momentum_score * weights["momentum"]
+        )
+        
+        return raw_score.clip(0, 100)
+
+    def _calculate_multi_period_consistency(self) -> pd.Series:
+        """
+        计算多周期RSI的一致性
+        
+        Returns:
+            pd.Series: 一致性评分
+        """
+        result = self._result
+        
+        # 获取所有RSI列
+        rsi_cols = [f"rsi_{p}" for p in self.multi_periods]
+        
+        # 计算短期和长期RSI的差异
+        short_rsi = result[rsi_cols[0]]
+        long_rsi = result[rsi_cols[-1]]
+        
+        # 趋势方向一致性
+        short_trend = short_rsi.diff().apply(np.sign)
+        long_trend = long_rsi.diff().apply(np.sign)
+        
+        trend_consistency = (short_trend == long_trend)
+        
+        # 位置一致性
+        short_pos = (short_rsi > 50)
+        long_pos = (long_rsi > 50)
+        
+        pos_consistency = (short_pos == long_pos)
+        
+        # 综合一致性
+        consistency = (trend_consistency & pos_consistency).astype(int) * 50 + 25
+        
+        return consistency
+
+    def _calculate_pattern_score(self, data: pd.DataFrame) -> pd.Series:
+        """
+        根据识别的形态计算评分
+        
+        Args:
+            data: 输入数据
+        
+        Returns:
+            pd.Series: 形态评分
+        """
+        patterns = self.identify_patterns(data)
+        score = pd.Series(50.0, index=data.index) # 默认中性评分
+        
+        if not patterns:
+            return score
+            
+        last_date = data.index[-1]
+        
+        # 根据形态调整分数
+        if "RSI正背离" in patterns or "W底形态" in patterns:
+            score.loc[last_date] = 80.0
+        elif "RSI负背离" in patterns or "M顶形态" in patterns:
+            score.loc[last_date] = 20.0
+        elif "看涨失败摆动" in patterns:
+            score.loc[last_date] = 70.0
+        elif "看跌失败摆动" in patterns:
+            score.loc[last_date] = 30.0
+            
+        return score
+
+    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """
+        生成RSI交易信号
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.DataFrame: 包含买入和卖出信号的DataFrame
+        """
+        if not self.has_result():
+            self.calculate(data)
+            
+        result = self._result
+        rsi = result[f"rsi_{self.period}"]
+        
+        # 动态阈值
+        oversold = result["oversold_threshold"]
+        overbought = result["overbought_threshold"]
+        
+        # 基本信号：RSI上穿超卖线为买入，下穿超买线为卖出
+        buy_signal = (rsi.shift(1) < oversold.shift(1)) & (rsi > oversold)
+        sell_signal = (rsi.shift(1) > overbought.shift(1)) & (rsi < overbought)
+        
+        # 形态信号
+        patterns = self.identify_patterns(data)
+        last_date = data.index[-1]
+        
+        # 如果有强烈的看涨形态，生成买入信号
+        if "RSI正背离" in patterns or "W底形态" in patterns or "看涨失败摆动" in patterns:
+            buy_signal.loc[last_date] = True
+            
+        # 如果有强烈的看跌形态，生成卖出信号
+        if "RSI负背离" in patterns or "M顶形态" in patterns or "看跌失败摆动" in patterns:
+            sell_signal.loc[last_date] = True
+            
+        signals = pd.DataFrame({
+            "buy_signal": buy_signal,
+            "sell_signal": sell_signal
+        }, index=data.index)
+        
+        # 计算信号强度
+        signals["strength"] = self._calculate_signal_strength(result, signals)
+        
+        return signals
+
+    def _calculate_signal_strength(self, result: pd.DataFrame, signals: pd.DataFrame) -> pd.Series:
+        """
+        计算信号强度
+        
+        Args:
+            result: 指标计算结果
+            signals: 交易信号
+            
+        Returns:
+            pd.Series: 信号强度
+        """
+        strength = pd.Series(SignalStrength.NEUTRAL.value, index=result.index)
+        
+        # 买入信号强度
+        buy_indices = signals[signals["buy_signal"]].index
+        
+        for idx in buy_indices:
+            rsi_val = result.loc[idx, f"rsi_{self.period}"]
+            
+            # RSI越低，买入信号越强
+            if rsi_val < 15:
+                strength.loc[idx] = SignalStrength.STRONG_BUY.value
+            elif rsi_val < 25:
+                strength.loc[idx] = SignalStrength.BUY.value
+            else:
+                strength.loc[idx] = SignalStrength.WEAK_BUY.value
+                
+        # 卖出信号强度
+        sell_indices = signals[signals["sell_signal"]].index
+        
+        for idx in sell_indices:
+            rsi_val = result.loc[idx, f"rsi_{self.period}"]
+            
+            # RSI越高，卖出信号越强
+            if rsi_val > 85:
+                strength.loc[idx] = SignalStrength.STRONG_SELL.value
+            elif rsi_val > 75:
+                strength.loc[idx] = SignalStrength.SELL.value
+            else:
+                strength.loc[idx] = SignalStrength.WEAK_SELL.value
+                
+        return strength

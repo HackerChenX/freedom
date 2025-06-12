@@ -71,20 +71,20 @@ class RSI(BaseIndicator):
         rs = gain / loss.replace(0, 1e-9)
         
         # 计算RSI
-        result_df['rsi'] = 100 - (100 / (1 + rs))
+        result_df[f'rsi_{self.period}'] = 100 - (100 / (1 + rs))
         
         # 可选：计算RSI均线
         if self.ma_periods and len(self.ma_periods) >= 2:
-            result_df[f'rsi_ma_{self.ma_periods[0]}'] = result_df['rsi'].rolling(window=self.ma_periods[0]).mean()
-            result_df[f'rsi_ma_{self.ma_periods[1]}'] = result_df['rsi'].rolling(window=self.ma_periods[1]).mean()
+            result_df[f'rsi_ma_{self.ma_periods[0]}'] = result_df[f'rsi_{self.period}'].rolling(window=self.ma_periods[0]).mean()
+            result_df[f'rsi_ma_{self.ma_periods[1]}'] = result_df[f'rsi_{self.period}'].rolling(window=self.ma_periods[1]).mean()
             # For pattern detection
             result_df['rsi_ma_short'] = result_df[f'rsi_ma_{self.ma_periods[0]}']
             result_df['rsi_ma_long'] = result_df[f'rsi_ma_{self.ma_periods[1]}']
 
-        result_df['rsi_overbought'] = result_df['rsi'] > self.overbought
-        result_df['rsi_oversold'] = result_df['rsi'] < self.oversold
+        result_df['rsi_overbought'] = result_df[f'rsi_{self.period}'] > self.overbought
+        result_df['rsi_oversold'] = result_df[f'rsi_{self.period}'] < self.oversold
 
-        return data.join(result_df)
+        return result_df
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -94,7 +94,7 @@ class RSI(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 确保列存在
-        if 'rsi' not in calculated_data.columns or 'rsi_ma_short' not in calculated_data.columns or 'rsi_ma_long' not in calculated_data.columns:
+        if f'rsi_{self.period}' not in calculated_data.columns or 'rsi_ma_short' not in calculated_data.columns or 'rsi_ma_long' not in calculated_data.columns:
             return patterns_df
 
         # 金叉和死叉
@@ -103,8 +103,8 @@ class RSI(BaseIndicator):
         patterns_df['RSI_DEATH_CROSS'] = crossunder(calculated_data['rsi_ma_short'], calculated_data['rsi_ma_long'])
 
         # 超买和超卖
-        patterns_df['RSI_OVERBOUGHT'] = calculated_data['rsi'] > self.overbought
-        patterns_df['RSI_OVERSOLD'] = calculated_data['rsi'] < self.oversold
+        patterns_df['RSI_OVERBOUGHT'] = calculated_data[f'rsi_{self.period}'] > self.overbought
+        patterns_df['RSI_OVERSOLD'] = calculated_data[f'rsi_{self.period}'] < self.oversold
         
         return patterns_df
 
@@ -128,11 +128,11 @@ class RSI(BaseIndicator):
         """
         calculated_data = self._calculate(data)
         
-        if calculated_data is None or 'rsi' not in calculated_data.columns:
+        if calculated_data is None or f'rsi_{self.period}' not in calculated_data.columns:
             return pd.Series(50.0, index=data.index)
             
         score = pd.Series(50.0, index=data.index)
-        rsi_values = calculated_data['rsi']
+        rsi_values = calculated_data[f'rsi_{self.period}']
         
         # 基于RSI值的评分
         score += (rsi_values - 50) * 0.4 # 20-80 映射到 42-58

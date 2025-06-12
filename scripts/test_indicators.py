@@ -12,7 +12,6 @@ import sys
 import json
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 # 添加项目根目录到Python路径

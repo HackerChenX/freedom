@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
+import talib
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -36,6 +37,13 @@ class CCI(BaseIndicator):
         """
         super().__init__(name="CCI", description="顺势指标，判断价格偏离度")
         self.period = period
+    
+    def set_parameters(self, period: int = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
     
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -560,44 +568,6 @@ class CCI(BaseIndicator):
         
         return df_copy
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
-        """
-        绘制顺势指标(CCI)指标图表
-        
-        Args:
-            df: 包含CCI指标的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            **kwargs: 额外绘图参数
-            
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        # 检查必要的指标列是否存在
-        required_columns = ['CCI']
-        self._validate_dataframe(df, required_columns)
-        
-        # 创建新的轴对象（如果未提供）
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 5))
-            
-        # 绘制CCI指标线
-        ax.plot(df.index, df['CCI'], label='顺势指标(CCI)')
-        
-        # 添加超买超卖参考线
-        overbought = kwargs.get('overbought', 100)
-        oversold = kwargs.get('oversold', -100)
-        ax.axhline(y=overbought, color='r', linestyle='--', alpha=0.3, label='超买线')
-        ax.axhline(y=oversold, color='g', linestyle='--', alpha=0.3, label='超卖线')
-        ax.axhline(y=0, color='k', linestyle='-', alpha=0.2)
-        
-        ax.set_ylabel('顺势指标(CCI)')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax
-    
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标并返回结果
@@ -610,69 +580,8 @@ class CCI(BaseIndicator):
         """
         return self.calculate(df)
 
-
-
-    
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-
-    
-            """
-
-    
-            生成交易信号
-        
-
-    
-            Args:
-
-    
-                data: 输入数据
-
-    
-                **kwargs: 额外参数
-            
-
-    
-            Returns:
-
-    
-                Dict[str, pd.Series]: 包含交易信号的字典
-
-    
-            """
-
-    
-            # 确保已计算指标
-
-    
-            if not self.has_result():
-
-    
-                self.calculate(data, **kwargs)
-            
-
-    
-            # 初始化信号
-
-    
-            signals = {}
-
-    
-            signals['buy_signal'] = pd.Series(False, index=data.index)
-
-    
-            signals['sell_signal'] = pd.Series(False, index=data.index)
-
-    
-            signals['signal_strength'] = pd.Series(0, index=data.index)
-        
-
-    
-            # 在这里实现指标特定的信号生成逻辑
-
-    
-            # 此处提供默认实现
-        
-
-    
-            return signals
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取CCI指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)

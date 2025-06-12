@@ -309,6 +309,53 @@ class CompositeIndicator(BaseIndicator):
             else:
                 # 为指标对象创建新的适配器
                 self.indicators.append(IndicatorAdapter(indicator_ref))
+        
+        self.combination_func = combination_func
+    
+    def set_parameters(self, indicators: List[Union[str, BaseIndicator]] = None, 
+                       combination_func: Callable[[List[pd.DataFrame], pd.DataFrame], pd.DataFrame] = None, 
+                       **kwargs):
+        """
+        设置组合指标的参数
+        
+        Args:
+            indicators: 新的指标列表或名称列表
+            combination_func: 新的组合函数
+        """
+        if indicators is not None:
+            self.indicators = indicators
+        if combination_func is not None:
+            self.combination_func = combination_func
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        组合指标的形态识别（默认不实现）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            list: 空列表
+        """
+        return []
+    
+    def _resolve_indicator(self, indicator: Union[str, BaseIndicator]) -> BaseIndicator:
+        """
+        解析指标，如果是字符串则从工厂创建
+        
+        Args:
+            indicator: 指标或指标名称
+            
+        Returns:
+            BaseIndicator: 解析后的指标对象
+        """
+        if isinstance(indicator, str):
+            return get_indicator(indicator)
+        elif isinstance(indicator, BaseIndicator):
+            return indicator
+        else:
+            raise ValueError("无效的指标格式")
     
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

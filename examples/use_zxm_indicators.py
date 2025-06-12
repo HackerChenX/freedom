@@ -4,10 +4,15 @@ ZXM体系指标使用示例
 展示如何使用ZXM体系的各种指标
 """
 
+import os
+import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+
+# 添加项目根目录到Python路径
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
 
 # 导入指标工厂和ZXM体系指标
 from indicators.factory import IndicatorFactory
@@ -15,6 +20,7 @@ from indicators.zxm.trend_indicators import ZXMDailyTrendUp
 from indicators.zxm.elasticity_indicators import ZXMAmplitudeElasticity
 from indicators.zxm.buy_point_indicators import ZXMMACallback
 from indicators.zxm.selection_model import ZXMSelectionModel
+from indicators.zxm.zxm_turnover import ZXMTurnover
 
 
 def generate_sample_data(days=180):
@@ -139,21 +145,6 @@ def demo_zxm_daily_trend_up(data):
     signal_count = result['XG'].sum()
     total_days = len(result)
     print(f"日线上移信号出现次数: {signal_count}，占总天数的 {signal_count/total_days*100:.2f}%")
-    
-    # 绘制结果图表
-    plt.figure(figsize=(12, 6))
-    plt.subplot(2, 1, 1)
-    plt.plot(data.index, data['close'], label='Close Price')
-    plt.plot(result.index, result['MA60'], label='MA60')
-    plt.plot(result.index, result['MA120'], label='MA120')
-    plt.title('ZXM趋势-日线上移指标')
-    plt.legend()
-    
-    plt.subplot(2, 1, 2)
-    plt.fill_between(result.index, 0, result['XG'], color='green', alpha=0.3, label='Trend Up Signal')
-    plt.title('趋势上移信号')
-    plt.tight_layout()
-    plt.show()
 
 
 def demo_zxm_amplitude_elasticity(data):
@@ -179,25 +170,6 @@ def demo_zxm_amplitude_elasticity(data):
     signal_count = result['XG'].sum()
     total_days = len(result)
     print(f"振幅弹性信号出现次数: {signal_count}，占总天数的 {signal_count/total_days*100:.2f}%")
-    
-    # 绘制结果图表
-    plt.figure(figsize=(12, 8))
-    plt.subplot(3, 1, 1)
-    plt.plot(data.index, data['close'], label='Close Price')
-    plt.title('收盘价')
-    plt.legend()
-    
-    plt.subplot(3, 1, 2)
-    plt.plot(result.index, result['Amplitude'], label='Amplitude(%)')
-    plt.axhline(y=8.1, color='r', linestyle='--', label='8.1% Threshold')
-    plt.title('日振幅百分比')
-    plt.legend()
-    
-    plt.subplot(3, 1, 3)
-    plt.fill_between(result.index, 0, result['XG'], color='green', alpha=0.3, label='Elasticity Signal')
-    plt.title('振幅弹性信号')
-    plt.tight_layout()
-    plt.show()
 
 
 def demo_zxm_ma_callback(data):
@@ -223,22 +195,6 @@ def demo_zxm_ma_callback(data):
     signal_count = result['XG'].sum()
     total_days = len(result)
     print(f"回踩均线买点信号出现次数: {signal_count}，占总天数的 {signal_count/total_days*100:.2f}%")
-    
-    # 绘制结果图表
-    plt.figure(figsize=(12, 8))
-    plt.subplot(2, 1, 1)
-    plt.plot(data.index, data['close'], label='Close Price')
-    plt.plot(result.index, result['MA20'], label='MA20')
-    plt.plot(result.index, result['MA60'], label='MA60')
-    plt.plot(result.index, result['MA120'], label='MA120')
-    plt.title('ZXM买点-回踩均线指标')
-    plt.legend()
-    
-    plt.subplot(2, 1, 2)
-    plt.fill_between(result.index, 0, result['XG'], color='green', alpha=0.3, label='MA Callback Signal')
-    plt.title('回踩均线买点信号')
-    plt.tight_layout()
-    plt.show()
 
 
 def demo_zxm_selection_model(daily_data, weekly_data, monthly_data):
@@ -261,29 +217,6 @@ def demo_zxm_selection_model(daily_data, weekly_data, monthly_data):
     # 打印最近的结果
     recent_result = result.tail(5)
     print(f"最近5天的总得分:\n{recent_result[['趋势指标得分', '弹性指标得分', '买点指标得分', 'ZXM选股总得分']]}")
-    
-    # 绘制结果图表
-    plt.figure(figsize=(12, 10))
-    plt.subplot(3, 1, 1)
-    plt.plot(daily_data.index, daily_data['close'], label='Close Price')
-    plt.title('收盘价')
-    plt.legend()
-    
-    plt.subplot(3, 1, 2)
-    plt.plot(result.index, result['趋势指标得分'], label='趋势得分', color='blue')
-    plt.plot(result.index, result['弹性指标得分'], label='弹性得分', color='orange')
-    plt.plot(result.index, result['买点指标得分'], label='买点得分', color='green')
-    plt.title('各类指标得分')
-    plt.legend()
-    
-    plt.subplot(3, 1, 3)
-    plt.plot(result.index, result['ZXM选股总得分'], label='总得分', color='red')
-    plt.axhline(y=60, color='green', linestyle='--', label='买入阈值(60分)')
-    plt.title('ZXM选股总得分')
-    plt.legend()
-    
-    plt.tight_layout()
-    plt.show()
 
 
 def demo_zxm_indicator_factory():

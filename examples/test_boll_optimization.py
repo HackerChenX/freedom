@@ -11,8 +11,6 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
 
 # 添加项目根目录到路径
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,55 +78,6 @@ def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='20
     })
     
     return data
-
-
-def plot_boll_score_comparison(data, old_score, new_score, title="布林带评分对比"):
-    """
-    绘制BOLL指标优化前后评分对比图
-    
-    Args:
-        data: 原始数据
-        old_score: 优化前评分
-        new_score: 优化后评分
-        title: 图表标题
-    """
-    plt.figure(figsize=(15, 12))
-    
-    # 绘制子图1: 价格和布林带
-    ax1 = plt.subplot(3, 1, 1)
-    ax1.plot(data.index, data['close'], label='收盘价', color='black')
-    ax1.plot(data.index, data['upper'], label='上轨', color='red', linestyle='--')
-    ax1.plot(data.index, data['middle'], label='中轨', color='blue')
-    ax1.plot(data.index, data['lower'], label='下轨', color='green', linestyle='--')
-    ax1.set_title('价格与布林带')
-    ax1.legend(loc='best')
-    ax1.grid(True)
-    
-    # 绘制子图2: 带宽变化
-    ax2 = plt.subplot(3, 1, 2)
-    bandwidth = (data['upper'] - data['lower']) / data['middle']
-    ax2.plot(data.index, bandwidth, label='带宽', color='purple')
-    ax2.set_title('布林带带宽')
-    ax2.legend(loc='best')
-    ax2.grid(True)
-    
-    # 绘制子图3: 评分对比
-    ax3 = plt.subplot(3, 1, 3)
-    ax3.plot(data.index, old_score, label='优化前评分', color='blue', alpha=0.7)
-    ax3.plot(data.index, new_score, label='优化后评分', color='red')
-    ax3.set_title('BOLL评分对比')
-    ax3.axhline(y=50, color='gray', linestyle='--', alpha=0.6)  # 添加中性线
-    ax3.legend(loc='best')
-    ax3.grid(True)
-    
-    # 调整布局
-    plt.tight_layout()
-    plt.suptitle(title, fontsize=16)
-    plt.subplots_adjust(top=0.92)
-    
-    # 保存图表
-    plt.savefig(os.path.join(project_root, 'data', 'result', 'boll_optimization.png'))
-    plt.close()
 
 
 def test_boll_optimization(data):
@@ -276,6 +225,38 @@ def test_boll_optimization(data):
     return simple_score, enhanced_score
 
 
+def find_best_boll_params(data):
+    """
+    找到最佳的BOLL参数组合
+    
+    Args:
+        data: 测试数据
+        
+    Returns:
+        tuple: 最佳参数组合
+    """
+    periods = [10, 20, 30]
+    std_devs = [1.5, 2.0, 2.5]
+    results = []
+
+    for period in periods:
+        for std_dev in std_devs:
+            boll.set_parameters(period=period, std_dev=std_dev)
+            signals = boll.generate_signals(data)
+            
+            # 简单的评估逻辑：信号越多越好（仅为示例）
+            score = signals['buy_signal'].sum() + signals['sell_signal'].sum()
+            results.append(((period, std_dev), score))
+
+    # 找到最佳参数组合
+    best_params, best_score = max(results, key=lambda item: item[1])
+    
+    logger.info(f"找到的最佳BOLL参数组合: 周期={best_params[0]}, 标准差={best_params[1]}")
+    logger.info(f"对应的评分为: {best_score}")
+
+    return best_params
+
+
 def main():
     """主函数"""
     try:
@@ -285,10 +266,18 @@ def main():
         # 测试BOLL指标优化效果
         old_score, new_score = test_boll_optimization(data)
         
-        # 绘制对比图
-        plot_boll_score_comparison(data, old_score, new_score)
+        # 找到最佳参数
+        best_params = find_best_boll_params(data)
         
-        print("\n测试完成，对比图已保存到 'data/result/boll_optimization.png'")
+        logger.info(f"BOLL指标优化后的最佳参数为: 周期={best_params[0]}, 标准差={best_params[1]}")
+
+        # 使用最佳参数重新计算并验证
+        boll = BOLL(period=best_params[0], std_dev=best_params[1])
+        final_result = boll.calculate(data)
+        final_signals = boll.generate_signals(final_result)
+        
+        logger.info("使用最佳参数计算的最终买入信号数量: %d", final_signals['buy_signal'].sum())
+        logger.info("使用最佳参数计算的最终卖出信号数量: %d", final_signals['sell_signal'].sum())
         
     except Exception as e:
         logger.error(f"测试过程中发生错误: {e}")

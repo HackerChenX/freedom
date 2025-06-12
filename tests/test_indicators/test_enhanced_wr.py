@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.oscillator.enhanced_wr import EnhancedWR
+from indicators.enhanced_wr import EnhancedWR
 
 
 class TestEnhancedWR(unittest.TestCase):

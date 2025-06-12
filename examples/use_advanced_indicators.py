@@ -23,6 +23,8 @@ from indicators.fibonacci_tools import FibonacciTools, FibonacciType
 from indicators.elliott_wave import ElliottWave, WavePattern, WaveDirection, WaveType
 from indicators.gann_tools import GannTools, GannAngle, GannTimeCycle
 from utils.logger import get_logger
+from indicators.enhanced_factory import EnhancedIndicatorFactory
+from indicators.market_env import MarketDetector
 
 logger = get_logger(__name__)
 
@@ -415,13 +417,41 @@ def main():
     data = get_stock_data(stock_code, start_date, end_date)
     print(f"获取到 {len(data)} 条数据记录")
     
-    # 运行各个示例
-    demo_candlestick_patterns(data)
-    demo_zxm_washplate(data)
-    demo_chip_distribution(data)
-    demo_fibonacci_tools(data)
-    demo_elliott_wave(data)
-    demo_gann_tools(data)
+    if data.empty:
+        logger.error("未能获取测试数据，无法继续")
+        return
+
+    # 2. 获取市场环境
+    market_detector = MarketDetector()
+    market_env = market_detector.detect_environment(data)
+    logger.info(f"当前市场环境: {market_env.value}")
+
+    # 3. 创建并计算指标
+    indicator_names = ['EnhancedMACD', 'EnhancedRSI', 'EnhancedKDJ', 'EnhancedBOLL']
+
+    for indicator_name in indicator_names:
+        logger.info(f"--- 测试指标: {indicator_name} ---")
+        try:
+            # 创建指标实例
+            indicator = EnhancedIndicatorFactory.create(indicator_name)
+            
+            # 设置市场环境
+            indicator.set_market_environment(market_env)
+
+            # 计算指标
+            result_df = indicator.calculate(data)
+            logger.info(f"{indicator_name} 计算结果 (前5行):\n{result_df.tail()}")
+
+            # 生成信号
+            signals_df = indicator.generate_signals(result_df)
+            logger.info(f"{indicator_name} 信号 (前5行):\n{signals_df.tail()}")
+            
+            # 计算评分
+            score_series = indicator.calculate_raw_score(result_df)
+            logger.info(f"{indicator_name} 评分 (后5行):\n{score_series.tail()}")
+
+        except Exception as e:
+            logger.error(f"测试指标 {indicator_name} 时出错: {e}", exc_info=True)
 
 
 if __name__ == "__main__":

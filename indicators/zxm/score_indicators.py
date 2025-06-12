@@ -9,7 +9,7 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
-from indicators.zxm.elasticity_indicators import ZXMAmplitudeElasticity, ZXMRiseElasticity
+from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZXMRiseElasticity
 from indicators.zxm.buy_point_indicators import ZXMDailyMACD, ZXMTurnover, ZXMMACallback
 from utils.logger import get_logger
 
@@ -35,7 +35,7 @@ class ZXMElasticityScore(BaseIndicator):
         self.threshold = threshold
         
         # 初始化弹性子指标
-        self.amplitude_elasticity = ZXMAmplitudeElasticity()
+        self.amplitude_elasticity = AmplitudeElasticity()
         self.rise_elasticity = ZXMRiseElasticity()
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:

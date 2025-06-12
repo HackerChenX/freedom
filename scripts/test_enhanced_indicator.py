@@ -57,7 +57,10 @@ def get_test_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFra
     ORDER BY trade_date
     """
     
-    data = db.execute_query(query)
+    data = db.query(query)
+    if data is None or data.empty:
+        return pd.DataFrame()
+        
     data = pd.DataFrame(data, columns=['trade_date', 'open', 'high', 'low', 'close', 'volume'])
     data['trade_date'] = pd.to_datetime(data['trade_date'])
     data.set_index('trade_date', inplace=True)

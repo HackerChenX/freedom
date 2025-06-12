@@ -90,6 +90,57 @@ class UnifiedMA(BaseIndicator):
             logger.warning(f"不支持的MA类型: {params['ma_type']}，将使用默认类型: {self.MA_TYPE_SIMPLE}")
             self._parameters['ma_type'] = self.MA_TYPE_SIMPLE
     
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        识别移动平均线的相关形态
+
+        Args:
+            data: 输入数据，必须包含价格和计算好的MA列
+            **kwargs: 可选参数，如 'short_period', 'long_period'
+
+        Returns:
+            pd.DataFrame: 包含各种形态信号的DataFrame
+        """
+        params = self._parameters.copy()
+        params.update(kwargs)
+        periods = params.get('periods', [])
+        price_col = params.get('price_col', 'close')
+
+        if len(periods) < 2:
+            return pd.DataFrame(index=data.index)
+
+        # 默认使用最短和最长周期进行交叉分析
+        short_period = params.get('short_period', min(periods))
+        long_period = params.get('long_period', max(periods))
+
+        short_ma_col = f'MA{short_period}'
+        long_ma_col = f'MA{long_period}'
+
+        # 确保MA列存在
+        if short_ma_col not in data.columns or long_ma_col not in data.columns:
+            # 如果不存在，先计算
+            data = self.calculate(data, periods=periods)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 1. 金叉 (Golden Cross)
+        patterns['golden_cross'] = (data[short_ma_col] > data[long_ma_col]) & \
+                                   (data[short_ma_col].shift(1) <= data[long_ma_col].shift(1))
+
+        # 2. 死叉 (Death Cross)
+        patterns['death_cross'] = (data[short_ma_col] < data[long_ma_col]) & \
+                                  (data[short_ma_col].shift(1) >= data[long_ma_col].shift(1))
+
+        # 3. 价格上穿/下穿所有均线
+        for p in periods:
+            ma_col = f'MA{p}'
+            patterns[f'price_cross_above_{ma_col}'] = (data[price_col] > data[ma_col]) & \
+                                                      (data[price_col].shift(1) <= data[ma_col].shift(1))
+            patterns[f'price_cross_below_{ma_col}'] = (data[price_col] < data[ma_col]) & \
+                                                      (data[price_col].shift(1) >= data[ma_col].shift(1))
+        
+        return patterns
+    
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算移动平均线指标

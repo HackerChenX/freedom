@@ -89,6 +89,8 @@ class MACD(BaseIndicator):
         
         # 重置形态注册表为不允许覆盖
         PatternRegistry.set_allow_override(False)
+        
+        self.is_available = True
     
     @property
     def fast_period(self) -> int:
@@ -243,72 +245,62 @@ class MACD(BaseIndicator):
             score_impact=0.0
         )
     
-    @property
     def parameters(self) -> Dict[str, Any]:
         """获取参数"""
         return self._parameters.copy()
-    
-    def set_parameters(self, params: Dict[str, Any]) -> None:
-        """
-        设置参数
-        
-        Args:
-            params: 参数字典
-        """
-        for key, value in params.items():
+
+    def set_parameters(self, **kwargs):
+        """设置指标参数"""
+        for key, value in kwargs.items():
             if key in self._parameters:
                 self._parameters[key] = value
-                
+
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算MACD指标
         
         Args:
-            data: 包含价格数据的DataFrame
-            **kwargs: 额外参数，可以包含:
-                - price_column: 用于计算的价格列，默认为'close'
-                
+            data: 输入数据
+            **kwargs: 其他参数
+        
         Returns:
-            pd.DataFrame: 添加了MACD指标的DataFrame
+            pd.DataFrame: 计算结果，包含 'macd', 'signal', 'hist' 列
         """
-        if data.empty:
-            return data
-            
-        # 获取参数
-        price_column = kwargs.get('price_column', 'close')
+        # 提取参数
+        price_col = self._parameters.get('price_col', 'close')
+        fast_period = self._parameters.get('fast_period', 12)
+        slow_period = self._parameters.get('slow_period', 26)
+        signal_period = self._parameters.get('signal_period', 9)
+
+        # 检查输入数据
+        if price_col not in data.columns:
+            raise ValueError(f"输入数据中缺少 '{price_col}' 列")
+
+        # 计算EMA
+        ema_fast = data[price_col].ewm(span=fast_period, adjust=False).mean()
+        ema_slow = data[price_col].ewm(span=slow_period, adjust=False).mean()
         
-        # 验证输入
-        if price_column not in data.columns:
-            raise ValueError(f"数据中不存在'{price_column}'列")
+        # 计算MACD线
+        macd_line = ema_fast - ema_slow
         
-        df = data.copy()
+        # 计算信号线
+        signal_line = macd_line.ewm(span=signal_period, adjust=False).mean()
         
-        # 计算快速EMA
-        df['ema_fast'] = df[price_column].ewm(span=self.fast_period, adjust=False).mean()
+        # 计算柱状图
+        histogram = macd_line - signal_line
         
-        # 计算慢速EMA
-        df['ema_slow'] = df[price_column].ewm(span=self.slow_period, adjust=False).mean()
+        # 创建结果DataFrame
+        result_df = pd.DataFrame({
+            'macd': macd_line,
+            'signal': signal_line,
+            'hist': histogram
+        }, index=data.index)
         
-        # 计算DIF (MACD线)
-        df['macd_line'] = df['ema_fast'] - df['ema_slow']
-        
-        # 计算DEA (MACD信号线)
-        df['macd_signal'] = df['macd_line'].ewm(span=self.signal_period, adjust=False).mean()
-        
-        # 计算MACD柱状体
-        df['macd_histogram'] = (df['macd_line'] - df['macd_signal']) * 2
-        
-        # 保存结果
-        self._result = df
-        
-        # 确保基础数据列被保留
-        df = self._preserve_base_columns(data, df)
-        
-        return df
+        return result_df
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取MACD形态
+        获取所有MACD形态
         
         Args:
             data: 输入数据
@@ -316,7 +308,7 @@ class MACD(BaseIndicator):
         Returns:
             pd.DataFrame: 包含MACD形态的DataFrame
         """
-        macd_columns = ['macd_line', 'macd_signal', 'macd_histogram']
+        macd_columns = ['macd', 'signal', 'hist']
         # 检查是否已计算MACD，如果未计算，则进行计算
         if not all(col in data.columns for col in macd_columns):
             indicator_df = self.calculate(data, **kwargs)
@@ -324,8 +316,8 @@ class MACD(BaseIndicator):
             indicator_df = data
 
         # 检测金叉和死叉
-        golden_cross = crossover(indicator_df['macd_line'], indicator_df['macd_signal'])
-        death_cross = crossunder(indicator_df['macd_line'], indicator_df['macd_signal'])
+        golden_cross = crossover(indicator_df['macd'], indicator_df['signal'])
+        death_cross = crossunder(indicator_df['macd'], indicator_df['signal'])
 
         # 创建结果DataFrame
         patterns_df = pd.DataFrame(index=indicator_df.index)
@@ -333,15 +325,15 @@ class MACD(BaseIndicator):
         patterns_df['MACD_DEATH_CROSS'] = death_cross
 
         # 检测零轴穿越
-        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self.crossover(indicator_df['macd_line'], 0)
-        patterns_df['MACD_ZERO_CROSS_BELOW'] = self.crossunder(indicator_df['macd_line'], 0)
+        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self.crossover(indicator_df['macd'], 0)
+        patterns_df['MACD_ZERO_CROSS_BELOW'] = self.crossunder(indicator_df['macd'], 0)
 
         # 检测柱状图扩张/收缩
-        patterns_df['MACD_HISTOGRAM_EXPANDING'] = ((indicator_df['macd_histogram'] > indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] > 0)) | ((indicator_df['macd_histogram'] < indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] < 0))
-        patterns_df['MACD_HISTOGRAM_CONTRACTING'] = ((indicator_df['macd_histogram'] < indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] > 0)) | ((indicator_df['macd_histogram'] > indicator_df['macd_histogram'].shift(1)) & (indicator_df['macd_histogram'] < 0))
+        patterns_df['MACD_HISTOGRAM_EXPANDING'] = ((indicator_df['hist'] > indicator_df['hist'].shift(1)) & (indicator_df['hist'] > 0)) | ((indicator_df['hist'] < indicator_df['hist'].shift(1)) & (indicator_df['hist'] < 0))
+        patterns_df['MACD_HISTOGRAM_CONTRACTING'] = ((indicator_df['hist'] < indicator_df['hist'].shift(1)) & (indicator_df['hist'] > 0)) | ((indicator_df['hist'] > indicator_df['hist'].shift(1)) & (indicator_df['hist'] < 0))
 
         # 检测背离
-        bullish_div, bearish_div = self._detect_divergence(data['close'], indicator_df['macd_line'])
+        bullish_div, bearish_div = self._detect_divergence(data['close'], indicator_df['macd'])
         patterns_df['MACD_BULLISH_DIVERGENCE'] = bullish_div
         patterns_df['MACD_BEARISH_DIVERGENCE'] = bearish_div
 
@@ -367,8 +359,8 @@ class MACD(BaseIndicator):
         
         # 获取指标值
         indicator_df = self.result if self.has_result() else self.calculate(data, **kwargs)
-        dif = indicator_df['macd_line']
-        hist = indicator_df['macd_histogram']
+        dif = indicator_df['macd']
+        hist = indicator_df['hist']
 
         # 基础分
         score = pd.Series(50.0, index=data.index)
@@ -455,63 +447,50 @@ class MACD(BaseIndicator):
             self.calculate(data)
             result = self._result
         else:
-            result = data if 'macd_line' in data.columns else self._result
+            result = data if 'macd' in data.columns else self._result
         
+        # 计算所有形态
+        patterns = self.get_patterns(data)
+        
+        # 定义买入和卖出信号的构成
+        buy_conditions = [
+            'MACD_GOLDEN_CROSS',
+            'MACD_BULLISH_DIVERGENCE',
+            'MACD_ZERO_CROSS_ABOVE',
+            'MACD_DOUBLE_BOTTOM'
+        ]
+        
+        sell_conditions = [
+            'MACD_DEATH_CROSS',
+            'MACD_BEARISH_DIVERGENCE',
+            'MACD_ZERO_CROSS_BELOW',
+            'MACD_DOUBLE_TOP'
+        ]
+
+        # 初始化信号Series
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+
+        # 聚合信号
+        for col in buy_conditions:
+            if col in patterns.columns:
+                buy_signal |= patterns[col]
+        
+        for col in sell_conditions:
+            if col in patterns.columns:
+                sell_signal |= patterns[col]
+
+        # 准备最终的信号字典
         signals = {
-            'golden_cross': False,         # 金叉
-            'death_cross': False,          # 死叉
-            'hist_positive': False,        # 柱状图为正
-            'hist_negative': False,        # 柱状图为负
-            'hist_increasing': False,      # 柱状图增加
-            'hist_decreasing': False,      # 柱状图减少
-            'zero_cross_up': False,        # 零轴向上穿越
-            'zero_cross_down': False,      # 零轴向下穿越
-            'bullish_divergence': False,   # 底背离
-            'bearish_divergence': False,   # 顶背离
-            'double_bottom': False,        # 双底
-            'double_top': False,           # 双顶
-            'triple_cross': False,         # 三重穿越
-            'zero_hesitation': False       # 零轴徘徊
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal
         }
         
-        if len(result) < 2:
-            return signals
-        
-        # 获取最后一行数据
-        last_row = result.iloc[-1]
-        
-        # 判断金叉和死叉
-        signals['golden_cross'] = last_row.get('MACD_GOLDEN_CROSS', False)
-        signals['death_cross'] = last_row.get('MACD_DEATH_CROSS', False)
-        
-        # 判断柱状图状态
-        signals['hist_positive'] = last_row['macd_histogram'] > 0
-        signals['hist_negative'] = last_row['macd_histogram'] < 0
-        
-        if len(result) >= 3:
-            signals['hist_increasing'] = (result['macd_histogram'].iloc[-1] > result['macd_histogram'].iloc[-2] and 
-                                         result['macd_histogram'].iloc[-2] > result['macd_histogram'].iloc[-3])
-            signals['hist_decreasing'] = (result['macd_histogram'].iloc[-1] < result['macd_histogram'].iloc[-2] and 
-                                         result['macd_histogram'].iloc[-2] < result['macd_histogram'].iloc[-3])
-        
-        # 判断零轴穿越
-        signals['zero_cross_up'] = last_row.get('MACD_ZERO_CROSS_ABOVE', False)
-        signals['zero_cross_down'] = last_row.get('MACD_ZERO_CROSS_BELOW', False)
-        
-        # 判断背离
-        signals['bullish_divergence'] = last_row.get('MACD_BULLISH_DIVERGENCE', False)
-        signals['bearish_divergence'] = last_row.get('MACD_BEARISH_DIVERGENCE', False)
-        
-        # 判断双顶双底
-        signals['double_bottom'] = last_row.get('MACD_DOUBLE_BOTTOM', False)
-        signals['double_top'] = last_row.get('MACD_DOUBLE_TOP', False)
-        
-        # 判断三重穿越
-        signals['triple_cross'] = last_row.get('MACD_TRIPLE_CROSS', False)
-        
-        # 判断零轴徘徊
-        signals['zero_hesitation'] = last_row.get('MACD_ZERO_LINE_HESITATION', False)
-        
+        # 添加其他详细信号，供深入分析
+        for col in patterns.columns:
+            if col not in ['buy_signal', 'sell_signal']:
+                signals[col.lower()] = patterns[col]
+
         return signals
         
     def get_score(self, data: pd.DataFrame) -> float:
@@ -531,20 +510,10 @@ class MACD(BaseIndicator):
         signals = self.get_signals(data)
         
         # 根据信号计算得分
-        if signals['golden_cross']:
+        if signals['buy_signal']:
             score += 0.4
-        elif signals['death_cross']:
+        elif signals['sell_signal']:
             score -= 0.4
-            
-        if signals['hist_positive']:
-            score += 0.2
-        elif signals['hist_negative']:
-            score -= 0.2
-            
-        if signals['hist_increasing']:
-            score += 0.2
-        elif signals['hist_decreasing']:
-            score -= 0.2
             
         # 归一化得分到0-1范围
         return max(0.0, min(1.0, (score + 1.0) / 2.0))
@@ -580,23 +549,23 @@ class MACD(BaseIndicator):
         
         # 寻找金叉
         for i in range(1, len(indicator_df)):
-            if indicator_df['macd_line'].iloc[i-1] < indicator_df['macd_signal'].iloc[i-1] and \
-               indicator_df['macd_line'].iloc[i] > indicator_df['macd_signal'].iloc[i]:
+            if indicator_df['macd'].iloc[i-1] < indicator_df['signal'].iloc[i-1] and \
+               indicator_df['macd'].iloc[i] > indicator_df['signal'].iloc[i]:
                 # 计算形态强度
-                prev_diff = abs(indicator_df['macd_line'].iloc[i-1] - indicator_df['macd_signal'].iloc[i-1])
+                prev_diff = abs(indicator_df['macd'].iloc[i-1] - indicator_df['signal'].iloc[i-1])
                 if prev_diff == 0:
                     strength = 1.0
                 else:
-                    strength = min(1.0, abs(indicator_df['macd_line'].iloc[i] - indicator_df['macd_signal'].iloc[i]) / prev_diff)
+                    strength = min(1.0, abs(indicator_df['macd'].iloc[i] - indicator_df['signal'].iloc[i]) / prev_diff)
 
                 results.append({
                     'date': indicator_df.index[i],
                     'pattern': 'macd_golden_cross',
                     'strength': strength,
                     'price': indicator_df['close'].iloc[i],
-                    'macd_line': indicator_df['macd_line'].iloc[i],
-                    'macd_signal': indicator_df['macd_signal'].iloc[i],
-                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
+                    'macd': indicator_df['macd'].iloc[i],
+                    'signal': indicator_df['signal'].iloc[i],
+                    'hist': indicator_df['hist'].iloc[i]
                 })
         
         return results
@@ -616,23 +585,23 @@ class MACD(BaseIndicator):
 
         # 寻找死叉
         for i in range(1, len(indicator_df)):
-            if indicator_df['macd_line'].iloc[i-1] > indicator_df['macd_signal'].iloc[i-1] and \
-               indicator_df['macd_line'].iloc[i] < indicator_df['macd_signal'].iloc[i]:
+            if indicator_df['macd'].iloc[i-1] > indicator_df['signal'].iloc[i-1] and \
+               indicator_df['macd'].iloc[i] < indicator_df['signal'].iloc[i]:
                 # 计算形态强度
-                prev_diff = abs(indicator_df['macd_line'].iloc[i-1] - indicator_df['macd_signal'].iloc[i-1])
+                prev_diff = abs(indicator_df['macd'].iloc[i-1] - indicator_df['signal'].iloc[i-1])
                 if prev_diff == 0:
                     strength = 1.0
                 else:
-                    strength = min(1.0, abs(indicator_df['macd_line'].iloc[i] - indicator_df['macd_signal'].iloc[i]) / prev_diff)
+                    strength = min(1.0, abs(indicator_df['macd'].iloc[i] - indicator_df['signal'].iloc[i]) / prev_diff)
 
                 results.append({
                     'date': indicator_df.index[i],
                     'pattern': 'macd_death_cross',
                     'strength': strength,
                     'price': indicator_df['close'].iloc[i],
-                    'macd_line': indicator_df['macd_line'].iloc[i],
-                    'macd_signal': indicator_df['macd_signal'].iloc[i],
-                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
+                    'macd': indicator_df['macd'].iloc[i],
+                    'signal': indicator_df['signal'].iloc[i],
+                    'hist': indicator_df['hist'].iloc[i]
                 })
 
         return results
@@ -655,17 +624,17 @@ class MACD(BaseIndicator):
             # 价格创新高但MACD未创新高
             if (indicator_df['high'].iloc[i] > indicator_df['high'].iloc[i-1] and 
                 indicator_df['high'].iloc[i-1] > indicator_df['high'].iloc[i-2] and
-                indicator_df['macd_histogram'].iloc[i] < indicator_df['macd_histogram'].iloc[i-1] and 
-                indicator_df['macd_histogram'].iloc[i-1] < indicator_df['macd_histogram'].iloc[i-2]):
+                indicator_df['hist'].iloc[i] < indicator_df['hist'].iloc[i-1] and 
+                indicator_df['hist'].iloc[i-1] < indicator_df['hist'].iloc[i-2]):
                 
                 # 计算形态强度
                 price_change = (indicator_df['high'].iloc[i] - indicator_df['high'].iloc[i-2]) / indicator_df['high'].iloc[i-2]
-                macd_hist_prev = indicator_df['macd_histogram'].iloc[i-2]
-                if abs(macd_hist_prev) < 1e-9: # 避免除以零
-                    macd_change = 0
+                hist_prev = indicator_df['hist'].iloc[i-2]
+                if abs(hist_prev) < 1e-9: # 避免除以零
+                    hist_change = 0
                 else:
-                    macd_change = (indicator_df['macd_histogram'].iloc[i] - macd_hist_prev) / abs(macd_hist_prev)
-                strength = min(1.0, abs(price_change * macd_change))
+                    hist_change = (indicator_df['hist'].iloc[i] - hist_prev) / abs(hist_prev)
+                strength = min(1.0, abs(price_change * hist_change))
                 
                 results.append({
                     'date': indicator_df.index[i],
@@ -673,25 +642,25 @@ class MACD(BaseIndicator):
                     'type': 'top',
                     'strength': strength,
                     'price': indicator_df['high'].iloc[i],
-                    'macd_line': indicator_df['macd_line'].iloc[i],
-                    'macd_signal': indicator_df['macd_signal'].iloc[i],
-                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
+                    'macd': indicator_df['macd'].iloc[i],
+                    'signal': indicator_df['signal'].iloc[i],
+                    'hist': indicator_df['hist'].iloc[i]
                 })
             
             # 价格创新低但MACD未创新低
             elif (indicator_df['low'].iloc[i] < indicator_df['low'].iloc[i-1] and 
                   indicator_df['low'].iloc[i-1] < indicator_df['low'].iloc[i-2] and
-                  indicator_df['macd_histogram'].iloc[i] > indicator_df['macd_histogram'].iloc[i-1] and 
-                  indicator_df['macd_histogram'].iloc[i-1] > indicator_df['macd_histogram'].iloc[i-2]):
+                  indicator_df['hist'].iloc[i] > indicator_df['hist'].iloc[i-1] and 
+                  indicator_df['hist'].iloc[i-1] > indicator_df['hist'].iloc[i-2]):
                 
                 # 计算形态强度
                 price_change = (indicator_df['low'].iloc[i] - indicator_df['low'].iloc[i-2]) / indicator_df['low'].iloc[i-2]
-                macd_hist_prev = indicator_df['macd_histogram'].iloc[i-2]
-                if abs(macd_hist_prev) < 1e-9: # 避免除以零
-                    macd_change = 0
+                hist_prev = indicator_df['hist'].iloc[i-2]
+                if abs(hist_prev) < 1e-9: # 避免除以零
+                    hist_change = 0
                 else:
-                    macd_change = (indicator_df['macd_histogram'].iloc[i] - macd_hist_prev) / abs(macd_hist_prev)
-                strength = min(1.0, abs(price_change * macd_change))
+                    hist_change = (indicator_df['hist'].iloc[i] - hist_prev) / abs(hist_prev)
+                strength = min(1.0, abs(price_change * hist_change))
                 
                 results.append({
                     'date': indicator_df.index[i],
@@ -699,9 +668,9 @@ class MACD(BaseIndicator):
                     'type': 'bottom',
                     'strength': strength,
                     'price': indicator_df['low'].iloc[i],
-                    'macd_line': indicator_df['macd_line'].iloc[i],
-                    'macd_signal': indicator_df['macd_signal'].iloc[i],
-                    'macd_histogram': indicator_df['macd_histogram'].iloc[i]
+                    'macd': indicator_df['macd'].iloc[i],
+                    'signal': indicator_df['signal'].iloc[i],
+                    'hist': indicator_df['hist'].iloc[i]
                 })
         
         return results
@@ -730,9 +699,9 @@ class MACD(BaseIndicator):
                     'pattern': 'macd_double_top',
                     'strength': 0.8,  # 固定强度
                     'price': result['close'].iloc[i],
-                    'macd_line': result['macd_line'].iloc[i],
-                    'macd_signal': result['macd_signal'].iloc[i],
-                    'macd_histogram': result['macd_histogram'].iloc[i],
+                    'macd': result['macd'].iloc[i],
+                    'signal': result['signal'].iloc[i],
+                    'hist': result['hist'].iloc[i],
                     'description': 'MACD双顶形态，可能的看跌信号'
                 })
         
@@ -746,10 +715,64 @@ class MACD(BaseIndicator):
                     'pattern': 'macd_double_bottom',
                     'strength': 0.8,  # 固定强度
                     'price': result['close'].iloc[i],
-                    'macd_line': result['macd_line'].iloc[i],
-                    'macd_signal': result['macd_signal'].iloc[i],
-                    'macd_histogram': result['macd_histogram'].iloc[i],
+                    'macd': result['macd'].iloc[i],
+                    'signal': result['signal'].iloc[i],
+                    'hist': result['hist'].iloc[i],
                     'description': 'MACD双底形态，可能的看涨信号'
                 })
                 
-        return results 
+        return results
+
+    def calculate_confidence(self, score: pd.Series, patterns: list, signals: dict) -> float:
+        """
+        计算MACD指标的置信度。
+
+        置信度基于以下因素：
+        1.  MACD柱(hist)的绝对值：柱子越长，动能越强，信号越可信。
+        2.  DIF和DEA的位置：两者均在零轴同侧时，趋势更明确。
+        3.  DIF和DEA的间距：间距越大，趋势越强。
+        4.  近期交叉频率：如果DIF/DEA近期频繁交叉，市场可能处于震荡，信号可靠性降低。
+
+        Args:
+            score: 原始评分序列 (当前未使用)
+            patterns: 形态列表 (当前未使用)
+            signals: 信号字典 (当前未使用)
+
+        Returns:
+            float: 置信度 (0.0 - 1.0)
+        """
+        if not self.has_result() or len(self.result) < 20:
+            return 0.5 # 数据不足，返回中性置信度
+
+        latest_macd = self.result.iloc[-1]
+        dif, dea, hist = latest_macd['macd'], latest_macd['signal'], latest_macd['hist']
+        
+        # 获取收盘价的平均值，用于标准化hist和dif-dea的距离
+        avg_price = self.result['close'].mean() if 'close' in self.result and self.result['close'].mean() > 0 else 100
+        
+        confidence = 0.5 # 基础置信度
+
+        # 1. MACD柱(hist)强度
+        # 将hist的绝对值标准化为价格的百分比，假设2%已经是一个很强的动能
+        hist_strength = min(abs(hist) / avg_price / 0.02, 1.0)
+        confidence += hist_strength * 0.3 # 最大贡献+0.3
+
+        # 2. DIF和DEA的位置
+        if (dif > 0 and dea > 0) or (dif < 0 and dea < 0):
+            confidence += 0.1 # 同在零轴一侧，趋势明确，贡献+0.1
+
+        # 3. DIF和DEA的间距
+        # 标准化间距
+        spread_strength = min(abs(dif - dea) / avg_price / 0.02, 1.0)
+        confidence += spread_strength * 0.2 # 最大贡献+0.2
+
+        # 4. 近期交叉频率
+        # 检查最近20个周期内的交叉次数
+        recent_hist = self.result['hist'].iloc[-20:]
+        # 符号变化次数约等于交叉次数
+        crosses = (np.sign(recent_hist) * np.sign(recent_hist.shift(1)) < 0).sum()
+        if crosses > 2: # 20天内交叉超过2次，认为震荡
+            confidence -= (crosses - 2) * 0.05 # 每多一次交叉，略微降低信心
+
+        # 确保置信度在0到1之间
+        return max(0.0, min(1.0, confidence)) 

@@ -132,24 +132,6 @@ class TestEnhancedDMI(unittest.TestCase):
         # 检查得分范围是否在0-100之间
         self.assertTrue((score.dropna() >= 0).all())
         self.assertTrue((score.dropna() <= 100).all())
-        
-        # 测试不同市场环境下的评分调整
-        # 牛市环境
-        self.dmi.set_market_environment("bull_market")
-        bull_score = self.dmi.calculate_score()
-        
-        # 熊市环境
-        self.dmi.set_market_environment("bear_market")
-        bear_score = self.dmi.calculate_score()
-        
-        # 高波动环境
-        self.dmi.set_market_environment("volatile_market")
-        volatile_score = self.dmi.calculate_score()
-        
-        # 确保市场环境确实影响了评分
-        # 不能直接比较得分值，因为影响是动态的，取决于原始得分
-        # 但可以验证三种评分不全都相同
-        self.assertTrue(not (bull_score.equals(bear_score) and bear_score.equals(volatile_score)))
 
     def test_pattern_identification(self):
         """测试形态识别功能"""

@@ -37,6 +37,7 @@ class EnhancedDMI(BaseIndicator):
         # 内部参数
         self.period = period  # 实际使用的周期（可能根据波动率调整）
         self._result = None
+        self.market_factors = {}  # 用于存储市场因子
         
     def set_market_environment(self, environment: str) -> None:
         """
@@ -365,7 +366,7 @@ class EnhancedDMI(BaseIndicator):
         signals['strong_downtrend'] = synergy['strong_downtrend']
         signals['potential_reversal'] = synergy['potential_reversal']
         signals['trend_strength'] = adx
-        signals['score'] = self.calculate_score(data)
+        signals['score'] = self.calculate_score()
         signals['signal_type'] = pd.Series('', index=signals.index)
         signals['signal_desc'] = pd.Series('', index=signals.index)
         signals['confidence'] = pd.Series(0, index=signals.index)
@@ -388,116 +389,53 @@ class EnhancedDMI(BaseIndicator):
         
         return signals
     
-    def calculate_score(self, data: pd.DataFrame = None) -> pd.Series:
+    def calculate_score(self) -> pd.Series:
         """
-        计算DMI指标评分
+        计算DMI指标的综合评分
         
-        Args:
-            data (pd.DataFrame, optional): 价格数据，如果为None则使用已有计算结果
-            
         Returns:
-            pd.Series: 评分序列，0-100
+            pd.Series: 综合评分
         """
-        if data is not None:
-            self.calculate(data)
-            
         if self._result is None:
-            return pd.Series()
-            
-        # 初始评分为50
-        score = pd.Series(50, index=self._result.index)
+            raise ValueError("请先调用calculate()方法计算指标")
+
+        # 1. 趋势强度评分 (基于ADX)
+        adx_score = (self._result['adx'] / 100 * 40).clip(0, 40)  # ADX越高，趋势越强
+
+        # 2. 趋势方向评分 (基于PDI/MDI)
+        direction_score = pd.Series(0, index=self._result.index)
+        direction_score[self._result['plus_di'] > self._result['minus_di']] = (self._result['plus_di'] - self._result['minus_di']) / 100 * 30
+        direction_score[self._result['plus_di'] < self._result['minus_di']] = - (self._result['minus_di'] - self._result['plus_di']) / 100 * 30
+        direction_score = direction_score.clip(-30, 30)
+
+        # 3. 交叉信号评分
+        cross_score = pd.Series(0, index=self._result.index)
+        cross_score[self._result['plus_di'] > self._result['minus_di']] = 20
+        cross_score[self._result['plus_di'] < self._result['minus_di']] = -20
+
+        # 4. ADX趋势评分
+        adx_trend_score = self._result['adx'].diff().apply(lambda x: 1 if x > 0 else -1) * 10
+        adx_trend_score = adx_trend_score.clip(-10, 10)
+
+        # 基础分
+        base_score = 50 + adx_score + direction_score + cross_score + adx_trend_score
         
-        # 分析三线关系
-        synergy = self.analyze_three_line_synergy()
-        
-        # 评估ADX强度
-        adx_score = self._result['adx'].apply(self._adx_to_score)
-        
-        # 根据+DI和-DI关系评分
-        direction_score = (self._result['plus_di'] - self._result['minus_di']).apply(
-            lambda x: min(max(x, -50), 50)  # 限制在 -50 到 50 范围内
-        )
-        
-        # 评估交叉质量
-        crossover_quality = self.evaluate_di_crossover_quality()
-        
-        # 综合评分
-        score = 50 + direction_score * 0.5 + (adx_score - 50) * 0.3
-        
-        # 交叉信号额外加分
-        cross_up = (self._result['plus_di'] > self._result['minus_di']) & (self._result['plus_di'].shift(1) <= self._result['minus_di'].shift(1))
-        cross_down = (self._result['plus_di'] < self._result['minus_di']) & (self._result['plus_di'].shift(1) >= self._result['minus_di'].shift(1))
-        
-        score[cross_up] += 15
-        score[cross_down] -= 15
-        
-        # 高质量交叉额外加分
-        high_quality_idx = crossover_quality[crossover_quality > 0.7].index
-        score.loc[high_quality_idx] += 10
-        
-        # 三线协同加分
-        bullish_synergy_idx = synergy[synergy['strong_uptrend']].index
-        bearish_synergy_idx = synergy[synergy['strong_downtrend']].index
-        
-        score.loc[bullish_synergy_idx] += 10
-        score.loc[bearish_synergy_idx] -= 10
-        
-        # 根据市场环境调整
-        score = self._adjust_score_by_market_environment(score)
-        
-        # 确保分数在0-100范围内
-        score = score.clip(0, 100)
-        
-        return score
+        return base_score.clip(0, 100)
     
-    def _adx_to_score(self, adx_value: float) -> float:
+    def get_market_analysis(self) -> Dict[str, Any]:
         """
-        将ADX值转换为评分
+        获取市场分析
         
-        Args:
-            adx_value (float): ADX值
-            
         Returns:
-            float: 评分，范围0-100
+            Dict[str, Any]: 包含市场分析结果的字典
         """
-        if np.isnan(adx_value):
-            return 50
-            
-        # 将ADX值从0-100映射到50-100（表示趋势强度）
-        # ADX=0 -> 评分=50（无趋势）
-        # ADX=100 -> 评分=100（极强趋势）
-        return 50 + adx_value * 0.5
+        # 实现市场分析逻辑
+        # 这里可以根据需要添加更多的分析逻辑
+        return {}
     
-    def _adjust_score_by_market_environment(self, score: pd.Series) -> pd.Series:
-        """
-        根据市场环境调整评分
-        
-        Args:
-            score (pd.Series): 原始评分
-            
-        Returns:
-            pd.Series: 调整后的评分
-        """
-        adjusted_score = score.copy()
-        
-        if self.market_environment == 'bull_market':
-            # 牛市环境，上涨信号更可靠
-            adjusted_score[adjusted_score > 50] += (adjusted_score[adjusted_score > 50] - 50) * 0.2
-        elif self.market_environment == 'bear_market':
-            # 熊市环境，下跌信号更可靠
-            adjusted_score[adjusted_score < 50] -= (50 - adjusted_score[adjusted_score < 50]) * 0.2
-        elif self.market_environment == 'volatile_market':
-            # 高波动环境，减弱所有信号
-            adjusted_score = 50 + (adjusted_score - 50) * 0.8
-        elif self.market_environment == 'sideways_market':
-            # 震荡市场，进一步减弱信号
-            adjusted_score = 50 + (adjusted_score - 50) * 0.6
-            
-        return adjusted_score.clip(0, 100)
-        
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算增强型DMI指标的原始评分
+        计算DMI指标的原始评分，作为`calculate_score`的别名
         
         Args:
             data: 输入数据，包含价格数据的DataFrame
@@ -507,7 +445,7 @@ class EnhancedDMI(BaseIndicator):
             pd.Series: 原始评分序列，0-100
         """
         # 如果已有评分计算方法，直接使用
-        return self.calculate_score(data)
+        return self.calculate_score()
     
     def identify_patterns(self) -> pd.DataFrame:
         """

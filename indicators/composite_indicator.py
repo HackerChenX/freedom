@@ -66,6 +66,33 @@ class CompositeIndicator(BaseIndicator):
         # 注册组合指标形态
         self._register_composite_patterns()
         
+    def set_parameters(self, indicators: List[BaseIndicator] = None, weights: Dict[str, float] = None, **kwargs):
+        """
+        设置组合指标的参数
+        
+        Args:
+            indicators: 新的指标列表
+            weights: 新的权重字典
+        """
+        if indicators is not None:
+            self.indicators = indicators
+        
+        if weights is not None:
+            self.weights = weights
+        
+        # 为未指定权重的指标设置默认权重并重新标准化
+        temp_weights = self.weights.copy() if self.weights is not None else {}
+        for indicator in self.indicators:
+            if indicator.name not in temp_weights:
+                temp_weights[indicator.name] = 1.0
+        
+        if temp_weights:
+            total_weight = sum(temp_weights.values())
+            if total_weight > 0:
+                self.weights = {name: weight / total_weight for name, weight in temp_weights.items()}
+            else:
+                self.weights = temp_weights
+    
     def add_indicator(self, indicator: BaseIndicator, weight: float = 1.0):
         """
         添加指标到组合中

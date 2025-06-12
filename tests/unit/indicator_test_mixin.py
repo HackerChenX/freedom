@@ -4,11 +4,11 @@
 提供指标测试类的通用功能和方法
 """
 
-import unittest
 import pandas as pd
 import numpy as np
 from tests.helper.log_capture import LogCaptureMixin
 from typing import List, Dict, Any, Union
+import pytest
 
 
 class IndicatorTestMixin(LogCaptureMixin):
@@ -76,13 +76,13 @@ class IndicatorTestMixin(LogCaptureMixin):
             expected_properties: 预期的属性列表
         """
         # 验证基本属性
-        self.assertIsNotNone(indicator, "指标不应为None")
-        self.assertTrue(hasattr(indicator, 'calculate'), "指标应有calculate方法")
+        assert indicator is not None, "指标不应为None"
+        assert hasattr(indicator, 'calculate'), "指标应有calculate方法"
         
         # 验证预期属性
         if expected_properties:
             for prop in expected_properties:
-                self.assertTrue(hasattr(indicator, prop), f"指标应有{prop}属性")
+                assert hasattr(indicator, prop), f"指标应有{prop}属性"
     
     def _verify_calculation_result(self, result: Union[pd.DataFrame, Dict], 
                                   expected_columns: List[str] = None):
@@ -94,21 +94,21 @@ class IndicatorTestMixin(LogCaptureMixin):
             expected_columns: 预期的列名列表
         """
         # 验证结果不为None
-        self.assertIsNotNone(result, "计算结果不应为None")
+        assert result is not None, "计算结果不应为None"
         
         # 如果结果是DataFrame
         if isinstance(result, pd.DataFrame):
             # 验证预期列
             if expected_columns:
                 for col in expected_columns:
-                    self.assertIn(col, result.columns, f"结果应包含{col}列")
+                    assert col in result.columns, f"结果应包含{col}列"
         
         # 如果结果是字典
         elif isinstance(result, dict):
             # 验证预期键
             if expected_columns:
                 for key in expected_columns:
-                    self.assertIn(key, result, f"结果应包含{key}键")
+                    assert key in result, f"结果应包含{key}键"
     
     def _verify_raw_score(self, score: pd.Series):
         """
@@ -118,11 +118,11 @@ class IndicatorTestMixin(LogCaptureMixin):
             score: 评分Series
         """
         # 验证评分为Series
-        self.assertIsInstance(score, pd.Series, "评分应为Series")
+        assert isinstance(score, pd.Series), "评分应为Series"
         
         # 验证评分在0-100范围内
         valid_scores = score.dropna()
-        self.assertTrue(all(0 <= s <= 100 for s in valid_scores), "评分应在0-100范围内")
+        assert all(0 <= s <= 100 for s in valid_scores), "评分应在0-100范围内"
     
     def _verify_signals(self, signals: List[Dict[str, Any]], min_expected: int = 0):
         """
@@ -133,20 +133,19 @@ class IndicatorTestMixin(LogCaptureMixin):
             min_expected: 最小预期信号数
         """
         # 验证信号为列表
-        self.assertIsInstance(signals, list, "信号应为列表")
+        assert isinstance(signals, list), "信号应为列表"
         
         # 验证信号数量
         if min_expected > 0:
-            self.assertGreaterEqual(len(signals), min_expected, 
-                                  f"信号数量应不少于{min_expected}")
+            assert len(signals) >= min_expected, f"信号数量应不少于{min_expected}"
         
         # 验证信号格式
         if signals:
             for signal in signals:
-                self.assertIsInstance(signal, dict, "信号项应为字典")
+                assert isinstance(signal, dict), "信号项应为字典"
                 required_keys = ['indicator', 'buy_signal', 'sell_signal', 'score']
                 for key in required_keys:
-                    self.assertIn(key, signal, f"信号应包含{key}键")
+                    assert key in signal, f"信号应包含{key}键"
     
     def _verify_pattern_result(self, result: Dict[str, List[int]], min_patterns: int = 0):
         """
@@ -157,19 +156,18 @@ class IndicatorTestMixin(LogCaptureMixin):
             min_patterns: 最小预期形态数
         """
         # 验证结果为字典
-        self.assertIsInstance(result, dict, "形态识别结果应为字典")
+        assert isinstance(result, dict), "形态识别结果应为字典"
         
         # 验证形态数量
         pattern_count = sum(len(positions) for positions in result.values())
         if min_patterns > 0:
-            self.assertGreaterEqual(pattern_count, min_patterns, 
-                                  f"识别出的形态数量应不少于{min_patterns}")
+            assert pattern_count >= min_patterns, f"识别出的形态数量应不少于{min_patterns}"
         
         # 验证形态位置
         for pattern, positions in result.items():
-            self.assertIsInstance(positions, list, f"{pattern}的位置应为列表")
+            assert isinstance(positions, list), f"{pattern}的位置应为列表"
             for pos in positions:
-                self.assertIsInstance(pos, int, "位置应为整数")
+                assert isinstance(pos, int), "位置应为整数"
     
     def _mock_stock_data(self, periods: int = 100, 
                         start_price: float = 100.0, 
@@ -223,19 +221,19 @@ class IndicatorTestMixin(LogCaptureMixin):
         try:
             self.indicator.calculate(self.data)
         except Exception as e:
-            self.fail(f"指标 {self.indicator.__class__.__name__} 计算失败，错误: {e}")
+            pytest.fail(f"指标 {self.indicator.__class__.__name__} 计算失败，错误: {e}")
     
     def test_returns_dataframe(self):
         """测试 calculate 方法是否返回一个 pandas DataFrame。"""
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame, "计算结果不是 DataFrame")
+        assert isinstance(result, pd.DataFrame), "计算结果不是 DataFrame"
     
     def test_output_has_expected_columns(self):
         """测试计算结果是否包含所有预期的列。"""
         result = self.indicator.calculate(self.data)
         
         for col in self.expected_columns:
-            self.assertIn(col, result.columns, f"结果中缺少预期列: {col}")
+            assert col in result.columns, f"结果中缺少预期列: {col}"
     
     def test_output_has_no_unexpected_all_nan_columns(self):
         """测试输出中不应有完全由NaN组成的意外列。"""
@@ -244,7 +242,7 @@ class IndicatorTestMixin(LogCaptureMixin):
         # 只检查预期的列
         for col in self.expected_columns:
             if col in result.columns:
-                self.assertFalse(result[col].isna().all(), f"预期列 '{col}' 全是 NaN")
+                assert not result[col].isna().all(), f"预期列 '{col}' 全是 NaN"
     
     def test_calculate_with_missing_columns(self):
         """测试 calculate 方法是否能处理缺失的列。"""
@@ -253,41 +251,37 @@ class IndicatorTestMixin(LogCaptureMixin):
         
         try:
             result = self.indicator.calculate(minimal_data)
-            self.assertIsInstance(result, pd.DataFrame, "缺少列的情况下，计算结果不是 DataFrame")
+            assert isinstance(result, pd.DataFrame), "缺少列的情况下，计算结果不是 DataFrame"
         except Exception as e:
-            self.fail(f"指标在缺少列的情况下计算失败，错误: {e}")
+            pytest.fail(f"指标在缺少列的情况下计算失败，错误: {e}")
     
     def test_patterns_run_without_error(self):
         """测试指标的 get_patterns 方法是否能无错运行。"""
         if not hasattr(self.indicator, 'get_patterns'):
-            self.skipTest(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
+            pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
         
         try:
-            calculated_data = self.indicator.calculate(self.data)
             self.indicator.get_patterns(self.data)
         except Exception as e:
-            self.fail(f"指标 {self.indicator.__class__.__name__} 的 get_patterns 失败，错误: {e}")
+            pytest.fail(f"指标 {self.indicator.__class__.__name__} 的 get_patterns 失败，错误: {e}")
     
     def test_patterns_return_valid_type(self):
-        """测试 get_patterns 方法是否返回一个有效类型（DataFrame 或 list）。"""
+        """测试 get_patterns 方法是否返回一个有效的类型。"""
         if not hasattr(self.indicator, 'get_patterns'):
-            self.skipTest(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
-        
-        calculated_data = self.indicator.calculate(self.data)
-        patterns = self.indicator.get_patterns(self.data)
-        
-        self.assertIsInstance(patterns, (pd.DataFrame, list), "获取形态结果既不是 DataFrame 也不是 list")
+            pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
+    
+        all_patterns = self.indicator.get_patterns(self.data)
+        assert isinstance(all_patterns, pd.DataFrame), "get_patterns 的返回类型不是 DataFrame"
     
     def test_no_errors_during_calculation(self):
-        """测试计算过程中没有错误日志"""
-        result = self.indicator.calculate(self.data)
-        self.assert_no_error_logs()
+        """测试在计算过程中是否记录了ERROR级别的日志。"""
+        self.indicator.calculate(self.data)
+        self.assert_no_logs('ERROR')
     
     def test_no_errors_during_pattern_detection(self):
-        """测试形态检测过程中没有错误日志"""
+        """测试在形态检测过程中是否记录了ERROR级别的日志。"""
         if not hasattr(self.indicator, 'get_patterns'):
-            self.skipTest(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
-        
-        calculated_data = self.indicator.calculate(self.data)
-        patterns = self.indicator.get_patterns(self.data)
-        self.assert_no_error_logs() 
+            pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
+    
+        self.indicator.get_patterns(self.data)
+        self.assert_no_logs('ERROR')

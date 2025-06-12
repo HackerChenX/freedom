@@ -6,15 +6,16 @@ import sys
 import json
 import argparse
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, root_dir)
+sys.path.append(root_dir)
 
-from analysis.strategy_validator import StrategyValidator
+from strategy.strategy_factory import StrategyFactory
+from utils.strategy_validator import StrategyValidator
+from db.clickhouse_db import get_clickhouse_db
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_strategies_dir
 
@@ -259,150 +260,15 @@ def main():
     args = parser.parse_args()
     
     # 创建验证器
-    validator = StrategyValidator()
+    validator = StrategyValidator(strategy=args.strategy, start_date=args.start_date, end_date=args.end_date)
     
-    if args.command == 'multi_period':
-        # 构建验证周期
-        periods = None
-        if args.start_date and args.end_date:
-            # 计算时间范围
-            start_date = datetime.strptime(args.start_date, "%Y%m%d")
-            end_date = datetime.strptime(args.end_date, "%Y%m%d")
-            
-            # 计算每个周期
-            periods = []
-            period_days = (end_date - start_date).days // args.periods
-            
-            for i in range(args.periods):
-                period_start = start_date + timedelta(days=i * period_days)
-                period_end = period_start + timedelta(days=period_days - 1)
-                if i == args.periods - 1:  # 最后一个周期延伸到结束日期
-                    period_end = end_date
-                    
-                periods.append((
-                    period_start.strftime("%Y%m%d"),
-                    period_end.strftime("%Y%m%d")
-                ))
-        
-        # 读取股票池
-        stock_pool = None
-        if args.pool:
-            try:
-                with open(args.pool, 'r', encoding='utf-8') as f:
-                    stock_pool = [line.strip() for line in f if line.strip()]
-            except Exception as e:
-                logger.error(f"读取股票池文件时出错: {e}")
-        
-        # 执行多周期验证
-        result = validator.validate_multi_period(args.strategy, periods, stock_pool)
-        
-        # 保存结果
-        with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-            
-        logger.info(f"多周期验证结果已保存到: {args.output}")
-        
-        # 生成可视化结果
-        if args.visualize:
-            output_prefix = args.output.replace('.json', '')
-            create_visualization(result, output_prefix)
-        
-    elif args.command == 'sensitivity':
-        # 读取参数配置
-        try:
-            with open(args.parameters, 'r', encoding='utf-8') as f:
-                parameters = json.load(f)
-        except Exception as e:
-            logger.error(f"读取参数配置文件时出错: {e}")
-            return
-        
-        # 读取股票池
-        stock_pool = None
-        if args.pool:
-            try:
-                with open(args.pool, 'r', encoding='utf-8') as f:
-                    stock_pool = [line.strip() for line in f if line.strip()]
-            except Exception as e:
-                logger.error(f"读取股票池文件时出错: {e}")
-        
-        # 执行参数敏感性分析
-        result = validator.analyze_parameter_sensitivity(
-            args.strategy, parameters, args.start_date, args.end_date, stock_pool)
-        
-        # 保存结果
-        with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-            
-        logger.info(f"参数敏感性分析结果已保存到: {args.output}")
-        
-        # 生成可视化结果
-        if args.visualize:
-            output_prefix = args.output.replace('.json', '')
-            create_visualization(result, output_prefix)
-        
-    elif args.command == 'compare':
-        # 解析策略ID列表
-        strategy_ids = [s.strip() for s in args.strategies.split(',') if s.strip()]
-        
-        # 读取股票池
-        stock_pool = None
-        if args.pool:
-            try:
-                with open(args.pool, 'r', encoding='utf-8') as f:
-                    stock_pool = [line.strip() for line in f if line.strip()]
-            except Exception as e:
-                logger.error(f"读取股票池文件时出错: {e}")
-        
-        # 执行策略对比
-        result = validator.compare_strategies(
-            strategy_ids, args.start_date, args.end_date, stock_pool)
-        
-        # 保存结果
-        with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-            
-        logger.info(f"策略对比结果已保存到: {args.output}")
-        
-        # 生成可视化结果
-        if args.visualize:
-            output_prefix = args.output.replace('.json', '')
-            create_visualization(result, output_prefix)
-        
-    elif args.command == 'monitor':
-        # 读取股票池
-        stock_pool = None
-        if args.pool:
-            try:
-                with open(args.pool, 'r', encoding='utf-8') as f:
-                    stock_pool = [line.strip() for line in f if line.strip()]
-            except Exception as e:
-                logger.error(f"读取股票池文件时出错: {e}")
-        
-        # 执行策略有效性监测
-        result = validator.monitor_strategy_effectiveness(
-            args.strategy, args.periods, args.period_length)
-        
-        # 保存结果
-        with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-            
-        logger.info(f"策略有效性监测结果已保存到: {args.output}")
-        
-        # 生成可视化结果
-        if args.visualize:
-            output_prefix = args.output.replace('.json', '')
-            create_visualization(result, output_prefix)
+    # 运行验证
+    is_valid = validator.validate()
     
-    elif args.command == 'optimize':
-        # TODO: 实现策略优化功能
-        logger.info("策略优化功能尚未实现")
-        
-    elif args.command == 'combine':
-        # TODO: 实现多策略组合优化功能
-        logger.info("多策略组合优化功能尚未实现")
-        
+    if is_valid:
+        logger.info(f"策略 '{args.strategy}' 验证通过。")
     else:
-        parser.print_help()
-    
+        logger.error(f"策略 '{args.strategy}' 验证失败。")
+
 if __name__ == "__main__":
     main() 

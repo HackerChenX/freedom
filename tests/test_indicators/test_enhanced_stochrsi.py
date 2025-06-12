@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.oscillator.enhanced_stochrsi import EnhancedSTOCHRSI
+from indicators.enhanced_stochrsi import EnhancedSTOCHRSI
 
 
 class TestEnhancedSTOCHRSI(unittest.TestCase):

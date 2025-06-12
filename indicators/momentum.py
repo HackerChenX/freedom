@@ -41,6 +41,17 @@ class Momentum(BaseIndicator):
         self.signal_period = signal_period
         self.calculation_method = calculation_method
     
+    def set_parameters(self, period: int = None, signal_period: int = None, calculation_method: str = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
+        if signal_period is not None:
+            self.signal_period = signal_period
+        if calculation_method is not None:
+            self.calculation_method = calculation_method
+    
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列
@@ -577,44 +588,6 @@ class Momentum(BaseIndicator):
         
         return patterns
     
-    def plot(self, df: pd.DataFrame, result: pd.DataFrame, ax=None):
-        """
-        绘制动量指标图表
-        
-        Args:
-            df: 原始数据DataFrame
-            result: 计算指标后的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-        
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(14, 7))
-        
-        # 绘制MTM和信号线
-        ax.plot(result['mtm'], label=f'MTM({self.period})')
-        ax.plot(result['signal'], label=f'Signal({self.signal_period})')
-        
-        # 绘制零线
-        ax.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-        
-        # 标记买卖信号
-        buy_signals = result[result['buy_signal'] == 1].index
-        sell_signals = result[result['sell_signal'] == 1].index
-        
-        ax.scatter(buy_signals, result.loc[buy_signals, 'mtm'], color='green', marker='^', s=100, label='买入信号')
-        ax.scatter(sell_signals, result.loc[sell_signals, 'mtm'], color='red', marker='v', s=100, label='卖出信号')
-        
-        ax.set_title(f'动量指标(MTM) - 周期:{self.period}')
-        ax.set_ylabel('动量值')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        
-        return ax
-    
     def compute(self, df: pd.DataFrame, price_column: str = "close") -> pd.DataFrame:
         """
         计算动量指标并生成交易信号
@@ -634,4 +607,10 @@ class Momentum(BaseIndicator):
         except Exception as e:
             self._error = str(e)
             logger.error(f"计算指标 {self.name} 时出错: {str(e)}")
-            raise 
+            raise
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取动量指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs) 

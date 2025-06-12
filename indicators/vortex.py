@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
+import talib
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -681,44 +682,6 @@ class Vortex(BaseIndicator):
         
         return patterns
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
-        """
-        绘制涡流指标(Vortex Indicator)图表
-        
-        Args:
-            df: 包含Vortex指标的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            **kwargs: 额外绘图参数
-            
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        # 检查必要的指标列是否存在
-        required_columns = ['vi_plus', 'vi_minus']
-        self._validate_dataframe(df, required_columns)
-        
-        # 创建新的轴对象（如果未提供）
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(12, 6))
-        
-        # 绘制VI+和VI-
-        ax.plot(df.index, df['vi_plus'], label='VI+', color='green', linewidth=2)
-        ax.plot(df.index, df['vi_minus'], label='VI-', color='red', linewidth=2)
-        
-        # 添加水平线
-        ax.axhline(y=1.0, color='black', linestyle='-', alpha=0.5, label='中性线')
-        ax.axhline(y=1.1, color='gray', linestyle='--', alpha=0.5, label='强势阈值')
-        ax.axhline(y=0.9, color='gray', linestyle='--', alpha=0.5, label='弱势阈值')
-        
-        ax.set_title(f"涡流指标(Vortex Indicator, {self.period}日)")
-        ax.set_ylabel('VI值')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax 
-
     def _register_vortex_patterns(self):
         """
         注册Vortex指标相关形态
@@ -829,4 +792,71 @@ class Vortex(BaseIndicator):
             pattern_type=PatternType.VOLATILITY,
             default_strength=PatternStrength.WEAK,
             score_impact=0.0
-        ) 
+        )
+
+    def get_patterns(self):
+        patterns = {
+            "description": "VI- 上穿 VI+，可能预示下跌趋势的开始。",
+        }
+        return patterns
+
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+        """
+        计算Vortex原始评分
+        """
+        if self._result is None:
+            self.calculate(data)
+        
+        # 评分逻辑...
+        score = pd.Series(50.0, index=data.index)
+        return score
+
+    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成涡流指标(Vortex Indicator)交易信号
+        
+        Args:
+            df: 包含价格数据和Vortex指标的DataFrame
+            **kwargs: 额外参数
+                
+        Returns:
+            添加了信号列的DataFrame:
+            - vortex_buy_signal: 1=买入信号, 0=无信号
+            - vortex_sell_signal: 1=卖出信号, 0=无信号
+        """
+        if df.empty:
+            return df
+            
+        # 检查必要的指标列是否存在
+        required_columns = ['vi_plus', 'vi_minus']
+        self._validate_dataframe(df, required_columns)
+        
+        df_copy = df.copy()
+        
+        # 初始化信号列
+        df_copy['vortex_buy_signal'] = 0
+        df_copy['vortex_sell_signal'] = 0
+        
+        # 生成交易信号
+        for i in range(1, len(df_copy)):
+            # 1. VI+上穿VI-（买入信号）
+            if (df_copy['vi_plus'].iloc[i-1] <= df_copy['vi_minus'].iloc[i-1] and 
+                df_copy['vi_plus'].iloc[i] > df_copy['vi_minus'].iloc[i]):
+                df_copy.iloc[i, df_copy.columns.get_loc('vortex_buy_signal')] = 1
+            
+            # 2. VI-上穿VI+（卖出信号）
+            elif (df_copy['vi_minus'].iloc[i-1] <= df_copy['vi_plus'].iloc[i-1] and 
+                  df_copy['vi_minus'].iloc[i] > df_copy['vi_plus'].iloc[i]):
+                df_copy.iloc[i, df_copy.columns.get_loc('vortex_sell_signal')] = 1
+            
+            # 3. VI+突破1.1阈值（强买入信号）
+            elif (df_copy['vi_plus'].iloc[i-1] <= 1.1 and 
+                  df_copy['vi_plus'].iloc[i] > 1.1):
+                df_copy.iloc[i, df_copy.columns.get_loc('vortex_buy_signal')] = 1
+            
+            # 4. VI-突破1.1阈值（强卖出信号）
+            elif (df_copy['vi_minus'].iloc[i-1] <= 1.1 and 
+                  df_copy['vi_minus'].iloc[i] > 1.1):
+                df_copy.iloc[i, df_copy.columns.get_loc('vortex_sell_signal')] = 1
+        
+        return df_copy 

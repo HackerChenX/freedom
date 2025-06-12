@@ -131,25 +131,20 @@ class DataManager:
 
     def get_kline_data(self, stock_code: str, start_date: Optional[str] = None,
                          end_date: Optional[str] = None, level: str = 'day',
-                         **kwargs) -> pd.DataFrame:
+                         **kwargs) -> StockInfo:
         """
         获取K线数据的兼容性接口（别名）。
-        内部调用 get_stock_info 并返回其包含的DataFrame。
+        内部直接调用 get_stock_info 并返回其结果。
         """
         logger.warning("方法 get_kline_data 已被弃用，请尽快切换到 get_stock_info。")
 
-        # 调用主方法
-        stock_info_obj = self.get_stock_info(
+        # 调用主方法并直接返回StockInfo对象
+        return self.get_stock_info(
             stock_code=stock_code,
             start_date=start_date,
             end_date=end_date,
             level=level
         )
-
-        # 返回 StockInfo 对象中的数据 DataFrame
-        if stock_info_obj and stock_info_obj.data is not None:
-            return stock_info_obj.data
-        return pd.DataFrame()
     
     @performance_monitor(threshold=0.5)
     def save_selection_result(self, result: pd.DataFrame, strategy_id: str, 

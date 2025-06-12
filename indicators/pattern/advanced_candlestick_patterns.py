@@ -69,6 +69,13 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         super().__init__(name="AdvancedCandlestickPatterns", description="高级K线形态识别指标，识别更复杂的组合K线形态和复合形态")
         self.basic_patterns = CandlestickPatterns()
     
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        """
+        # 高级K线形态识别通常没有可变参数，但为了符合接口要求，提供此方法
+        pass
+    
     def ensure_columns(self, data: pd.DataFrame, required_columns: List[str]) -> None:
         """
         确保数据包含必要的列

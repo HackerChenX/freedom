@@ -521,6 +521,19 @@ class BuyPointDetector(BaseIndicator):
         """初始化ZXM买点检测指标"""
         super().__init__(name="BuyPointDetector", description="ZXM买点检测指标，检测多种买点形态")
         
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        """
+        # 买点侦测器通常没有可变参数，但为了符合接口要求，提供此方法
+        pass
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取买点侦测器的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)
+    
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点指标

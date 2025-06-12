@@ -69,7 +69,7 @@ class IndicatorFactory:
         # 使用直接赋值而非lambda，简化创建过程
         if indicator_type not in cls._indicators:
             cls._indicators[indicator_type] = indicator_class
-            logger.info(f"已注册指标: {indicator_type}")
+            logger.info(f"已注册指标: {indicator_type} -> {indicator_class.__name__}")
         else:
             logger.debug(f"指标 {indicator_type} 已存在，跳过重复注册")
     
@@ -237,9 +237,11 @@ class IndicatorFactory:
                         sub_package = relative_path.replace(os.sep, '.')
                         full_module_name = f"{package_name}.{sub_package}.{module_name}"
 
+                    logger.info(f"尝试导入模块: {full_module_name}")
                     try:
                         # 导入模块
                         module = importlib.import_module(full_module_name)
+                        logger.info(f"正在扫描模块: {full_module_name}")
                         
                         # 从模块中找出所有继承自BaseIndicator的类
                         for name, obj in inspect.getmembers(module):
@@ -248,17 +250,22 @@ class IndicatorFactory:
                                 obj is not BaseIndicator and 
                                 not inspect.isabstract(obj)):
                                 
-                                # 使用类名的大写作为指标ID
-                                indicator_id = name.upper()
-                                
-                                # 注册指标
-                                cls.register_indicator(indicator_id, obj)
-                                registered_count += 1
-                                
+                                try:
+                                    # 实例化指标以检查其可用性
+                                    indicator_instance = obj()
+                                    if indicator_instance.is_available:
+                                        # 使用类名作为默认的指标类型名称
+                                        indicator_type = obj.__name__.upper()
+                                        cls.register_indicator(indicator_type, obj)
+                                        registered_count += 1
+                                    else:
+                                        logger.debug(f"指标 {obj.__name__} 未标记为可用，跳过注册。")
+                                except Exception as e:
+                                    logger.warning(f"无法实例化指标 {obj.__name__} 来检查可用性，跳过注册。错误: {e}")
                     except Exception as e:
-                        logger.error(f"导入或注册指标模块 {full_module_name} 时出错: {e}")
+                        logger.error(f"导入或注册模块 {full_module_name} 时出错: {e}", exc_info=True)
         
-        logger.info(f"自动注册完成，共注册 {registered_count} 个新指标。")
+        logger.info(f"自动注册完成，共注册了 {registered_count} 个可用指标。")
         
         # 设置标记，避免重复注册
         cls._has_auto_registered = True

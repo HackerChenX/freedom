@@ -24,6 +24,20 @@ class ZXMPatternIndicator(BaseIndicator):
         self.name = "ZXMPattern"
         self.description = "基于ZXM体系的买点和吸筹形态识别指标"
     
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        """
+        # ZXM形态识别通常没有可变参数，但为了符合接口要求，提供此方法
+        pass
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取ZXM指标的技术形态
+        """
+        # ZXM形态识别较为复杂，暂不直接返回形态列表
+        return []
+    
     def _calculate(self, 
                   open_prices: np.ndarray, 
                   high_prices: np.ndarray, 

@@ -7,13 +7,17 @@
 用于验证技术指标评分系统的有效性和准确性
 """
 
-import numpy as np
+import os
+import sys
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Any, Union, Callable
-import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
-import seaborn as sns
+from datetime import datetime, timedelta
 
+# 添加项目根目录到Python路径
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+
+from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
 from utils.decorators import performance_monitor
 
@@ -195,83 +199,6 @@ class ScoringValidator:
         
         logger.info(f"优化后的阈值: {best_thresholds}, 准确率: {best_accuracy:.4f}")
         return best_thresholds
-    
-    def plot_validation_results(self, output_file: Optional[str] = None):
-        """
-        绘制验证结果图表
-        
-        Args:
-            output_file: 输出文件路径，如果为None则显示图表
-            
-        Returns:
-            None
-        """
-        if not self.results:
-            logger.warning("没有验证结果可供绘制")
-            return
-            
-        validation_df = self.results.get('validation_data')
-        if validation_df is None or len(validation_df) == 0:
-            logger.warning("验证数据为空")
-            return
-            
-        # 创建图表
-        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-        
-        # 1. 混淆矩阵热力图
-        cm = self.results.get('confusion_matrix')
-        if cm is not None:
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                       xticklabels=['看涨', '中性', '看跌'],
-                       yticklabels=['看涨', '中性', '看跌'],
-                       ax=axes[0, 0])
-            axes[0, 0].set_title('混淆矩阵')
-            axes[0, 0].set_xlabel('预测标签')
-            axes[0, 0].set_ylabel('实际标签')
-        
-        # 2. 评分分布图
-        validation_df['score'].hist(bins=20, ax=axes[0, 1])
-        axes[0, 1].set_title('评分分布')
-        axes[0, 1].set_xlabel('评分')
-        axes[0, 1].set_ylabel('频率')
-        
-        # 3. 评分组与未来回报的关系
-        score_perf = self.results.get('score_group_performance')
-        if score_perf is not None:
-            score_perf.plot(x='score_group', y='mean', kind='bar', ax=axes[1, 0])
-            axes[1, 0].set_title(f'评分组与{self.lookforward_days}日未来回报的关系')
-            axes[1, 0].set_xlabel('评分组')
-            axes[1, 0].set_ylabel('平均未来回报')
-        
-        # 4. ROC曲线（针对看涨预测）
-        # 将问题转换为二分类：是否为看涨信号
-        y_true_binary = (validation_df['actual'] > 0).astype(int)
-        
-        # 使用评分作为预测概率
-        y_score = validation_df['score'] / 100  # 归一化到0-1
-        
-        fpr, tpr, _ = roc_curve(y_true_binary, y_score)
-        roc_auc = auc(fpr, tpr)
-        
-        axes[1, 1].plot(fpr, tpr, label=f'ROC曲线 (AUC = {roc_auc:.2f})')
-        axes[1, 1].plot([0, 1], [0, 1], 'k--')
-        axes[1, 1].set_xlim([0.0, 1.0])
-        axes[1, 1].set_ylim([0.0, 1.05])
-        axes[1, 1].set_xlabel('假正例率')
-        axes[1, 1].set_ylabel('真正例率')
-        axes[1, 1].set_title('看涨信号的ROC曲线')
-        axes[1, 1].legend(loc="lower right")
-        
-        # 调整布局
-        plt.tight_layout()
-        
-        # 保存或显示图表
-        if output_file:
-            plt.savefig(output_file, dpi=300)
-            plt.close(fig)
-            logger.info(f"验证结果图表已保存至: {output_file}")
-        else:
-            plt.show()
     
     def get_performance_statistics(self) -> Dict[str, Any]:
         """

@@ -20,7 +20,7 @@ from indicators.rsi_score import RSIScore
 from indicators.boll_score import BOLLScore
 from indicators.scoring_framework import IndicatorScoreBase, IndicatorScoreManager
 from indicators.volume_score import VolumeScore
-from indicators.trend_strength import TrendStrength
+# from indicators.trend.trend_strength import TrendStrength
 from indicators.unified_ma import UnifiedMA
 from indicators.vosc import VOSC
 from indicators.volume_ratio import VR
@@ -28,6 +28,16 @@ from indicators.vortex import Vortex
 from indicators.wma import WMA
 from indicators.wr import WR
 from enums.indicator_enum import IndicatorEnum
+from indicators.macd import MACD
+from indicators.rsi import RSI
+from indicators.boll import BOLL as BollingerBands
+from indicators.volume import Volume
+from indicators.obv import OBV
+from indicators.atr import ATR
+from indicators.chaikin import Chaikin as ChaikinVolatility
+from indicators.roc import ROC
+from indicators.trix import TRIX
+from indicators.momentum import Momentum
 
 logger = get_logger(__name__)
 
@@ -114,20 +124,10 @@ class IndicatorRegistry:
 
     def register_standard_indicators(self):
         """注册标准指标集"""
-        # 导入所有指标类
-        from indicators.macd import MACD
-        from indicators.kdj import KDJ
-        from indicators.rsi import RSI
-        from indicators.boll import BOLL
-        from indicators.ma import MA
-        from indicators.volume import Volume
-        
         # 注册指标
         self.register_indicator(MACD, name="MACD", description="移动平均线收敛散度指标")
-        self.register_indicator(KDJ, name="KDJ", description="随机指标")
         self.register_indicator(RSI, name="RSI", description="相对强弱指数")
-        self.register_indicator(BOLL, name="BOLL", description="布林带")
-        self.register_indicator(MA, name="MA", description="移动平均线")
+        self.register_indicator(BollingerBands, name="BOLL", description="布林带")
         self.register_indicator(Volume, name="Volume", description="成交量指标")
 
     def initialize_pattern_registry(self):

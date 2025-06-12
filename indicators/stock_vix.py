@@ -59,6 +59,30 @@ class StockVIX(BaseIndicator):
         self._parameters = default_params
         self.atr = ATR()
     
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数键值对
+        """
+        for key, value in kwargs.items():
+            if key in self._parameters:
+                self._parameters[key] = value
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        个股VIX指标的形态识别（默认不实现）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            list: 空列表
+        """
+        return []
+    
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算个股VIX指标

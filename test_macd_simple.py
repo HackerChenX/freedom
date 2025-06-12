@@ -71,119 +71,79 @@ def generate_test_data(size=200):
 
 
 def test_enhanced_macd():
-    """测试增强MACD指标"""
-    # 生成测试数据
-    df = generate_test_data(300)
+    """测试增强版MACD指标的计算、信号和得分"""
+    # 准备测试数据
+    df = generate_test_data()
     
     # 创建MACD实例
-    macd = MACD(
-        fast_period=12,
-        slow_period=26,
-        signal_period=9,
-        histogram_threshold=0.01,
-        divergence_window=15,
-        divergence_threshold=0.03,
-        zero_line_sensitivity=0.001
-    )
+    macd = MACD()
     
-    # 计算指标
-    print("计算MACD指标...")
+    # 1. 测试计算
     result = macd.calculate(df)
+    assert isinstance(result, pd.DataFrame), "计算结果应为DataFrame"
+    assert 'macd' in result.columns, "结果中应包含 'macd' 列"
+    assert 'signal' in result.columns, "结果中应包含 'signal' 列"
+    assert 'hist' in result.columns, "结果中应包含 'hist' 列"
     
-    # 输出结果的列名
-    print("\nMACD计算结果包含以下列:")
-    for col in result.columns:
-        print(f"- {col}")
-    
-    # 获取信号
-    print("\n检测信号...")
-    signals = macd.get_signals(df)
-    
-    print("\n检测到的信号:")
-    active_signals = []
-    for signal_name, is_active in signals.items():
-        if is_active:
-            active_signals.append(signal_name)
-            print(f"- {signal_name}")
-    
-    if not active_signals:
-        print("- 没有检测到信号")
-    
-    # 计算得分
-    print("\n计算MACD评分...")
-    score = macd.calculate_raw_score(df)
-    
-    print(f"\n最新评分: {score.iloc[-1]:.2f}")
-    
-    print("\n最近10个评分:")
-    for date, score_value in score.iloc[-10:].items():
-        print(f"- {date.strftime('%Y-%m-%d')}: {score_value:.2f}")
+    # 2. 测试信号生成
+    signals = macd.get_signals(result)
+    assert isinstance(signals, dict), "信号应为字典"
+    assert 'buy_signal' in signals, "信号中应包含 'buy_signal'"
+    assert 'sell_signal' in signals, "信号中应包含 'sell_signal'"
+    assert isinstance(signals['buy_signal'], pd.Series), "买入信号应为Series"
+    assert isinstance(signals['sell_signal'], pd.Series), "卖出信号应为Series"
+
+    print("\n--- 检测到的信号 ---")
+    has_signals = False
+    for signal_name, signal_series in signals.items():
+        if isinstance(signal_series, pd.Series) and signal_series.any():
+            print(f"- 检测到 '{signal_name}'")
+            has_signals = True
+    if not has_signals:
+        print("- 未检测到任何信号")
+    print("--------------------")
+
+    # 3. 测试得分计算
+    score = macd.calculate_raw_score(result)
+    assert isinstance(score, pd.Series), "得分应为Series"
+    assert not score.empty, "得分Series不应为空"
 
 
 def test_parameter_tuning():
-    """测试参数调整对MACD指标的影响"""
+    """测试不同参数对MACD指标的影响"""
     # 生成测试数据
-    df = generate_test_data(300)
+    df = generate_test_data(500)
     
-    # 定义不同的参数组合
+    # 定义多组参数进行测试
     parameter_sets = [
-        {'fast_period': 8, 'slow_period': 17, 'signal_period': 9, 'name': 'Fast MACD (8,17,9)'},
-        {'fast_period': 12, 'slow_period': 26, 'signal_period': 9, 'name': 'Standard MACD (12,26,9)'},
-        {'fast_period': 16, 'slow_period': 35, 'signal_period': 9, 'name': 'Slow MACD (16,35,9)'}
+        {'name': '默认参数', 'fast_period': 12, 'slow_period': 26, 'signal_period': 9},
+        {'name': '快速响应', 'fast_period': 5, 'slow_period': 15, 'signal_period': 5},
+        {'name': '长周期', 'fast_period': 24, 'slow_period': 52, 'signal_period': 18},
     ]
     
-    print("\n参数调整对MACD指标的影响:")
-    
-    # 为每组参数计算MACD
+    # 为每组参数计算MACD并验证
     for params in parameter_sets:
-        print(f"\n测试 {params['name']}...")
+        name = params.pop('name')
+        print(f"\n--- 测试参数组: {name} ---")
         
         # 创建MACD实例
-        macd_indicator = MACD(
-            fast_period=params['fast_period'],
-            slow_period=params['slow_period'],
-            signal_period=params['signal_period']
-        )
+        macd_indicator = MACD(**params)
         
-        # 计算指标
-        result = macd_indicator.calculate(df)
+        # 1. 测试计算
+        result_df = macd_indicator.calculate(df)
+        assert isinstance(result_df, pd.DataFrame), f"[{name}] 计算结果应为DataFrame"
+        assert 'macd' in result_df.columns, f"[{name}] 结果中应包含 'macd' 列"
+        assert 'signal' in result_df.columns, f"[{name}] 结果中应包含 'signal' 列"
         
-        # 获取信号
-        signals = macd_indicator.get_signals(df)
+        # 2. 测试信号
+        signals = macd_indicator.get_signals(result_df)
+        assert isinstance(signals, dict), f"[{name}] 信号应为字典"
+        assert 'buy_signal' in signals, f"[{name}] 信号中应包含 'buy_signal'"
+        assert isinstance(signals['buy_signal'], pd.Series), f"[{name}] 买入信号应为Series"
         
-        # 计算得分
-        score = macd_indicator.calculate_raw_score(df)
-        
-        # 输出信号统计
-        active_signals = []
-        for signal_name, is_active in signals.items():
-            if is_active:
-                active_signals.append(signal_name)
-        
-        print(f"- 信号数量: {len(active_signals)}")
-        print(f"- 最新评分: {score.iloc[-1]:.2f}")
-        
-        # 计算交叉次数
-        golden_crosses = result['golden_cross'].sum()
-        death_crosses = result['death_cross'].sum()
-        zero_up_crosses = result.get('macd_cross_zero_up', pd.Series([False] * len(result))).sum()
-        zero_down_crosses = result.get('macd_cross_zero_down', pd.Series([False] * len(result))).sum()
-        
-        print(f"- 金叉次数: {golden_crosses}")
-        print(f"- 死叉次数: {death_crosses}")
-        print(f"- 零轴向上穿越次数: {zero_up_crosses}")
-        print(f"- 零轴向下穿越次数: {zero_down_crosses}")
-        
-        # 计算背离和双顶双底次数
-        bullish_divergences = result.get('bullish_divergence', pd.Series([False] * len(result))).sum()
-        bearish_divergences = result.get('bearish_divergence', pd.Series([False] * len(result))).sum()
-        double_bottoms = result.get('double_bottom', pd.Series([False] * len(result))).sum()
-        double_tops = result.get('double_top', pd.Series([False] * len(result))).sum()
-        
-        print(f"- 底背离次数: {bullish_divergences}")
-        print(f"- 顶背离次数: {bearish_divergences}")
-        print(f"- 双底次数: {double_bottoms}")
-        print(f"- 双顶次数: {double_tops}")
+        # 打印检测到的信号
+        has_buy_signal = signals['buy_signal'].any()
+        print(f"[{name}] 是否检测到买入信号: {'是' if has_buy_signal else '否'}")
 
 
 def main():

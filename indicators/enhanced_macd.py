@@ -74,6 +74,44 @@ class EnhancedMACD(BaseIndicator):
             if key in self._parameters:
                 self._parameters[key] = value
     
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取MACD指标的形态信号
+
+        Args:
+            data: 输入数据，通常是已经调用 _calculate 方法计算过的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含各种形态信号的DataFrame
+        """
+        # 定义所有可能的形态信号列
+        pattern_cols = [
+            'golden_cross', 'death_cross',
+            'bullish_divergence', 'bearish_divergence',
+            'hidden_bullish_divergence', 'hidden_bearish_divergence',
+            'MACD_turn_positive', 'MACD_turn_negative',
+            'DIF_cross_zero_up', 'DIF_cross_zero_down'
+        ]
+        
+        # 如果启用了双MACD，添加相关信号
+        if self._parameters.get('use_secondary_macd', False):
+            pattern_cols.extend([
+                'dual_macd_agree_bullish', 'dual_macd_agree_bearish',
+                'dual_macd_both_positive', 'dual_macd_both_negative'
+            ])
+
+        # 筛选出data中存在的形态列
+        existing_patterns = [col for col in pattern_cols if col in data.columns]
+        
+        if not existing_patterns:
+            # 如果没有任何形态列，可能需要先运行计算
+            # 但为避免复杂调用，这里返回空DataFrame
+            logger.warning("未在输入数据中找到任何形态信号，请先运行 a.calculate(df)")
+            return pd.DataFrame(index=data.index)
+            
+        return data[existing_patterns].copy()
+    
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强版MACD指标
@@ -344,77 +382,122 @@ class EnhancedMACD(BaseIndicator):
     
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        生成交易信号
+        生成买入和卖出信号
         
         Args:
-            data: 输入数据，包含价格数据的DataFrame
+            data: 输入数据
             
         Returns:
-            pd.DataFrame: 包含信号的DataFrame
+            pd.DataFrame: 包含买卖信号的DataFrame
         """
-        if not self.has_result():
-            self.calculate(data)
+        # 首先，计算所有指标和形态
+        if 'DIF' not in data.columns:
+            calc_data = self.calculate(data)
+        else:
+            calc_data = data
+
+        # 获取所有形态
+        patterns = self.get_patterns(calc_data)
         
-        # 复制输入数据
-        signals = pd.DataFrame(index=data.index)
-        signals['buy'] = False
-        signals['sell'] = False
-        signals['neutral'] = True
+        # 定义买入和卖出信号的构成
+        buy_conditions = [
+            'golden_cross',
+            'bullish_divergence',
+            'hidden_bullish_divergence',
+            'DIF_cross_zero_up'
+        ]
         
-        # 检查结果是否有效
-        if self._result is None or len(self._result) == 0:
-            return signals
+        sell_conditions = [
+            'death_cross',
+            'bearish_divergence',
+            'hidden_bearish_divergence',
+            'DIF_cross_zero_down'
+        ]
         
-        # 从计算结果中获取各种信号
-        result = self._result
+        # 如果启用双MACD，添加协同信号
+        if self._parameters.get('use_secondary_macd', False):
+            buy_conditions.append('dual_macd_agree_bullish')
+            sell_conditions.append('dual_macd_agree_bearish')
+
+        # 初始化信号Series
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+
+        # 聚合信号
+        for col in buy_conditions:
+            if col in patterns.columns:
+                buy_signal |= patterns[col]
         
-        # 生成买入信号
-        # 1. 金叉信号（主要买入信号）
-        signals.loc[result['golden_cross'], 'buy'] = True
+        for col in sell_conditions:
+            if col in patterns.columns:
+                sell_signal |= patterns[col]
         
-        # 2. DIF上穿零轴且为正值
-        zero_cross_buy = result['DIF_cross_zero_up'] & (result['DEA'] > -0.5 * result['DEA'].rolling(window=10).std())
-        signals.loc[zero_cross_buy, 'buy'] = True
+        # 创建最终的信号DataFrame
+        signals_df = pd.DataFrame({
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal
+        }, index=data.index)
+
+        return signals_df
+
+    def get_signal_strength(self, data: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
+        """
+        计算信号强度
         
-        # 3. 双MACD共振买入信号
-        if 'dual_macd_agree_bullish' in result.columns:
-            signals.loc[result['dual_macd_agree_bullish'], 'buy'] = True
+        Args:
+            data: 输入数据
+            
+        Returns:
+            Tuple[pd.Series, pd.Series]: 包含买入信号强度和卖出信号强度的元组
+        """
+        # 首先，计算所有指标和形态
+        if 'DIF' not in data.columns:
+            calc_data = self.calculate(data)
+        else:
+            calc_data = data
+
+        # 获取所有形态
+        patterns = self.get_patterns(calc_data)
         
-        # 4. 柱状图加速放大买入信号
-        if 'MACD_expanding_strong' in result.columns:
-            macd_expand_buy = result['MACD_expanding_strong'] & (result['DIF'] > result['DEA'])
-            signals.loc[macd_expand_buy, 'buy'] = True
+        # 定义买入和卖出信号的构成
+        buy_conditions = [
+            'golden_cross',
+            'bullish_divergence',
+            'hidden_bullish_divergence',
+            'DIF_cross_zero_up'
+        ]
         
-        # 5. 看涨背离买入信号
-        if 'bullish_divergence' in result.columns:
-            signals.loc[result['bullish_divergence'], 'buy'] = True
+        sell_conditions = [
+            'death_cross',
+            'bearish_divergence',
+            'hidden_bearish_divergence',
+            'DIF_cross_zero_down'
+        ]
         
-        # 生成卖出信号
-        # 1. 死叉信号（主要卖出信号）
-        signals.loc[result['death_cross'], 'sell'] = True
+        # 如果启用双MACD，添加协同信号
+        if self._parameters.get('use_secondary_macd', False):
+            buy_conditions.append('dual_macd_agree_bullish')
+            sell_conditions.append('dual_macd_agree_bearish')
+
+        # 初始化信号Series
+        buy_signal = pd.Series(0, index=data.index)
+        sell_signal = pd.Series(0, index=data.index)
+
+        # 聚合信号
+        for col in buy_conditions:
+            if col in patterns.columns:
+                buy_signal += patterns[col]
         
-        # 2. DIF下穿零轴且为负值
-        zero_cross_sell = result['DIF_cross_zero_down'] & (result['DEA'] < 0.5 * result['DEA'].rolling(window=10).std())
-        signals.loc[zero_cross_sell, 'sell'] = True
+        for col in sell_conditions:
+            if col in patterns.columns:
+                sell_signal += patterns[col]
         
-        # 3. 双MACD共振卖出信号
-        if 'dual_macd_agree_bearish' in result.columns:
-            signals.loc[result['dual_macd_agree_bearish'], 'sell'] = True
-        
-        # 4. 柱状图加速缩小卖出信号
-        if 'MACD_contracting_strong' in result.columns:
-            macd_contract_sell = result['MACD_contracting_strong'] & (result['DIF'] < result['DEA'])
-            signals.loc[macd_contract_sell, 'sell'] = True
-        
-        # 5. 看跌背离卖出信号
-        if 'bearish_divergence' in result.columns:
-            signals.loc[result['bearish_divergence'], 'sell'] = True
-        
-        # 设置中性信号（既不是买入也不是卖出）
-        signals['neutral'] = ~(signals['buy'] | signals['sell'])
-        
-        return signals
-        
+        # 计算信号强度
+        buy_strength = buy_signal / len(buy_conditions)
+        sell_strength = sell_signal / len(sell_conditions)
+
+        return buy_strength, sell_strength
+    
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算增强版MACD指标的原始评分
@@ -486,87 +569,5 @@ class EnhancedMACD(BaseIndicator):
         
         return score
     
-    def plot_macd(self, data: pd.DataFrame, ax=None, show_divergence=True):
-        """
-        绘制MACD图表
-        
-        Args:
-            data: 输入数据
-            ax: matplotlib轴对象
-            show_divergence: 是否显示背离标记
-            
-        Returns:
-            matplotlib轴对象
-        """
-        try:
-            import matplotlib.pyplot as plt
-            from matplotlib.patches import Rectangle
-            
-            # 计算MACD
-            if not self.has_result():
-                self.compute(data)
-                
-            if not self.has_result():
-                logger.error("没有MACD计算结果可供绘图")
-                return None
-            
-            # 创建图表
-            if ax is None:
-                fig, ax = plt.subplots(figsize=(12, 6))
-            
-            # 绘制DIF和DEA线
-            ax.plot(self._result.index, self._result['DIF'], 'b-', label='DIF')
-            ax.plot(self._result.index, self._result['DEA'], 'r-', label='DEA')
-            
-            # 绘制柱状图
-            for i in range(len(self._result)):
-                if i > 0:  # 跳过第一个点，因为无法计算变化
-                    if self._result['MACD'].iloc[i] >= 0:
-                        color = 'r'  # 正值为红色
-                    else:
-                        color = 'g'  # 负值为绿色
-                    
-                    ax.add_patch(Rectangle(
-                        (i, 0),
-                        0.6,
-                        self._result['MACD'].iloc[i],
-                        color=color,
-                        alpha=0.5
-                    ))
-            
-            # 绘制零轴
-            ax.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-            
-            # 标记金叉和死叉
-            if 'golden_cross' in self._result.columns:
-                golden_cross_idx = self._result[self._result['golden_cross']].index
-                death_cross_idx = self._result[self._result['death_cross']].index
-                
-                ax.scatter(golden_cross_idx, self._result.loc[golden_cross_idx, 'DIF'], 
-                          marker='^', color='r', s=50, label='金叉')
-                ax.scatter(death_cross_idx, self._result.loc[death_cross_idx, 'DIF'], 
-                          marker='v', color='g', s=50, label='死叉')
-            
-            # 标记背离
-            if show_divergence:
-                if 'bullish_divergence' in self._result.columns:
-                    bull_div_idx = self._result[self._result['bullish_divergence']].index
-                    ax.scatter(bull_div_idx, self._result.loc[bull_div_idx, 'DIF'], 
-                              marker='*', color='lime', s=100, label='看涨背离')
-                
-                if 'bearish_divergence' in self._result.columns:
-                    bear_div_idx = self._result[self._result['bearish_divergence']].index
-                    ax.scatter(bear_div_idx, self._result.loc[bear_div_idx, 'DIF'], 
-                              marker='*', color='orangered', s=100, label='看跌背离')
-            
-            # 添加图例和标题
-            ax.legend(loc='best')
-            ax.set_title('Enhanced MACD')
-            ax.set_ylabel('Value')
-            ax.grid(True, alpha=0.3)
-            
-            return ax
-            
-        except ImportError:
-            logger.warning("缺少matplotlib库，无法绘图")
-            return None 
+    def set_market_environment(self, market_env: str):
+        self.market_env = market_env 

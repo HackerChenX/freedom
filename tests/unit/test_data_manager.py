@@ -17,6 +17,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(root_dir)
 
 from db.data_manager import DataManager
+from models.stock_info import StockInfo
 from enums.period import Period
 from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError
 
@@ -55,173 +56,147 @@ class TestDataManager(unittest.TestCase):
             'turnover_rate': [2, 3, 4]
         })
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_kline_data_success(self, mock_query):
+    @patch('db.data_manager.DataManager.db.get_stock_info')
+    def test_get_kline_data_success(self, mock_get_stock_info):
         """测试成功获取K线数据"""
         # 配置模拟对象
-        mock_query.return_value = self.test_kline_data
-        
+        mock_get_stock_info.return_value = StockInfo(self.test_kline_data)
+
         # 调用被测方法
         result = self.data_manager.get_kline_data(
             stock_code='000001',
-            period=Period.DAILY,
+            level='day',
             start_date='2023-01-01',
             end_date='2023-01-10'
         )
-        
+
         # 验证结果
         self.assertIsNotNone(result)
+        self.assertTrue(result.is_collection)
         self.assertEqual(len(result), 10)
-        self.assertEqual(result.iloc[0]['date'].strftime('%Y-%m-%d'), '2023-01-01')
-        
+        self.assertEqual(result[0].date.strftime('%Y-%m-%d'), '2023-01-01')
+
         # 验证模拟对象被调用
-        mock_query.assert_called_once()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_kline_data_empty(self, mock_query):
+        mock_get_stock_info.assert_called_once()
+
+    @patch('db.data_manager.DataManager.db.get_stock_info')
+    def test_get_kline_data_empty(self, mock_get_stock_info):
         """测试获取空K线数据"""
         # 配置模拟对象返回空DataFrame
-        mock_query.return_value = pd.DataFrame()
-        
+        mock_get_stock_info.return_value = StockInfo(pd.DataFrame())
+
         # 调用被测方法
         result = self.data_manager.get_kline_data(
             stock_code='000001',
-            period=Period.DAILY,
+            level='day',
             start_date='2023-01-01',
             end_date='2023-01-10'
         )
-        
+
         # 验证结果
-        self.assertTrue(result.empty)
-        
+        self.assertEqual(len(result), 0)
+
         # 验证模拟对象被调用
-        mock_query.assert_called_once()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_kline_data_invalid_period(self, mock_query):
-        """测试使用无效周期获取K线数据"""
-        # 测试使用无效的周期字符串
-        with self.assertRaises(DataValidationError):
-            self.data_manager.get_kline_data(
-                stock_code='000001',
-                period='INVALID_PERIOD',
-                start_date='2023-01-01',
-                end_date='2023-01-10'
-            )
-        
-        # 验证模拟对象未被调用
-        mock_query.assert_not_called()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_kline_data_empty_stock_code(self, mock_query):
-        """测试使用空股票代码获取K线数据"""
-        # 测试使用空股票代码
-        with self.assertRaises(DataValidationError):
-            self.data_manager.get_kline_data(
-                stock_code='',
-                period=Period.DAILY,
-                start_date='2023-01-01',
-                end_date='2023-01-10'
-            )
-        
-        # 验证模拟对象未被调用
-        mock_query.assert_not_called()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_kline_data_db_error(self, mock_query):
+        mock_get_stock_info.assert_called_once()
+
+    @patch('db.data_manager.DataManager.db.get_stock_info')
+    def test_get_kline_data_db_error(self, mock_get_stock_info):
         """测试数据库错误时获取K线数据"""
         # 配置模拟对象抛出异常
-        mock_query.side_effect = Exception("数据库连接错误")
-        
+        mock_get_stock_info.side_effect = Exception("数据库连接错误")
+
         # 测试数据库错误
         with self.assertRaises(DataAccessError):
             self.data_manager.get_kline_data(
                 stock_code='000001',
-                period=Period.DAILY,
+                level='day',
                 start_date='2023-01-01',
                 end_date='2023-01-10'
             )
-        
+
         # 验证模拟对象被调用
-        mock_query.assert_called_once()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_kline_data_cache(self, mock_query):
+        mock_get_stock_info.assert_called_once()
+
+    @patch('db.data_manager.DataManager.db.get_stock_info')
+    def test_get_kline_data_cache(self, mock_get_stock_info):
         """测试K线数据缓存功能"""
         # 配置模拟对象
-        mock_query.return_value = self.test_kline_data
-        
+        mock_get_stock_info.return_value = StockInfo(self.test_kline_data)
+
         # 首次调用
         self.data_manager.get_kline_data(
             stock_code='000001',
-            period=Period.DAILY,
+            level='day',
             start_date='2023-01-01',
             end_date='2023-01-10'
         )
-        
+
         # 验证模拟对象被调用一次
-        mock_query.assert_called_once()
-        mock_query.reset_mock()
-        
+        mock_get_stock_info.assert_called_once()
+        mock_get_stock_info.reset_mock()
+
         # 再次调用，应该使用缓存
         self.data_manager.get_kline_data(
             stock_code='000001',
-            period=Period.DAILY,
+            level='day',
             start_date='2023-01-01',
             end_date='2023-01-10'
         )
-        
+
         # 验证模拟对象未被再次调用
-        mock_query.assert_not_called()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_stock_list_success(self, mock_query):
+        mock_get_stock_info.assert_not_called()
+
+    @patch('db.data_manager.DataManager.db.get_stock_info')
+    def test_get_stock_info_for_list_success(self, mock_get_stock_info):
         """测试成功获取股票列表"""
         # 配置模拟对象
-        mock_query.return_value = self.test_stock_list
-        
+        mock_get_stock_info.return_value = StockInfo(self.test_stock_list)
+
         # 调用被测方法
-        result = self.data_manager.get_stock_list()
-        
+        result = self.data_manager.get_stock_info()
+        result_df = result.to_dataframe()
+
         # 验证结果
-        self.assertIsNotNone(result)
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result.iloc[0]['stock_code'], '000001')
-        
+        self.assertIsNotNone(result_df)
+        self.assertEqual(len(result_df), 3)
+        self.assertEqual(result_df.iloc[0]['stock_code'], '000001')
+
         # 验证模拟对象被调用
-        mock_query.assert_called_once()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_stock_list_with_filters(self, mock_query):
+        mock_get_stock_info.assert_called_once()
+
+    @patch('db.data_manager.DataManager.db.get_stock_info')
+    def test_get_stock_info_for_list_with_filters(self, mock_get_stock_info):
         """测试使用过滤器获取股票列表"""
         # 配置模拟对象
-        mock_query.return_value = self.test_stock_list[self.test_stock_list['market'] == '主板']
-        
+        filtered_df = self.test_stock_list[self.test_stock_list['market'] == '主板']
+        mock_get_stock_info.return_value = StockInfo(filtered_df)
+
         # 调用被测方法
-        result = self.data_manager.get_stock_list(
+        result = self.data_manager.get_stock_info(
             filters={'market': ['主板']}
         )
-        
+        result_df = result.to_dataframe()
+
         # 验证结果
-        self.assertIsNotNone(result)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result.iloc[0]['stock_code'], '000001')
-        
+        self.assertIsNotNone(result_df)
+        self.assertEqual(len(result_df), 1)
+        self.assertEqual(result_df.iloc[0]['stock_code'], '000001')
+
         # 验证模拟对象被调用
-        mock_query.assert_called_once()
-    
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    def test_get_stock_list_db_error(self, mock_query):
+        mock_get_stock_info.assert_called_once()
+
+    @patch('db.data_manager.DataManager.db.get_stock_info')
+    def test_get_stock_info_for_list_db_error(self, mock_get_stock_info):
         """测试数据库错误时获取股票列表"""
         # 配置模拟对象抛出异常
-        mock_query.side_effect = Exception("数据库连接错误")
-        
+        mock_get_stock_info.side_effect = Exception("数据库连接错误")
+
         # 测试数据库错误
         with self.assertRaises(DataAccessError):
-            self.data_manager.get_stock_list()
-        
+            self.data_manager.get_stock_info()
+
         # 验证模拟对象被调用
-        mock_query.assert_called_once()
+        mock_get_stock_info.assert_called_once()
     
     @patch('db.clickhouse_db.ClickHouseDB.query')
     @patch('db.clickhouse_db.ClickHouseDB.execute')

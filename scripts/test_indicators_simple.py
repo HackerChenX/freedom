@@ -185,31 +185,36 @@ def test_enhanced_rsi():
     # 获取测试数据
     df = generate_mock_data()
     
+    # --- 测试单周期 EnhancedRSI ---
+    logger.info("测试单周期 EnhancedRSI")
     # 创建增强版RSI实例（单周期）
-    rsi = EnhancedRSI(
-        periods=[14],
-        price_col='close'
+    rsi_single = EnhancedRSI(
+        period=14
     )
     
-    # 设置参数
-    rsi.set_parameters({'use_multi_period': False})
-    
     # 计算指标
-    rsi_data = rsi.compute(df)
+    rsi_data = rsi_single.calculate(df)
     logger.info(f"单周期RSI 结果列: {rsi_data.columns.tolist()}")
+    assert f'rsi_{rsi_single.period}' in rsi_data.columns
     
+    # --- 测试多周期 EnhancedRSI ---
+    logger.info("测试多周期 EnhancedRSI")
     # 创建多周期RSI实例
-    multi_rsi = EnhancedRSI(
-        periods=[6, 14, 21],
-        price_col='close'
+    rsi_multi = EnhancedRSI(
+        period=14,
+        multi_periods=[6, 14, 21]
     )
     
     # 计算指标
-    multi_rsi_data = multi_rsi.compute(df)
+    multi_rsi_data = rsi_multi.calculate(df)
     logger.info(f"多周期RSI 结果列: {multi_rsi_data.columns.tolist()}")
     
+    # 验证多周期列存在
+    for p in rsi_multi.multi_periods:
+        assert f"rsi_{p}" in multi_rsi_data.columns
+    
     # 获取信号
-    signals = multi_rsi.generate_signals(df)
+    signals = rsi_multi.generate_signals(multi_rsi_data)
     
     # 统计买入卖出信号数量
     buy_count = signals['buy_signal'].sum()
@@ -217,12 +222,13 @@ def test_enhanced_rsi():
     logger.info(f"多周期RSI 买入信号: {buy_count}, 卖出信号: {sell_count}")
     
     # 统计背离信号
-    if 'bullish_divergence' in multi_rsi_data.columns:
-        bull_div_count = multi_rsi_data['bullish_divergence'].sum()
+    patterns = rsi_multi.get_patterns(multi_rsi_data)
+    if 'bullish_divergence' in patterns.columns:
+        bull_div_count = patterns['bullish_divergence'].sum()
         logger.info(f"RSI看涨背离数量: {bull_div_count}")
     
-    if 'bearish_divergence' in multi_rsi_data.columns:
-        bear_div_count = multi_rsi_data['bearish_divergence'].sum()
+    if 'bearish_divergence' in patterns.columns:
+        bear_div_count = patterns['bearish_divergence'].sum()
         logger.info(f"RSI看跌背离数量: {bear_div_count}")
     
     logger.info("增强版RSI测试完成")

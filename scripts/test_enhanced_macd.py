@@ -17,6 +17,7 @@ sys.path.insert(0, root_dir)
 from indicators.macd import MACD
 from db.clickhouse_db import get_clickhouse_db
 from utils.logger import get_logger
+from indicators.base_indicator import MarketEnvironment
 
 logger = get_logger(__name__)
 
@@ -150,34 +151,29 @@ def test_enhanced_macd():
     macd = MACD()
     macd_result = macd.calculate(data)
     
-    # 2. 测试自适应参数的MACD
-    adaptive_macd = MACD(adapt_to_volatility=True)
-    adaptive_result = adaptive_macd.calculate(data)
-    
     # 3. 测试不同市场环境下的MACD
     # 3.1 牛市环境
     bull_macd = MACD()
-    bull_macd.set_market_environment("bull_market")
+    bull_macd.set_market_environment(MarketEnvironment.BULL_MARKET)
     bull_result = bull_macd.calculate(data)
     
     # 3.2 熊市环境
     bear_macd = MACD()
-    bear_macd.set_market_environment("bear_market")
+    bear_macd.set_market_environment(MarketEnvironment.BEAR_MARKET)
     bear_result = bear_macd.calculate(data)
     
     # 4. 测试信号生成
-    signals = macd.generate_signals(data)
+    signals = macd.get_signals(data)
     
     # 5. 测试评分计算
     score = macd.calculate_raw_score(data)
     
     # 6. 测试形态识别
-    patterns = macd.identify_patterns(data)
+    patterns = macd.get_patterns(data)
     
     # 打印测试结果摘要
     logger.info("MACD测试结果摘要:")
-    logger.info(f"标准MACD计算结果: DIF/DEA/MACD均值 = {macd_result['DIF'].mean():.2f} / {macd_result['DEA'].mean():.2f} / {macd_result['MACD'].mean():.2f}")
-    logger.info(f"自适应MACD计算结果: DIF/DEA/MACD均值 = {adaptive_result['DIF'].mean():.2f} / {adaptive_result['DEA'].mean():.2f} / {adaptive_result['MACD'].mean():.2f}")
+    logger.info(f"标准MACD计算结果: macd/signal/hist均值 = {macd_result['macd'].mean():.2f} / {macd_result['signal'].mean():.2f} / {macd_result['hist'].mean():.2f}")
     
     # 统计信号数量
     buy_signals = signals['buy_signal'].sum()
@@ -208,10 +204,10 @@ def analyze_signals(data, signals, score):
         score: 评分数据
     """
     # 找出所有买入信号
-    buy_dates = signals[signals['buy_signal']].index
+    buy_dates = signals['buy_signal'][signals['buy_signal']].index
     
     # 找出所有卖出信号
-    sell_dates = signals[signals['sell_signal']].index
+    sell_dates = signals['sell_signal'][signals['sell_signal']].index
     
     if len(buy_dates) == 0 or len(sell_dates) == 0:
         logger.warning("没有足够的买入或卖出信号进行分析")

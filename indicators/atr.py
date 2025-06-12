@@ -12,6 +12,7 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 from enum import Enum
 import warnings
+import talib
 
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
@@ -65,6 +66,20 @@ class ATR(BaseIndicator):
         
         # 注册ATR形态
         self._register_atr_patterns()
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        """
+        for key, value in kwargs.items():
+            if key in self.params:
+                self.params[key] = value
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取ATR指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)
     
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -578,59 +593,6 @@ class ATR(BaseIndicator):
                 result.iloc[i, result.columns.get_loc('atr_falling')] = 1
                 
         return result
-    
-    def plot(self, df: pd.DataFrame, result: pd.DataFrame, ax=None):
-        """
-        绘制ATR指标图表
-        
-        Args:
-            df: 原始数据DataFrame
-            result: 计算指标后的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-        
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(14, 7))
-        
-        # 绘制ATR
-        ax.plot(result[f'ATR{self.params["period"]}'], label=f'ATR({self.params["period"]})')
-        
-        # 标记高波动性和低波动性区域
-        high_volatility = result[result['volatility_high'] == 1].index
-        low_volatility = result[result['volatility_low'] == 1].index
-        
-        ax.scatter(high_volatility, result.loc[high_volatility, f'ATR{self.params["period"]}'], color='red', marker='^', s=100, label='高波动性')
-        ax.scatter(low_volatility, result.loc[low_volatility, f'ATR{self.params["period"]}'], color='green', marker='v', s=100, label='低波动性')
-        
-        ax.set_title(f'平均真实波幅(ATR) - 周期:{self.params["period"]}')
-        ax.set_ylabel('ATR值')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        
-        return ax
-    
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        计算ATR指标并生成交易信号
-        
-        Args:
-            df: 包含价格数据的DataFrame
-        
-        Returns:
-            包含ATR指标和交易信号的DataFrame
-        """
-        try:
-            result = self.calculate(df)
-            result = self.generate_signals(df)
-            self._result = result
-            return result
-        except Exception as e:
-            logger.error(f"计算ATR指标时出错: {e}")
-            return df
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

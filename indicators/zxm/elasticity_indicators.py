@@ -14,7 +14,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ZXMAmplitudeElasticity(BaseIndicator):
+class AmplitudeElasticity(BaseIndicator):
     """
     ZXM弹性-振幅指标
     
@@ -24,7 +24,7 @@ class ZXMAmplitudeElasticity(BaseIndicator):
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM弹性-振幅指标"""
-        super().__init__(name="ZXMAmplitudeElasticity", description="ZXM弹性-振幅指标，判断近期是否有较大振幅")
+        super().__init__(name="AmplitudeElasticity", description="ZXM弹性-振幅指标，判断近期是否有较大振幅")
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -180,7 +180,7 @@ class ZXMRiseElasticity(BaseIndicator):
         score = score.clip(0, 100)
         
         return score
-class ElasticityIndicator(BaseIndicator):
+class Elasticity(BaseIndicator):
     """
     ZXM弹性指标
     
@@ -195,7 +195,7 @@ class ElasticityIndicator(BaseIndicator):
         Args:
             period: 计算周期，默认20天
         """
-        super().__init__(name="ElasticityIndicator", description="ZXM弹性指标，检测股价弹性和反弹力度")
+        super().__init__(name="Elasticity", description="ZXM弹性指标，检测股价弹性和反弹力度")
         self.period = period
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:

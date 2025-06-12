@@ -8,14 +8,13 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.oscillator.enhanced_rsi import EnhancedRSI
+from indicators.enhanced_rsi import EnhancedRSI
 from indicators.rsi import RSI
 from indicators.oscillator.enhanced_kdj import EnhancedKDJ
 from indicators.kdj import KDJ
@@ -121,6 +120,7 @@ def test_enhanced_rsi():
     # 创建标准RSI和增强型RSI
     std_rsi = RSI(period=14)
     enhanced_rsi = EnhancedRSI(period=14, multi_periods=[9, 14, 21])
+    print(f"DEBUG: Indicator type is {enhanced_rsi.get_indicator_type()}")
     
     # 检测市场环境
     market_detector = MarketDetector()
@@ -158,48 +158,6 @@ def test_enhanced_rsi():
     patterns = enhanced_rsi.identify_patterns(data)
     
     logger.info(f"识别到的形态: {patterns}")
-    
-    # 可视化结果
-    plt.figure(figsize=(15, 12))
-    
-    # 绘制价格图
-    ax1 = plt.subplot(311)
-    ax1.plot(data.index, data['close'], label='价格')
-    ax1.set_title('价格走势')
-    ax1.legend()
-    
-    # 绘制RSI对比图
-    ax2 = plt.subplot(312, sharex=ax1)
-    ax2.plot(data.index, std_result['rsi'], label='标准RSI')
-    ax2.plot(data.index, enhanced_result['rsi_14'], label='增强型RSI')
-    ax2.plot(data.index, enhanced_result['oversold_threshold'], 'r--', label='超卖阈值')
-    ax2.plot(data.index, enhanced_result['overbought_threshold'], 'g--', label='超买阈值')
-    ax2.axhline(y=50, color='k', linestyle='--', alpha=0.3)
-    ax2.set_title('RSI对比')
-    ax2.set_ylim(0, 100)
-    ax2.legend()
-    
-    # 绘制信号和评分图
-    ax3 = plt.subplot(313, sharex=ax1)
-    ax3.plot(data.index, enhanced_score, label='增强型RSI评分')
-    
-    # 绘制买入和卖出信号
-    buy_signals = data.index[enhanced_signals['buy_signal']]
-    sell_signals = data.index[enhanced_signals['sell_signal']]
-    
-    ax3.scatter(buy_signals, enhanced_score.loc[buy_signals], color='g', marker='^', s=100, label='买入信号')
-    ax3.scatter(sell_signals, enhanced_score.loc[sell_signals], color='r', marker='v', s=100, label='卖出信号')
-    
-    ax3.axhline(y=50, color='k', linestyle='--', alpha=0.3)
-    ax3.axhline(y=70, color='g', linestyle='--', alpha=0.3)
-    ax3.axhline(y=30, color='r', linestyle='--', alpha=0.3)
-    ax3.set_title('增强型RSI评分和信号')
-    ax3.set_ylim(0, 100)
-    ax3.legend()
-    
-    plt.tight_layout()
-    plt.savefig('enhanced_rsi_test.png')
-    logger.info("结果已保存为 enhanced_rsi_test.png")
     
     # 对比信号质量
     compare_signal_quality(data, std_signals, enhanced_signals)
@@ -260,63 +218,6 @@ def test_enhanced_kdj():
     patterns = enhanced_kdj.identify_patterns(data)
     
     logger.info(f"识别到的形态: {patterns}")
-    
-    # 可视化结果
-    plt.figure(figsize=(15, 16))
-    
-    # 绘制价格图
-    ax1 = plt.subplot(411)
-    ax1.plot(data.index, data['close'], label='价格')
-    ax1.set_title('价格走势')
-    ax1.legend()
-    
-    # 绘制K线与D线对比图
-    ax2 = plt.subplot(412, sharex=ax1)
-    ax2.plot(data.index, std_result['k'], label='标准K线')
-    ax2.plot(data.index, std_result['d'], label='标准D线')
-    ax2.plot(data.index, enhanced_result['k'], label='增强型K线')
-    ax2.plot(data.index, enhanced_result['d'], label='增强型D线')
-    ax2.axhline(y=20, color='r', linestyle='--', alpha=0.3, label='超卖线')
-    ax2.axhline(y=80, color='g', linestyle='--', alpha=0.3, label='超买线')
-    ax2.axhline(y=50, color='k', linestyle='--', alpha=0.3)
-    ax2.set_title('KD线对比')
-    ax2.set_ylim(0, 100)
-    ax2.legend()
-    
-    # 绘制J线图
-    ax3 = plt.subplot(413, sharex=ax1)
-    ax3.plot(data.index, std_result['j'], label='标准J线')
-    ax3.plot(data.index, enhanced_result['j'], label='增强型J线')
-    ax3.plot(data.index, enhanced_result['j_normalized'], label='归一化J线', alpha=0.5)
-    ax3.axhline(y=0, color='r', linestyle='--', alpha=0.3, label='J线超卖线')
-    ax3.axhline(y=100, color='g', linestyle='--', alpha=0.3, label='J线超买线')
-    ax3.set_title('J线对比')
-    ax3.legend()
-    
-    # 绘制信号和评分图
-    ax4 = plt.subplot(414, sharex=ax1)
-    ax4.plot(data.index, enhanced_score, label='增强型KDJ评分')
-    
-    # 绘制买入和卖出信号
-    buy_signals = data.index[enhanced_signals['buy_signal']]
-    sell_signals = data.index[enhanced_signals['sell_signal']]
-    
-    ax4.scatter(buy_signals, enhanced_score.loc[buy_signals], color='g', marker='^', s=100, label='买入信号')
-    ax4.scatter(sell_signals, enhanced_score.loc[sell_signals], color='r', marker='v', s=100, label='卖出信号')
-    
-    ax4.axhline(y=50, color='k', linestyle='--', alpha=0.3)
-    ax4.axhline(y=70, color='g', linestyle='--', alpha=0.3)
-    ax4.axhline(y=30, color='r', linestyle='--', alpha=0.3)
-    ax4.set_title('增强型KDJ评分和信号')
-    ax4.set_ylim(0, 100)
-    ax4.legend()
-    
-    plt.tight_layout()
-    plt.savefig('enhanced_kdj_test.png')
-    logger.info("结果已保存为 enhanced_kdj_test.png")
-    
-    # 对比信号质量
-    compare_signal_quality(data, std_signals, enhanced_signals)
     
     # 分析高级特性
     analyze_kdj_advanced_features(enhanced_result)

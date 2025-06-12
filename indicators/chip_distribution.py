@@ -32,21 +32,49 @@ class ChipDistribution(BaseIndicator):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化筹码分布指标"""
         super().__init__(name="ChipDistribution", description="筹码分布指标，分析各价位持仓情况")
+        self._parameters = {'half_life': 60, 'price_precision': 0.01, 'use_precision_cost': True}
     
-    def _calculate(self, data: pd.DataFrame, half_life: int = 60, price_precision: float = 0.01, 
-                 use_precision_cost: bool = True, *args, **kwargs) -> pd.DataFrame:
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数键值对
+        """
+        for key, value in kwargs.items():
+            if key in self._parameters:
+                self._parameters[key] = value
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        筹码分布指标的形态识别（默认不实现）
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            list: 空列表
+        """
+        return []
+    
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算筹码分布指标
         
         Args:
             data: 输入数据，包含OHLCV和换手率数据
-            half_life: 半衰期，用于计算筹码衰减，默认为60天
-            price_precision: 价格精度，用于设置价格区间，默认为0.01元
-            use_precision_cost: 是否使用高精度成本估算，默认为True
+            *args: 其他参数
+            **kwargs: 其他参数
             
         Returns:
             pd.DataFrame: 计算结果，包含筹码分布相关指标
         """
+        # 从参数或默认值中获取
+        half_life = kwargs.get('half_life', self._parameters['half_life'])
+        price_precision = kwargs.get('price_precision', self._parameters['price_precision'])
+        use_precision_cost = kwargs.get('use_precision_cost', self._parameters['use_precision_cost'])
+        
         # 确保数据包含必需的列
         self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
         
@@ -636,88 +664,6 @@ class ChipDistribution(BaseIndicator):
         
         return density
     
-    def plot_chip_distribution(self, data: pd.DataFrame, 
-                             ax=None, 
-                             half_life: int = 60,
-                             price_precision: float = 0.01):
-        """
-        绘制筹码分布图
-        
-        Args:
-            data: 输入数据
-            ax: matplotlib轴对象
-            half_life: 半衰期
-            price_precision: 价格精度
-            
-        Returns:
-            matplotlib.axes.Axes: 轴对象
-        """
-        try:
-            import matplotlib.pyplot as plt
-            from matplotlib.colors import LinearSegmentedColormap
-            
-            if ax is None:
-                fig, ax = plt.subplots(figsize=(12, 6))
-            
-            # 计算筹码分布指标
-            result = self.calculate(data, half_life, price_precision)
-            
-            # 创建价格网格
-            min_price = data["low"].min() * 0.9
-            max_price = data["high"].max() * 1.1
-            price_grid = np.arange(min_price, max_price + price_precision, price_precision)
-            
-            # 创建时间网格
-            time_grid = np.arange(len(data))
-            
-            # 创建筹码密度矩阵（简化版本，实际应用需要使用完整的chip_matrix）
-            density_matrix = np.zeros((len(time_grid), len(price_grid)))
-            
-            for i, idx in enumerate(time_grid):
-                # 使用正态分布模拟筹码分布
-                if idx < len(result):
-                    avg_cost = result["avg_cost"].iloc[idx]
-                    std = result["chip_width_90pct"].iloc[idx] * avg_cost / 3.29  # 3.29是90%置信区间的宽度
-                    
-                    for j, price in enumerate(price_grid):
-                        density_matrix[i, j] = np.exp(-0.5 * ((price - avg_cost) / (std + 0.0001))**2)
-            
-            # 归一化
-            for i in range(len(time_grid)):
-                if np.sum(density_matrix[i]) > 0:
-                    density_matrix[i] = density_matrix[i] / np.max(density_matrix[i])
-            
-            # 创建自定义colormap
-            colors = [(0, 0, 1, 0), (0, 0, 1, 0.5), (1, 0, 0, 0.5), (1, 0, 0, 1)]
-            cmap = LinearSegmentedColormap.from_list('chip_cmap', colors, N=100)
-            
-            # 绘制筹码分布热力图
-            im = ax.imshow(
-                density_matrix.T, 
-                aspect='auto', 
-                origin='lower',
-                extent=[0, len(data), min_price, max_price],
-                cmap=cmap,
-                alpha=0.7
-            )
-            
-            # 绘制K线图
-            ax.plot(time_grid, data["close"].values, 'k-', linewidth=1.5)
-            
-            # 设置坐标轴
-            ax.set_xlabel('Time')
-            ax.set_ylabel('Price')
-            ax.set_title('Chip Distribution')
-            
-            # 添加颜色条
-            plt.colorbar(im, ax=ax, label='Density')
-            
-            return ax
-        
-        except ImportError:
-            logger.error("绘图需要安装matplotlib库")
-            return None 
-
     def _calculate_precision_cost(self, data: pd.DataFrame, 
                              chip_matrix: np.ndarray, 
                              price_grid: np.ndarray,

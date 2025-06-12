@@ -630,46 +630,20 @@ class Chaikin(BaseIndicator):
         
         return patterns
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
+    def get_patterns(self):
+        patterns = {
+            "name": "Chaikin",
+            "description": "Chaikin振荡器下穿零线，可能预示卖出时机。",
+        }
+        return patterns
+
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
         """
-        绘制蔡金指标(Chaikin)图表
-        
-        Args:
-            df: 包含Chaikin指标的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            **kwargs: 额外绘图参数
-            
-        Returns:
-            matplotlib轴对象
+        计算Chaikin振荡器原始评分
         """
-        import matplotlib.pyplot as plt
+        if self._result is None:
+            self.calculate(data)
         
-        # 检查必要的指标列是否存在
-        required_columns = ['ad_line', 'chaikin_oscillator', 'chaikin_signal']
-        self._validate_dataframe(df, required_columns)
-        
-        # 创建新的轴对象（如果未提供）
-        if ax is None:
-            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
-        else:
-            ax1 = ax
-            ax2 = None
-        
-        # 绘制A/D线
-        ax1.plot(df.index, df['ad_line'], label='A/D线', color='blue', linewidth=2)
-        ax1.set_title(f"蔡金指标(Chaikin) - A/D线")
-        ax1.set_ylabel('A/D线值')
-        ax1.legend(loc='best')
-        ax1.grid(True, alpha=0.3)
-        
-        # 如果有第二个子图，绘制Chaikin震荡器
-        if ax2 is not None:
-            ax2.plot(df.index, df['chaikin_oscillator'], label='Chaikin震荡器', color='green', linewidth=2)
-            ax2.plot(df.index, df['chaikin_signal'], label='信号线', color='red', linewidth=1, linestyle='--')
-            ax2.axhline(y=0, color='black', linestyle='-', alpha=0.5)
-            
-            ax2.set_ylabel('震荡器值')
-            ax2.legend(loc='best')
-            ax2.grid(True, alpha=0.3)
-        
-        return ax1 if ax2 is None else (ax1, ax2) 
+        # 评分逻辑...
+        score = pd.Series(50.0, index=data.index)
+        return score 

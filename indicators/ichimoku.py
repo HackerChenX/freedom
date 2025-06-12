@@ -802,57 +802,11 @@ class Ichimoku(BaseIndicator):
         
         return patterns
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
-        """
-        绘制一目均衡表指标(Ichimoku)图表
-        
-        Args:
-            df: 包含Ichimoku指标的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            **kwargs: 额外绘图参数
-            
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        # 检查必要的指标列是否存在
-        required_columns = ['tenkan_sen', 'kijun_sen', 'senkou_span_a', 'senkou_span_b', 'close']
-        self._validate_dataframe(df, required_columns)
-        
-        # 创建新的轴对象（如果未提供）
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(14, 8))
-            
-        # 绘制价格线
-        ax.plot(df.index, df['close'], label='收盘价', linewidth=2, color='black')
-        
-        # 绘制转换线和基准线
-        ax.plot(df.index, df['tenkan_sen'], label='转换线', linewidth=1, color='red')
-        ax.plot(df.index, df['kijun_sen'], label='基准线', linewidth=1, color='blue')
-        
-        # 绘制先行带
-        ax.plot(df.index, df['senkou_span_a'], label='先行带A', linewidth=1, color='green', alpha=0.7)
-        ax.plot(df.index, df['senkou_span_b'], label='先行带B', linewidth=1, color='orange', alpha=0.7)
-        
-        # 填充云图
-        ax.fill_between(df.index, df['senkou_span_a'], df['senkou_span_b'], 
-                       where=(df['senkou_span_a'] >= df['senkou_span_b']), 
-                       color='green', alpha=0.2, label='看涨云图')
-        ax.fill_between(df.index, df['senkou_span_a'], df['senkou_span_b'], 
-                       where=(df['senkou_span_a'] < df['senkou_span_b']), 
-                       color='red', alpha=0.2, label='看跌云图')
-        
-        # 绘制滞后线
-        if 'chikou_span' in df.columns:
-            ax.plot(df.index, df['chikou_span'], label='滞后线', linewidth=1, color='purple', alpha=0.7)
-        
-        ax.set_title(f"一目均衡表指标(Ichimoku)")
-        ax.set_ylabel('价格')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax 
+    def get_patterns(self):
+        patterns = {
+            "description": "转换线下穿基准线，是卖出信号。",
+        }
+        return patterns
 
     def calculate_score(self, data):
         return {

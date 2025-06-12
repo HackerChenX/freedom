@@ -125,6 +125,49 @@ class TestDataGenerator:
         return data
     
     @staticmethod
+    def generate_steady_trend(periods: int = 50,
+                              start_price: float = 100,
+                              slope: float = 0.2,
+                              base_volume: int = 10000) -> pd.DataFrame:
+        """
+        生成稳定的趋势数据（上升或下降）
+
+        Args:
+            periods: 周期数
+            start_price: 起始价格
+            slope: 趋势斜率（正值为上涨，负值为下跌）
+            base_volume: 基础成交量
+
+        Returns:
+            pd.DataFrame: 包含稳定趋势的DataFrame
+        """
+        end_price = start_price + (periods * slope)
+        trend_data = TestDataGenerator._generate_trend(
+            periods=periods,
+            start_price=start_price,
+            end_price=end_price,
+            base_volume=base_volume,
+            volume_trend='follow_price' if slope >= 0 else 'inverse'
+        )
+
+        # 添加日期和其他元数据
+        base_date = '2023-01-01'
+        current_date = pd.to_datetime(base_date)
+        dates = [current_date + datetime.timedelta(days=i) for i in range(periods)]
+        trend_data['date'] = dates
+        trend_data = trend_data.set_index('date')
+        
+        trend_data['code'] = '000001'
+        trend_data['name'] = '稳定趋势股票'
+        trend_data['level'] = 'D'
+        trend_data['industry'] = '软件服务'
+        trend_data['turnover_rate'] = trend_data['volume'] / base_volume * 5
+        trend_data['price_change'] = trend_data['close'].diff().fillna(0)
+        trend_data['price_range'] = (trend_data['high'] - trend_data['low']) / trend_data['close'] * 100
+
+        return trend_data
+    
+    @staticmethod
     def _generate_trend(periods: int, 
                         start_price: float, 
                         end_price: float, 

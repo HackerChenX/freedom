@@ -626,38 +626,9 @@ class PVT(BaseIndicator):
     
         return signals
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
-        """
-        绘制价格成交量趋势指标(PVT)指标图表
-        
-        Args:
-            df: 包含PVT指标的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            **kwargs: 额外绘图参数
-            
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        # 检查必要的指标列是否存在
-        required_columns = ['pvt', 'pvt_signal']
-        self._validate_dataframe(df, required_columns)
-        
-        # 创建新的轴对象（如果未提供）
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 5))
-            
-        # 绘制PVT指标线
-        ax.plot(df.index, df['pvt'], label='PVT')
-        ax.plot(df.index, df['pvt_signal'], label='信号线', linestyle='--')
-        
-        # 添加零轴线
-        ax.axhline(y=0, color='k', linestyle='--', alpha=0.3)
-        
-        ax.set_ylabel('价格成交量趋势指标(PVT)')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax
+    def get_patterns(self):
+        patterns = {
+            "death_cross": "PVT下穿其移动平均线，可能预示卖出时机。",
+        }
+        return patterns
 

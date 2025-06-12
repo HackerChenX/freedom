@@ -45,6 +45,22 @@ class ROC(BaseIndicator):
         self.oversold = oversold
         self._auto_threshold = (overbought == 0 and oversold == 0)
     
+    def set_parameters(self, period: int = None, ma_period: int = None, overbought: float = None, oversold: float = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
+        if ma_period is not None:
+            self.ma_period = ma_period
+        if overbought is not None:
+            self.overbought = overbought
+        if oversold is not None:
+            self.oversold = oversold
+        # 如果超买或超卖被手动设置，则禁用自动阈值计算
+        if overbought is not None or oversold is not None:
+            self._auto_threshold = False
+    
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算ROC指标

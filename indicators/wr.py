@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
+import talib
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -37,6 +38,13 @@ class WR(BaseIndicator):
         """
         super().__init__(name="WR", description="威廉指标，确认超买超卖")
         self.period = period
+        
+    def set_parameters(self, period: int = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -436,42 +444,6 @@ class WR(BaseIndicator):
         
         return df_copy
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
-        """
-        绘制威廉指标(WR)指标图表
-        
-        Args:
-            df: 包含WR指标的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            **kwargs: 额外绘图参数
-            
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        # 检查必要的指标列是否存在
-        required_columns = ['wr']
-        self._validate_dataframe(df, required_columns)
-        
-        # 创建新的轴对象（如果未提供）
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 5))
-            
-        # 绘制WR指标线
-        ax.plot(df.index, df['wr'], label='威廉指标(WR)')
-        
-        # 添加超买超卖参考线
-        ax.axhline(y=-20, color='r', linestyle='--', alpha=0.3, label='超买区域(-20)')
-        ax.axhline(y=-50, color='k', linestyle='--', alpha=0.3, label='中轴线(-50)')
-        ax.axhline(y=-80, color='g', linestyle='--', alpha=0.3, label='超卖区域(-80)')
-        
-        ax.set_ylabel('威廉指标(WR)')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax
-
     def _register_wr_patterns(self):
         """
         注册WR指标相关形态
@@ -610,3 +582,9 @@ class WR(BaseIndicator):
         # 此处提供默认实现
         
         return signals
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取WR指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)

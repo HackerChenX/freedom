@@ -11,8 +11,6 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
 
 # 添加项目根目录到路径
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,55 +78,6 @@ def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='20
     })
     
     return data
-
-
-def plot_kdj_score_comparison(data, old_score, new_score, title="KDJ评分对比"):
-    """
-    绘制KDJ指标优化前后评分对比图
-    
-    Args:
-        data: 原始数据
-        old_score: 优化前评分
-        new_score: 优化后评分
-        title: 图表标题
-    """
-    plt.figure(figsize=(15, 12))
-    
-    # 绘制子图1: 价格和KDJ指标
-    ax1 = plt.subplot(3, 1, 1)
-    ax1.plot(data.index, data['close'], label='收盘价', color='black')
-    ax1.set_title('价格')
-    ax1.legend(loc='best')
-    ax1.grid(True)
-    
-    # 绘制子图2: KDJ指标
-    ax2 = plt.subplot(3, 1, 2)
-    ax2.plot(data.index, data['K'], label='K', color='blue')
-    ax2.plot(data.index, data['D'], label='D', color='orange')
-    ax2.plot(data.index, data['J'], label='J', color='purple')
-    ax2.axhline(y=80, color='red', linestyle='--', alpha=0.6)  # 超买线
-    ax2.axhline(y=20, color='green', linestyle='--', alpha=0.6)  # 超卖线
-    ax2.set_title('KDJ指标')
-    ax2.legend(loc='best')
-    ax2.grid(True)
-    
-    # 绘制子图3: 评分对比
-    ax3 = plt.subplot(3, 1, 3)
-    ax3.plot(data.index, old_score, label='优化前评分', color='blue', alpha=0.7)
-    ax3.plot(data.index, new_score, label='优化后评分', color='red')
-    ax3.set_title('KDJ评分对比')
-    ax3.axhline(y=50, color='gray', linestyle='--', alpha=0.6)  # 添加中性线
-    ax3.legend(loc='best')
-    ax3.grid(True)
-    
-    # 调整布局
-    plt.tight_layout()
-    plt.suptitle(title, fontsize=16)
-    plt.subplots_adjust(top=0.92)
-    
-    # 保存图表
-    plt.savefig(os.path.join(project_root, 'data', 'result', 'kdj_optimization.png'))
-    plt.close()
 
 
 def test_kdj_optimization(data):
@@ -270,6 +219,39 @@ def test_kdj_optimization(data):
     return simple_score, enhanced_score, data_with_kdj
 
 
+def find_best_kdj_params(data):
+    """
+    找到最佳的KDJ参数组合
+    
+    Args:
+        data: 测试数据
+        
+    Returns:
+        tuple: 最佳的KDJ参数组合
+    """
+    n_periods = [3, 5, 7, 9, 11]
+    m_periods = [1, 2, 3, 4, 5]
+    results = []
+
+    for n in n_periods:
+        for m1 in m_periods:
+            for m2 in m_periods:
+                kdj.set_parameters(n=n, m1=m1, m2=m2)
+                signals = kdj.generate_signals(data)
+                
+                # 简单的评估逻辑：信号越多越好（仅为示例）
+                score = signals['buy_signal'].sum() + signals['sell_signal'].sum()
+                results.append(((n, m1, m2), score))
+
+    # 找到最佳参数组合
+    best_params, best_score = max(results, key=lambda item: item[1])
+    
+    logger.info(f"找到的最佳KDJ参数组合: n={best_params[0]}, m1={best_params[1]}, m2={best_params[2]}")
+    logger.info(f"对应的评分为: {best_score}")
+
+    return best_params
+
+
 def main():
     """主函数"""
     try:
@@ -279,10 +261,18 @@ def main():
         # 测试KDJ指标优化效果
         old_score, new_score, data_with_kdj = test_kdj_optimization(data)
         
-        # 绘制对比图
-        plot_kdj_score_comparison(data_with_kdj, old_score, new_score)
+        # 找到最佳参数组合
+        best_params = find_best_kdj_params(data)
         
-        print("\n测试完成，对比图已保存到 'data/result/kdj_optimization.png'")
+        logger.info(f"KDJ指标优化后的最佳参数为: n={best_params[0]}, m1={best_params[1]}, m2={best_params[2]}")
+
+        # 使用最佳参数重新计算并验证
+        kdj = KDJ(n=best_params[0], m1=best_params[1], m2=best_params[2])
+        final_result = kdj.calculate(data)
+        final_signals = kdj.generate_signals(final_result)
+        
+        logger.info("使用最佳参数计算的最终买入信号数量: %d", final_signals['buy_signal'].sum())
+        logger.info("使用最佳参数计算的最终卖出信号数量: %d", final_signals['sell_signal'].sum())
         
     except Exception as e:
         logger.error(f"测试过程中发生错误: {e}")

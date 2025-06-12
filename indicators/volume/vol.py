@@ -12,6 +12,7 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 from scipy import signal, stats
 import warnings
+import talib
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder

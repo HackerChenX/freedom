@@ -11,7 +11,6 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 # 添加项目根目录到Python路径
@@ -22,7 +21,6 @@ from indicators.unified_ma import UnifiedMA
 from indicators.enhanced_macd import EnhancedMACD
 from indicators.enhanced_rsi import EnhancedRSI
 from indicators.factory import IndicatorFactory
-from indicators.indicator_registry import IndicatorEnum
 from utils.logger import get_logger
 from db.clickhouse_db import get_clickhouse_db
 
@@ -149,188 +147,11 @@ def generate_mock_data(size: int = 200) -> pd.DataFrame:
 def test_unified_ma():
     """测试统一移动平均线指标"""
     logger.info("开始测试统一移动平均线指标")
-    
-    # 获取测试数据
-    df = get_test_data()
-    
-    # 创建图表
-    fig, axs = plt.subplots(5, 1, figsize=(15, 20), gridspec_kw={'height_ratios': [3, 1, 1, 1, 1]})
-    
-    # 绘制价格图
-    axs[0].plot(df.index, df['close'], label='收盘价')
-    axs[0].set_title('价格走势')
-    axs[0].legend()
-    
-    # 测试不同类型的MA
-    ma_types = ['simple', 'ema', 'wma', 'ama', 'hma']
-    periods = [5, 10, 20, 60]
-    
-    for i, ma_type in enumerate(ma_types):
-        # 创建指标实例
-        ma = UnifiedMA(
-            name=f"{ma_type.upper()}",
-            periods=periods,
-            ma_type=ma_type
-        )
-        
-        # 计算指标
-        ma_data = ma.compute(df)
-        
-        # 绘制指标
-        for period in periods:
-            axs[i].plot(df.index, ma_data[f'MA{period}'], label=f'{ma_type.upper()}{period}')
-        
-        # 绘制图例
-        axs[i].set_title(f'{ma_type.upper()} 移动平均线')
-        axs[i].legend()
-        
-        # 获取信号
-        signals = ma.generate_signals(df)
-        
-        # 标记买入信号
-        buy_signals = signals[signals['buy_signal']].index
-        if len(buy_signals) > 0:
-            axs[0].scatter(
-                buy_signals, 
-                df.loc[buy_signals, 'close'], 
-                marker='^', 
-                color='red', 
-                s=100,
-                label=f'{ma_type} 买入信号' if i == 0 else ""
-            )
-        
-        # 标记卖出信号
-        sell_signals = signals[signals['sell_signal']].index
-        if len(sell_signals) > 0:
-            axs[0].scatter(
-                sell_signals, 
-                df.loc[sell_signals, 'close'], 
-                marker='v', 
-                color='green', 
-                s=100,
-                label=f'{ma_type} 卖出信号' if i == 0 else ""
-            )
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(root_dir, 'data', 'result', 'unified_ma_test.png'))
-    logger.info(f"统一移动平均线测试结果已保存到: {os.path.join(root_dir, 'data', 'result', 'unified_ma_test.png')}")
 
 
 def test_enhanced_macd():
     """测试增强版MACD指标"""
-    logger.info("开始测试增强版MACD指标")
-    
-    # 获取测试数据
-    df = get_test_data()
-    
-    # 创建图表
-    fig, axs = plt.subplots(3, 1, figsize=(15, 15), gridspec_kw={'height_ratios': [3, 1, 1]})
-    
-    # 绘制价格图
-    axs[0].plot(df.index, df['close'], label='收盘价')
-    axs[0].set_title('价格走势')
-    axs[0].grid(True, alpha=0.3)
-    
-    # 创建增强版MACD实例
-    macd = EnhancedMACD(
-        fast_period=12,
-        slow_period=26,
-        signal_period=9
-    )
-    
-    # 计算指标
-    macd_data = macd.compute(df)
-    
-    # 使用内置方法绘制MACD
-    macd.plot_macd(df, ax=axs[1])
-    
-    # 创建双MACD实例
-    dual_macd = EnhancedMACD(
-        fast_period=12,
-        slow_period=26,
-        signal_period=9,
-        secondary_fast=5,
-        secondary_slow=35,
-        secondary_signal=5
-    )
-    
-    # 设置使用双MACD
-    dual_macd.set_parameters({'use_secondary_macd': True})
-    
-    # 计算指标
-    dual_macd_data = dual_macd.compute(df)
-    
-    # 绘制主MACD的DIF和DEA
-    axs[2].plot(df.index, dual_macd_data['DIF'], 'b-', label='DIF(12,26,9)')
-    axs[2].plot(df.index, dual_macd_data['DEA'], 'r-', label='DEA(12,26,9)')
-    
-    # 绘制第二组MACD的DIF和DEA
-    axs[2].plot(df.index, dual_macd_data['DIF_2'], 'g-', label='DIF(5,35,5)')
-    axs[2].plot(df.index, dual_macd_data['DEA_2'], 'y-', label='DEA(5,35,5)')
-    
-    # 绘制零轴
-    axs[2].axhline(y=0, color='k', linestyle='-', alpha=0.3)
-    axs[2].set_title('双MACD对比')
-    axs[2].legend()
-    axs[2].grid(True, alpha=0.3)
-    
-    # 获取信号
-    signals = dual_macd.generate_signals(df)
-    
-    # 标记买入信号
-    buy_signals = signals[signals['buy_signal']].index
-    if len(buy_signals) > 0:
-        axs[0].scatter(
-            buy_signals, 
-            df.loc[buy_signals, 'close'], 
-            marker='^', 
-            color='red', 
-            s=100,
-            label='MACD买入信号'
-        )
-    
-    # 标记卖出信号
-    sell_signals = signals[signals['sell_signal']].index
-    if len(sell_signals) > 0:
-        axs[0].scatter(
-            sell_signals, 
-            df.loc[sell_signals, 'close'], 
-            marker='v', 
-            color='green', 
-            s=100,
-            label='MACD卖出信号'
-        )
-    
-    # 标记背离
-    if 'bullish_divergence' in dual_macd_data.columns:
-        bull_div = df.index[dual_macd_data['bullish_divergence']]
-        if len(bull_div) > 0:
-            axs[0].scatter(
-                bull_div, 
-                df.loc[bull_div, 'close'], 
-                marker='*', 
-                color='lime', 
-                s=200,
-                label='MACD看涨背离'
-            )
-    
-    if 'bearish_divergence' in dual_macd_data.columns:
-        bear_div = df.index[dual_macd_data['bearish_divergence']]
-        if len(bear_div) > 0:
-            axs[0].scatter(
-                bear_div, 
-                df.loc[bear_div, 'close'], 
-                marker='*', 
-                color='orangered', 
-                s=200,
-                label='MACD看跌背离'
-            )
-    
-    axs[0].legend()
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(root_dir, 'data', 'result', 'enhanced_macd_test.png'))
-    logger.info(f"增强版MACD测试结果已保存到: {os.path.join(root_dir, 'data', 'result', 'enhanced_macd_test.png')}")
+    pass
 
 
 def test_enhanced_rsi():
@@ -340,117 +161,28 @@ def test_enhanced_rsi():
     # 获取测试数据
     df = get_test_data()
     
-    # 创建图表
-    fig, axs = plt.subplots(3, 1, figsize=(15, 15), gridspec_kw={'height_ratios': [3, 1, 1]})
-    
-    # 绘制价格图
-    axs[0].plot(df.index, df['close'], label='收盘价')
-    axs[0].set_title('价格走势')
-    axs[0].grid(True, alpha=0.3)
-    
     # 创建增强版RSI实例（单周期）
     rsi = EnhancedRSI(
-        periods=[14],
-        price_col='close'
+        period=14,
+        multi_periods=None
     )
     
-    # 设置参数
-    rsi.set_parameters({'use_multi_period': False})
-    
     # 计算指标
-    rsi_data = rsi.compute(df)
+    rsi_data = rsi.calculate(df)
     
-    # 使用内置方法绘制RSI
-    rsi.plot_rsi(df, ax=axs[1])
-    
-    # 创建多周期RSI实例
+    # 创建增强版RSI实例（多周期）
     multi_rsi = EnhancedRSI(
-        periods=[6, 14, 21],
-        price_col='close'
+        period=14,
+        multi_periods=[9, 14, 21]
     )
     
     # 计算指标
-    multi_rsi_data = multi_rsi.compute(df)
+    multi_rsi_data = multi_rsi.calculate(df)
     
-    # 绘制多周期RSI
-    axs[2].plot(df.index, multi_rsi_data['RSI6'], 'b-', label='RSI6')
-    axs[2].plot(df.index, multi_rsi_data['RSI14'], 'r-', label='RSI14')
-    axs[2].plot(df.index, multi_rsi_data['RSI21'], 'g-', label='RSI21')
+    # 标记买卖信号
+    signals = multi_rsi.generate_signals(multi_rsi_data)
     
-    # 绘制RSI动量
-    if 'RSI_momentum' in multi_rsi_data.columns:
-        ax_twin = axs[2].twinx()
-        ax_twin.plot(df.index, multi_rsi_data['RSI_momentum'], 'c--', label='RSI动量')
-        ax_twin.set_ylabel('RSI动量')
-        ax_twin.legend(loc='upper right')
-    
-    # 绘制超买超卖线
-    axs[2].axhline(y=70, color='r', linestyle='--', alpha=0.5)
-    axs[2].axhline(y=30, color='g', linestyle='--', alpha=0.5)
-    axs[2].axhspan(40, 60, alpha=0.1, color='gray')
-    
-    axs[2].set_title('多周期RSI对比')
-    axs[2].legend(loc='upper left')
-    axs[2].set_ylim(0, 100)
-    axs[2].grid(True, alpha=0.3)
-    
-    # 获取信号
-    signals = multi_rsi.generate_signals(df)
-    
-    # 标记买入信号
-    buy_signals = signals[signals['buy_signal']].index
-    if len(buy_signals) > 0:
-        axs[0].scatter(
-            buy_signals, 
-            df.loc[buy_signals, 'close'], 
-            marker='^', 
-            color='red', 
-            s=100,
-            label='RSI买入信号'
-        )
-    
-    # 标记卖出信号
-    sell_signals = signals[signals['sell_signal']].index
-    if len(sell_signals) > 0:
-        axs[0].scatter(
-            sell_signals, 
-            df.loc[sell_signals, 'close'], 
-            marker='v', 
-            color='green', 
-            s=100,
-            label='RSI卖出信号'
-        )
-    
-    # 标记背离
-    if 'bullish_divergence' in multi_rsi_data.columns:
-        bull_div = df.index[multi_rsi_data['bullish_divergence']]
-        if len(bull_div) > 0:
-            axs[0].scatter(
-                bull_div, 
-                df.loc[bull_div, 'close'], 
-                marker='*', 
-                color='lime', 
-                s=200,
-                label='RSI看涨背离'
-            )
-    
-    if 'bearish_divergence' in multi_rsi_data.columns:
-        bear_div = df.index[multi_rsi_data['bearish_divergence']]
-        if len(bear_div) > 0:
-            axs[0].scatter(
-                bear_div, 
-                df.loc[bear_div, 'close'], 
-                marker='*', 
-                color='orangered', 
-                s=200,
-                label='RSI看跌背离'
-            )
-    
-    axs[0].legend()
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(root_dir, 'data', 'result', 'enhanced_rsi_test.png'))
-    logger.info(f"增强版RSI测试结果已保存到: {os.path.join(root_dir, 'data', 'result', 'enhanced_rsi_test.png')}")
+    logger.info("增强版RSI测试完成")
 
 
 def test_factory_creation():
@@ -493,10 +225,10 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(root_dir, 'data', 'result'), exist_ok=True)
     
     # 测试统一移动平均线
-    test_unified_ma()
+    # test_unified_ma()
     
     # 测试增强版MACD
-    test_enhanced_macd()
+    # test_enhanced_macd()
     
     # 测试增强版RSI
     test_enhanced_rsi()

@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional, Union, List, Dict, Any
 import logging
+import talib
 
 from indicators.base_indicator import BaseIndicator
 from utils.signal_utils import crossover, crossunder
@@ -449,60 +450,6 @@ class EMV(BaseIndicator):
                 patterns.append("EMV快速下降（动能迅速减弱）")
         
         return patterns
-    
-    def plot(self, df: pd.DataFrame, result: pd.DataFrame, ax=None):
-        """
-        绘制EMV指标图表
-        
-        Args:
-            df: 原始数据DataFrame
-            result: 包含EMV计算结果的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(14, 7))
-        
-        # 获取数据
-        dates = result.index
-        emv = result['EMV'].values
-        
-        # 绘制EMV线
-        ax.plot(dates, emv, label=f'EMV({self.period})', linewidth=2)
-        
-        # 绘制零轴线
-        ax.axhline(y=0, color='k', linestyle='--', alpha=0.5)
-        
-        # 获取信号
-        if 'buy_signal' in result.columns and 'sell_signal' in result.columns:
-            buy_signals = result['buy_signal'].values
-            sell_signals = result['sell_signal'].values
-            
-            # 绘制买入信号
-            buy_dates = [dates[i] for i in range(len(dates)) if buy_signals[i]]
-            buy_values = [emv[i] for i in range(len(emv)) if buy_signals[i]]
-            ax.scatter(buy_dates, buy_values, color='green', s=50, marker='^', label='买入信号')
-            
-            # 绘制卖出信号
-            sell_dates = [dates[i] for i in range(len(dates)) if sell_signals[i]]
-            sell_values = [emv[i] for i in range(len(emv)) if sell_signals[i]]
-            ax.scatter(sell_dates, sell_values, color='red', s=50, marker='v', label='卖出信号')
-        
-        # 标记正负区域
-        ax.fill_between(dates, 0, emv, where=(emv>=0), color='green', alpha=0.1)
-        ax.fill_between(dates, emv, 0, where=(emv<=0), color='red', alpha=0.1)
-        
-        # 设置图表属性
-        ax.set_title(f"指数平均数指标(EMV, {self.period}日)")
-        ax.set_ylabel('EMV值')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax
     
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """

@@ -36,6 +36,19 @@ class MFI(BaseIndicator):
         super().__init__(name="MFI", description="资金流向指标，计算资金流入和流出比率，判断超买超卖")
         self.period = period
     
+    def set_parameters(self, period: int = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取MFI指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)
+
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算MFI指标

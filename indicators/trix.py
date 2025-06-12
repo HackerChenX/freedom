@@ -36,6 +36,15 @@ class TRIX(BaseIndicator):
         self.n = n
         self.m = m
     
+    def set_parameters(self, n: int = None, m: int = None):
+        """
+        设置指标参数
+        """
+        if n is not None:
+            self.n = n
+        if m is not None:
+            self.m = m
+    
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算TRIX指标

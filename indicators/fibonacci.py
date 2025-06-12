@@ -39,6 +39,19 @@ class Fibonacci(BaseIndicator):
         self.retracement_levels = retracement_levels or [0.236, 0.382, 0.5, 0.618, 0.786]
         self.extension_levels = extension_levels or [1.27, 1.618, 2.0, 2.618]
     
+    def set_parameters(self, retracement_levels: List[float] = None, extension_levels: List[float] = None, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            retracement_levels: 回调水平列表
+            extension_levels: 扩展水平列表
+        """
+        if retracement_levels is not None:
+            self.retracement_levels = retracement_levels
+        if extension_levels is not None:
+            self.extension_levels = extension_levels
+    
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算斐波那契指标

@@ -65,6 +65,13 @@ class CandlestickPatterns(BaseIndicator):
         """初始化K线形态识别指标"""
         super().__init__(name="CandlestickPatterns", description="K线形态识别指标，识别各种单日和组合K线形态")
     
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        """
+        # K线形态识别通常没有可变参数，但为了符合接口要求，提供此方法
+        pass
+    
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         识别各种K线形态

@@ -4,7 +4,7 @@
 测试那些实现不完整或需要特殊处理的指标(CMO, DMA, KC)
 """
 
-import unittest
+import pytest
 import pandas as pd
 import numpy as np
 from indicators.factory import IndicatorFactory
@@ -13,16 +13,13 @@ from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.indicator_adapter import DataFrameToZXMAdapter
 
 
-class TestSpecialIndicatorsImplementation(unittest.TestCase, IndicatorTestMixin):
+class TestSpecialIndicatorsImplementation(IndicatorTestMixin):
     """特殊指标实现测试类"""
 
-    @classmethod
-    def setUpClass(cls):
-        """类级别的初始化方法，确保注册所有指标"""
-        IndicatorFactory.auto_register_all_indicators()
-
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """准备测试数据和环境"""
+        IndicatorFactory.auto_register_all_indicators()
         # 生成测试数据
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 50},  # 上涨趋势
@@ -279,8 +276,4 @@ class TestSpecialIndicatorsImplementation(unittest.TestCase, IndicatorTestMixin)
                 result = kc.calculate(extreme_data)
                 self.assertTrue(True, "KC指标应处理极端值数据")
             except Exception as e:
-                self.fail(f"KC指标在处理极端值数据时出错: {e}")
-
-
-if __name__ == '__main__':
-    unittest.main() 
+                self.fail(f"KC指标在处理极端值数据时出错: {e}") 

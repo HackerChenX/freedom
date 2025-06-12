@@ -16,12 +16,19 @@ import os
 import datetime
 import json
 from collections import defaultdict
+import sys
 
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, time_it
 from utils.path_utils import get_backtest_result_dir
 
 logger = get_logger(__name__)
+
+# 添加项目根目录到Python路径
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+
+from strategy.base_strategy import BaseStrategy
 
 class StrategyValidator:
     """

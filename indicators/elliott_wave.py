@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 from enum import Enum
+from scipy.signal import find_peaks
 
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger

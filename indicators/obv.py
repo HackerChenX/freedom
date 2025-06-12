@@ -36,6 +36,17 @@ class OBV(BaseIndicator):
         super().__init__(name="OBV", description="能量潮指标，根据价格变动方向，计算成交量的累计值")
         self.ma_period = ma_period
     
+    def set_parameters(self, **kwargs):
+        """设置指标参数，可设置 'ma_period'"""
+        if 'ma_period' in kwargs:
+            self.ma_period = int(kwargs['ma_period'])
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取OBV指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)
+    
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算OBV指标

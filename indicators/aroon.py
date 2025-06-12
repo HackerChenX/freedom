@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
+import talib
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
@@ -38,6 +39,13 @@ class Aroon(BaseIndicator):
         
         # 注册Aroon形态
         self._register_aroon_patterns()
+        
+    def set_parameters(self, period: int = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
         
     def _register_aroon_patterns(self):
         """
@@ -339,43 +347,6 @@ class Aroon(BaseIndicator):
         patterns['AROON_REVERSAL_BEARISH'] = (aroon_up.shift(1) > 70) & up_declining_fast & (aroon_down.shift(1) < 30) & down_rising_fast
 
         return patterns
-
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
-        """
-        绘制阿隆指标(Aroon)
-        
-        Args:
-            df: 包含Aroon指标的DataFrame
-            ax: Matplotlib的Axes对象
-            **kwargs: 其他绘图参数
-        """
-        import matplotlib.pyplot as plt
-        
-        if ax is None:
-            fig, ax = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
-            price_ax = ax[0]
-            indicator_ax = ax[1]
-        else:
-            price_ax = ax
-            indicator_ax = price_ax.twinx()
-            
-        # 绘制价格
-        price_ax.plot(df.index, df['close'], label='Close Price')
-        price_ax.set_ylabel('Price')
-        price_ax.set_title(f'Aroon ({self.period})')
-        price_ax.legend(loc='upper left')
-        
-        # 绘制Aroon指标
-        indicator_ax.plot(df.index, df['aroon_up'], label='Aroon Up', color='green')
-        indicator_ax.plot(df.index, df['aroon_down'], label='Aroon Down', color='red')
-        indicator_ax.set_ylabel('Aroon')
-        indicator_ax.legend(loc='upper right')
-        
-        # 添加水平线
-        indicator_ax.axhline(70, linestyle='--', color='gray', alpha=0.7)
-        indicator_ax.axhline(30, linestyle='--', color='gray', alpha=0.7)
-        
-        plt.show()
 
     def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """

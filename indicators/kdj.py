@@ -44,13 +44,18 @@ class KDJ(BaseIndicator):
         self.n = n
         self.m1 = m1
         self.m2 = m2
+        self.is_available = True
         self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
         self._registered_patterns = False
     
     def set_parameters(self, **kwargs):
-        """设置指标参数的存根方法"""
-        # 此方法旨在满足基类接口要求，具体参数设置逻辑可在未来实现
-        pass
+        """设置指标参数，可设置 'n', 'm1', 'm2'"""
+        if 'n' in kwargs:
+            self.n = int(kwargs['n'])
+        if 'm1' in kwargs:
+            self.m1 = int(kwargs['m1'])
+        if 'm2' in kwargs:
+            self.m2 = int(kwargs['m2'])
     
     def _register_kdj_patterns(self):
         """将KDJ形态注册到全局形态注册表"""
@@ -148,15 +153,66 @@ class KDJ(BaseIndicator):
             pd.DataFrame: 包含形态信号的DataFrame
         """
         if 'K' not in data.columns or 'D' not in data.columns:
-            calculated_data = self._calculate_kdj(data)
+            calculated_data = self._calculate(data)
         else:
             calculated_data = data
 
         patterns_df = pd.DataFrame(index=calculated_data.index)
-        patterns_df['KDJ_GOLDEN_CROSS'] = self._detect_golden_cross(calculated_data)
-        patterns_df['KDJ_DEATH_CROSS'] = self._detect_death_cross(calculated_data)
+        patterns_df['KDJ_GOLDEN_CROSS'] = self._detect_golden_cross(calculated_data['K'], calculated_data['D'])
+        patterns_df['KDJ_DEATH_CROSS'] = self._detect_death_cross(calculated_data['K'], calculated_data['D'])
         
         return patterns_df
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算KDJ指标的置信度。
+
+        置信度基于以下因素：
+        1.  KDJ值的位置：处于超买/超卖区的信号更可信。
+        2.  J值的方向和极端性：J值是领先指标，其极端值和快速转向可以增强信心。
+        3.  KDJ三线的排列形态：三线同向发散表明趋势强劲，收敛则表明犹豫。
+        4.  K、D线间距：距离越大，趋势越明确。
+
+        Args:
+            score: 原始评分序列 (当前未使用)
+            patterns: 形态DataFrame (当前未使用)
+            signals: 信号字典 (当前未使用)
+
+        Returns:
+            float: 置信度 (0.0 - 1.0)
+        """
+        if not self.has_result() or len(self.result) < 5:
+            return 0.5  # 数据不足，返回中性置信度
+
+        # 获取最新的KDJ值
+        latest_kdj = self.result.iloc[-1]
+        k, d, j = latest_kdj['K'], latest_kdj['D'], latest_kdj['J']
+
+        confidence = 0.5  # 基础置信度
+
+        # 1. 位置因素: K值越极端，置信度越高
+        k_extremity = abs(k - 50) / 50.0  # (0 for k=50, 1 for k=0 or 100)
+        confidence += k_extremity * 0.2  # 最大贡献+0.2
+
+        # 2. J值因素: J值是领先指标，绝对值越大，信号越明确
+        j_factor = min(abs(j - 50) / 100.0, 1.0) # (0 for j=50, 1 for j>=150 or j<=-50)
+        confidence += j_factor * 0.2 # 最大贡献+0.2
+
+        # 3. 三线排列因素: K,D,J同向发散则置信度高
+        if len(self.result) >= 3:
+            prev_kdj = self.result.iloc[-2]
+            is_uptrend = k > d and d > j and prev_kdj['K'] < k
+            is_downtrend = k < d and d < j and prev_kdj['K'] > k
+            if is_uptrend or is_downtrend:
+                confidence += 0.15
+
+        # 4. K、D线间距: 距离越大，趋势越明确
+        kd_spread = abs(k - d)
+        spread_factor = min(kd_spread / 20.0, 1.0) # 假设20是比较大的间距
+        confidence += spread_factor * 0.1 # 最大贡献+0.1
+
+        # 确保置信度在0到1之间
+        return max(0.0, min(1.0, confidence))
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
         """
@@ -172,87 +228,38 @@ class KDJ(BaseIndicator):
         raw_score = self.calculate_raw_score(data, **kwargs)
         
         if raw_score.empty:
-            return 50.0  # 默认中性评分
+            return 50.0
         
         last_score = raw_score.iloc[-1]
         
-        # 应用市场环境调整
-        market_env = kwargs.get('market_env', self._market_environment)
-        adjusted_score = self.apply_market_environment_adjustment(market_env, last_score)
+        # apply_market_environment_adjustment 已从基类移除，不再调用
+        # adjusted_score = self.apply_market_environment_adjustment(last_score)
+        adjusted_score = last_score
         
         # 计算置信度
-        confidence = self.calculate_confidence(adjusted_score, self.get_patterns(data), {})
+        confidence = self.calculate_confidence(raw_score, self.get_patterns(data), {})
         
-        # 返回最终评分
         return float(np.clip(adjusted_score * confidence, 0, 100))
-    
-    def _detect_overbought(self, data: pd.DataFrame) -> bool:
-        """检测KDJ超买形态"""
-        if not self.has_result() or 'K' not in data.columns:
-            return False
-        
-        # 确保数据量足够
-        if len(data) < 2:
-            return False
-        
-        # 获取最新的K值
-        k_value = data['K'].iloc[-1]
-        
-        # 超买条件：K值大于80
-        return k_value > 80.0
-    
-    def _detect_oversold(self, data: pd.DataFrame) -> bool:
-        """检测KDJ超卖形态"""
-        if not self.has_result() or 'K' not in data.columns:
-            return False
-        
-        # 确保数据量足够
-        if len(data) < 2:
-            return False
-        
-        # 获取最新的K值
-        k_value = data['K'].iloc[-1]
-        
-        # 超卖条件：K值小于20
-        return k_value < 20.0
-    
-    def _detect_golden_cross(self, data: pd.DataFrame) -> pd.Series:
-        """
-        检测KDJ金叉形态
-        
-        Args:
-            data: 含有KDJ指标的DataFrame
-            
-        Returns:
-            pd.Series: 标记金叉发生位置的布尔序列
-        """
-        required_columns = ['K', 'D']
-        if not all(col in data.columns for col in required_columns):
-            logger.warning(f"检测KDJ金叉形态时缺少必要的列: {required_columns}")
-            return pd.Series([False] * len(data), index=data.index)
-        
-        k = data['K']
-        d = data['D']
-        return crossover(k, d)
-    
-    def _detect_death_cross(self, data: pd.DataFrame) -> pd.Series:
-        """
-        检测KDJ死叉形态
-        
-        Args:
-            data: 含有KDJ指标的DataFrame
-            
-        Returns:
-            pd.Series: 标记死叉发生位置的布尔序列
-        """
-        required_columns = ['K', 'D']
-        if not all(col in data.columns for col in required_columns):
-            logger.warning(f"检测KDJ死叉形态时缺少必要的列: {required_columns}")
-            return pd.Series([False] * len(data), index=data.index)
 
-        k = data['K']
-        d = data['D']
-        return crossunder(k, d)
+    def _detect_overbought(self, data: pd.DataFrame) -> pd.Series:
+        """检测KDJ超买形态"""
+        if 'K' not in data.columns:
+            return pd.Series([False] * len(data), index=data.index)
+        return data['K'] > 80.0
+
+    def _detect_oversold(self, data: pd.DataFrame) -> pd.Series:
+        """检测KDJ超卖形态"""
+        if 'K' not in data.columns:
+            return pd.Series([False] * len(data), index=data.index)
+        return data['K'] < 20.0
+    
+    def _detect_golden_cross(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
+        """检测金叉"""
+        return pd.Series(crossover(series1.values, series2.values), index=series1.index)
+    
+    def _detect_death_cross(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
+        """检测死叉"""
+        return pd.Series(crossunder(series1.values, series2.values), index=series1.index)
     
     def _detect_bullish_divergence(self, data: pd.DataFrame) -> bool:
         """检测KDJ看涨背离形态"""
@@ -442,205 +449,57 @@ class KDJ(BaseIndicator):
         return False
     
     def _detect_j_breakdown(self, data: pd.DataFrame) -> bool:
-        """检测J值击穿形态"""
-        if not self.has_result() or 'J' not in data.columns:
+        """检测J线跌破关键位形态"""
+        if 'J' not in data.columns or len(data) < 2:
             return False
         
-        # 确保数据量足够
-        if len(data) < 5:
-            return False
+        j = data['J']
         
-        # 获取最近5个周期的J值
-        j_values = data['J'].iloc[-5:].values
-        
-        # J值击穿条件：从正值快速下降到低于30
-        if j_values[0] > 100 and j_values[-1] < 30:
-            # 检查是否是持续下降
-            is_falling = True
-            for i in range(1, len(j_values)):
-                if j_values[i] >= j_values[i-1]:
-                    is_falling = False
-                    break
+        # J线从上方跌破0轴
+        if j.iloc[-2] > 0 and j.iloc[-1] < 0:
+            return True
             
-            return is_falling
-        
         return False
     
-    def set_market_environment(self, environment: Union[str, MarketEnvironment]) -> None:
-        """
-        设置市场环境
-        
-        Args:
-            environment: 市场环境，可以是MarketEnvironment枚举或字符串
-        """
-        if isinstance(environment, MarketEnvironment):
-            self._market_environment = environment
-            return
-            
-        # 兼容旧版接口
-        env_mapping = {
-            "bull_market": MarketEnvironment.BULL_MARKET,
-            "bear_market": MarketEnvironment.BEAR_MARKET,
-            "sideways_market": MarketEnvironment.SIDEWAYS_MARKET,
-            "volatile_market": MarketEnvironment.VOLATILE_MARKET,
-            "normal": MarketEnvironment.SIDEWAYS_MARKET,
-        }
-        
-        if environment not in env_mapping:
-            valid_values = list(env_mapping.keys())
-            raise ValueError(f"无效的市场环境，有效值为: {', '.join(valid_values)}")
-            
-        self._market_environment = env_mapping[environment]
-    
-    def get_market_environment(self) -> MarketEnvironment:
-        """
-        获取当前市场环境
-        
-        Returns:
-            MarketEnvironment: 当前市场环境
-        """
-        return self._market_environment
-    
-    def detect_market_environment(self, data: pd.DataFrame) -> MarketEnvironment:
-        """
-        根据KDJ数值判断当前市场环境
-        
-        Args:
-            data: 包含KDJ指标的DataFrame
-            
-        Returns:
-            MarketEnvironment: 检测到的市场环境
-        """
-        try:
-            if 'K' not in data.columns or 'D' not in data.columns or 'J' not in data.columns:
-                return MarketEnvironment.SIDEWAYS_MARKET
-            
-            # 获取最新的KDJ值
-            k_value = data['K'].iloc[-1]
-            d_value = data['D'].iloc[-1]
-            j_value = data['J'].iloc[-1]
-            
-            # 根据KDJ值范围判断市场环境
-            if k_value > 80 and d_value > 80:
-                self._market_environment = MarketEnvironment.UPTREND_MARKET
-                return MarketEnvironment.UPTREND_MARKET
-            elif k_value < 20 and d_value < 20:
-                self._market_environment = MarketEnvironment.DOWNTREND_MARKET
-                return MarketEnvironment.DOWNTREND_MARKET
-            else:
-                self._market_environment = MarketEnvironment.SIDEWAYS_MARKET
-                return MarketEnvironment.SIDEWAYS_MARKET
-        except Exception as e:
-            logger.warning(f"判断市场环境出错: {e}")
-            return MarketEnvironment.SIDEWAYS_MARKET
-    
-    def _calculate(self, *args, **kwargs) -> pd.DataFrame:
-        """
-        计算KDJ指标
-
-        Args:
-            *args: 如果第一个参数是DataFrame，则使用它
-            **kwargs: 应该包含一个名为`data`的DataFrame
-        
-        Returns:
-            pd.DataFrame: 包含K, D, J线的DataFrame
-        """
-        if args and isinstance(args[0], pd.DataFrame):
-            data = args[0]
-        elif 'data' in kwargs and isinstance(kwargs['data'], pd.DataFrame):
-            data = kwargs['data']
-        else:
-            raise ValueError("calculate()需要一个DataFrame作为输入，通过'data'关键字参数或作为第一个位置参数提供")
-        
-        return self._calculate_kdj(data, **kwargs)
-
-    def _calculate_kdj(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算KDJ指标
         
         Args:
-            data: 包含OHLC数据的DataFrame
-            **kwargs: 其他参数，可包含n、m1、m2
+            data: 输入数据，必须包含 'high', 'low', 'close' 列
             
         Returns:
-            pd.DataFrame: 包含K、D、J列的DataFrame
+            pd.DataFrame: 包含K, D, J列的DataFrame
         """
-        try:
-            # 检查必要的列
-            required_cols = ['high', 'low', 'close']
-            if not all(col in data.columns for col in required_cols):
-                missing = [col for col in required_cols if col not in data.columns]
-                logger.error(f"计算KDJ指标需要 {', '.join(required_cols)} 列，缺少: {', '.join(missing)}")
-                # 创建空的K, D, J列，避免后续错误
-                result = data.copy()
-                result['K'] = np.nan
-                result['D'] = np.nan
-                result['J'] = np.nan
-                return result
-            
-            # 获取参数
-            n = kwargs.get('n', self.n)
-            m1 = kwargs.get('m1', self.m1)
-            m2 = kwargs.get('m2', self.m2)
-            
-            # 确保足够的数据长度
-            if len(data) < n:
-                logger.warning(f"数据长度({len(data)})小于所需的回溯周期({n})，返回原始数据")
-                result = data.copy()
-                result['K'] = np.nan
-                result['D'] = np.nan
-                result['J'] = np.nan
-                return result
-            
-            # 创建结果DataFrame
-            result = data.copy()
-            
-            # 计算RSV
-            high_n = result['high'].rolling(window=n).max()
-            low_n = result['low'].rolling(window=n).min()
-            close = result['close']
-            
-            # 防止除以零
-            rsv_denominator = high_n - low_n
-            rsv = np.where(rsv_denominator != 0, 
-                           100 * (close - low_n) / rsv_denominator, 
-                           0)
-            
-            # 计算K值 - 初始值为50
-            k_values = np.zeros(len(data))
-            k_values[0] = 50
-            
-            # 计算D值 - 初始值为50
-            d_values = np.zeros(len(data))
-            d_values[0] = 50
-            
-            # 计算K和D值
-            for i in range(1, len(data)):
-                if np.isnan(rsv[i]):
-                    k_values[i] = k_values[i-1]
-                    d_values[i] = d_values[i-1]
-                else:
-                    k_values[i] = (m1 * k_values[i-1] + (9 - m1) * rsv[i]) / 9
-                    d_values[i] = (m2 * d_values[i-1] + (9 - m2) * k_values[i]) / 9
-            
-            # 计算J值
-            j_values = 3 * k_values - 2 * d_values
-            
-            # 添加结果
-            result['K'] = k_values
-            result['D'] = d_values
-            result['J'] = j_values
-            
-            return result
-        except Exception as e:
-            logger.error(f"计算KDJ指标时出错: {e}")
-            # 返回原始数据，但添加空的KDJ列
-            result = data.copy()
-            result['K'] = np.nan
-            result['D'] = np.nan
-            result['J'] = np.nan
-            return result
-    
+        return self._calculate(data)
+
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        核心计算逻辑
+        """
+        df = data.copy()
+        
+        # 计算RSV
+        low_n = df['low'].rolling(window=self.n, min_periods=1).min()
+        high_n = df['high'].rolling(window=self.n, min_periods=1).max()
+        rsv = (df['close'] - low_n) / (high_n - low_n) * 100
+        rsv.fillna(0, inplace=True)
+
+        # 使用pandas的ewm方法计算K, D, J
+        # K值: RSV的指数移动平均
+        df['K'] = rsv.ewm(com=self.m1 - 1, adjust=False).mean()
+        
+        # D值: K值的指数移动平均
+        df['D'] = df['K'].ewm(com=self.m2 - 1, adjust=False).mean()
+
+        # J值
+        df['J'] = 3 * df['K'] - 2 * df['D']
+        
+        # 将初始的NaN值设置为50.0，这是常见做法
+        df.fillna(50.0, inplace=True)
+
+        return df
+
     def add_signals(self, data: pd.DataFrame, k_col: str = 'K', 
                    d_col: str = 'D', j_col: str = 'J') -> pd.DataFrame:
         """
@@ -955,9 +814,18 @@ class KDJ(BaseIndicator):
         # 形态影响分数：最多调整15分
         pattern_adjustment = pd.Series(0, index=data.index)
         for pattern in patterns:
-            # 找到对应的注册形态信息
-            if pattern.pattern_id in self._registered_patterns:
-                score_impact = self._registered_patterns[pattern.pattern_id]['score_impact']
+            pattern_id = None
+            # 兼容字符串、字典等类型
+            if isinstance(pattern, dict) and 'pattern_id' in pattern and isinstance(pattern['pattern_id'], str):
+                pattern_id = pattern['pattern_id']
+            elif isinstance(pattern, str):
+                pattern_id = pattern
+            if not isinstance(pattern_id, str):
+                continue
+            if not isinstance(self._registered_patterns, dict):
+                continue
+            if pattern_id in self._registered_patterns:
+                score_impact = self._registered_patterns[pattern_id]['score_impact']
                 # 最多调整±15分
                 pattern_adjustment += np.clip(score_impact, -15, 15)
         

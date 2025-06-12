@@ -40,6 +40,21 @@ class VIX(BaseIndicator):
         self.smooth_period = smooth_period
         self.name = "VIX"
     
+    def set_parameters(self, period: int = None, smooth_period: int = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
+        if smooth_period is not None:
+            self.smooth_period = smooth_period
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+        """
+        获取VIX指标的技术形态
+        """
+        return self.identify_patterns(data, **kwargs)
+    
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算VIX指标

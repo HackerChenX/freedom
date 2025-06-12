@@ -76,14 +76,11 @@ class EnhancedKDJ(KDJ):
         Returns:
             pd.DataFrame: 计算结果，包含KDJ及其多周期指标
         """
+        # 调用父类的calculate方法，获取包含K, D, J基础计算的DataFrame
+        result = super().calculate(data, *args, **kwargs)
+
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["high", "low", "close"])
-        
-        # 复制输入数据
-        result = data.copy()
-        
-        # 计算标准KDJ
-        self._calculate_kdj(result, self.n, self.m1, self.m2)
+        self.ensure_columns(result, ["high", "low", "close", "K", "D", "J"])
         
         # 计算多周期KDJ
         for n in self.multi_periods:
@@ -91,16 +88,20 @@ class EnhancedKDJ(KDJ):
                 self._calculate_multi_period_kdj(result, n, self.m1, self.m2)
         
         # 计算J线加速度
-        result["j_acceleration"] = self._calculate_j_acceleration(result["j"])
+        if "J" in result.columns:
+            result["j_acceleration"] = self._calculate_j_acceleration(result["J"])
         
         # 计算KD交叉角度
-        result["kd_cross_angle"] = self._calculate_kd_cross_angle(result["k"], result["d"])
+        if "K" in result.columns and "D" in result.columns:
+            result["kd_cross_angle"] = self._calculate_kd_cross_angle(result["K"], result["D"])
         
         # 计算KD距离
-        result["kd_distance"] = result["k"] - result["d"]
-        
+        if "K" in result.columns and "D" in result.columns:
+            result["kd_distance"] = result["K"] - result["D"]
+
         # 计算历史极值归一化J值
-        result["j_normalized"] = self._normalize_j_values(result["j"])
+        if "J" in result.columns:
+            result["j_normalized"] = self._normalize_j_values(result["J"])
         
         # 保存结果
         self._result = result
@@ -145,9 +146,9 @@ class EnhancedKDJ(KDJ):
         
         # 保存结果
         data["rsv"] = rsv
-        data["k"] = k
-        data["d"] = d
-        data["j"] = j
+        data["K"] = k
+        data["D"] = d
+        data["J"] = j
     
     def _calculate_multi_period_kdj(self, data: pd.DataFrame, n: int, m1: int, m2: int) -> None:
         """
@@ -186,9 +187,9 @@ class EnhancedKDJ(KDJ):
         
         # 保存结果
         data[f"rsv_{n}"] = rsv
-        data[f"k_{n}"] = k
-        data[f"d_{n}"] = d
-        data[f"j_{n}"] = j
+        data[f"K_{n}"] = k
+        data[f"D_{n}"] = d
+        data[f"J_{n}"] = j
     
     def _calculate_j_acceleration(self, j: pd.Series, window: int = 3) -> pd.Series:
         """
@@ -270,9 +271,9 @@ class EnhancedKDJ(KDJ):
             self.calculate(data)
             
         patterns = []
-        k = self._result["k"]
-        d = self._result["d"]
-        j = self._result["j"]
+        k = self._result["K"]
+        d = self._result["D"]
+        j = self._result["J"]
         
         # 1. 超买超卖区域判断
         if k.iloc[-1] < 20 and d.iloc[-1] < 20:
@@ -492,9 +493,9 @@ class EnhancedKDJ(KDJ):
         
         score = pd.Series(50.0, index=data.index)  # 基础分50分
         
-        k = self._result["k"]
-        d = self._result["d"]
-        j = self._result["j"]
+        k = self._result["K"]
+        d = self._result["D"]
+        j = self._result["J"]
         j_norm = self._result["j_normalized"]
         kd_angle = self._result["kd_cross_angle"]
         j_accel = self._result["j_acceleration"]
@@ -578,15 +579,15 @@ class EnhancedKDJ(KDJ):
         score = pd.Series(0.0, index=self._result.index)
         
         # 获取所有计算的KDJ周期
-        k_columns = [col for col in self._result.columns if col.startswith("k_")]
-        d_columns = [col for col in self._result.columns if col.startswith("d_")]
+        k_columns = [col for col in self._result.columns if col.startswith("K_")]
+        d_columns = [col for col in self._result.columns if col.startswith("D_")]
         
         if not k_columns or not d_columns:
             return score
         
         # 添加主周期的K和D
-        k_columns.append("k")
-        d_columns.append("d")
+        k_columns.append("K")
+        d_columns.append("D")
         
         # 计算每个时间点的趋势一致性
         for i in range(len(self._result)):
@@ -645,9 +646,9 @@ class EnhancedKDJ(KDJ):
         
         # 创建信号DataFrame
         signals = pd.DataFrame(index=result.index)
-        signals['k'] = result["k"]
-        signals['d'] = result["d"]
-        signals['j'] = result["j"]
+        signals['K'] = result["K"]
+        signals['D'] = result["D"]
+        signals['J'] = result["J"]
         
         # 计算KDJ评分
         kdj_score = self.calculate_raw_score(data)
@@ -655,17 +656,17 @@ class EnhancedKDJ(KDJ):
         
         # 生成买入信号
         buy_signal = (
-            (self.crossover(signals['k'], signals['d'])) |  # KD金叉
-            ((signals['k'] < 20) & (signals['d'] < 20)) |  # KD处于超卖区
-            (signals['j'] < 0) |  # J线处于超卖区
+            (self.crossover(signals['K'], signals['D'])) |  # KD金叉
+            ((signals['K'] < 20) & (signals['D'] < 20)) |  # KD处于超卖区
+            (signals['J'] < 0) |  # J线处于超卖区
             (signals['score'] > 70)  # 评分高于70
         )
         
         # 生成卖出信号
         sell_signal = (
-            (self.crossunder(signals['k'], signals['d'])) |  # KD死叉
-            ((signals['k'] > 80) & (signals['d'] > 80)) |  # KD处于超买区
-            (signals['j'] > 100) |  # J线处于超买区
+            (self.crossunder(signals['K'], signals['D'])) |  # KD死叉
+            ((signals['K'] > 80) & (signals['D'] > 80)) |  # KD处于超买区
+            (signals['J'] > 100) |  # J线处于超买区
             (signals['score'] < 30)  # 评分低于30
         )
         
@@ -720,7 +721,7 @@ class EnhancedKDJ(KDJ):
             if signals['buy_signal'].iloc[i]:
                 # 根据评分、J线和KD交叉角度确定信号强度
                 score = signals['score'].iloc[i]
-                j_val = result['j'].iloc[i]
+                j_val = result['J'].iloc[i]
                 kd_angle = result['kd_cross_angle'].iloc[i] if i > 0 else 0
                 
                 if score > 85 and j_val < -10 and kd_angle > 2:
@@ -735,7 +736,7 @@ class EnhancedKDJ(KDJ):
             elif signals['sell_signal'].iloc[i]:
                 # 根据评分、J线和KD交叉角度确定信号强度
                 score = signals['score'].iloc[i]
-                j_val = result['j'].iloc[i]
+                j_val = result['J'].iloc[i]
                 kd_angle = result['kd_cross_angle'].iloc[i] if i > 0 else 0
                 
                 if score < 15 and j_val > 110 and kd_angle < -2:

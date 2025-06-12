@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
+import talib
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -598,40 +599,11 @@ class VOSC(BaseIndicator):
     
         return signals
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
-        """
-        绘制成交量震荡指标(VOSC)指标图表
-        
-        Args:
-            df: 包含VOSC指标的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            **kwargs: 额外绘图参数
-            
-        Returns:
-            matplotlib轴对象
-        """
-        import matplotlib.pyplot as plt
-        
-        # 检查必要的指标列是否存在
-        required_columns = ['vosc', 'vosc_signal']
-        self._validate_dataframe(df, required_columns)
-        
-        # 创建新的轴对象（如果未提供）
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 5))
-            
-        # 绘制VOSC指标线
-        ax.plot(df.index, df['vosc'], label='VOSC')
-        ax.plot(df.index, df['vosc_signal'], label='信号线', linestyle='--')
-        
-        # 添加零轴线
-        ax.axhline(y=0, color='k', linestyle='--', alpha=0.3)
-        
-        ax.set_ylabel('成交量震荡指标(VOSC)')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax
+    def get_patterns(self):
+        patterns = {
+            "description": "VOSC下穿零线，可能预示卖出时机。",
+        }
+        return patterns
 
     def _register_vosc_patterns(self):
         """

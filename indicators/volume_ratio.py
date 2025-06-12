@@ -8,6 +8,7 @@
 
 import numpy as np
 import pandas as pd
+import talib
 from typing import Optional, Union, List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
@@ -68,6 +69,21 @@ class VolumeRatio(BaseIndicator):
         self.ma_period = ma_period
         self.name = f"VOLUME_RATIO({reference_period},{ma_period})"
         
+    def set_parameters(self, reference_period: int = None, ma_period: int = None):
+        """
+        设置指标参数
+        """
+        if reference_period is not None:
+            self.reference_period = reference_period
+        if ma_period is not None:
+            self.ma_period = ma_period
+
+    def get_patterns(self):
+        patterns = {
+            "description": "成交量比率低于阈值，可能表明回调或盘整结束",
+        }
+        return patterns
+
     def _validate_dataframe(self, df: pd.DataFrame) -> None:
         """
         验证DataFrame是否包含计算所需的列
@@ -175,64 +191,6 @@ class VolumeRatio(BaseIndicator):
         
         return signal_df
     
-    def plot(self, df: pd.DataFrame, result: pd.DataFrame, ax=None):
-        """
-        绘制量比指标图表
-        
-        Args:
-            df: 原始数据DataFrame
-            result: 包含量比指标计算结果的DataFrame
-            ax: matplotlib轴对象，如果为None则创建新的
-            
-        Returns:
-            matplotlib.axes.Axes: 绘制好的轴对象
-        """
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError:
-            print("警告: matplotlib不可用，无法绘制图表")
-            return None
-            
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(12, 6))
-        
-        # 获取数据
-        dates = df.index
-        volume_ratio = result['volume_ratio'].values
-        volume_ratio_ma = result['volume_ratio_ma'].values
-        
-        # 绘制量比线
-        ax.plot(dates, volume_ratio, label=f"量比({self.reference_period}日)", color='blue', linewidth=1.5)
-        ax.plot(dates, volume_ratio_ma, label=f"量比均线({self.ma_period}日)", color='red', linewidth=1.2)
-        
-        # 绘制参考线
-        ax.axhline(y=1, color='gray', linestyle='--', alpha=0.5)
-        ax.axhline(y=1.5, color='green', linestyle='--', alpha=0.3)
-        ax.axhline(y=0.7, color='red', linestyle='--', alpha=0.3)
-        
-        # 获取信号
-        if 'bullish_signal' in result.columns and 'bearish_signal' in result.columns:
-            bullish_signals = result['bullish_signal'].values
-            bearish_signals = result['bearish_signal'].values
-            
-            # 绘制买入信号
-            buy_dates = [dates[i] for i in range(len(dates)) if bullish_signals[i]]
-            buy_values = [volume_ratio[i] for i in range(len(volume_ratio)) if bullish_signals[i]]
-            ax.scatter(buy_dates, buy_values, color='green', s=50, marker='^', label='买入信号')
-            
-            # 绘制卖出信号
-            sell_dates = [dates[i] for i in range(len(dates)) if bearish_signals[i]]
-            sell_values = [volume_ratio[i] for i in range(len(volume_ratio)) if bearish_signals[i]]
-            ax.scatter(sell_dates, sell_values, color='red', s=50, marker='v', label='卖出信号')
-        
-        # 设置图表属性
-        ax.set_title(f"量比指标 (参考期: {self.reference_period}日)")
-        ax.set_ylabel('量比值')
-        ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
-        
-        return ax
-    
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算并生成量比指标信号
@@ -288,30 +246,15 @@ class VolumeRatio(BaseIndicator):
         
         return activity_df
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
         """
-        计算指标原始评分
-        
-        Args:
-            data: 输入数据
-            **kwargs: 其他参数
-            
-        Returns:
-            pd.Series: 评分(0-100)
+        计算VR原始评分
         """
-        # 确保已计算指标
-        if not self.has_result():
-            self.calculate(data, **kwargs)
-        
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            self.calculate(data)
         
-        # 初始化评分
+        # 评分逻辑...
         score = pd.Series(50.0, index=data.index)
-    
-        # 在这里实现指标特定的评分逻辑
-        # 此处提供默认实现
-    
         return score
         
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

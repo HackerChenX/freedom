@@ -43,6 +43,19 @@ class WMA(BaseIndicator):
         self.name = "WMA"
         self._pattern_registry = {}
         
+    def set_parameters(self, period: int = None, periods: List[int] = None):
+        """
+        设置指标参数
+        """
+        if period is not None:
+            self.period = period
+        if periods is not None:
+            self.periods = periods
+        else:
+            # 如果只提供了period，确保periods列表也更新
+            if period is not None:
+                self.periods = [period]
+        
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列
