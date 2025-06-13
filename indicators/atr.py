@@ -855,4 +855,8 @@ class ATR(BaseIndicator):
             description="ATR表明市场处于低波动状态",
             score_impact=-15.0,
             signal_type="neutral"
-        ) 
+        )
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        return 0.5
+

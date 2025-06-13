@@ -12,7 +12,7 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
-from utils.signal_utils import crossover, crossunder
+from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,7 +27,7 @@ class Ichimoku(BaseIndicator):
     """
     
     def __init__(self, tenkan_period: int = 9, kijun_period: int = 26, senkou_b_period: int = 52, chikou_period: int = 26):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
         """
         初始化一目均衡表指标(Ichimoku)
         
@@ -42,6 +42,26 @@ class Ichimoku(BaseIndicator):
         self.kijun_period = kijun_period
         self.senkou_b_period = senkou_b_period
         self.chikou_period = chikou_period
+
+    def set_parameters(self, tenkan_period: int = None, kijun_period: int = None,
+                      senkou_b_period: int = None, chikou_period: int = None):
+        """
+        设置指标参数
+
+        Args:
+            tenkan_period: 转换线周期
+            kijun_period: 基准线周期
+            senkou_b_period: 先行带B周期
+            chikou_period: 滞后线周期
+        """
+        if tenkan_period is not None:
+            self.tenkan_period = tenkan_period
+        if kijun_period is not None:
+            self.kijun_period = kijun_period
+        if senkou_b_period is not None:
+            self.senkou_b_period = senkou_b_period
+        if chikou_period is not None:
+            self.chikou_period = chikou_period
         
         # 注册Ichimoku形态
         # self._register_ichimoku_patterns()
@@ -409,7 +429,89 @@ class Ichimoku(BaseIndicator):
         score += breakout_score
         
         return np.clip(score, 0, 100)
-    
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算Ichimoku指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于Ichimoku多重确认的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            try:
+                # 检查多重确认信号
+                confirmations = 0
+
+                # 转换线基准线关系
+                if 'tenkan_sen' in self._result.columns and 'kijun_sen' in self._result.columns:
+                    tenkan = self._result['tenkan_sen'].dropna()
+                    kijun = self._result['kijun_sen'].dropna()
+                    if len(tenkan) > 0 and len(kijun) > 0:
+                        if tenkan.iloc[-1] > kijun.iloc[-1]:
+                            confirmations += 1
+
+                # 云图状态
+                if 'senkou_span_a' in self._result.columns and 'senkou_span_b' in self._result.columns:
+                    senkou_a = self._result['senkou_span_a'].dropna()
+                    senkou_b = self._result['senkou_span_b'].dropna()
+                    if len(senkou_a) > 0 and len(senkou_b) > 0:
+                        if senkou_a.iloc[-1] > senkou_b.iloc[-1]:
+                            confirmations += 1
+
+                # 多重确认增加置信度
+                if confirmations >= 2:
+                    confidence += 0.15
+                elif confirmations == 1:
+                    confidence += 0.1
+
+            except:
+                pass
+
+        # 4. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别Ichimoku技术形态
@@ -802,16 +904,208 @@ class Ichimoku(BaseIndicator):
         
         return patterns
         
-    def get_patterns(self):
-        patterns = {
-            "description": "转换线下穿基准线，是卖出信号。",
-        }
-        return patterns
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取Ichimoku指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算Ichimoku
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        tenkan_sen = self._result['tenkan_sen']
+        kijun_sen = self._result['kijun_sen']
+        senkou_a = self._result['senkou_span_a']
+        senkou_b = self._result['senkou_span_b']
+        chikou_span = self._result['chikou_span']
+        kumo_top = self._result['kumo_top']
+        kumo_bottom = self._result['kumo_bottom']
+
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 转换线基准线交叉形态
+        patterns_df['ICHIMOKU_TK_GOLDEN_CROSS'] = crossover(tenkan_sen, kijun_sen)
+        patterns_df['ICHIMOKU_TK_DEATH_CROSS'] = crossunder(tenkan_sen, kijun_sen)
+        patterns_df['ICHIMOKU_TK_BULLISH'] = tenkan_sen > kijun_sen
+        patterns_df['ICHIMOKU_TK_BEARISH'] = tenkan_sen < kijun_sen
+
+        # 2. 价格与云图关系形态
+        patterns_df['ICHIMOKU_PRICE_ABOVE_KUMO'] = data['close'] > kumo_top
+        patterns_df['ICHIMOKU_PRICE_BELOW_KUMO'] = data['close'] < kumo_bottom
+        patterns_df['ICHIMOKU_PRICE_IN_KUMO'] = (data['close'] >= kumo_bottom) & (data['close'] <= kumo_top)
+
+        # 3. 价格突破云图形态
+        patterns_df['ICHIMOKU_PRICE_BREAK_KUMO_UP'] = crossover(data['close'], kumo_top)
+        patterns_df['ICHIMOKU_PRICE_BREAK_KUMO_DOWN'] = crossunder(data['close'], kumo_bottom)
+
+        # 4. 云图形态
+        patterns_df['ICHIMOKU_KUMO_BULLISH'] = senkou_a > senkou_b
+        patterns_df['ICHIMOKU_KUMO_BEARISH'] = senkou_a < senkou_b
+        patterns_df['ICHIMOKU_KUMO_TWIST_BULLISH'] = crossover(senkou_a, senkou_b)
+        patterns_df['ICHIMOKU_KUMO_TWIST_BEARISH'] = crossunder(senkou_a, senkou_b)
+
+        # 5. 滞后线形态
+        if len(data) >= self.chikou_period:
+            # 滞后线与价格比较（需要考虑时间偏移）
+            price_shifted = data['close'].shift(self.chikou_period)
+            patterns_df['ICHIMOKU_CHIKOU_ABOVE_PRICE'] = chikou_span > price_shifted
+            patterns_df['ICHIMOKU_CHIKOU_BELOW_PRICE'] = chikou_span < price_shifted
+
+        # 6. 云图厚度形态
+        kumo_thickness = self._result['kumo_thickness']
+        if len(kumo_thickness) >= 20:
+            thickness_ma = kumo_thickness.rolling(20).mean()
+            patterns_df['ICHIMOKU_KUMO_THICK'] = kumo_thickness > thickness_ma * 1.5
+            patterns_df['ICHIMOKU_KUMO_THIN'] = kumo_thickness < thickness_ma * 0.5
+
+        # 7. 综合形态
+        patterns_df['ICHIMOKU_STRONG_BULLISH'] = (
+            patterns_df['ICHIMOKU_PRICE_ABOVE_KUMO'] &
+            patterns_df['ICHIMOKU_TK_BULLISH'] &
+            patterns_df['ICHIMOKU_KUMO_BULLISH']
+        )
+
+        patterns_df['ICHIMOKU_STRONG_BEARISH'] = (
+            patterns_df['ICHIMOKU_PRICE_BELOW_KUMO'] &
+            patterns_df['ICHIMOKU_TK_BEARISH'] &
+            patterns_df['ICHIMOKU_KUMO_BEARISH']
+        )
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册Ichimoku指标的技术形态
+        """
+        # 注册转换线基准线交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_TK_GOLDEN_CROSS",
+            display_name="一目均衡表金叉",
+            description="转换线上穿基准线，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_TK_DEATH_CROSS",
+            display_name="一目均衡表死叉",
+            description="转换线下穿基准线，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册价格与云图关系形态
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_PRICE_ABOVE_KUMO",
+            display_name="价格位于云层之上",
+            description="价格位于云层上方，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_PRICE_BELOW_KUMO",
+            display_name="价格位于云层之下",
+            description="价格位于云层下方，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册价格突破云图形态
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_PRICE_BREAK_KUMO_UP",
+            display_name="价格向上突破云层",
+            description="价格从下方突破云层，强烈看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_PRICE_BREAK_KUMO_DOWN",
+            display_name="价格向下突破云层",
+            description="价格从上方突破云层，强烈看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册云图翻转形态
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_KUMO_TWIST_BULLISH",
+            display_name="云层看涨翻转",
+            description="先行带A上穿先行带B，云层由红变绿",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_KUMO_TWIST_BEARISH",
+            display_name="云层看跌翻转",
+            description="先行带A下穿先行带B，云层由绿变红",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0
+        )
+
+        # 注册综合形态
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_STRONG_BULLISH",
+            display_name="一目均衡表强烈看涨",
+            description="价格位于云层上方，转换线上穿基准线，云层看涨",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ICHIMOKU_STRONG_BEARISH",
+            display_name="一目均衡表强烈看跌",
+            description="价格位于云层下方，转换线下穿基准线，云层看跌",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0
+        )
 
     def calculate_score(self, data):
+        """
+        计算Ichimoku指标的综合评分
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            dict: 包含评分和置信度的字典
+        """
+        # 计算原始评分
+        raw_score = self.calculate_raw_score(data)
+
+        # 获取形态
+        patterns = self.get_patterns(data)
+
+        # 计算置信度
+        confidence = self.calculate_confidence(raw_score, patterns, {})
+
+        # 计算最终评分
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+
         return {
-            'final_score': pd.Series([50] * len(data), index=data.index),
-            'patterns': [],
-            'market_environment': MagicMock(),
-            'confidence': 50
-        } 
+            'score': final_score,
+            'confidence': confidence,
+            'patterns': patterns,
+            'raw_score': raw_score
+        }

@@ -8,6 +8,7 @@
 """
 
 import pandas as pd
+import numpy as np
 from typing import List
 
 from indicators.base_indicator import BaseIndicator
@@ -19,11 +20,11 @@ logger = get_logger(__name__)
 class BIAS(BaseIndicator):
     """
     均线多空指标(BIAS) (BIAS)
-    
+
     分类：趋势类指标
     描述：(收盘价-MA)/MA×100%
     """
-    
+
     def __init__(self, name: str = "BIAS", description: str = "均线多空指标",
                  period: int = 14, periods: List[int] = None):
         """
@@ -32,6 +33,7 @@ class BIAS(BaseIndicator):
         super().__init__(name, description)
         self.periods = periods if periods is not None else [period]
         self.indicator_type = "BIAS"
+        self.REQUIRED_COLUMNS = ['close']  # 添加必需列定义
         
     def set_parameters(self, period: int = 14, **kwargs):
         """
@@ -97,10 +99,127 @@ class BIAS(BaseIndicator):
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算BIAS指标的原始评分 (0-100分) - 存根实现
-        """
-        return pd.Series(50.0, index=data.index)
+        计算BIAS指标的原始评分 (0-100分)
 
-    # 其他方法（如get_signals, plot, calculate_raw_score等）可以根据需要
-    # 同样基于调用 self.calculate(df) 的模式进行重构
-    # 为了本次修复的简洁性，暂时省略它们的完整实现
+        评分逻辑：
+        - BIAS值越接近0，评分越接近50（中性）
+        - BIAS值为正且较大时，评分偏高（超买）
+        - BIAS值为负且较大时，评分偏低（超卖）
+        """
+        # 首先计算指标值
+        calculated_data = self._calculate(data)
+
+        if 'BIAS' not in calculated_data.columns:
+            return pd.Series(50.0, index=data.index)
+
+        bias_values = calculated_data['BIAS']
+
+        # 计算评分
+        # BIAS在-10到+10之间为正常范围，对应40-60分
+        # BIAS超过+10为超买，对应60-100分
+        # BIAS低于-10为超卖，对应0-40分
+        scores = pd.Series(50.0, index=data.index)
+
+        # 处理有效值
+        valid_mask = bias_values.notna()
+        valid_bias = bias_values[valid_mask]
+
+        if len(valid_bias) > 0:
+            # 标准化BIAS值到评分
+            # 使用sigmoid函数进行平滑转换
+            normalized_bias = valid_bias / 10.0  # 将BIAS值标准化
+            sigmoid_scores = 50 + 40 * (2 / (1 + pd.Series(np.exp(-normalized_bias), index=valid_bias.index)) - 1)
+            scores[valid_mask] = sigmoid_scores.clip(0, 100)
+
+        return scores
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: dict) -> float:
+        """
+        计算BIAS指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分（超买/超卖）置信度较高
+        if last_score > 70 or last_score < 30:
+            confidence += 0.2
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, (list, pd.DataFrame)):
+            if isinstance(patterns, pd.DataFrame):
+                # 统计最近几个周期的形态数量
+                try:
+                    # 只统计数值列的形态
+                    numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                    if len(numeric_cols) > 0:
+                        recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                        recent_patterns = recent_data.sum().sum()
+                    else:
+                        recent_patterns = 0
+                except:
+                    recent_patterns = 0
+            else:
+                recent_patterns = len(patterns)
+
+            if recent_patterns > 0:
+                confidence += min(recent_patterns * 0.05, 0.2)
+
+        # 3. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)  # 标准差越小，稳定性越高
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
+
+    def register_patterns(self):
+        """
+        注册BIAS指标的技术形态
+        """
+        # 注册BIAS极值形态
+        self.register_pattern_to_registry(
+            pattern_id="BIAS_EXTREME_HIGH",
+            display_name="BIAS极高值",
+            description="BIAS值超过+15%，表示严重超买",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BIAS_EXTREME_LOW",
+            display_name="BIAS极低值",
+            description="BIAS值低于-15%，表示严重超卖",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册BIAS背离形态
+        self.register_pattern_to_registry(
+            pattern_id="BIAS_DIVERGENCE",
+            display_name="BIAS背离",
+            description="价格与BIAS指标出现背离",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )

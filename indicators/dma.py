@@ -9,7 +9,7 @@ import pandas as pd
 
 from enums.indicator_types import TrendType, CrossType
 from enums.indicator_enum import IndicatorEnum
-from utils.signal_utils import crossover, crossunder
+from indicators.common import crossover, crossunder
 from .base_indicator import BaseIndicator
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,23 @@ class DMA(BaseIndicator):
         self.slow_period = slow_period
         self.ama_period = ama_period
         self._result = None
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.REQUIRED_COLUMNS = ['close']
+
+    def set_parameters(self, fast_period: int = None, slow_period: int = None, ama_period: int = None):
+        """
+        设置指标参数
+
+        Args:
+            fast_period: 快速均线周期
+            slow_period: 慢速均线周期
+            ama_period: 差值平均线周期
+        """
+        if fast_period is not None:
+            self.fast_period = fast_period
+        if slow_period is not None:
+            self.slow_period = slow_period
+        if ama_period is not None:
+            self.ama_period = ama_period
         
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -72,7 +88,7 @@ class DMA(BaseIndicator):
         )
         
         # 计算FASTMA的变化率
-        result['FAST_MA_CHG'] = result['FAST_MA'].pct_change(periods=5) * 100
+        result['FAST_MA_CHG'] = result['FAST_MA'].pct_change(periods=5, fill_method=None) * 100
         
         # 删除不需要的临时列
         result = result.drop(['FAST_MA', 'SLOW_MA'], axis=1)
@@ -125,40 +141,40 @@ class DMA(BaseIndicator):
         score = 50  # 中性分值
         
         # 判断DMA和AMA的关系及DMA的绝对水平
-        if crossover(result['DMA'], result['AMA']):  # DMA上穿AMA
+        if crossover(result['DMA'], result['AMA']).any():  # DMA上穿AMA
             signal_type = "DMA上穿AMA"
             signal_desc = "DMA上穿AMA，显示由空头转为多头趋势"
-            cross_type = CrossType.CROSS_OVER
+            cross_type = "GOLDEN_CROSS"
             score = 70
-        elif crossunder(result['DMA'], result['AMA']):  # DMA下穿AMA
+        elif crossunder(result['DMA'], result['AMA']).any():  # DMA下穿AMA
             signal_type = "DMA下穿AMA"
             signal_desc = "DMA下穿AMA，显示由多头转为空头趋势"
-            cross_type = CrossType.CROSS_UNDER
+            cross_type = "DEATH_CROSS"
             score = 30
         elif dma > ama and dma_pct > 0:  # DMA在AMA上方且为正
             signal_type = "多头趋势增强"
             signal_desc = f"DMA位于AMA上方，百分比差值为{dma_pct:.2f}%，多头趋势增强"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 60 + min(30, dma_pct * 1.5)
         elif dma < ama and dma_pct < 0:  # DMA在AMA下方且为负
             signal_type = "空头趋势增强"
             signal_desc = f"DMA位于AMA下方，百分比差值为{dma_pct:.2f}%，空头趋势增强"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 40 - min(30, abs(dma_pct * 1.5))
         elif dma > 0 and ama > 0:  # DMA和AMA都为正
             signal_type = "弱势多头"
             signal_desc = "DMA和AMA均为正值，处于弱势多头"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 55
         elif dma < 0 and ama < 0:  # DMA和AMA都为负
             signal_type = "弱势空头"
             signal_desc = "DMA和AMA均为负值，处于弱势空头"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 45
         else:  # 其他情况
             signal_type = "震荡整理"
             signal_desc = "DMA指标处于震荡状态，无明确方向"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 50
             
         # 考虑FASTMA变化率调整评分
@@ -191,7 +207,7 @@ class DMA(BaseIndicator):
             sell_signal = False
             
         # 计算置信度(0-100%)
-        if cross_type in [CrossType.CROSS_OVER, CrossType.CROSS_UNDER]:
+        if cross_type in ["GOLDEN_CROSS", "DEATH_CROSS"]:
             confidence = 80
         elif abs(dma_pct) > 5:
             confidence = 75
@@ -228,7 +244,7 @@ class DMA(BaseIndicator):
             "trend_strength": trend_strength,
             "signal_type": signal_type,
             "signal_desc": signal_desc,
-            "cross_type": cross_type.value,
+            "cross_type": cross_type,
             "confidence": confidence,
             "risk_level": risk_level,
             "position_pct": position_pct,
@@ -266,7 +282,7 @@ class DMA(BaseIndicator):
         dma_pct = data['DMA_PCT']
         
         # 初始化评分
-        score = pd.Series(50, index=data.index)  # 默认中性评分
+        score = pd.Series(50.0, index=data.index)  # 默认中性评分
         
         # 计算趋势强度
         # 1. 上升趋势 (DMA > 0 且 DMA > AMA)
@@ -306,6 +322,57 @@ class DMA(BaseIndicator):
         score = score.clip(0, 100)
         
         return score
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算DMA指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 75 or last_score < 25:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
@@ -372,5 +439,146 @@ class DMA(BaseIndicator):
                 patterns.append("DMA上升加速")
             elif dma_trend < -0.1:
                 patterns.append("DMA下降加速")
-                
-        return patterns 
+
+        return patterns
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取DMA指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算DMA
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        dma = self._result['DMA']
+        ama = self._result['AMA']
+        dma_pct = self._result['DMA_PCT']
+
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 趋势形态
+        patterns_df['DMA_UPTREND'] = (dma > 0) & (dma > ama)
+        patterns_df['DMA_DOWNTREND'] = (dma < 0) & (dma < ama)
+        patterns_df['DMA_WEAK_UPTREND'] = (dma > 0) & (ama > 0) & ~patterns_df['DMA_UPTREND']
+        patterns_df['DMA_WEAK_DOWNTREND'] = (dma < 0) & (ama < 0) & ~patterns_df['DMA_DOWNTREND']
+
+        # 2. 交叉形态
+        patterns_df['DMA_GOLDEN_CROSS'] = crossover(dma, ama)
+        patterns_df['DMA_DEATH_CROSS'] = crossunder(dma, ama)
+
+        # 3. 零轴穿越形态
+        patterns_df['DMA_CROSS_UP_ZERO'] = crossover(dma, 0)
+        patterns_df['DMA_CROSS_DOWN_ZERO'] = crossunder(dma, 0)
+        patterns_df['DMA_ABOVE_ZERO'] = dma > 0
+        patterns_df['DMA_BELOW_ZERO'] = dma < 0
+
+        # 4. 强度形态
+        patterns_df['DMA_STRONG_UPTREND'] = dma_pct > 5
+        patterns_df['DMA_STRONG_DOWNTREND'] = dma_pct < -5
+
+        # 5. 偏离形态
+        if len(dma) >= 2:
+            dma_ama_diff = abs(dma - ama)
+            avg_close = data['close'].rolling(20).mean()
+            diff_pct = (dma_ama_diff / avg_close * 100).fillna(0)
+
+            patterns_df['DMA_LARGE_DIVERGENCE_UP'] = (diff_pct > 5) & (dma > ama)
+            patterns_df['DMA_LARGE_DIVERGENCE_DOWN'] = (diff_pct > 5) & (dma < ama)
+
+        # 6. 加速形态
+        if len(dma) >= 10:
+            dma_acceleration = dma.diff(5)
+            patterns_df['DMA_ACCELERATION_UP'] = dma_acceleration > 0.1
+            patterns_df['DMA_ACCELERATION_DOWN'] = dma_acceleration < -0.1
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册DMA指标的技术形态
+        """
+        # 注册DMA趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="DMA_UPTREND",
+            display_name="DMA上升趋势",
+            description="DMA大于0且DMA大于AMA，表示强势上升趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMA_DOWNTREND",
+            display_name="DMA下降趋势",
+            description="DMA小于0且DMA小于AMA，表示强势下降趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册DMA交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="DMA_GOLDEN_CROSS",
+            display_name="DMA金叉",
+            description="DMA上穿AMA，显示由空头转为多头趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMA_DEATH_CROSS",
+            display_name="DMA死叉",
+            description="DMA下穿AMA，显示由多头转为空头趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0
+        )
+
+        # 注册DMA零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="DMA_CROSS_UP_ZERO",
+            display_name="DMA上穿零轴",
+            description="DMA从负值区域穿越零轴",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMA_CROSS_DOWN_ZERO",
+            display_name="DMA下穿零轴",
+            description="DMA从正值区域穿越零轴",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册DMA强度形态
+        self.register_pattern_to_registry(
+            pattern_id="DMA_STRONG_UPTREND",
+            display_name="DMA强势上涨",
+            description="DMA百分比差值大于5%，表示强势上涨",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMA_STRONG_DOWNTREND",
+            display_name="DMA强势下跌",
+            description="DMA百分比差值小于-5%，表示强势下跌",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )

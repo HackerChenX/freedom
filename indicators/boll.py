@@ -41,6 +41,11 @@ class BOLL(BaseIndicator):
         
         # 注册布林带指标形态
         self._register_boll_patterns()
+
+        # 导入交叉检测函数
+        from indicators.common import crossover, crossunder
+        self.crossover = crossover
+        self.crossunder = crossunder
     
     def set_parameters(self, period: int = None, std_dev: float = None):
         """设置指标参数"""
@@ -422,13 +427,13 @@ class BOLL(BaseIndicator):
             self.calculate(data, **kwargs)
         
         # 获取布林带指标值
-        if 'upper' not in data.columns or 'middle' not in data.columns or 'lower' not in data.columns or 'close' not in data.columns:
-            raise ValueError("数据中缺少布林带指标列")
-        
-        close = data['close']
-        upper = data['upper']
-        middle = data['middle']
-        lower = data['lower']
+        if self._result is None:
+            raise ValueError("需要先计算布林带指标")
+
+        close = self._result['close']
+        upper = self._result['upper']
+        middle = self._result['middle']
+        lower = self._result['lower']
         
         # 计算带宽
         bandwidth = (upper - lower) / middle
@@ -474,17 +479,21 @@ class BOLL(BaseIndicator):
         )
         
         # 检测形态对评分的影响
-        patterns = self.get_patterns(data, **kwargs)
+        patterns = self.identify_patterns(data, **kwargs)
         
         # 形态影响分数：最多调整±20分
-        pattern_adjustment = pd.Series(0, index=data.index)
+        pattern_adjustment = 0
         for pattern in patterns:
-            # 找到对应的注册形态信息
-            if pattern.pattern_id in self._registered_patterns:
-                score_impact = self._registered_patterns[pattern.pattern_id]['score_impact']
-                # 应用形态影响
-                pattern_adjustment += score_impact
-        
+            # 根据形态类型调整分数
+            if "超买" in pattern or "M顶" in pattern or "上轨" in pattern:
+                pattern_adjustment -= 5  # 看跌形态减分
+            elif "超卖" in pattern or "W底" in pattern or "下轨" in pattern:
+                pattern_adjustment += 5  # 看涨形态加分
+            elif "收窄" in pattern:
+                pattern_adjustment += 2  # 收窄形态轻微加分（蓄势）
+            elif "扩张" in pattern:
+                pattern_adjustment -= 2  # 扩张形态轻微减分（波动）
+
         # 限制形态调整范围
         pattern_adjustment = np.clip(pattern_adjustment, -20, 20)
         raw_score += pattern_adjustment
@@ -1340,42 +1349,66 @@ class BOLL(BaseIndicator):
         # 计算并添加评分
         score = self.calculate_raw_score(data)
         signals['score'] = score
-        
-        return signals
+
+        # 将字典转换为DataFrame
+        return pd.DataFrame(signals)
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取布林带指标的所有形态信息
-        
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
-        Returns:
-            List[Dict[str, Any]]: 包含形态信息的字典列表
-        """
-        if not self.has_result():
-            self.calculate(data)
-            
-        result = []
-        
-        # 检查是否有足够的数据
-        if len(self.result) < 2:
-            return result
-        
-        # 遍历所有已注册的形态并检测
-        detected_patterns = []
-        for pattern_id in all_patterns:
-            pattern_info = registry.get_pattern(pattern_id)
-            if not pattern_info:
-                continue
 
-            detection_func = pattern_info.get("detection_function")
-            if detection_func and callable(detection_func):
-                if detection_func(self._result):
-                    detected_patterns.append(pattern_info)
-        
-        return detected_patterns
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算布林带
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        # 获取形态列表
+        pattern_list = self.identify_patterns(data, **kwargs)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 定义所有可能的布林带形态
+        all_pattern_names = [
+            'BOLL_OVERBOUGHT', 'BOLL_OVERSOLD', 'BOLL_UPPER_BREAKOUT', 'BOLL_LOWER_BREAKOUT',
+            'BOLL_SQUEEZE', 'BOLL_EXPANSION', 'BOLL_W_BOTTOM', 'BOLL_M_TOP',
+            'BOLL_TREND_FOLLOWING', 'BOLL_MEAN_REVERSION'
+        ]
+
+        # 初始化所有形态列为False
+        for pattern_name in all_pattern_names:
+            patterns_df[pattern_name] = False
+
+        # 根据识别的形态设置相应的列
+        for pattern in pattern_list:
+            if "超买" in pattern:
+                patterns_df['BOLL_OVERBOUGHT'].iloc[-1] = True
+            elif "超卖" in pattern:
+                patterns_df['BOLL_OVERSOLD'].iloc[-1] = True
+            elif "突破" in pattern and "上轨" in pattern:
+                patterns_df['BOLL_UPPER_BREAKOUT'].iloc[-1] = True
+            elif "突破" in pattern and "下轨" in pattern:
+                patterns_df['BOLL_LOWER_BREAKOUT'].iloc[-1] = True
+            elif "收窄" in pattern or "挤压" in pattern:
+                patterns_df['BOLL_SQUEEZE'].iloc[-1] = True
+            elif "扩张" in pattern:
+                patterns_df['BOLL_EXPANSION'].iloc[-1] = True
+            elif "W底" in pattern:
+                patterns_df['BOLL_W_BOTTOM'].iloc[-1] = True
+            elif "M顶" in pattern:
+                patterns_df['BOLL_M_TOP'].iloc[-1] = True
+            elif "同步" in pattern:
+                patterns_df['BOLL_TREND_FOLLOWING'].iloc[-1] = True
+            elif "背离" in pattern:
+                patterns_df['BOLL_MEAN_REVERSION'].iloc[-1] = True
+
+        return patterns_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """

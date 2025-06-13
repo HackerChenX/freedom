@@ -30,13 +30,14 @@ class Aroon(BaseIndicator):
     def __init__(self, period: int = 14):
         """
         初始化阿隆指标(Aroon)
-        
+
         Args:
             period: 计算周期，默认为14
         """
         super().__init__(name="Aroon", description="阿隆指标，用于识别趋势的开始和结束")
         self.period = period
-        
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+
         # 注册Aroon形态
         self._register_aroon_patterns()
         
@@ -298,6 +299,88 @@ class Aroon(BaseIndicator):
         # 返回总分
         return score.clip(0, 100)
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算Aroon指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 1. 基于Aroon值的置信度
+        # 确保已计算Aroon
+        if not self.has_result():
+            return 0.5
+
+        aroon_up = self._result.get('aroon_up', pd.Series())
+        aroon_down = self._result.get('aroon_down', pd.Series())
+        aroon_osc = self._result.get('aroon_oscillator', pd.Series())
+
+        if aroon_up.empty or aroon_down.empty:
+            return 0.5
+
+        last_up = aroon_up.iloc[-1] if not aroon_up.empty else 50
+        last_down = aroon_down.iloc[-1] if not aroon_down.empty else 50
+        last_osc = aroon_osc.iloc[-1] if not aroon_osc.empty else 0
+
+        # Aroon值置信度
+        aroon_confidence = 0.5
+
+        # 强趋势时置信度较高
+        if (last_up > 70 and last_down < 30) or (last_down > 70 and last_up < 30):
+            aroon_confidence = 0.9
+        # 中等趋势
+        elif abs(last_up - last_down) > 30:
+            aroon_confidence = 0.7
+        # 盘整时置信度较低
+        elif last_up < 30 and last_down < 30:
+            aroon_confidence = 0.4
+        else:
+            aroon_confidence = 0.6
+
+        # 2. 基于震荡器的置信度
+        osc_confidence = 0.5
+        if abs(last_osc) > 50:  # 极端值
+            osc_confidence = 0.8
+        elif abs(last_osc) > 25:  # 中等值
+            osc_confidence = 0.7
+        else:
+            osc_confidence = 0.5
+
+        # 3. 基于形态的置信度
+        pattern_confidence = 0.5
+        if isinstance(patterns, (list, pd.DataFrame)):
+            if isinstance(patterns, pd.DataFrame):
+                # 统计最近几个周期的形态数量
+                recent_patterns = patterns.iloc[-5:].sum().sum() if len(patterns) >= 5 else patterns.sum().sum()
+            else:
+                recent_patterns = len(patterns)
+
+            if recent_patterns > 0:
+                pattern_confidence = min(0.5 + recent_patterns * 0.1, 0.9)
+
+        # 4. 基于信号的置信度
+        signal_confidence = 0.5
+        if signals:
+            # 检查是否有强烈的买卖信号
+            for signal_name, signal_series in signals.items():
+                if isinstance(signal_series, pd.Series) and signal_series.iloc[-1]:
+                    signal_confidence = 0.8
+                    break
+
+        # 综合置信度
+        confidence = (aroon_confidence * 0.4 + osc_confidence * 0.3 +
+                     pattern_confidence * 0.2 + signal_confidence * 0.1)
+
+        return min(confidence, 1.0)
+
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         识别所有已注册的Aroon形态
@@ -360,10 +443,28 @@ class Aroon(BaseIndicator):
         """
         return self.get_signals(data)
 
-    def calculate_score(self, data):
-        return {
-            'final_score': pd.Series([50] * len(data), index=data.index),
-            'patterns': [],
-            'market_environment': MagicMock(),
-            'confidence': 50
-        } 
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
+        """
+        计算Aroon指标评分（0-100分制）
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            float: 综合评分（0-100）
+        """
+        raw_score = self.calculate_raw_score(data, **kwargs)
+
+        if raw_score.empty:
+            return 50.0  # 默认中性评分
+
+        last_score = raw_score.iloc[-1]
+
+        # 计算置信度
+        patterns = self.get_patterns(data)
+        signals = self.get_signals(data)
+        confidence = self.calculate_confidence(pd.Series([last_score]), patterns, signals)
+
+        # 返回最终评分
+        return float(np.clip(last_score * confidence, 0, 100))

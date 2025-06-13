@@ -28,6 +28,16 @@ class AD(BaseIndicator):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self._result = None
         
+    def set_parameters(self, **kwargs):
+        """设置指标参数"""
+        pass
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算AD指标的置信度。
+        """
+        return 0.5
+        
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算AD指标
@@ -194,30 +204,66 @@ class AD(BaseIndicator):
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
         """
         计算AD指标评分（0-100分制）
-        
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
             float: 综合评分（0-100）
         """
         raw_score = self.calculate_raw_score(data, **kwargs)
-        
+
         if raw_score.empty:
             return 50.0  # 默认中性评分
-        
+
         last_score = raw_score.iloc[-1]
-        
+
         # 应用市场环境调整
         market_env = kwargs.get('market_env', self._market_environment)
-        adjusted_score = self.apply_market_environment_adjustment(market_env, last_score)
-        
+        adjusted_score = self._apply_market_environment_adjustment(market_env, last_score)
+
         # 计算置信度
-        confidence = self.calculate_confidence(adjusted_score, self.get_patterns(data), {})
-        
+        patterns = self.get_patterns(data)
+        confidence = self.calculate_confidence(pd.Series([adjusted_score]), patterns, {})
+
         # 返回最终评分
         return float(np.clip(adjusted_score * confidence, 0, 100))
+
+    def _apply_market_environment_adjustment(self, market_env, score: float) -> float:
+        """
+        根据市场环境调整评分
+
+        Args:
+            market_env: 市场环境
+            score: 原始评分
+
+        Returns:
+            float: 调整后的评分
+        """
+        from indicators.base_indicator import MarketEnvironment
+
+        if market_env == MarketEnvironment.BULL_MARKET:
+            # 牛市中增强多头信号，弱化空头信号
+            if score > 50:
+                return score + (score - 50) * 0.2  # 多头信号增强
+            else:
+                return score + (score - 50) * 0.1  # 空头信号减弱
+        elif market_env == MarketEnvironment.BEAR_MARKET:
+            # 熊市中增强空头信号，弱化多头信号
+            if score < 50:
+                return score - (50 - score) * 0.2  # 空头信号增强
+            else:
+                return score - (score - 50) * 0.1  # 多头信号减弱
+        elif market_env == MarketEnvironment.VOLATILE_MARKET:
+            # 高波动市场需要更强的信号
+            if score > 60 or score < 40:
+                return score + (score - 50) * 0.15  # 极端信号更极端
+            else:
+                return 50 + (score - 50) * 0.8  # 中性信号更中性
+        else:
+            # 震荡市场，保持原评分
+            return score
     
     def has_result(self) -> bool:
         """检查是否已计算结果"""
@@ -318,14 +364,16 @@ class AD(BaseIndicator):
                         
                         # AD未创新低（正背离）
                         if pd.notna(recent_low_ad) and pd.notna(prev_low_ad) and recent_low_ad > prev_low_ad:
-                            signals.iloc[i, signals.columns.get_loc('buy_signal')] = True
-                            signals.iloc[i, signals.columns.get_loc('neutral_signal')] = False
-                            signals.iloc[i, signals.columns.get_loc('trend')] = 1
-                            signals.iloc[i, signals.columns.get_loc('signal_type')] = 'AD正背离'
-                            signals.iloc[i, signals.columns.get_loc('signal_desc')] = '价格创新低但AD未创新低，表明下跌动能减弱'
-                            signals.iloc[i, signals.columns.get_loc('confidence')] = 75.0
-                            signals.iloc[i, signals.columns.get_loc('position_size')] = 0.4
-                            signals.iloc[i, signals.columns.get_loc('risk_level')] = '低'
+                            # 只有在没有其他信号时才设置背离信号
+                            if not signals.iloc[i]['buy_signal'] and not signals.iloc[i]['sell_signal']:
+                                signals.iloc[i, signals.columns.get_loc('buy_signal')] = True
+                                signals.iloc[i, signals.columns.get_loc('neutral_signal')] = False
+                                signals.iloc[i, signals.columns.get_loc('trend')] = 1
+                                signals.iloc[i, signals.columns.get_loc('signal_type')] = 'AD正背离'
+                                signals.iloc[i, signals.columns.get_loc('signal_desc')] = '价格创新低但AD未创新低，表明下跌动能减弱'
+                                signals.iloc[i, signals.columns.get_loc('confidence')] = 75.0
+                                signals.iloc[i, signals.columns.get_loc('position_size')] = 0.4
+                                signals.iloc[i, signals.columns.get_loc('risk_level')] = '低'
         
             # 4. 负背离信号（价格创新高，但AD未创新高）
             highs_close = pd.Series(np.nan, index=close.index)
@@ -349,14 +397,16 @@ class AD(BaseIndicator):
                         
                         # AD未创新高（负背离）
                         if pd.notna(recent_high_ad) and pd.notna(prev_high_ad) and recent_high_ad < prev_high_ad:
-                            signals.iloc[i, signals.columns.get_loc('sell_signal')] = True
-                            signals.iloc[i, signals.columns.get_loc('neutral_signal')] = False
-                            signals.iloc[i, signals.columns.get_loc('trend')] = -1
-                            signals.iloc[i, signals.columns.get_loc('signal_type')] = 'AD负背离'
-                            signals.iloc[i, signals.columns.get_loc('signal_desc')] = '价格创新高但AD未创新高，表明上涨动能减弱'
-                            signals.iloc[i, signals.columns.get_loc('confidence')] = 75.0
-                            signals.iloc[i, signals.columns.get_loc('position_size')] = 0.4
-                            signals.iloc[i, signals.columns.get_loc('risk_level')] = '低'
+                            # 只有在没有其他信号时才设置背离信号
+                            if not signals.iloc[i]['buy_signal'] and not signals.iloc[i]['sell_signal']:
+                                signals.iloc[i, signals.columns.get_loc('sell_signal')] = True
+                                signals.iloc[i, signals.columns.get_loc('neutral_signal')] = False
+                                signals.iloc[i, signals.columns.get_loc('trend')] = -1
+                                signals.iloc[i, signals.columns.get_loc('signal_type')] = 'AD负背离'
+                                signals.iloc[i, signals.columns.get_loc('signal_desc')] = '价格创新高但AD未创新高，表明上涨动能减弱'
+                                signals.iloc[i, signals.columns.get_loc('confidence')] = 75.0
+                                signals.iloc[i, signals.columns.get_loc('position_size')] = 0.4
+                                signals.iloc[i, signals.columns.get_loc('risk_level')] = '低'
         
         # 5. AD趋势
         ad_trend = pd.Series(np.nan, index=ad.index)

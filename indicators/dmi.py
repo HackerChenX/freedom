@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 from functools import lru_cache
-import talib
+
 
 from indicators.base_indicator import BaseIndicator, PatternResult
 from indicators.common import crossover, crossunder
@@ -31,7 +31,7 @@ class DMI(BaseIndicator):
     """
     
     def __init__(self, period: int = 14, adx_period: int = 14):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
         """
         初始化趋向指标(DMI)指标
         
@@ -239,9 +239,9 @@ class DMI(BaseIndicator):
             
             # 1. DI线交叉形态
             if len(recent_pdi) >= 2 and len(recent_mdi) >= 2:
-                if self.crossover(recent_pdi, recent_mdi).any():
+                if crossover(recent_pdi, recent_mdi).any():
                     patterns.append("DMI多头交叉")
-                if self.crossunder(recent_pdi, recent_mdi).any():
+                if crossunder(recent_pdi, recent_mdi).any():
                     patterns.append("DMI空头交叉")
             
             # 2. ADX趋势强度形态
@@ -305,11 +305,11 @@ class DMI(BaseIndicator):
         cross_score = pd.Series(0.0, index=pdi.index)
         
         # +DI上穿-DI（多头信号）+25分
-        pdi_cross_up_mdi = self.crossover(pdi, mdi)
+        pdi_cross_up_mdi = crossover(pdi, mdi)
         cross_score += pdi_cross_up_mdi * 25
-        
+
         # -DI上穿+DI（空头信号）-25分
-        mdi_cross_up_pdi = self.crossover(mdi, pdi)
+        mdi_cross_up_pdi = crossover(mdi, pdi)
         cross_score -= mdi_cross_up_pdi * 25
         
         # DI线差距评分
@@ -943,3 +943,131 @@ class DMI(BaseIndicator):
         patterns_df['ADX_FALLING'] = adx < adx.shift(1)
 
         return patterns_df
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算DMI指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于ADX强度的置信度
+        if hasattr(self, '_result') and self._result is not None and 'ADX' in self._result.columns:
+            try:
+                adx_values = self._result['ADX'].dropna()
+                if len(adx_values) > 0:
+                    last_adx = adx_values.iloc[-1]
+                    # ADX越高，置信度越高
+                    if last_adx > 40:
+                        confidence += 0.2
+                    elif last_adx > 25:
+                        confidence += 0.15
+                    elif last_adx < 15:
+                        confidence -= 0.1
+            except:
+                pass
+
+        # 4. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
+
+    def register_patterns(self):
+        """
+        注册DMI指标的技术形态
+        """
+        # 注册DMI交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="DMI_GOLDEN_CROSS",
+            display_name="DMI金叉",
+            description="+DI上穿-DI，显示多头趋势开始",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMI_DEATH_CROSS",
+            display_name="DMI死叉",
+            description="-DI上穿+DI，显示空头趋势开始",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0
+        )
+
+        # 注册ADX趋势强度形态
+        self.register_pattern_to_registry(
+            pattern_id="ADX_STRONG_TREND",
+            display_name="ADX强趋势",
+            description="ADX大于25，表示趋势强劲",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ADX_WEAK_TREND",
+            display_name="ADX弱趋势",
+            description="ADX小于20，表示趋势疲弱",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=-10.0
+        )
+
+        # 注册ADX趋势方向形态
+        self.register_pattern_to_registry(
+            pattern_id="ADX_RISING",
+            display_name="ADX上升",
+            description="ADX上升，趋势强度增强",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ADX_FALLING",
+            display_name="ADX下降",
+            description="ADX下降，趋势强度减弱",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=-10.0
+        )

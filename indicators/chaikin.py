@@ -12,7 +12,7 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
-from utils.signal_utils import crossover, crossunder
+from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -38,6 +38,19 @@ class Chaikin(BaseIndicator):
         super().__init__(name="Chaikin", description="蔡金指标，基于累积/分布线的动量指标")
         self.fast_period = fast_period
         self.slow_period = slow_period
+
+    def set_parameters(self, fast_period: int = None, slow_period: int = None):
+        """
+        设置指标参数
+
+        Args:
+            fast_period: 快速EMA周期
+            slow_period: 慢速EMA周期
+        """
+        if fast_period is not None:
+            self.fast_period = fast_period
+        if slow_period is not None:
+            self.slow_period = slow_period
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -211,7 +224,58 @@ class Chaikin(BaseIndicator):
         score += ad_line_score
         
         return np.clip(score, 0, 100)
-    
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算Chaikin指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 75 or last_score < 25:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别Chaikin技术形态
@@ -630,20 +694,118 @@ class Chaikin(BaseIndicator):
         
         return patterns
         
-    def get_patterns(self):
-        patterns = {
-            "name": "Chaikin",
-            "description": "Chaikin振荡器下穿零线，可能预示卖出时机。",
-        }
-        return patterns
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取Chaikin指标的技术形态
 
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        计算Chaikin振荡器原始评分
-        """
+        # 确保已计算Chaikin
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
         if self._result is None:
-            self.calculate(data)
-        
-        # 评分逻辑...
-        score = pd.Series(50.0, index=data.index)
-        return score 
+            return pd.DataFrame(index=data.index)
+
+        chaikin_oscillator = self._result['chaikin_oscillator']
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 零轴穿越形态
+        patterns_df['CHAIKIN_CROSS_UP_ZERO'] = crossover(chaikin_oscillator, 0)
+        patterns_df['CHAIKIN_CROSS_DOWN_ZERO'] = crossunder(chaikin_oscillator, 0)
+        patterns_df['CHAIKIN_ABOVE_ZERO'] = chaikin_oscillator > 0
+        patterns_df['CHAIKIN_BELOW_ZERO'] = chaikin_oscillator < 0
+
+        # 2. 趋势形态
+        patterns_df['CHAIKIN_RISING'] = chaikin_oscillator > chaikin_oscillator.shift(1)
+        patterns_df['CHAIKIN_FALLING'] = chaikin_oscillator < chaikin_oscillator.shift(1)
+
+        # 3. 连续趋势形态
+        if len(chaikin_oscillator) >= 3:
+            consecutive_rising = (
+                (chaikin_oscillator > chaikin_oscillator.shift(1)) &
+                (chaikin_oscillator.shift(1) > chaikin_oscillator.shift(2))
+            )
+            consecutive_falling = (
+                (chaikin_oscillator < chaikin_oscillator.shift(1)) &
+                (chaikin_oscillator.shift(1) < chaikin_oscillator.shift(2))
+            )
+            patterns_df['CHAIKIN_CONSECUTIVE_RISING'] = consecutive_rising
+            patterns_df['CHAIKIN_CONSECUTIVE_FALLING'] = consecutive_falling
+
+        # 4. 强度形态
+        if len(chaikin_oscillator) >= 20:
+            chaikin_change = chaikin_oscillator.diff()
+            chaikin_std = chaikin_oscillator.rolling(20).std()
+
+            patterns_df['CHAIKIN_LARGE_RISE'] = chaikin_change > chaikin_std
+            patterns_df['CHAIKIN_LARGE_FALL'] = chaikin_change < -chaikin_std
+            patterns_df['CHAIKIN_RAPID_CHANGE'] = np.abs(chaikin_change) > 2 * chaikin_std
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册Chaikin指标的技术形态
+        """
+        # 注册Chaikin零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="CHAIKIN_CROSS_UP_ZERO",
+            display_name="Chaikin上穿零轴",
+            description="Chaikin震荡器从下方穿越零轴",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CHAIKIN_CROSS_DOWN_ZERO",
+            display_name="Chaikin下穿零轴",
+            description="Chaikin震荡器从上方穿越零轴",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册Chaikin趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="CHAIKIN_CONSECUTIVE_RISING",
+            display_name="Chaikin连续上升",
+            description="Chaikin震荡器连续上升",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=18.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CHAIKIN_CONSECUTIVE_FALLING",
+            display_name="Chaikin连续下降",
+            description="Chaikin震荡器连续下降",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-18.0
+        )
+
+        # 注册Chaikin强度形态
+        self.register_pattern_to_registry(
+            pattern_id="CHAIKIN_LARGE_RISE",
+            display_name="Chaikin大幅上升",
+            description="Chaikin震荡器大幅上升",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CHAIKIN_LARGE_FALL",
+            display_name="Chaikin大幅下降",
+            description="Chaikin震荡器大幅下降",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )

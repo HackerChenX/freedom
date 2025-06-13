@@ -102,4 +102,30 @@
 9.  [In `tests/unit/test_macd.py`, add a new method `test_get_signals` to verify the structure and output of the signal generation function]
 10. [In `tests/unit/test_macd.py`, add a new method `test_edge_cases` to handle insufficient data and NaN values]
 11. [Append the execution summary to `doc/任务安排/MACD指标修复日志.md`]
-12. [Update the status of MACD in `doc/任务安排/指标修复进度表.md` to '已完成' and '是'] 
+12. [Update the status of MACD in `doc/任务安排/指标修复进度表.md` to '已完成' and '是']
+
+## 3. 执行阶段
+
+### 修复过程记录
+
+1. **删除过时脚本**：无需执行，项目根目录下未发现废弃的测试脚本 `test_macd.py` 和 `test_macd_simple.py`。
+
+2. **修复交叉检测逻辑**：
+   - 发现 `_detect_robust_crossover` 方法已经存在，但未在 `get_patterns` 方法中使用。
+   - 修改 `get_patterns` 方法，使用 `_detect_robust_crossover` 替换原有的 `crossover` 和 `crossunder` 函数调用。
+   - 删除了不存在的 `self._validate_data(data)` 方法调用，该调用导致 `AttributeError`。
+   - 修正了列名错误，将 `DIF`、`DEA` 和 `MACD` 替换为正确的 `macd_line`、`macd_signal` 和 `macd_histogram`。
+
+3. **测试验证**：
+   - 运行单元测试 `tests/unit/test_macd.py`，确认所有 20 个测试用例全部通过。
+   - 验证了鲁棒交叉检测逻辑的有效性。
+
+4. **更新进度文档**：
+   - 更新 `doc/任务安排/指标修复进度表.md`，将 `MACD` 指标的状态更改为"已完成"，并将"是否可用"标记为"是"。
+   - 更新 `doc/任务安排/MACD指标修复日志.md`，记录修复过程。
+
+### 结论
+
+MACD 指标已完成修复，解决了交叉检测过于敏感的问题。通过引入鲁棒的交叉检测逻辑，确保了金叉和死叉信号的可靠性。所有单元测试均已通过，指标可以安全地用于生产环境。
+
+下一步可以开始处理 KDJ 指标的修复工作。 

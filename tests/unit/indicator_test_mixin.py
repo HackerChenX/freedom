@@ -298,6 +298,9 @@ class IndicatorTestMixin:
     
     def test_no_errors_during_calculation(self):
         """测试在计算过程中是否记录了ERROR级别的日志。"""
+        # 清除之前测试产生的日志
+        if hasattr(self, 'clear_logs'):
+            self.clear_logs()
         self.indicator.calculate(self.data)
         self.assert_no_logs('ERROR')
     
@@ -305,6 +308,9 @@ class IndicatorTestMixin:
         """测试在形态检测过程中是否记录了ERROR级别的日志。"""
         if not hasattr(self.indicator, 'get_patterns'):
             pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
-    
+
+        # 清除之前测试产生的日志
+        if hasattr(self, 'clear_logs'):
+            self.clear_logs()
         self.indicator.get_patterns(self.data)
         self.assert_no_logs('ERROR')

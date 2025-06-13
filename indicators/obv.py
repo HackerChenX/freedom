@@ -14,6 +14,9 @@ from typing import Dict, List, Union, Optional, Any
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from indicators.common import crossover, crossunder
+from utils.technical_utils import calculate_ma
+from utils.decorators import log_calls, error_handling, cache_result
 
 logger = get_logger(__name__)
 
@@ -35,17 +38,25 @@ class OBV(BaseIndicator):
         """
         super().__init__(name="OBV", description="能量潮指标，根据价格变动方向，计算成交量的累计值")
         self.ma_period = ma_period
+        self.crossover = crossover
+        self.crossunder = crossunder
     
     def set_parameters(self, **kwargs):
         """设置指标参数，可设置 'ma_period'"""
         if 'ma_period' in kwargs:
             self.ma_period = int(kwargs['ma_period'])
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算OBV指标的置信度。
+        """
+        return 0.5
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取OBV指标的技术形态
         """
-        return self.identify_patterns(data, **kwargs)
+        return pd.DataFrame(index=data.index)
     
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

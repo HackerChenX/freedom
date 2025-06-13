@@ -959,3 +959,13 @@ class WMA(BaseIndicator):
 
         return patterns_df
 
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        return 0.5
+
+    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算加权移动平均线
+        """
+        if 'close' not in data.columns:
+            raise ValueError("Data must contain 'close' column.")
+

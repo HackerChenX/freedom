@@ -12,14 +12,16 @@ def crossover(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.S
     """
     判断series1上穿series2
     """
-    return (series1 > series2) & (series1.shift(1) <= series2)
+    series2 = pd.Series(series2, index=series1.index) if isinstance(series2, (int, float)) else series2
+    return (series1 > series2) & (series1.shift(1) <= series2.shift(1))
 
 
 def crossunder(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
     """
     判断series1下穿series2
     """
-    return (series1 < series2) & (series1.shift(1) >= series2)
+    series2 = pd.Series(series2, index=series1.index) if isinstance(series2, (int, float)) else series2
+    return (series1 < series2) & (series1.shift(1) >= series2.shift(1))
 
 
 def sma(series: pd.Series, periods: int) -> pd.Series:

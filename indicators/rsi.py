@@ -113,9 +113,9 @@ class RSI(BaseIndicator):
         生成RSI交易信号
         """
         calculated_data = self._calculate(data)
-        
-        patterns = self.get_patterns(calculated_data)
-        
+
+        patterns = self.get_patterns(data)
+
         signals = pd.DataFrame(index=data.index)
         signals['buy_signal'] = patterns['RSI_GOLDEN_CROSS'] | (patterns['RSI_OVERSOLD'])
         signals['sell_signal'] = patterns['RSI_DEATH_CROSS'] | (patterns['RSI_OVERBOUGHT'])
@@ -150,4 +150,58 @@ class RSI(BaseIndicator):
             score[crossover(short_ma, long_ma)] += 20
             score[crossunder(short_ma, long_ma)] -= 20
             
-        return score.clip(0, 100) 
+        return score.clip(0, 100)
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算RSI指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 1. 基于得分的置信度
+        last_score = score.iloc[-1]
+        score_confidence = 0.5
+
+        # 超买超卖区域置信度较高
+        if last_score > 70 or last_score < 30:
+            score_confidence = 0.8
+        # 中性区域置信度中等
+        elif 40 <= last_score <= 60:
+            score_confidence = 0.6
+        else:
+            score_confidence = 0.7
+
+        # 2. 基于形态的置信度
+        pattern_confidence = 0.5
+        if isinstance(patterns, (list, pd.DataFrame)):
+            if isinstance(patterns, pd.DataFrame):
+                # 统计最近几个周期的形态数量
+                recent_patterns = patterns.iloc[-5:].sum().sum() if len(patterns) >= 5 else patterns.sum().sum()
+            else:
+                recent_patterns = len(patterns)
+
+            if recent_patterns > 0:
+                pattern_confidence = min(0.5 + recent_patterns * 0.1, 0.9)
+
+        # 3. 基于信号的置信度
+        signal_confidence = 0.5
+        if signals:
+            # 检查是否有强烈的买卖信号
+            for signal_name, signal_series in signals.items():
+                if isinstance(signal_series, pd.Series) and signal_series.iloc[-1]:
+                    signal_confidence = 0.8
+                    break
+
+        # 综合置信度
+        confidence = (score_confidence * 0.4 + pattern_confidence * 0.3 + signal_confidence * 0.3)
+
+        return min(confidence, 1.0)

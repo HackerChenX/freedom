@@ -9,7 +9,7 @@ import pandas as pd
 from enums.indicator_enum import IndicatorEnum
 
 from enums.indicator_types import TrendType, CrossType
-from utils.signal_utils import crossover, crossunder
+from indicators.common import crossover, crossunder
 from .base_indicator import BaseIndicator
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,23 @@ class CMO(BaseIndicator):
         self.oversold = oversold
         self.overbought = overbought
         self._result = None
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.REQUIRED_COLUMNS = ['close']
+
+    def set_parameters(self, period: int = None, oversold: float = None, overbought: float = None):
+        """
+        设置指标参数
+
+        Args:
+            period: 计算周期
+            oversold: 超卖阈值
+            overbought: 超买阈值
+        """
+        if period is not None:
+            self.period = period
+        if oversold is not None:
+            self.oversold = oversold
+        if overbought is not None:
+            self.overbought = overbought
         
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -131,51 +147,51 @@ class CMO(BaseIndicator):
             position_score = 70
             signal_type = "超买区域"
             signal_desc = f"CMO位于超买区域({cmo:.2f})，可能出现回调"
-            cross_type = CrossType.NO_CROSS
-            
+            cross_type = "NO_CROSS"
+
             # 如果刚刚进入超买区，强调这一点
             if prev_cmo <= self.overbought:
                 signal_type = "进入超买区域"
                 signal_desc = f"CMO刚刚进入超买区域({cmo:.2f})，上涨动能强劲但注意可能回调"
-                cross_type = CrossType.CROSS_OVER
+                cross_type = "CROSS_OVER"
                 position_score = 75
                 
         elif cmo < self.oversold:  # 超卖区
             position_score = 30
             signal_type = "超卖区域"
             signal_desc = f"CMO位于超卖区域({cmo:.2f})，可能出现反弹"
-            cross_type = CrossType.NO_CROSS
-            
+            cross_type = "NO_CROSS"
+
             # 如果刚刚进入超卖区，强调这一点
             if prev_cmo >= self.oversold:
                 signal_type = "进入超卖区域"
                 signal_desc = f"CMO刚刚进入超卖区域({cmo:.2f})，下跌动能强劲但注意可能反弹"
-                cross_type = CrossType.CROSS_UNDER
+                cross_type = "CROSS_UNDER"
                 position_score = 25
                 
-        elif crossover(result['cmo'], 0):  # 上穿零轴
+        elif crossover(result['cmo'], 0).any():  # 上穿零轴
             position_score = 65
             signal_type = "上穿零轴"
             signal_desc = "CMO上穿零轴，动量由负转正，看涨信号"
-            cross_type = CrossType.CROSS_OVER
-            
-        elif crossunder(result['cmo'], 0):  # 下穿零轴
+            cross_type = "CROSS_OVER"
+
+        elif crossunder(result['cmo'], 0).any():  # 下穿零轴
             position_score = 35
             signal_type = "下穿零轴"
             signal_desc = "CMO下穿零轴，动量由正转负，看跌信号"
-            cross_type = CrossType.CROSS_UNDER
-            
-        elif crossover(result['cmo'], self.oversold):  # 上穿超卖线
+            cross_type = "CROSS_UNDER"
+
+        elif crossover(result['cmo'], self.oversold).any():  # 上穿超卖线
             position_score = 60
             signal_type = "离开超卖区域"
             signal_desc = f"CMO上穿超卖线({self.oversold})，下跌动能减弱，可能反弹"
-            cross_type = CrossType.CROSS_OVER
-            
-        elif crossunder(result['cmo'], self.overbought):  # 下穿超买线
+            cross_type = "CROSS_OVER"
+
+        elif crossunder(result['cmo'], self.overbought).any():  # 下穿超买线
             position_score = 40
             signal_type = "离开超买区域"
             signal_desc = f"CMO下穿超买线({self.overbought})，上涨动能减弱，可能回调"
-            cross_type = CrossType.CROSS_UNDER
+            cross_type = "CROSS_UNDER"
             
         else:  # 中性区域
             # 根据CMO值在中性区域内的位置线性调整评分
@@ -189,7 +205,7 @@ class CMO(BaseIndicator):
                 signal_type = "负动量区域"
                 signal_desc = f"CMO在负区域({cmo:.2f})，市场呈现负动量"
                 
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             
         # 考虑CMO斜率调整评分
         if len(result) >= 5:
@@ -245,7 +261,7 @@ class CMO(BaseIndicator):
             sell_signal = False
             
         # 计算置信度(0-100%)
-        if cross_type in [CrossType.CROSS_OVER, CrossType.CROSS_UNDER]:
+        if cross_type in ["CROSS_OVER", "CROSS_UNDER"]:
             confidence = 75
         elif abs(cmo) > 60:  # 极端值
             confidence = 80
@@ -276,7 +292,7 @@ class CMO(BaseIndicator):
             "trend_strength": trend_strength,
             "signal_type": signal_type,
             "signal_desc": signal_desc,
-            "cross_type": cross_type.value,
+            "cross_type": cross_type,
             "confidence": confidence,
             "risk_level": risk_level,
             "position_pct": position_pct,
@@ -309,7 +325,7 @@ class CMO(BaseIndicator):
         cmo = data['cmo']
         
         # 初始化评分
-        score = pd.Series(50, index=data.index)  # 默认中性评分
+        score = pd.Series(50.0, index=data.index)  # 默认中性评分
         
         # CMO大于0为看涨，小于0为看跌
         bullish_mask = cmo > 0
@@ -349,7 +365,58 @@ class CMO(BaseIndicator):
         score = score.clip(0, 100)
         
         return score
-        
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算CMO指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别CMO指标的技术形态
@@ -414,5 +481,113 @@ class CMO(BaseIndicator):
                 
                 if cmo_at_price_low > min_cmo_in_period * 0.9:  # CMO比之前最低点高10%以上
                     patterns.append("CMO底背离")
-                    
-        return patterns 
+
+        return patterns
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取CMO指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算CMO
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        cmo = self._result['cmo']
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 超买超卖形态
+        patterns_df['CMO_OVERSOLD'] = cmo < self.oversold
+        patterns_df['CMO_OVERBOUGHT'] = cmo > self.overbought
+
+        # 2. 零轴穿越形态
+        patterns_df['CMO_CROSS_UP_ZERO'] = crossover(cmo, 0)
+        patterns_df['CMO_CROSS_DOWN_ZERO'] = crossunder(cmo, 0)
+        patterns_df['CMO_ABOVE_ZERO'] = cmo > 0
+        patterns_df['CMO_BELOW_ZERO'] = cmo < 0
+
+        # 3. 超买超卖区域穿越形态
+        patterns_df['CMO_CROSS_UP_OVERSOLD'] = crossover(cmo, self.oversold)
+        patterns_df['CMO_CROSS_DOWN_OVERBOUGHT'] = crossunder(cmo, self.overbought)
+
+        # 4. 趋势形态
+        patterns_df['CMO_RISING'] = cmo > cmo.shift(1)
+        patterns_df['CMO_FALLING'] = cmo < cmo.shift(1)
+
+        # 5. 强度形态
+        if len(cmo) >= 5:
+            cmo_change = cmo.diff(5)
+            patterns_df['CMO_STRONG_RISE'] = cmo_change > 10
+            patterns_df['CMO_STRONG_FALL'] = cmo_change < -10
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册CMO指标的技术形态
+        """
+        # 注册CMO超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="CMO_OVERSOLD",
+            display_name="CMO超卖",
+            description=f"CMO值低于{self.oversold}，表示超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_OVERBOUGHT",
+            display_name="CMO超买",
+            description=f"CMO值高于{self.overbought}，表示超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册CMO零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="CMO_CROSS_UP_ZERO",
+            display_name="CMO上穿零轴",
+            description="CMO从负值区域穿越零轴",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_CROSS_DOWN_ZERO",
+            display_name="CMO下穿零轴",
+            description="CMO从正值区域穿越零轴",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册CMO超买超卖区域穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="CMO_CROSS_UP_OVERSOLD",
+            display_name="CMO上穿超卖线",
+            description=f"CMO从超卖区域上穿{self.oversold}线",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_CROSS_DOWN_OVERBOUGHT",
+            display_name="CMO下穿超买线",
+            description=f"CMO从超买区域下穿{self.overbought}线",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )

@@ -111,12 +111,12 @@ class TestDataGenerator:
         # 设置索引
         data = data.set_index('date')
         
-        # 添加股票代码和其他字段
+        # 添加股票代码和其他字段，完全符合StockInfo模型规范
         data['code'] = '000001'
         data['name'] = '测试股票'
         data['level'] = 'D'
         data['industry'] = '软件服务'
-        data['datetime_value'] = data.index
+        data['datetime'] = data.index  # 使用datetime而不是datetime_value
         data['seq'] = range(len(data))
         data['turnover_rate'] = data['volume'] / base_volume * 5
         data['price_change'] = data['close'].diff().fillna(0)

@@ -48,11 +48,17 @@ class VR(BaseIndicator):
         if ma_period is not None:
             self.ma_period = ma_period
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算VR指标的置信度。
+        """
+        return 0.5
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取VR指标的技术形态
         """
-        return self.identify_patterns(data, **kwargs)
+        return pd.DataFrame(index=data.index)
 
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -65,7 +71,7 @@ class VR(BaseIndicator):
             pd.DataFrame: 计算结果，包含VR指标值
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "volume"])
+        self.ensure_columns(data, self.REQUIRED_COLUMNS)
         
         # 初始化结果数据框
         result = data.copy()
@@ -95,8 +101,9 @@ class VR(BaseIndicator):
         
         # 计算VR: (AVS+1/2SVS)/(BVS+1/2SVS)×100
         # 其中AVS为上涨成交量，BVS为下跌成交量，SVS为平盘成交量
-        vr = ((up_volume_sum + 0.5 * flat_volume_sum) / 
-             (down_volume_sum + 0.5 * flat_volume_sum)) * 100
+        denominator = down_volume_sum + 0.5 * flat_volume_sum
+        denominator[denominator == 0] = 0.000001 # 避免除以0
+        vr = ((up_volume_sum + 0.5 * flat_volume_sum) / denominator) * 100
         
         # 添加到结果
         result["vr"] = vr
@@ -183,31 +190,14 @@ class VR(BaseIndicator):
             data = self.calculate(data)
         
         # 初始化情绪列
-        data["market_sentiment"] = np.nan
+        data["market_sentiment"] = "中性"
         
         # 判断市场情绪
-        for i in range(len(data)):
-            if pd.notna(data["vr"].iloc[i]):
-                # 多头区域
-                if data["vr"].iloc[i] > overbought:
-                    data.iloc[i, data.columns.get_loc("market_sentiment")] = "极度多头"
-                
-                # 多头倾向区域
-                elif data["vr"].iloc[i] > neutral_upper:
-                    data.iloc[i, data.columns.get_loc("market_sentiment")] = "多头"
-                
-                # 中性区域靠上
-                elif data["vr"].iloc[i] > neutral_lower:
-                    data.iloc[i, data.columns.get_loc("market_sentiment")] = "中性偏多"
-                
-                # 中性区域靠下
-                elif data["vr"].iloc[i] > oversold:
-                    data.iloc[i, data.columns.get_loc("market_sentiment")] = "中性偏空"
-                
-                # 空头区域
-                else:
-                    data.iloc[i, data.columns.get_loc("market_sentiment")] = "空头"
-        
+        data.loc[data["vr"] > overbought, "market_sentiment"] = "极度多头"
+        data.loc[data["vr"] > neutral_upper, "market_sentiment"] = "多头"
+        data.loc[data["vr"] < oversold, "market_sentiment"] = "空头"
+        data.loc[data["vr"] < neutral_lower, "market_sentiment"] = "中性偏空"
+
         return data
     
     def get_vr_change_rate(self, data: pd.DataFrame, window: int = 5) -> pd.DataFrame:
@@ -400,22 +390,22 @@ class VR(BaseIndicator):
         trend_score -= vr_falling * 10
         
         # VR连续上升（3个周期）+15分
-        if len(vr_values) >= 3:
+        if len(vr_values) >= 4:
             consecutive_rising = (
                 (vr_values > vr_values.shift(1)) &
                 (vr_values.shift(1) > vr_values.shift(2)) &
                 (vr_values.shift(2) > vr_values.shift(3))
             )
-            trend_score += consecutive_rising * 15
+            trend_score += consecutive_rising.fillna(False) * 15
         
         # VR连续下降（3个周期）-15分
-        if len(vr_values) >= 3:
+        if len(vr_values) >= 4:
             consecutive_falling = (
                 (vr_values < vr_values.shift(1)) &
                 (vr_values.shift(1) < vr_values.shift(2)) &
                 (vr_values.shift(2) < vr_values.shift(3))
             )
-            trend_score -= consecutive_falling * 15
+            trend_score -= consecutive_falling.fillna(False) * 15
         
         return trend_score
     
@@ -482,16 +472,16 @@ class VR(BaseIndicator):
         
         # VR大幅上升（变化>20）+12分
         large_rise = vr_change > 20
-        strength_score += large_rise * 12
+        strength_score += large_rise.fillna(False) * 12
         
         # VR大幅下降（变化<-20）-12分
         large_fall = vr_change < -20
-        strength_score -= large_fall * 12
+        strength_score -= large_fall.fillna(False) * 12
         
         # VR快速变化（绝对值>30）额外±8分
         rapid_change = np.abs(vr_change) > 30
         rapid_change_direction = np.sign(vr_change)
-        strength_score += rapid_change * rapid_change_direction * 8
+        strength_score += (rapid_change * rapid_change_direction).fillna(0) * 8
         
         return strength_score
     
@@ -636,11 +626,11 @@ class VR(BaseIndicator):
             vr_trend = recent_vr.iloc[-1] - recent_vr.iloc[0]
             
             # 背离检测
-            if price_trend < -0.02 and vr_trend > 5:  # 价格下跌但VR上升
+            if price_trend < -0.02 * recent_price.iloc[0] and vr_trend > 5:  # 价格下跌但VR上升
                 patterns.append("VR正背离")
-            elif price_trend > 0.02 and vr_trend < -5:  # 价格上涨但VR下降
+            elif price_trend > 0.02 * recent_price.iloc[0] and vr_trend < -5:  # 价格上涨但VR下降
                 patterns.append("VR负背离")
-            elif abs(price_trend) < 0.01 and abs(vr_trend) < 2:
+            elif abs(price_trend) < 0.01 * recent_price.iloc[0] and abs(vr_trend) < 2:
                 patterns.append("VR价格同步")
         
         return patterns
@@ -739,39 +729,18 @@ class VR(BaseIndicator):
         registry.register(
             pattern_id="VR_DEATH_CROSS",
             display_name="VR死叉",
-            description="VR下穿其均线，表明卖盘力量增强",
+            description="VR下穿其均线，表明买盘力量减弱",
             indicator_id="VR",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
             score_impact=-10.0
         )
         
-        # 注册VR稳定性形态
-        registry.register(
-            pattern_id="VR_STABLE_HIGH",
-            display_name="VR高位稳定",
-            description="VR在高位稳定，表明市场买盘持续强势",
-            indicator_id="VR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
-            score_impact=8.0
-        )
-        
-        registry.register(
-            pattern_id="VR_STABLE_LOW",
-            display_name="VR低位稳定",
-            description="VR在低位稳定，表明市场卖盘持续强势",
-            indicator_id="VR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
-            score_impact=-8.0
-        )
-        
         # 注册VR背离形态
         registry.register(
             pattern_id="VR_BULLISH_DIVERGENCE",
             display_name="VR底背离",
-            description="价格创新低，但VR未创新低，表明下跌动能减弱",
+            description="价格创新低但VR未创新低，可能预示反弹",
             indicator_id="VR",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
@@ -781,7 +750,7 @@ class VR(BaseIndicator):
         registry.register(
             pattern_id="VR_BEARISH_DIVERGENCE",
             display_name="VR顶背离",
-            description="价格创新高，但VR未创新高，表明上涨动能减弱",
+            description="价格创新高但VR未创新高，可能预示回调",
             indicator_id="VR",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
@@ -790,27 +759,26 @@ class VR(BaseIndicator):
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成交易信号
-        
+        生成VR指标的交易信号
+
         Args:
             data: 输入数据
-            **kwargs: 额外参数
-            
+            **kwargs: 其他参数
+
         Returns:
             Dict[str, pd.Series]: 包含交易信号的字典
         """
-        # 确保已计算指标
-        if not self.has_result():
-            self.calculate(data, **kwargs)
+        # 计算VR指标
+        vr_data = self.calculate(data, **kwargs)
         
-        # 初始化信号
-        signals = {}
+        # 获取信号
+        signals_df = self.get_signals(vr_data, **kwargs)
         
-        signals['buy_signal'] = pd.Series(False, index=data.index)
-        signals['sell_signal'] = pd.Series(False, index=data.index)
-        signals['signal_strength'] = pd.Series(0, index=data.index)
+        # 提取买卖信号
+        buy_signal = signals_df['vr_ma_cross'] == 1
+        sell_signal = signals_df['vr_ma_cross'] == -1
         
-        # 在这里实现指标特定的信号生成逻辑
-        # 此处提供默认实现
-        
-        return signals
+        return {
+            "buy": buy_signal,
+            "sell": sell_signal
+        }

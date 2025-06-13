@@ -9,7 +9,7 @@ import pandas as pd
 
 from enums.indicator_types import TrendType, CrossType
 from enums.indicator_enum import IndicatorEnum
-from utils.signal_utils import crossover, crossunder
+from indicators.common import crossover, crossunder
 from .base_indicator import BaseIndicator
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,23 @@ class KC(BaseIndicator):
         self.atr_period = atr_period
         self.multiplier = multiplier
         self._result = None
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
+
+    def set_parameters(self, period: int = None, atr_period: int = None, multiplier: float = None):
+        """
+        设置指标参数
+
+        Args:
+            period: 中轨移动平均周期
+            atr_period: ATR计算周期
+            multiplier: ATR乘数
+        """
+        if period is not None:
+            self.period = period
+        if atr_period is not None:
+            self.atr_period = atr_period
+        if multiplier is not None:
+            self.multiplier = multiplier
         
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -88,7 +104,7 @@ class KC(BaseIndicator):
         )
         
         # 计算通道宽度变化率
-        result['kc_width_chg'] = result['kc_width'].pct_change(periods=5) * 100
+        result['kc_width_chg'] = result['kc_width'].pct_change(periods=5, fill_method=None) * 100
         
         # 删除临时计算列
         result = result.drop(['TR', 'ATR'], axis=1)
@@ -143,15 +159,15 @@ class KC(BaseIndicator):
         score = 50  # 中性分值
         
         # 判断价格与通道的关系
-        if crossover(result['close'], result['kc_upper']):  # 价格上穿上轨
+        if crossover(result['close'], result['kc_upper']).any():  # 价格上穿上轨
             signal_type = "上穿上轨"
             signal_desc = "价格上穿肯特纳通道上轨，显示强势突破"
-            cross_type = CrossType.CROSS_OVER
+            cross_type = "GOLDEN_CROSS"
             score = 80
-        elif crossunder(result['close'], result['kc_lower']):  # 价格下穿下轨
+        elif crossunder(result['close'], result['kc_lower']).any():  # 价格下穿下轨
             signal_type = "下穿下轨"
             signal_desc = "价格下穿肯特纳通道下轨，显示弱势突破"
-            cross_type = CrossType.CROSS_UNDER
+            cross_type = "DEATH_CROSS"
             score = 20
         elif current_price > kc_upper:  # 价格在上轨之上
             signal_type = "上轨之上"
@@ -161,32 +177,32 @@ class KC(BaseIndicator):
         elif current_price < kc_lower:  # 价格在下轨之下
             signal_type = "下轨之下"
             signal_desc = "价格位于肯特纳通道下轨之下，显示超卖状态"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 30 - (kc_lower - current_price) / kc_lower * 100  # 根据超出程度减少评分
-        elif crossover(result['close'], result['kc_middle']):  # 价格上穿中轨
+        elif crossover(result['close'], result['kc_middle']).any():  # 价格上穿中轨
             signal_type = "上穿中轨"
             signal_desc = "价格上穿肯特纳通道中轨，显示由弱转强"
-            cross_type = CrossType.CROSS_OVER
+            cross_type = "GOLDEN_CROSS"
             score = 60
-        elif crossunder(result['close'], result['kc_middle']):  # 价格下穿中轨
+        elif crossunder(result['close'], result['kc_middle']).any():  # 价格下穿中轨
             signal_type = "下穿中轨"
             signal_desc = "价格下穿肯特纳通道中轨，显示由强转弱"
-            cross_type = CrossType.CROSS_UNDER
+            cross_type = "DEATH_CROSS"
             score = 40
         elif current_price > kc_middle:  # 价格在中轨和上轨之间
             signal_type = "中上区域"
             signal_desc = "价格位于肯特纳通道中轨和上轨之间，显示温和强势"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 55 + kc_position * 0.15  # 根据位置线性调整55-70
         elif current_price < kc_middle:  # 价格在中轨和下轨之间
             signal_type = "中下区域"
             signal_desc = "价格位于肯特纳通道中轨和下轨之间，显示温和弱势"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 45 - (100 - kc_position) * 0.15  # 根据位置线性调整30-45
         else:  # 价格在中轨上
             signal_type = "中轨位置"
             signal_desc = "价格位于肯特纳通道中轨，显示中性"
-            cross_type = CrossType.NO_CROSS
+            cross_type = "NO_CROSS"
             score = 50
             
         # 考虑通道宽度变化
@@ -226,7 +242,7 @@ class KC(BaseIndicator):
             sell_signal = False
             
         # 计算置信度(0-100%)
-        if cross_type in [CrossType.CROSS_OVER, CrossType.CROSS_UNDER]:
+        if cross_type in ["GOLDEN_CROSS", "DEATH_CROSS"]:
             if current_price > kc_upper or current_price < kc_lower:
                 confidence = 85  # 突破外轨的交叉信号
             else:
@@ -264,7 +280,7 @@ class KC(BaseIndicator):
             "trend_strength": trend_strength,
             "signal_type": signal_type,
             "signal_desc": signal_desc,
-            "cross_type": cross_type.value,
+            "cross_type": cross_type,
             "confidence": confidence,
             "risk_level": risk_level,
             "position_pct": position_pct,
@@ -304,7 +320,7 @@ class KC(BaseIndicator):
         position = data['kc_position']
         
         # 初始化评分
-        score = pd.Series(50, index=data.index)  # 默认中性评分
+        score = pd.Series(50.0, index=data.index)  # 默认中性评分
         
         # 价格位置评分
         # 1. 价格在上轨之上
@@ -355,6 +371,73 @@ class KC(BaseIndicator):
         score = score.clip(0, 100)
         
         return score
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算KC指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于KC通道宽度的置信度
+        if hasattr(self, '_result') and self._result is not None and 'kc_width' in self._result.columns:
+            try:
+                width_values = self._result['kc_width'].dropna()
+                if len(width_values) > 0:
+                    last_width = width_values.iloc[-1]
+                    # 通道宽度适中时置信度较高
+                    if 3 <= last_width <= 10:
+                        confidence += 0.15
+                    elif last_width > 15:  # 通道过宽，波动性过高
+                        confidence -= 0.1
+                    elif last_width < 1:  # 通道过窄，可能即将突破
+                        confidence += 0.1
+            except:
+                pass
+
+        # 4. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
@@ -433,4 +516,159 @@ class KC(BaseIndicator):
         if ((close.iloc[-3:] >= lower.iloc[-3:]) & (close.iloc[-3:] <= lower.iloc[-3:] * 1.01)).any():
             patterns.append("KC底部测试")
             
-        return patterns 
+        return patterns
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取KC指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算KC
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        close = self._result['close']
+        middle = self._result['kc_middle']
+        upper = self._result['kc_upper']
+        lower = self._result['kc_lower']
+        width = self._result['kc_width']
+
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 价格位置形态
+        patterns_df['KC_ABOVE_UPPER'] = close > upper
+        patterns_df['KC_BELOW_LOWER'] = close < lower
+        patterns_df['KC_ABOVE_MIDDLE'] = (close > middle) & (close <= upper)
+        patterns_df['KC_BELOW_MIDDLE'] = (close < middle) & (close >= lower)
+        patterns_df['KC_AT_MIDDLE'] = abs(close - middle) / middle < 0.01
+
+        # 2. 突破形态
+        patterns_df['KC_BREAK_UPPER'] = crossover(close, upper)
+        patterns_df['KC_BREAK_LOWER'] = crossunder(close, lower)
+        patterns_df['KC_BREAK_MIDDLE_UP'] = crossover(close, middle)
+        patterns_df['KC_BREAK_MIDDLE_DOWN'] = crossunder(close, middle)
+
+        # 3. 通道宽度形态
+        if len(width) >= 20:
+            width_ma = width.rolling(20).mean()
+            patterns_df['KC_WIDE_CHANNEL'] = width > width_ma * 1.5
+            patterns_df['KC_NARROW_CHANNEL'] = width < width_ma * 0.5
+            patterns_df['KC_EXPANDING'] = width > width.shift(1)
+            patterns_df['KC_CONTRACTING'] = width < width.shift(1)
+
+        # 4. 极值形态
+        patterns_df['KC_EXTREME_OVERBOUGHT'] = close > upper * 1.02
+        patterns_df['KC_EXTREME_OVERSOLD'] = close < lower * 0.98
+
+        # 5. 回归形态
+        patterns_df['KC_RETURN_TO_MIDDLE'] = (
+            (close.shift(1) > upper.shift(1)) & (close <= upper) |
+            (close.shift(1) < lower.shift(1)) & (close >= lower)
+        )
+
+        # 6. 震荡形态
+        if len(close) >= 10:
+            # 检查是否在通道内震荡
+            recent_close = close.iloc[-10:]
+            recent_upper = upper.iloc[-10:]
+            recent_lower = lower.iloc[-10:]
+            recent_middle = middle.iloc[-10:]
+
+            in_channel = (recent_close < recent_upper) & (recent_close > recent_lower)
+            cross_middle = (
+                ((recent_close.shift(1) < recent_middle.shift(1)) & (recent_close > recent_middle)) |
+                ((recent_close.shift(1) > recent_middle.shift(1)) & (recent_close < recent_middle))
+            ).any()
+
+            patterns_df['KC_OSCILLATING'] = in_channel.all() & cross_middle
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册KC指标的技术形态
+        """
+        # 注册价格突破形态
+        self.register_pattern_to_registry(
+            pattern_id="KC_BREAK_UPPER",
+            display_name="KC上轨突破",
+            description="价格突破肯特纳通道上轨，强势信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_BREAK_LOWER",
+            display_name="KC下轨突破",
+            description="价格跌破肯特纳通道下轨，弱势信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册中轨突破形态
+        self.register_pattern_to_registry(
+            pattern_id="KC_BREAK_MIDDLE_UP",
+            display_name="KC中轨向上突破",
+            description="价格向上突破肯特纳通道中轨，由弱转强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_BREAK_MIDDLE_DOWN",
+            display_name="KC中轨向下突破",
+            description="价格向下突破肯特纳通道中轨，由强转弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册极值形态
+        self.register_pattern_to_registry(
+            pattern_id="KC_EXTREME_OVERBOUGHT",
+            display_name="KC极度超买",
+            description="价格远超肯特纳通道上轨，极度超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_EXTREME_OVERSOLD",
+            display_name="KC极度超卖",
+            description="价格远低于肯特纳通道下轨，极度超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        # 注册通道形态
+        self.register_pattern_to_registry(
+            pattern_id="KC_WIDE_CHANNEL",
+            display_name="KC通道扩张",
+            description="肯特纳通道宽度扩张，波动性增加",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=5.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_NARROW_CHANNEL",
+            display_name="KC通道收缩",
+            description="肯特纳通道宽度收缩，可能酝酿突破",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )

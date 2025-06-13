@@ -10,7 +10,6 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
-import talib
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -28,7 +27,7 @@ class CCI(BaseIndicator):
     """
     
     def __init__(self, period: int = 14):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
         """
         初始化顺势指标(CCI)指标
         
@@ -136,20 +135,20 @@ class CCI(BaseIndicator):
         
         # 2. CCI穿越关键位置评分
         # CCI从超卖区上穿-100+25分
-        cci_cross_up_oversold = self.crossover(cci, -100)
+        cci_cross_up_oversold = crossover(cci, -100)
         score += cci_cross_up_oversold * 25
-        
+
         # CCI从超买区下穿+100-25分
-        cci_cross_down_overbought = self.crossunder(cci, 100)
+        cci_cross_down_overbought = crossunder(cci, 100)
         score -= cci_cross_down_overbought * 25
-        
+
         # 3. 零轴穿越评分
         # CCI上穿零轴+15分
-        cci_cross_up_zero = self.crossover(cci, 0)
+        cci_cross_up_zero = crossover(cci, 0)
         score += cci_cross_up_zero * 15
-        
+
         # CCI下穿零轴-15分
-        cci_cross_down_zero = self.crossunder(cci, 0)
+        cci_cross_down_zero = crossunder(cci, 0)
         score -= cci_cross_down_zero * 15
         
         # 4. CCI背离评分
@@ -175,7 +174,58 @@ class CCI(BaseIndicator):
         score += cci_strength_score
         
         return np.clip(score, 0, 100)
-    
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算CCI指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分（超买/超卖）置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)  # 标准差越小，稳定性越高
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别CCI技术形态
@@ -217,13 +267,13 @@ class CCI(BaseIndicator):
             patterns.append("CCI超买")
         
         # 2. 穿越形态
-        if self.crossover(recent_cci, -100).any():
+        if crossover(recent_cci, -100).any():
             patterns.append("CCI上穿超卖线")
-        if self.crossunder(recent_cci, 100).any():
+        if crossunder(recent_cci, 100).any():
             patterns.append("CCI下穿超买线")
-        if self.crossover(recent_cci, 0).any():
+        if crossover(recent_cci, 0).any():
             patterns.append("CCI上穿零轴")
-        if self.crossunder(recent_cci, 0).any():
+        if crossunder(recent_cci, 0).any():
             patterns.append("CCI下穿零轴")
         
         # 3. 背离形态
@@ -580,8 +630,126 @@ class CCI(BaseIndicator):
         """
         return self.calculate(df)
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取CCI指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        return self.identify_patterns(data, **kwargs)
+        # 确保已计算CCI
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        cci = self._result['CCI']
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 超买超卖形态
+        patterns_df['CCI_OVERSOLD'] = cci <= -100
+        patterns_df['CCI_EXTREME_OVERSOLD'] = cci <= -200
+        patterns_df['CCI_OVERBOUGHT'] = cci >= 100
+        patterns_df['CCI_EXTREME_OVERBOUGHT'] = cci >= 200
+
+        # 2. 穿越形态
+        patterns_df['CCI_CROSS_UP_OVERSOLD'] = crossover(cci, -100)
+        patterns_df['CCI_CROSS_DOWN_OVERBOUGHT'] = crossunder(cci, 100)
+        patterns_df['CCI_CROSS_UP_ZERO'] = crossover(cci, 0)
+        patterns_df['CCI_CROSS_DOWN_ZERO'] = crossunder(cci, 0)
+
+        # 3. 趋势形态
+        if len(cci) >= 5:
+            cci_slope = cci.diff(3)
+            patterns_df['CCI_STRONG_UPTREND'] = cci_slope > 20
+            patterns_df['CCI_STRONG_DOWNTREND'] = cci_slope < -20
+
+        # 4. 钝化形态
+        if len(cci) >= 5:
+            patterns_df['CCI_LOW_STAGNATION'] = cci.rolling(5).apply(lambda x: (x < -100).all(), raw=False)
+            patterns_df['CCI_HIGH_STAGNATION'] = cci.rolling(5).apply(lambda x: (x > 100).all(), raw=False)
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册CCI指标的技术形态
+        """
+        # 注册CCI超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_EXTREME_OVERSOLD",
+            display_name="CCI极度超卖",
+            description="CCI值低于-200，表示严重超卖",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_OVERSOLD",
+            display_name="CCI超卖",
+            description="CCI值低于-100，表示超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_EXTREME_OVERBOUGHT",
+            display_name="CCI极度超买",
+            description="CCI值高于+200，表示严重超买",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_OVERBOUGHT",
+            display_name="CCI超买",
+            description="CCI值高于+100，表示超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册CCI穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_CROSS_UP_OVERSOLD",
+            display_name="CCI上穿超卖线",
+            description="CCI从超卖区上穿-100线",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_CROSS_DOWN_OVERBOUGHT",
+            display_name="CCI下穿超买线",
+            description="CCI从超买区下穿+100线",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_CROSS_UP_ZERO",
+            display_name="CCI上穿零轴",
+            description="CCI上穿零轴线",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_CROSS_DOWN_ZERO",
+            display_name="CCI下穿零轴",
+            description="CCI下穿零轴线",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )

@@ -288,25 +288,44 @@ class MACD(BaseIndicator):
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取所有MACD形态
-        """
-        # 首先，调用 _calculate 来获取基础指标列
-        calculated_data = self._calculate(data)
-        
-        # 在计算后的数据上检测形态
-        # 金叉和死叉
-        golden_cross = self._detect_robust_crossover(calculated_data['macd_line'], calculated_data['macd_signal'], cross_type='above')
-        death_cross = self._detect_robust_crossover(calculated_data['macd_line'], calculated_data['macd_signal'], cross_type='below')
-        
-        # 背离
-        bullish_divergence, bearish_divergence = self._detect_divergence(calculated_data['close'], calculated_data['macd_line'])
+        计算MACD指标的各种形态
 
-        # 零轴穿越
-        zero_cross_above = self._detect_robust_crossover(calculated_data['macd_line'], 0, cross_type='above')
-        zero_cross_below = self._detect_robust_crossover(calculated_data['macd_line'], 0, cross_type='below')
+        Args:
+            data: 输入数据，至少包含'close'列
+            **kwargs: 其他参数，用于覆盖默认参数
+
+        Returns:
+            一个包含各种形态布尔值的DataFrame
+        """
+        # 覆盖默认参数
+        self._parameters.update(kwargs)
+
+        # 核心计算
+        macd_df = self._calculate(data, **self._parameters)
+        dif = macd_df['macd_line']
+        dea = macd_df['macd_signal']
+        hist = macd_df['macd_histogram']
+
+        # 初始化一个空的DataFrame来存储形态结果
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 金叉和死叉
+        patterns_df['MACD_GOLDEN_CROSS'] = self._detect_robust_crossover(dif, dea, window=3, cross_type='above')
+        patterns_df['MACD_DEATH_CROSS'] = self._detect_robust_crossover(dif, dea, window=3, cross_type='below')
+
+        # 2. 零轴穿越
+        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self._detect_robust_crossover(dif, 0, window=1, cross_type='above')
+        patterns_df['MACD_ZERO_CROSS_BELOW'] = self._detect_robust_crossover(dif, 0, window=1, cross_type='below')
+
+        # 3. 背离检测
+        bullish_divergence, bearish_divergence = self._detect_divergence(
+            data['close'],
+            macd_df['macd_line'],
+            window=self._parameters['divergence_window']
+        )
         
         # 柱状图扩张和收缩
-        histogram = calculated_data['macd_histogram']
+        histogram = macd_df['macd_histogram']
         histogram_expanding = pd.Series(False, index=data.index)
         histogram_contracting = pd.Series(False, index=data.index)
         
@@ -327,7 +346,7 @@ class MACD(BaseIndicator):
         from scipy.signal import find_peaks
         
         # 双顶
-        macd_peaks, _ = find_peaks(calculated_data['macd_line'].values, distance=10, prominence=0.1)
+        macd_peaks, _ = find_peaks(dif.values, distance=10, prominence=0.1)
         if len(macd_peaks) >= 2:
             for i in range(1, len(macd_peaks)):
                 idx = macd_peaks[i]
@@ -335,7 +354,7 @@ class MACD(BaseIndicator):
                     double_top.iloc[idx] = True
         
         # 双底
-        macd_bottoms, _ = find_peaks(-calculated_data['macd_line'].values, distance=10, prominence=0.1)
+        macd_bottoms, _ = find_peaks(-dif.values, distance=10, prominence=0.1)
         if len(macd_bottoms) >= 2:
             for i in range(1, len(macd_bottoms)):
                 idx = macd_bottoms[i]
@@ -344,12 +363,12 @@ class MACD(BaseIndicator):
         
         # 将所有形态信号合并到一个DataFrame
         patterns_df = pd.DataFrame({
-            'MACD_GOLDEN_CROSS': golden_cross,
-            'MACD_DEATH_CROSS': death_cross,
+            'MACD_GOLDEN_CROSS': patterns_df['MACD_GOLDEN_CROSS'],
+            'MACD_DEATH_CROSS': patterns_df['MACD_DEATH_CROSS'],
             'MACD_BULLISH_DIVERGENCE': bullish_divergence,
             'MACD_BEARISH_DIVERGENCE': bearish_divergence,
-            'MACD_ZERO_CROSS_ABOVE': zero_cross_above,
-            'MACD_ZERO_CROSS_BELOW': zero_cross_below,
+            'MACD_ZERO_CROSS_ABOVE': patterns_df['MACD_ZERO_CROSS_ABOVE'],
+            'MACD_ZERO_CROSS_BELOW': patterns_df['MACD_ZERO_CROSS_BELOW'],
             'MACD_HISTOGRAM_EXPANDING': histogram_expanding,
             'MACD_HISTOGRAM_CONTRACTING': histogram_contracting,
             'MACD_DOUBLE_TOP': double_top,
@@ -357,7 +376,7 @@ class MACD(BaseIndicator):
         }, index=data.index)
         
         # 合并基础计算结果和形态结果
-        final_df = pd.concat([calculated_data, patterns_df], axis=1)
+        final_df = pd.concat([macd_df, patterns_df], axis=1)
         
         return final_df
 

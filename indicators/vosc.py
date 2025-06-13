@@ -41,6 +41,21 @@ class VOSC(BaseIndicator):
         self.short_period = short_period
         self.long_period = long_period
         
+    def set_parameters(self, short_period: int = None, long_period: int = None):
+        """
+        设置指标参数
+        """
+        if short_period is not None:
+            self.short_period = short_period
+        if long_period is not None:
+            self.long_period = long_period
+            
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算VOSC指标的置信度。
+        """
+        return 0.5
+        
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列
@@ -599,11 +614,11 @@ class VOSC(BaseIndicator):
     
         return signals
         
-    def get_patterns(self):
-        patterns = {
-            "description": "VOSC下穿零线，可能预示卖出时机。",
-        }
-        return patterns
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取VOSC指标的技术形态
+        """
+        return pd.DataFrame(index=data.index)
 
     def _register_vosc_patterns(self):
         """

@@ -54,6 +54,11 @@ class ADX(BaseIndicator):
         
         # 注册ADX形态
         self._register_adx_patterns()
+
+        # 导入交叉检测函数
+        from indicators.common import crossover, crossunder
+        self.crossover = crossover
+        self.crossunder = crossunder
     
     def set_parameters(self, **kwargs):
         """设置指标参数，可设置 'period', 'strong_trend'"""
@@ -499,6 +504,81 @@ class ADX(BaseIndicator):
         
         # 确保评分在0-100范围内
         return score.clip(0, 100)
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算ADX指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 1. 基于ADX强度的置信度
+        # 确保已计算ADX
+        if not self.has_result():
+            return 0.5
+
+        period = self.params["period"]
+        strong_trend = self.params["strong_trend"]
+
+        adx = self._result[f'ADX{period}']
+        pdi = self._result[f'PDI{period}']
+        mdi = self._result[f'MDI{period}']
+
+        last_adx = adx.iloc[-1] if not adx.empty else 0
+        last_pdi = pdi.iloc[-1] if not pdi.empty else 0
+        last_mdi = mdi.iloc[-1] if not mdi.empty else 0
+
+        # ADX强度置信度
+        adx_confidence = 0.5
+        if last_adx > strong_trend * 1.5:  # 极强趋势
+            adx_confidence = 0.9
+        elif last_adx > strong_trend:  # 强趋势
+            adx_confidence = 0.8
+        elif last_adx > strong_trend * 0.6:  # 中等趋势
+            adx_confidence = 0.7
+        else:  # 弱趋势
+            adx_confidence = 0.5
+
+        # 2. 基于DI差距的置信度
+        di_diff = abs(last_pdi - last_mdi)
+        di_sum = last_pdi + last_mdi
+        di_ratio = di_diff / di_sum if di_sum > 0 else 0
+
+        di_confidence = 0.5 + di_ratio * 0.4  # 差距越大，置信度越高
+
+        # 3. 基于形态的置信度
+        pattern_confidence = 0.5
+        if isinstance(patterns, (list, pd.DataFrame)):
+            if isinstance(patterns, pd.DataFrame):
+                pattern_count = len(patterns)
+            else:
+                pattern_count = len(patterns)
+
+            if pattern_count > 0:
+                pattern_confidence = min(0.5 + pattern_count * 0.1, 0.9)
+
+        # 4. 基于信号的置信度
+        signal_confidence = 0.5
+        if signals:
+            # 检查是否有强烈的买卖信号
+            for signal_name, signal_series in signals.items():
+                if isinstance(signal_series, pd.Series) and signal_series.iloc[-1]:
+                    signal_confidence = 0.8
+                    break
+
+        # 综合置信度
+        confidence = (adx_confidence * 0.4 + di_confidence * 0.3 +
+                     pattern_confidence * 0.2 + signal_confidence * 0.1)
+
+        return min(confidence, 1.0)
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

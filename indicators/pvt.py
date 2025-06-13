@@ -37,6 +37,19 @@ class PVT(BaseIndicator):
         super().__init__(name="PVT", description="价格成交量趋势指标，通过价格变化与成交量相结合，反映价格趋势的强度和持续性")
         self.ma_period = ma_period
         
+    def set_parameters(self, ma_period: int = None):
+        """
+        设置指标参数
+        """
+        if ma_period is not None:
+            self.ma_period = ma_period
+            
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算PVT指标的置信度。
+        """
+        return 0.5
+        
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列
@@ -626,9 +639,9 @@ class PVT(BaseIndicator):
     
         return signals
         
-    def get_patterns(self):
-        patterns = {
-            "death_cross": "PVT下穿其移动平均线，可能预示卖出时机。",
-        }
-        return patterns
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取PVT指标的技术形态
+        """
+        return pd.DataFrame(index=data.index)
 

@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 from typing import Optional, Union, List, Dict, Any
 import logging
-import talib
+
 
 from indicators.base_indicator import BaseIndicator
-from utils.signal_utils import crossover, crossunder
+from indicators.common import crossover, crossunder
 from utils.logger import get_logger
-from indicators.atr import ATR
+# from indicators.atr import ATR  # 移除ATR依赖
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +35,25 @@ class EMV(BaseIndicator):
     """
     
     def __init__(self, volume_divisor: float = 10000, period: int = 14):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.REQUIRED_COLUMNS = ['high', 'low', 'volume']
         """初始化EMV指标"""
         super().__init__(name="EMV", description="指数平均数指标，评估价格上涨下跌的难易程度")
         self.volume_divisor = volume_divisor
         self.period = period
         self._result = None
+
+    def set_parameters(self, volume_divisor: float = None, period: int = None):
+        """
+        设置指标参数
+
+        Args:
+            volume_divisor: 成交量调整因子
+            period: 移动平均期数
+        """
+        if volume_divisor is not None:
+            self.volume_divisor = volume_divisor
+        if period is not None:
+            self.period = period
     
     def _validate_dataframe(self, df: pd.DataFrame) -> None:
         """
@@ -135,11 +148,13 @@ class EMV(BaseIndicator):
         signals['market_env'] = '中性'
         signals['volume_confirmation'] = False
         
-        # 计算ATR用于止损设置
+        # 计算简化的ATR用于止损设置
         try:
-            atr_indicator = ATR()
-            atr_data = atr_indicator.calculate(data)
-            atr_values = atr_data['atr']
+            high_low = data['high'] - data['low']
+            high_close = abs(data['high'] - data['close'].shift(1))
+            low_close = abs(data['low'] - data['close'].shift(1))
+            true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+            atr_values = true_range.rolling(window=14).mean()
         except Exception as e:
             logger.warning(f"计算ATR失败: {e}")
             atr_values = pd.Series(0, index=data.index)
@@ -373,7 +388,69 @@ class EMV(BaseIndicator):
         
         # 限制评分范围在0-100之间
         return np.clip(score, 0, 100)
-    
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EMV指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 75 or last_score < 25:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+            try:
+                # 统计最近几个周期的形态数量
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
+                if len(numeric_cols) > 0:
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                    recent_patterns = recent_data.sum().sum()
+                    if recent_patterns > 0:
+                        confidence += min(recent_patterns * 0.05, 0.2)
+            except:
+                pass
+
+        # 3. 基于EMV值的稳定性
+        if hasattr(self, '_result') and self._result is not None and 'EMV' in self._result.columns:
+            try:
+                emv_values = self._result['EMV'].dropna()
+                if len(emv_values) >= 5:
+                    recent_emv = emv_values.iloc[-5:]
+                    emv_stability = 1.0 - (recent_emv.std() / (abs(recent_emv.mean()) + 0.001))
+                    confidence += min(emv_stability * 0.1, 0.15)
+            except:
+                pass
+
+        # 4. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.1
+
+        return min(confidence, 1.0)
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别EMV技术形态
@@ -450,7 +527,152 @@ class EMV(BaseIndicator):
                 patterns.append("EMV快速下降（动能迅速减弱）")
         
         return patterns
-    
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EMV指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算EMV
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        emv = self._result['EMV']
+        emv_ma = self._result['EMV_MA']
+
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 零轴穿越形态
+        patterns_df['EMV_CROSS_UP_ZERO'] = crossover(emv, 0)
+        patterns_df['EMV_CROSS_DOWN_ZERO'] = crossunder(emv, 0)
+        patterns_df['EMV_ABOVE_ZERO'] = emv > 0
+        patterns_df['EMV_BELOW_ZERO'] = emv < 0
+
+        # 2. EMV与其移动平均线的关系
+        patterns_df['EMV_ABOVE_MA'] = emv > emv_ma
+        patterns_df['EMV_BELOW_MA'] = emv < emv_ma
+        patterns_df['EMV_CROSS_UP_MA'] = crossover(emv, emv_ma)
+        patterns_df['EMV_CROSS_DOWN_MA'] = crossunder(emv, emv_ma)
+
+        # 3. 趋势形态
+        patterns_df['EMV_RISING'] = emv > emv.shift(1)
+        patterns_df['EMV_FALLING'] = emv < emv.shift(1)
+
+        # 4. 强度形态
+        if len(emv) >= 5:
+            emv_change = emv.diff(3)
+            emv_std = emv.rolling(20).std()
+
+            patterns_df['EMV_STRONG_RISE'] = emv_change > emv_std
+            patterns_df['EMV_STRONG_FALL'] = emv_change < -emv_std
+
+        # 5. 极值形态
+        if len(emv) >= 20:
+            emv_rolling_max = emv.rolling(20).max()
+            emv_rolling_min = emv.rolling(20).min()
+
+            patterns_df['EMV_HIGH_EXTREME'] = emv >= emv_rolling_max * 0.9
+            patterns_df['EMV_LOW_EXTREME'] = emv <= emv_rolling_min * 0.9
+
+        # 6. 背离形态（简化版）
+        if len(emv) >= 10 and 'high' in data.columns:
+            price_trend = data['high'].rolling(5).mean().diff(5)
+            emv_trend = emv.diff(5)
+
+            patterns_df['EMV_BULLISH_DIVERGENCE'] = (price_trend < 0) & (emv_trend > 0)
+            patterns_df['EMV_BEARISH_DIVERGENCE'] = (price_trend > 0) & (emv_trend < 0)
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册EMV指标的技术形态
+        """
+        # 注册EMV零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="EMV_CROSS_UP_ZERO",
+            display_name="EMV上穿零轴",
+            description="EMV从负值区域穿越零轴，表示买盘力量增强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="EMV_CROSS_DOWN_ZERO",
+            display_name="EMV下穿零轴",
+            description="EMV从正值区域穿越零轴，表示卖盘力量增强",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册EMV与移动平均线交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="EMV_CROSS_UP_MA",
+            display_name="EMV上穿均线",
+            description="EMV上穿其移动平均线，趋势转强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="EMV_CROSS_DOWN_MA",
+            display_name="EMV下穿均线",
+            description="EMV下穿其移动平均线，趋势转弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册EMV强度形态
+        self.register_pattern_to_registry(
+            pattern_id="EMV_STRONG_RISE",
+            display_name="EMV强势上升",
+            description="EMV大幅上升，买盘力量强劲",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=18.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="EMV_STRONG_FALL",
+            display_name="EMV强势下降",
+            description="EMV大幅下降，卖盘力量强劲",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-18.0
+        )
+
+        # 注册EMV背离形态
+        self.register_pattern_to_registry(
+            pattern_id="EMV_BULLISH_DIVERGENCE",
+            display_name="EMV底背离",
+            description="价格下跌但EMV上升，可能反转向上",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="EMV_BEARISH_DIVERGENCE",
+            display_name="EMV顶背离",
+            description="价格上涨但EMV下降，可能反转向下",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0
+        )
+
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算并生成EMV指标信号
