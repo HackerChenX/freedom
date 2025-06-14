@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <!-- 数据目录配置 -->
+    <path>/Users/hacker/clickhouse_data/</path>
+    
+    <!-- 临时数据目录 -->
+    <tmp_path>/Users/hacker/clickhouse_data/tmp/</tmp_path>
+    
+    <!-- 用户文件目录 -->
+    <user_files_path>/Users/hacker/clickhouse_data/user_files/</user_files_path>
+    
+    <!-- 网络配置 -->
+    <listen_host>127.0.0.1</listen_host>
+    <listen_host>::1</listen_host>
+    
+    <!-- 端口配置 -->
+    <http_port>8123</http_port>
+    <tcp_port>9000</tcp_port>
+    <mysql_port>9004</mysql_port>
+    
+    <!-- 日志配置 -->
+    <logger>
+        <level>information</level>
+        <log>/Users/hacker/clickhouse_data/logs/clickhouse-server.log</log>
+        <errorlog>/Users/hacker/clickhouse_data/logs/clickhouse-server.err.log</errorlog>
+        <size>1000M</size>
+        <count>10</count>
+    </logger>
+    
+    <!-- 用户配置 -->
+    <users>
+        <default>
+            <password></password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>default</profile>
+            <quota>default</quota>
+        </default>
+    </users>
+    
+    <!-- 配置文件 -->
+    <profiles>
+        <default>
+            <max_memory_usage>10000000000</max_memory_usage>
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+            <load_balancing>random</load_balancing>
+        </default>
+    </profiles>
+    
+    <quotas>
+        <default>
+            <interval>
+                <duration>3600</duration>
+                <queries>0</queries>
+                <errors>0</errors>
+                <result_rows>0</result_rows>
+                <read_rows>0</read_rows>
+                <execution_time>0</execution_time>
+            </interval>
+        </default>
+    </quotas>
+</clickhouse>
