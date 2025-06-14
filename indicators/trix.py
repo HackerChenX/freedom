@@ -44,18 +44,276 @@ class TRIX(BaseIndicator):
             self.n = n
         if m is not None:
             self.m = m
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算TRIX指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含TRIX指标的DataFrame
+        """
+        # 从kwargs中获取参数，如果没有则使用默认值
+        n = kwargs.get('n', self.n)
+        m = kwargs.get('m', self.m)
+        return self._calculate(data, n, m)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算TRIX指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查TRIX形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取TRIX相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        try:
+            # 确保已计算指标
+            if self._result is None:
+                self.calculate(data)
+
+            if self._result is None or 'TRIX' not in self._result.columns:
+                return pd.DataFrame(index=data.index)
+
+            # 获取TRIX和MATRIX值
+            trix = self._result['TRIX']
+            matrix = self._result['MATRIX']
+
+            # 创建形态DataFrame
+            patterns_df = pd.DataFrame(index=data.index)
+
+            # 1. TRIX与信号线交叉形态
+            from utils.indicator_utils import crossover, crossunder
+
+            patterns_df['TRIX_GOLDEN_CROSS'] = crossover(trix, matrix)
+            patterns_df['TRIX_DEATH_CROSS'] = crossunder(trix, matrix)
+
+            # 2. TRIX零轴穿越形态
+            try:
+                zero_line = pd.Series(0.0, index=data.index)
+                patterns_df['TRIX_CROSS_UP_ZERO'] = crossover(trix, zero_line)
+                patterns_df['TRIX_CROSS_DOWN_ZERO'] = crossunder(trix, zero_line)
+            except Exception as e:
+                logger.warning(f"计算TRIX零轴穿越形态时出错: {e}")
+                patterns_df['TRIX_CROSS_UP_ZERO'] = False
+                patterns_df['TRIX_CROSS_DOWN_ZERO'] = False
+
+            # 3. TRIX位置形态
+            try:
+                patterns_df['TRIX_ABOVE_ZERO'] = trix > 0
+                patterns_df['TRIX_BELOW_ZERO'] = trix < 0
+                patterns_df['TRIX_ABOVE_SIGNAL'] = trix > matrix
+                patterns_df['TRIX_BELOW_SIGNAL'] = trix < matrix
+            except Exception as e:
+                logger.warning(f"计算TRIX位置形态时出错: {e}")
+                patterns_df['TRIX_ABOVE_ZERO'] = False
+                patterns_df['TRIX_BELOW_ZERO'] = False
+                patterns_df['TRIX_ABOVE_SIGNAL'] = False
+                patterns_df['TRIX_BELOW_SIGNAL'] = False
+
+            # 4. TRIX趋势形态
+            try:
+                patterns_df['TRIX_RISING'] = trix > trix.shift(1)
+                patterns_df['TRIX_FALLING'] = trix < trix.shift(1)
+            except Exception as e:
+                logger.warning(f"计算TRIX趋势形态时出错: {e}")
+                patterns_df['TRIX_RISING'] = False
+                patterns_df['TRIX_FALLING'] = False
+
+            # 5. TRIX强势形态
+            try:
+                if len(trix) >= 3:
+                    consecutive_rising = (
+                        (trix > trix.shift(1)) &
+                        (trix.shift(1) > trix.shift(2)) &
+                        (trix.shift(2) > trix.shift(3))
+                    )
+                    consecutive_falling = (
+                        (trix < trix.shift(1)) &
+                        (trix.shift(1) < trix.shift(2)) &
+                        (trix.shift(2) < trix.shift(3))
+                    )
+                    patterns_df['TRIX_CONSECUTIVE_RISING'] = consecutive_rising
+                    patterns_df['TRIX_CONSECUTIVE_FALLING'] = consecutive_falling
+                else:
+                    patterns_df['TRIX_CONSECUTIVE_RISING'] = False
+                    patterns_df['TRIX_CONSECUTIVE_FALLING'] = False
+            except Exception as e:
+                logger.warning(f"计算TRIX连续形态时出错: {e}")
+                patterns_df['TRIX_CONSECUTIVE_RISING'] = False
+                patterns_df['TRIX_CONSECUTIVE_FALLING'] = False
+
+            # 6. TRIX强度形态
+            try:
+                trix_abs = abs(trix)
+                patterns_df['TRIX_STRONG'] = trix_abs > 2
+                patterns_df['TRIX_WEAK'] = trix_abs < 0.5
+            except Exception as e:
+                logger.warning(f"计算TRIX强度形态时出错: {e}")
+                patterns_df['TRIX_STRONG'] = False
+                patterns_df['TRIX_WEAK'] = False
+
+            return patterns_df
+        except Exception as e:
+            logger.error(f"获取TRIX形态时出错: {e}")
+            return pd.DataFrame(index=data.index)
+
+    def register_patterns(self):
+        """
+        注册TRIX指标的形态到全局形态注册表
+        """
+        # 注册TRIX金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_GOLDEN_CROSS",
+            display_name="TRIX金叉",
+            description="TRIX上穿信号线，中长期趋势转好",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册TRIX死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_DEATH_CROSS",
+            display_name="TRIX死叉",
+            description="TRIX下穿信号线，中长期趋势转弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册TRIX上穿零轴形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_CROSS_UP_ZERO",
+            display_name="TRIX上穿零轴",
+            description="TRIX上穿零轴，中长期趋势由负转正",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=20.0
+        )
+
+        # 注册TRIX下穿零轴形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_CROSS_DOWN_ZERO",
+            display_name="TRIX下穿零轴",
+            description="TRIX下穿零轴，中长期趋势由正转负",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册TRIX连续上升形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_CONSECUTIVE_RISING",
+            display_name="TRIX连续上升",
+            description="TRIX连续3个周期上升，趋势强劲",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0
+        )
+
+        # 注册TRIX连续下降形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_CONSECUTIVE_FALLING",
+            display_name="TRIX连续下降",
+            description="TRIX连续3个周期下降，趋势疲弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0
+        )
+
+        # 注册TRIX强势形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_STRONG",
+            display_name="TRIX强势",
+            description="TRIX绝对值大于2%，趋势强劲",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册TRIX弱势形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_WEAK",
+            display_name="TRIX弱势",
+            description="TRIX绝对值小于0.5%，趋势疲弱",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=-5.0
+        )
     
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算TRIX指标
-        
+
         Args:
             df: 包含OHLCV数据的DataFrame
-                
+
         Returns:
             包含TRIX指标的DataFrame
         """
-        result = self.calculate(df, self.n, self.m)
+        result = self.calculate(df)
         # 重命名列以符合标准
         result['trix'] = result['TRIX']
         result['signal'] = result['MATRIX']
@@ -100,7 +358,8 @@ class TRIX(BaseIndicator):
         MATRIX:MA(TRIX,9);
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("TRIX指标计算需要'close'列")
         
         # 提取数据
         close = data["close"].values
@@ -193,7 +452,50 @@ class TRIX(BaseIndicator):
         score += strength_score
         
         return np.clip(score, 0, 100)
-    
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别TRIX技术形态
@@ -288,11 +590,12 @@ class TRIX(BaseIndicator):
         matrix_values = self._result['MATRIX']
         
         # TRIX上穿MATRIX（金叉）+25分
-        golden_cross = self.crossover(trix_values, matrix_values)
+        from utils.indicator_utils import crossover, crossunder
+        golden_cross = crossover(trix_values, matrix_values)
         cross_score += golden_cross * 25
-        
+
         # TRIX下穿MATRIX（死叉）-25分
-        death_cross = self.crossunder(trix_values, matrix_values)
+        death_cross = crossunder(trix_values, matrix_values)
         cross_score -= death_cross * 25
         
         return cross_score
@@ -313,11 +616,12 @@ class TRIX(BaseIndicator):
         zero_line = pd.Series(0.0, index=self._result.index)
         
         # TRIX上穿零轴+20分
-        zero_cross_up = self.crossover(trix_values, zero_line)
+        from utils.indicator_utils import crossover, crossunder
+        zero_cross_up = crossover(trix_values, zero_line)
         zero_cross_score += zero_cross_up * 20
-        
+
         # TRIX下穿零轴-20分
-        zero_cross_down = self.crossunder(trix_values, zero_line)
+        zero_cross_down = crossunder(trix_values, zero_line)
         zero_cross_score -= zero_cross_down * 20
         
         # TRIX在零轴上方+8分
@@ -455,10 +759,11 @@ class TRIX(BaseIndicator):
         recent_trix = trix_values.tail(recent_periods)
         recent_matrix = matrix_values.tail(recent_periods)
         
-        if self.crossover(recent_trix, recent_matrix).any():
+        from utils.indicator_utils import crossover, crossunder
+        if crossover(recent_trix, recent_matrix).any():
             patterns.append("TRIX金叉")
-        
-        if self.crossunder(recent_trix, recent_matrix).any():
+
+        if crossunder(recent_trix, recent_matrix).any():
             patterns.append("TRIX死叉")
         
         # 当前位置关系

@@ -21,11 +21,11 @@ class CrossOver(BaseIndicator):
     """
     交叉指标，检测快线是否上穿慢线
     """
-    
+
     def __init__(self, fast_line: str = "", slow_line: str = "", **kwargs):
         """
         初始化交叉指标
-        
+
         Args:
             fast_line: 快线表达式
             slow_line: 慢线表达式
@@ -35,6 +35,40 @@ class CrossOver(BaseIndicator):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.fast_line = fast_line
         self.slow_line = slow_line
+
+    def set_parameters(self, **kwargs):
+        """设置指标参数"""
+        if 'fast_line' in kwargs:
+            self.fast_line = kwargs['fast_line']
+        if 'slow_line' in kwargs:
+            self.slow_line = kwargs['slow_line']
+
+    def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
+        """计算置信度"""
+        if len(data) < 10:
+            return 0.0
+        return 0.8  # 默认置信度
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取交叉形态"""
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 计算指标
+        result = self._calculate(data)
+        if 'crossover' in result.columns:
+            patterns_df['CROSS_OVER'] = result['crossover']
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        result = self._calculate(data)
+        score = pd.Series(50.0, index=data.index)  # 默认中性评分
+
+        if 'crossover' in result.columns:
+            score[result['crossover']] = 80.0  # 交叉时给高分
+
+        return score
         
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -199,11 +233,11 @@ class KDJCondition(BaseIndicator):
     """
     KDJ条件指标，检测KDJ指标线的条件
     """
-    
+
     def __init__(self, line: str = "K", operator: str = ">", value: float = 0, **kwargs):
         """
         初始化KDJ条件指标
-        
+
         Args:
             line: KDJ指标线，可选K/D/J
             operator: 比较操作符，如> < >= <= =
@@ -215,11 +249,53 @@ class KDJCondition(BaseIndicator):
         self.line = line.upper()
         self.operator = operator
         self.value = value
-        
+
         # KDJ默认参数
         self.n = kwargs.get('n', 9)
         self.m1 = kwargs.get('m1', 3)
         self.m2 = kwargs.get('m2', 3)
+
+    def set_parameters(self, **kwargs):
+        """设置指标参数"""
+        if 'line' in kwargs:
+            self.line = kwargs['line'].upper()
+        if 'operator' in kwargs:
+            self.operator = kwargs['operator']
+        if 'value' in kwargs:
+            self.value = kwargs['value']
+        if 'n' in kwargs:
+            self.n = kwargs['n']
+        if 'm1' in kwargs:
+            self.m1 = kwargs['m1']
+        if 'm2' in kwargs:
+            self.m2 = kwargs['m2']
+
+    def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
+        """计算置信度"""
+        if len(data) < self.n + 10:
+            return 0.0
+        return 0.75  # 默认置信度
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取KDJ条件形态"""
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 计算指标
+        result = self._calculate(data)
+        if 'condition_met' in result.columns:
+            patterns_df[f'KDJ_{self.line}_{self.operator}_{self.value}'] = result['condition_met']
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        result = self._calculate(data)
+        score = pd.Series(50.0, index=data.index)  # 默认中性评分
+
+        if 'condition_met' in result.columns:
+            score[result['condition_met']] = 70.0  # 条件满足时给较高分
+
+        return score
         
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -393,12 +469,11 @@ class MACDCondition(BaseIndicator):
     """
     MACD条件指标，检测MACD指标线的条件
     """
-    
+
     def __init__(self, line: str = "MACD", operator: str = ">", value: float = 0, **kwargs):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化MACD条件指标
-        
+
         Args:
             line: MACD指标线，可选MACD/DIF/DEA
             operator: 比较操作符，如> < >= <= =
@@ -406,14 +481,58 @@ class MACDCondition(BaseIndicator):
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.line = line.upper()
         self.operator = operator
         self.value = value
-        
+
         # MACD默认参数
         self.fast_period = kwargs.get('fast_period', 12)
         self.slow_period = kwargs.get('slow_period', 26)
         self.signal_period = kwargs.get('signal_period', 9)
+
+    def set_parameters(self, **kwargs):
+        """设置指标参数"""
+        if 'line' in kwargs:
+            self.line = kwargs['line'].upper()
+        if 'operator' in kwargs:
+            self.operator = kwargs['operator']
+        if 'value' in kwargs:
+            self.value = kwargs['value']
+        if 'fast_period' in kwargs:
+            self.fast_period = kwargs['fast_period']
+        if 'slow_period' in kwargs:
+            self.slow_period = kwargs['slow_period']
+        if 'signal_period' in kwargs:
+            self.signal_period = kwargs['signal_period']
+
+    def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
+        """计算置信度"""
+        min_periods = max(self.fast_period, self.slow_period) + self.signal_period + 10
+        if len(data) < min_periods:
+            return 0.0
+        return 0.8  # 默认置信度
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取MACD条件形态"""
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 计算指标
+        result = self._calculate(data)
+        if 'condition_met' in result.columns:
+            patterns_df[f'MACD_{self.line}_{self.operator}_{self.value}'] = result['condition_met']
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        result = self._calculate(data)
+        score = pd.Series(50.0, index=data.index)  # 默认中性评分
+
+        if 'condition_met' in result.columns:
+            score[result['condition_met']] = 75.0  # 条件满足时给较高分
+
+        return score
         
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -634,6 +753,34 @@ class MACondition(BaseIndicator):
         self.ma_period = ma_period
         self.operator = operator
         self.compare_value = compare_value
+
+    def set_parameters(self, **kwargs):
+        """设置指标参数"""
+        if 'ma_type' in kwargs:
+            self.ma_type = kwargs['ma_type'].upper()
+        if 'ma_period' in kwargs:
+            self.ma_period = kwargs['ma_period']
+        if 'operator' in kwargs:
+            self.operator = kwargs['operator']
+        if 'compare_value' in kwargs:
+            self.compare_value = kwargs['compare_value']
+
+    def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
+        """计算置信度"""
+        if len(data) < self.ma_period + 10:
+            return 0.0
+        return 0.8  # 默认置信度
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取均线条件形态"""
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 计算指标
+        result = self._calculate(data)
+        if 'condition_met' in result.columns:
+            patterns_df[f'MA_{self.ma_type}{self.ma_period}_{self.operator}_{self.compare_value}'] = result['condition_met']
+
+        return patterns_df
         
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -916,6 +1063,30 @@ class GenericCondition(BaseIndicator):
         """
         super().__init__(**kwargs)
         self.condition = condition
+
+    def set_parameters(self, **kwargs):
+        """设置指标参数"""
+        if 'condition' in kwargs:
+            self.condition = kwargs['condition']
+
+    def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
+        """计算置信度"""
+        if len(data) < 20:
+            return 0.0
+        return 0.6  # 默认置信度
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取通用条件形态"""
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 计算指标
+        result = self._calculate(data)
+        if 'condition_met' in result.columns:
+            # 使用条件表达式作为形态名称
+            condition_name = self.condition.replace('>', '_GT_').replace('<', '_LT_').replace('=', '_EQ_')
+            patterns_df[f'GENERIC_{condition_name}'] = result['condition_met']
+
+        return patterns_df
         
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """

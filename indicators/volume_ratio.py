@@ -8,10 +8,13 @@
 
 import numpy as np
 import pandas as pd
-import talib
+# import talib  # 移除talib依赖
 from typing import Optional, Union, List, Dict, Any
+import logging
 
 from indicators.base_indicator import BaseIndicator
+
+logger = logging.getLogger(__name__)
 
 class VR(BaseIndicator):
     """
@@ -64,10 +67,10 @@ class VolumeRatio(BaseIndicator):
             reference_period: 参考周期，默认为5
             ma_period: 量比均线周期，默认为3
         """
-        super().__init__()
+        super().__init__(name=f"VOLUME_RATIO({reference_period},{ma_period})",
+                         description=f"量比指标，参考周期{reference_period}，均线周期{ma_period}")
         self.reference_period = reference_period
         self.ma_period = ma_period
-        self.name = f"VOLUME_RATIO({reference_period},{ma_period})"
         
     def set_parameters(self, reference_period: int = None, ma_period: int = None):
         """
@@ -78,11 +81,136 @@ class VolumeRatio(BaseIndicator):
         if ma_period is not None:
             self.ma_period = ma_period
 
-    def get_patterns(self):
-        patterns = {
-            "description": "成交量比率低于阈值，可能表明回调或盘整结束",
-        }
-        return patterns
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算Volume Ratio指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Volume Ratio指标的DataFrame
+        """
+        return self._calculate(data)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取Volume Ratio相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None or 'volume_ratio' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取Volume Ratio数据
+        volume_ratio = self._result['volume_ratio']
+        volume_ratio_ma = self._result['volume_ratio_ma']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 量比水平形态
+        patterns_df['VR_EXTREMELY_HIGH'] = volume_ratio > 3.0
+        patterns_df['VR_VERY_HIGH'] = (volume_ratio > 2.0) & (volume_ratio <= 3.0)
+        patterns_df['VR_HIGH'] = (volume_ratio > 1.5) & (volume_ratio <= 2.0)
+        patterns_df['VR_NORMAL'] = (volume_ratio >= 0.8) & (volume_ratio <= 1.2)
+        patterns_df['VR_LOW'] = (volume_ratio >= 0.5) & (volume_ratio < 0.8)
+        patterns_df['VR_VERY_LOW'] = (volume_ratio >= 0.3) & (volume_ratio < 0.5)
+        patterns_df['VR_EXTREMELY_LOW'] = volume_ratio < 0.3
+
+        # 2. 量比趋势形态
+        patterns_df['VR_RISING'] = volume_ratio > volume_ratio.shift(1)
+        patterns_df['VR_FALLING'] = volume_ratio < volume_ratio.shift(1)
+        patterns_df['VR_ACCELERATING_UP'] = (volume_ratio > volume_ratio.shift(1)) & (volume_ratio.shift(1) > volume_ratio.shift(2))
+        patterns_df['VR_ACCELERATING_DOWN'] = (volume_ratio < volume_ratio.shift(1)) & (volume_ratio.shift(1) < volume_ratio.shift(2))
+
+        # 3. 量比与均线关系
+        patterns_df['VR_ABOVE_MA'] = volume_ratio > volume_ratio_ma
+        patterns_df['VR_BELOW_MA'] = volume_ratio < volume_ratio_ma
+        patterns_df['VR_GOLDEN_CROSS'] = (volume_ratio > volume_ratio_ma) & (volume_ratio.shift(1) <= volume_ratio_ma.shift(1))
+        patterns_df['VR_DEATH_CROSS'] = (volume_ratio < volume_ratio_ma) & (volume_ratio.shift(1) >= volume_ratio_ma.shift(1))
+
+        # 4. 量比突破形态
+        patterns_df['VR_BREAKOUT_HIGH'] = (volume_ratio > 1.5) & (volume_ratio.shift(1) <= 1.5)
+        patterns_df['VR_BREAKDOWN_LOW'] = (volume_ratio < 0.7) & (volume_ratio.shift(1) >= 0.7)
+
+        # 5. 量比极值形态
+        if len(volume_ratio) >= 20:
+            vr_20_max = volume_ratio.rolling(window=20).max()
+            vr_20_min = volume_ratio.rolling(window=20).min()
+            patterns_df['VR_PEAK'] = volume_ratio >= vr_20_max
+            patterns_df['VR_TROUGH'] = volume_ratio <= vr_20_min
+        else:
+            patterns_df['VR_PEAK'] = False
+            patterns_df['VR_TROUGH'] = False
+
+        return patterns_df
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算Volume Ratio指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查Volume Ratio形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
 
     def _validate_dataframe(self, df: pd.DataFrame) -> None:
         """
@@ -246,17 +374,205 @@ class VolumeRatio(BaseIndicator):
         
         return activity_df
     
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算VR原始评分
+        计算Volume Ratio原始评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 评分序列 (0-100)
         """
+        # 确保已计算指标
         if self._result is None:
             self.calculate(data)
-        
-        # 评分逻辑...
+
+        if self._result is None or 'volume_ratio' not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
+
+        # 获取Volume Ratio数据
+        volume_ratio = self._result['volume_ratio']
+        volume_ratio_ma = self._result['volume_ratio_ma']
+
+        # 初始化评分
         score = pd.Series(50.0, index=data.index)
-        return score
-        
+
+        # 基于量比水平的评分
+        # 量比>1.5为正面信号，<0.7为负面信号
+        score += np.where(volume_ratio > 1.5,
+                         np.minimum((volume_ratio - 1.5) * 20, 30),  # 最多加30分
+                         0)
+
+        score -= np.where(volume_ratio < 0.7,
+                         np.minimum((0.7 - volume_ratio) * 30, 30),  # 最多减30分
+                         0)
+
+        # 基于量比与均线关系的评分
+        score += np.where(volume_ratio > volume_ratio_ma, 5, -5)
+
+        # 基于量比趋势的评分
+        vr_change = volume_ratio.pct_change()
+        score += np.where(vr_change > 0.1, 10,  # 量比快速上升
+                         np.where(vr_change < -0.1, -10, 0))  # 量比快速下降
+
+        # 基于量比稳定性的评分
+        if len(volume_ratio) >= 5:
+            vr_volatility = volume_ratio.rolling(window=5).std()
+            # 量比过于波动降低评分
+            score -= np.where(vr_volatility > 0.5, 5, 0)
+
+        # 确保评分在0-100范围内
+        return np.clip(score, 0, 100)
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册Volume Ratio指标的形态到全局形态注册表
+        """
+        # 注册量比极高形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_EXTREMELY_HIGH",
+            display_name="量比极高",
+            description="量比超过3倍，市场极度活跃，可能是重大消息或主力行为",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0
+        )
+
+        # 注册量比高形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_HIGH",
+            display_name="量比偏高",
+            description="量比在1.5-2倍之间，市场活跃度较高",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        # 注册量比极低形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_EXTREMELY_LOW",
+            display_name="量比极低",
+            description="量比低于0.3倍，市场极度冷清",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册量比低形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_LOW",
+            display_name="量比偏低",
+            description="量比在0.5-0.8倍之间，市场活跃度较低",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册量比突破形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_BREAKOUT_HIGH",
+            display_name="量比突破",
+            description="量比突破1.5倍，市场活跃度显著提升",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册量比跌破形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_BREAKDOWN_LOW",
+            display_name="量比跌破",
+            description="量比跌破0.7倍，市场活跃度显著下降",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册量比金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_GOLDEN_CROSS",
+            display_name="量比金叉",
+            description="量比上穿均线，活跃度趋势向好",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        # 注册量比死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_DEATH_CROSS",
+            display_name="量比死叉",
+            description="量比下穿均线，活跃度趋势转弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0
+        )
+
+        # 注册量比加速上升形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_ACCELERATING_UP",
+            display_name="量比加速上升",
+            description="量比连续上升，市场活跃度快速提升",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0
+        )
+
+        # 注册量比加速下降形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_ACCELERATING_DOWN",
+            display_name="量比加速下降",
+            description="量比连续下降，市场活跃度快速下降",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0
+        )
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号

@@ -12,10 +12,10 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 from scipy import signal, stats
 import warnings
-import talib
+# import talib  # 移除talib依赖
 
 from indicators.base_indicator import BaseIndicator, PatternResult
-from indicators.common import crossover, crossunder
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
@@ -43,9 +43,8 @@ class VOL(BaseIndicator):
             enable_cycles_analysis: 是否启用量能周期分析，默认启用
             enable_standardization: 是否启用成交量标准化，默认启用
         """
-        super().__init__()
+        super().__init__(name="VOL", description="成交量指标，市场活跃度、参与度直观体现")
         self.period = period
-        self.name = "VOL"
         self.enable_cycles_analysis = enable_cycles_analysis
         self.enable_standardization = enable_standardization
     
@@ -59,12 +58,75 @@ class VOL(BaseIndicator):
             self.enable_cycles_analysis = enable_cycles_analysis
         if enable_standardization is not None:
             self.enable_standardization = enable_standardization
-            
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算VOL指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含VOL指标的DataFrame
+        """
+        return self._calculate(data)
+
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算VOL指标的置信度。
+        计算VOL指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
         """
-        return 0.5
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查VOL形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
     
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -111,7 +173,7 @@ class VOL(BaseIndicator):
         df_copy['vol_ratio'] = df_copy['volume'] / df_copy['vol_ma5']
         
         # 优化: 计算相对成交量变化率
-        df_copy['vol_ratio_change'] = df_copy['vol_ratio'].pct_change()
+        df_copy['vol_ratio_change'] = df_copy['vol_ratio'].pct_change(fill_method=None)
         
         # 优化: 计算成交量波动率
         df_copy['vol_std'] = df_copy['volume'].rolling(window=20).std() / df_copy['vol_ma20']
@@ -731,73 +793,217 @@ class VOL(BaseIndicator):
             strength=PatternStrength.WEAK
         )
         
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取VOL指标的形态列表
+        获取VOL相关形态
 
         Args:
-            data (pd.DataFrame): 输入数据
-            **kwargs: 额外参数
+            data: 输入数据
+            **kwargs: 其他参数
 
         Returns:
-            List[Dict[str, Any]]: 形态识别结果列表
+            pd.DataFrame: 包含形态信息的DataFrame
         """
         # 确保已计算指标
-        if not self.has_result():
-            self._calculate(data, **kwargs)
+        if self._result is None:
+            self.calculate(data)
 
-        patterns = []
+        if self._result is None or 'vol' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取VOL数据
+        vol = self._result['vol']
+        vol_ma5 = self._result['vol_ma5']
+        vol_ma10 = self._result['vol_ma10']
+        vol_ma20 = self._result['vol_ma20']
+        vol_ratio = self._result['vol_ratio']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. 成交量水平形态
+        patterns_df['VOL_HIGH'] = vol > vol_ma20 * 1.5
+        patterns_df['VOL_VERY_HIGH'] = vol > vol_ma20 * 2.0
+        patterns_df['VOL_LOW'] = vol < vol_ma20 * 0.5
+        patterns_df['VOL_VERY_LOW'] = vol < vol_ma20 * 0.3
+
+        # 2. 成交量趋势形态
+        patterns_df['VOL_RISING'] = vol > vol.shift(1)
+        patterns_df['VOL_FALLING'] = vol < vol.shift(1)
+        patterns_df['VOL_MA_BULLISH'] = (vol_ma5 > vol_ma10) & (vol_ma10 > vol_ma20)
+        patterns_df['VOL_MA_BEARISH'] = (vol_ma5 < vol_ma10) & (vol_ma10 < vol_ma20)
+
+        # 3. 成交量突破形态
+        patterns_df['VOL_BREAKOUT_UP'] = (vol_ratio > 1.5) & (data['close'] > data['close'].shift(1))
+        patterns_df['VOL_BREAKOUT_DOWN'] = (vol_ratio > 1.5) & (data['close'] < data['close'].shift(1))
+
+        # 4. 成交量背离形态
+        patterns_df['VOL_WEAK_UP'] = (vol_ratio < 0.7) & (data['close'] > data['close'].shift(1))
+        patterns_df['VOL_WEAK_DOWN'] = (vol_ratio < 0.7) & (data['close'] < data['close'].shift(1))
+
+        # 5. 成交量极值形态
+        if len(vol) >= 120:
+            vol_120_max = vol.rolling(window=120).max()
+            vol_120_min = vol.rolling(window=120).min()
+            patterns_df['VOL_PEAK'] = vol >= vol_120_max
+            patterns_df['VOL_TROUGH'] = vol <= vol_120_min
+        else:
+            patterns_df['VOL_PEAK'] = False
+            patterns_df['VOL_TROUGH'] = False
+
+        # 6. 成交量金叉死叉
+        patterns_df['VOL_GOLDEN_CROSS'] = (vol_ma5 > vol_ma10) & (vol_ma5.shift(1) <= vol_ma10.shift(1))
+        patterns_df['VOL_DEATH_CROSS'] = (vol_ma5 < vol_ma10) & (vol_ma5.shift(1) >= vol_ma10.shift(1))
+
+        return patterns_df
         
-        # 如果没有结果或数据不足，返回空列表
-        if self._result is None or len(self._result) < 20:
-            return patterns
-
-        # 调用原有的形态识别方法
-        identified_pattern_names = self.identify_patterns(self._result)
-        
-        # 获取已注册的形态
-        registry = PatternRegistry()
-        vol_pattern_ids = registry.get_patterns_by_indicator('VOL')
-        vol_patterns = {p['display_name']: p for p_id in vol_pattern_ids if (p := registry.get_pattern(p_id))}
-
-        for pattern_name in identified_pattern_names:
-            if pattern_name in vol_patterns:
-                pattern_info = vol_patterns[pattern_name]
-                patterns.append(PatternResult(
-                    pattern_id=pattern_info['pattern_id'],
-                    display_name=pattern_name,
-                    strength=pattern_info.get('strength', 50), # 默认强度50
-                    duration=1, # 持续时间需要更复杂的逻辑来计算
-                    details={} # 细节信息
-                ).to_dict())
-
-        return patterns
-        
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
-        计算VOL指标综合评分
-        
+        计算最终评分
+
         Args:
-            data (pd.DataFrame): 输入数据
-            **kwargs: 额外参数
+            data: 输入数据
+            **kwargs: 其他参数
 
         Returns:
-            float: 0-100之间的综合评分
+            Dict[str, Any]: 包含评分和置信度的字典
         """
-        # 确保已计算指标
-        if not self.has_result():
-            self._calculate(data, **kwargs)
-        
-        # 获取原始评分
-        raw_score = self.calculate_raw_score(data)
-        
-        # 如果原始评分序列为空，返回50
-        if raw_score.empty:
-            return 50.0
-            
-        # 返回最新的评分
-        return raw_score.iloc[-1]
-    
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册VOL指标的形态到全局形态注册表
+        """
+        # 注册放量上涨形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_BREAKOUT_UP",
+            display_name="放量上涨",
+            description="成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        # 注册放量下跌形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_BREAKOUT_DOWN",
+            display_name="放量下跌",
+            description="成交量显著放大，同时价格下跌，通常是恐慌性抛售或趋势反转的信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0
+        )
+
+        # 注册缩量上涨形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_WEAK_UP",
+            display_name="缩量上涨",
+            description="价格上涨但成交量萎缩，可能表示上涨动力不足",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-10.0
+        )
+
+        # 注册缩量下跌形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_WEAK_DOWN",
+            display_name="缩量下跌",
+            description="价格下跌且成交量萎缩，可能表示下跌动能衰竭",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册天量形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_PEAK",
+            display_name="天量",
+            description="成交量达到近期峰值，可能预示趋势即将反转",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-8.0
+        )
+
+        # 注册地量形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_TROUGH",
+            display_name="地量",
+            description="成交量达到近期谷底，可能表示市场极度冷清或惜售",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=8.0
+        )
+
+        # 注册成交量金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_GOLDEN_CROSS",
+            display_name="成交量金叉",
+            description="短期成交量均线上穿长期均线，表示成交量趋势向好",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        # 注册成交量死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_DEATH_CROSS",
+            display_name="成交量死叉",
+            description="短期成交量均线下穿长期均线，表示成交量趋势转弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0
+        )
+
+        # 注册均量线多头排列形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_MA_BULLISH",
+            display_name="均量线多头排列",
+            description="成交量均线呈多头排列，表示成交量趋势强劲",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        # 注册均量线空头排列形态
+        self.register_pattern_to_registry(
+            pattern_id="VOL_MA_BEARISH",
+            display_name="均量线空头排列",
+            description="成交量均线呈空头排列，表示成交量趋势疲弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0
+        )
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号

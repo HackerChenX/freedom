@@ -142,8 +142,10 @@ class KDJ(BaseIndicator):
             patterns_df.loc[last_idx, 'KDJ_BEARISH_DIVERGENCE'] = self._detect_bearish_divergence(calculated_data)
             
             # 填充其他行为False
-            patterns_df['KDJ_BULLISH_DIVERGENCE'] = patterns_df['KDJ_BULLISH_DIVERGENCE'].fillna(False).astype(bool)
-            patterns_df['KDJ_BEARISH_DIVERGENCE'] = patterns_df['KDJ_BEARISH_DIVERGENCE'].fillna(False).astype(bool)
+            patterns_df['KDJ_BULLISH_DIVERGENCE'] = patterns_df['KDJ_BULLISH_DIVERGENCE'].fillna(False)
+            patterns_df['KDJ_BEARISH_DIVERGENCE'] = patterns_df['KDJ_BEARISH_DIVERGENCE'].fillna(False)
+            patterns_df['KDJ_BULLISH_DIVERGENCE'] = patterns_df['KDJ_BULLISH_DIVERGENCE'].astype(bool)
+            patterns_df['KDJ_BEARISH_DIVERGENCE'] = patterns_df['KDJ_BEARISH_DIVERGENCE'].astype(bool)
         
         return patterns_df
 
@@ -1085,4 +1087,60 @@ class KDJ(BaseIndicator):
                 # 综合评分: 价格上涨越多，指标减弱越明显，评分越高
                 return min(100, 50 + price_rise * 100 * weight + indicator_weaken * 10)
         
-        return 50.0 
+        return 50.0
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典，包含name, description, strength等
+        """
+        pattern_info_map = {
+            'KDJ_GOLDEN_CROSS': {
+                'name': 'KDJ金叉',
+                'description': 'K线上穿D线，表示买入信号',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'KDJ_DEATH_CROSS': {
+                'name': 'KDJ死叉',
+                'description': 'K线下穿D线，表示卖出信号',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'KDJ_OVERSOLD': {
+                'name': 'KDJ超卖',
+                'description': 'KDJ值低于20，表示超卖状态',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'KDJ_OVERBOUGHT': {
+                'name': 'KDJ超买',
+                'description': 'KDJ值高于80，表示超买状态',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'KDJ_BULLISH_DIVERGENCE': {
+                'name': 'KDJ牛市背离',
+                'description': '价格创新低而KDJ不创新低，表示看涨信号',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'KDJ_BEARISH_DIVERGENCE': {
+                'name': 'KDJ熊市背离',
+                'description': '价格创新高而KDJ不创新高，表示看跌信号',
+                'strength': 'strong',
+                'type': 'bearish'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'KDJ形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

@@ -395,4 +395,419 @@ class ZXMMarketBreadth(BaseIndicator):
                     signals.loc[signals.index[i], 'volume_confirmation'] = True
                     signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)
         
-        return signals 
+        return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1] if hasattr(score, 'iloc') else score
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "市场底部形成" in patterns:
+            pattern_boost += 0.2
+        elif "市场顶部钝化" in patterns:
+            pattern_boost += 0.2
+        elif "市场宽度扩展" in patterns:
+            pattern_boost += 0.15
+        elif "市场宽度收缩" in patterns:
+            pattern_boost += 0.15
+        elif "市场过热" in patterns:
+            pattern_boost += 0.1
+        elif "市场超跌" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, max(0.0, base_confidence + pattern_boost))
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        return self.identify_patterns(data, **kwargs)
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - lookback_period: 回溯分析周期，默认60
+                - ma_periods: 均线周期列表，默认[20, 50, 200]
+                - signal_threshold: 信号阈值，默认70
+        """
+        self.lookback_period = kwargs.get('lookback_period', 60)
+        self.ma_periods = kwargs.get('ma_periods', [20, 50, 200])
+        self.signal_threshold = kwargs.get('signal_threshold', 70)
+
+    def _calculate_advance_decline_ratio(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算涨跌家数比率"""
+        dates = data.index.get_level_values(0).unique()
+        result = pd.DataFrame(index=dates)
+
+        for date in dates:
+            try:
+                day_data = data.loc[date]
+                if 'close' in day_data.columns and len(day_data) > 1:
+                    # 计算当日涨跌情况
+                    if len(day_data) > 1:
+                        prev_close = day_data['close'].shift(1)
+                        advances = (day_data['close'] > prev_close).sum()
+                        declines = (day_data['close'] < prev_close).sum()
+                        unchanged = (day_data['close'] == prev_close).sum()
+
+                        total = advances + declines
+                        if total > 0:
+                            ad_ratio = (advances - declines) / total
+                        else:
+                            ad_ratio = 0
+                    else:
+                        ad_ratio = 0
+                else:
+                    ad_ratio = 0
+
+                result.loc[date, 'ad_ratio'] = ad_ratio
+            except:
+                result.loc[date, 'ad_ratio'] = 0
+
+        # 计算AD线（累积）
+        result['ad_line'] = result['ad_ratio'].cumsum()
+        return result
+
+    def _calculate_new_highs_lows_ratio(self, data: pd.DataFrame, lookback_period: int) -> pd.DataFrame:
+        """计算新高新低比率"""
+        dates = data.index.get_level_values(0).unique()
+        result = pd.DataFrame(index=dates)
+
+        for i, date in enumerate(dates):
+            if i < lookback_period:
+                result.loc[date, 'new_highs_ratio'] = 0
+                result.loc[date, 'new_lows_ratio'] = 0
+                result.loc[date, 'hl_ratio'] = 1
+                continue
+
+            try:
+                # 获取当前日期和历史数据
+                current_data = data.loc[date]
+                historical_dates = dates[max(0, i-lookback_period):i]
+
+                new_highs = 0
+                new_lows = 0
+                total_stocks = len(current_data)
+
+                for stock in current_data.index:
+                    current_high = current_data.loc[stock, 'high']
+                    current_low = current_data.loc[stock, 'low']
+
+                    # 检查是否创新高或新低
+                    historical_highs = []
+                    historical_lows = []
+
+                    for hist_date in historical_dates:
+                        try:
+                            hist_data = data.loc[hist_date]
+                            if stock in hist_data.index:
+                                historical_highs.append(hist_data.loc[stock, 'high'])
+                                historical_lows.append(hist_data.loc[stock, 'low'])
+                        except:
+                            continue
+
+                    if historical_highs and current_high > max(historical_highs):
+                        new_highs += 1
+                    if historical_lows and current_low < min(historical_lows):
+                        new_lows += 1
+
+                if total_stocks > 0:
+                    result.loc[date, 'new_highs_ratio'] = new_highs / total_stocks
+                    result.loc[date, 'new_lows_ratio'] = new_lows / total_stocks
+
+                    if new_lows > 0:
+                        result.loc[date, 'hl_ratio'] = new_highs / new_lows
+                    else:
+                        result.loc[date, 'hl_ratio'] = new_highs if new_highs > 0 else 1
+                else:
+                    result.loc[date, 'new_highs_ratio'] = 0
+                    result.loc[date, 'new_lows_ratio'] = 0
+                    result.loc[date, 'hl_ratio'] = 1
+
+            except:
+                result.loc[date, 'new_highs_ratio'] = 0
+                result.loc[date, 'new_lows_ratio'] = 0
+                result.loc[date, 'hl_ratio'] = 1
+
+        return result
+
+    def _calculate_percentage_above_ma(self, data: pd.DataFrame, period: int) -> pd.Series:
+        """计算站上均线的股票比例"""
+        dates = data.index.get_level_values(0).unique()
+        result = pd.Series(index=dates, dtype=float)
+
+        for date in dates:
+            try:
+                day_data = data.loc[date]
+                if 'close' in day_data.columns and len(day_data) > 0:
+                    above_ma_count = 0
+                    total_count = 0
+
+                    for stock in day_data.index:
+                        # 获取该股票的历史数据计算均线
+                        stock_data = []
+                        for hist_date in dates:
+                            try:
+                                hist_day_data = data.loc[hist_date]
+                                if stock in hist_day_data.index:
+                                    stock_data.append(hist_day_data.loc[stock, 'close'])
+                            except:
+                                continue
+
+                        if len(stock_data) >= period:
+                            ma_value = np.mean(stock_data[-period:])
+                            current_price = day_data.loc[stock, 'close']
+
+                            if current_price > ma_value:
+                                above_ma_count += 1
+                            total_count += 1
+
+                    if total_count > 0:
+                        result[date] = above_ma_count / total_count
+                    else:
+                        result[date] = 0
+                else:
+                    result[date] = 0
+            except:
+                result[date] = 0
+
+        return result
+
+    def _calculate_sector_strength(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算板块强度"""
+        dates = data.index.get_level_values(0).unique()
+        result = pd.DataFrame(index=dates)
+
+        # 简化实现，返回默认值
+        result['strongest_sector'] = 'Technology'
+        result['weakest_sector'] = 'Energy'
+        result['sector_rotation'] = 0.5
+
+        return result
+
+    def _calculate_volume_breadth(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算成交量宽度"""
+        dates = data.index.get_level_values(0).unique()
+        result = pd.DataFrame(index=dates)
+
+        for date in dates:
+            try:
+                day_data = data.loc[date]
+                if 'volume' in day_data.columns and len(day_data) > 0:
+                    # 计算成交量变化
+                    volume_surge_count = 0
+                    volume_decline_count = 0
+                    total_count = len(day_data)
+
+                    # 简化计算：假设成交量放大和缩小的比例
+                    avg_volume = day_data['volume'].mean()
+                    volume_surge_count = (day_data['volume'] > avg_volume * 1.5).sum()
+                    volume_decline_count = (day_data['volume'] < avg_volume * 0.5).sum()
+
+                    if total_count > 0:
+                        result.loc[date, 'volume_surge_ratio'] = volume_surge_count / total_count
+                        result.loc[date, 'volume_decline_ratio'] = volume_decline_count / total_count
+                    else:
+                        result.loc[date, 'volume_surge_ratio'] = 0
+                        result.loc[date, 'volume_decline_ratio'] = 0
+                else:
+                    result.loc[date, 'volume_surge_ratio'] = 0
+                    result.loc[date, 'volume_decline_ratio'] = 0
+            except:
+                result.loc[date, 'volume_surge_ratio'] = 0
+                result.loc[date, 'volume_decline_ratio'] = 0
+
+        return result
+
+    def _calculate_momentum_breadth(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算动量宽度"""
+        dates = data.index.get_level_values(0).unique()
+        result = pd.DataFrame(index=dates)
+
+        for date in dates:
+            try:
+                day_data = data.loc[date]
+                if 'close' in day_data.columns and len(day_data) > 0:
+                    # 简化计算：基于价格变化计算动量
+                    positive_momentum = 0
+                    negative_momentum = 0
+                    total_count = len(day_data)
+
+                    # 假设有前一日数据进行比较
+                    for stock in day_data.index:
+                        current_price = day_data.loc[stock, 'close']
+                        # 简化：使用开盘价作为参考
+                        open_price = day_data.loc[stock, 'open']
+
+                        if current_price > open_price:
+                            positive_momentum += 1
+                        elif current_price < open_price:
+                            negative_momentum += 1
+
+                    if total_count > 0:
+                        result.loc[date, 'positive_ratio'] = positive_momentum / total_count
+                        result.loc[date, 'negative_ratio'] = negative_momentum / total_count
+                    else:
+                        result.loc[date, 'positive_ratio'] = 0
+                        result.loc[date, 'negative_ratio'] = 0
+                else:
+                    result.loc[date, 'positive_ratio'] = 0
+                    result.loc[date, 'negative_ratio'] = 0
+            except:
+                result.loc[date, 'positive_ratio'] = 0
+                result.loc[date, 'negative_ratio'] = 0
+
+        return result
+
+    def _calculate_market_relative_strength(self, data: pd.DataFrame, index_code: str) -> pd.Series:
+        """计算市场相对强度"""
+        dates = data.index.get_level_values(0).unique()
+        result = pd.Series(index=dates, dtype=float)
+
+        # 简化实现，返回默认值
+        result[:] = 1.0
+
+        return result
+
+    def _calculate_breadth_indicator(self, result: pd.DataFrame) -> pd.Series:
+        """计算综合市场宽度指标"""
+        breadth_indicator = pd.Series(index=result.index, dtype=float)
+
+        for i in range(len(result)):
+            score = 50.0  # 基础分数
+
+            # AD比率贡献
+            if 'ad_ratio' in result.columns:
+                ad_ratio = result['ad_ratio'].iloc[i]
+                score += ad_ratio * 25  # -1到1映射到25-75
+
+            # 站上均线比例贡献
+            if 'above_ma50' in result.columns:
+                above_ma50 = result['above_ma50'].iloc[i]
+                score += (above_ma50 - 0.5) * 50  # 0-1映射到25-75
+
+            # 新高新低比率贡献
+            if 'hl_ratio' in result.columns:
+                hl_ratio = result['hl_ratio'].iloc[i]
+                if hl_ratio > 1:
+                    score += min(25, (hl_ratio - 1) * 10)
+                else:
+                    score -= min(25, (1 - hl_ratio) * 10)
+
+            breadth_indicator.iloc[i] = max(0, min(100, score))
+
+        return breadth_indicator
+
+    def _classify_market_state(self, result: pd.DataFrame) -> pd.Series:
+        """分类市场状态"""
+        market_state = pd.Series(index=result.index, dtype=str)
+
+        for i in range(len(result)):
+            if 'market_breadth_indicator' in result.columns:
+                breadth_score = result['market_breadth_indicator'].iloc[i]
+
+                if breadth_score > 75:
+                    market_state.iloc[i] = 'bull'
+                elif breadth_score < 25:
+                    market_state.iloc[i] = 'bear'
+                elif breadth_score > 85:
+                    market_state.iloc[i] = 'top'
+                elif breadth_score < 15:
+                    market_state.iloc[i] = 'bottom'
+                else:
+                    market_state.iloc[i] = 'sideways'
+            else:
+                market_state.iloc[i] = 'sideways'
+
+        return market_state
+
+    def _is_breadth_divergence(self, result: pd.DataFrame, index: int, bearish: bool = True) -> bool:
+        """检测宽度背离"""
+        if index < 5 or 'market_breadth_indicator' not in result.columns:
+            return False
+
+        # 简化实现
+        current_breadth = result['market_breadth_indicator'].iloc[index]
+        prev_breadth = result['market_breadth_indicator'].iloc[index-1]
+
+        if bearish:
+            return current_breadth < prev_breadth - 5
+        else:
+            return current_breadth > prev_breadth + 5
+
+    def _is_breadth_extreme(self, result: pd.DataFrame, index: int, high: bool = True) -> bool:
+        """检测宽度极值"""
+        if 'market_breadth_indicator' not in result.columns:
+            return False
+
+        current_breadth = result['market_breadth_indicator'].iloc[index]
+
+        if high:
+            return current_breadth > 85
+        else:
+            return current_breadth < 15
+
+    def _is_breadth_expansion(self, result: pd.DataFrame, index: int) -> bool:
+        """检测宽度扩展"""
+        if index < 3 or 'market_breadth_indicator' not in result.columns:
+            return False
+
+        current_breadth = result['market_breadth_indicator'].iloc[index]
+        prev_breadth = result['market_breadth_indicator'].iloc[index-3]
+
+        return current_breadth > prev_breadth + 15
+
+    def _is_breadth_contraction(self, result: pd.DataFrame, index: int) -> bool:
+        """检测宽度收缩"""
+        if index < 3 or 'market_breadth_indicator' not in result.columns:
+            return False
+
+        current_breadth = result['market_breadth_indicator'].iloc[index]
+        prev_breadth = result['market_breadth_indicator'].iloc[index-3]
+
+        return current_breadth < prev_breadth - 15
+
+    def _is_market_overheated(self, result: pd.DataFrame, index: int) -> bool:
+        """检测市场过热"""
+        if 'market_breadth_indicator' not in result.columns:
+            return False
+
+        current_breadth = result['market_breadth_indicator'].iloc[index]
+        return current_breadth > 90
+
+    def _is_market_oversold(self, result: pd.DataFrame, index: int) -> bool:
+        """检测市场超跌"""
+        if 'market_breadth_indicator' not in result.columns:
+            return False
+
+        current_breadth = result['market_breadth_indicator'].iloc[index]
+        return current_breadth < 10

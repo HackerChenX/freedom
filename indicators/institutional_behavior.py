@@ -46,18 +46,97 @@ class InstitutionalBehavior(BaseIndicator):
         if volume_quantile is not None:
             self.volume_quantile = volume_quantile
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        主力行为模式的形态识别（默认不实现）
-        
+        获取InstitutionalBehavior相关形态
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
-            list: 空列表
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        return []
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 1. 机构阶段形态
+        if 'inst_phase' in self._result.columns:
+            phase = self._result['inst_phase']
+
+            # 各阶段形态
+            patterns['INST_ABSORPTION_PHASE'] = phase == "吸筹期"
+            patterns['INST_CONTROL_PHASE'] = phase == "控盘期"
+            patterns['INST_RALLY_PHASE'] = phase == "拉升期"
+            patterns['INST_DISTRIBUTION_PHASE'] = phase == "出货期"
+            patterns['INST_WAITING_PHASE'] = phase == "观望期"
+
+        # 2. 行为模式形态
+        if 'behavior_pattern' in self._result.columns:
+            behavior = self._result['behavior_pattern']
+
+            # 吸筹形态
+            patterns['INST_GENTLE_ABSORPTION'] = behavior == "温和吸筹"
+            patterns['INST_STRONG_ABSORPTION'] = behavior == "强势吸筹"
+            # 操作形态
+            patterns['INST_WASHOUT'] = behavior == "洗盘"
+            patterns['INST_RALLY'] = behavior == "拉升"
+            patterns['INST_ACCELERATED_RALLY'] = behavior == "加速拉升"
+            # 出货形态
+            patterns['INST_DISTRIBUTION'] = behavior == "出货"
+            patterns['INST_CONCENTRATED_DISTRIBUTION'] = behavior == "集中出货"
+
+        # 3. 阶段转换形态
+        if 'phase_change' in self._result.columns:
+            phase_change = self._result['phase_change']
+
+            # 重要转换点
+            patterns['INST_ABSORPTION_COMPLETE'] = phase_change == "吸筹完成"
+            patterns['INST_RALLY_START'] = phase_change == "开始拉升"
+            patterns['INST_DISTRIBUTION_START'] = phase_change == "开始出货"
+            patterns['INST_NEW_CYCLE_START'] = phase_change == "新一轮开始"
+
+        # 4. 行为强度形态
+        if 'behavior_intensity' in self._result.columns:
+            intensity = self._result['behavior_intensity']
+
+            # 强度分级
+            patterns['INST_WEAK_ACTIVITY'] = intensity < 2
+            patterns['INST_MODERATE_ACTIVITY'] = (intensity >= 2) & (intensity < 5)
+            patterns['INST_STRONG_ACTIVITY'] = (intensity >= 5) & (intensity < 8)
+            patterns['INST_EXTREME_ACTIVITY'] = intensity >= 8
+
+        # 5. 集中度形态
+        if 'inst_concentration' in self._result.columns:
+            concentration = self._result['inst_concentration']
+
+            # 集中度形态
+            patterns['INST_HIGH_CONCENTRATION'] = concentration > 0.7
+            patterns['INST_MODERATE_CONCENTRATION'] = (concentration >= 0.4) & (concentration <= 0.7)
+            patterns['INST_LOW_CONCENTRATION'] = concentration < 0.4
+
+            # 集中度变化
+            conc_change = concentration.diff()
+            patterns['INST_CONCENTRATION_RISING'] = conc_change > 0.1
+            patterns['INST_CONCENTRATION_FALLING'] = conc_change < -0.1
+
+        # 6. 获利盘形态
+        if 'inst_profit_ratio' in self._result.columns:
+            profit_ratio = self._result['inst_profit_ratio']
+
+            # 获利盘形态
+            patterns['INST_LOW_PROFIT'] = profit_ratio < 0.3
+            patterns['INST_MODERATE_PROFIT'] = (profit_ratio >= 0.3) & (profit_ratio <= 0.7)
+            patterns['INST_HIGH_PROFIT'] = profit_ratio > 0.7
+
+        return patterns
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -70,30 +149,120 @@ class InstitutionalBehavior(BaseIndicator):
             pd.DataFrame: 计算结果，包含主力行为模式相关指标
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
+        required_columns = ["open", "high", "low", "close", "volume"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 初始化结果数据框
         result = data.copy()
         
         # 计算筹码分布相关指标
-        chip_result = self.chip_distribution.identify_institutional_chips(data)
-        
-        # 添加筹码分布的主要指标到结果中
-        for col in ["inst_cost", "inst_profit_ratio", "inst_concentration", 
-                    "inst_activity_score", "inst_phase"]:
-            if col in chip_result.columns:
-                result[col] = chip_result[col]
+        try:
+            chip_result = self.chip_distribution.calculate(data)
+
+            # 添加筹码分布的主要指标到结果中（使用简化的映射）
+            if 'chip_concentration' in chip_result.columns:
+                result['inst_concentration'] = chip_result['chip_concentration']
+            if 'profit_ratio' in chip_result.columns:
+                result['inst_profit_ratio'] = chip_result['profit_ratio']
+            if 'avg_cost' in chip_result.columns:
+                result['inst_cost'] = chip_result['avg_cost']
+
+            # 计算活跃度评分（基于成交量和价格波动）
+            volume_score = (data['volume'] / data['volume'].rolling(20).mean()).fillna(1.0)
+            price_volatility = data['close'].rolling(5).std() / data['close'].rolling(5).mean()
+            result['inst_activity_score'] = (volume_score * 10 + price_volatility * 100).fillna(0)
+
+            # 简化的阶段判断
+            result['inst_phase'] = self._determine_institutional_phase(data, result)
+
+        except Exception as e:
+            logger.error(f"计算筹码分布指标时出错: {e}")
+            # 使用默认值
+            result['inst_concentration'] = 0.5
+            result['inst_profit_ratio'] = 0.5
+            result['inst_cost'] = data['close']
+            result['inst_activity_score'] = 10.0
+            result['inst_phase'] = "观望期"
         
         # 计算行为模式识别指标
         self._calculate_behavior_patterns(data, result)
-        
+
+        # 确保behavior_pattern列存在
+        if 'behavior_pattern' not in result.columns:
+            result['behavior_pattern'] = "未知"
+
         # 计算行为模式变化指标
         self._calculate_behavior_transitions(result)
-        
+
+        # 确保phase_change列存在
+        if 'phase_change' not in result.columns:
+            result['phase_change'] = "无变化"
+
         # 分析主力行为强度
         self._analyze_behavior_intensity(data, result)
+
+        # 确保behavior_intensity和behavior_description列存在
+        if 'behavior_intensity' not in result.columns:
+            result['behavior_intensity'] = 0.0
+        if 'behavior_description' not in result.columns:
+            result['behavior_description'] = ""
         
         return result
+
+    def _determine_institutional_phase(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.Series:
+        """
+        确定机构投资阶段
+
+        Args:
+            data: 原始数据
+            result: 结果数据框
+
+        Returns:
+            pd.Series: 机构投资阶段
+        """
+        phase = pd.Series("观望期", index=data.index)
+
+        if len(data) < 20:
+            return phase
+
+        # 获取指标
+        concentration = result.get('inst_concentration', pd.Series(0.5, index=data.index))
+        profit_ratio = result.get('inst_profit_ratio', pd.Series(0.5, index=data.index))
+        activity_score = result.get('inst_activity_score', pd.Series(10.0, index=data.index))
+
+        # 计算价格趋势
+        price_ma20 = data['close'].rolling(20).mean()
+        price_trend = (data['close'] / price_ma20 - 1).fillna(0)
+
+        # 计算成交量趋势
+        volume_ma20 = data['volume'].rolling(20).mean()
+        volume_trend = (data['volume'] / volume_ma20 - 1).fillna(0)
+
+        for i in range(20, len(data)):
+            conc = concentration.iloc[i]
+            profit = profit_ratio.iloc[i]
+            activity = activity_score.iloc[i]
+            p_trend = price_trend.iloc[i]
+            v_trend = volume_trend.iloc[i]
+
+            # 吸筹期：高集中度，低获利盘，高活跃度
+            if conc > 0.6 and profit < 0.3 and activity > 15:
+                phase.iloc[i] = "吸筹期"
+            # 控盘期：高集中度，中等获利盘，中等活跃度
+            elif conc > 0.5 and 0.3 <= profit <= 0.6 and activity > 10:
+                phase.iloc[i] = "控盘期"
+            # 拉升期：中等集中度，中高获利盘，高活跃度，价格上涨
+            elif conc > 0.4 and profit > 0.5 and activity > 20 and p_trend > 0.05:
+                phase.iloc[i] = "拉升期"
+            # 出货期：低集中度，高获利盘，高活跃度
+            elif conc < 0.4 and profit > 0.7 and activity > 15:
+                phase.iloc[i] = "出货期"
+            else:
+                phase.iloc[i] = "观望期"
+
+        return phase
     
     def _calculate_behavior_patterns(self, data: pd.DataFrame, result: pd.DataFrame) -> None:
         """
@@ -255,7 +424,7 @@ class InstitutionalBehavior(BaseIndicator):
             return
             
         # 初始化行为强度评分
-        behavior_intensity = pd.Series(0, index=result.index)
+        behavior_intensity = pd.Series(0.0, index=result.index)
         
         # 提取相关数据
         activity_score = result["inst_activity_score"].values
@@ -666,4 +835,282 @@ class InstitutionalBehavior(BaseIndicator):
                 in_absorption = False
                 start_idx = -1
         
-        return cycles 
+        return cycles
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算InstitutionalBehavior指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有机构阶段数据
+            if 'inst_phase' in self._result.columns:
+                phase_values = self._result['inst_phase'].dropna()
+                if len(phase_values) > 0:
+                    # 非观望期的比例越高，置信度越高
+                    active_ratio = len(phase_values[phase_values != "观望期"]) / len(phase_values)
+                    confidence += active_ratio * 0.1
+
+            # 检查行为模式数据质量
+            if 'behavior_pattern' in self._result.columns:
+                pattern_values = self._result['behavior_pattern'].dropna()
+                if len(pattern_values) > 0:
+                    # 明确行为模式的比例
+                    clear_pattern_ratio = len(pattern_values[pattern_values != "未知"]) / len(pattern_values)
+                    confidence += clear_pattern_ratio * 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查InstitutionalBehavior形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 60:
+            confidence += 0.1  # 长期数据更可靠
+        elif len(score) >= 30:
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册InstitutionalBehavior指标的形态到全局形态注册表
+        """
+        # 注册机构阶段形态
+        self.register_pattern_to_registry(
+            pattern_id="INST_ABSORPTION_PHASE",
+            display_name="机构吸筹期",
+            description="机构处于吸筹阶段，通常是买入良机",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_CONTROL_PHASE",
+            display_name="机构控盘期",
+            description="机构处于控盘阶段，价格相对稳定",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=5.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_RALLY_PHASE",
+            display_name="机构拉升期",
+            description="机构处于拉升阶段，价格快速上涨",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_DISTRIBUTION_PHASE",
+            display_name="机构出货期",
+            description="机构处于出货阶段，存在下跌风险",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册行为模式形态
+        self.register_pattern_to_registry(
+            pattern_id="INST_STRONG_ABSORPTION",
+            display_name="机构强势吸筹",
+            description="机构强势吸筹，买入信号强烈",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_WASHOUT",
+            display_name="机构洗盘",
+            description="机构洗盘操作，短期调整后可能继续上涨",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_ACCELERATED_RALLY",
+            display_name="机构加速拉升",
+            description="机构加速拉升，但需警惕顶部风险",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_CONCENTRATED_DISTRIBUTION",
+            display_name="机构集中出货",
+            description="机构集中出货，卖出信号强烈",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0
+        )
+
+        # 注册转换形态
+        self.register_pattern_to_registry(
+            pattern_id="INST_ABSORPTION_COMPLETE",
+            display_name="吸筹完成",
+            description="机构吸筹完成，即将进入拉升阶段",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_RALLY_START",
+            display_name="开始拉升",
+            description="机构开始拉升，买入时机",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="INST_DISTRIBUTION_START",
+            display_name="开始出货",
+            description="机构开始出货，卖出时机",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册活动强度形态
+        self.register_pattern_to_registry(
+            pattern_id="INST_EXTREME_ACTIVITY",
+            display_name="机构极强活动",
+            description="机构活动极其活跃，重要变化即将发生",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成InstitutionalBehavior交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 初始化信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 基于机构阶段生成信号
+        if 'inst_phase' in self._result.columns:
+            phase = self._result['inst_phase']
+
+            # 买入信号
+            buy_signal |= (phase == "吸筹期")
+            buy_signal |= (phase == "控盘期")
+
+            # 卖出信号
+            sell_signal |= (phase == "出货期")
+
+        # 基于阶段转换生成信号
+        if 'phase_change' in self._result.columns:
+            phase_change = self._result['phase_change']
+
+            # 强买入信号
+            strong_buy = (phase_change == "吸筹完成") | (phase_change == "开始拉升")
+            buy_signal |= strong_buy
+            signal_strength[strong_buy] = 0.9
+
+            # 强卖出信号
+            strong_sell = (phase_change == "开始出货")
+            sell_signal |= strong_sell
+            signal_strength[strong_sell] = -0.9
+
+        # 基于行为模式调整信号强度
+        if 'behavior_pattern' in self._result.columns:
+            behavior = self._result['behavior_pattern']
+
+            # 增强买入信号
+            signal_strength[(behavior == "强势吸筹") & buy_signal] = 0.8
+            signal_strength[(behavior == "温和吸筹") & buy_signal] = 0.6
+
+            # 增强卖出信号
+            signal_strength[(behavior == "集中出货") & sell_signal] = -0.8
+            signal_strength[(behavior == "出货") & sell_signal] = -0.6
+
+        # 基于行为强度调整信号
+        if 'behavior_intensity' in self._result.columns:
+            intensity = self._result['behavior_intensity']
+
+            # 高强度时增强信号
+            high_intensity = intensity > 5
+            signal_strength[high_intensity & buy_signal] *= 1.2
+            signal_strength[high_intensity & sell_signal] *= 1.2
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(-1, 1)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "INSTITUTIONALBEHAVIOR"

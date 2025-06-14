@@ -9,11 +9,11 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
-import talib
+from typing import Union, List, Dict, Optional, Tuple, Any
+# import talib  # 移除talib依赖
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
@@ -38,6 +38,19 @@ class WR(BaseIndicator):
         """
         super().__init__(name="WR", description="威廉指标，确认超买超卖")
         self.period = period
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算WR指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含WR指标的DataFrame
+        """
+        return self._calculate(data)
         
     def set_parameters(self, period: int = None):
         """
@@ -143,20 +156,20 @@ class WR(BaseIndicator):
         
         # 2. WR穿越关键位置评分
         # WR从超卖区上穿-80+25分
-        wr_cross_up_oversold = self.crossover(wr, -80)
+        wr_cross_up_oversold = crossover(wr, -80)
         score += wr_cross_up_oversold * 25
-        
+
         # WR从超买区下穿-20-25分
-        wr_cross_down_overbought = self.crossunder(wr, -20)
+        wr_cross_down_overbought = crossunder(wr, -20)
         score -= wr_cross_down_overbought * 25
-        
+
         # 3. 中线穿越评分
         # WR上穿-50+15分
-        wr_cross_up_middle = self.crossover(wr, -50)
+        wr_cross_up_middle = crossover(wr, -50)
         score += wr_cross_up_middle * 15
-        
+
         # WR下穿-50-15分
-        wr_cross_down_middle = self.crossunder(wr, -50)
+        wr_cross_down_middle = crossunder(wr, -50)
         score -= wr_cross_down_middle * 15
         
         # 4. WR背离评分
@@ -220,13 +233,13 @@ class WR(BaseIndicator):
             patterns.append("WR超买")
         
         # 2. 穿越形态
-        if self.crossover(recent_wr, -80).any():
+        if crossover(recent_wr, -80).any():
             patterns.append("WR上穿超卖线")
-        if self.crossunder(recent_wr, -20).any():
+        if crossunder(recent_wr, -20).any():
             patterns.append("WR下穿超买线")
-        if self.crossover(recent_wr, -50).any():
+        if crossover(recent_wr, -50).any():
             patterns.append("WR上穿中线")
-        if self.crossunder(recent_wr, -50).any():
+        if crossunder(recent_wr, -50).any():
             patterns.append("WR下穿中线")
         
         # 3. 背离形态
@@ -583,8 +596,243 @@ class WR(BaseIndicator):
         
         return signals
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取WR指标的技术形态
+        获取WR相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        return self.identify_patterns(data, **kwargs)
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None or 'wr' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取WR数据
+        wr = self._result['wr']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. WR超买超卖形态
+        patterns_df['WR_EXTREME_OVERSOLD'] = wr < -90
+        patterns_df['WR_OVERSOLD'] = (wr >= -90) & (wr < -80)
+        patterns_df['WR_NORMAL'] = (wr >= -80) & (wr <= -20)
+        patterns_df['WR_OVERBOUGHT'] = (wr > -20) & (wr <= -10)
+        patterns_df['WR_EXTREME_OVERBOUGHT'] = wr > -10
+
+        # 2. WR穿越形态
+        patterns_df['WR_CROSS_ABOVE_OVERSOLD'] = crossover(wr, -80)
+        patterns_df['WR_CROSS_BELOW_OVERBOUGHT'] = crossunder(wr, -20)
+        patterns_df['WR_CROSS_ABOVE_MID'] = crossover(wr, -50)
+        patterns_df['WR_CROSS_BELOW_MID'] = crossunder(wr, -50)
+
+        # 3. WR趋势形态
+        patterns_df['WR_RISING'] = wr > wr.shift(1)
+        patterns_df['WR_FALLING'] = wr < wr.shift(1)
+        patterns_df['WR_UPTREND'] = (
+            (wr > wr.shift(1)) &
+            (wr.shift(1) > wr.shift(2)) &
+            (wr.shift(2) > wr.shift(3))
+        )
+        patterns_df['WR_DOWNTREND'] = (
+            (wr < wr.shift(1)) &
+            (wr.shift(1) < wr.shift(2)) &
+            (wr.shift(2) < wr.shift(3))
+        )
+
+        # 4. WR钝化形态
+        patterns_df['WR_LOW_STAGNATION'] = wr.rolling(5).apply(lambda x: (x < -80).all(), raw=False)
+        patterns_df['WR_HIGH_STAGNATION'] = wr.rolling(5).apply(lambda x: (x > -20).all(), raw=False)
+
+        # 5. WR反转形态
+        # 从超卖区快速反转
+        wr_change_5 = wr - wr.shift(4)
+        patterns_df['WR_BULLISH_REVERSAL'] = (wr.shift(4) < -80) & (wr > -50) & (wr_change_5 > 20)
+        patterns_df['WR_BEARISH_REVERSAL'] = (wr.shift(4) > -20) & (wr < -50) & (wr_change_5 < -20)
+
+        return patterns_df
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算WR指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查WR形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册WR指标的形态到全局形态注册表
+        """
+        # 注册WR超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="WR_EXTREME_OVERSOLD",
+            display_name="WR极度超卖",
+            description="WR值低于-90，表明市场极度超卖，存在强烈反弹机会",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_OVERSOLD",
+            display_name="WR超卖",
+            description="WR值在-90到-80之间，表明市场超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_OVERBOUGHT",
+            display_name="WR超买",
+            description="WR值在-20到-10之间，表明市场超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_EXTREME_OVERBOUGHT",
+            display_name="WR极度超买",
+            description="WR值高于-10，表明市场极度超买，存在强烈回调风险",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册WR穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="WR_CROSS_ABOVE_OVERSOLD",
+            display_name="WR上穿超卖线",
+            description="WR从超卖区域向上突破-80线，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_CROSS_BELOW_OVERBOUGHT",
+            display_name="WR下穿超买线",
+            description="WR从超买区域向下突破-20线，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册WR反转形态
+        self.register_pattern_to_registry(
+            pattern_id="WR_BULLISH_REVERSAL",
+            display_name="WR超卖反转",
+            description="WR在超卖区见底回升，表明可能形成底部",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_BEARISH_REVERSAL",
+            display_name="WR超买反转",
+            description="WR在超买区触顶回落，表明可能形成顶部",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0
+        )

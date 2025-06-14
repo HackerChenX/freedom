@@ -570,4 +570,164 @@ class EnhancedMACD(BaseIndicator):
         return score
     
     def set_market_environment(self, market_env: str):
-        self.market_env = market_env 
+        self.market_env = market_env
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典，包含name, description, strength等
+        """
+        pattern_info_map = {
+            'golden_cross': {
+                'name': 'MACD金叉',
+                'description': 'DIF线上穿DEA线，表示买入信号',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'death_cross': {
+                'name': 'MACD死叉',
+                'description': 'DIF线下穿DEA线，表示卖出信号',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'bullish_divergence': {
+                'name': 'MACD牛市背离',
+                'description': '价格创新低但MACD未创新低，表示看涨信号',
+                'strength': 'very_strong',
+                'type': 'bullish'
+            },
+            'bearish_divergence': {
+                'name': 'MACD熊市背离',
+                'description': '价格创新高但MACD未创新高，表示看跌信号',
+                'strength': 'very_strong',
+                'type': 'bearish'
+            },
+            'hidden_bullish_divergence': {
+                'name': 'MACD隐藏牛市背离',
+                'description': '价格未创新低但MACD创新低，表示隐藏看涨信号',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'hidden_bearish_divergence': {
+                'name': 'MACD隐藏熊市背离',
+                'description': '价格未创新高但MACD创新高，表示隐藏看跌信号',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'MACD_turn_positive': {
+                'name': 'MACD转正',
+                'description': 'MACD柱状图由负转正，表示上升动能',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'MACD_turn_negative': {
+                'name': 'MACD转负',
+                'description': 'MACD柱状图由正转负，表示下降动能',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'DIF_cross_zero_up': {
+                'name': 'DIF零轴向上穿越',
+                'description': 'DIF线从下方穿越零轴，表明由空头转为多头',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'DIF_cross_zero_down': {
+                'name': 'DIF零轴向下穿越',
+                'description': 'DIF线从上方穿越零轴，表明由多头转为空头',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'dual_macd_agree_bullish': {
+                'name': '双MACD看涨共振',
+                'description': '主次MACD同时出现金叉，表示强烈看涨信号',
+                'strength': 'very_strong',
+                'type': 'bullish'
+            },
+            'dual_macd_agree_bearish': {
+                'name': '双MACD看跌共振',
+                'description': '主次MACD同时出现死叉，表示强烈看跌信号',
+                'strength': 'very_strong',
+                'type': 'bearish'
+            },
+            'dual_macd_both_positive': {
+                'name': '双MACD同时为正',
+                'description': '主次MACD的DIF线同时在零轴以上，表示强势上涨',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'dual_macd_both_negative': {
+                'name': '双MACD同时为负',
+                'description': '主次MACD的DIF线同时在零轴以下，表示强势下跌',
+                'strength': 'strong',
+                'type': 'bearish'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'EnhancedMACD形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedMACD指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedMACD形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))

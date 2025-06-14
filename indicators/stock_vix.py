@@ -15,7 +15,7 @@ from scipy import stats
 import math
 
 from indicators.base_indicator import BaseIndicator
-from indicators.atr import ATR
+# from indicators.atr import ATR  # 暂时注释掉，避免talib依赖
 from utils.logger import get_logger
 
 # 静默警告
@@ -57,7 +57,7 @@ class StockVIX(BaseIndicator):
         
         super().__init__(name="StockVIX", description="个股VIX波动率指数")
         self._parameters = default_params
-        self.atr = ATR()
+        # self.atr = ATR()  # 暂时注释掉，避免talib依赖
     
     def set_parameters(self, **kwargs):
         """
@@ -70,18 +70,97 @@ class StockVIX(BaseIndicator):
             if key in self._parameters:
                 self._parameters[key] = value
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        个股VIX指标的形态识别（默认不实现）
-        
+        获取StockVIX相关形态
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
-            list: 空列表
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        return []
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 1. 波动率区域形态
+        if 'volatility_zone' in self._result.columns:
+            zone = self._result['volatility_zone']
+
+            # 各波动区域形态
+            patterns['VIX_VERY_LOW_VOLATILITY'] = zone == '极低波动'
+            patterns['VIX_LOW_VOLATILITY'] = zone == '低波动'
+            patterns['VIX_NORMAL_VOLATILITY'] = zone == '正常波动'
+            patterns['VIX_HIGH_VOLATILITY'] = zone == '高波动'
+            patterns['VIX_VERY_HIGH_VOLATILITY'] = zone == '极高波动'
+
+        # 2. 波动率趋势形态
+        if 'volatility_trend' in self._result.columns:
+            trend = self._result['volatility_trend']
+
+            # 趋势形态
+            patterns['VIX_UPTREND'] = trend == 1
+            patterns['VIX_DOWNTREND'] = trend == -1
+            patterns['VIX_SIDEWAYS'] = trend == 0
+
+        # 3. 异常波动形态
+        if 'volatility_anomaly' in self._result.columns:
+            anomaly = self._result['volatility_anomaly']
+
+            # 异常形态
+            patterns['VIX_ANOMALY_SPIKE'] = anomaly == 1
+            patterns['VIX_ANOMALY_DROP'] = anomaly == -1
+            patterns['VIX_NORMAL'] = anomaly == 0
+
+        # 4. 波动率百分位形态
+        if 'vix_percentile' in self._result.columns:
+            percentile = self._result['vix_percentile']
+
+            # 百分位形态
+            patterns['VIX_EXTREME_LOW'] = percentile < 10
+            patterns['VIX_LOW_PERCENTILE'] = (percentile >= 10) & (percentile < 25)
+            patterns['VIX_MEDIUM_PERCENTILE'] = (percentile >= 25) & (percentile < 75)
+            patterns['VIX_HIGH_PERCENTILE'] = (percentile >= 75) & (percentile < 90)
+            patterns['VIX_EXTREME_HIGH'] = percentile >= 90
+
+        # 5. 波动率强度形态
+        if 'volatility_strength' in self._result.columns:
+            strength = self._result['volatility_strength']
+
+            # 强度形态
+            patterns['VIX_WEAK_STRENGTH'] = strength < 25
+            patterns['VIX_MODERATE_STRENGTH'] = (strength >= 25) & (strength < 75)
+            patterns['VIX_STRONG_STRENGTH'] = strength >= 75
+
+        # 6. VIX值形态
+        if 'stock_vix' in self._result.columns:
+            vix = self._result['stock_vix']
+
+            # VIX变化形态
+            vix_change = vix.diff()
+            patterns['VIX_RISING'] = vix_change > 0
+            patterns['VIX_FALLING'] = vix_change < 0
+
+            # VIX突破形态
+            vix_ma20 = vix.rolling(20).mean()
+            patterns['VIX_ABOVE_MA20'] = vix > vix_ma20
+            patterns['VIX_BELOW_MA20'] = vix < vix_ma20
+
+            # VIX极值形态
+            vix_rolling_max = vix.rolling(60).max()
+            vix_rolling_min = vix.rolling(60).min()
+            patterns['VIX_NEAR_HIGH'] = vix > vix_rolling_max * 0.9
+            patterns['VIX_NEAR_LOW'] = vix < vix_rolling_min * 1.1
+
+        return patterns
     
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -128,10 +207,18 @@ class StockVIX(BaseIndicator):
             log_returns, self._parameters['garch_window']
         ) * 100  # 转为百分比
         
-        # 6. ATR相对波动率
-        atr_result = self.atr.calculate(df)
-        if 'ATR' in atr_result.columns:
-            result['atr_volatility'] = (atr_result['ATR'] / df['close']) * 100  # 相对ATR，转为百分比
+        # 6. ATR相对波动率（简化实现）
+        # atr_result = self.atr.calculate(df)
+        # if 'ATR' in atr_result.columns:
+        #     result['atr_volatility'] = (atr_result['ATR'] / df['close']) * 100  # 相对ATR，转为百分比
+
+        # 简化的ATR计算
+        tr1 = df['high'] - df['low']
+        tr2 = abs(df['high'] - df['close'].shift(1))
+        tr3 = abs(df['low'] - df['close'].shift(1))
+        true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        atr = true_range.rolling(window=14).mean()
+        result['atr_volatility'] = (atr / df['close']) * 100  # 相对ATR，转为百分比
         
         # 7. 基于各种波动率指标的综合VIX指数
         result['stock_vix'] = self._calculate_composite_vix(result)
@@ -517,4 +604,181 @@ class StockVIX(BaseIndicator):
         # 在这里实现指标特定的评分逻辑
         # 此处提供默认实现
     
-        return score 
+        return score
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算StockVIX指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有VIX数据
+            if 'stock_vix' in self._result.columns:
+                vix_values = self._result['stock_vix'].dropna()
+                if len(vix_values) > 0:
+                    # VIX数据越完整，置信度越高
+                    data_completeness = len(vix_values) / len(self._result)
+                    confidence += data_completeness * 0.1
+
+            # 检查波动率指标数量
+            vol_indicators = ['returns_volatility', 'parkinson_volatility', 'garman_klass_volatility',
+                             'ewma_volatility', 'garch_volatility']
+            available_indicators = sum(1 for col in vol_indicators if col in self._result.columns)
+            confidence += (available_indicators / len(vol_indicators)) * 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查StockVIX形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 252:  # 一年数据
+            confidence += 0.1
+        elif len(score) >= 60:  # 两个月数据
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册StockVIX指标的形态到全局形态注册表
+        """
+        # 注册波动率区域形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_VERY_LOW_VOLATILITY",
+            display_name="极低波动",
+            description="VIX处于极低水平，市场恐慌情绪极低，可能是买入机会",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VIX_VERY_HIGH_VOLATILITY",
+            display_name="极高波动",
+            description="VIX处于极高水平，市场恐慌情绪极高，存在超跌反弹机会",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=0.0
+        )
+
+        # 注册异常波动形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_ANOMALY_SPIKE",
+            display_name="VIX异常飙升",
+            description="VIX异常飙升，市场恐慌情绪爆发，可能是短期底部信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VIX_ANOMALY_DROP",
+            display_name="VIX异常下跌",
+            description="VIX异常下跌，市场过度乐观，需警惕风险",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_UPTREND",
+            display_name="VIX上升趋势",
+            description="VIX处于上升趋势，市场恐慌情绪增加",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VIX_DOWNTREND",
+            display_name="VIX下降趋势",
+            description="VIX处于下降趋势，市场恐慌情绪减少",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册百分位形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_EXTREME_LOW",
+            display_name="VIX极低百分位",
+            description="VIX处于历史极低百分位，市场可能过度乐观",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-5.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VIX_EXTREME_HIGH",
+            display_name="VIX极高百分位",
+            description="VIX处于历史极高百分位，市场可能过度悲观",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        # 注册VIX位置形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_NEAR_HIGH",
+            display_name="VIX接近高点",
+            description="VIX接近近期高点，恐慌情绪接近峰值",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VIX_NEAR_LOW",
+            display_name="VIX接近低点",
+            description="VIX接近近期低点，市场情绪过于乐观",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-5.0
+        )
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "STOCKVIX"

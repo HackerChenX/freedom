@@ -43,7 +43,8 @@ class ZXMDailyMACD(BaseIndicator):
         xg:MACD<0.9
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -84,20 +85,238 @@ class ZXMDailyMACD(BaseIndicator):
         
         # 初始化评分为基础分50分（中性）
         score = pd.Series(50, index=data.index)
-        
-        # MACD为正值加分
-        score[result["MACDPositive"]] += 15
-        
-        # MACD上升趋势加分
-        score[result["MACDRising"]] += 15
-        
-        # 买点满足额外加分
-        score[result["BuyPoint"]] += 20
+
+        # 主要信号评分规则
+        # 1. MACD小于0.9的买点信号：+30分
+        score[result["XG"]] += 30
+
+        # 2. MACD为正值加分
+        macd_positive = result["MACD"] > 0
+        score[macd_positive] += 15
+
+        # 3. MACD上升趋势加分
+        macd_rising = result["MACD"] > result["MACD"].shift(1)
+        score[macd_rising] += 15
+
+        # 4. DIFF和DEA都为正值且DIFF>DEA（多头排列）
+        bullish_alignment = (result["DIFF"] > 0) & (result["DEA"] > 0) & (result["DIFF"] > result["DEA"])
+        score[bullish_alignment] += 10
+
+        # 5. MACD金叉信号
+        golden_cross = (result["DIFF"] > result["DEA"]) & (result["DIFF"].shift(1) <= result["DEA"].shift(1))
+        score[golden_cross] += 20
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
         
         return score
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM日线MACD指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["XG"]:
+                patterns.append("日线MACD买点信号")
+
+            # MACD值形态判断
+            macd_value = last_row["MACD"]
+            if macd_value > 0:
+                patterns.append("日线MACD为正值")
+            else:
+                patterns.append("日线MACD为负值")
+
+            # MACD趋势判断
+            if len(result) > 1:
+                prev_macd = result["MACD"].iloc[-2]
+                if macd_value > prev_macd:
+                    patterns.append("日线MACD上升趋势")
+                elif macd_value < prev_macd:
+                    patterns.append("日线MACD下降趋势")
+
+            # DIFF和DEA关系判断
+            diff_value = last_row["DIFF"]
+            dea_value = last_row["DEA"]
+
+            if diff_value > dea_value:
+                patterns.append("日线MACD多头排列")
+                # 检查是否为金叉
+                if len(result) > 1:
+                    prev_diff = result["DIFF"].iloc[-2]
+                    prev_dea = result["DEA"].iloc[-2]
+                    if prev_diff <= prev_dea:
+                        patterns.append("日线MACD金叉形成")
+            else:
+                patterns.append("日线MACD空头排列")
+                # 检查是否为死叉
+                if len(result) > 1:
+                    prev_diff = result["DIFF"].iloc[-2]
+                    prev_dea = result["DEA"].iloc[-2]
+                    if prev_diff >= prev_dea:
+                        patterns.append("日线MACD死叉形成")
+
+            # MACD值区间判断
+            if abs(macd_value) < 0.5:
+                patterns.append("日线MACD接近零轴")
+            elif macd_value < -2:
+                patterns.append("日线MACD严重超卖")
+            elif macd_value > 2:
+                patterns.append("日线MACD严重超买")
+
+        return patterns
+
+    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成标准化的信号输出
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含标准化信号的DataFrame
+        """
+        # 计算指标和评分
+        result = self.calculate(data)
+        score = self.calculate_raw_score(data, **kwargs)
+
+        # 初始化信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+
+        # 设置买卖信号
+        signals['buy_signal'] = result["XG"]
+        signals['sell_signal'] = ~result["XG"]
+        signals['neutral_signal'] = False
+
+        # 设置趋势
+        signals['trend'] = 0  # 默认中性
+        signals.loc[result["MACD"] > 0, 'trend'] = 1  # MACD为正看涨
+        signals.loc[result["MACD"] < 0, 'trend'] = -1  # MACD为负看跌
+
+        # 设置评分
+        signals['score'] = score
+
+        # 设置信号类型
+        signals['signal_type'] = 'neutral'
+        signals.loc[result["XG"], 'signal_type'] = 'buy_point'
+
+        # 设置信号描述
+        signals['signal_desc'] = ''
+        for i in signals.index:
+            if result.loc[i, "XG"]:
+                signals.loc[i, 'signal_desc'] = f"日线MACD买点信号，MACD值{result.loc[i, 'MACD']:.3f}"
+            else:
+                signals.loc[i, 'signal_desc'] = f"日线MACD非买点，MACD值{result.loc[i, 'MACD']:.3f}"
+
+        return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "日线MACD买点信号" in patterns:
+            pattern_boost += 0.2
+        if "日线MACD金叉形成" in patterns:
+            pattern_boost += 0.15
+        if "日线MACD多头排列" in patterns:
+            pattern_boost += 0.1
+        if "日线MACD上升趋势" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["日线MACD买点信号"] = result["XG"]
+        patterns_df["日线MACD为正值"] = result["MACD"] > 0
+        patterns_df["日线MACD为负值"] = result["MACD"] < 0
+        patterns_df["日线MACD上升趋势"] = result["MACD"] > result["MACD"].shift(1)
+        patterns_df["日线MACD下降趋势"] = result["MACD"] < result["MACD"].shift(1)
+
+        # DIFF和DEA关系形态
+        patterns_df["日线MACD多头排列"] = result["DIFF"] > result["DEA"]
+        patterns_df["日线MACD空头排列"] = result["DIFF"] < result["DEA"]
+
+        # 金叉死叉形态
+        diff_cross_above_dea = (result["DIFF"] > result["DEA"]) & (result["DIFF"].shift(1) <= result["DEA"].shift(1))
+        diff_cross_below_dea = (result["DIFF"] < result["DEA"]) & (result["DIFF"].shift(1) >= result["DEA"].shift(1))
+
+        patterns_df["日线MACD金叉形成"] = diff_cross_above_dea
+        patterns_df["日线MACD死叉形成"] = diff_cross_below_dea
+
+        # MACD值区间形态
+        patterns_df["日线MACD接近零轴"] = abs(result["MACD"]) < 0.5
+        patterns_df["日线MACD严重超卖"] = result["MACD"] < -2
+        patterns_df["日线MACD严重超买"] = result["MACD"] > 2
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - fast_period: 快线周期，默认12
+                - slow_period: 慢线周期，默认26
+                - signal_period: 信号线周期，默认9
+                - threshold: MACD阈值，默认0.9
+        """
+        self.fast_period = kwargs.get('fast_period', 12)
+        self.slow_period = kwargs.get('slow_period', 26)
+        self.signal_period = kwargs.get('signal_period', 9)
+        self.threshold = kwargs.get('threshold', 0.9)
 
 
 class ZXMTurnover(BaseIndicator):
@@ -127,7 +346,8 @@ class ZXMTurnover(BaseIndicator):
         xg:换手;
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["turnover_rate"])
+        if 'turnover_rate' not in data.columns:
+            raise ValueError("数据缺少必需的'turnover_rate'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -160,20 +380,176 @@ class ZXMTurnover(BaseIndicator):
         
         # 初始化评分为基础分50分（中性）
         score = pd.Series(50, index=data.index)
-        
-        # 换手率活跃加分
-        score[result["ActiveSignal"]] += 15
-        
-        # 换手率相对活跃加分
-        score[result["RelativeActiveSignal"]] += 10
-        
-        # 同时满足两个条件额外加分
-        score[result["ActiveSignal"] & result["RelativeActiveSignal"]] += 15
+
+        # 主要信号评分规则
+        # 1. 换手率大于0.7%的买点信号：+30分
+        score[result["XG"]] += 30
+
+        # 2. 换手率活跃度评分
+        turnover = result["Turnover"]
+
+        # 换手率越高，活跃度越高
+        score[turnover > 1.0] += 15  # 换手率>1%，非常活跃
+        score[(turnover > 0.7) & (turnover <= 1.0)] += 10  # 换手率0.7%-1%，活跃
+        score[(turnover > 0.5) & (turnover <= 0.7)] += 5   # 换手率0.5%-0.7%，一般活跃
+
+        # 3. 相对换手率评分（与历史平均比较）
+        if len(turnover) >= 20:
+            avg_turnover_20 = turnover.rolling(window=20).mean()
+            relative_active = turnover > avg_turnover_20 * 1.5
+            score[relative_active] += 10
+
+        # 4. 换手率过高风险评分
+        score[turnover > 5.0] -= 10  # 换手率过高可能是炒作
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
         
         return score
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM换手率指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["XG"]:
+                patterns.append("换手率买点信号")
+
+            # 换手率活跃度判断
+            turnover = last_row["Turnover"]
+            if turnover > 5.0:
+                patterns.append("换手率极度活跃")
+            elif turnover > 2.0:
+                patterns.append("换手率非常活跃")
+            elif turnover > 1.0:
+                patterns.append("换手率活跃")
+            elif turnover > 0.7:
+                patterns.append("换手率一般活跃")
+            else:
+                patterns.append("换手率低迷")
+
+            # 相对活跃度判断
+            if len(result) >= 20:
+                avg_turnover_20 = result["Turnover"].rolling(window=20).mean().iloc[-1]
+                if turnover > avg_turnover_20 * 2:
+                    patterns.append("换手率相对历史极度活跃")
+                elif turnover > avg_turnover_20 * 1.5:
+                    patterns.append("换手率相对历史活跃")
+                elif turnover < avg_turnover_20 * 0.5:
+                    patterns.append("换手率相对历史低迷")
+
+            # 换手率趋势判断
+            if len(result) >= 5:
+                recent_trend = result["Turnover"].iloc[-5:].mean()
+                if turnover > recent_trend * 1.3:
+                    patterns.append("换手率突然放大")
+                elif turnover < recent_trend * 0.7:
+                    patterns.append("换手率突然缩小")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "换手率买点信号" in patterns:
+            pattern_boost += 0.15
+        if "换手率相对历史活跃" in patterns:
+            pattern_boost += 0.1
+        if "换手率突然放大" in patterns:
+            pattern_boost += 0.1
+        if "换手率极度活跃" in patterns:
+            pattern_boost -= 0.1  # 过度活跃可能是风险
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["换手率买点信号"] = result["XG"]
+
+        # 换手率活跃度形态
+        turnover = result["Turnover"]
+        patterns_df["换手率极度活跃"] = turnover > 5.0
+        patterns_df["换手率非常活跃"] = (turnover > 2.0) & (turnover <= 5.0)
+        patterns_df["换手率活跃"] = (turnover > 1.0) & (turnover <= 2.0)
+        patterns_df["换手率一般活跃"] = (turnover > 0.7) & (turnover <= 1.0)
+        patterns_df["换手率低迷"] = turnover <= 0.7
+
+        # 相对活跃度形态
+        if len(result) >= 20:
+            avg_turnover_20 = turnover.rolling(window=20).mean()
+            patterns_df["换手率相对历史极度活跃"] = turnover > avg_turnover_20 * 2
+            patterns_df["换手率相对历史活跃"] = (turnover > avg_turnover_20 * 1.5) & (turnover <= avg_turnover_20 * 2)
+            patterns_df["换手率相对历史低迷"] = turnover < avg_turnover_20 * 0.5
+
+        # 换手率趋势形态
+        if len(result) >= 5:
+            recent_trend = turnover.rolling(window=5).mean()
+            patterns_df["换手率突然放大"] = turnover > recent_trend * 1.3
+            patterns_df["换手率突然缩小"] = turnover < recent_trend * 0.7
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - threshold: 换手率阈值，默认0.7
+        """
+        self.threshold = kwargs.get('threshold', 0.7)
 
 
 class ZXMVolumeShrink(BaseIndicator):
@@ -202,7 +578,8 @@ class ZXMVolumeShrink(BaseIndicator):
         VOL/MA(VOL,2)<0.9;
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["volume"])
+        if 'volume' not in data.columns:
+            raise ValueError("数据缺少必需的'volume'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -239,24 +616,173 @@ class ZXMVolumeShrink(BaseIndicator):
         
         # 初始化评分为基础分50分（中性）
         score = pd.Series(50, index=data.index)
-        
-        # 日缩量加分
-        score[result["DailyShrink"]] += 10
-        
-        # 低于均量加分
-        score[result["BelowAverage"]] += 10
-        
-        # 连续缩量加分
-        score[result["ConsecutiveShrink"]] += 15
-        
-        # 缩量整理加分（如果有这个指标）
-        if "VolumeShrinkWithStablePrice" in result.columns:
-            score[result["VolumeShrinkWithStablePrice"]] += 15
+
+        # 主要信号评分规则
+        # 1. 缩量买点信号：+30分
+        score[result["XG"]] += 30
+
+        # 2. 缩量程度评分
+        vol_ratio = result["VOL_RATIO"]
+
+        # 缩量越明显，评分越高
+        score[vol_ratio < 0.7] += 15  # 严重缩量
+        score[(vol_ratio >= 0.7) & (vol_ratio < 0.8)] += 10  # 明显缩量
+        score[(vol_ratio >= 0.8) & (vol_ratio < 0.9)] += 5   # 轻微缩量
+
+        # 3. 连续缩量评分
+        if len(result) >= 3:
+            consecutive_shrink = pd.Series(False, index=data.index)
+            for i in range(2, len(result)):
+                if all(result["XG"].iloc[i-2:i+1]):
+                    consecutive_shrink.iloc[i] = True
+            score[consecutive_shrink] += 15
+
+        # 4. 缩量配合价格稳定评分
+        if 'close' in data.columns and len(data) >= 3:
+            price_stable = abs(data['close'].pct_change(3)) < 0.05  # 3日内价格变化小于5%
+            volume_shrink_with_stable_price = result["XG"] & price_stable
+            score[volume_shrink_with_stable_price] += 10
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
         
         return score
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM缩量指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["XG"]:
+                patterns.append("缩量买点信号")
+
+            # 缩量程度判断
+            vol_ratio = last_row["VOL_RATIO"]
+            if vol_ratio < 0.5:
+                patterns.append("严重缩量")
+            elif vol_ratio < 0.7:
+                patterns.append("明显缩量")
+            elif vol_ratio < 0.9:
+                patterns.append("轻微缩量")
+            else:
+                patterns.append("成交量正常")
+
+            # 连续缩量判断
+            if len(result) >= 3:
+                if all(result["XG"].iloc[-3:]):
+                    patterns.append("连续缩量")
+
+            # 缩量配合价格稳定判断
+            if 'close' in data.columns and len(data) >= 3:
+                price_change = abs(data['close'].iloc[-1] / data['close'].iloc[-4] - 1)
+                if last_row["XG"] and price_change < 0.05:
+                    patterns.append("缩量整理")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "缩量买点信号" in patterns:
+            pattern_boost += 0.15
+        if "严重缩量" in patterns:
+            pattern_boost += 0.15
+        if "连续缩量" in patterns:
+            pattern_boost += 0.1
+        if "缩量整理" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["缩量买点信号"] = result["XG"]
+
+        # 缩量程度形态
+        vol_ratio = result["VOL_RATIO"]
+        patterns_df["严重缩量"] = vol_ratio < 0.5
+        patterns_df["明显缩量"] = (vol_ratio >= 0.5) & (vol_ratio < 0.7)
+        patterns_df["轻微缩量"] = (vol_ratio >= 0.7) & (vol_ratio < 0.9)
+        patterns_df["成交量正常"] = vol_ratio >= 0.9
+
+        # 连续缩量形态
+        if len(result) >= 3:
+            consecutive_shrink = pd.Series(False, index=data.index)
+            for i in range(2, len(result)):
+                if all(result["XG"].iloc[i-2:i+1]):
+                    consecutive_shrink.iloc[i] = True
+            patterns_df["连续缩量"] = consecutive_shrink
+
+        # 缩量整理形态
+        if 'close' in data.columns and len(data) >= 3:
+            price_stable = abs(data['close'].pct_change(3)) < 0.05
+            patterns_df["缩量整理"] = result["XG"] & price_stable
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - ma_period: 均量计算周期，默认2
+                - shrink_threshold: 缩量阈值，默认0.9
+        """
+        self.ma_period = kwargs.get('ma_period', 2)
+        self.shrink_threshold = kwargs.get('shrink_threshold', 0.9)
 
 
 class ZXMMACallback(BaseIndicator):
@@ -295,7 +821,8 @@ class ZXMMACallback(BaseIndicator):
         XG:A20 OR A30 OR A60 OR A120;
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -344,23 +871,188 @@ class ZXMMACallback(BaseIndicator):
         
         # 初始化评分为基础分50分（中性）
         score = pd.Series(50, index=data.index)
-        
-        # 回调到单个均线加分
-        ma_columns = ["MA5_Callback", "MA10_Callback", "MA20_Callback", "MA30_Callback", "MA60_Callback"]
-        
-        for col in ma_columns:
-            score[result[col]] += 5
-        
-        # 回调到任意均线加分
-        score[result["AnyMA_Callback"]] += 10
-        
-        # 回调到多条均线加分
-        score[result["MultiMA_Callback"]] += 15
+
+        # 主要信号评分规则
+        # 1. 回踩均线买点信号：+30分
+        score[result["XG"]] += 30
+
+        # 2. 回踩到不同均线的评分
+        score[result["A20"]] += 5   # 回踩20日线
+        score[result["A30"]] += 8   # 回踩30日线
+        score[result["A60"]] += 12  # 回踩60日线
+        score[result["A120"]] += 15 # 回踩120日线
+
+        # 3. 多条均线同时回踩加分
+        ma_count = result["A20"].astype(int) + result["A30"].astype(int) + result["A60"].astype(int) + result["A120"].astype(int)
+        score[ma_count >= 2] += 10  # 同时回踩2条以上均线
+        score[ma_count >= 3] += 15  # 同时回踩3条以上均线
+
+        # 4. 均线支撑强度评分
+        if 'close' in data.columns:
+            close_price = data['close']
+            # 价格在均线上方但接近均线（支撑有效）
+            for ma_col, a_col in [('MA20', 'A20'), ('MA30', 'A30'), ('MA60', 'A60'), ('MA120', 'A120')]:
+                if ma_col in result.columns:
+                    above_ma = close_price > result[ma_col]
+                    near_ma = result[a_col]
+                    valid_support = above_ma & near_ma
+                    score[valid_support] += 5
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
         
         return score
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM均线回调指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["XG"]:
+                patterns.append("均线回调买点信号")
+
+            # 具体回调均线判断
+            if last_row["A20"]:
+                patterns.append("回踩20日均线")
+            if last_row["A30"]:
+                patterns.append("回踩30日均线")
+            if last_row["A60"]:
+                patterns.append("回踩60日均线")
+            if last_row["A120"]:
+                patterns.append("回踩120日均线")
+
+            # 多重回调判断
+            ma_count = sum([last_row["A20"], last_row["A30"], last_row["A60"], last_row["A120"]])
+            if ma_count >= 3:
+                patterns.append("多重均线回调")
+            elif ma_count >= 2:
+                patterns.append("双重均线回调")
+
+            # 支撑强度判断
+            if 'close' in data.columns:
+                close_price = data['close'].iloc[-1]
+                for ma_name, ma_col, a_col in [
+                    ("20日线", "MA20", "A20"), ("30日线", "MA30", "A30"),
+                    ("60日线", "MA60", "A60"), ("120日线", "MA120", "A120")
+                ]:
+                    if ma_col in result.columns and last_row[a_col]:
+                        ma_value = last_row[ma_col]
+                        if close_price > ma_value:
+                            patterns.append(f"{ma_name}有效支撑")
+                        else:
+                            patterns.append(f"{ma_name}跌破风险")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "均线回调买点信号" in patterns:
+            pattern_boost += 0.15
+        if "多重均线回调" in patterns:
+            pattern_boost += 0.15
+        elif "双重均线回调" in patterns:
+            pattern_boost += 0.1
+
+        # 长期均线支撑更可靠
+        if "120日线有效支撑" in patterns:
+            pattern_boost += 0.15
+        elif "60日线有效支撑" in patterns:
+            pattern_boost += 0.1
+
+        # 跌破风险降低置信度
+        if any("跌破风险" in p for p in patterns):
+            pattern_boost -= 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["均线回调买点信号"] = result["XG"]
+        patterns_df["回踩20日均线"] = result["A20"]
+        patterns_df["回踩30日均线"] = result["A30"]
+        patterns_df["回踩60日均线"] = result["A60"]
+        patterns_df["回踩120日均线"] = result["A120"]
+
+        # 多重回调形态
+        ma_count = result["A20"].astype(int) + result["A30"].astype(int) + result["A60"].astype(int) + result["A120"].astype(int)
+        patterns_df["多重均线回调"] = ma_count >= 3
+        patterns_df["双重均线回调"] = ma_count == 2
+        patterns_df["单一均线回调"] = ma_count == 1
+
+        # 支撑有效性形态
+        if 'close' in data.columns:
+            close_price = data['close']
+            for ma_col, a_col, pattern_name in [
+                ("MA20", "A20", "20日线有效支撑"), ("MA30", "A30", "30日线有效支撑"),
+                ("MA60", "A60", "60日线有效支撑"), ("MA120", "A120", "120日线有效支撑")
+            ]:
+                if ma_col in result.columns:
+                    patterns_df[pattern_name] = (close_price > result[ma_col]) & result[a_col]
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - callback_percent: 回踩百分比，默认4.0
+        """
+        self.callback_percent = kwargs.get('callback_percent', 4.0)
     
     
 class ZXMBSAbsorb(BaseIndicator):
@@ -395,7 +1087,10 @@ class ZXMBSAbsorb(BaseIndicator):
         注意：这里的FILTER函数表示在过去N周期内至少出现一次该条件
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "high", "low"])
+        required_cols = ["close", "high", "low"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -487,26 +1182,222 @@ class ZXMBSAbsorb(BaseIndicator):
         
         # 初始化评分为基础分50分（中性）
         score = pd.Series(50, index=data.index)
-        
-        # 放量下跌加分（可能是主力出货，评分降低）
-        score[result["VolumeDownDrop"]] -= 10
-        
-        # 横盘震荡但成交量持续放大加分
-        score[result["SidewaysVolumeExpand"]] += 15
-        
-        # 缩量十字星加分
-        score[result["VolumeShrinkDoji"]] += 10
-        
-        # 长下影线加分
-        score[result["LongLowerShadow"]] += 20
-        
-        # 连续横盘整理加分
-        score[result["SidewaysConsolidation"]] += 15
+
+        # 主要信号评分规则
+        # 1. BS吸筹信号强度评分
+        xg_value = result["XG"]
+
+        # 根据XG值（近6周期内满足条件的次数）评分
+        score[xg_value >= 5] += 30  # 强烈吸筹信号
+        score[(xg_value >= 3) & (xg_value < 5)] += 20  # 明显吸筹信号
+        score[(xg_value >= 1) & (xg_value < 3)] += 10  # 轻微吸筹信号
+
+        # 2. V11指标位置评分
+        v11_ema = result["EMA_V11_3"]
+        score[v11_ema <= 10] += 15  # V11极低位，强烈超卖
+        score[(v11_ema > 10) & (v11_ema <= 13)] += 10  # V11低位，超卖
+        score[v11_ema > 80] -= 10   # V11高位，可能超买
+
+        # 3. V12动量评分
+        v12_value = result["V12"]
+        score[v12_value > 20] += 15  # 强烈上升动量
+        score[(v12_value > 13) & (v12_value <= 20)] += 10  # 上升动量
+        score[v12_value < -20] -= 10  # 下降动量
+
+        # 4. AA和BB条件评分
+        score[result["AA"]] += 10  # AA条件满足
+        score[result["BB"]] += 15  # BB条件满足（更强信号）
+
+        # 5. 连续满足条件加分
+        if len(result) >= 3:
+            consecutive_signal = pd.Series(False, index=data.index)
+            for i in range(2, len(result)):
+                if all((result["AA"] | result["BB"]).iloc[i-2:i+1]):
+                    consecutive_signal.iloc[i] = True
+            score[consecutive_signal] += 15
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
         
         return score
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM BS吸筹指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 吸筹强度判断
+            xg_value = last_row["XG"]
+            if xg_value >= 5:
+                patterns.append("强烈吸筹信号")
+            elif xg_value >= 3:
+                patterns.append("明显吸筹信号")
+            elif xg_value >= 1:
+                patterns.append("轻微吸筹信号")
+            else:
+                patterns.append("无吸筹信号")
+
+            # V11位置判断
+            v11_ema = last_row["EMA_V11_3"]
+            if v11_ema <= 10:
+                patterns.append("V11极低位")
+            elif v11_ema <= 13:
+                patterns.append("V11低位")
+            elif v11_ema >= 80:
+                patterns.append("V11高位")
+            else:
+                patterns.append("V11中位")
+
+            # V12动量判断
+            v12_value = last_row["V12"]
+            if v12_value > 20:
+                patterns.append("强烈上升动量")
+            elif v12_value > 13:
+                patterns.append("上升动量")
+            elif v12_value < -20:
+                patterns.append("下降动量")
+            else:
+                patterns.append("动量平稳")
+
+            # AA和BB条件判断
+            if last_row["AA"]:
+                patterns.append("AA条件满足")
+            if last_row["BB"]:
+                patterns.append("BB条件满足")
+
+            # 综合判断
+            if last_row["AA"] and last_row["BB"]:
+                patterns.append("双重吸筹确认")
+            elif v11_ema <= 13 and v12_value > 13:
+                patterns.append("低位反弹信号")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "强烈吸筹信号" in patterns:
+            pattern_boost += 0.25
+        elif "明显吸筹信号" in patterns:
+            pattern_boost += 0.15
+        elif "轻微吸筹信号" in patterns:
+            pattern_boost += 0.1
+
+        if "双重吸筹确认" in patterns:
+            pattern_boost += 0.2
+        elif "BB条件满足" in patterns:
+            pattern_boost += 0.15
+        elif "AA条件满足" in patterns:
+            pattern_boost += 0.1
+
+        if "V11极低位" in patterns:
+            pattern_boost += 0.15
+        elif "V11低位" in patterns:
+            pattern_boost += 0.1
+
+        if "强烈上升动量" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 吸筹强度形态
+        xg_value = result["XG"]
+        patterns_df["强烈吸筹信号"] = xg_value >= 5
+        patterns_df["明显吸筹信号"] = (xg_value >= 3) & (xg_value < 5)
+        patterns_df["轻微吸筹信号"] = (xg_value >= 1) & (xg_value < 3)
+        patterns_df["无吸筹信号"] = xg_value == 0
+
+        # V11位置形态
+        v11_ema = result["EMA_V11_3"]
+        patterns_df["V11极低位"] = v11_ema <= 10
+        patterns_df["V11低位"] = (v11_ema > 10) & (v11_ema <= 13)
+        patterns_df["V11中位"] = (v11_ema > 13) & (v11_ema < 80)
+        patterns_df["V11高位"] = v11_ema >= 80
+
+        # V12动量形态
+        v12_value = result["V12"]
+        patterns_df["强烈上升动量"] = v12_value > 20
+        patterns_df["上升动量"] = (v12_value > 13) & (v12_value <= 20)
+        patterns_df["动量平稳"] = (v12_value >= -20) & (v12_value <= 13)
+        patterns_df["下降动量"] = v12_value < -20
+
+        # 条件满足形态
+        patterns_df["AA条件满足"] = result["AA"]
+        patterns_df["BB条件满足"] = result["BB"]
+        patterns_df["双重吸筹确认"] = result["AA"] & result["BB"]
+        patterns_df["低位反弹信号"] = (v11_ema <= 13) & (v12_value > 13)
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - v11_threshold: V11阈值，默认13
+                - v12_threshold: V12阈值，默认13
+                - aa_filter_period: AA过滤周期，默认15
+                - bb_filter_period: BB过滤周期，默认10
+                - count_period: 计数周期，默认6
+        """
+        self.v11_threshold = kwargs.get('v11_threshold', 13)
+        self.v12_threshold = kwargs.get('v12_threshold', 13)
+        self.aa_filter_period = kwargs.get('aa_filter_period', 15)
+        self.bb_filter_period = kwargs.get('bb_filter_period', 10)
+        self.count_period = kwargs.get('count_period', 6)
 
 
 class BuyPointDetector(BaseIndicator):
@@ -545,7 +1436,10 @@ class BuyPointDetector(BaseIndicator):
             pd.DataFrame: 计算结果
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
+        required_cols = ["open", "high", "low", "close", "volume"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -1074,4 +1968,47 @@ class BuyPointDetector(BaseIndicator):
         volume_ratio = data["volume"] / data["volume"].rolling(window=20).mean()
         signals['volume_confirmation'] = volume_ratio > 1.2
         
-        return signals 
+        return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "强势多重买点组合" in patterns:
+            pattern_boost += 0.25
+        elif "双重买点组合" in patterns:
+            pattern_boost += 0.15
+
+        # 具体买点形态调整
+        if "放量上涨买点" in patterns:
+            pattern_boost += 0.15
+        if "突破买点" in patterns:
+            pattern_boost += 0.15
+        if "回调企稳买点" in patterns:
+            pattern_boost += 0.12
+        if "底部放量买点" in patterns:
+            pattern_boost += 0.12
+        if "缩量整理买点" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence

@@ -66,7 +66,10 @@ class ElliottWave(BaseIndicator):
             pd.DataFrame: 计算结果，包含波浪结构信息
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["high", "low", "close"])
+        required_columns = ["high", "low", "close"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -88,7 +91,71 @@ class ElliottWave(BaseIndicator):
         next_wave_prediction = self._predict_next_wave(data, waves, wave_pattern)
         if next_wave_prediction is not None:
             result["next_wave_prediction"] = next_wave_prediction
-        
+
+        # 添加形态识别列（避免循环调用）
+        try:
+            # 直接进行简单的形态识别，避免调用identify_patterns
+            identified_patterns = []
+
+            if wave_pattern:
+                identified_patterns.append(f"艾略特波浪形态-{wave_pattern.value}")
+
+                if wave_pattern == WavePattern.FIVE_WAVE:
+                    identified_patterns.append("五浪推动结构")
+                elif wave_pattern == WavePattern.ZIG_ZAG:
+                    identified_patterns.append("锯齿形调整")
+                elif wave_pattern == WavePattern.FLAT:
+                    identified_patterns.append("平台形调整")
+                elif wave_pattern == WavePattern.TRIANGLE:
+                    identified_patterns.append("三角形调整")
+
+            # 初始化所有可能的形态列
+            pattern_columns = [
+                'ELLIOTT_FIVE_WAVE', 'ELLIOTT_ZIG_ZAG', 'ELLIOTT_FLAT',
+                'ELLIOTT_TRIANGLE', 'ELLIOTT_DIAGONAL', 'ELLIOTT_COMBINATION',
+                'ELLIOTT_WAVE_1', 'ELLIOTT_WAVE_2', 'ELLIOTT_WAVE_3',
+                'ELLIOTT_WAVE_4', 'ELLIOTT_WAVE_5', 'ELLIOTT_WAVE_A',
+                'ELLIOTT_WAVE_B', 'ELLIOTT_WAVE_C', 'ELLIOTT_IMPULSE',
+                'ELLIOTT_CORRECTIVE', 'ELLIOTT_GOLDEN_RATIO', 'ELLIOTT_FIBONACCI_RATIO',
+                'ELLIOTT_VOLUME_CONFIRMATION', 'ELLIOTT_TIME_RATIO',
+                'ELLIOTT_WAVE_COMPLETION', 'ELLIOTT_TREND_REVERSAL'
+            ]
+
+            for col in pattern_columns:
+                result[col] = False
+
+            # 根据识别的形态设置相应的布尔值
+            for pattern in identified_patterns:
+                if "五浪推动结构" in pattern or "五浪结构" in pattern:
+                    result['ELLIOTT_FIVE_WAVE'] = True
+                elif "锯齿形调整" in pattern:
+                    result['ELLIOTT_ZIG_ZAG'] = True
+                elif "平台形调整" in pattern:
+                    result['ELLIOTT_FLAT'] = True
+                elif "三角形调整" in pattern:
+                    result['ELLIOTT_TRIANGLE'] = True
+                elif "对角线三角形" in pattern:
+                    result['ELLIOTT_DIAGONAL'] = True
+                elif "组合调整" in pattern:
+                    result['ELLIOTT_COMBINATION'] = True
+
+        except Exception as e:
+            logger.warning(f"形态识别失败: {e}")
+            # 如果形态识别失败，至少添加空的形态列
+            pattern_columns = [
+                'ELLIOTT_FIVE_WAVE', 'ELLIOTT_ZIG_ZAG', 'ELLIOTT_FLAT',
+                'ELLIOTT_TRIANGLE', 'ELLIOTT_DIAGONAL', 'ELLIOTT_COMBINATION',
+                'ELLIOTT_WAVE_1', 'ELLIOTT_WAVE_2', 'ELLIOTT_WAVE_3',
+                'ELLIOTT_WAVE_4', 'ELLIOTT_WAVE_5', 'ELLIOTT_WAVE_A',
+                'ELLIOTT_WAVE_B', 'ELLIOTT_WAVE_C', 'ELLIOTT_IMPULSE',
+                'ELLIOTT_CORRECTIVE', 'ELLIOTT_GOLDEN_RATIO', 'ELLIOTT_FIBONACCI_RATIO',
+                'ELLIOTT_VOLUME_CONFIRMATION', 'ELLIOTT_TIME_RATIO',
+                'ELLIOTT_WAVE_COMPLETION', 'ELLIOTT_TREND_REVERSAL'
+            ]
+
+            for col in pattern_columns:
+                result[col] = False
+
         return result
     
     def _identify_swing_points(self, data: pd.DataFrame, min_wave_height: float) -> List[int]:
@@ -697,13 +764,18 @@ class ElliottWave(BaseIndicator):
                     wave_indices = recent_waves.index.tolist()
                     
                     if len(wave_indices) >= 2:
-                        wave_1_time = wave_indices[1] - wave_indices[0]
-                        
+                        # 使用数值索引计算时间差
+                        idx1 = data.index.get_loc(wave_indices[0]) if wave_indices[0] in data.index else 0
+                        idx2 = data.index.get_loc(wave_indices[1]) if wave_indices[1] in data.index else len(data) - 1
+                        wave_1_time = idx2 - idx1
+
                         # 如果有第三个波浪的开始
                         if len(wave_starts) >= 3:
                             wave_2_start = wave_indices[1]
-                            current_time = len(data) - 1 - wave_2_start
-                            
+                            # 使用数值索引而不是Timestamp
+                            numeric_idx = data.index.get_loc(wave_2_start) if wave_2_start in data.index else len(data) - 1
+                            current_time = len(data) - 1 - numeric_idx
+
                             # 检查时间比例关系
                             if wave_1_time > 0:
                                 time_ratio = current_time / wave_1_time
@@ -893,8 +965,11 @@ class ElliottWave(BaseIndicator):
                     wave_indices = recent_waves.index.tolist()
                     
                     if len(wave_indices) >= 2:
-                        wave_time = wave_indices[1] - wave_indices[0]
-                        current_time = len(data) - 1 - wave_indices[1]
+                        # 使用数值索引计算时间差
+                        idx1 = data.index.get_loc(wave_indices[0]) if wave_indices[0] in data.index else 0
+                        idx2 = data.index.get_loc(wave_indices[1]) if wave_indices[1] in data.index else len(data) - 1
+                        wave_time = idx2 - idx1
+                        current_time = len(data) - 1 - idx2
                         
                         if wave_time > 0:
                             time_ratio = current_time / wave_time
@@ -1192,4 +1267,388 @@ class ElliottWave(BaseIndicator):
                     stop_level = data['high'].iloc[i-5:i].max() * 1.02
                     signals.loc[signals.index[i], 'stop_loss'] = stop_level
         
-        return signals 
+        return signals
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - min_wave_height: 最小波浪高度，默认0.03
+                - max_wave_count: 最大波浪数量，默认9
+        """
+        self.min_wave_height = kwargs.get('min_wave_height', 0.03)
+        self.max_wave_count = kwargs.get('max_wave_count', 9)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取ElliottWave相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 基于识别的形态创建布尔列
+        identified_patterns = self.identify_patterns(data)
+
+        # 初始化所有可能的形态列
+        pattern_columns = [
+            'ELLIOTT_FIVE_WAVE', 'ELLIOTT_ZIG_ZAG', 'ELLIOTT_FLAT',
+            'ELLIOTT_TRIANGLE', 'ELLIOTT_DIAGONAL', 'ELLIOTT_COMBINATION',
+            'ELLIOTT_WAVE_1', 'ELLIOTT_WAVE_2', 'ELLIOTT_WAVE_3',
+            'ELLIOTT_WAVE_4', 'ELLIOTT_WAVE_5', 'ELLIOTT_WAVE_A',
+            'ELLIOTT_WAVE_B', 'ELLIOTT_WAVE_C', 'ELLIOTT_IMPULSE',
+            'ELLIOTT_CORRECTIVE', 'ELLIOTT_GOLDEN_RATIO', 'ELLIOTT_FIBONACCI_RATIO',
+            'ELLIOTT_VOLUME_CONFIRMATION', 'ELLIOTT_TIME_RATIO',
+            'ELLIOTT_WAVE_COMPLETION', 'ELLIOTT_TREND_REVERSAL'
+        ]
+
+        for col in pattern_columns:
+            patterns[col] = False
+
+        # 根据识别的形态设置相应的布尔值
+        for pattern in identified_patterns:
+            if "五浪推动结构" in pattern or "五浪结构" in pattern:
+                patterns['ELLIOTT_FIVE_WAVE'] = True
+            elif "锯齿形调整" in pattern:
+                patterns['ELLIOTT_ZIG_ZAG'] = True
+            elif "平台形调整" in pattern:
+                patterns['ELLIOTT_FLAT'] = True
+            elif "三角形调整" in pattern:
+                patterns['ELLIOTT_TRIANGLE'] = True
+            elif "对角线三角形" in pattern:
+                patterns['ELLIOTT_DIAGONAL'] = True
+            elif "组合调整" in pattern:
+                patterns['ELLIOTT_COMBINATION'] = True
+
+            if "第1浪" in pattern:
+                patterns['ELLIOTT_WAVE_1'] = True
+            elif "第2浪" in pattern:
+                patterns['ELLIOTT_WAVE_2'] = True
+            elif "第3浪" in pattern:
+                patterns['ELLIOTT_WAVE_3'] = True
+            elif "第4浪" in pattern:
+                patterns['ELLIOTT_WAVE_4'] = True
+            elif "第5浪" in pattern:
+                patterns['ELLIOTT_WAVE_5'] = True
+            elif "A浪" in pattern:
+                patterns['ELLIOTT_WAVE_A'] = True
+            elif "B浪" in pattern:
+                patterns['ELLIOTT_WAVE_B'] = True
+            elif "C浪" in pattern:
+                patterns['ELLIOTT_WAVE_C'] = True
+
+            if "推动浪" in pattern:
+                patterns['ELLIOTT_IMPULSE'] = True
+            elif "调整浪" in pattern:
+                patterns['ELLIOTT_CORRECTIVE'] = True
+
+            if "黄金比例" in pattern or "1.618" in pattern:
+                patterns['ELLIOTT_GOLDEN_RATIO'] = True
+            elif "斐波那契" in pattern or "2.618" in pattern:
+                patterns['ELLIOTT_FIBONACCI_RATIO'] = True
+
+            if "放量确认" in pattern:
+                patterns['ELLIOTT_VOLUME_CONFIRMATION'] = True
+
+            if "时间比例" in pattern:
+                patterns['ELLIOTT_TIME_RATIO'] = True
+
+            if "完成" in pattern:
+                patterns['ELLIOTT_WAVE_COMPLETION'] = True
+
+            if "反转" in pattern:
+                patterns['ELLIOTT_TREND_REVERSAL'] = True
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算ElliottWave指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有波浪数据
+            wave_columns = [col for col in self._result.columns if 'wave_' in col]
+            if wave_columns:
+                # 波浪数据越完整，置信度越高
+                data_completeness = len(wave_columns) / 10  # 假设最多10个波浪相关列
+                confidence += min(data_completeness * 0.1, 0.1)
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查ElliottWave形态（只计算布尔列）
+            bool_columns = patterns.select_dtypes(include=[bool]).columns
+            if len(bool_columns) > 0:
+                pattern_count = patterns[bool_columns].sum().sum()
+                if pattern_count > 0:
+                    confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 60:  # 两个月数据
+            confidence += 0.1
+        elif len(score) >= 30:  # 一个月数据
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册ElliottWave指标的形态到全局形态注册表
+        """
+        # 注册波浪形态
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_FIVE_WAVE",
+            display_name="艾略特五浪结构",
+            description="完整的五浪推动结构，强烈的趋势信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_ZIG_ZAG",
+            display_name="艾略特锯齿形调整",
+            description="锯齿形调整浪，强烈的调整信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_FLAT",
+            display_name="艾略特平台形调整",
+            description="平台形调整浪，温和的调整信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_TRIANGLE",
+            display_name="艾略特三角形调整",
+            description="三角形调整浪，通常预示突破",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册具体波浪
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_1",
+            display_name="艾略特第一浪",
+            description="新趋势的起始浪，重要的趋势确认信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_3",
+            display_name="艾略特第三浪",
+            description="主推动浪，最强烈的趋势信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=40.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_5",
+            display_name="艾略特第五浪",
+            description="推动浪结束浪，趋势即将完成",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册调整浪
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_2",
+            display_name="艾略特第二浪",
+            description="第二浪调整，为第三浪做准备",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_4",
+            display_name="艾略特第四浪",
+            description="第四浪调整，为第五浪做准备",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册ABC调整浪
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_A",
+            display_name="艾略特A浪",
+            description="调整浪的第一段，调整开始",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_B",
+            display_name="艾略特B浪",
+            description="调整浪的反弹段，通常是假突破",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=-5.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_C",
+            display_name="艾略特C浪",
+            description="调整浪的最后段，调整即将结束",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册比例关系
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_GOLDEN_RATIO",
+            display_name="艾略特黄金比例",
+            description="波浪符合1.618黄金比例关系",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_FIBONACCI_RATIO",
+            display_name="艾略特斐波那契比例",
+            description="波浪符合斐波那契比例关系",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册确认形态
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_VOLUME_CONFIRMATION",
+            display_name="艾略特成交量确认",
+            description="波浪伴随成交量确认",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ELLIOTT_WAVE_COMPLETION",
+            display_name="艾略特波浪完成",
+            description="波浪结构即将完成",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=18.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成ElliottWave交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 使用generate_signals方法生成详细信号
+        detailed_signals = self.generate_signals(data, **kwargs)
+
+        # 转换为简化的信号格式
+        buy_signal = detailed_signals['buy_signal']
+        sell_signal = detailed_signals['sell_signal']
+
+        # 计算信号强度
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 基于评分计算信号强度
+        scores = detailed_signals['score']
+
+        # 买入信号强度
+        signal_strength[buy_signal] = (scores[buy_signal] - 50) / 50.0
+
+        # 卖出信号强度（负值）
+        signal_strength[sell_signal] = -(50 - scores[sell_signal]) / 50.0
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(-1, 1)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "ELLIOTTWAVE"

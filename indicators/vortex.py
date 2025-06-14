@@ -9,11 +9,11 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
-import talib
+from typing import Union, List, Dict, Optional, Tuple, Any
+# import talib  # 移除talib依赖
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
@@ -38,6 +38,29 @@ class Vortex(BaseIndicator):
         """
         super().__init__(name="Vortex", description="涡流指标，用于识别趋势的开始和确认现有趋势")
         self.period = period
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算Vortex指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Vortex指标的DataFrame
+        """
+        return self._calculate(data)
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含period等
+        """
+        if 'period' in kwargs:
+            self.period = kwargs['period']
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -794,22 +817,268 @@ class Vortex(BaseIndicator):
             score_impact=0.0
         )
 
-    def get_patterns(self):
-        patterns = {
-            "description": "VI- 上穿 VI+，可能预示下跌趋势的开始。",
-        }
-        return patterns
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取Vortex相关形态
 
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        计算Vortex原始评分
-        """
+        # 确保已计算指标
         if self._result is None:
             self.calculate(data)
-        
-        # 评分逻辑...
-        score = pd.Series(50.0, index=data.index)
-        return score
+
+        if self._result is None or 'vi_plus' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取Vortex数据
+        vi_plus = self._result['vi_plus']
+        vi_minus = self._result['vi_minus']
+        vi_diff = self._result['vi_diff']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. Vortex交叉形态
+        patterns_df['VORTEX_BULLISH_CROSS'] = crossover(vi_plus, vi_minus)
+        patterns_df['VORTEX_BEARISH_CROSS'] = crossover(vi_minus, vi_plus)
+        patterns_df['VORTEX_VI_PLUS_ABOVE'] = vi_plus > vi_minus
+        patterns_df['VORTEX_VI_MINUS_ABOVE'] = vi_minus > vi_plus
+
+        # 2. Vortex阈值形态
+        patterns_df['VORTEX_VI_PLUS_STRONG'] = vi_plus > 1.1
+        patterns_df['VORTEX_VI_MINUS_STRONG'] = vi_minus > 1.1
+        patterns_df['VORTEX_VI_PLUS_WEAK'] = vi_plus < 0.9
+        patterns_df['VORTEX_VI_MINUS_WEAK'] = vi_minus < 0.9
+        patterns_df['VORTEX_VI_PLUS_BREAK_HIGH'] = crossover(vi_plus, 1.1)
+        patterns_df['VORTEX_VI_MINUS_BREAK_HIGH'] = crossover(vi_minus, 1.1)
+
+        # 3. Vortex趋势形态
+        patterns_df['VORTEX_VI_PLUS_RISING'] = vi_plus > vi_plus.shift(1)
+        patterns_df['VORTEX_VI_MINUS_RISING'] = vi_minus > vi_minus.shift(1)
+        patterns_df['VORTEX_VI_DIFF_RISING'] = vi_diff > vi_diff.shift(1)
+        patterns_df['VORTEX_VI_DIFF_FALLING'] = vi_diff < vi_diff.shift(1)
+
+        # 4. Vortex连续趋势形态
+        patterns_df['VORTEX_VI_PLUS_UPTREND'] = (
+            (vi_plus > vi_plus.shift(1)) &
+            (vi_plus.shift(1) > vi_plus.shift(2)) &
+            (vi_plus.shift(2) > vi_plus.shift(3))
+        )
+        patterns_df['VORTEX_VI_MINUS_UPTREND'] = (
+            (vi_minus > vi_minus.shift(1)) &
+            (vi_minus.shift(1) > vi_minus.shift(2)) &
+            (vi_minus.shift(2) > vi_minus.shift(3))
+        )
+
+        # 5. Vortex极值形态
+        patterns_df['VORTEX_VI_PLUS_EXTREME_HIGH'] = vi_plus > 1.3
+        patterns_df['VORTEX_VI_MINUS_EXTREME_HIGH'] = vi_minus > 1.3
+        patterns_df['VORTEX_VI_PLUS_EXTREME_LOW'] = vi_plus < 0.7
+        patterns_df['VORTEX_VI_MINUS_EXTREME_LOW'] = vi_minus < 0.7
+
+        return patterns_df
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算Vortex指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查Vortex形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册Vortex指标的形态到全局形态注册表
+        """
+        # 注册Vortex交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_BULLISH_CROSS",
+            display_name="Vortex多头交叉",
+            description="VI+上穿VI-，表明趋势由空转多",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_BEARISH_CROSS",
+            display_name="Vortex空头交叉",
+            description="VI-上穿VI+，表明趋势由多转空",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册Vortex阈值形态
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_VI_PLUS_STRONG",
+            display_name="VI+强势",
+            description="VI+高于1.1，表明上升趋势强烈",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_VI_MINUS_STRONG",
+            display_name="VI-强势",
+            description="VI-高于1.1，表明下降趋势强烈",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成Vortex交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        vi_plus = self._result['vi_plus']
+        vi_minus = self._result['vi_minus']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. VI+上穿VI-（买入信号）
+        bullish_cross = crossover(vi_plus, vi_minus)
+        buy_signal |= bullish_cross
+        signal_strength += bullish_cross * 0.8
+
+        # 2. VI-上穿VI+（卖出信号）
+        bearish_cross = crossover(vi_minus, vi_plus)
+        sell_signal |= bearish_cross
+        signal_strength += bearish_cross * 0.8
+
+        # 3. VI+突破1.1阈值（强买入信号）
+        vi_plus_break_high = crossover(vi_plus, 1.1)
+        buy_signal |= vi_plus_break_high
+        signal_strength += vi_plus_break_high * 0.9
+
+        # 4. VI-突破1.1阈值（强卖出信号）
+        vi_minus_break_high = crossover(vi_minus, 1.1)
+        sell_signal |= vi_minus_break_high
+        signal_strength += vi_minus_break_high * 0.9
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
 
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

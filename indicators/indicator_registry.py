@@ -31,13 +31,14 @@ from enums.indicator_enum import IndicatorEnum
 from indicators.macd import MACD
 from indicators.rsi import RSI
 from indicators.boll import BOLL as BollingerBands
-from indicators.volume import Volume
+from indicators.vol import VOL as Volume
 from indicators.obv import OBV
 from indicators.atr import ATR
 from indicators.chaikin import Chaikin as ChaikinVolatility
 from indicators.roc import ROC
 from indicators.trix import TRIX
 from indicators.momentum import Momentum
+# 暂时移除可能有问题的导入，专注于修复核心功能
 
 logger = get_logger(__name__)
 
@@ -124,11 +125,53 @@ class IndicatorRegistry:
 
     def register_standard_indicators(self):
         """注册标准指标集"""
-        # 注册指标
+        # 注册基础指标
         self.register_indicator(MACD, name="MACD", description="移动平均线收敛散度指标")
         self.register_indicator(RSI, name="RSI", description="相对强弱指数")
         self.register_indicator(BollingerBands, name="BOLL", description="布林带")
         self.register_indicator(Volume, name="Volume", description="成交量指标")
+
+        # 注册已修复的技术指标（已实现get_pattern_info方法）
+        # 暂时注释掉可能有问题的指标，先确保基础功能正常
+        # if BIAS:
+        #     self.register_indicator(BIAS, name="BIAS", description="均线多空指标")
+        # if CCI:
+        #     self.register_indicator(CCI, name="CCI", description="顺势指标")
+        # if Chaikin:
+        #     self.register_indicator(Chaikin, name="Chaikin", description="Chaikin振荡器")
+        # if DMI:
+        #     self.register_indicator(DMI, name="DMI", description="动向指标")
+        # if EMV:
+        #     self.register_indicator(EMV, name="EMV", description="简易波动指标")
+        # if Ichimoku:
+        #     self.register_indicator(Ichimoku, name="Ichimoku", description="一目均衡表")
+        # if EnhancedTRIX:
+        #     self.register_indicator(EnhancedTRIX, name="EnhancedTRIX", description="增强版TRIX指标")
+        # if EnhancedKDJ:
+        #     self.register_indicator(EnhancedKDJ, name="EnhancedKDJ", description="增强版KDJ指标")
+        # if EnhancedMACD:
+        #     self.register_indicator(EnhancedMACD, name="EnhancedMACD", description="增强版MACD指标")
+        # if StochasticRSI:
+        #     self.register_indicator(StochasticRSI, name="StochasticRSI", description="随机RSI指标")
+        # if CandlestickPatterns:
+        #     self.register_indicator(CandlestickPatterns, name="CandlestickPatterns", description="K线形态识别")
+        # if AdvancedCandlestickPatterns:
+        #     self.register_indicator(AdvancedCandlestickPatterns, name="AdvancedCandlestickPatterns", description="高级K线形态识别")
+        # if ZXMPatternIndicator:
+        #     self.register_indicator(ZXMPatternIndicator, name="ZXMPatterns", description="ZXM形态指标")
+        # if Fibonacci:
+        #     self.register_indicator(Fibonacci, name="Fibonacci", description="斐波那契工具")
+
+        # 尝试注册其他可能可用的指标
+        try:
+            self.register_indicator(CMO, name="CMO", description="钱德动量摆动指标")
+        except Exception as e:
+            logger.warning(f"注册CMO指标失败: {e}")
+
+        try:
+            self.register_indicator(DMA, name="DMA", description="平行线差指标")
+        except Exception as e:
+            logger.warning(f"注册DMA指标失败: {e}")
 
     def initialize_pattern_registry(self):
         """初始化形态注册表，将所有指标的形态导入到形态注册表中"""

@@ -31,7 +31,7 @@ DEFAULT_CONFIG = {
     'host': 'localhost',
     'port': 9000,
     'user': 'default',
-    'password': '123456',
+    'password': '',
     'database': 'stock'
 }
 
@@ -357,15 +357,16 @@ class ClickHouseDB:
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         执行查询并返回Pandas DataFrame
-        
+
         Args:
             query: SQL查询语句
             params: 查询参数
-            
+
         Returns:
             pd.DataFrame: 查询结果
         """
-        return self.db_connection.query_dataframe(query, params)
+        with self.manager.get_connection(self.config) as conn:
+            return conn.query(query, params)
 
     def get_stock_info(self,
                        stock_code: Union[str, List[str]] = None,
@@ -604,8 +605,8 @@ class ClickHouseDB:
                 return empty_stock
 
             # 标准化列名（处理col_0, col_1等通用列名）
+            column_mapping = {}
             if 'col_0' in result.columns:
-                column_mapping = {}
                 for i, field in enumerate(fields):
                     if f'col_{i}' in result.columns:
                         # 从field中提取列名（处理类似"code as stock_code"的情况）

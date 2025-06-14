@@ -42,6 +42,18 @@ class FibonacciTools(BaseIndicator):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化斐波那契工具指标"""
         super().__init__(name="FibonacciTools", description="斐波那契工具指标，计算回调线、扩展线和时间序列")
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - swing_window: 摆动点检测窗口，默认10
+                - fib_type: 斐波那契类型，默认RETRACEMENT
+        """
+        self.swing_window = kwargs.get('swing_window', 10)
+        self.fib_type = kwargs.get('fib_type', FibonacciType.RETRACEMENT)
     
     def _calculate(self, data: pd.DataFrame, swing_high_idx: int = None, swing_low_idx: int = None, 
                 fib_type: Union[FibonacciType, str] = FibonacciType.RETRACEMENT, *args, **kwargs) -> pd.DataFrame:
@@ -65,7 +77,10 @@ class FibonacciTools(BaseIndicator):
                 return pd.DataFrame(index=data.index)
 
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["high", "low", "close"])
+        required_columns = ["high", "low", "close"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 如果未指定摆动点，则自动检测
         if swing_high_idx is None or swing_low_idx is None:
@@ -73,14 +88,100 @@ class FibonacciTools(BaseIndicator):
         
         # 根据工具类型计算斐波那契水平线
         if fib_type == FibonacciType.RETRACEMENT:
-            return self.calculate_retracement(data, swing_high_idx, swing_low_idx)
+            result = self.calculate_retracement(data, swing_high_idx, swing_low_idx)
         elif fib_type == FibonacciType.EXTENSION:
-            return self.calculate_extension(data, swing_high_idx, swing_low_idx)
+            result = self.calculate_extension(data, swing_high_idx, swing_low_idx)
         elif fib_type == FibonacciType.TIME_SERIES:
-            return self.calculate_time_series(data, swing_low_idx)
+            result = self.calculate_time_series(data, swing_low_idx)
         else:
             logger.warning(f"不支持的斐波那契工具类型: {fib_type}")
-            return pd.DataFrame(index=data.index)
+            result = pd.DataFrame(index=data.index)
+
+        # 添加形态识别列（避免循环调用）
+        try:
+            identified_patterns = self.identify_patterns(data)
+
+            # 初始化所有可能的形态列
+            pattern_columns = [
+                'FIB_GOLDEN_RATIO_SUPPORT', 'FIB_GOLDEN_RATIO_RESISTANCE',
+                'FIB_50_PERCENT_RETRACEMENT', 'FIB_382_RETRACEMENT', 'FIB_618_RETRACEMENT',
+                'FIB_EXTENSION_TARGET', 'FIB_GOLDEN_EXTENSION', 'FIB_100_EXTENSION',
+                'FIB_CLUSTER_SUPPORT', 'FIB_CLUSTER_RESISTANCE',
+                'FIB_BREAKOUT_UP', 'FIB_BREAKOUT_DOWN',
+                'FIB_SUPPORT_BOUNCE', 'FIB_RESISTANCE_PULLBACK',
+                'FIB_TIME_CYCLE', 'FIB_VOLUME_CONFIRMATION',
+                'FIB_TREND_ALIGNMENT', 'FIB_REVERSAL_SIGNAL'
+            ]
+
+            for col in pattern_columns:
+                result[col] = False
+
+            # 根据识别的形态设置相应的布尔值
+            for pattern in identified_patterns:
+                if "黄金分割位" in pattern:
+                    if "支撑" in pattern:
+                        result['FIB_GOLDEN_RATIO_SUPPORT'] = True
+                    elif "阻力" in pattern:
+                        result['FIB_GOLDEN_RATIO_RESISTANCE'] = True
+
+                if "50%回调位" in pattern:
+                    result['FIB_50_PERCENT_RETRACEMENT'] = True
+                elif "0.382" in pattern:
+                    result['FIB_382_RETRACEMENT'] = True
+                elif "0.618" in pattern:
+                    result['FIB_618_RETRACEMENT'] = True
+
+                if "扩展位" in pattern:
+                    if "黄金扩展位" in pattern:
+                        result['FIB_GOLDEN_EXTENSION'] = True
+                    elif "100%扩展位" in pattern:
+                        result['FIB_100_EXTENSION'] = True
+                    else:
+                        result['FIB_EXTENSION_TARGET'] = True
+
+                if "聚集区" in pattern:
+                    if "支撑" in pattern:
+                        result['FIB_CLUSTER_SUPPORT'] = True
+                    elif "阻力" in pattern:
+                        result['FIB_CLUSTER_RESISTANCE'] = True
+
+                if "向上突破" in pattern:
+                    result['FIB_BREAKOUT_UP'] = True
+                elif "向下突破" in pattern:
+                    result['FIB_BREAKOUT_DOWN'] = True
+
+                if "支撑反弹" in pattern:
+                    result['FIB_SUPPORT_BOUNCE'] = True
+                elif "阻力回调" in pattern:
+                    result['FIB_RESISTANCE_PULLBACK'] = True
+
+                if "时间节点" in pattern:
+                    result['FIB_TIME_CYCLE'] = True
+
+                if "放量" in pattern:
+                    result['FIB_VOLUME_CONFIRMATION'] = True
+
+                if "趋势" in pattern:
+                    result['FIB_TREND_ALIGNMENT'] = True
+
+        except Exception as e:
+            logger.warning(f"形态识别失败: {e}")
+            # 如果形态识别失败，至少添加空的形态列
+            pattern_columns = [
+                'FIB_GOLDEN_RATIO_SUPPORT', 'FIB_GOLDEN_RATIO_RESISTANCE',
+                'FIB_50_PERCENT_RETRACEMENT', 'FIB_382_RETRACEMENT', 'FIB_618_RETRACEMENT',
+                'FIB_EXTENSION_TARGET', 'FIB_GOLDEN_EXTENSION', 'FIB_100_EXTENSION',
+                'FIB_CLUSTER_SUPPORT', 'FIB_CLUSTER_RESISTANCE',
+                'FIB_BREAKOUT_UP', 'FIB_BREAKOUT_DOWN',
+                'FIB_SUPPORT_BOUNCE', 'FIB_RESISTANCE_PULLBACK',
+                'FIB_TIME_CYCLE', 'FIB_VOLUME_CONFIRMATION',
+                'FIB_TREND_ALIGNMENT', 'FIB_REVERSAL_SIGNAL'
+            ]
+
+            for col in pattern_columns:
+                result[col] = False
+
+        return result
     
     def calculate_retracement(self, data: pd.DataFrame, swing_high_idx: int, swing_low_idx: int) -> pd.DataFrame:
         """
@@ -1021,4 +1122,372 @@ class FibonacciTools(BaseIndicator):
                             signals.loc[signals.index[i], 'stop_loss'] = level_price * 1.02
                             break
         
-        return signals 
+        return signals
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取FibonacciTools相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 基于识别的形态创建布尔列
+        identified_patterns = self.identify_patterns(data)
+
+        # 初始化所有可能的形态列
+        pattern_columns = [
+            'FIB_GOLDEN_RATIO_SUPPORT', 'FIB_GOLDEN_RATIO_RESISTANCE',
+            'FIB_50_PERCENT_RETRACEMENT', 'FIB_382_RETRACEMENT', 'FIB_618_RETRACEMENT',
+            'FIB_EXTENSION_TARGET', 'FIB_GOLDEN_EXTENSION', 'FIB_100_EXTENSION',
+            'FIB_CLUSTER_SUPPORT', 'FIB_CLUSTER_RESISTANCE',
+            'FIB_BREAKOUT_UP', 'FIB_BREAKOUT_DOWN',
+            'FIB_SUPPORT_BOUNCE', 'FIB_RESISTANCE_PULLBACK',
+            'FIB_TIME_CYCLE', 'FIB_VOLUME_CONFIRMATION',
+            'FIB_TREND_ALIGNMENT', 'FIB_REVERSAL_SIGNAL'
+        ]
+
+        for col in pattern_columns:
+            patterns[col] = False
+
+        # 根据识别的形态设置相应的布尔值
+        for pattern in identified_patterns:
+            if "黄金分割位" in pattern:
+                if "支撑" in pattern:
+                    patterns['FIB_GOLDEN_RATIO_SUPPORT'] = True
+                elif "阻力" in pattern:
+                    patterns['FIB_GOLDEN_RATIO_RESISTANCE'] = True
+
+            if "50%回调位" in pattern:
+                patterns['FIB_50_PERCENT_RETRACEMENT'] = True
+            elif "0.382" in pattern:
+                patterns['FIB_382_RETRACEMENT'] = True
+            elif "0.618" in pattern:
+                patterns['FIB_618_RETRACEMENT'] = True
+
+            if "扩展位" in pattern:
+                if "黄金扩展位" in pattern:
+                    patterns['FIB_GOLDEN_EXTENSION'] = True
+                elif "100%扩展位" in pattern:
+                    patterns['FIB_100_EXTENSION'] = True
+                else:
+                    patterns['FIB_EXTENSION_TARGET'] = True
+
+            if "聚集区" in pattern:
+                if "支撑" in pattern:
+                    patterns['FIB_CLUSTER_SUPPORT'] = True
+                elif "阻力" in pattern:
+                    patterns['FIB_CLUSTER_RESISTANCE'] = True
+
+            if "向上突破" in pattern:
+                patterns['FIB_BREAKOUT_UP'] = True
+            elif "向下突破" in pattern:
+                patterns['FIB_BREAKOUT_DOWN'] = True
+
+            if "支撑反弹" in pattern:
+                patterns['FIB_SUPPORT_BOUNCE'] = True
+            elif "阻力回调" in pattern:
+                patterns['FIB_RESISTANCE_PULLBACK'] = True
+
+            if "时间节点" in pattern:
+                patterns['FIB_TIME_CYCLE'] = True
+
+            if "放量" in pattern:
+                patterns['FIB_VOLUME_CONFIRMATION'] = True
+
+            if "趋势" in pattern:
+                patterns['FIB_TREND_ALIGNMENT'] = True
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算FibonacciTools指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有斐波那契水平数据
+            fib_columns = [col for col in self._result.columns if 'fib_' in col]
+            if fib_columns:
+                # 斐波那契数据越完整，置信度越高
+                data_completeness = len(fib_columns) / 10  # 假设最多10个斐波那契水平
+                confidence += min(data_completeness * 0.1, 0.1)
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查FibonacciTools形态（只计算布尔列）
+            bool_columns = patterns.select_dtypes(include=[bool]).columns
+            if len(bool_columns) > 0:
+                pattern_count = patterns[bool_columns].sum().sum()
+                if pattern_count > 0:
+                    confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 60:  # 两个月数据
+            confidence += 0.1
+        elif len(score) >= 30:  # 一个月数据
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册FibonacciTools指标的形态到全局形态注册表
+        """
+        # 注册黄金分割位形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_GOLDEN_RATIO_SUPPORT",
+            display_name="黄金分割位支撑",
+            description="价格在0.618黄金分割位获得支撑，强烈的买入信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_GOLDEN_RATIO_RESISTANCE",
+            display_name="黄金分割位阻力",
+            description="价格在0.618黄金分割位遇阻，强烈的卖出信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0
+        )
+
+        # 注册回调位形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_50_PERCENT_RETRACEMENT",
+            display_name="50%回调位",
+            description="价格接近50%斐波那契回调位，重要的支撑/阻力位",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_382_RETRACEMENT",
+            display_name="38.2%回调位",
+            description="价格接近38.2%斐波那契回调位，浅度回调支撑",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_618_RETRACEMENT",
+            display_name="61.8%回调位",
+            description="价格接近61.8%斐波那契回调位，深度回调支撑",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册扩展位形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_GOLDEN_EXTENSION",
+            display_name="黄金扩展位",
+            description="价格接近1.618黄金扩展位，重要的目标位",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_100_EXTENSION",
+            display_name="100%扩展位",
+            description="价格接近100%扩展位，等幅扩展目标",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        # 注册聚集区形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_CLUSTER_SUPPORT",
+            display_name="斐波那契聚集区支撑",
+            description="多个斐波那契水平聚集形成强力支撑",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_CLUSTER_RESISTANCE",
+            display_name="斐波那契聚集区阻力",
+            description="多个斐波那契水平聚集形成强力阻力",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-35.0
+        )
+
+        # 注册突破形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_BREAKOUT_UP",
+            display_name="斐波那契向上突破",
+            description="价格向上突破重要斐波那契水平",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_BREAKOUT_DOWN",
+            display_name="斐波那契向下突破",
+            description="价格向下突破重要斐波那契水平",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册反弹回调形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_SUPPORT_BOUNCE",
+            display_name="斐波那契支撑反弹",
+            description="价格在斐波那契水平获得支撑并反弹",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=18.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_RESISTANCE_PULLBACK",
+            display_name="斐波那契阻力回调",
+            description="价格在斐波那契水平遇阻并回调",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-18.0
+        )
+
+        # 注册时间周期形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_TIME_CYCLE",
+            display_name="斐波那契时间周期",
+            description="接近重要的斐波那契时间节点",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        # 注册确认形态
+        self.register_pattern_to_registry(
+            pattern_id="FIB_VOLUME_CONFIRMATION",
+            display_name="斐波那契成交量确认",
+            description="斐波那契水平附近伴随成交量放大",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIB_TREND_ALIGNMENT",
+            display_name="斐波那契趋势一致",
+            description="斐波那契信号与主趋势方向一致",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成FibonacciTools交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 使用generate_signals方法生成详细信号
+        detailed_signals = self.generate_signals(data, **kwargs)
+
+        # 转换为简化的信号格式
+        buy_signal = detailed_signals['buy_signal']
+        sell_signal = detailed_signals['sell_signal']
+
+        # 计算信号强度
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 基于置信度计算信号强度
+        confidence = detailed_signals['confidence']
+
+        # 买入信号强度
+        signal_strength[buy_signal] = confidence[buy_signal] / 100.0
+
+        # 卖出信号强度（负值）
+        signal_strength[sell_signal] = -confidence[sell_signal] / 100.0
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(-1, 1)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "FIBONACCITOOLS"

@@ -162,7 +162,8 @@ class UnifiedMA(BaseIndicator):
         ma_type = params.get('ma_type', self._parameters['ma_type'])
         
         # 确保数据包含价格列
-        self.ensure_columns(data, [price_col])
+        if price_col not in data.columns:
+            raise ValueError(f"数据必须包含'{price_col}'列")
         
         # 如果periods是单个值，转换为列表
         if not isinstance(periods, list):
@@ -322,7 +323,7 @@ class UnifiedMA(BaseIndicator):
         """
         # 计算均线
         if not self.has_result():
-            self.compute(data)
+            self.calculate(data)
             
         if not self.has_result():
             return pd.DataFrame()
@@ -343,8 +344,9 @@ class UnifiedMA(BaseIndicator):
             if ma_col in ma_data.columns:
                 # 价格上穿均线
                 signals[f'price_above_{ma_col}'] = data[price_col] > ma_data[ma_col]
-                signals[f'price_cross_above_{ma_col}'] = self.crossover(data[price_col], ma_data[ma_col])
-                signals[f'price_cross_below_{ma_col}'] = self.crossunder(data[price_col], ma_data[ma_col])
+                from utils.indicator_utils import crossover, crossunder
+                signals[f'price_cross_above_{ma_col}'] = crossover(data[price_col], ma_data[ma_col])
+                signals[f'price_cross_below_{ma_col}'] = crossunder(data[price_col], ma_data[ma_col])
         
         # 计算均线交叉信号
         if len(periods) >= 2:
@@ -356,11 +358,11 @@ class UnifiedMA(BaseIndicator):
                     long_ma = f'MA{long_period}'
                     if short_ma in ma_data.columns and long_ma in ma_data.columns:
                         # 短期均线上穿长期均线
-                        signals[f'golden_cross_{short_ma}_{long_ma}'] = self.crossover(
+                        signals[f'golden_cross_{short_ma}_{long_ma}'] = crossover(
                             ma_data[short_ma], ma_data[long_ma]
                         )
                         # 短期均线下穿长期均线
-                        signals[f'death_cross_{short_ma}_{long_ma}'] = self.crossunder(
+                        signals[f'death_cross_{short_ma}_{long_ma}'] = crossunder(
                             ma_data[short_ma], ma_data[long_ma]
                         )
         
@@ -398,13 +400,13 @@ class UnifiedMA(BaseIndicator):
             if all(col in ma_data.columns for col in [short_ma, mid_ma, long_ma]):
                 # 买入信号：短期均线上穿中期均线，且价格在长期均线上方
                 signals['buy_signal'] = (
-                    self.crossover(ma_data[short_ma], ma_data[mid_ma]) & 
+                    crossover(ma_data[short_ma], ma_data[mid_ma]) &
                     (data[price_col] > ma_data[long_ma])
                 )
-                
+
                 # 卖出信号：短期均线下穿中期均线，且价格在长期均线下方
                 signals['sell_signal'] = (
-                    self.crossunder(ma_data[short_ma], ma_data[mid_ma]) & 
+                    crossunder(ma_data[short_ma], ma_data[mid_ma]) &
                     (data[price_col] < ma_data[long_ma])
                 )
         
@@ -602,5 +604,306 @@ class UnifiedMA(BaseIndicator):
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
-        
-        return score 
+
+        return score
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算UnifiedMA指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于MA类型的置信度
+        ma_type = self._parameters.get('ma_type', self.MA_TYPE_SIMPLE)
+        if ma_type == self.MA_TYPE_AMA:
+            confidence += 0.1  # 自适应MA置信度更高
+        elif ma_type == self.MA_TYPE_HMA:
+            confidence += 0.08  # Hull MA置信度较高
+        elif ma_type == self.MA_TYPE_EMA:
+            confidence += 0.05  # EMA置信度中等
+
+        # 3. 基于周期数量的置信度
+        periods = self._parameters.get('periods', [])
+        if len(periods) >= 3:
+            confidence += 0.1  # 多周期分析置信度更高
+        elif len(periods) >= 2:
+            confidence += 0.05
+
+        # 4. 基于形态的置信度
+        if not patterns.empty:
+            # 检查UnifiedMA形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.15)
+
+        # 5. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 6. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取UnifiedMA相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 获取参数
+        params = self._parameters.copy()
+        params.update(kwargs)
+        periods = params.get('periods', [5, 10, 20, 30, 60])
+        price_col = params.get('price_col', 'close')
+
+        if len(periods) < 2:
+            return patterns
+
+        # 选择短期和长期MA
+        periods = sorted(periods)
+        short_period = periods[0]
+        long_period = periods[-1]
+
+        short_ma_col = f'MA{short_period}'
+        long_ma_col = f'MA{long_period}'
+
+        # 确保MA列存在
+        if short_ma_col not in self._result.columns or long_ma_col not in self._result.columns:
+            return patterns
+
+        from utils.indicator_utils import crossover, crossunder
+
+        # 1. 金叉和死叉
+        patterns['MA_GOLDEN_CROSS'] = crossover(self._result[short_ma_col], self._result[long_ma_col])
+        patterns['MA_DEATH_CROSS'] = crossunder(self._result[short_ma_col], self._result[long_ma_col])
+
+        # 2. 价格与MA的关系
+        patterns['PRICE_ABOVE_SHORT_MA'] = data[price_col] > self._result[short_ma_col]
+        patterns['PRICE_BELOW_SHORT_MA'] = data[price_col] < self._result[short_ma_col]
+        patterns['PRICE_ABOVE_LONG_MA'] = data[price_col] > self._result[long_ma_col]
+        patterns['PRICE_BELOW_LONG_MA'] = data[price_col] < self._result[long_ma_col]
+
+        # 3. 价格突破MA
+        patterns['PRICE_BREAKOUT_ABOVE_SHORT_MA'] = crossover(data[price_col], self._result[short_ma_col])
+        patterns['PRICE_BREAKOUT_BELOW_SHORT_MA'] = crossunder(data[price_col], self._result[short_ma_col])
+        patterns['PRICE_BREAKOUT_ABOVE_LONG_MA'] = crossover(data[price_col], self._result[long_ma_col])
+        patterns['PRICE_BREAKOUT_BELOW_LONG_MA'] = crossunder(data[price_col], self._result[long_ma_col])
+
+        # 4. MA排列形态
+        if len(periods) >= 3:
+            mid_period = periods[len(periods)//2]
+            mid_ma_col = f'MA{mid_period}'
+
+            if mid_ma_col in self._result.columns:
+                # 多头排列：短期 > 中期 > 长期
+                patterns['MA_BULLISH_ALIGNMENT'] = (
+                    (self._result[short_ma_col] > self._result[mid_ma_col]) &
+                    (self._result[mid_ma_col] > self._result[long_ma_col])
+                )
+
+                # 空头排列：短期 < 中期 < 长期
+                patterns['MA_BEARISH_ALIGNMENT'] = (
+                    (self._result[short_ma_col] < self._result[mid_ma_col]) &
+                    (self._result[mid_ma_col] < self._result[long_ma_col])
+                )
+
+        # 5. MA趋势形态
+        short_ma_trend = self._result[short_ma_col].diff()
+        patterns['MA_SHORT_UPTREND'] = short_ma_trend > 0
+        patterns['MA_SHORT_DOWNTREND'] = short_ma_trend < 0
+
+        long_ma_trend = self._result[long_ma_col].diff()
+        patterns['MA_LONG_UPTREND'] = long_ma_trend > 0
+        patterns['MA_LONG_DOWNTREND'] = long_ma_trend < 0
+
+        # 6. 盘整形态
+        consolidation = self.is_consolidation(period=short_period)
+        if not consolidation.empty:
+            patterns['MA_CONSOLIDATION'] = consolidation
+            patterns['MA_BREAKOUT_FROM_CONSOLIDATION'] = consolidation.shift(1) & (~consolidation)
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册UnifiedMA指标的形态到全局形态注册表
+        """
+        # 注册金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MA_GOLDEN_CROSS",
+            display_name="MA金叉",
+            description="短期移动平均线上穿长期移动平均线，通常是看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MA_DEATH_CROSS",
+            display_name="MA死叉",
+            description="短期移动平均线下穿长期移动平均线，通常是看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册多头排列形态
+        self.register_pattern_to_registry(
+            pattern_id="MA_BULLISH_ALIGNMENT",
+            display_name="MA多头排列",
+            description="短期、中期、长期移动平均线呈多头排列，表明强劲上升趋势",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0
+        )
+
+        # 注册空头排列形态
+        self.register_pattern_to_registry(
+            pattern_id="MA_BEARISH_ALIGNMENT",
+            display_name="MA空头排列",
+            description="短期、中期、长期移动平均线呈空头排列，表明强劲下降趋势",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册价格突破形态
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_BREAKOUT_ABOVE_LONG_MA",
+            display_name="价格突破长期MA",
+            description="价格向上突破长期移动平均线，可能是趋势转换信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_BREAKOUT_BELOW_LONG_MA",
+            display_name="价格跌破长期MA",
+            description="价格向下跌破长期移动平均线，可能是趋势转换信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0
+        )
+
+        # 注册盘整突破形态
+        self.register_pattern_to_registry(
+            pattern_id="MA_BREAKOUT_FROM_CONSOLIDATION",
+            display_name="MA盘整突破",
+            description="移动平均线从盘整状态突破，可能预示新趋势开始",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成UnifiedMA交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        # 生成信号
+        signals_df = self.generate_signals(data)
+
+        if signals_df.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 计算信号强度
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 基于买卖信号计算强度
+        if 'buy_signal' in signals_df.columns:
+            signal_strength[signals_df['buy_signal']] += 0.8
+        if 'sell_signal' in signals_df.columns:
+            signal_strength[signals_df['sell_signal']] += 0.8
+
+        # 基于趋势信号调整强度
+        if 'bull_trend' in signals_df.columns:
+            signal_strength[signals_df['bull_trend']] += 0.3
+        if 'bear_trend' in signals_df.columns:
+            signal_strength[signals_df['bear_trend']] += 0.3
+
+        # 基于金叉死叉调整强度
+        for col in signals_df.columns:
+            if 'golden_cross' in col:
+                signal_strength[signals_df[col]] += 0.5
+            elif 'death_cross' in col:
+                signal_strength[signals_df[col]] += 0.5
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(0, 1)
+
+        return {
+            'buy_signal': signals_df.get('buy_signal', pd.Series(False, index=data.index)),
+            'sell_signal': signals_df.get('sell_signal', pd.Series(False, index=data.index)),
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "UNIFIEDMA"

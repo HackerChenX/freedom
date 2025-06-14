@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment
+from indicators.base_indicator import BaseIndicator
 from indicators.mfi import MFI
 from utils.logger import get_logger
 
@@ -79,7 +79,10 @@ class EnhancedMFI(MFI):
             pd.DataFrame: 计算结果，包含MFI及其相关指标
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["high", "low", "close", "volume"])
+        required_columns = ["high", "low", "close", "volume"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 处理异常成交量
         processed_data = data.copy()
@@ -88,14 +91,20 @@ class EnhancedMFI(MFI):
         
         # 使用父类方法计算MFI
         result = super().calculate(processed_data, *args, **kwargs)
-        
+
+        # 如果父类计算失败，返回基础结果
+        if result is None or 'mfi' not in result.columns:
+            logger.warning("父类MFI计算失败，返回基础结果")
+            result = pd.DataFrame(index=data.index)
+            result["mfi"] = 50.0  # 默认中性值
+
         # 计算动态阈值
         self._calculate_dynamic_thresholds(data)
-        
+
         # 添加动态阈值到结果
         result["mfi_overbought"] = self._dynamic_overbought
         result["mfi_oversold"] = self._dynamic_oversold
-        
+
         # 计算MFI与价格的相对变化率
         result["mfi_price_ratio"] = self._calculate_mfi_price_ratio(data["close"], result["mfi"])
         
@@ -708,4 +717,417 @@ class EnhancedMFI(MFI):
             signals.loc[sell_signals, 'position_size'] = signals.loc[sell_signals, 'position_size'] * 1.2
             signals.loc[sell_signals, 'position_size'] = signals.loc[sell_signals, 'position_size'].clip(0, 1)
         
-        return signals 
+        return signals
+
+    def _calculate_mfi_divergence_score(self, data: pd.DataFrame) -> pd.Series:
+        """
+        计算MFI背离评分
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            pd.Series: 背离评分序列
+        """
+        score = pd.Series(0.0, index=data.index)
+
+        if self._result is None:
+            return score
+
+        mfi = self._result["mfi"]
+        close = data["close"]
+
+        # 简单的背离检测
+        window = 20
+        for i in range(window, len(data)):
+            # 价格创新高但MFI未创新高（顶背离）
+            price_window = close.iloc[i-window:i+1]
+            mfi_window = mfi.iloc[i-window:i+1]
+
+            if (close.iloc[i] == price_window.max() and
+                mfi.iloc[i] < mfi_window.max() * 0.95):
+                score.iloc[i] = -20  # 顶背离，看跌
+
+            # 价格创新低但MFI未创新低（底背离）
+            elif (close.iloc[i] == price_window.min() and
+                  mfi.iloc[i] > mfi_window.min() * 1.05):
+                score.iloc[i] = 20  # 底背离，看涨
+
+        return score
+
+    def _calculate_mfi_trend_score(self) -> pd.Series:
+        """
+        计算MFI趋势评分
+
+        Returns:
+            pd.Series: 趋势评分序列
+        """
+        score = pd.Series(0.0, index=self._result.index)
+
+        mfi = self._result["mfi"]
+
+        # MFI趋势评分
+        mfi_momentum = self._result.get("mfi_momentum", mfi.diff(3))
+        mfi_slope = self._result.get("mfi_slope", mfi.diff(3))
+
+        # 上升趋势加分
+        uptrend = (mfi_momentum > 0) & (mfi_slope > 0)
+        score.loc[uptrend] += 10
+
+        # 下降趋势减分
+        downtrend = (mfi_momentum < 0) & (mfi_slope < 0)
+        score.loc[downtrend] -= 10
+
+        # 强势上升趋势
+        strong_uptrend = (mfi_momentum > 5) & (mfi_slope > 2)
+        score.loc[strong_uptrend] += 15
+
+        # 强势下降趋势
+        strong_downtrend = (mfi_momentum < -5) & (mfi_slope < -2)
+        score.loc[strong_downtrend] -= 15
+
+        return score
+
+    def _detect_mfi_divergence_patterns(self, data: pd.DataFrame) -> List[str]:
+        """
+        检测MFI背离形态
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            List[str]: 背离形态列表
+        """
+        patterns = []
+
+        if len(data) < 20:
+            return patterns
+
+        mfi = self._result["mfi"]
+        close = data["close"]
+
+        # 检测最近的背离
+        window = 20
+        recent_idx = len(data) - 1
+
+        if recent_idx >= window:
+            price_window = close.iloc[recent_idx-window:recent_idx+1]
+            mfi_window = mfi.iloc[recent_idx-window:recent_idx+1]
+
+            current_price = close.iloc[recent_idx]
+            current_mfi = mfi.iloc[recent_idx]
+
+            # 顶背离
+            if (current_price == price_window.max() and
+                current_mfi < mfi_window.max() * 0.95):
+                patterns.append("MFI顶背离")
+
+            # 底背离
+            elif (current_price == price_window.min() and
+                  current_mfi > mfi_window.min() * 1.05):
+                patterns.append("MFI底背离")
+
+        return patterns
+
+    def _detect_mfi_trend_patterns(self) -> List[str]:
+        """
+        检测MFI趋势形态
+
+        Returns:
+            List[str]: 趋势形态列表
+        """
+        patterns = []
+
+        if len(self._result) < 10:
+            return patterns
+
+        mfi = self._result["mfi"]
+        recent_mfi = mfi.iloc[-10:]
+
+        # 上升趋势
+        if recent_mfi.iloc[-1] > recent_mfi.iloc[-5] > recent_mfi.iloc[-10]:
+            patterns.append("MFI上升趋势")
+
+            # 强势上升
+            if recent_mfi.iloc[-1] - recent_mfi.iloc[-10] > 20:
+                patterns.append("MFI强势上升")
+
+        # 下降趋势
+        elif recent_mfi.iloc[-1] < recent_mfi.iloc[-5] < recent_mfi.iloc[-10]:
+            patterns.append("MFI下降趋势")
+
+            # 强势下降
+            if recent_mfi.iloc[-10] - recent_mfi.iloc[-1] > 20:
+                patterns.append("MFI强势下降")
+
+        # 横盘整理
+        else:
+            patterns.append("MFI横盘整理")
+
+        return patterns
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        if 'period' in kwargs:
+            self.period = kwargs['period']
+        if 'volatility_lookback' in kwargs:
+            self.volatility_lookback = kwargs['volatility_lookback']
+        if 'enable_volume_filter' in kwargs:
+            self.enable_volume_filter = kwargs['enable_volume_filter']
+        if 'volume_filter_threshold' in kwargs:
+            self.volume_filter_threshold = kwargs['volume_filter_threshold']
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedMFI指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedMFI形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EnhancedMFI相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 获取MFI数据
+        mfi = self._result['mfi']
+
+        # 基本形态
+        patterns['MFI_OVERBOUGHT'] = mfi > self._dynamic_overbought
+        patterns['MFI_OVERSOLD'] = mfi < self._dynamic_oversold
+        patterns['MFI_ABOVE_50'] = mfi > 50
+        patterns['MFI_BELOW_50'] = mfi < 50
+
+        # 交叉形态
+        patterns['MFI_CROSS_OVERBOUGHT_UP'] = (mfi > self._dynamic_overbought) & (mfi.shift(1) <= self._dynamic_overbought)
+        patterns['MFI_CROSS_OVERBOUGHT_DOWN'] = (mfi < self._dynamic_overbought) & (mfi.shift(1) >= self._dynamic_overbought)
+        patterns['MFI_CROSS_OVERSOLD_UP'] = (mfi > self._dynamic_oversold) & (mfi.shift(1) <= self._dynamic_oversold)
+        patterns['MFI_CROSS_OVERSOLD_DOWN'] = (mfi < self._dynamic_oversold) & (mfi.shift(1) >= self._dynamic_oversold)
+        patterns['MFI_CROSS_50_UP'] = (mfi > 50) & (mfi.shift(1) <= 50)
+        patterns['MFI_CROSS_50_DOWN'] = (mfi < 50) & (mfi.shift(1) >= 50)
+
+        # 趋势形态
+        patterns['MFI_RISING'] = mfi > mfi.shift(1)
+        patterns['MFI_FALLING'] = mfi < mfi.shift(1)
+
+        # 背离形态（简化版）
+        if 'mfi_price_ratio' in self._result.columns:
+            mfi_ratio = self._result['mfi_price_ratio']
+            patterns['MFI_BULLISH_DIVERGENCE'] = (mfi_ratio > 2) & (mfi < 30)
+            patterns['MFI_BEARISH_DIVERGENCE'] = (mfi_ratio < -2) & (mfi > 70)
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册EnhancedMFI指标的形态到全局形态注册表
+        """
+        # 注册MFI超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="MFI_OVERBOUGHT",
+            display_name="MFI超买",
+            description="MFI指标进入超买区域，表明市场可能过热",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MFI_OVERSOLD",
+            display_name="MFI超卖",
+            description="MFI指标进入超卖区域，表明市场可能超跌",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        # 注册MFI交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MFI_CROSS_50_UP",
+            display_name="MFI上穿50",
+            description="MFI从下方穿越50中线，表明资金流入增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MFI_CROSS_50_DOWN",
+            display_name="MFI下穿50",
+            description="MFI从上方穿越50中线，表明资金流出增强",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册MFI背离形态
+        self.register_pattern_to_registry(
+            pattern_id="MFI_BULLISH_DIVERGENCE",
+            display_name="MFI看涨背离",
+            description="价格创新低但MFI未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MFI_BEARISH_DIVERGENCE",
+            display_name="MFI看跌背离",
+            description="价格创新高但MFI未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册MFI超买超卖反转形态
+        self.register_pattern_to_registry(
+            pattern_id="MFI_CROSS_OVERSOLD_UP",
+            display_name="MFI超卖反弹",
+            description="MFI从超卖区域向上突破，表明反弹开始",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MFI_CROSS_OVERBOUGHT_DOWN",
+            display_name="MFI超买回落",
+            description="MFI从超买区域向下突破，表明回调开始",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成EnhancedMFI交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        mfi = self._result['mfi']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. MFI超卖反弹信号
+        oversold_bounce = (mfi > self._dynamic_oversold) & (mfi.shift(1) <= self._dynamic_oversold)
+        buy_signal |= oversold_bounce
+        signal_strength += oversold_bounce * 0.7
+
+        # 2. MFI超买回落信号
+        overbought_fall = (mfi < self._dynamic_overbought) & (mfi.shift(1) >= self._dynamic_overbought)
+        sell_signal |= overbought_fall
+        signal_strength += overbought_fall * 0.7
+
+        # 3. MFI中线交叉信号
+        cross_50_up = (mfi > 50) & (mfi.shift(1) <= 50)
+        cross_50_down = (mfi < 50) & (mfi.shift(1) >= 50)
+
+        buy_signal |= cross_50_up
+        sell_signal |= cross_50_down
+        signal_strength += cross_50_up * 0.5
+        signal_strength += cross_50_down * 0.5
+
+        # 4. MFI背离信号
+        if 'mfi_price_ratio' in self._result.columns:
+            mfi_ratio = self._result['mfi_price_ratio']
+            bullish_divergence = (mfi_ratio > 2) & (mfi < 30)
+            bearish_divergence = (mfi_ratio < -2) & (mfi > 70)
+
+            buy_signal |= bullish_divergence
+            sell_signal |= bearish_divergence
+            signal_strength += bullish_divergence * 0.8
+            signal_strength += bearish_divergence * 0.8
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }

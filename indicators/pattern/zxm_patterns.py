@@ -31,70 +31,116 @@ class ZXMPatternIndicator(BaseIndicator):
         # ZXM形态识别通常没有可变参数，但为了符合接口要求，提供此方法
         pass
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取ZXM指标的技术形态
+        获取ZXM相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        # ZXM形态识别较为复杂，暂不直接返回形态列表
-        return []
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 直接返回计算结果，因为_calculate已经包含了所有形态
+        return self._result
     
-    def _calculate(self, 
-                  open_prices: np.ndarray, 
-                  high_prices: np.ndarray, 
-                  low_prices: np.ndarray, 
-                  close_prices: np.ndarray, 
-                  volumes: np.ndarray, 
-                  *args, **kwargs) -> Dict[str, np.ndarray]:
+    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM体系的买点和吸筹形态指标
-        
+
         Args:
-            open_prices: 开盘价数组
-            high_prices: 最高价数组
-            low_prices: 最低价数组
-            close_prices: 收盘价数组
-            volumes: 成交量数组
-            
+            data: 输入数据，包含OHLCV数据
+
         Returns:
-            包含各种买点和吸筹形态识别结果的字典
+            pd.DataFrame: 包含各种买点和吸筹形态识别结果的DataFrame
         """
+        # 验证输入数据
+        if data is None or len(data) == 0:
+            return pd.DataFrame(index=data.index if data is not None else [])
+
+        # 确保数据包含必需的列
+        required_columns = ["open", "high", "low", "close", "volume"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
+
+        # 数据量不足时提前返回，但包含所有必需列
+        if len(data) < 10:
+            result = pd.DataFrame(index=data.index)
+            # 确保所有预期列都存在
+            expected_columns = [
+                'class_one_buy', 'class_two_buy', 'class_three_buy',
+                'breakout_pullback_buy', 'volume_shrink_platform_buy',
+                'long_shadow_support_buy', 'ma_converge_diverge_buy',
+                'volume_decrease', 'decline_slow_down', 'decline_reduce',
+                'key_support_hold', 'macd_double_diverge', 'volume_shrink_range',
+                'ma_convergence', 'macd_zero_hover', 'long_lower_shadow',
+                'ma_precise_support', 'small_alternating'
+            ]
+            for col in expected_columns:
+                result[col] = False
+            return result
+
+        # 提取价格和成交量数据
+        open_prices = data["open"].values
+        high_prices = data["high"].values
+        low_prices = data["low"].values
+        close_prices = data["close"].values
+        volumes = data["volume"].values
+
         # 计算基础指标
         ma5 = ma(close_prices, 5)
         ma10 = ma(close_prices, 10)
         ma20 = ma(close_prices, 20)
         ma30 = ma(close_prices, 30)
         ma60 = ma(close_prices, 60)
-        
+
         ema12 = ema(close_prices, 12)
         ema26 = ema(close_prices, 26)
-        
+
         # 计算MACD
         dif, dea, macd_hist = macd(close_prices)
-        
+
         # 计算KDJ
         k, d, j = kdj(close_prices, high_prices, low_prices)
-        
+
         # 成交量相关指标
         vol_ma5 = ma(volumes, 5)
         vol_ma10 = ma(volumes, 10)
-        
+
         # 定义结果字典
-        result = {}
-        
+        result_dict = {}
+
         # 识别买点形态
-        result.update(self._identify_buy_points(
+        result_dict.update(self._identify_buy_points(
             open_prices, high_prices, low_prices, close_prices, volumes,
             ma5, ma10, ma20, ma30, ma60, dif, dea, macd_hist, k, d, j,
             vol_ma5, vol_ma10
         ))
-        
+
         # 识别吸筹形态
-        result.update(self._identify_absorption_patterns(
+        result_dict.update(self._identify_absorption_patterns(
             open_prices, high_prices, low_prices, close_prices, volumes,
             ma5, ma10, ma20, ma30, ma60, dif, dea, macd_hist, k, d, j,
             vol_ma5, vol_ma10
         ))
-        
+
+        # 转换为DataFrame
+        result = pd.DataFrame(index=data.index)
+        for key, value in result_dict.items():
+            result[key] = value
+
         return result
         
     def _identify_buy_points(self, 
@@ -277,7 +323,7 @@ class ZXMPatternIndicator(BaseIndicator):
         return result
     
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ZXM体系买点和吸筹形态指标的原始评分
         
@@ -286,22 +332,16 @@ class ZXMPatternIndicator(BaseIndicator):
             **kwargs: 其他参数
             
         Returns:
-            pd.Series: 评分结果，0-100分
+            pd.DataFrame: 包含评分结果的DataFrame，0-100分
         """
         # 确保数据包含必需的列
         required_columns = ["open", "high", "low", "close", "volume"]
         for col in required_columns:
             if col not in data.columns:
-                return pd.Series(50.0, index=data.index)  # 返回默认中性评分
-        
+                return pd.DataFrame({'score': pd.Series(50.0, index=data.index)})  # 返回默认中性评分
+
         # 计算指标
-        result = self.calculate(
-            data["open"].values, 
-            data["high"].values, 
-            data["low"].values, 
-            data["close"].values, 
-            data["volume"].values
-        )
+        result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
         score = pd.Series(50.0, index=data.index)
@@ -360,8 +400,8 @@ class ZXMPatternIndicator(BaseIndicator):
                         current_score += 18
             
             score[idx] = min(100, max(0, current_score))  # 确保评分在0-100范围内
-        
-        return score
+
+        return pd.DataFrame({'score': score}, index=data.index)
     
     def _identify_absorption_patterns(self, 
                                      open_prices: np.ndarray, 
@@ -441,11 +481,23 @@ class ZXMPatternIndicator(BaseIndicator):
         
         # 中期吸筹特征：关键价位精准支撑
         key_support_hold = np.zeros(length, dtype=bool)
-        for i in range(20, length):
+        for i in range(60, length):  # 确保有足够的历史数据
             # MA60精准支撑
-            ma60_support = low_prices[i] <= ma60[i] * 1.01 and close_prices[i] > ma60[i]
+            if not np.isnan(ma60[i]):
+                ma60_support = low_prices[i] <= ma60[i] * 1.01 and close_prices[i] > ma60[i]
+            else:
+                ma60_support = False
+
             # 前期低点支撑
-            prev_low_support = low_prices[i] <= lowest(low_prices[i-60:i-1], 59)[0] * 1.01 and close_prices[i] > lowest(low_prices[i-60:i-1], 59)[0]
+            if i >= 60:
+                prev_low_data = low_prices[i-60:i-1]
+                if len(prev_low_data) > 0:
+                    prev_low_min = np.min(prev_low_data)
+                    prev_low_support = low_prices[i] <= prev_low_min * 1.01 and close_prices[i] > prev_low_min
+                else:
+                    prev_low_support = False
+            else:
+                prev_low_support = False
             
             if ma60_support or prev_low_support:
                 key_support_hold[i] = True
@@ -559,6 +611,281 @@ class ZXMPatternIndicator(BaseIndicator):
         result['small_alternating'] = small_alternating
         
         return result
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算ZXMPatternIndicator指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有ZXM形态数据
+            zxm_pattern_columns = [
+                'class_one_buy', 'class_two_buy', 'class_three_buy',
+                'breakout_pullback_buy', 'volume_shrink_platform_buy',
+                'long_shadow_support_buy', 'ma_converge_diverge_buy'
+            ]
+            available_patterns = [col for col in zxm_pattern_columns if col in self._result.columns]
+            if available_patterns:
+                # ZXM形态数据越完整，置信度越高
+                data_completeness = len(available_patterns) / len(zxm_pattern_columns)
+                confidence += data_completeness * 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查ZXMPatternIndicator形态（只计算布尔列）
+            bool_columns = patterns.select_dtypes(include=[bool]).columns
+            if len(bool_columns) > 0:
+                pattern_count = patterns[bool_columns].sum().sum()
+                if pattern_count > 0:
+                    confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 60:  # 两个月数据
+            confidence += 0.1
+        elif len(score) >= 30:  # 一个月数据
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册ZXMPatternIndicator指标的形态到全局形态注册表
+        """
+        # 注册买点形态
+        self.register_pattern_to_registry(
+            pattern_id="CLASS_ONE_BUY",
+            display_name="一类买点",
+            description="主升浪启动买点，前期横盘整理后放量突破",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=40.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CLASS_TWO_BUY",
+            display_name="二类买点",
+            description="主升浪调整后买点，回调至支撑位后反弹",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CLASS_THREE_BUY",
+            display_name="三类买点",
+            description="超跌反弹买点，连续下跌后出现反转信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BREAKOUT_PULLBACK_BUY",
+            display_name="强势突破回踩买点",
+            description="突破后小幅回踩不破颈线位，再次上攻",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VOLUME_SHRINK_PLATFORM_BUY",
+            display_name="连续缩量平台买点",
+            description="连续缩量横盘整理后KDJ底部金叉突破",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="LONG_SHADOW_SUPPORT_BUY",
+            display_name="长下影线支撑买点",
+            description="在支撑位附近出现长下影线并获得确认",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MA_CONVERGE_DIVERGE_BUY",
+            display_name="均线粘合发散买点",
+            description="均线粘合后首次放量突破发散",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        # 注册吸筹形态
+        self.register_pattern_to_registry(
+            pattern_id="VOLUME_DECREASE",
+            display_name="缩量阴线吸筹",
+            description="初期吸筹特征，缩量小实体阴线",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=5.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DECLINE_SLOW_DOWN",
+            display_name="下跌趋势变缓",
+            description="均线下跌斜率变缓，吸筹迹象",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=5.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KEY_SUPPORT_HOLD",
+            display_name="关键价位精准支撑",
+            description="在关键支撑位获得精准支撑",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_DOUBLE_DIVERGE",
+            display_name="MACD二次背离",
+            description="价格创新低但MACD未创新低的背离",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VOLUME_SHRINK_RANGE",
+            display_name="缩量横盘整理",
+            description="后期吸筹特征，缩量横盘整理",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=5.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MA_CONVERGENCE",
+            display_name="均线开始粘合",
+            description="均线从发散转为粘合，吸筹末期特征",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=8.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成ZXMPatternIndicator交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 初始化信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 定义买入形态
+        buy_patterns = [
+            'class_one_buy',
+            'class_two_buy',
+            'class_three_buy',
+            'breakout_pullback_buy',
+            'volume_shrink_platform_buy',
+            'long_shadow_support_buy',
+            'ma_converge_diverge_buy'
+        ]
+
+        # 强形态权重
+        strong_patterns = {
+            'class_one_buy': 0.9,
+            'class_two_buy': 0.8,
+            'breakout_pullback_buy': 0.75,
+            'class_three_buy': 0.6,
+            'volume_shrink_platform_buy': 0.6,
+            'ma_converge_diverge_buy': 0.6,
+            'long_shadow_support_buy': 0.5
+        }
+
+        # 生成买入信号
+        for pattern in buy_patterns:
+            if pattern in self._result.columns:
+                pattern_mask = self._result[pattern]
+                buy_signal |= pattern_mask
+
+                # 设置信号强度
+                if pattern in strong_patterns:
+                    signal_strength[pattern_mask] = strong_patterns[pattern]
+                else:
+                    signal_strength[pattern_mask] = 0.5
+
+        # ZXM体系主要是买点识别，卖出信号相对较少
+        # 这里可以基于一些反向指标生成卖出信号
+        # 暂时不实现复杂的卖出逻辑
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(0, 1)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "ZXMPATTERNS"
 
 
 # 测试代码

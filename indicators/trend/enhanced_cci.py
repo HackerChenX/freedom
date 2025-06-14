@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, Tuple, List
 
 from indicators.base_indicator import BaseIndicator
 from utils.technical_utils import find_peaks_and_troughs
+from utils.indicator_utils import crossover, crossunder
 
 
 class EnhancedCCI(BaseIndicator):
@@ -71,7 +72,36 @@ class EnhancedCCI(BaseIndicator):
             raise ValueError(f"无效的市场环境类型: {environment}。有效类型: {valid_environments}")
         
         self.market_environment = environment
-    
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算EnhancedCCI指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含EnhancedCCI指标的DataFrame
+        """
+        return self._calculate(data)
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        if 'period' in kwargs:
+            self.base_period = kwargs['period']
+        if 'factor' in kwargs:
+            self.factor = kwargs['factor']
+        if 'secondary_period' in kwargs:
+            self.secondary_period = kwargs['secondary_period']
+        if 'adaptive' in kwargs:
+            self.adaptive = kwargs['adaptive']
+
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算CCI指标
@@ -485,8 +515,8 @@ class EnhancedCCI(BaseIndicator):
         patterns = pd.DataFrame(index=self._result.index)
         
         # 1. 零轴穿越
-        patterns['zero_cross_up'] = self.crossover(self._result['cci'], 0)
-        patterns['zero_cross_down'] = self.crossunder(self._result['cci'], 0)
+        patterns['zero_cross_up'] = crossover(self._result['cci'], 0)
+        patterns['zero_cross_down'] = crossunder(self._result['cci'], 0)
         
         # 2. CCI背离 (价格与CCI走势不一致)
         divergence = self.detect_divergence()
@@ -520,7 +550,7 @@ class EnhancedCCI(BaseIndicator):
                         m_top[peaks[i]] = True
         patterns['m_top'] = pd.Series(m_top, index=cci.index)
 
-        return patterns.reindex(self._result.index).fillna(False)
+        return patterns.reindex(self._result.index).fillna(False).infer_objects(copy=False)
     
     def detect_divergence(self) -> pd.DataFrame:
         """
@@ -872,4 +902,235 @@ class EnhancedCCI(BaseIndicator):
         if not self.has_result():
             self.calculate(data)
         
-        return self.calculate_score() 
+        return self.calculate_score()
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedCCI指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedCCI形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EnhancedCCI相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        # 使用现有的identify_patterns方法
+        patterns = self.identify_patterns()
+
+        # 如果patterns为空，创建基本的形态DataFrame
+        if patterns.empty:
+            patterns = pd.DataFrame(index=data.index)
+
+            # 获取CCI数据
+            cci = self._result['cci']
+
+            # 基本形态
+            patterns['CCI_ZERO_CROSS_UP'] = crossover(cci, 0)
+            patterns['CCI_ZERO_CROSS_DOWN'] = crossunder(cci, 0)
+            patterns['CCI_OVERBOUGHT'] = cci > 100
+            patterns['CCI_OVERSOLD'] = cci < -100
+            patterns['CCI_EXTREME_OVERBOUGHT'] = cci > 200
+            patterns['CCI_EXTREME_OVERSOLD'] = cci < -200
+
+            # 趋势形态
+            patterns['CCI_RISING'] = cci > cci.shift(1)
+            patterns['CCI_FALLING'] = cci < cci.shift(1)
+            patterns['CCI_UPTREND'] = (
+                (cci > cci.shift(1)) &
+                (cci.shift(1) > cci.shift(2)) &
+                (cci.shift(2) > cci.shift(3))
+            )
+            patterns['CCI_DOWNTREND'] = (
+                (cci < cci.shift(1)) &
+                (cci.shift(1) < cci.shift(2)) &
+                (cci.shift(2) < cci.shift(3))
+            )
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册EnhancedCCI指标的形态到全局形态注册表
+        """
+        # 注册CCI零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_ZERO_CROSS_UP",
+            display_name="CCI零轴上穿",
+            description="CCI从下方穿越零轴，表明趋势转为看涨",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_ZERO_CROSS_DOWN",
+            display_name="CCI零轴下穿",
+            description="CCI从上方穿越零轴，表明趋势转为看跌",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册CCI超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_EXTREME_OVERBOUGHT",
+            display_name="CCI极度超买",
+            description="CCI值高于200，表明市场极度超买",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_EXTREME_OVERSOLD",
+            display_name="CCI极度超卖",
+            description="CCI值低于-200，表明市场极度超卖",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册CCI趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_UPTREND",
+            display_name="CCI上升趋势",
+            description="CCI连续上升，表明强势上升趋势",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_DOWNTREND",
+            display_name="CCI下降趋势",
+            description="CCI连续下降，表明强势下降趋势",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成EnhancedCCI交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        cci = self._result['cci']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. CCI零轴穿越信号
+        zero_cross_up = crossover(cci, 0)
+        zero_cross_down = crossunder(cci, 0)
+
+        buy_signal |= zero_cross_up
+        sell_signal |= zero_cross_down
+        signal_strength += zero_cross_up * 0.6
+        signal_strength += zero_cross_down * 0.6
+
+        # 2. CCI超买超卖反转信号
+        oversold_exit = crossover(cci, -100)
+        overbought_exit = crossunder(cci, 100)
+
+        buy_signal |= oversold_exit
+        sell_signal |= overbought_exit
+        signal_strength += oversold_exit * 0.7
+        signal_strength += overbought_exit * 0.7
+
+        # 3. CCI极值反转信号
+        extreme_oversold_exit = crossover(cci, -200)
+        extreme_overbought_exit = crossunder(cci, 200)
+
+        buy_signal |= extreme_oversold_exit
+        sell_signal |= extreme_overbought_exit
+        signal_strength += extreme_oversold_exit * 0.9
+        signal_strength += extreme_overbought_exit * 0.9
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }

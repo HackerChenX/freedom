@@ -90,7 +90,8 @@ class PSY(BaseIndicator):
             pd.DataFrame: 计算结果，包含PSY指标值
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("PSY指标计算需要'close'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -539,7 +540,240 @@ class PSY(BaseIndicator):
         score.loc[bearish_divergence] -= 20
         
         return score
-    
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
+        """
+        计算PSY指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查超买超卖形态
+            if 'PSY_OVERBOUGHT' in patterns.columns and patterns['PSY_OVERBOUGHT'].any():
+                confidence += 0.1
+            if 'PSY_OVERSOLD' in patterns.columns and patterns['PSY_OVERSOLD'].any():
+                confidence += 0.1
+
+            # 检查金叉死叉形态
+            if 'PSY_GOLDEN_CROSS' in patterns.columns and patterns['PSY_GOLDEN_CROSS'].any():
+                confidence += 0.15
+            if 'PSY_DEATH_CROSS' in patterns.columns and patterns['PSY_DEATH_CROSS'].any():
+                confidence += 0.15
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_strength = signals.get('signal_strength', pd.Series())
+            if not signal_strength.empty:
+                avg_strength = signal_strength.mean()
+                if avg_strength > 70:
+                    confidence += 0.1
+
+        # 4. 增强功能的置信度调整
+        if self.enhanced and self._result is not None:
+            # 多周期协同增加置信度
+            synergy = self.analyze_multi_period_synergy()
+            if not synergy.empty and 'synergy_score' in synergy.columns:
+                synergy_score = synergy['synergy_score'].iloc[-1]
+                if synergy_score > 70 or synergy_score < 30:
+                    confidence += 0.1
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取PSY相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None or 'psy' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取PSY和PSYMA值
+        psy = self._result['psy']
+        psyma = self._result['psyma']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. PSY超买超卖形态
+        patterns_df['PSY_OVERBOUGHT'] = psy > 75
+        patterns_df['PSY_OVERSOLD'] = psy < 25
+        patterns_df['PSY_EXTREME_OVERBOUGHT'] = psy > 85
+        patterns_df['PSY_EXTREME_OVERSOLD'] = psy < 15
+
+        # 2. PSY金叉死叉形态
+        from utils.indicator_utils import crossover, crossunder
+
+        patterns_df['PSY_GOLDEN_CROSS'] = crossover(psy, psyma)
+        patterns_df['PSY_DEATH_CROSS'] = crossunder(psy, psyma)
+
+        # 3. PSY零轴穿越形态
+        patterns_df['PSY_CROSS_UP_50'] = crossover(psy, 50)
+        patterns_df['PSY_CROSS_DOWN_50'] = crossunder(psy, 50)
+
+        # 4. PSY趋势形态
+        patterns_df['PSY_ABOVE_50'] = psy > 50
+        patterns_df['PSY_BELOW_50'] = psy < 50
+        patterns_df['PSY_ABOVE_MA'] = psy > psyma
+        patterns_df['PSY_BELOW_MA'] = psy < psyma
+
+        # 5. PSY强势形态
+        if len(psy) >= 5:
+            psy_momentum = psy - psy.shift(3)
+            patterns_df['PSY_STRONG_UP'] = psy_momentum > 10
+            patterns_df['PSY_STRONG_DOWN'] = psy_momentum < -10
+        else:
+            patterns_df['PSY_STRONG_UP'] = False
+            patterns_df['PSY_STRONG_DOWN'] = False
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册PSY指标的形态到全局形态注册表
+        """
+        # 注册PSY超买形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_OVERBOUGHT",
+            display_name="PSY超买",
+            description="PSY指标进入超买区域，市场情绪过热",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册PSY超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_OVERSOLD",
+            display_name="PSY超卖",
+            description="PSY指标进入超卖区域，市场情绪过冷",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册PSY极度超买形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_EXTREME_OVERBOUGHT",
+            display_name="PSY极度超买",
+            description="PSY指标进入极度超买区域，市场情绪极度过热",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册PSY极度超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_EXTREME_OVERSOLD",
+            display_name="PSY极度超卖",
+            description="PSY指标进入极度超卖区域，市场情绪极度过冷",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册PSY金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_GOLDEN_CROSS",
+            display_name="PSY金叉",
+            description="PSY上穿信号线，市场情绪转好",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        # 注册PSY死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_DEATH_CROSS",
+            display_name="PSY死叉",
+            description="PSY下穿信号线，市场情绪转差",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0
+        )
+
+        # 注册PSY上穿50形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_CROSS_UP_50",
+            display_name="PSY上穿50",
+            description="PSY上穿50中性线，市场情绪转向乐观",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        # 注册PSY下穿50形态
+        self.register_pattern_to_registry(
+            pattern_id="PSY_CROSS_DOWN_50",
+            display_name="PSY下穿50",
+            description="PSY下穿50中性线，市场情绪转向悲观",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0
+        )
+
+    def set_parameters(self, **kwargs):
+        """
+        设置PSY指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含period, secondary_period, multi_periods等
+        """
+        if 'period' in kwargs:
+            self.period = kwargs['period']
+        if 'secondary_period' in kwargs:
+            self.secondary_period = kwargs['secondary_period']
+        if 'multi_periods' in kwargs:
+            self.multi_periods = kwargs['multi_periods']
+        if 'adaptive_period' in kwargs:
+            self.adaptive_period = kwargs['adaptive_period']
+        if 'volatility_lookback' in kwargs:
+            self.volatility_lookback = kwargs['volatility_lookback']
+        if 'enhanced' in kwargs:
+            self.enhanced = kwargs['enhanced']
+            if self.enhanced:
+                self.name = "EnhancedPSY"
+                self.description = "增强型心理线指标，优化参数自适应性，增加多周期协同分析和市场氛围评估"
+                self._secondary_psy = None
+                self._multi_period_psy = {}
+                self._adaptive_period = self.period
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
         """
         识别PSY指标形态
@@ -957,7 +1191,7 @@ class PSY(BaseIndicator):
         signals['buy_signal'] = False
         signals['sell_signal'] = False
         signals['neutral_signal'] = True  # 默认为中性信号
-        signals['trend'] = 0  # 0表示中性
+        signals['trend'] = 0.0  # 0表示中性
         signals['score'] = 50.0  # 默认评分50分
         signals['signal_type'] = None
         signals['signal_desc'] = None

@@ -9,11 +9,11 @@
 
 import numpy as np
 import pandas as pd
-import talib
+# import talib  # 暂时注释掉，使用自定义实现
 from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
-from utils.signal_utils import crossover, crossunder
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,10 +36,9 @@ class SAR(BaseIndicator):
             acceleration: 加速因子，默认为0.02
             maximum: 加速因子最大值，默认为0.2
         """
-        super().__init__()
+        super().__init__(name="SAR", description="抛物线转向系统，判断价格趋势反转信号")
         self.acceleration = acceleration
         self.maximum = maximum
-        self.name = "SAR"
         
         # 注册SAR形态
         # self._register_sar_patterns()
@@ -52,6 +51,75 @@ class SAR(BaseIndicator):
             self.acceleration = acceleration
         if maximum is not None:
             self.maximum = maximum
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算SAR指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含SAR指标的DataFrame
+        """
+        return self._calculate(data)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算SAR指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查SAR形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
         
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -195,21 +263,190 @@ class SAR(BaseIndicator):
         
         return signals
     
-    def get_patterns(self):
-        patterns = {
-            "description": "收盘价下穿SAR，是卖出信号。",
-        }
-        return patterns
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取SAR相关形态
 
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        计算SAR原始评分
-        """
+        # 确保已计算指标
         if self._result is None:
             self.calculate(data)
-        
-        # 评分逻辑...
-        score = pd.Series(50.0, index=data.index)
+
+        if self._result is None or 'sar' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取SAR和价格数据
+        sar = self._result['sar']
+        trend = self._result['trend']
+        close = data['close']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. SAR趋势反转形态
+        patterns_df['SAR_BULLISH_REVERSAL'] = (trend == 1) & (trend.shift(1) == -1)
+        patterns_df['SAR_BEARISH_REVERSAL'] = (trend == -1) & (trend.shift(1) == 1)
+
+        # 2. SAR趋势持续形态
+        patterns_df['SAR_UPTREND'] = trend == 1
+        patterns_df['SAR_DOWNTREND'] = trend == -1
+
+        # 3. SAR与价格位置关系
+        patterns_df['SAR_BELOW_PRICE'] = sar < close
+        patterns_df['SAR_ABOVE_PRICE'] = sar > close
+
+        # 4. SAR距离形态
+        price_distance = abs(close - sar) / close * 100
+        patterns_df['SAR_CLOSE_TO_PRICE'] = price_distance < 1.0
+        patterns_df['SAR_MODERATE_DISTANCE'] = (price_distance >= 1.0) & (price_distance < 3.0)
+        patterns_df['SAR_FAR_FROM_PRICE'] = price_distance >= 3.0
+
+        # 5. SAR加速因子形态
+        if 'af' in self._result.columns:
+            af = self._result['af']
+            patterns_df['SAR_HIGH_ACCELERATION'] = af >= 0.15
+            patterns_df['SAR_MEDIUM_ACCELERATION'] = (af >= 0.08) & (af < 0.15)
+            patterns_df['SAR_LOW_ACCELERATION'] = af < 0.08
+        else:
+            patterns_df['SAR_HIGH_ACCELERATION'] = False
+            patterns_df['SAR_MEDIUM_ACCELERATION'] = False
+            patterns_df['SAR_LOW_ACCELERATION'] = False
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算SAR原始评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列（0-100分）
+        """
+        # 确保已计算SAR
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+
+        # 1. SAR趋势评分
+        trend_score = self._calculate_sar_trend_score(data)
+        score += trend_score
+
+        # 2. SAR反转信号评分
+        reversal_score = self._calculate_sar_reversal_score()
+        score += reversal_score
+
+        # 3. SAR距离评分
+        distance_score = self._calculate_sar_distance_score(data)
+        score += distance_score
+
+        # 4. SAR加速因子评分
+        acceleration_score = self._calculate_sar_acceleration_score()
+        score += acceleration_score
+
+        # 5. SAR稳定性评分
+        stability_score = self._calculate_sar_stability_score()
+        score += stability_score
+
+        return np.clip(score, 0, 100)
+
+    def _calculate_sar_trend_score(self, data: pd.DataFrame) -> pd.Series:
+        """计算SAR趋势评分"""
+        score = pd.Series(0.0, index=data.index)
+
+        if 'trend' not in self._result.columns:
+            return score
+
+        trend = self._result['trend']
+
+        # 上升趋势+15分，下降趋势-15分
+        score += trend * 15
+
+        return score
+
+    def _calculate_sar_reversal_score(self) -> pd.Series:
+        """计算SAR反转信号评分"""
+        score = pd.Series(0.0, index=self._result.index)
+
+        if 'trend' not in self._result.columns:
+            return score
+
+        trend = self._result['trend']
+
+        # 趋势反转信号
+        bullish_reversal = (trend == 1) & (trend.shift(1) == -1)
+        bearish_reversal = (trend == -1) & (trend.shift(1) == 1)
+
+        # 看涨反转+25分，看跌反转-25分
+        score += bullish_reversal * 25
+        score -= bearish_reversal * 25
+
+        return score
+
+    def _calculate_sar_distance_score(self, data: pd.DataFrame) -> pd.Series:
+        """计算SAR距离评分"""
+        score = pd.Series(0.0, index=data.index)
+
+        if 'sar' not in self._result.columns:
+            return score
+
+        sar = self._result['sar']
+        close = data['close']
+
+        # 计算SAR与价格的相对距离
+        distance_pct = abs(close - sar) / close * 100
+
+        # 距离适中时评分较高
+        score += np.where(distance_pct < 0.5, -5,  # 距离太近-5分
+                         np.where(distance_pct < 2.0, 5,   # 距离适中+5分
+                                 np.where(distance_pct < 5.0, 0, -10)))  # 距离太远-10分
+
+        return score
+
+    def _calculate_sar_acceleration_score(self) -> pd.Series:
+        """计算SAR加速因子评分"""
+        score = pd.Series(0.0, index=self._result.index)
+
+        if 'af' not in self._result.columns:
+            return score
+
+        af = self._result['af']
+
+        # 加速因子适中时评分较高
+        score += np.where(af < 0.04, -5,  # 加速太慢-5分
+                         np.where(af < 0.12, 5,   # 加速适中+5分
+                                 np.where(af < 0.18, 0, -5)))  # 加速太快-5分
+
+        return score
+
+    def _calculate_sar_stability_score(self) -> pd.Series:
+        """计算SAR稳定性评分"""
+        score = pd.Series(0.0, index=self._result.index)
+
+        if 'trend' not in self._result.columns:
+            return score
+
+        trend = self._result['trend']
+
+        # 计算趋势持续性
+        trend_changes = (trend != trend.shift(1)).astype(int)
+        trend_stability = 1 - trend_changes.rolling(10, min_periods=1).mean()
+
+        # 趋势稳定性高时+5分
+        score += trend_stability * 5
+
         return score
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -233,6 +470,103 @@ class SAR(BaseIndicator):
         except Exception as e:
             logger.error(f"计算指标 {self.name} 时出错: {str(e)}")
             raise
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册SAR指标的形态到全局形态注册表
+        """
+        # 注册SAR看涨反转形态
+        self.register_pattern_to_registry(
+            pattern_id="SAR_BULLISH_REVERSAL",
+            display_name="SAR看涨反转",
+            description="SAR由下降趋势转为上升趋势，产生看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册SAR看跌反转形态
+        self.register_pattern_to_registry(
+            pattern_id="SAR_BEARISH_REVERSAL",
+            display_name="SAR看跌反转",
+            description="SAR由上升趋势转为下降趋势，产生看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册SAR上升趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="SAR_UPTREND",
+            display_name="SAR上升趋势",
+            description="SAR保持在价格下方，表示上升趋势",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        # 注册SAR下降趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="SAR_DOWNTREND",
+            display_name="SAR下降趋势",
+            description="SAR保持在价格上方，表示下降趋势",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册SAR高加速形态
+        self.register_pattern_to_registry(
+            pattern_id="SAR_HIGH_ACCELERATION",
+            display_name="SAR高加速",
+            description="SAR加速因子较高，趋势强劲",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=10.0
+        )
 
     def _register_sar_patterns(self):
         """

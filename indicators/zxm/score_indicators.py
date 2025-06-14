@@ -108,6 +108,144 @@ class ZXMElasticityScore(BaseIndicator):
         
         # 直接使用计算的弹性评分作为原始评分
         return result["ElasticityScore"]
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM弹性评分指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["Signal"]:
+                patterns.append("弹性评分信号")
+
+            # 弹性评分等级判断
+            score = last_row["ElasticityScore"]
+            if score >= 90:
+                patterns.append("极高弹性评分(≥90)")
+            elif score >= 75:
+                patterns.append("高弹性评分(75-90)")
+            elif score >= 50:
+                patterns.append("中等弹性评分(50-75)")
+            elif score >= 25:
+                patterns.append("低弹性评分(25-50)")
+            else:
+                patterns.append("极低弹性评分(<25)")
+
+            # 弹性指标满足情况
+            count = last_row["ElasticityCount"]
+            if count == 2:
+                patterns.append("全部弹性指标满足")
+            elif count == 1:
+                patterns.append("部分弹性指标满足")
+            else:
+                patterns.append("无弹性指标满足")
+
+            # 具体弹性指标判断
+            if last_row["AmplitudeElasticity"]:
+                patterns.append("振幅弹性满足")
+            if last_row["RiseElasticity"]:
+                patterns.append("涨幅弹性满足")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "弹性评分信号" in patterns:
+            pattern_boost += 0.15
+        if "极高弹性评分(≥90)" in patterns:
+            pattern_boost += 0.2
+        elif "高弹性评分(75-90)" in patterns:
+            pattern_boost += 0.15
+        if "全部弹性指标满足" in patterns:
+            pattern_boost += 0.15
+        elif "部分弹性指标满足" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["弹性评分信号"] = result["Signal"]
+        patterns_df["振幅弹性满足"] = result["AmplitudeElasticity"]
+        patterns_df["涨幅弹性满足"] = result["RiseElasticity"]
+
+        # 弹性评分等级形态
+        score = result["ElasticityScore"]
+        patterns_df["极高弹性评分"] = score >= 90
+        patterns_df["高弹性评分"] = (score >= 75) & (score < 90)
+        patterns_df["中等弹性评分"] = (score >= 50) & (score < 75)
+        patterns_df["低弹性评分"] = (score >= 25) & (score < 50)
+        patterns_df["极低弹性评分"] = score < 25
+
+        # 弹性指标满足情况形态
+        count = result["ElasticityCount"]
+        patterns_df["全部弹性指标满足"] = count == 2
+        patterns_df["部分弹性指标满足"] = count == 1
+        patterns_df["无弹性指标满足"] = count == 0
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - threshold: 弹性评分阈值，默认75
+        """
+        self.threshold = kwargs.get('threshold', 75)
 class ZXMBuyPointScore(BaseIndicator):
     """
     ZXM买点评分指标
@@ -210,6 +348,152 @@ class ZXMBuyPointScore(BaseIndicator):
         
         # 直接使用计算的买点评分作为原始评分
         return result["BuyPointScore"]
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM买点评分指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["Signal"]:
+                patterns.append("买点评分信号")
+
+            # 买点评分等级判断
+            score = last_row["BuyPointScore"]
+            if score >= 90:
+                patterns.append("极高买点评分(≥90)")
+            elif score >= 75:
+                patterns.append("高买点评分(75-90)")
+            elif score >= 50:
+                patterns.append("中等买点评分(50-75)")
+            elif score >= 25:
+                patterns.append("低买点评分(25-50)")
+            else:
+                patterns.append("极低买点评分(<25)")
+
+            # 买点指标满足情况
+            count = last_row["BuyPointCount"]
+            if count == 3:
+                patterns.append("全部买点指标满足")
+            elif count == 2:
+                patterns.append("多数买点指标满足")
+            elif count == 1:
+                patterns.append("少数买点指标满足")
+            else:
+                patterns.append("无买点指标满足")
+
+            # 具体买点指标判断
+            if last_row["MACDBuyPoint"]:
+                patterns.append("MACD买点满足")
+            if last_row["TurnoverBuyPoint"]:
+                patterns.append("换手买点满足")
+            if last_row["MACallbackBuyPoint"]:
+                patterns.append("均线回调买点满足")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "买点评分信号" in patterns:
+            pattern_boost += 0.15
+        if "极高买点评分(≥90)" in patterns:
+            pattern_boost += 0.2
+        elif "高买点评分(75-90)" in patterns:
+            pattern_boost += 0.15
+        if "全部买点指标满足" in patterns:
+            pattern_boost += 0.2
+        elif "多数买点指标满足" in patterns:
+            pattern_boost += 0.15
+        elif "少数买点指标满足" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["买点评分信号"] = result["Signal"]
+        patterns_df["MACD买点满足"] = result["MACDBuyPoint"]
+        patterns_df["换手买点满足"] = result["TurnoverBuyPoint"]
+        patterns_df["均线回调买点满足"] = result["MACallbackBuyPoint"]
+
+        # 买点评分等级形态
+        score = result["BuyPointScore"]
+        patterns_df["极高买点评分"] = score >= 90
+        patterns_df["高买点评分"] = (score >= 75) & (score < 90)
+        patterns_df["中等买点评分"] = (score >= 50) & (score < 75)
+        patterns_df["低买点评分"] = (score >= 25) & (score < 50)
+        patterns_df["极低买点评分"] = score < 25
+
+        # 买点指标满足情况形态
+        count = result["BuyPointCount"]
+        patterns_df["全部买点指标满足"] = count == 3
+        patterns_df["多数买点指标满足"] = count == 2
+        patterns_df["少数买点指标满足"] = count == 1
+        patterns_df["无买点指标满足"] = count == 0
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - threshold: 买点评分阈值，默认75
+        """
+        self.threshold = kwargs.get('threshold', 75)
 class StockScoreCalculator(BaseIndicator):
     """
     ZXM股票综合评分指标
@@ -233,7 +517,10 @@ class StockScoreCalculator(BaseIndicator):
             pd.DataFrame: 计算结果
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
+        required_cols = ["open", "high", "low", "close", "volume"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -825,4 +1112,108 @@ class StockScoreCalculator(BaseIndicator):
         # 成交量确认
         signals['volume_confirmation'] = result["VolumeScore"] >= 60
         
-        return signals 
+        return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "高分股票(80+)" in patterns:
+            pattern_boost += 0.2
+        elif "优质股票(70-80)" in patterns:
+            pattern_boost += 0.15
+        elif "低分股票(<30)" in patterns:
+            pattern_boost -= 0.2
+
+        # 根据各分项一致性调整
+        consistency_patterns = ["趋势强劲", "动量强劲", "低波动性", "成交量理想", "高价值股"]
+        consistency_count = sum(1 for p in consistency_patterns if p in patterns)
+        if consistency_count >= 3:
+            pattern_boost += 0.15
+        elif consistency_count >= 2:
+            pattern_boost += 0.1
+
+        # 买卖信号调整
+        if "买入信号" in patterns:
+            pattern_boost += 0.1
+        elif "卖出信号" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, max(0.0, base_confidence + pattern_boost))
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础信号形态
+        patterns_df["买入信号"] = result["BuySignal"]
+        patterns_df["卖出信号"] = result["SellSignal"]
+
+        # 总分等级形态
+        total_score = result["TotalScore"]
+        patterns_df["高分股票"] = total_score >= 80
+        patterns_df["优质股票"] = (total_score >= 70) & (total_score < 80)
+        patterns_df["中等股票"] = (total_score >= 40) & (total_score < 70)
+        patterns_df["低分股票"] = total_score < 30
+
+        # 各分项强弱形态
+        patterns_df["趋势强劲"] = result["TrendScore"] >= 70
+        patterns_df["趋势疲软"] = result["TrendScore"] <= 30
+        patterns_df["动量强劲"] = result["MomentumScore"] >= 70
+        patterns_df["动量疲软"] = result["MomentumScore"] <= 30
+        patterns_df["低波动性"] = result["VolatilityScore"] >= 70
+        patterns_df["高波动性"] = result["VolatilityScore"] <= 30
+        patterns_df["成交量理想"] = result["VolumeScore"] >= 70
+        patterns_df["成交量不佳"] = result["VolumeScore"] <= 30
+
+        # 价值评分形态（如果存在）
+        if "ValueScore" in result.columns:
+            patterns_df["高价值股"] = result["ValueScore"] >= 70
+            patterns_df["低价值股"] = result["ValueScore"] <= 30
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - buy_threshold: 买入阈值，默认70
+                - sell_threshold: 卖出阈值，默认30
+        """
+        self.buy_threshold = kwargs.get('buy_threshold', 70)
+        self.sell_threshold = kwargs.get('sell_threshold', 30)

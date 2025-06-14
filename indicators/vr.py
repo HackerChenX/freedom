@@ -12,7 +12,7 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
@@ -48,17 +48,293 @@ class VR(BaseIndicator):
         if ma_period is not None:
             self.ma_period = ma_period
 
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算VR指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含VR指标的DataFrame
+        """
+        return self._calculate(data)
+
+    def compute(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算VR指标（兼容性方法）
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            包含VR指标的DataFrame
+        """
+        return self._calculate(data)
+
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算VR指标的置信度。
+        计算VR指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
         """
-        return 0.5
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查VR形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取VR指标的技术形态
+        获取VR相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        return pd.DataFrame(index=data.index)
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None or 'vr' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取VR数据
+        vr = self._result['vr']
+        vr_ma = self._result['vr_ma']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. VR超买超卖形态
+        patterns_df['VR_EXTREME_OVERSOLD'] = vr < 50
+        patterns_df['VR_OVERSOLD'] = (vr >= 50) & (vr < 70)
+        patterns_df['VR_NORMAL'] = (vr >= 70) & (vr <= 160)
+        patterns_df['VR_OVERBOUGHT'] = (vr > 160) & (vr <= 200)
+        patterns_df['VR_EXTREME_OVERBOUGHT'] = vr > 200
+
+        # 2. VR与均线关系
+        patterns_df['VR_ABOVE_MA'] = vr > vr_ma
+        patterns_df['VR_BELOW_MA'] = vr < vr_ma
+        patterns_df['VR_GOLDEN_CROSS'] = (vr > vr_ma) & (vr.shift(1) <= vr_ma.shift(1))
+        patterns_df['VR_DEATH_CROSS'] = (vr < vr_ma) & (vr.shift(1) >= vr_ma.shift(1))
+
+        # 3. VR趋势形态
+        patterns_df['VR_RISING'] = vr > vr.shift(1)
+        patterns_df['VR_FALLING'] = vr < vr.shift(1)
+        patterns_df['VR_UPTREND'] = (
+            (vr > vr.shift(1)) &
+            (vr.shift(1) > vr.shift(2)) &
+            (vr.shift(2) > vr.shift(3))
+        )
+        patterns_df['VR_DOWNTREND'] = (
+            (vr < vr.shift(1)) &
+            (vr.shift(1) < vr.shift(2)) &
+            (vr.shift(2) < vr.shift(3))
+        )
+
+        # 4. VR阈值穿越形态
+        patterns_df['VR_CROSS_ABOVE_OVERSOLD'] = (vr > 70) & (vr.shift(1) <= 70)
+        patterns_df['VR_CROSS_BELOW_OVERBOUGHT'] = (vr < 160) & (vr.shift(1) >= 160)
+
+        # 5. VR强度变化形态
+        vr_change = vr - vr.shift(1)
+        patterns_df['VR_RAPID_RISE'] = vr_change > 30
+        patterns_df['VR_RAPID_FALL'] = vr_change < -30
+        patterns_df['VR_LARGE_RISE'] = (vr_change > 20) & (vr_change <= 30)
+        patterns_df['VR_LARGE_FALL'] = (vr_change < -20) & (vr_change >= -30)
+        patterns_df['VR_STABLE'] = abs(vr_change) <= 5
+
+        return patterns_df
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册VR指标的形态到全局形态注册表
+        """
+        # 注册VR超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_EXTREME_OVERSOLD",
+            display_name="VR极度超卖",
+            description="VR值低于50，表明市场极度超卖，可能出现反弹",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VR_OVERSOLD",
+            display_name="VR超卖",
+            description="VR值在50-70之间，表明市场超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VR_OVERBOUGHT",
+            display_name="VR超买",
+            description="VR值在160-200之间，表明市场超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VR_EXTREME_OVERBOUGHT",
+            display_name="VR极度超买",
+            description="VR值高于200，表明市场极度超买，可能出现回调",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册VR金叉死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_GOLDEN_CROSS",
+            display_name="VR金叉",
+            description="VR上穿其均线，表明买盘力量增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VR_DEATH_CROSS",
+            display_name="VR死叉",
+            description="VR下穿其均线，表明买盘力量减弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0
+        )
+
+        # 注册VR趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_UPTREND",
+            display_name="VR上升趋势",
+            description="VR连续上升，表明市场活跃度和买盘力量增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VR_DOWNTREND",
+            display_name="VR下降趋势",
+            description="VR连续下降，表明市场活跃度和买盘力量减弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册VR阈值穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="VR_CROSS_ABOVE_OVERSOLD",
+            display_name="VR上穿超卖线",
+            description="VR从超卖区域向上突破，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VR_CROSS_BELOW_OVERBOUGHT",
+            display_name="VR下穿超买线",
+            description="VR从超买区域向下突破，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
 
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -71,7 +347,9 @@ class VR(BaseIndicator):
             pd.DataFrame: 计算结果，包含VR指标值
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, self.REQUIRED_COLUMNS)
+        for col in self.REQUIRED_COLUMNS:
+            if col not in data.columns:
+                raise ValueError(f"缺少必需的列: {col}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -102,8 +380,25 @@ class VR(BaseIndicator):
         # 计算VR: (AVS+1/2SVS)/(BVS+1/2SVS)×100
         # 其中AVS为上涨成交量，BVS为下跌成交量，SVS为平盘成交量
         denominator = down_volume_sum + 0.5 * flat_volume_sum
-        denominator[denominator == 0] = 0.000001 # 避免除以0
-        vr = ((up_volume_sum + 0.5 * flat_volume_sum) / denominator) * 100
+
+        # 处理分母为0的情况
+        # 如果分母为0，说明没有下跌成交量和平盘成交量，VR应该设为一个较大的值
+        numerator = up_volume_sum + 0.5 * flat_volume_sum
+
+        # 创建VR序列
+        vr = pd.Series(index=data.index, dtype=float)
+
+        # 当分母不为0时正常计算
+        valid_mask = (denominator > 0) & (denominator.notna())
+        vr[valid_mask] = (numerator[valid_mask] / denominator[valid_mask]) * 100
+
+        # 当分母为0但分子不为0时，设为较大值
+        zero_denom_mask = (denominator == 0) & (numerator > 0)
+        vr[zero_denom_mask] = 300.0  # 设为一个较大的VR值
+
+        # 当分子分母都为0时，设为100（中性值）
+        both_zero_mask = (denominator == 0) & (numerator == 0)
+        vr[both_zero_mask] = 100.0
         
         # 添加到结果
         result["vr"] = vr
@@ -412,48 +707,35 @@ class VR(BaseIndicator):
     def _calculate_vr_divergence_score(self, data: pd.DataFrame) -> pd.Series:
         """
         计算VR背离评分
-        
+
         Args:
             data: 价格数据
-            
+
         Returns:
             pd.Series: 背离评分
         """
         divergence_score = pd.Series(0.0, index=self._result.index)
-        
+
         if 'close' not in data.columns:
             return divergence_score
-        
+
         close_price = data['close']
         vr_values = self._result['vr']
-        
-        # 简化的背离检测
-        if len(close_price) >= 20:
-            # 检查最近20个周期的价格和VR趋势
-            recent_periods = 20
-            
-            for i in range(recent_periods, len(close_price)):
-                # 寻找最近的价格和VR峰值/谷值
-                price_window = close_price.iloc[i-recent_periods:i+1]
-                vr_window = vr_values.iloc[i-recent_periods:i+1]
-                
-                # 检查是否为价格新高/新低
-                current_price = close_price.iloc[i]
-                current_vr = vr_values.iloc[i]
-                
-                price_is_high = current_price >= price_window.max()
-                price_is_low = current_price <= price_window.min()
-                vr_is_high = current_vr >= vr_window.max()
-                vr_is_low = current_vr <= vr_window.min()
-                
-                # 正背离：价格创新低但VR未创新低
-                if price_is_low and not vr_is_low:
-                    divergence_score.iloc[i] += 25
-                
-                # 负背离：价格创新高但VR未创新高
-                elif price_is_high and not vr_is_high:
-                    divergence_score.iloc[i] -= 25
-        
+
+        # 简化的背离检测 - 只检查最近的趋势
+        if len(close_price) >= 10:
+            # 计算最近10个周期的价格和VR趋势（使用简单的差值计算）
+            price_change = close_price.diff(10)  # 10期价格变化
+            vr_change = vr_values.diff(10)       # 10期VR变化
+
+            # 正背离：价格下跌但VR上升
+            positive_divergence = (price_change < 0) & (vr_change > 0)
+            divergence_score += positive_divergence.fillna(False) * 15
+
+            # 负背离：价格上涨但VR下降
+            negative_divergence = (price_change > 0) & (vr_change < 0)
+            divergence_score -= negative_divergence.fillna(False) * 15
+
         return divergence_score
     
     def _calculate_vr_strength_score(self) -> pd.Series:

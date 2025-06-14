@@ -12,8 +12,8 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 import logging
 
-from indicators.base_indicator import BaseIndicator, PatternResult
-from indicators.common import crossover, crossunder
+from indicators.base_indicator import BaseIndicator
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
 
@@ -37,11 +37,22 @@ class WMA(BaseIndicator):
             period: 计算周期，默认为14
             periods: 多个计算周期，如果提供，将计算多个周期的WMA
         """
-        super().__init__()
+        super().__init__(name="WMA", description="加权移动平均线，对不同时期价格赋予不同权重")
         self.period = period
         self.periods = periods if periods is not None else [period]
-        self.name = "WMA"
-        self._pattern_registry = {}
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算WMA指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含WMA指标的DataFrame
+        """
+        return self._calculate(data)
         
     def set_parameters(self, period: int = None, periods: List[int] = None):
         """
@@ -960,12 +971,162 @@ class WMA(BaseIndicator):
         return patterns_df
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        return 0.5
+        """
+        计算WMA指标的置信度
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
         """
-        计算加权移动平均线
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查WMA形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
-        if 'close' not in data.columns:
-            raise ValueError("Data must contain 'close' column.")
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册WMA指标的形态到全局形态注册表
+        """
+        # 注册WMA交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="WMA_GOLDEN_CROSS",
+            display_name="WMA金叉",
+            description="短期WMA上穿长期WMA，表明趋势转为看涨",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WMA_DEATH_CROSS",
+            display_name="WMA死叉",
+            description="短期WMA下穿长期WMA，表明趋势转为看跌",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册价格与WMA关系形态
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_CROSS_ABOVE_WMA",
+            display_name="价格上穿WMA",
+            description="价格从下方突破WMA，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_CROSS_BELOW_WMA",
+            display_name="价格下穿WMA",
+            description="价格从上方跌破WMA，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册WMA排列形态
+        self.register_pattern_to_registry(
+            pattern_id="WMA_BULLISH_ARRANGEMENT",
+            display_name="WMA多头排列",
+            description="短期WMA在长期WMA上方，表明强势上升趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WMA_BEARISH_ARRANGEMENT",
+            display_name="WMA空头排列",
+            description="短期WMA在长期WMA下方，表明强势下降趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
 

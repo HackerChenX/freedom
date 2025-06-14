@@ -8,9 +8,10 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
+from indicators.base_indicator import BaseIndicator
 from indicators.macd import MACD
 from utils.logger import get_logger
+from utils.indicator_utils import crossover, crossunder
 
 logger = get_logger(__name__)
 
@@ -42,10 +43,10 @@ class EnhancedMACD(MACD):
             volume_weighted: 是否使用成交量加权，默认为False
             adapt_to_volatility: 是否根据波动率自适应调整参数，默认为True
         """
-        self.indicator_type = "trend"  # 指标类型：趋势类
         super().__init__(fast_period=fast_period, slow_period=slow_period, signal_period=signal_period)
         self.name = "EnhancedMACD"
         self.description = "增强型MACD指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
+        self.indicator_type = "trend"  # 指标类型：趋势类
         self.sensitivity = sensitivity
         self.multi_periods = multi_periods or [(8, 17, 9), (12, 26, 9), (24, 52, 18)]
         self.volume_weighted = volume_weighted
@@ -71,7 +72,8 @@ class EnhancedMACD(MACD):
             pd.DataFrame: 计算结果，包含MACD及其多周期指标
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if "close" not in data.columns:
+            raise ValueError("数据必须包含'close'列")
         
         # 复制输入数据
         result = data.copy()
@@ -761,20 +763,367 @@ class EnhancedMACD(MACD):
         
         return deviation
 
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        if 'fast_period' in kwargs:
+            self._fast_period = kwargs['fast_period']
+        if 'slow_period' in kwargs:
+            self._slow_period = kwargs['slow_period']
+        if 'signal_period' in kwargs:
+            self._signal_period = kwargs['signal_period']
+        if 'sensitivity' in kwargs:
+            self.sensitivity = kwargs['sensitivity']
+        if 'volume_weighted' in kwargs:
+            self.volume_weighted = kwargs['volume_weighted']
+        if 'adapt_to_volatility' in kwargs:
+            self.adapt_to_volatility = kwargs['adapt_to_volatility']
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedMACD指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedMACD形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EnhancedMACD相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 获取MACD数据
+        macd = self._result['macd']
+        signal = self._result['macd_signal']
+        hist = self._result['macd_hist']
+
+        # 基本形态
+        patterns['MACD_GOLDEN_CROSS'] = crossover(macd, signal)
+        patterns['MACD_DEATH_CROSS'] = crossover(signal, macd)
+        patterns['MACD_ZERO_CROSS_UP'] = crossover(macd, 0)
+        patterns['MACD_ZERO_CROSS_DOWN'] = crossover(pd.Series(0, index=macd.index), macd)
+        patterns['MACD_HIST_POSITIVE'] = hist > 0
+        patterns['MACD_HIST_NEGATIVE'] = hist < 0
+
+        # 趋势形态
+        patterns['MACD_RISING'] = macd > macd.shift(1)
+        patterns['MACD_FALLING'] = macd < macd.shift(1)
+        patterns['MACD_HIST_INCREASING'] = hist > hist.shift(1)
+        patterns['MACD_HIST_DECREASING'] = hist < hist.shift(1)
+
+        # 强度形态
+        if 'trend_strength' in self._result.columns:
+            trend_strength = self._result['trend_strength']
+            patterns['MACD_STRONG_UPTREND'] = (hist > 0) & (trend_strength > 0.5)
+            patterns['MACD_STRONG_DOWNTREND'] = (hist < 0) & (trend_strength < -0.5)
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册EnhancedMACD指标的形态到全局形态注册表
+        """
+        # 注册MACD交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_GOLDEN_CROSS",
+            display_name="MACD金叉",
+            description="MACD线上穿信号线，表明上升趋势开始",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_DEATH_CROSS",
+            display_name="MACD死叉",
+            description="MACD线下穿信号线，表明下降趋势开始",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册MACD零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_ZERO_CROSS_UP",
+            display_name="MACD零轴上穿",
+            description="MACD线从下方穿越零轴，表明趋势转为看涨",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_ZERO_CROSS_DOWN",
+            display_name="MACD零轴下穿",
+            description="MACD线从上方穿越零轴，表明趋势转为看跌",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册MACD强度形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_STRONG_UPTREND",
+            display_name="MACD强上升趋势",
+            description="MACD柱状体为正且趋势强度高，表明强势上升趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_STRONG_DOWNTREND",
+            display_name="MACD强下降趋势",
+            description="MACD柱状体为负且趋势强度低，表明强势下降趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成EnhancedMACD交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        macd = self._result['macd']
+        signal = self._result['macd_signal']
+        hist = self._result['macd_hist']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. MACD金叉死叉信号
+        golden_cross = crossover(macd, signal)
+        death_cross = crossover(signal, macd)
+
+        buy_signal |= golden_cross
+        sell_signal |= death_cross
+        signal_strength += golden_cross * 0.7
+        signal_strength += death_cross * 0.7
+
+        # 2. MACD零轴穿越信号
+        zero_cross_up = crossover(macd, 0)
+        zero_cross_down = crossover(pd.Series(0, index=macd.index), macd)
+
+        buy_signal |= zero_cross_up
+        sell_signal |= zero_cross_down
+        signal_strength += zero_cross_up * 0.6
+        signal_strength += zero_cross_down * 0.6
+
+        # 3. 柱状体方向变化信号
+        hist_turn_positive = crossover(hist, 0)
+        hist_turn_negative = crossover(pd.Series(0, index=hist.index), hist)
+
+        buy_signal |= hist_turn_positive
+        sell_signal |= hist_turn_negative
+        signal_strength += hist_turn_positive * 0.5
+        signal_strength += hist_turn_negative * 0.5
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
     def identify_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         识别MACD相关形态
-        
-        当前版本暂未实现详细的形态识别，返回一个空的DataFrame。
-        后续可在此基础上扩展，如识别金叉、死叉、背离等。
-        
+
         Args:
             data: 输入数据
-            
+
         Returns:
             pd.DataFrame: 形态识别结果
         """
-        raise ValueError("This is a test to see if this method is called.")
-        if self._result is not None:
-            return pd.DataFrame(index=self._result.index)
-        return pd.DataFrame(index=data.index) 
+        # 使用get_patterns方法
+        return self.get_patterns(data)
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典，包含name, description, strength等
+        """
+        pattern_info_map = {
+            'MACD_GOLDEN_CROSS': {
+                'name': 'MACD金叉',
+                'description': 'MACD线上穿信号线，表明上升趋势开始',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'MACD_DEATH_CROSS': {
+                'name': 'MACD死叉',
+                'description': 'MACD线下穿信号线，表明下降趋势开始',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'MACD_ZERO_CROSS_UP': {
+                'name': 'MACD零轴上穿',
+                'description': 'MACD线从下方穿越零轴，表明趋势转为看涨',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'MACD_ZERO_CROSS_DOWN': {
+                'name': 'MACD零轴下穿',
+                'description': 'MACD线从上方穿越零轴，表明趋势转为看跌',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'MACD_HIST_POSITIVE': {
+                'name': 'MACD柱状体为正',
+                'description': 'MACD柱状体大于零，表示上升动能',
+                'strength': 'weak',
+                'type': 'bullish'
+            },
+            'MACD_HIST_NEGATIVE': {
+                'name': 'MACD柱状体为负',
+                'description': 'MACD柱状体小于零，表示下降动能',
+                'strength': 'weak',
+                'type': 'bearish'
+            },
+            'MACD_RISING': {
+                'name': 'MACD上升',
+                'description': 'MACD线呈上升趋势',
+                'strength': 'weak',
+                'type': 'bullish'
+            },
+            'MACD_FALLING': {
+                'name': 'MACD下降',
+                'description': 'MACD线呈下降趋势',
+                'strength': 'weak',
+                'type': 'bearish'
+            },
+            'MACD_HIST_INCREASING': {
+                'name': 'MACD柱状体增长',
+                'description': 'MACD柱状体连续增长，表示动能增强',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'MACD_HIST_DECREASING': {
+                'name': 'MACD柱状体减少',
+                'description': 'MACD柱状体连续减少，表示动能减弱',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'MACD_STRONG_UPTREND': {
+                'name': 'MACD强上升趋势',
+                'description': 'MACD柱状体为正且趋势强度高，表明强势上升趋势',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'MACD_STRONG_DOWNTREND': {
+                'name': 'MACD强下降趋势',
+                'description': 'MACD柱状体为负且趋势强度低，表明强势下降趋势',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'MACD_BULLISH_DIVERGENCE': {
+                'name': 'MACD牛市背离',
+                'description': '价格创新低而MACD不创新低，表示看涨信号',
+                'strength': 'very_strong',
+                'type': 'bullish'
+            },
+            'MACD_BEARISH_DIVERGENCE': {
+                'name': 'MACD熊市背离',
+                'description': '价格创新高而MACD不创新高，表示看跌信号',
+                'strength': 'very_strong',
+                'type': 'bearish'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'EnhancedMACD形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

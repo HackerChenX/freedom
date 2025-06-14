@@ -44,7 +44,8 @@ class ZXMDailyTrendUp(BaseIndicator):
         xg:j1 OR j2;
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -270,6 +271,100 @@ class ZXMDailyTrendUp(BaseIndicator):
         signals['volume_confirmation'] = False
         
         return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "双均线上移" in patterns:
+            pattern_boost += 0.15
+        elif "60日均线上移" in patterns or "120日均线上移" in patterns:
+            pattern_boost += 0.1
+
+        if "价格站上双均线，多头排列" in patterns:
+            pattern_boost += 0.1
+        elif "趋势由弱转强" in patterns:
+            pattern_boost += 0.15
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["均线上移"] = result["XG"]
+        patterns_df["双均线上移"] = result["J1"] & result["J2"]
+        patterns_df["60日均线上移"] = result["J1"] & ~result["J2"]
+        patterns_df["120日均线上移"] = ~result["J1"] & result["J2"]
+
+        # 价格与均线关系
+        price_above_ma60 = data["close"] > result["MA60"]
+        price_above_ma120 = data["close"] > result["MA120"]
+        ma_bull_alignment = result["MA60"] > result["MA120"]
+
+        patterns_df["价格站上双均线"] = price_above_ma60 & price_above_ma120 & ma_bull_alignment
+        patterns_df["价格回踩60日线"] = ma_bull_alignment & ~price_above_ma60 & (data["close"] > result["MA120"])
+        patterns_df["均线空头排列"] = result["MA60"] < result["MA120"]
+
+        # 趋势变化
+        if len(result) >= 10:
+            trend_weak_to_strong = pd.Series(False, index=data.index)
+            trend_strong_to_weak = pd.Series(False, index=data.index)
+
+            for i in range(10, len(result)):
+                if not result["XG"].iloc[i-10:i-5].any() and result["XG"].iloc[i-5:i+1].all():
+                    trend_weak_to_strong.iloc[i] = True
+                elif result["XG"].iloc[i-10:i-5].all() and not result["XG"].iloc[i-5:i+1].any():
+                    trend_strong_to_weak.iloc[i] = True
+
+            patterns_df["趋势由弱转强"] = trend_weak_to_strong
+            patterns_df["趋势由强转弱"] = trend_strong_to_weak
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        # 日线上移指标没有可调参数，保持默认实现
+        pass
     
 
 class ZXMWeeklyTrendUp(BaseIndicator):
@@ -301,7 +396,8 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         xg:a1 OR b1 OR c1;
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -597,6 +693,110 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "三均线同时上移" in patterns:
+            pattern_boost += 0.2
+        elif any(p in patterns for p in ["10周和20周均线上移", "20周和30周均线上移"]):
+            pattern_boost += 0.15
+        elif any(p in patterns for p in ["10周均线上移", "20周均线上移", "30周均线上移"]):
+            pattern_boost += 0.1
+
+        if "价格站上三均线，多头排列" in patterns:
+            pattern_boost += 0.15
+        elif "周线趋势由弱转强" in patterns:
+            pattern_boost += 0.15
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["周均线上移"] = result["XG"]
+        patterns_df["三均线同时上移"] = result["A1"] & result["B1"] & result["C1"]
+        patterns_df["10周均线上移"] = result["A1"] & ~result["B1"] & ~result["C1"]
+        patterns_df["20周均线上移"] = ~result["A1"] & result["B1"] & ~result["C1"]
+        patterns_df["30周均线上移"] = ~result["A1"] & ~result["B1"] & result["C1"]
+        patterns_df["10周和20周均线上移"] = result["A1"] & result["B1"] & ~result["C1"]
+        patterns_df["10周和30周均线上移"] = result["A1"] & ~result["B1"] & result["C1"]
+        patterns_df["20周和30周均线上移"] = ~result["A1"] & result["B1"] & result["C1"]
+
+        # 价格与均线关系
+        price_above_ma10 = data["close"] > result["MA10"]
+        price_above_ma20 = data["close"] > result["MA20"]
+        price_above_ma30 = data["close"] > result["MA30"]
+        ma_bull_alignment = (result["MA10"] > result["MA20"]) & (result["MA20"] > result["MA30"])
+        ma_bear_alignment = (result["MA10"] < result["MA20"]) & (result["MA20"] < result["MA30"])
+
+        patterns_df["价格站上三均线"] = price_above_ma10 & price_above_ma20 & price_above_ma30 & ma_bull_alignment
+        patterns_df["均线多头排列"] = ma_bull_alignment
+        patterns_df["均线空头排列"] = ma_bear_alignment
+        patterns_df["价格回踩10周线"] = ma_bull_alignment & ~price_above_ma10 & price_above_ma20
+        patterns_df["价格反弹站上10周线"] = ma_bear_alignment & price_above_ma10
+
+        # 趋势变化
+        if len(result) >= 8:
+            trend_weak_to_strong = pd.Series(False, index=data.index)
+            trend_strong_to_weak = pd.Series(False, index=data.index)
+
+            for i in range(8, len(result)):
+                if not result["XG"].iloc[i-8:i-4].any() and result["XG"].iloc[i-4:i+1].all():
+                    trend_weak_to_strong.iloc[i] = True
+                elif result["XG"].iloc[i-8:i-4].all() and not result["XG"].iloc[i-4:i+1].any():
+                    trend_strong_to_weak.iloc[i] = True
+
+            patterns_df["周线趋势由弱转强"] = trend_weak_to_strong
+            patterns_df["周线趋势由强转弱"] = trend_strong_to_weak
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        # 周线上移指标没有可调参数，保持默认实现
+        pass
+
 
 class ZXMMonthlyKDJTrendUp(BaseIndicator):
     """
@@ -628,7 +828,10 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         xg:D>=REF(D,1) AND K>=REF(K,1);
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "high", "low"])
+        required_cols = ["close", "high", "low"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -946,6 +1149,118 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "月线KDJ金叉形成" in patterns:
+            pattern_boost += 0.2
+        elif "月KDJ指标K值上移" in patterns:
+            pattern_boost += 0.15
+
+        if "月KDJ严重超卖区域" in patterns:
+            pattern_boost += 0.15
+        elif "月KDJ超卖区域" in patterns:
+            pattern_boost += 0.1
+
+        if "月KDJ趋势由弱转强" in patterns:
+            pattern_boost += 0.2
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["月KDJ指标K值上移"] = result["XG"]
+
+        # KDJ值区间形态
+        k_value = result["K"]
+        d_value = result["D"]
+        j_value = result["J"]
+
+        patterns_df["月KDJ严重超卖区域"] = k_value < 20
+        patterns_df["月KDJ超卖区域"] = (k_value >= 20) & (k_value < 40)
+        patterns_df["月KDJ严重超买区域"] = k_value > 80
+        patterns_df["月KDJ超买区域"] = (k_value <= 80) & (k_value > 60)
+
+        # KD关系形态
+        k_cross_above_d = (k_value > d_value) & (k_value.shift(1) <= d_value.shift(1))
+        k_cross_below_d = (k_value < d_value) & (k_value.shift(1) >= d_value.shift(1))
+
+        patterns_df["月线KDJ金叉形成"] = k_cross_above_d
+        patterns_df["月线KDJ死叉形成"] = k_cross_below_d
+        patterns_df["月线KDJ金叉后持续上行"] = (k_value > d_value) & ~k_cross_above_d
+        patterns_df["月线KDJ死叉后持续下行"] = (k_value < d_value) & ~k_cross_below_d
+
+        # J值极值形态
+        patterns_df["月KDJ-J值低于0"] = j_value < 0
+        patterns_df["月KDJ-J值高于100"] = j_value > 100
+
+        # 趋势变化
+        if len(result) >= 6:
+            trend_weak_to_strong = pd.Series(False, index=data.index)
+            trend_strong_to_weak = pd.Series(False, index=data.index)
+
+            for i in range(6, len(result)):
+                if not result["XG"].iloc[i-6:i-3].any() and result["XG"].iloc[i-3:i+1].all():
+                    trend_weak_to_strong.iloc[i] = True
+                elif result["XG"].iloc[i-6:i-3].all() and not result["XG"].iloc[i-3:i+1].any():
+                    trend_strong_to_weak.iloc[i] = True
+
+            patterns_df["月KDJ趋势由弱转强"] = trend_weak_to_strong
+            patterns_df["月KDJ趋势由强转弱"] = trend_strong_to_weak
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - kdj_period: KDJ计算周期，默认9
+                - k_period: K值平滑周期，默认3
+                - d_period: D值平滑周期，默认3
+        """
+        self.kdj_period = kwargs.get('kdj_period', 9)
+        self.k_period = kwargs.get('k_period', 3)
+        self.d_period = kwargs.get('d_period', 3)
+
 
 class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
     """
@@ -979,7 +1294,10 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         xg:D>=REF(D,1) OR DEA>=REF(DEA,1);
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "high", "low"])
+        required_cols = ["close", "high", "low"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -1176,14 +1494,18 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
             if d_value > macd_dea:
                 # 检查是否为金叉
                 if len(result) > 1:
-                    if result["D"].iloc[-2] <= macd_dea.iloc[-2]:
+                    prev_d = result["D"].iloc[-2]
+                    prev_dea = macd_dea if isinstance(macd_dea, (int, float)) else macd_dea.iloc[-2] if hasattr(macd_dea, 'iloc') else macd_dea
+                    if prev_d <= prev_dea:
                         patterns.append("周线KDJ金叉形成")
                     else:
                         patterns.append("周线KDJ金叉后持续上行")
             else:
                 # 检查是否为死叉
                 if len(result) > 1:
-                    if result["D"].iloc[-2] >= macd_dea.iloc[-2]:
+                    prev_d = result["D"].iloc[-2]
+                    prev_dea = macd_dea if isinstance(macd_dea, (int, float)) else macd_dea.iloc[-2] if hasattr(macd_dea, 'iloc') else macd_dea
+                    if prev_d >= prev_dea:
                         patterns.append("周线KDJ死叉形成")
                     else:
                         patterns.append("周线KDJ死叉后持续下行")
@@ -1300,6 +1622,125 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "周KDJ·D/DEA上移" in patterns:
+            pattern_boost += 0.15
+
+        if "周KDJ严重超卖区域" in patterns:
+            pattern_boost += 0.15
+        elif "周KDJ超卖区域" in patterns:
+            pattern_boost += 0.1
+
+        if "周线KDJ金叉形成" in patterns:
+            pattern_boost += 0.2
+        elif "周KDJ趋势由弱转强" in patterns:
+            pattern_boost += 0.15
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["周KDJ·D/DEA上移"] = result["XG"]
+
+        # KDJ值区间形态
+        d_value = result["D"]
+        dea_value = result.get("DEA", pd.Series(0, index=data.index))
+
+        patterns_df["周KDJ严重超卖区域"] = d_value < 20
+        patterns_df["周KDJ超卖区域"] = (d_value >= 20) & (d_value < 40)
+        patterns_df["周KDJ严重超买区域"] = d_value > 80
+        patterns_df["周KDJ超买区域"] = (d_value <= 80) & (d_value > 60)
+
+        # KD关系形态
+        k_value = result.get("K", pd.Series(50, index=data.index))
+        k_cross_above_d = (k_value > d_value) & (k_value.shift(1) <= d_value.shift(1))
+        k_cross_below_d = (k_value < d_value) & (k_value.shift(1) >= d_value.shift(1))
+
+        patterns_df["周线KDJ金叉形成"] = k_cross_above_d
+        patterns_df["周线KDJ死叉形成"] = k_cross_below_d
+
+        # DEA相关形态
+        if "DEA" in result.columns:
+            patterns_df["DEA向上穿越0轴"] = (dea_value > 0) & (dea_value.shift(1) <= 0)
+            patterns_df["DEA向下穿越0轴"] = (dea_value < 0) & (dea_value.shift(1) >= 0)
+            patterns_df["DEA低于0"] = dea_value < 0
+            patterns_df["DEA高于0"] = dea_value > 0
+
+        # 趋势变化
+        if len(result) >= 6:
+            trend_weak_to_strong = pd.Series(False, index=data.index)
+            trend_strong_to_weak = pd.Series(False, index=data.index)
+
+            for i in range(6, len(result)):
+                if not result["XG"].iloc[i-6:i-3].any() and result["XG"].iloc[i-3:i+1].all():
+                    trend_weak_to_strong.iloc[i] = True
+                elif result["XG"].iloc[i-6:i-3].all() and not result["XG"].iloc[i-3:i+1].any():
+                    trend_strong_to_weak.iloc[i] = True
+
+            patterns_df["周KDJ趋势由弱转强"] = trend_weak_to_strong
+            patterns_df["周KDJ趋势由强转弱"] = trend_strong_to_weak
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - kdj_period: KDJ计算周期，默认9
+                - k_period: K值平滑周期，默认3
+                - d_period: D值平滑周期，默认3
+                - macd_fast: MACD快线周期，默认12
+                - macd_slow: MACD慢线周期，默认26
+                - macd_signal: MACD信号线周期，默认9
+        """
+        self.kdj_period = kwargs.get('kdj_period', 9)
+        self.k_period = kwargs.get('k_period', 3)
+        self.d_period = kwargs.get('d_period', 3)
+        self.macd_fast = kwargs.get('macd_fast', 12)
+        self.macd_slow = kwargs.get('macd_slow', 26)
+        self.macd_signal = kwargs.get('macd_signal', 9)
+
 
 class ZXMWeeklyKDJDTrendUp(BaseIndicator):
     """
@@ -1331,7 +1772,10 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         xg:D>=REF(D,1);
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "high", "low"])
+        required_cols = ["close", "high", "low"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -1607,6 +2051,118 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "周KDJ·D上移" in patterns:
+            pattern_boost += 0.15
+
+        if "周KDJ严重超卖区域" in patterns:
+            pattern_boost += 0.15
+        elif "周KDJ超卖区域" in patterns:
+            pattern_boost += 0.1
+
+        if "周线KDJ金叉形成" in patterns:
+            pattern_boost += 0.2
+        elif "周KDJ趋势由弱转强" in patterns:
+            pattern_boost += 0.15
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["周KDJ·D上移"] = result["XG"]
+
+        # KDJ值区间形态
+        k_value = result["K"]
+        d_value = result["D"]
+        j_value = result["J"]
+
+        patterns_df["周KDJ严重超卖区域"] = k_value < 20
+        patterns_df["周KDJ超卖区域"] = (k_value >= 20) & (k_value < 40)
+        patterns_df["周KDJ严重超买区域"] = k_value > 80
+        patterns_df["周KDJ超买区域"] = (k_value <= 80) & (k_value > 60)
+
+        # KD关系形态
+        k_cross_above_d = (k_value > d_value) & (k_value.shift(1) <= d_value.shift(1))
+        k_cross_below_d = (k_value < d_value) & (k_value.shift(1) >= d_value.shift(1))
+
+        patterns_df["周线KDJ金叉形成"] = k_cross_above_d
+        patterns_df["周线KDJ死叉形成"] = k_cross_below_d
+        patterns_df["周线KDJ金叉后持续上行"] = (k_value > d_value) & ~k_cross_above_d
+        patterns_df["周线KDJ死叉后持续下行"] = (k_value < d_value) & ~k_cross_below_d
+
+        # J值极值形态
+        patterns_df["周KDJ-J值低于0"] = j_value < 0
+        patterns_df["周KDJ-J值高于100"] = j_value > 100
+
+        # 趋势变化
+        if len(result) >= 6:
+            trend_weak_to_strong = pd.Series(False, index=data.index)
+            trend_strong_to_weak = pd.Series(False, index=data.index)
+
+            for i in range(6, len(result)):
+                if not result["XG"].iloc[i-6:i-3].any() and result["XG"].iloc[i-3:i+1].all():
+                    trend_weak_to_strong.iloc[i] = True
+                elif result["XG"].iloc[i-6:i-3].all() and not result["XG"].iloc[i-3:i+1].any():
+                    trend_strong_to_weak.iloc[i] = True
+
+            patterns_df["周KDJ趋势由弱转强"] = trend_weak_to_strong
+            patterns_df["周KDJ趋势由强转弱"] = trend_strong_to_weak
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - kdj_period: KDJ计算周期，默认9
+                - k_period: K值平滑周期，默认3
+                - d_period: D值平滑周期，默认3
+        """
+        self.kdj_period = kwargs.get('kdj_period', 9)
+        self.k_period = kwargs.get('k_period', 3)
+        self.d_period = kwargs.get('d_period', 3)
+
 
 class ZXMMonthlyMACD(BaseIndicator):
     """
@@ -1637,7 +2193,8 @@ class ZXMMonthlyMACD(BaseIndicator):
         xg:CROSS(DIF,DEA);
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -1973,6 +2530,119 @@ class ZXMMonthlyMACD(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "月线MACD金叉形成" in patterns:
+            pattern_boost += 0.25
+        elif "月线MACD多头排列" in patterns:
+            pattern_boost += 0.15
+
+        if "月线MACD由负转正" in patterns:
+            pattern_boost += 0.2
+        elif "月线MACD柱状图扩大" in patterns:
+            pattern_boost += 0.1
+
+        if "月线MACD双线位于零轴上方" in patterns:
+            pattern_boost += 0.1
+        elif "月线MACD可能底背离" in patterns:
+            pattern_boost += 0.15
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # MACD金叉死叉形态
+        dif_cross_above_dea = (result["DIF"] > result["DEA"]) & (result["DIF"].shift(1) <= result["DEA"].shift(1))
+        dif_cross_below_dea = (result["DIF"] < result["DEA"]) & (result["DIF"].shift(1) >= result["DEA"].shift(1))
+
+        patterns_df["月线MACD金叉形成"] = dif_cross_above_dea
+        patterns_df["月线MACD死叉形成"] = dif_cross_below_dea
+        patterns_df["月线MACD多头排列"] = result["DIF"] > result["DEA"]
+        patterns_df["月线MACD空头排列"] = result["DIF"] < result["DEA"]
+
+        # MACD柱状图形态
+        macd_turn_positive = (result["MACD"] > 0) & (result["MACD"].shift(1) <= 0)
+        macd_turn_negative = (result["MACD"] < 0) & (result["MACD"].shift(1) >= 0)
+        macd_expanding = result["MACD"] > result["MACD"].shift(1)
+        macd_contracting = result["MACD"] < result["MACD"].shift(1)
+
+        patterns_df["月线MACD由负转正"] = macd_turn_positive
+        patterns_df["月线MACD由正转负"] = macd_turn_negative
+        patterns_df["月线MACD柱状图扩大"] = macd_expanding & (result["MACD"] > 0)
+        patterns_df["月线MACD柱状图收缩"] = macd_contracting & (result["MACD"] > 0)
+        patterns_df["月线MACD柱状图负向扩大"] = macd_contracting & (result["MACD"] < 0)
+        patterns_df["月线MACD柱状图负向收缩"] = macd_expanding & (result["MACD"] < 0)
+
+        # 零轴位置形态
+        patterns_df["月线MACD双线位于零轴上方"] = (result["DIF"] > 0) & (result["DEA"] > 0)
+        patterns_df["月线MACD双线位于零轴下方"] = (result["DIF"] < 0) & (result["DEA"] < 0)
+        patterns_df["月线MACD-DIF位于零轴上方，DEA位于零轴下方"] = (result["DIF"] > 0) & (result["DEA"] < 0)
+        patterns_df["月线MACD-DIF位于零轴下方，DEA位于零轴上方"] = (result["DIF"] < 0) & (result["DEA"] > 0)
+
+        # 背离形态（简化版）
+        if len(data) >= 6:
+            # 计算6期内的价格和DIF变化
+            price_change_6 = data["close"].diff(6)
+            dif_change_6 = result["DIF"].diff(6)
+
+            # 顶背离：价格上涨但DIF下跌
+            patterns_df["月线MACD可能顶背离"] = (price_change_6 > 0) & (dif_change_6 < 0)
+            # 底背离：价格下跌但DIF上涨
+            patterns_df["月线MACD可能底背离"] = (price_change_6 < 0) & (dif_change_6 > 0)
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - fast_period: 快线周期，默认12
+                - slow_period: 慢线周期，默认26
+                - signal_period: 信号线周期，默认9
+        """
+        self.fast_period = kwargs.get('fast_period', 12)
+        self.slow_period = kwargs.get('slow_period', 26)
+        self.signal_period = kwargs.get('signal_period', 9)
+
 
 class TrendDetector(BaseIndicator):
     """
@@ -1996,7 +2666,8 @@ class TrendDetector(BaseIndicator):
         Returns:
             pd.DataFrame: 计算结果，包含趋势方向、强度、持续时间等
         """
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 复制数据，避免修改原始数据
         result = data.copy()
@@ -2123,9 +2794,10 @@ class TrendDetector(BaseIndicator):
             
             # 健康度调整
             health_score = (health - 50) / 5  # -10到+10的范围
-            
+
             # 综合评分调整
-            score.iloc[i] = 50 + state_score + maturity_score + health_score
+            final_score = 50 + state_score + maturity_score + health_score
+            score.iloc[i] = max(0, min(100, final_score))
         
         # 趋势变化点额外调整
         trend_change = result["TrendChange"]
@@ -2351,6 +3023,110 @@ class TrendDetector(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "趋势转折：由空转多" in patterns:
+            pattern_boost += 0.25
+        elif "趋势转折：由多转空" in patterns:
+            pattern_boost += 0.25
+        elif "健康上升趋势" in patterns:
+            pattern_boost += 0.15
+        elif "健康下降趋势" in patterns:
+            pattern_boost += 0.15
+
+        if "上升趋势初期" in patterns:
+            pattern_boost += 0.1
+        elif "下降趋势后期" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 趋势状态形态
+        patterns_df["上升趋势"] = result["TrendState"] == 1
+        patterns_df["下降趋势"] = result["TrendState"] == -1
+        patterns_df["震荡/无趋势"] = result["TrendState"] == 0
+
+        # 趋势变化形态
+        patterns_df["趋势转折：由空转多"] = result["TrendChange"] & (result["TrendState"] == 1)
+        patterns_df["趋势转折：由多转空"] = result["TrendChange"] & (result["TrendState"] == -1)
+
+        # 趋势成熟度形态
+        patterns_df["上升趋势初期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] < 30)
+        patterns_df["上升趋势中期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] >= 30) & (result["TrendMaturity"] < 70)
+        patterns_df["上升趋势后期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] >= 70)
+        patterns_df["下降趋势初期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] < 30)
+        patterns_df["下降趋势中期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] >= 30) & (result["TrendMaturity"] < 70)
+        patterns_df["下降趋势后期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] >= 70)
+
+        # 趋势健康度形态
+        patterns_df["健康上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] >= 80)
+        patterns_df["稳定上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] >= 60) & (result["TrendHealth"] < 80)
+        patterns_df["虚弱上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] < 60)
+        patterns_df["健康下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] >= 80)
+        patterns_df["稳定下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] >= 60) & (result["TrendHealth"] < 80)
+        patterns_df["虚弱下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] < 60)
+
+        # 趋势持续性形态
+        patterns_df["超长期趋势"] = result["TrendDuration"] >= 60
+        patterns_df["长期趋势"] = (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
+        patterns_df["中期趋势"] = (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
+        patterns_df["短期趋势"] = result["TrendDuration"] < 10
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - ma_short: 短期均线周期，默认20
+                - ma_long: 长期均线周期，默认60
+                - slope_period: 斜率计算周期，默认5
+        """
+        self.ma_short = kwargs.get('ma_short', 20)
+        self.ma_long = kwargs.get('ma_long', 60)
+        self.slope_period = kwargs.get('slope_period', 5)
+
 
 class TrendDuration(BaseIndicator):
     """
@@ -2374,7 +3150,8 @@ class TrendDuration(BaseIndicator):
         Returns:
             pd.DataFrame: 计算结果，包含趋势持续时间相关指标
         """
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 复制数据，避免修改原始数据
         result = data.copy()
@@ -2895,6 +3672,119 @@ class TrendDuration(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "趋势刚转为上升" in patterns:
+            pattern_boost += 0.25
+        elif "趋势刚转为下降" in patterns:
+            pattern_boost += 0.25
+        elif "上升趋势初始阶段" in patterns:
+            pattern_boost += 0.15
+        elif "下降趋势衰退阶段" in patterns:
+            pattern_boost += 0.15
+
+        if "高规律性周期" in patterns:
+            pattern_boost += 0.1
+        elif "趋势接近尾声" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 趋势状态形态
+        patterns_df["上升趋势"] = result["TrendState"] == 1
+        patterns_df["下降趋势"] = result["TrendState"] == -1
+        patterns_df["震荡/无趋势"] = result["TrendState"] == 0
+
+        # 趋势变化形态
+        patterns_df["趋势刚转为上升"] = result["TrendChange"] & (result["TrendState"] == 1)
+        patterns_df["趋势刚转为下降"] = result["TrendChange"] & (result["TrendState"] == -1)
+
+        # 生命周期阶段形态
+        patterns_df["上升趋势初始阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 0)
+        patterns_df["上升趋势发展阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 1)
+        patterns_df["上升趋势成熟阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 2)
+        patterns_df["上升趋势衰退阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 3)
+        patterns_df["下降趋势初始阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 0)
+        patterns_df["下降趋势发展阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 1)
+        patterns_df["下降趋势成熟阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 2)
+        patterns_df["下降趋势衰退阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 3)
+
+        # 趋势持续时间形态
+        patterns_df["超长期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 60)
+        patterns_df["长期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
+        patterns_df["中期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
+        patterns_df["短期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] < 10)
+        patterns_df["超长期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 60)
+        patterns_df["长期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
+        patterns_df["中期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
+        patterns_df["短期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] < 10)
+
+        # 趋势成熟度形态
+        patterns_df["趋势接近尾声"] = result["TrendMaturity"] > 90
+        patterns_df["趋势成熟期"] = (result["TrendMaturity"] > 70) & (result["TrendMaturity"] <= 90)
+        patterns_df["趋势初期"] = result["TrendMaturity"] < 30
+
+        # 周期规律性形态
+        patterns_df["高规律性周期"] = result["CycleRegularity"] < 0.3
+        patterns_df["低规律性周期"] = result["CycleRegularity"] > 0.7
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - ma_short: 短期均线周期，默认10
+                - ma_medium: 中期均线周期，默认20
+                - ma_long: 长期均线周期，默认60
+                - slope_period: 斜率计算周期，默认5
+        """
+        self.ma_short = kwargs.get('ma_short', 10)
+        self.ma_medium = kwargs.get('ma_medium', 20)
+        self.ma_long = kwargs.get('ma_long', 60)
+        self.slope_period = kwargs.get('slope_period', 5)
+
 
 class ZXMWeeklyMACD(BaseIndicator):
     """
@@ -3362,3 +4252,104 @@ class ZXMWeeklyMACD(BaseIndicator):
         except Exception as e:
             logger.error(f"计算趋势稳定性时出错: {e}")
             return result
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "周线MACD金叉" in patterns:
+            pattern_boost += 0.2
+        elif "周线MACD死叉" in patterns:
+            pattern_boost += 0.2
+
+        if "周线MACD底背离" in patterns:
+            pattern_boost += 0.25
+        elif "周线MACD顶背离" in patterns:
+            pattern_boost += 0.25
+
+        if "周线MACD零轴上方" in patterns:
+            pattern_boost += 0.1
+        elif "周线MACD零轴下方" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # MACD金叉死叉形态
+        patterns_df["周线MACD金叉"] = result["golden_cross"]
+        patterns_df["周线MACD死叉"] = result["death_cross"]
+        patterns_df["周线MACD多头排列"] = result["DIF"] > result["DEA"]
+        patterns_df["周线MACD空头排列"] = result["DIF"] < result["DEA"]
+
+        # 零轴位置形态
+        patterns_df["周线MACD零轴上方"] = result["above_zero"]
+        patterns_df["周线MACD零轴下方"] = result["below_zero"]
+        patterns_df["周线MACD-DIF上穿零轴"] = (result["DIF"] > 0) & (result["DIF"].shift(1) <= 0)
+        patterns_df["周线MACD-DIF下穿零轴"] = (result["DIF"] < 0) & (result["DIF"].shift(1) >= 0)
+
+        # 背离形态
+        patterns_df["周线MACD底背离"] = result["bullish_divergence"]
+        patterns_df["周线MACD顶背离"] = result["bearish_divergence"]
+
+        # MACD柱状图形态
+        macd_histogram = result["MACD"]
+        patterns_df["周线MACD柱状图扩大"] = (macd_histogram > 0) & (macd_histogram > macd_histogram.shift(1))
+        patterns_df["周线MACD柱状图收缩"] = (macd_histogram > 0) & (macd_histogram < macd_histogram.shift(1))
+        patterns_df["周线MACD柱状图负向扩大"] = (macd_histogram < 0) & (macd_histogram < macd_histogram.shift(1))
+        patterns_df["周线MACD柱状图负向收缩"] = (macd_histogram < 0) & (macd_histogram > macd_histogram.shift(1))
+        patterns_df["周线MACD由负转正"] = (macd_histogram > 0) & (macd_histogram.shift(1) <= 0)
+        patterns_df["周线MACD由正转负"] = (macd_histogram < 0) & (macd_histogram.shift(1) >= 0)
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - fast_period: 快线周期，默认12
+                - slow_period: 慢线周期，默认26
+                - signal_period: 信号线周期，默认9
+                - divergence_lookback: 背离检测回看周期，默认10
+        """
+        self.fast_period = kwargs.get('fast_period', 12)
+        self.slow_period = kwargs.get('slow_period', 26)
+        self.signal_period = kwargs.get('signal_period', 9)
+        self.divergence_lookback = kwargs.get('divergence_lookback', 10)

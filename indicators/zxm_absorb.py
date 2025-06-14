@@ -50,25 +50,26 @@ class ZXMAbsorb(BaseIndicator):
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM核心吸筹指标
-        
+
         Args:
             data: 输入数据，包含OHLCV数据
-            
+
         Returns:
             pd.DataFrame: 计算结果，包含核心吸筹信号
-            
-        公式说明：
+
+        公式说明（基于ZXM体系3.0版权威文档）：
         V11:=3*SMA((CLOSE-LLV(LOW,55))/(HHV(HIGH,55)-LLV(LOW,55))*100,5,1)-2*SMA(SMA((CLOSE-LLV(LOW,55))/(HHV(HIGH,55)-LLV(LOW,55))*100,5,1),3,1);
         V12:=(EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100;
         AA:=EMA(V11,3)<=13;
         BB:=EMA(V11,3)<=13 AND V12>13;
-        XC:=COUNT(AA,15)>=10; // 满足低位条件
-        XD:=COUNT(BB,10)>=5;  // 满足低位回升条件
-        XG:=COUNT(AA OR BB,6); // 近期满足吸筹条件次数
-        BUY:=XG>=3; // 满足3次以上视为有效吸筹信号
+        XG:=COUNT(AA OR BB,6);
+        BUY:=XG>=3;
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "high", "low"])
+        required_columns = ["close", "high", "low"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 提取数据
         close = data["close"].values
@@ -106,28 +107,19 @@ class ZXMAbsorb(BaseIndicator):
             if ema_v11_3[i-1] != 0:
                 v12[i] = (ema_v11_3[i] - ema_v11_3[i-1]) / ema_v11_3[i-1] * 100
         
-        # 定义AA和BB条件
+        # 定义AA和BB条件（严格按照文档公式）
         aa = ema_v11_3 <= 13
         bb = (ema_v11_3 <= 13) & (v12 > 13)
-        
+
         # 计算满足条件的次数
-        xc = np.zeros_like(close, dtype=bool)
-        xd = np.zeros_like(close, dtype=bool)
         xg = np.zeros_like(close, dtype=int)
         buy = np.zeros_like(close, dtype=bool)
-        
-        for i in range(15, len(close)):
-            # 计算XC：近15天内AA条件满足10次以上
-            xc[i] = np.sum(aa[i-14:i+1]) >= 10
-            
-            # 计算XD：近10天内BB条件满足5次以上
-            if i >= 10:
-                xd[i] = np.sum(bb[i-9:i+1]) >= 5
-            
+
+        # 按照文档公式计算XG和BUY
+        for i in range(6, len(close)):
             # 计算XG：近6天内AA或BB条件满足的次数
-            if i >= 6:
-                xg[i] = np.sum(aa[i-5:i+1] | bb[i-5:i+1])
-            
+            xg[i] = np.sum(aa[i-5:i+1] | bb[i-5:i+1])
+
             # 计算BUY：XG >= 3
             buy[i] = xg[i] >= 3
         
@@ -137,8 +129,6 @@ class ZXMAbsorb(BaseIndicator):
         result["EMA_V11_3"] = ema_v11_3
         result["AA"] = aa
         result["BB"] = bb
-        result["XC"] = xc
-        result["XD"] = xd
         result["XG"] = xg
         result["BUY"] = buy
         
@@ -343,7 +333,7 @@ class ZXMAbsorb(BaseIndicator):
         indicator_data = self.calculate(data)
         
         # 初始化评分序列，默认分数50
-        scores = pd.Series(50, index=data.index)
+        scores = pd.Series(50.0, index=data.index, dtype=float)
         
         # 根据吸筹信号和强度计算分数
         for i in range(len(data)):
@@ -417,13 +407,17 @@ class ZXMAbsorb(BaseIndicator):
                 if indicator_data['V12'].iloc[latest_index] > 13:
                     patterns.append("V11低位V12快速上升")
         
-        # 检查是否满足XC条件(15天内满足10次低位条件)
-        if indicator_data['XC'].iloc[latest_index]:
-            patterns.append("持续低位状态")
-        
-        # 检查是否满足XD条件(10天内满足5次低位回升条件)
-        if indicator_data['XD'].iloc[latest_index]:
-            patterns.append("低位持续回升")
+        # 检查是否满足持续低位条件(基于AA条件的持续性)
+        if len(indicator_data) >= 15:
+            recent_aa = indicator_data['AA'].iloc[-15:].sum()
+            if recent_aa >= 10:
+                patterns.append("持续低位状态")
+
+        # 检查是否满足低位回升条件(基于BB条件的持续性)
+        if len(indicator_data) >= 10:
+            recent_bb = indicator_data['BB'].iloc[-10:].sum()
+            if recent_bb >= 5:
+                patterns.append("低位持续回升")
         
         # 成交量特征
         if 'volume' in data.columns and len(data) >= 5:
@@ -438,4 +432,400 @@ class ZXMAbsorb(BaseIndicator):
                 elif volume_ratio > 1.5 and indicator_data['EMA_V11_3'].iloc[latest_index] < 13:
                     patterns.append("低位放量")
         
-        return patterns 
+        return patterns
+
+    def validate_buy_point_four_elements(self, data: pd.DataFrame, index: int) -> Dict[str, bool]:
+        """
+        验证ZXM买点四要素
+
+        Args:
+            data: 股价数据
+            index: 当前位置索引
+
+        Returns:
+            Dict[str, bool]: 四要素验证结果
+        """
+        if index < 60:  # 需要足够的历史数据
+            return {
+                'trend_intact': False,
+                'volume_shrink': False,
+                'pullback_support': False,
+                'bs_signal': False
+            }
+
+        # 1. 趋势不破：60日和120日均线上移
+        ma60 = data['close'].rolling(window=60).mean()
+        ma120 = data['close'].rolling(window=120).mean()
+
+        trend_intact = False
+        if index >= 120:
+            trend_intact = (ma60.iloc[index] >= ma60.iloc[index-1] or
+                          ma120.iloc[index] >= ma120.iloc[index-1])
+
+        # 2. 缩量：当日成交量小于前2日或前3日平均量
+        volume_shrink = False
+        if index >= 3:
+            current_vol = data['volume'].iloc[index]
+            avg_vol_2 = data['volume'].iloc[index-2:index].mean()
+            avg_vol_3 = data['volume'].iloc[index-3:index].mean()
+            volume_shrink = (current_vol * 1.1 < avg_vol_2 or
+                           current_vol * 1.1 < avg_vol_3)
+
+        # 3. 回踩支撑：价格接近10/20/30/60日均线
+        pullback_support = False
+        if index >= 60:
+            current_price = data['close'].iloc[index]
+            ma10 = data['close'].rolling(window=10).mean().iloc[index]
+            ma20 = data['close'].rolling(window=20).mean().iloc[index]
+            ma30 = data['close'].rolling(window=30).mean().iloc[index]
+            ma60_val = ma60.iloc[index]
+
+            # 价格距离均线小于4%视为回踩支撑
+            support_distances = [
+                abs(current_price - ma10) / ma10,
+                abs(current_price - ma20) / ma20,
+                abs(current_price - ma30) / ma30,
+                abs(current_price - ma60_val) / ma60_val
+            ]
+            pullback_support = any(dist <= 0.04 for dist in support_distances)
+
+        # 4. BS吸筹信号：当前有BUY信号
+        bs_signal = False
+        if hasattr(self, '_result') and self._result is not None:
+            if 'BUY' in self._result.columns and index < len(self._result):
+                bs_signal = bool(self._result['BUY'].iloc[index])
+
+        return {
+            'trend_intact': bool(trend_intact),
+            'volume_shrink': bool(volume_shrink),
+            'pullback_support': bool(pullback_support),
+            'bs_signal': bool(bs_signal)
+        }
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - v11_threshold: V11低位阈值，默认13
+                - v12_threshold: V12上升阈值，默认13
+                - xg_threshold: XG吸筹强度阈值，默认3
+        """
+        self.v11_threshold = kwargs.get('v11_threshold', 13)
+        self.v12_threshold = kwargs.get('v12_threshold', 13)
+        self.xg_threshold = kwargs.get('xg_threshold', 3)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取ZXMAbsorb相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 基于识别的形态创建布尔列
+        identified_patterns = self.identify_patterns(data)
+
+        # 初始化所有可能的形态列
+        pattern_columns = [
+            'ZXM_ABSORB_SIGNAL', 'ZXM_STRONG_ABSORB', 'ZXM_MEDIUM_ABSORB', 'ZXM_WEAK_ABSORB',
+            'ZXM_V11_LOW', 'ZXM_V11_LOW_V12_UP', 'ZXM_V11_LOW_V12_FAST_UP',
+            'ZXM_CONTINUOUS_LOW', 'ZXM_LOW_RECOVERY', 'ZXM_VOLUME_SHRINK',
+            'ZXM_LOW_VOLUME_EXPANSION', 'ZXM_ABSORB_CONFIRMATION'
+        ]
+
+        for col in pattern_columns:
+            patterns[col] = False
+
+        # 根据识别的形态设置相应的布尔值
+        for pattern in identified_patterns:
+            if "ZXM吸筹信号" in pattern:
+                patterns['ZXM_ABSORB_SIGNAL'] = True
+                patterns['ZXM_ABSORB_CONFIRMATION'] = True
+
+            if "强吸筹信号" in pattern:
+                patterns['ZXM_STRONG_ABSORB'] = True
+            elif "中等吸筹信号" in pattern:
+                patterns['ZXM_MEDIUM_ABSORB'] = True
+            elif "弱吸筹信号" in pattern:
+                patterns['ZXM_WEAK_ABSORB'] = True
+
+            if "V11指标低位" in pattern:
+                patterns['ZXM_V11_LOW'] = True
+
+            if "V11低位V12上升" in pattern:
+                patterns['ZXM_V11_LOW_V12_UP'] = True
+
+            if "V11低位V12快速上升" in pattern:
+                patterns['ZXM_V11_LOW_V12_FAST_UP'] = True
+
+            if "持续低位状态" in pattern:
+                patterns['ZXM_CONTINUOUS_LOW'] = True
+
+            if "低位持续回升" in pattern:
+                patterns['ZXM_LOW_RECOVERY'] = True
+
+            if "成交量萎缩" in pattern:
+                patterns['ZXM_VOLUME_SHRINK'] = True
+
+            if "低位放量" in pattern:
+                patterns['ZXM_LOW_VOLUME_EXPANSION'] = True
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算ZXMAbsorb指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80:
+            confidence += 0.3
+        elif last_score > 70:
+            confidence += 0.2
+        elif last_score < 30:
+            confidence += 0.25
+        elif last_score < 40:
+            confidence += 0.15
+        else:
+            confidence += 0.1
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有ZXM吸筹数据
+            zxm_columns = ['BUY', 'XG', 'EMA_V11_3', 'V12']
+            available_columns = [col for col in zxm_columns if col in self._result.columns]
+            if available_columns:
+                # ZXM数据越完整，置信度越高
+                data_completeness = len(available_columns) / len(zxm_columns)
+                confidence += data_completeness * 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查ZXM吸筹形态（只计算布尔列）
+            bool_columns = patterns.select_dtypes(include=[bool]).columns
+            if len(bool_columns) > 0:
+                pattern_count = patterns[bool_columns].sum().sum()
+                if pattern_count > 0:
+                    confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 60:  # 两个月数据
+            confidence += 0.1
+        elif len(score) >= 30:  # 一个月数据
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册ZXMAbsorb指标的形态到全局形态注册表
+        """
+        # 注册吸筹信号形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_ABSORB_SIGNAL",
+            display_name="ZXM吸筹信号",
+            description="基于KDJ衍生指标的低位吸筹信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_STRONG_ABSORB",
+            display_name="ZXM强吸筹信号",
+            description="强度≥5的ZXM吸筹信号，主力大量吸筹",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=40.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MEDIUM_ABSORB",
+            display_name="ZXM中等吸筹信号",
+            description="强度4的ZXM吸筹信号，主力适度吸筹",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WEAK_ABSORB",
+            display_name="ZXM弱吸筹信号",
+            description="强度3的ZXM吸筹信号，主力轻度吸筹",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        # 注册V11指标形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_V11_LOW",
+            display_name="ZXM V11指标低位",
+            description="V11指标处于低位区域，具备吸筹基础",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_V11_LOW_V12_UP",
+            display_name="ZXM V11低位V12上升",
+            description="V11低位且V12上升，吸筹动能增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_V11_LOW_V12_FAST_UP",
+            display_name="ZXM V11低位V12快速上升",
+            description="V11低位且V12快速上升，强烈吸筹信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册持续性形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_CONTINUOUS_LOW",
+            display_name="ZXM持续低位状态",
+            description="15天内满足10次低位条件，持续吸筹环境",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_LOW_RECOVERY",
+            display_name="ZXM低位持续回升",
+            description="10天内满足5次低位回升条件，吸筹后启动",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册成交量确认形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_SHRINK",
+            display_name="ZXM成交量萎缩",
+            description="吸筹过程中成交量萎缩，主力控盘",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=8.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_LOW_VOLUME_EXPANSION",
+            display_name="ZXM低位放量",
+            description="低位区域放量，主力积极吸筹",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_ABSORB_CONFIRMATION",
+            display_name="ZXM吸筹确认",
+            description="综合确认的ZXM吸筹信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成ZXMAbsorb交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 使用generate_signals方法生成详细信号
+        detailed_signals = self.generate_signals(data, **kwargs)
+
+        # 转换为简化的信号格式
+        buy_signal = detailed_signals['buy_signal']
+        sell_signal = detailed_signals['sell_signal']
+
+        # 计算信号强度
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 基于吸筹强度计算信号强度
+        if 'XG' in self._result.columns:
+            xg_values = self._result['XG']
+
+            # 买入信号强度基于XG值
+            for i in range(len(data)):
+                if buy_signal.iloc[i]:
+                    xg_value = xg_values.iloc[i]
+                    # XG值3-6对应信号强度0.3-1.0
+                    if xg_value >= 3:
+                        signal_strength.iloc[i] = min(0.3 + (xg_value - 3) * 0.175, 1.0)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "ZXM_ABSORB"

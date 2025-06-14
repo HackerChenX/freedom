@@ -49,34 +49,354 @@ class ChipDistribution(BaseIndicator):
                 self._parameters[key] = value
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        return 0.5
+        """
+        计算ChipDistribution指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有换手率数据
+            if 'turnover_rate' in self._result.columns:
+                confidence += 0.1
+
+            # 检查筹码集中度数据质量
+            if 'chip_concentration' in self._result.columns:
+                concentration_values = self._result['chip_concentration'].dropna()
+                if len(concentration_values) > 0:
+                    # 集中度数据越完整，置信度越高
+                    data_completeness = len(concentration_values) / len(self._result)
+                    confidence += data_completeness * 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查ChipDistribution形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于评分稳定性的置信度
+        if len(score) >= 5:
+            recent_scores = score.iloc[-5:]
+            score_stability = 1.0 - (recent_scores.std() / 50.0)
+            confidence += score_stability * 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        筹码分布指标的形态识别（默认不实现）
-        
+        获取ChipDistribution相关形态
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
-            pd.DataFrame: 空DataFrame
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        return pd.DataFrame(index=data.index)
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 1. 筹码集中度形态
+        if 'chip_concentration' in self._result.columns:
+            concentration = self._result['chip_concentration']
+
+            # 高度集中形态
+            patterns['CHIP_HIGH_CONCENTRATION'] = concentration > 0.7
+            # 分散形态
+            patterns['CHIP_DISPERSED'] = concentration < 0.3
+            # 集中度上升
+            patterns['CHIP_CONCENTRATION_RISING'] = concentration.diff() > 0.1
+            # 集中度下降
+            patterns['CHIP_CONCENTRATION_FALLING'] = concentration.diff() < -0.1
+
+        # 2. 获利盘比例形态
+        if 'profit_ratio' in self._result.columns:
+            profit_ratio = self._result['profit_ratio']
+
+            # 高获利盘
+            patterns['CHIP_HIGH_PROFIT'] = profit_ratio > 0.8
+            # 低获利盘
+            patterns['CHIP_LOW_PROFIT'] = profit_ratio < 0.2
+            # 获利盘快速增加
+            patterns['CHIP_PROFIT_SURGE'] = profit_ratio.diff() > 0.2
+            # 获利盘快速减少
+            patterns['CHIP_PROFIT_DROP'] = profit_ratio.diff() < -0.2
+
+        # 3. 成本偏离形态
+        if 'avg_cost' in self._result.columns:
+            avg_cost = self._result['avg_cost']
+            current_price = data['close']
+
+            # 价格远高于成本
+            patterns['PRICE_FAR_ABOVE_COST'] = (current_price / avg_cost) > 1.2
+            # 价格远低于成本
+            patterns['PRICE_FAR_BELOW_COST'] = (current_price / avg_cost) < 0.8
+            # 价格接近成本
+            patterns['PRICE_NEAR_COST'] = ((current_price / avg_cost) >= 0.95) & ((current_price / avg_cost) <= 1.05)
+
+        # 4. 解套难度形态
+        if 'untrapped_difficulty' in self._result.columns:
+            untrapped = self._result['untrapped_difficulty']
+
+            # 解套容易
+            patterns['EASY_UNTRAPPED'] = untrapped < 0.9
+            # 解套困难
+            patterns['HARD_UNTRAPPED'] = untrapped > 1.1
+
+        # 5. 筹码松散度形态
+        if 'chip_looseness' in self._result.columns:
+            looseness = self._result['chip_looseness']
+
+            # 筹码松散
+            patterns['CHIP_LOOSE'] = looseness > 3.0
+            # 筹码紧密
+            patterns['CHIP_TIGHT'] = looseness < 1.5
+
+        # 6. 综合形态
+        if 'chip_concentration' in self._result.columns and 'profit_ratio' in self._result.columns:
+            concentration = self._result['chip_concentration']
+            profit_ratio = self._result['profit_ratio']
+
+            # 底部吸筹形态：高集中度 + 低获利盘
+            patterns['CHIP_BOTTOM_ACCUMULATION'] = (concentration > 0.6) & (profit_ratio < 0.3)
+            # 顶部派发形态：低集中度 + 高获利盘
+            patterns['CHIP_TOP_DISTRIBUTION'] = (concentration < 0.4) & (profit_ratio > 0.7)
+            # 主升浪形态：中等集中度 + 中等获利盘
+            patterns['CHIP_MAIN_WAVE'] = (concentration >= 0.4) & (concentration <= 0.6) & (profit_ratio >= 0.3) & (profit_ratio <= 0.7)
+
+        return patterns
     
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算筹码分布指标
-        
+
         Args:
             data: 输入数据，包含OHLCV和换手率数据
             **kwargs: 其他参数
-            
+
         Returns:
             pd.DataFrame: 计算结果，包含筹码分布相关指标
         """
-        # 实际的筹码分布计算会非常复杂，这里暂时返回一个空DataFrame
-        return pd.DataFrame(index=data.index)
+        if data.empty:
+            return pd.DataFrame(index=data.index)
+
+        # 初始化结果DataFrame
+        result = data.copy()
+
+        # 获取参数
+        half_life = kwargs.get('half_life', self._parameters.get('half_life', 60))
+        price_precision = kwargs.get('price_precision', self._parameters.get('price_precision', 0.01))
+
+        # 如果没有换手率数据，使用成交量估算
+        if 'turnover_rate' not in data.columns:
+            # 简单估算换手率：假设流通股本为固定值
+            avg_volume = data['volume'].mean()
+            estimated_shares = avg_volume * 100  # 估算流通股本
+            result['turnover_rate'] = (data['volume'] / estimated_shares) * 100
+
+        # 计算简化的筹码分布指标
+        try:
+            # 1. 计算平均成本（使用成交量加权平均价格的近似）
+            result['avg_cost'] = ((data['high'] + data['low'] + data['close']) / 3).rolling(window=20).mean()
+
+            # 2. 计算筹码集中度（基于价格波动率的倒数）
+            price_volatility = data['close'].rolling(window=20).std() / data['close'].rolling(window=20).mean()
+            result['chip_concentration'] = np.clip(1 / (price_volatility + 0.01), 0, 1)
+
+            # 3. 计算获利盘比例
+            result['profit_ratio'] = np.where(
+                data['close'] > result['avg_cost'],
+                (data['close'] - result['avg_cost']) / result['avg_cost'],
+                0
+            )
+            result['profit_ratio'] = np.clip(result['profit_ratio'], 0, 1)
+
+            # 4. 计算90%筹码区间宽度（基于价格波动）
+            price_range = data['high'].rolling(window=20).max() - data['low'].rolling(window=20).min()
+            result['chip_width_90pct'] = price_range / data['close']
+
+            # 5. 计算解套难度
+            result['untrapped_difficulty'] = data['close'] / result['avg_cost']
+
+            # 6. 计算筹码松散度
+            result['chip_looseness'] = 1 / (result['chip_concentration'] + 0.0001)
+
+            # 7. 计算筹码变动率
+            result['profit_ratio_change'] = result['profit_ratio'].diff()
+
+            # 8. 计算成本偏离度
+            result['cost_deviation'] = (data['close'] - result['avg_cost']) / result['avg_cost']
+
+        except Exception as e:
+            logger.error(f"计算筹码分布指标时出错: {e}")
+            # 返回基础数据
+            result['avg_cost'] = data['close']
+            result['chip_concentration'] = 0.5
+            result['profit_ratio'] = 0.5
+            result['chip_width_90pct'] = 0.1
+            result['untrapped_difficulty'] = 1.0
+            result['chip_looseness'] = 2.0
+            result['profit_ratio_change'] = 0.0
+            result['cost_deviation'] = 0.0
+
+        return result
+
+    def register_patterns(self):
+        """
+        注册ChipDistribution指标的形态到全局形态注册表
+        """
+        # 注册筹码集中形态
+        self.register_pattern_to_registry(
+            pattern_id="CHIP_HIGH_CONCENTRATION",
+            display_name="筹码高度集中",
+            description="筹码集中度较高，通常表明主力控盘程度较强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CHIP_DISPERSED",
+            display_name="筹码分散",
+            description="筹码分散度较高，通常表明散户持股较多",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册获利盘形态
+        self.register_pattern_to_registry(
+            pattern_id="CHIP_HIGH_PROFIT",
+            display_name="高获利盘",
+            description="获利盘比例较高，存在获利回吐压力",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CHIP_LOW_PROFIT",
+            display_name="低获利盘",
+            description="获利盘比例较低，上涨阻力相对较小",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册成本偏离形态
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_FAR_ABOVE_COST",
+            display_name="价格远高于成本",
+            description="当前价格远高于平均成本，存在回调风险",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_FAR_BELOW_COST",
+            display_name="价格远低于成本",
+            description="当前价格远低于平均成本，具有反弹潜力",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_NEAR_COST",
+            display_name="价格接近成本",
+            description="当前价格接近平均成本，处于相对均衡状态",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0
+        )
+
+        # 注册综合形态
+        self.register_pattern_to_registry(
+            pattern_id="CHIP_BOTTOM_ACCUMULATION",
+            display_name="底部吸筹",
+            description="高集中度低获利盘，通常表明底部吸筹阶段",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CHIP_TOP_DISTRIBUTION",
+            display_name="顶部派发",
+            description="低集中度高获利盘，通常表明顶部派发阶段",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CHIP_MAIN_WAVE",
+            display_name="主升浪",
+            description="中等集中度中等获利盘，通常表明主升浪阶段",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册解套难度形态
+        self.register_pattern_to_registry(
+            pattern_id="EASY_UNTRAPPED",
+            display_name="解套容易",
+            description="解套难度较低，套牢盘压力较小",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="HARD_UNTRAPPED",
+            display_name="解套困难",
+            description="解套难度较高，套牢盘压力较大",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
     
     def _calculate_day_chip_distribution(self, day_data: pd.Series, 
                                        price_grid: np.ndarray, 
@@ -1019,4 +1339,26 @@ class ChipDistribution(BaseIndicator):
             signals['signal_strength'].loc[easy_untrapped] += 0.5
             signals['signal_strength'].loc[hard_untrapped] -= 0.5
         
-        return signals 
+        return signals
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "CHIPDISTRIBUTION"
+
+    def set_market_environment(self, environment: str):
+        """
+        设置市场环境
+
+        Args:
+            environment: 市场环境字符串
+        """
+        valid_environments = ['bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal']
+        if environment not in valid_environments:
+            raise ValueError(f"无效的市场环境: {environment}. 有效值: {valid_environments}")
+
+        self.market_environment = environment

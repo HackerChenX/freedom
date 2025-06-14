@@ -16,7 +16,7 @@ configs = [
         'host': 'localhost',
         'port': 9000,
         'user': 'default',
-        'password': '123456',  # 从Docker环境变量中获取的密码
+        'password': '',  # 从Docker环境变量中获取的密码
         'database': 'stock'
     },
     # 不指定数据库名
@@ -24,14 +24,14 @@ configs = [
         'host': 'localhost',
         'port': 9000,
         'user': 'default',
-        'password': '123456'  # 从Docker环境变量中获取的密码
+        'password': ''  # 从Docker环境变量中获取的密码
     },
     # 使用默认系统数据库
     {
         'host': 'localhost',
         'port': 9000,
         'user': 'default',
-        'password': '123456',  # 从Docker环境变量中获取的密码
+        'password': '',  # 从Docker环境变量中获取的密码
         'database': 'default'
     }
 ]

@@ -9,10 +9,10 @@
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -46,10 +46,190 @@ class PVT(BaseIndicator):
             
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算PVT指标的置信度。
+        计算PVT指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
         """
-        return 0.5
-        
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查PVT形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取PVT相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 直接计算PVT指标
+        result = self._calculate(data)
+
+        if 'pvt' not in result.columns or 'pvt_signal' not in result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取PVT和信号线值
+        pvt = result['pvt']
+        pvt_signal = result['pvt_signal']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. PVT与信号线交叉形态
+        patterns_df['PVT_GOLDEN_CROSS'] = crossover(pvt, pvt_signal)
+        patterns_df['PVT_DEATH_CROSS'] = crossunder(pvt, pvt_signal)
+
+        # 2. PVT位置形态
+        patterns_df['PVT_ABOVE_SIGNAL'] = pvt > pvt_signal
+        patterns_df['PVT_BELOW_SIGNAL'] = pvt < pvt_signal
+
+        # 3. PVT趋势形态
+        patterns_df['PVT_RISING'] = pvt > pvt.shift(1)
+        patterns_df['PVT_FALLING'] = pvt < pvt.shift(1)
+
+        # 4. PVT强势形态
+        if len(pvt) >= 3:
+            consecutive_rising = (
+                (pvt > pvt.shift(1)) &
+                (pvt.shift(1) > pvt.shift(2)) &
+                (pvt.shift(2) > pvt.shift(3))
+            )
+            consecutive_falling = (
+                (pvt < pvt.shift(1)) &
+                (pvt.shift(1) < pvt.shift(2)) &
+                (pvt.shift(2) < pvt.shift(3))
+            )
+            patterns_df['PVT_CONSECUTIVE_RISING'] = consecutive_rising
+            patterns_df['PVT_CONSECUTIVE_FALLING'] = consecutive_falling
+        else:
+            patterns_df['PVT_CONSECUTIVE_RISING'] = False
+            patterns_df['PVT_CONSECUTIVE_FALLING'] = False
+
+        # 5. PVT强度形态
+        if len(pvt) >= 20:
+            pvt_change = pvt.diff()
+            pvt_std = pvt.rolling(20).std()
+            patterns_df['PVT_STRONG_UP'] = pvt_change > pvt_std
+            patterns_df['PVT_STRONG_DOWN'] = pvt_change < -pvt_std
+        else:
+            patterns_df['PVT_STRONG_UP'] = False
+            patterns_df['PVT_STRONG_DOWN'] = False
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册PVT指标的形态到全局形态注册表
+        """
+        # 注册PVT金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="PVT_GOLDEN_CROSS",
+            display_name="PVT金叉",
+            description="PVT上穿信号线，量价配合向好",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册PVT死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="PVT_DEATH_CROSS",
+            display_name="PVT死叉",
+            description="PVT下穿信号线，量价配合转弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册PVT连续上升形态
+        self.register_pattern_to_registry(
+            pattern_id="PVT_CONSECUTIVE_RISING",
+            display_name="PVT连续上升",
+            description="PVT连续3个周期上升，量价趋势强劲",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=18.0
+        )
+
+        # 注册PVT连续下降形态
+        self.register_pattern_to_registry(
+            pattern_id="PVT_CONSECUTIVE_FALLING",
+            display_name="PVT连续下降",
+            description="PVT连续3个周期下降，量价趋势疲弱",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-18.0
+        )
+
+        # 注册PVT强势上涨形态
+        self.register_pattern_to_registry(
+            pattern_id="PVT_STRONG_UP",
+            display_name="PVT强势上涨",
+            description="PVT大幅上升，量价配合强劲",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        # 注册PVT强势下跌形态
+        self.register_pattern_to_registry(
+            pattern_id="PVT_STRONG_DOWN",
+            display_name="PVT强势下跌",
+            description="PVT大幅下降，量价配合疲弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0
+        )
+
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列
@@ -65,13 +245,26 @@ class PVT(BaseIndicator):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算PVT指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含PVT指标的DataFrame
+        """
+        return self._calculate(data)
+
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算PVT指标
-        
+
         Args:
             df: 包含OHLCV数据的DataFrame
-                
+
         Returns:
             包含PVT指标的DataFrame
         """
@@ -195,7 +388,50 @@ class PVT(BaseIndicator):
         score += price_relation_score
         
         return np.clip(score, 0, 100)
-    
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别PVT技术形态

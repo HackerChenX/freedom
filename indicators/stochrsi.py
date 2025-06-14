@@ -43,14 +43,45 @@ class STOCHRSI(BaseIndicator):
             overbought: 超买线，默认为80
             oversold: 超卖线，默认为20
         """
-        super().__init__()
-        self.name = "STOCHRSI"
+        super().__init__(name="STOCHRSI", description="随机相对强弱指数，结合RSI和随机指标特点")
+        # self.name = "STOCHRSI"  # 已在super().__init__中设置
         self.rsi_period = rsi_period
         self.k_period = k_period
         self.d_period = d_period
         self.overbought = overbought
         self.oversold = oversold
-    
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含rsi_period, k_period, d_period, overbought, oversold
+        """
+        if 'rsi_period' in kwargs:
+            self.rsi_period = kwargs['rsi_period']
+        if 'k_period' in kwargs:
+            self.k_period = kwargs['k_period']
+        if 'd_period' in kwargs:
+            self.d_period = kwargs['d_period']
+        if 'overbought' in kwargs:
+            self.overbought = kwargs['overbought']
+        if 'oversold' in kwargs:
+            self.oversold = kwargs['oversold']
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算StochRSI指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含StochRSI指标的DataFrame
+        """
+        return self._calculate(data)
+
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算StochRSI指标
@@ -90,11 +121,16 @@ class STOCHRSI(BaseIndicator):
         rsi_max = rsi.rolling(window=self.k_period).max()
         
         # 计算StochRSI的K值
-        # 避免除以零，当max == min时，k = 0.5
+        # 避免除以零，当max == min时，k = 50
         divisor = rsi_max - rsi_min
-        divisor = divisor.replace(0, 1e-9)
-        k = 100 * (rsi - rsi_min) / divisor
-        
+        k = np.where(divisor == 0, 50, 100 * (rsi - rsi_min) / divisor)
+
+        # 确保K值在0-100范围内
+        k = np.clip(k, 0, 100)
+
+        # 转换为pandas Series以便使用rolling方法
+        k = pd.Series(k, index=df_copy.index)
+
         # 计算StochRSI的D值 (K的简单移动平均)
         d = k.rolling(window=self.d_period).mean()
         
@@ -111,195 +147,116 @@ class STOCHRSI(BaseIndicator):
         
         return df_copy
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取StochRSI相关形态
-        
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
-            List[Dict[str, Any]]: 识别的形态列表
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        patterns = []
-        
         # 确保已计算指标
-        if not self.has_result():
-            self.calculate(data, **kwargs)
-        
+        if self._result is None:
+            self.calculate(data)
+
         if self._result is None or 'stochrsi_k' not in self._result.columns:
-            return patterns
+            return pd.DataFrame(index=data.index)
         
         # 获取K线和D线值
         k = self._result['stochrsi_k']
         d = self._result['stochrsi_d']
-        dates = self._result.index
-        
-        # 1. 识别StochRSI超买
-        for i in range(1, len(k)):
-            if i < 1:
-                continue
-                
-            if k.iloc[i] > self.overbought:
-                # 计算持续时间
-                duration = 1
-                for j in range(i+1, len(k)):
-                    if k.iloc[j] > self.overbought:
-                        duration += 1
-                    else:
-                        break
-                
-                # 如果持续时间足够长，添加形态
-                if duration >= 2:
-                    pattern = {
-                        "name": "StochRSI超买",
-                        "start_date": dates[i],
-                        "end_date": dates[min(i+duration-1, len(dates)-1)],
-                        "duration": duration,
-                        "strength": (k.iloc[i] - self.overbought) / (100 - self.overbought),  # 归一化强度
-                        "description": f"StochRSI在{self.overbought}以上持续{duration}天，表明市场可能超买",
-                        "type": "bearish"  # 超买是看跌信号
-                    }
-                    patterns.append(pattern)
-                
-                # 跳过已经识别的区域
-                i += duration - 1
-        
-        # 2. 识别StochRSI超卖
-        for i in range(1, len(k)):
-            if i < 1:
-                continue
-                
-            if k.iloc[i] < self.oversold:
-                # 计算持续时间
-                duration = 1
-                for j in range(i+1, len(k)):
-                    if k.iloc[j] < self.oversold:
-                        duration += 1
-                    else:
-                        break
-                
-                # 如果持续时间足够长，添加形态
-                if duration >= 2:
-                    pattern = {
-                        "name": "StochRSI超卖",
-                        "start_date": dates[i],
-                        "end_date": dates[min(i+duration-1, len(dates)-1)],
-                        "duration": duration,
-                        "strength": (self.oversold - k.iloc[i]) / self.oversold,  # 归一化强度
-                        "description": f"StochRSI在{self.oversold}以下持续{duration}天，表明市场可能超卖",
-                        "type": "bullish"  # 超卖是看涨信号
-                    }
-                    patterns.append(pattern)
-                
-                # 跳过已经识别的区域
-                i += duration - 1
-        
-        # 3. 识别StochRSI金叉
-        for i in range(1, len(k)):
-            if i < 1 or np.isnan(k.iloc[i-1]) or np.isnan(d.iloc[i-1]) or np.isnan(k.iloc[i]) or np.isnan(d.iloc[i]):
-                continue
-                
-            # K线上穿D线，金叉信号
-            if k.iloc[i-1] <= d.iloc[i-1] and k.iloc[i] > d.iloc[i]:
-                # 计算金叉强度 (基于交叉角度)
-                angle = self._calculate_cross_angle(k.iloc[i-1], k.iloc[i], d.iloc[i-1], d.iloc[i])
-                
-                pattern = {
-                    "name": "StochRSI金叉",
-                    "start_date": dates[i-1],
-                    "end_date": dates[i],
-                    "duration": 2,
-                    "strength": min(angle / 90, 1.0),  # 归一化到0-1
-                    "description": "StochRSI K线上穿D线，可能是买入信号",
-                    "type": "bullish"
-                }
-                patterns.append(pattern)
-        
-        # 4. 识别StochRSI死叉
-        for i in range(1, len(k)):
-            if i < 1 or np.isnan(k.iloc[i-1]) or np.isnan(d.iloc[i-1]) or np.isnan(k.iloc[i]) or np.isnan(d.iloc[i]):
-                continue
-                
-            # K线下穿D线，死叉信号
-            if k.iloc[i-1] >= d.iloc[i-1] and k.iloc[i] < d.iloc[i]:
-                # 计算死叉强度 (基于交叉角度)
-                angle = self._calculate_cross_angle(k.iloc[i-1], k.iloc[i], d.iloc[i-1], d.iloc[i])
-                
-                pattern = {
-                    "name": "StochRSI死叉",
-                    "start_date": dates[i-1],
-                    "end_date": dates[i],
-                    "duration": 2,
-                    "strength": min(angle / 90, 1.0),  # 归一化到0-1
-                    "description": "StochRSI K线下穿D线，可能是卖出信号",
-                    "type": "bearish"
-                }
-                patterns.append(pattern)
-        
-        # 5. 识别顶背离和底背离
-        if 'close' in self._result.columns:
-            # 价格新高但StochRSI没有新高 - 顶背离
-            for i in range(20, len(k)):
-                if i < 5:
-                    continue
-                
-                # 获取近期价格和StochRSI
-                recent_prices = self._result['close'].iloc[i-20:i+1]
-                recent_k = k.iloc[i-20:i+1]
-                
-                # 判断价格是否创新高
-                if recent_prices.iloc[-1] > recent_prices.iloc[:-1].max():
-                    # 检查StochRSI是否没有同步创新高
-                    if recent_k.iloc[-1] < recent_k.iloc[:-1].max():
-                        # 背离强度
-                        price_change = (recent_prices.iloc[-1] - recent_prices.iloc[:-1].max()) / recent_prices.iloc[:-1].max()
-                        k_change = (recent_k.iloc[-1] - recent_k.iloc[:-1].max()) / (recent_k.iloc[:-1].max() if recent_k.iloc[:-1].max() != 0 else 1)
-                        strength = min(abs(price_change - k_change) / max(abs(price_change), 0.01), 1.0)
-                        
-                        pattern = {
-                            "name": "StochRSI顶背离",
-                            "start_date": dates[i-5],  # 使用适当的起始日期
-                            "end_date": dates[i],
-                            "duration": 5,  # 使用固定值表示背离形态
-                            "strength": strength,
-                            "description": "价格创新高但StochRSI未同步创新高，可能暗示上涨动能减弱",
-                            "type": "bearish"  # 顶背离是看跌信号
-                        }
-                        patterns.append(pattern)
-            
-            # 价格新低但StochRSI没有新低 - 底背离
-            for i in range(20, len(k)):
-                if i < 5:
-                    continue
-                
-                # 获取近期价格和StochRSI
-                recent_prices = self._result['close'].iloc[i-20:i+1]
-                recent_k = k.iloc[i-20:i+1]
-                
-                # 判断价格是否创新低
-                if recent_prices.iloc[-1] < recent_prices.iloc[:-1].min():
-                    # 检查StochRSI是否没有同步创新低
-                    if recent_k.iloc[-1] > recent_k.iloc[:-1].min():
-                        # 背离强度
-                        price_change = (recent_prices.iloc[-1] - recent_prices.iloc[:-1].min()) / recent_prices.iloc[:-1].min()
-                        k_change = (recent_k.iloc[-1] - recent_k.iloc[:-1].min()) / (recent_k.iloc[:-1].min() if recent_k.iloc[:-1].min() != 0 else 1)
-                        strength = min(abs(price_change - k_change) / max(abs(price_change), 0.01), 1.0)
-                        
-                        pattern = {
-                            "name": "StochRSI底背离",
-                            "start_date": dates[i-5],
-                            "end_date": dates[i],
-                            "duration": 5,
-                            "strength": strength,
-                            "description": "价格创新低但StochRSI未同步创新低，可能暗示下跌动能减弱",
-                            "type": "bullish"  # 底背离是看涨信号
-                        }
-                        patterns.append(pattern)
-        
-        return patterns
-    
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. StochRSI超买超卖形态
+        patterns_df['STOCHRSI_OVERBOUGHT'] = k > self.overbought
+        patterns_df['STOCHRSI_OVERSOLD'] = k < self.oversold
+
+        # 2. StochRSI金叉死叉形态
+        from utils.indicator_utils import crossover, crossunder
+        patterns_df['STOCHRSI_GOLDEN_CROSS'] = crossover(k, d)
+        patterns_df['STOCHRSI_DEATH_CROSS'] = crossunder(k, d)
+
+        # 3. StochRSI位置形态
+        patterns_df['STOCHRSI_K_ABOVE_D'] = k > d
+        patterns_df['STOCHRSI_K_BELOW_D'] = k < d
+
+        # 4. StochRSI趋势形态
+        patterns_df['STOCHRSI_K_RISING'] = k > k.shift(1)
+        patterns_df['STOCHRSI_K_FALLING'] = k < k.shift(1)
+        patterns_df['STOCHRSI_D_RISING'] = d > d.shift(1)
+        patterns_df['STOCHRSI_D_FALLING'] = d < d.shift(1)
+
+        # 5. StochRSI强势形态
+        patterns_df['STOCHRSI_STRONG_BULLISH'] = (k > 80) & (k > d) & (k > k.shift(1))
+        patterns_df['STOCHRSI_STRONG_BEARISH'] = (k < 20) & (k < d) & (k < k.shift(1))
+
+        # 6. StochRSI反转形态
+        patterns_df['STOCHRSI_OVERSOLD_REVERSAL'] = (k.shift(1) < self.oversold) & (k > self.oversold)
+        patterns_df['STOCHRSI_OVERBOUGHT_REVERSAL'] = (k.shift(1) > self.overbought) & (k < self.overbought)
+
+        return patterns_df
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算StochRSI指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查StochRSI形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
     def _calculate_cross_angle(self, y1_prev, y1_curr, y2_prev, y2_curr):
         """计算两条线交叉时的角度"""
         # 计算两条线的斜率
@@ -333,7 +290,7 @@ class STOCHRSI(BaseIndicator):
         signals = {}
         signals['buy_signal'] = pd.Series(False, index=data.index)
         signals['sell_signal'] = pd.Series(False, index=data.index)
-        signals['signal_strength'] = pd.Series(0, index=data.index)
+        signals['signal_strength'] = pd.Series(0.0, index=data.index)
     
         # 如果没有结果，返回空信号
         if self._result is None or 'stochrsi_k' not in self._result.columns:
@@ -395,21 +352,6 @@ class STOCHRSI(BaseIndicator):
                 distance = self.overbought - k.iloc[i]
                 signals['signal_strength'].iloc[i] = 60 + min(distance * 0.5, 20)  # 60-80
         
-        # 基于背离形态生成信号
-        patterns = self.get_patterns(data, **kwargs)
-        for pattern in patterns:
-            if pattern['name'] == 'StochRSI底背离' and pattern['type'] == 'bullish':
-                end_date = pattern['end_date']
-                if end_date in signals['buy_signal'].index:
-                    signals['buy_signal'].loc[end_date] = True
-                    signals['signal_strength'].loc[end_date] = 70 + min(pattern['strength'] * 20, 20)  # 70-90
-            
-            elif pattern['name'] == 'StochRSI顶背离' and pattern['type'] == 'bearish':
-                end_date = pattern['end_date']
-                if end_date in signals['sell_signal'].index:
-                    signals['sell_signal'].loc[end_date] = True
-                    signals['signal_strength'].loc[end_date] = 70 + min(pattern['strength'] * 20, 20)  # 70-90
-    
         return signals
         
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -489,53 +431,131 @@ class STOCHRSI(BaseIndicator):
                 adjust = min(angle / 90 * 15, 15)  # 最多减少15分
                 score.iloc[i] = max(score.iloc[i] - adjust, 10)
         
-        # 结合背离形态增强评分
-        patterns = self.get_patterns(data, **kwargs)
-        for pattern in patterns:
-            if pattern['name'] == 'StochRSI底背离' and pattern['type'] == 'bullish':
-                # 底背离增加评分
-                end_idx = data.index.get_loc(pattern['end_date'])
-                adjust_range = min(5, len(score) - end_idx - 1)
-                for j in range(adjust_range):
-                    idx = end_idx + j
-                    strength_factor = pattern['strength'] * (1 - j/adjust_range)  # 随时间衰减
-                    score.iloc[idx] = min(score.iloc[idx] + strength_factor * 20, 90)
-            
-            elif pattern['name'] == 'StochRSI顶背离' and pattern['type'] == 'bearish':
-                # 顶背离降低评分
-                end_idx = data.index.get_loc(pattern['end_date'])
-                adjust_range = min(5, len(score) - end_idx - 1)
-                for j in range(adjust_range):
-                    idx = end_idx + j
-                    strength_factor = pattern['strength'] * (1 - j/adjust_range)  # 随时间衰减
-                    score.iloc[idx] = max(score.iloc[idx] - strength_factor * 20, 10)
-        
-        return score
+        return np.clip(score, 0, 100)
     
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
-        
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-        
+
         Returns:
-            float: 评分(0-100)
+            Dict[str, Any]: 包含评分和置信度的字典
         """
-        # 计算原始评分序列
-        raw_scores = self.calculate_raw_score(data, **kwargs)
-        
-        # 如果数据不足，返回中性评分
-        if len(raw_scores) < 3:
-            return 50.0
-        
-        # 取最近的评分作为最终评分，但考虑近期趋势
-        recent_scores = raw_scores.iloc[-3:]
-        trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
-        
-        # 最终评分 = 最新评分 + 趋势调整
-        final_score = recent_scores.iloc[-1] + trend / 2
-        
-        # 确保评分在0-100范围内
-        return max(0, min(100, final_score)) 
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册StochRSI指标的形态到全局形态注册表
+        """
+        # 注册StochRSI金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_GOLDEN_CROSS",
+            display_name="StochRSI金叉",
+            description="StochRSI K线上穿D线，产生看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册StochRSI死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_DEATH_CROSS",
+            display_name="StochRSI死叉",
+            description="StochRSI K线下穿D线，产生看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册StochRSI超买形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_OVERBOUGHT",
+            display_name="StochRSI超买",
+            description="StochRSI进入超买区域，可能出现回调",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册StochRSI超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_OVERSOLD",
+            display_name="StochRSI超卖",
+            description="StochRSI进入超卖区域，可能出现反弹",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        # 注册StochRSI超卖反转形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_OVERSOLD_REVERSAL",
+            display_name="StochRSI超卖反转",
+            description="StochRSI从超卖区域向上突破，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册StochRSI超买反转形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_OVERBOUGHT_REVERSAL",
+            display_name="StochRSI超买反转",
+            description="StochRSI从超买区域向下突破，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册StochRSI强势看涨形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_STRONG_BULLISH",
+            display_name="StochRSI强势看涨",
+            description="StochRSI K线在高位且上升，强势看涨",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=18.0
+        )
+
+        # 注册StochRSI强势看跌形态
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_STRONG_BEARISH",
+            display_name="StochRSI强势看跌",
+            description="StochRSI K线在低位且下降，强势看跌",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-18.0
+        )

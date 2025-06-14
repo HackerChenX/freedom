@@ -41,7 +41,10 @@ class AmplitudeElasticity(BaseIndicator):
         COUNT(a1,120)>1
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["high", "low"])
+        required_cols = ["high", "low"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -97,6 +100,137 @@ class AmplitudeElasticity(BaseIndicator):
         score = score.clip(0, 100)
         
         return score
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM振幅弹性指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["XG"]:
+                patterns.append("振幅弹性信号")
+
+            # 振幅大小判断
+            amplitude = last_row["Amplitude"]
+            if amplitude > 15:
+                patterns.append("极大振幅(>15%)")
+            elif amplitude > 12:
+                patterns.append("大振幅(12%-15%)")
+            elif amplitude > 8.1:
+                patterns.append("中等振幅(8.1%-12%)")
+            else:
+                patterns.append("小振幅(<8.1%)")
+
+            # 历史振幅判断
+            if len(result) >= 120:
+                recent_amplitude_count = result["A1"].iloc[-120:].sum()
+                if recent_amplitude_count > 10:
+                    patterns.append("频繁大振幅")
+                elif recent_amplitude_count > 5:
+                    patterns.append("偶尔大振幅")
+                elif recent_amplitude_count > 1:
+                    patterns.append("少量大振幅")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "振幅弹性信号" in patterns:
+            pattern_boost += 0.15
+        if "极大振幅(>15%)" in patterns:
+            pattern_boost += 0.15
+        elif "大振幅(12%-15%)" in patterns:
+            pattern_boost += 0.1
+        if "频繁大振幅" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["振幅弹性信号"] = result["XG"]
+        patterns_df["大振幅日"] = result["A1"]
+
+        # 振幅大小形态
+        amplitude = result["Amplitude"]
+        patterns_df["极大振幅"] = amplitude > 15
+        patterns_df["大振幅"] = (amplitude > 12) & (amplitude <= 15)
+        patterns_df["中等振幅"] = (amplitude > 8.1) & (amplitude <= 12)
+        patterns_df["小振幅"] = amplitude <= 8.1
+
+        # 历史振幅统计形态
+        if len(result) >= 120:
+            amplitude_count_120 = result["A1"].rolling(window=120).sum()
+            patterns_df["频繁大振幅"] = amplitude_count_120 > 10
+            patterns_df["偶尔大振幅"] = (amplitude_count_120 > 5) & (amplitude_count_120 <= 10)
+            patterns_df["少量大振幅"] = (amplitude_count_120 > 1) & (amplitude_count_120 <= 5)
+            patterns_df["无大振幅"] = amplitude_count_120 <= 1
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - amplitude_threshold: 振幅阈值，默认8.1
+                - count_period: 统计周期，默认120
+        """
+        self.amplitude_threshold = kwargs.get('amplitude_threshold', 8.1)
+        self.count_period = kwargs.get('count_period', 120)
 class ZXMRiseElasticity(BaseIndicator):
     """
     ZXM弹性-涨幅指标
@@ -124,7 +258,8 @@ class ZXMRiseElasticity(BaseIndicator):
         COUNT(a1,80)>0
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if 'close' not in data.columns:
+            raise ValueError("数据缺少必需的'close'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -180,6 +315,139 @@ class ZXMRiseElasticity(BaseIndicator):
         score = score.clip(0, 100)
         
         return score
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+        """
+        识别ZXM涨幅弹性指标相关的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            List[str]: 识别的形态列表
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 只关注最后一个交易日的形态
+        patterns = []
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+
+            # 基础形态判断
+            if last_row["XG"]:
+                patterns.append("涨幅弹性信号")
+
+            # 涨幅大小判断
+            rise_ratio = last_row["RiseRatio"]
+            if rise_ratio > 1.15:
+                patterns.append("极大涨幅(>15%)")
+            elif rise_ratio > 1.10:
+                patterns.append("大涨幅(10%-15%)")
+            elif rise_ratio > 1.07:
+                patterns.append("中等涨幅(7%-10%)")
+            else:
+                patterns.append("小涨幅(<7%)")
+
+            # 历史涨幅判断
+            if len(result) >= 80:
+                recent_rise_count = result["A1"].iloc[-80:].sum()
+                if recent_rise_count > 10:
+                    patterns.append("频繁大涨")
+                elif recent_rise_count > 5:
+                    patterns.append("偶尔大涨")
+                elif recent_rise_count > 0:
+                    patterns.append("少量大涨")
+                else:
+                    patterns.append("无大涨")
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "涨幅弹性信号" in patterns:
+            pattern_boost += 0.15
+        if "极大涨幅(>15%)" in patterns:
+            pattern_boost += 0.15
+        elif "大涨幅(10%-15%)" in patterns:
+            pattern_boost += 0.1
+        if "频繁大涨" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["涨幅弹性信号"] = result["XG"]
+        patterns_df["大涨日"] = result["A1"]
+
+        # 涨幅大小形态
+        rise_ratio = result["RiseRatio"]
+        patterns_df["极大涨幅"] = rise_ratio > 1.15
+        patterns_df["大涨幅"] = (rise_ratio > 1.10) & (rise_ratio <= 1.15)
+        patterns_df["中等涨幅"] = (rise_ratio > 1.07) & (rise_ratio <= 1.10)
+        patterns_df["小涨幅"] = rise_ratio <= 1.07
+
+        # 历史涨幅统计形态
+        if len(result) >= 80:
+            rise_count_80 = result["A1"].rolling(window=80).sum()
+            patterns_df["频繁大涨"] = rise_count_80 > 10
+            patterns_df["偶尔大涨"] = (rise_count_80 > 5) & (rise_count_80 <= 10)
+            patterns_df["少量大涨"] = (rise_count_80 > 0) & (rise_count_80 <= 5)
+            patterns_df["无大涨"] = rise_count_80 == 0
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - rise_threshold: 涨幅阈值，默认1.07
+                - count_period: 统计周期，默认80
+        """
+        self.rise_threshold = kwargs.get('rise_threshold', 1.07)
+        self.count_period = kwargs.get('count_period', 80)
 class Elasticity(BaseIndicator):
     """
     ZXM弹性指标
@@ -209,7 +477,10 @@ class Elasticity(BaseIndicator):
             pd.DataFrame: 计算结果
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
+        required_cols = ["open", "high", "low", "close", "volume"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -516,6 +787,111 @@ class Elasticity(BaseIndicator):
         
         return signals
 
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "弹性买点" in patterns:
+            pattern_boost += 0.2
+        if "高弹性比率(>2)" in patterns:
+            pattern_boost += 0.15
+        elif "中等弹性比率(1.5-2)" in patterns:
+            pattern_boost += 0.1
+        if "强反弹(>70%)" in patterns:
+            pattern_boost += 0.15
+        elif "中等反弹(50%-70%)" in patterns:
+            pattern_boost += 0.1
+        if "放量反弹" in patterns:
+            pattern_boost += 0.1
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础形态
+        patterns_df["弹性买点"] = result["BuySignal"]
+
+        # 弹性比率形态
+        elasticity_ratio = result["ElasticityRatio"]
+        patterns_df["高弹性比率"] = elasticity_ratio > 2
+        patterns_df["中等弹性比率"] = (elasticity_ratio > 1.5) & (elasticity_ratio <= 2)
+        patterns_df["轻微弹性比率"] = (elasticity_ratio > 1.2) & (elasticity_ratio <= 1.5)
+        patterns_df["低弹性比率"] = elasticity_ratio < 0.8
+
+        # 反弹强度形态
+        bounce_strength = result["BounceStrength"]
+        patterns_df["强反弹"] = bounce_strength > 0.7
+        patterns_df["中等反弹"] = (bounce_strength > 0.5) & (bounce_strength <= 0.7)
+        patterns_df["轻微反弹"] = (bounce_strength > 0.3) & (bounce_strength <= 0.5)
+        patterns_df["接近低点"] = bounce_strength < 0.2
+
+        # 成交量配合形态
+        volume_ratio = result["VolumeRatio"]
+        patterns_df["放量反弹"] = volume_ratio > 1.5
+        patterns_df["缩量反弹"] = volume_ratio < 0.7
+        patterns_df["量能正常"] = (volume_ratio >= 0.7) & (volume_ratio <= 1.5)
+
+        # 区间波动形态
+        range_pct = result["RangePct"]
+        patterns_df["大幅波动区间"] = range_pct > 0.15
+        patterns_df["窄幅波动区间"] = range_pct < 0.05
+        patterns_df["正常波动区间"] = (range_pct >= 0.05) & (range_pct <= 0.15)
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - period: 计算周期，默认20
+                - elasticity_threshold: 弹性比率阈值，默认1.2
+                - bounce_threshold: 反弹强度阈值，默认0.3
+                - range_threshold: 区间波动阈值，默认0.05
+                - volume_threshold: 成交量比率阈值，默认0.8
+        """
+        self.period = kwargs.get('period', 20)
+        self.elasticity_threshold = kwargs.get('elasticity_threshold', 1.2)
+        self.bounce_threshold = kwargs.get('bounce_threshold', 0.3)
+        self.range_threshold = kwargs.get('range_threshold', 0.05)
+        self.volume_threshold = kwargs.get('volume_threshold', 0.8)
+
 
 class BounceDetector(BaseIndicator):
     """
@@ -548,7 +924,10 @@ class BounceDetector(BaseIndicator):
             pd.DataFrame: 计算结果
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
+        required_cols = ["open", "high", "low", "close", "volume"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -980,4 +1359,111 @@ class BounceDetector(BaseIndicator):
         # 成交量确认
         signals['volume_confirmation'] = result["VolumeChange"] > 0
         
-        return signals 
+        return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "回调买入机会" in patterns:
+            pattern_boost += 0.2
+        elif "反弹卖出机会" in patterns:
+            pattern_boost += 0.2
+        elif "强势反弹" in patterns:
+            pattern_boost += 0.15
+        elif "健康回调" in patterns:
+            pattern_boost += 0.15
+
+        if "反弹确认信号" in patterns:
+            pattern_boost += 0.1
+        elif "回调确认信号" in patterns:
+            pattern_boost += 0.1
+
+        if "明显放量" in patterns:
+            pattern_boost += 0.08
+        elif "明显缩量" in patterns:
+            pattern_boost += 0.05
+
+        # 最终置信度
+        final_confidence = min(1.0, base_confidence + pattern_boost)
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础信号形态
+        patterns_df["反弹确认信号"] = result["BounceSignal"]
+        patterns_df["回调确认信号"] = result["PullbackSignal"]
+        patterns_df["回调买入机会"] = result["PullbackBuyPoint"]
+        patterns_df["反弹卖出机会"] = result["BounceSellPoint"]
+
+        # 反弹幅度形态
+        bounce_pct = result["BounceFromLow"]
+        patterns_df["大幅反弹"] = bounce_pct > 20
+        patterns_df["中等反弹"] = (bounce_pct > 10) & (bounce_pct <= 20)
+        patterns_df["小幅反弹"] = (bounce_pct > 5) & (bounce_pct <= 10)
+
+        # 回调幅度形态
+        pullback_pct = result["PullbackFromHigh"]
+        patterns_df["深度回调"] = pullback_pct > 20
+        patterns_df["中等回调"] = (pullback_pct > 10) & (pullback_pct <= 20)
+        patterns_df["浅度回调"] = (pullback_pct > 5) & (pullback_pct <= 10)
+
+        # 趋势形态
+        patterns_df["短期上升趋势"] = result["PriceTrend"] == 1
+        patterns_df["短期下降趋势"] = result["PriceTrend"] == -1
+
+        # 成交量形态
+        vol_change = result["VolumeChange"]
+        patterns_df["明显放量"] = vol_change > 20
+        patterns_df["明显缩量"] = vol_change < -20
+
+        # 综合形态
+        patterns_df["强势反弹"] = (bounce_pct > 5) & (result["PriceTrend"] == 1) & (vol_change > 0)
+        patterns_df["健康回调"] = (pullback_pct > 5) & (result["PriceTrend"] == 1) & (vol_change < 0)
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - short_period: 短期周期，默认5
+                - long_period: 长期周期，默认20
+        """
+        self.short_period = kwargs.get('short_period', 5)
+        self.long_period = kwargs.get('long_period', 20)

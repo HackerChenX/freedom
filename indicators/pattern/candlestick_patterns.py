@@ -83,7 +83,10 @@ class CandlestickPatterns(BaseIndicator):
             pd.DataFrame: 计算结果，包含各种K线形态的标记
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close"])
+        required_columns = ["open", "high", "low", "close"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -96,6 +99,12 @@ class CandlestickPatterns(BaseIndicator):
         
         # 计算复合形态（需要更多的历史数据）
         result = self._calculate_complex_patterns(data, result)
+
+        # 确保所有形态列都存在（即使数据不足）
+        all_pattern_names = [pattern.name.lower() for pattern in PatternType]
+        for pattern_name in all_pattern_names:
+            if pattern_name not in result.columns:
+                result[pattern_name] = False
         
         return result
     
@@ -423,7 +432,7 @@ class CandlestickPatterns(BaseIndicator):
         for pattern_type in PatternType:
             pattern_name = pattern_type.name.lower()
             if pattern_name in recent_result.columns:
-                patterns[pattern_name] = recent_result[pattern_name].any()
+                patterns[pattern_name] = bool(recent_result[pattern_name].any())
         
         return patterns
     
@@ -814,4 +823,380 @@ class CandlestickPatterns(BaseIndicator):
                     # 成交量确认增加信号置信度
                     signals.loc[data.index[i], 'confidence'] = min(100, signals.loc[data.index[i], 'confidence'] + 10)
         
-        return signals 
+        return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算CandlestickPatterns指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有形态数据
+            pattern_columns = [col for col in self._result.columns
+                             if any(pattern.name.lower() in col for pattern in PatternType)]
+            if pattern_columns:
+                # 形态数据越完整，置信度越高
+                data_completeness = len(pattern_columns) / len(PatternType)
+                confidence += data_completeness * 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查CandlestickPatterns形态（只计算布尔列）
+            bool_columns = patterns.select_dtypes(include=[bool]).columns
+            if len(bool_columns) > 0:
+                pattern_count = patterns[bool_columns].sum().sum()
+                if pattern_count > 0:
+                    confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 60:  # 两个月数据
+            confidence += 0.1
+        elif len(score) >= 30:  # 一个月数据
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册CandlestickPatterns指标的形态到全局形态注册表
+        """
+        # 注册单日看涨形态
+        self.register_pattern_to_registry(
+            pattern_id="HAMMER",
+            display_name="锤头线",
+            description="小实体，长下影线，几乎无上影线，底部反转信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="LONG_LEGGED_DOJI",
+            display_name="长腿十字",
+            description="十字星带长下影线，表明买卖力量均衡但下方有支撑",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="SINGLE_NEEDLE_BOTTOM",
+            display_name="单针探底",
+            description="长下影线，表明下方有强力买盘支撑",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册单日看跌形态
+        self.register_pattern_to_registry(
+            pattern_id="HANGING_MAN",
+            display_name="吊颈线",
+            description="小实体，长上影线，几乎无下影线，顶部反转信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GRAVESTONE_DOJI",
+            display_name="墓碑线",
+            description="十字星带长上影线，表明上方抛压沉重",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="SHOOTING_STAR",
+            display_name="射击之星",
+            description="小实体，长上影线，短下影线，顶部反转信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册组合看涨形态
+        self.register_pattern_to_registry(
+            pattern_id="ENGULFING_BULLISH",
+            display_name="阳包阴",
+            description="阳线完全包含前一天阴线，强烈的底部反转信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PIERCING_LINE",
+            display_name="曙光初现",
+            description="阴线后接长阳线，阳线开盘价低于前日最低价",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MORNING_STAR",
+            display_name="启明星",
+            description="长阴线+十字星+长阳线，经典的底部反转形态",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="HARAMI_BULLISH",
+            display_name="好友反攻",
+            description="长阴线后第二天以低于前日收盘价开盘，收于前日开盘价之上",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        # 注册组合看跌形态
+        self.register_pattern_to_registry(
+            pattern_id="ENGULFING_BEARISH",
+            display_name="阴包阳",
+            description="阴线完全包含前一天阳线，强烈的顶部反转信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DARK_CLOUD_COVER",
+            display_name="乌云盖顶",
+            description="阳线后接长阴线，阴线开盘价高于前日最高价",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="EVENING_STAR",
+            display_name="黄昏星",
+            description="长阳线+十字星+长阴线，经典的顶部反转形态",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-35.0
+        )
+
+        # 注册复合形态
+        self.register_pattern_to_registry(
+            pattern_id="HEAD_SHOULDERS_BOTTOM",
+            display_name="头肩底",
+            description="三个波谷，中间低于两侧，强烈的底部反转形态",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=40.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="HEAD_SHOULDERS_TOP",
+            display_name="头肩顶",
+            description="三个波峰，中间高于两侧，强烈的顶部反转形态",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-40.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DOUBLE_BOTTOM",
+            display_name="双底",
+            description="W形价格形态，强烈的底部反转信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DOUBLE_TOP",
+            display_name="双顶",
+            description="M形价格形态，强烈的顶部反转信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-35.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="V_REVERSAL",
+            display_name="V形反转",
+            description="急速下跌后快速反弹，快速反转形态",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ISLAND_REVERSAL",
+            display_name="岛型反转",
+            description="跳空+反向跳空形成孤岛，强烈的反转信号",
+            pattern_type="NEUTRAL",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        # 注册中性形态
+        self.register_pattern_to_registry(
+            pattern_id="DOJI",
+            display_name="十字星",
+            description="开盘价与收盘价接近，上下影线明显，表明市场犹豫",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成CandlestickPatterns交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 初始化信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 定义看涨形态
+        bullish_patterns = [
+            PatternType.HAMMER.name.lower(),
+            PatternType.MORNING_STAR.name.lower(),
+            PatternType.PIERCING_LINE.name.lower(),
+            PatternType.ENGULFING_BULLISH.name.lower(),
+            PatternType.HARAMI_BULLISH.name.lower(),
+            PatternType.SINGLE_NEEDLE_BOTTOM.name.lower(),
+            PatternType.HEAD_SHOULDERS_BOTTOM.name.lower(),
+            PatternType.DOUBLE_BOTTOM.name.lower(),
+            PatternType.V_REVERSAL.name.lower()
+        ]
+
+        # 定义看跌形态
+        bearish_patterns = [
+            PatternType.HANGING_MAN.name.lower(),
+            PatternType.EVENING_STAR.name.lower(),
+            PatternType.DARK_CLOUD_COVER.name.lower(),
+            PatternType.ENGULFING_BEARISH.name.lower(),
+            PatternType.SHOOTING_STAR.name.lower(),
+            PatternType.HEAD_SHOULDERS_TOP.name.lower(),
+            PatternType.DOUBLE_TOP.name.lower()
+        ]
+
+        # 强形态权重
+        strong_patterns = {
+            PatternType.MORNING_STAR.name.lower(): 0.9,
+            PatternType.EVENING_STAR.name.lower(): -0.9,
+            PatternType.ENGULFING_BULLISH.name.lower(): 0.8,
+            PatternType.ENGULFING_BEARISH.name.lower(): -0.8,
+            PatternType.HEAD_SHOULDERS_BOTTOM.name.lower(): 0.9,
+            PatternType.HEAD_SHOULDERS_TOP.name.lower(): -0.9,
+            PatternType.DOUBLE_BOTTOM.name.lower(): 0.8,
+            PatternType.DOUBLE_TOP.name.lower(): -0.8
+        }
+
+        # 生成信号
+        for pattern in bullish_patterns:
+            if pattern in self._result.columns:
+                pattern_mask = self._result[pattern]
+                buy_signal |= pattern_mask
+
+                # 设置信号强度
+                if pattern in strong_patterns:
+                    signal_strength[pattern_mask] = strong_patterns[pattern]
+                else:
+                    signal_strength[pattern_mask] = 0.6
+
+        for pattern in bearish_patterns:
+            if pattern in self._result.columns:
+                pattern_mask = self._result[pattern]
+                sell_signal |= pattern_mask
+
+                # 设置信号强度
+                if pattern in strong_patterns:
+                    signal_strength[pattern_mask] = strong_patterns[pattern]
+                else:
+                    signal_strength[pattern_mask] = -0.6
+
+        # 处理岛型反转（需要结合趋势判断）
+        if PatternType.ISLAND_REVERSAL.name.lower() in self._result.columns:
+            island_mask = self._result[PatternType.ISLAND_REVERSAL.name.lower()]
+            if island_mask.any() and len(data) >= 5:
+                # 简单趋势判断
+                price_change_5d = data['close'].pct_change(5)
+
+                # 在上升趋势后的岛型反转（看跌）
+                bearish_island = island_mask & (price_change_5d > 0.05)
+                sell_signal |= bearish_island
+                signal_strength[bearish_island] = -0.8
+
+                # 在下降趋势后的岛型反转（看涨）
+                bullish_island = island_mask & (price_change_5d < -0.05)
+                buy_signal |= bullish_island
+                signal_strength[bullish_island] = 0.8
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(-1, 1)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "CANDLESTICKPATTERNS"

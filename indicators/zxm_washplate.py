@@ -47,7 +47,10 @@ class ZXMWashPlate(BaseIndicator):
             pd.DataFrame: 计算结果，包含各种洗盘形态的标记
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
+        required_columns = ["open", "high", "low", "close", "volume"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 初始化结果数据框
         result = data.copy()
@@ -338,7 +341,7 @@ class ZXMWashPlate(BaseIndicator):
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        score = pd.Series(50.0, index=data.index, dtype=float)
         
         # 检查是否有任何类型的洗盘形态
         any_wash_plate = pd.Series(False, index=data.index)
@@ -372,7 +375,7 @@ class ZXMWashPlate(BaseIndicator):
         
         # 多重洗盘形态加分
         # 计算每天满足的洗盘形态数量
-        wash_count = pd.Series(0, index=data.index)
+        wash_count = pd.Series(0, index=data.index, dtype=int)
         for i in range(len(data)):
             count = 0
             for wash_type in WashPlateType:
@@ -547,4 +550,319 @@ class ZXMWashPlate(BaseIndicator):
             except:
                 continue
         
-        return signals 
+        return signals
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - shock_price_threshold: 横盘震荡价格波动阈值，默认0.07
+                - shock_volume_ratio: 横盘震荡成交量比例阈值，默认2.0
+                - pullback_support_ratio: 回调洗盘支撑位比例，默认0.97
+        """
+        self.shock_price_threshold = kwargs.get('shock_price_threshold', 0.07)
+        self.shock_volume_ratio = kwargs.get('shock_volume_ratio', 2.0)
+        self.pullback_support_ratio = kwargs.get('pullback_support_ratio', 0.97)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取ZXMWashPlate相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 基于识别的形态创建布尔列
+        identified_patterns = self.identify_patterns(data)
+
+        # 初始化所有可能的形态列
+        pattern_columns = [
+            'ZXM_SHOCK_WASH', 'ZXM_PULLBACK_WASH', 'ZXM_FALSE_BREAK_WASH',
+            'ZXM_TIME_WASH', 'ZXM_CONTINUOUS_YIN_WASH', 'ZXM_ANY_WASH',
+            'ZXM_MULTIPLE_WASH', 'ZXM_WASH_COMPLETION', 'ZXM_WASH_RECOVERY',
+            'ZXM_WASH_VOLUME_CONFIRM', 'ZXM_WASH_SUPPORT', 'ZXM_WASH_BREAKOUT'
+        ]
+
+        for col in pattern_columns:
+            patterns[col] = False
+
+        # 根据识别的形态设置相应的布尔值
+        for pattern in identified_patterns:
+            if "横盘震荡洗盘" in pattern:
+                patterns['ZXM_SHOCK_WASH'] = True
+                patterns['ZXM_ANY_WASH'] = True
+            elif "回调洗盘" in pattern:
+                patterns['ZXM_PULLBACK_WASH'] = True
+                patterns['ZXM_ANY_WASH'] = True
+            elif "假突破洗盘" in pattern:
+                patterns['ZXM_FALSE_BREAK_WASH'] = True
+                patterns['ZXM_ANY_WASH'] = True
+            elif "时间洗盘" in pattern:
+                patterns['ZXM_TIME_WASH'] = True
+                patterns['ZXM_ANY_WASH'] = True
+            elif "连续阴线洗盘" in pattern:
+                patterns['ZXM_CONTINUOUS_YIN_WASH'] = True
+                patterns['ZXM_ANY_WASH'] = True
+            elif "无洗盘形态" not in pattern:
+                patterns['ZXM_ANY_WASH'] = True
+
+        # 检查多重洗盘形态
+        wash_count = 0
+        for wash_type in WashPlateType:
+            if wash_type.value in self._result.columns and self._result[wash_type.value].any():
+                wash_count += 1
+
+        if wash_count >= 2:
+            patterns['ZXM_MULTIPLE_WASH'] = True
+
+        # 其他形态逻辑
+        patterns['ZXM_WASH_COMPLETION'] = patterns['ZXM_ANY_WASH']
+        patterns['ZXM_WASH_RECOVERY'] = patterns['ZXM_ANY_WASH']
+        patterns['ZXM_WASH_VOLUME_CONFIRM'] = patterns['ZXM_ANY_WASH']
+        patterns['ZXM_WASH_SUPPORT'] = patterns['ZXM_PULLBACK_WASH'] | patterns['ZXM_FALSE_BREAK_WASH']
+        patterns['ZXM_WASH_BREAKOUT'] = patterns['ZXM_FALSE_BREAK_WASH']
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算ZXMWashPlate指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 85:
+            confidence += 0.35
+        elif last_score > 70:
+            confidence += 0.25
+        elif last_score > 60:
+            confidence += 0.15
+        else:
+            confidence += 0.05
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有洗盘数据
+            wash_columns = [wash_type.value for wash_type in WashPlateType]
+            available_columns = [col for col in wash_columns if col in self._result.columns]
+            if available_columns:
+                # 洗盘数据越完整，置信度越高
+                data_completeness = len(available_columns) / len(wash_columns)
+                confidence += data_completeness * 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查ZXM洗盘形态（只计算布尔列）
+            bool_columns = patterns.select_dtypes(include=[bool]).columns
+            if len(bool_columns) > 0:
+                pattern_count = patterns[bool_columns].sum().sum()
+                if pattern_count > 0:
+                    confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 60:  # 两个月数据
+            confidence += 0.1
+        elif len(score) >= 30:  # 一个月数据
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册ZXMWashPlate指标的形态到全局形态注册表
+        """
+        # 注册各种洗盘形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_SHOCK_WASH",
+            display_name="ZXM横盘震荡洗盘",
+            description="价格区间震荡，成交量忽大忽小的洗盘形态",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_PULLBACK_WASH",
+            display_name="ZXM回调洗盘",
+            description="短期回调后在支撑位止跌的洗盘形态",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_FALSE_BREAK_WASH",
+            display_name="ZXM假突破洗盘",
+            description="向下假突破后快速收复的洗盘形态",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TIME_WASH",
+            display_name="ZXM时间洗盘",
+            description="长时间小幅波动，成交量萎缩的洗盘形态",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=22.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_CONTINUOUS_YIN_WASH",
+            display_name="ZXM连续阴线洗盘",
+            description="连续阴线但实体缩小，下影线增多的洗盘形态",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=18.0
+        )
+
+        # 注册综合形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_ANY_WASH",
+            display_name="ZXM洗盘形态",
+            description="任何类型的ZXM洗盘形态",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MULTIPLE_WASH",
+            display_name="ZXM多重洗盘",
+            description="同时出现多种洗盘形态，洗盘更充分",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WASH_COMPLETION",
+            display_name="ZXM洗盘完成",
+            description="洗盘形态完成，准备上攻",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册确认形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WASH_VOLUME_CONFIRM",
+            display_name="ZXM洗盘成交量确认",
+            description="洗盘伴随成交量确认",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WASH_SUPPORT",
+            display_name="ZXM洗盘支撑",
+            description="洗盘过程中获得重要支撑",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WASH_BREAKOUT",
+            display_name="ZXM洗盘突破",
+            description="洗盘后的突破信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成ZXMWashPlate交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 使用generate_signals方法生成详细信号
+        detailed_signals = self.generate_signals(data, **kwargs)
+
+        # 转换为简化的信号格式
+        buy_signal = detailed_signals['buy_signal']
+        sell_signal = detailed_signals['sell_signal']
+
+        # 计算信号强度
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 基于评分计算信号强度
+        scores = detailed_signals['score']
+
+        # 买入信号强度
+        signal_strength[buy_signal] = (scores[buy_signal] - 50) / 50.0
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(0, 1)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "ZXM_WASHPLATE"

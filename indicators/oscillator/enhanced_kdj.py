@@ -8,9 +8,10 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
+from indicators.base_indicator import BaseIndicator
 from indicators.kdj import KDJ
 from utils.logger import get_logger
+from utils.indicator_utils import crossover, crossunder
 
 logger = get_logger(__name__)
 
@@ -52,9 +53,10 @@ class EnhancedKDJ(KDJ):
             use_smoothed_kdj: 是否使用平滑后的KDJ，默认为True
             smoothing_period: 平滑周期，默认为3
         """
+        # 先设置indicator_type，因为父类初始化时会调用get_indicator_type
+        self.indicator_type = "ENHANCEDKDJ"
         super().__init__(n=n, m1=m1, m2=m2)
         self.name = "EnhancedKDJ"
-        self.indicator_type = "ENHANCEDKDJ"
         self.description = "增强型随机指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
         self.sensitivity = sensitivity
         self.multi_periods = multi_periods or [5, 9, 14]
@@ -80,7 +82,15 @@ class EnhancedKDJ(KDJ):
         result = super().calculate(data, *args, **kwargs)
 
         # 确保数据包含必需的列
-        self.ensure_columns(result, ["high", "low", "close", "K", "D", "J"])
+        required_columns = ["high", "low", "close"]
+        for col in required_columns:
+            if col not in result.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
+
+        # 确保基础KDJ列存在
+        if 'K' not in result.columns or 'D' not in result.columns or 'J' not in result.columns:
+            # 如果基础KDJ列不存在，计算它们
+            self._calculate_kdj(result, self.n, self.m1, self.m2)
         
         # 计算多周期KDJ
         for n in self.multi_periods:
@@ -288,17 +298,17 @@ class EnhancedKDJ(KDJ):
             patterns.append("J线超买区域")
             
         # 3. 金叉/死叉判断
-        if self.crossover(k, d).iloc[-1]:
+        if crossover(k, d).iloc[-1]:
             # 检查金叉质量
             cross_angle = self._result["kd_cross_angle"].iloc[-1]
             j_acceleration = self._result["j_acceleration"].iloc[-1]
-            
+
             if cross_angle > 2 and j_acceleration > 0:
                 patterns.append("KD高质量金叉")
             else:
                 patterns.append("KD金叉")
-                
-        elif self.crossunder(k, d).iloc[-1]:
+
+        elif crossunder(k, d).iloc[-1]:
             # 检查死叉质量
             cross_angle = self._result["kd_cross_angle"].iloc[-1]
             j_acceleration = self._result["j_acceleration"].iloc[-1]
@@ -520,12 +530,12 @@ class EnhancedKDJ(KDJ):
         
         # 3. KD交叉信号评分
         # 金叉质量评分
-        golden_cross = self.crossover(k, d)
+        golden_cross = crossover(k, d)
         cross_quality = kd_angle.abs().clip(0, 5)
         score += golden_cross * (15 + cross_quality)  # 基础15分 + 最多5分质量加成
-        
+
         # 死叉质量评分
-        death_cross = self.crossunder(k, d)
+        death_cross = crossunder(k, d)
         score -= death_cross * (15 + cross_quality)  # 基础15分 + 最多5分质量加成
         
         # 4. J线加速度评分
@@ -656,15 +666,15 @@ class EnhancedKDJ(KDJ):
         
         # 生成买入信号
         buy_signal = (
-            (self.crossover(signals['K'], signals['D'])) |  # KD金叉
+            (crossover(signals['K'], signals['D'])) |  # KD金叉
             ((signals['K'] < 20) & (signals['D'] < 20)) |  # KD处于超卖区
             (signals['J'] < 0) |  # J线处于超卖区
             (signals['score'] > 70)  # 评分高于70
         )
-        
+
         # 生成卖出信号
         sell_signal = (
-            (self.crossunder(signals['K'], signals['D'])) |  # KD死叉
+            (crossunder(signals['K'], signals['D'])) |  # KD死叉
             ((signals['K'] > 80) & (signals['D'] > 80)) |  # KD处于超买区
             (signals['J'] > 100) |  # J线处于超买区
             (signals['score'] < 30)  # 评分低于30
@@ -681,12 +691,12 @@ class EnhancedKDJ(KDJ):
         sell_signal = sell_signal & ((j_accel < 0) | (kd_angle < -1))
         
         # 应用市场环境调整
-        market_env = self.get_market_environment()
-        if market_env == MarketEnvironment.BULL_MARKET:
+        market_env = getattr(self, 'market_environment', 'normal')
+        if market_env == 'bull_market':
             # 牛市中降低买入门槛，提高卖出门槛
             buy_signal = buy_signal | (signals['score'] > 65)
             sell_signal = sell_signal & (signals['score'] < 25)
-        elif market_env == MarketEnvironment.BEAR_MARKET:
+        elif market_env == 'bear_market':
             # 熊市中提高买入门槛，降低卖出门槛
             buy_signal = buy_signal & (signals['score'] > 75)
             sell_signal = sell_signal | (signals['score'] < 35)
@@ -714,7 +724,7 @@ class EnhancedKDJ(KDJ):
         Returns:
             pd.Series: 信号强度序列
         """
-        strength = pd.Series(SignalStrength.NEUTRAL.value, index=result.index)
+        strength = pd.Series(0.0, index=result.index)  # 中性强度为0
         
         # 买入信号强度
         for i in range(len(result)):
@@ -725,13 +735,13 @@ class EnhancedKDJ(KDJ):
                 kd_angle = result['kd_cross_angle'].iloc[i] if i > 0 else 0
                 
                 if score > 85 and j_val < -10 and kd_angle > 2:
-                    strength.iloc[i] = SignalStrength.VERY_STRONG.value
+                    strength.iloc[i] = 1.0  # 非常强
                 elif score > 75 and j_val < 0:
-                    strength.iloc[i] = SignalStrength.STRONG.value
+                    strength.iloc[i] = 0.8  # 强
                 elif score > 65:
-                    strength.iloc[i] = SignalStrength.MODERATE.value
+                    strength.iloc[i] = 0.6  # 中等
                 else:
-                    strength.iloc[i] = SignalStrength.WEAK.value
+                    strength.iloc[i] = 0.4  # 弱
             
             elif signals['sell_signal'].iloc[i]:
                 # 根据评分、J线和KD交叉角度确定信号强度
@@ -740,12 +750,392 @@ class EnhancedKDJ(KDJ):
                 kd_angle = result['kd_cross_angle'].iloc[i] if i > 0 else 0
                 
                 if score < 15 and j_val > 110 and kd_angle < -2:
-                    strength.iloc[i] = SignalStrength.VERY_STRONG_NEGATIVE.value
+                    strength.iloc[i] = -1.0  # 非常强（负向）
                 elif score < 25 and j_val > 100:
-                    strength.iloc[i] = SignalStrength.STRONG_NEGATIVE.value
+                    strength.iloc[i] = -0.8  # 强（负向）
                 elif score < 35:
-                    strength.iloc[i] = SignalStrength.MODERATE_NEGATIVE.value
+                    strength.iloc[i] = -0.6  # 中等（负向）
                 else:
-                    strength.iloc[i] = SignalStrength.WEAK_NEGATIVE.value
+                    strength.iloc[i] = -0.4  # 弱（负向）
         
-        return strength 
+        return strength
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        if 'n' in kwargs:
+            self.n = kwargs['n']
+        if 'm1' in kwargs:
+            self.m1 = kwargs['m1']
+        if 'm2' in kwargs:
+            self.m2 = kwargs['m2']
+        if 'sensitivity' in kwargs:
+            self.sensitivity = kwargs['sensitivity']
+        if 'j_weight' in kwargs:
+            self.j_weight = kwargs['j_weight']
+        if 'multi_periods' in kwargs:
+            self.multi_periods = kwargs['multi_periods']
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedKDJ指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedKDJ形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EnhancedKDJ相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 获取KDJ数据
+        k = self._result['K']
+        d = self._result['D']
+        j = self._result['J']
+
+        # 基本形态
+        patterns['KDJ_GOLDEN_CROSS'] = crossover(k, d)
+        patterns['KDJ_DEATH_CROSS'] = crossunder(k, d)
+        patterns['KDJ_OVERSOLD'] = (k < 20) & (d < 20)
+        patterns['KDJ_OVERBOUGHT'] = (k > 80) & (d > 80)
+        patterns['KDJ_J_OVERSOLD'] = j < 0
+        patterns['KDJ_J_OVERBOUGHT'] = j > 100
+
+        # 趋势形态
+        patterns['KDJ_K_RISING'] = k > k.shift(1)
+        patterns['KDJ_K_FALLING'] = k < k.shift(1)
+        patterns['KDJ_D_RISING'] = d > d.shift(1)
+        patterns['KDJ_D_FALLING'] = d < d.shift(1)
+
+        # 强度形态
+        if 'kd_cross_angle' in self._result.columns:
+            kd_angle = self._result['kd_cross_angle']
+            patterns['KDJ_STRONG_GOLDEN_CROSS'] = patterns['KDJ_GOLDEN_CROSS'] & (kd_angle > 2)
+            patterns['KDJ_STRONG_DEATH_CROSS'] = patterns['KDJ_DEATH_CROSS'] & (kd_angle < -2)
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册EnhancedKDJ指标的形态到全局形态注册表
+        """
+        # 注册KDJ交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_GOLDEN_CROSS",
+            display_name="KDJ金叉",
+            description="K线上穿D线，表明上升趋势开始",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_DEATH_CROSS",
+            display_name="KDJ死叉",
+            description="K线下穿D线，表明下降趋势开始",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册KDJ超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_OVERSOLD",
+            display_name="KDJ超卖",
+            description="K线和D线均低于20，表明市场超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_OVERBOUGHT",
+            display_name="KDJ超买",
+            description="K线和D线均高于80，表明市场超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册J线极值形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_J_OVERSOLD",
+            display_name="J线超卖",
+            description="J线低于0，表明极度超卖",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_J_OVERBOUGHT",
+            display_name="J线超买",
+            description="J线高于100，表明极度超买",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册强势交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_STRONG_GOLDEN_CROSS",
+            display_name="KDJ强势金叉",
+            description="K线以大角度上穿D线，表明强势上升趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_STRONG_DEATH_CROSS",
+            display_name="KDJ强势死叉",
+            description="K线以大角度下穿D线，表明强势下降趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成EnhancedKDJ交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        k = self._result['K']
+        d = self._result['D']
+        j = self._result['J']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. KDJ金叉死叉信号
+        golden_cross = crossover(k, d)
+        death_cross = crossunder(k, d)
+
+        buy_signal |= golden_cross
+        sell_signal |= death_cross
+        signal_strength += golden_cross * 0.7
+        signal_strength += death_cross * 0.7
+
+        # 2. KDJ超买超卖信号
+        oversold = (k < 20) & (d < 20)
+        overbought = (k > 80) & (d > 80)
+
+        buy_signal |= oversold
+        sell_signal |= overbought
+        signal_strength += oversold * 0.6
+        signal_strength += overbought * 0.6
+
+        # 3. J线极值信号
+        j_oversold = j < 0
+        j_overbought = j > 100
+
+        buy_signal |= j_oversold
+        sell_signal |= j_overbought
+        signal_strength += j_oversold * 0.8
+        signal_strength += j_overbought * 0.8
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return self.indicator_type
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典，包含name, description, strength等
+        """
+        pattern_info_map = {
+            'KDJ_GOLDEN_CROSS': {
+                'name': 'KDJ金叉',
+                'description': 'K线上穿D线，表明上升趋势开始',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'KDJ_DEATH_CROSS': {
+                'name': 'KDJ死叉',
+                'description': 'K线下穿D线，表明下降趋势开始',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'KDJ_OVERSOLD': {
+                'name': 'KDJ超卖',
+                'description': 'K线和D线均低于20，表明市场超卖',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'KDJ_OVERBOUGHT': {
+                'name': 'KDJ超买',
+                'description': 'K线和D线均高于80，表明市场超买',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'KDJ_J_OVERSOLD': {
+                'name': 'J线超卖',
+                'description': 'J线低于0，表明极度超卖',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'KDJ_J_OVERBOUGHT': {
+                'name': 'J线超买',
+                'description': 'J线高于100，表明极度超买',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'KDJ_STRONG_GOLDEN_CROSS': {
+                'name': 'KDJ强势金叉',
+                'description': 'K线以大角度上穿D线，表明强势上升趋势',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'KDJ_STRONG_DEATH_CROSS': {
+                'name': 'KDJ强势死叉',
+                'description': 'K线以大角度下穿D线，表明强势下降趋势',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'KDJ_K_RISING': {
+                'name': 'K线上升',
+                'description': 'K线呈上升趋势',
+                'strength': 'weak',
+                'type': 'bullish'
+            },
+            'KDJ_K_FALLING': {
+                'name': 'K线下降',
+                'description': 'K线呈下降趋势',
+                'strength': 'weak',
+                'type': 'bearish'
+            },
+            'KDJ_D_RISING': {
+                'name': 'D线上升',
+                'description': 'D线呈上升趋势',
+                'strength': 'weak',
+                'type': 'bullish'
+            },
+            'KDJ_D_FALLING': {
+                'name': 'D线下降',
+                'description': 'D线呈下降趋势',
+                'strength': 'weak',
+                'type': 'bearish'
+            },
+            'KDJ_BULLISH_DIVERGENCE': {
+                'name': 'KDJ牛市背离',
+                'description': '价格创新低而KDJ不创新低，表示看涨信号',
+                'strength': 'very_strong',
+                'type': 'bullish'
+            },
+            'KDJ_BEARISH_DIVERGENCE': {
+                'name': 'KDJ熊市背离',
+                'description': '价格创新高而KDJ不创新高，表示看跌信号',
+                'strength': 'very_strong',
+                'type': 'bearish'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'EnhancedKDJ形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

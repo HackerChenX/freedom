@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Optional, Dict, Any, Tuple, List
 
 from indicators.base_indicator import BaseIndicator
-from utils.market_analysis import MarketAnalyzer
+from utils.indicator_utils import crossover, crossunder
 
 
 class EnhancedDMI(BaseIndicator):
@@ -19,16 +19,16 @@ class EnhancedDMI(BaseIndicator):
     """
 
     def __init__(self, period: int = 14, adx_period: int = 14, adaptive: bool = True):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化增强型DMI指标
-        
+
         Args:
             period (int): DMI计算周期
             adx_period (int): ADX计算周期
             adaptive (bool): 是否启用自适应周期
         """
-        super().__init__()
+        super().__init__(name="EnhancedDMI", description="增强版方向运动指标")
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.base_period = period
         self.adx_period = adx_period
         self.adaptive = adaptive
@@ -51,7 +51,34 @@ class EnhancedDMI(BaseIndicator):
             raise ValueError(f"无效的市场环境类型: {environment}。有效类型: {valid_environments}")
         
         self.market_environment = environment
-    
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算EnhancedDMI指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含EnhancedDMI指标的DataFrame
+        """
+        return self._calculate(data)
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        if 'period' in kwargs:
+            self.base_period = kwargs['period']
+        if 'adx_period' in kwargs:
+            self.adx_period = kwargs['adx_period']
+        if 'adaptive' in kwargs:
+            self.adaptive = kwargs['adaptive']
+
     def adjust_period_by_volatility(self, data: pd.DataFrame) -> int:
         """
         根据市场波动率调整计算周期
@@ -112,7 +139,17 @@ class EnhancedDMI(BaseIndicator):
         
         # 确保数据足够
         if len(data) < self.period + 1:
-            return pd.DataFrame(index=data.index)
+            # 返回包含所需列的空DataFrame
+            result = pd.DataFrame({
+                'plus_di': np.nan,
+                'minus_di': np.nan,
+                'adx': np.nan,
+                'adxr': np.nan,
+                'dx': np.nan,
+                'tr': np.nan
+            }, index=data.index)
+            self._result = result
+            return result
         
         # 计算True Range (TR)
         tr1 = abs(high - low)
@@ -130,15 +167,16 @@ class EnhancedDMI(BaseIndicator):
         
         # 计算平滑值
         smoothed_tr = self._calculate_smoothed_values(tr, self.period)
-        smoothed_plus_dm = self._calculate_smoothed_values(pd.Series(plus_dm), self.period)
-        smoothed_minus_dm = self._calculate_smoothed_values(pd.Series(minus_dm), self.period)
+        smoothed_plus_dm = self._calculate_smoothed_values(pd.Series(plus_dm, index=data.index), self.period)
+        smoothed_minus_dm = self._calculate_smoothed_values(pd.Series(minus_dm, index=data.index), self.period)
         
         # 计算方向指数 (+DI, -DI)
-        plus_di = 100 * smoothed_plus_dm / smoothed_tr
-        minus_di = 100 * smoothed_minus_dm / smoothed_tr
-        
+        plus_di = 100 * smoothed_plus_dm / smoothed_tr.replace(0, np.nan)
+        minus_di = 100 * smoothed_minus_dm / smoothed_tr.replace(0, np.nan)
+
         # 计算方向指数差值 (DX)
-        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di)
+        di_sum = plus_di + minus_di
+        dx = 100 * abs(plus_di - minus_di) / di_sum.replace(0, np.nan)
         
         # 计算平均方向指数 (ADX)
         adx = self._calculate_smoothed_values(dx, self.adx_period)
@@ -162,24 +200,29 @@ class EnhancedDMI(BaseIndicator):
     def _calculate_smoothed_values(self, series: pd.Series, period: int) -> pd.Series:
         """
         计算Wilder平滑值
-        
+
         Args:
             series (pd.Series): 输入数据
             period (int): 周期
-            
+
         Returns:
             pd.Series: 平滑后的数据
         """
+        # 检查数据是否足够
+        if len(series) < period:
+            return pd.Series(np.nan, index=series.index)
+
         # 第一个值使用简单平均
         first_value = series.iloc[:period].mean()
-        
+
         # 使用Wilder平滑公式: smoothed = (prev_smoothed * (period-1) + current) / period
         smoothed = pd.Series(np.nan, index=series.index)
         smoothed.iloc[period-1] = first_value
-        
+
         for i in range(period, len(series)):
-            smoothed.iloc[i] = (smoothed.iloc[i-1] * (period-1) + series.iloc[i]) / period
-            
+            if not pd.isna(smoothed.iloc[i-1]) and not pd.isna(series.iloc[i]):
+                smoothed.iloc[i] = (smoothed.iloc[i-1] * (period-1) + series.iloc[i]) / period
+
         return smoothed
     
     def classify_adx_strength(self, adx_value: float) -> str:
@@ -436,14 +479,18 @@ class EnhancedDMI(BaseIndicator):
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算DMI指标的原始评分，作为`calculate_score`的别名
-        
+
         Args:
             data: 输入数据，包含价格数据的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
             pd.Series: 原始评分序列，0-100
         """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
         # 如果已有评分计算方法，直接使用
         return self.calculate_score()
     
@@ -526,4 +573,229 @@ class EnhancedDMI(BaseIndicator):
             (adx.shift(3) > adx.shift(4))  # ADX先下降再上升
         )
         
-        return patterns 
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedDMI指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedDMI形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EnhancedDMI相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        # 使用现有的identify_patterns方法
+        patterns = self.identify_patterns()
+
+        # 如果patterns为空，创建基本的形态DataFrame
+        if patterns.empty:
+            patterns = pd.DataFrame(index=data.index)
+
+            # 获取DMI数据
+            plus_di = self._result['plus_di']
+            minus_di = self._result['minus_di']
+            adx = self._result['adx']
+
+            # 基本形态
+            patterns['DMI_GOLDEN_CROSS'] = crossover(plus_di, minus_di)
+            patterns['DMI_DEATH_CROSS'] = crossover(minus_di, plus_di)
+            patterns['DMI_STRONG_UPTREND'] = (plus_di > minus_di) & (adx > 25)
+            patterns['DMI_STRONG_DOWNTREND'] = (minus_di > plus_di) & (adx > 25)
+            patterns['DMI_WEAK_TREND'] = adx < 20
+            patterns['DMI_STRONG_TREND'] = adx > 40
+
+            # 趋势形态
+            patterns['DMI_ADX_RISING'] = adx > adx.shift(1)
+            patterns['DMI_ADX_FALLING'] = adx < adx.shift(1)
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册EnhancedDMI指标的形态到全局形态注册表
+        """
+        # 注册DMI交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="DMI_GOLDEN_CROSS",
+            display_name="DMI金叉",
+            description="+DI上穿-DI，表明上升趋势开始",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMI_DEATH_CROSS",
+            display_name="DMI死叉",
+            description="-DI上穿+DI，表明下降趋势开始",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册DMI趋势强度形态
+        self.register_pattern_to_registry(
+            pattern_id="DMI_STRONG_UPTREND",
+            display_name="DMI强上升趋势",
+            description="+DI > -DI且ADX > 25，表明强势上升趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMI_STRONG_DOWNTREND",
+            display_name="DMI强下降趋势",
+            description="-DI > +DI且ADX > 25，表明强势下降趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册DMI趋势强度形态
+        self.register_pattern_to_registry(
+            pattern_id="DMI_WEAK_TREND",
+            display_name="DMI弱趋势",
+            description="ADX < 20，表明趋势较弱或无趋势",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DMI_STRONG_TREND",
+            display_name="DMI强趋势",
+            description="ADX > 40，表明趋势非常强烈",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成EnhancedDMI交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        plus_di = self._result['plus_di']
+        minus_di = self._result['minus_di']
+        adx = self._result['adx']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. DMI金叉死叉信号
+        golden_cross = crossover(plus_di, minus_di)
+        death_cross = crossover(minus_di, plus_di)
+
+        buy_signal |= golden_cross
+        sell_signal |= death_cross
+        signal_strength += golden_cross * 0.6
+        signal_strength += death_cross * 0.6
+
+        # 2. 强趋势信号（ADX > 25时的交叉信号更可靠）
+        strong_golden_cross = golden_cross & (adx > 25)
+        strong_death_cross = death_cross & (adx > 25)
+
+        buy_signal |= strong_golden_cross
+        sell_signal |= strong_death_cross
+        signal_strength += strong_golden_cross * 0.8
+        signal_strength += strong_death_cross * 0.8
+
+        # 3. 极强趋势信号（ADX > 40）
+        extreme_golden_cross = golden_cross & (adx > 40)
+        extreme_death_cross = death_cross & (adx > 40)
+
+        buy_signal |= extreme_golden_cross
+        sell_signal |= extreme_death_cross
+        signal_strength += extreme_golden_cross * 1.0
+        signal_strength += extreme_death_cross * 1.0
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }

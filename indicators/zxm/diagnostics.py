@@ -1001,4 +1001,82 @@ class ZXMDiagnostics(BaseIndicator):
             "consistency_description": consistency_description,
             "direction": direction,
             "advice": advice
-        } 
+        }
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1] if hasattr(score, 'iloc') else score
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "健康状态良好" in patterns:
+            pattern_boost += 0.15
+        elif "健康状态优秀" in patterns:
+            pattern_boost += 0.2
+        elif "健康状态较差" in patterns:
+            pattern_boost -= 0.1
+
+        if "机会评分高" in patterns:
+            pattern_boost += 0.15
+        elif "机会评分低" in patterns:
+            pattern_boost -= 0.1
+
+        if "趋势健康" in patterns:
+            pattern_boost += 0.1
+        elif "动量健康" in patterns:
+            pattern_boost += 0.1
+        elif "成交量健康" in patterns:
+            pattern_boost += 0.08
+
+        # 最终置信度
+        final_confidence = min(1.0, max(0.0, base_confidence + pattern_boost))
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        return self.identify_patterns(data, **kwargs)
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - lookback_period: 回溯分析周期，默认60
+                - signal_threshold: 信号阈值，默认70
+                - require_volume: 是否要求成交量数据，默认True
+        """
+        self.lookback_period = kwargs.get('lookback_period', 60)
+        self.signal_threshold = kwargs.get('signal_threshold', 70)
+        self.require_volume = kwargs.get('require_volume', True)
+
+        # 更新权重配置
+        if 'health_weights' in kwargs:
+            self.health_weights.update(kwargs['health_weights'])
+        if 'opportunity_weights' in kwargs:
+            self.opportunity_weights.update(kwargs['opportunity_weights'])

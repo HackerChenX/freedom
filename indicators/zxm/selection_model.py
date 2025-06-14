@@ -53,7 +53,10 @@ class SelectionModel(BaseIndicator):
             pd.DataFrame: 计算结果，包含选股得分和信号
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["open", "high", "low", "close", "volume"])
+        required_cols = ["open", "high", "low", "close", "volume"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"数据缺少必需的列: {missing_cols}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -303,42 +306,47 @@ class SelectionModel(BaseIndicator):
             
             # 详细技术形态
             # 趋势状态
-            if last_row["TrendDirection"] == 1:
+            if "TrendDirection" in last_row.index:
                 if last_row["TrendDirection"] == 1:
                     patterns.append("超强上升趋势")
-                elif last_row["TrendDirection"] == 0:
-                    patterns.append("强上升趋势")
+                elif last_row["TrendDirection"] == -1:
+                    patterns.append("下降趋势")
                 else:
-                    patterns.append("温和上升趋势")
-            elif last_row["TrendDirection"] == -1:
-                patterns.append("下降趋势")
+                    patterns.append("震荡趋势")
+            elif "TrendState" in last_row.index:
+                if last_row["TrendState"] == 1:
+                    patterns.append("上升趋势")
+                elif last_row["TrendState"] == -1:
+                    patterns.append("下降趋势")
+                else:
+                    patterns.append("震荡趋势")
             else:
-                patterns.append("震荡趋势")
+                patterns.append("趋势未知")
             
             # 买点信号
-            if last_row["AnyBuyPoint"]:
-                if last_row["VolumeRiseBuyPoint"]:
+            if "AnyBuyPoint" in last_row.index and last_row["AnyBuyPoint"]:
+                if "VolumeRiseBuyPoint" in last_row.index and last_row["VolumeRiseBuyPoint"]:
                     patterns.append("放量上涨买点")
-                if last_row["PullbackStabilizeBuyPoint"]:
+                if "PullbackStabilizeBuyPoint" in last_row.index and last_row["PullbackStabilizeBuyPoint"]:
                     patterns.append("回调企稳买点")
-                if last_row["BreakoutBuyPoint"]:
+                if "BreakoutBuyPoint" in last_row.index and last_row["BreakoutBuyPoint"]:
                     patterns.append("突破买点")
-                if last_row["BottomVolumeBuyPoint"]:
+                if "BottomVolumeBuyPoint" in last_row.index and last_row["BottomVolumeBuyPoint"]:
                     patterns.append("底部放量买点")
-                if last_row["VolumeShrinkBuyPoint"]:
+                if "VolumeShrinkBuyPoint" in last_row.index and last_row["VolumeShrinkBuyPoint"]:
                     patterns.append("缩量整理买点")
             
             # 洗盘信号
-            if last_row["AnyWashPlate"]:
-                if last_row["ShockWash"]:
+            if "AnyWashPlate" in last_row.index and last_row["AnyWashPlate"]:
+                if "ShockWash" in last_row.index and last_row["ShockWash"]:
                     patterns.append("横盘震荡洗盘")
-                if last_row["PullbackWash"]:
+                if "PullbackWash" in last_row.index and last_row["PullbackWash"]:
                     patterns.append("回调洗盘")
-                if last_row["FalseBreakWash"]:
+                if "FalseBreakWash" in last_row.index and last_row["FalseBreakWash"]:
                     patterns.append("假突破洗盘")
-                if last_row["TimeWash"]:
+                if "TimeWash" in last_row.index and last_row["TimeWash"]:
                     patterns.append("时间洗盘")
-                if last_row["ContinuousYinWash"]:
+                if "ContinuousYinWash" in last_row.index and last_row["ContinuousYinWash"]:
                     patterns.append("连续阴线洗盘")
         
         return patterns
@@ -367,7 +375,12 @@ class SelectionModel(BaseIndicator):
         signals['neutral_signal'] = ~result["FinalSelect"]
         
         # 设置趋势
-        signals['trend'] = result["TrendDirection"]
+        if "TrendDirection" in result.columns:
+            signals['trend'] = result["TrendDirection"]
+        elif "TrendState" in result.columns:
+            signals['trend'] = result["TrendState"]
+        else:
+            signals['trend'] = 0  # 默认中性
         
         # 设置评分
         signals['score'] = score
@@ -511,11 +524,155 @@ class SelectionModel(BaseIndicator):
         
         # 市场环境
         signals['market_env'] = 'normal'
-        signals.loc[result["TrendDirection"] == 1, 'market_env'] = 'bull_market'
-        signals.loc[result["TrendDirection"] == -1, 'market_env'] = 'bear_market'
-        signals.loc[result["TrendDirection"] == 0, 'market_env'] = 'sideways_market'
+        if "TrendDirection" in result.columns:
+            signals.loc[result["TrendDirection"] == 1, 'market_env'] = 'bull_market'
+            signals.loc[result["TrendDirection"] == -1, 'market_env'] = 'bear_market'
+            signals.loc[result["TrendDirection"] == 0, 'market_env'] = 'sideways_market'
+        elif "TrendState" in result.columns:
+            signals.loc[result["TrendState"] == 1, 'market_env'] = 'bull_market'
+            signals.loc[result["TrendState"] == -1, 'market_env'] = 'bear_market'
+            signals.loc[result["TrendState"] == 0, 'market_env'] = 'sideways_market'
         
         # 成交量确认
         signals['volume_confirmation'] = True
         
-        return signals 
+        return signals
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算置信度
+
+        Args:
+            score: 评分序列
+            patterns: 形态列表
+            signals: 信号字典
+
+        Returns:
+            float: 置信度值，0-1之间
+        """
+        if score.empty:
+            return 0.5
+
+        latest_score = score.iloc[-1]
+
+        # 基础置信度基于评分
+        base_confidence = min(0.9, max(0.1, latest_score / 100))
+
+        # 根据形态调整置信度
+        pattern_boost = 0.0
+        if "选股系统买入信号" in patterns:
+            pattern_boost += 0.15
+        if "最高优先级选股" in patterns:
+            pattern_boost += 0.25
+        elif "高优先级选股" in patterns:
+            pattern_boost += 0.2
+        elif "中等优先级选股" in patterns:
+            pattern_boost += 0.15
+
+        # 选股类型调整
+        if "强趋势上涨股" in patterns:
+            pattern_boost += 0.15
+        elif "放量突破股" in patterns:
+            pattern_boost += 0.15
+        elif "洗盘后启动股" in patterns:
+            pattern_boost += 0.1
+
+        # 技术形态调整
+        if "超强上升趋势" in patterns:
+            pattern_boost += 0.1
+        elif "强上升趋势" in patterns:
+            pattern_boost += 0.08
+
+        # 买点信号调整
+        if "突破买点" in patterns:
+            pattern_boost += 0.1
+        elif "回调企稳买点" in patterns:
+            pattern_boost += 0.08
+
+        # 最终置信度
+        final_confidence = min(1.0, max(0.0, base_confidence + pattern_boost))
+        return final_confidence
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
+        """
+        # 计算选股模型
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础选股信号形态
+        patterns_df["选股系统买入信号"] = result["FinalSelect"]
+
+        # 选股类型形态
+        patterns_df["强趋势上涨股"] = result["StrongUptrendSelect"]
+        patterns_df["放量突破股"] = result["VolumeBreakoutSelect"]
+        patterns_df["回调买点股"] = result["PullbackBuySelect"]
+        patterns_df["洗盘后启动股"] = result["WashplateStartSelect"]
+        patterns_df["低吸高弹性股"] = result["LowBuyElasticSelect"]
+
+        # 优先级形态
+        patterns_df["最高优先级选股"] = result["BuyPriority"] == 1
+        patterns_df["高优先级选股"] = result["BuyPriority"] == 2
+        patterns_df["中等优先级选股"] = result["BuyPriority"] == 3
+        patterns_df["低优先级选股"] = result["BuyPriority"] == 4
+        patterns_df["最低优先级选股"] = result["BuyPriority"] == 5
+
+        # 趋势形态
+        if "TrendDirection" in result.columns:
+            patterns_df["超强上升趋势"] = result["TrendDirection"] == 1
+            patterns_df["下降趋势"] = result["TrendDirection"] == -1
+            patterns_df["震荡趋势"] = result["TrendDirection"] == 0
+        elif "TrendState" in result.columns:
+            patterns_df["上升趋势"] = result["TrendState"] == 1
+            patterns_df["下降趋势"] = result["TrendState"] == -1
+            patterns_df["震荡趋势"] = result["TrendState"] == 0
+        else:
+            patterns_df["趋势未知"] = True
+
+        # 买点信号形态
+        patterns_df["放量上涨买点"] = result["VolumeRiseBuyPoint"]
+        patterns_df["回调企稳买点"] = result["PullbackStabilizeBuyPoint"]
+        patterns_df["突破买点"] = result["BreakoutBuyPoint"]
+        patterns_df["底部放量买点"] = result["BottomVolumeBuyPoint"]
+        patterns_df["缩量整理买点"] = result["VolumeShrinkBuyPoint"]
+
+        # 洗盘信号形态
+        if "AnyWashPlate" in result.columns:
+            patterns_df["横盘震荡洗盘"] = result.get("ShockWash", False)
+            patterns_df["回调洗盘"] = result.get("PullbackWash", False)
+            patterns_df["假突破洗盘"] = result.get("FalseBreakWash", False)
+            patterns_df["时间洗盘"] = result.get("TimeWash", False)
+            patterns_df["连续阴线洗盘"] = result.get("ContinuousYinWash", False)
+
+        return patterns_df
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含各子指标的参数
+        """
+        # 设置各子指标的参数
+        if hasattr(self, 'trend_detector'):
+            self.trend_detector.set_parameters(**kwargs.get('trend_params', {}))
+        if hasattr(self, 'elasticity_indicator'):
+            self.elasticity_indicator.set_parameters(**kwargs.get('elasticity_params', {}))
+        if hasattr(self, 'score_calculator'):
+            self.score_calculator.set_parameters(**kwargs.get('score_params', {}))
+        if hasattr(self, 'buy_point_detector'):
+            self.buy_point_detector.set_parameters(**kwargs.get('buypoint_params', {}))
+
+        # 设置选股模型自身的参数
+        self.selection_threshold = kwargs.get('selection_threshold', 70)
+        self.priority_threshold = kwargs.get('priority_threshold', 85)

@@ -779,4 +779,84 @@ class MACD(BaseIndicator):
         # 综合置信度
         confidence = (normalized_score * 0.6) + (normalized_patterns * 0.4)
         
-        return min(confidence, 1.0) 
+        return min(confidence, 1.0)
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典，包含name, description, strength等
+        """
+        pattern_info_map = {
+            'MACD_GOLDEN_CROSS': {
+                'name': 'MACD金叉',
+                'description': 'MACD快线从下向上穿越慢线，看涨信号',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'MACD_DEATH_CROSS': {
+                'name': 'MACD死叉',
+                'description': 'MACD快线从上向下穿越慢线，看跌信号',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'MACD_ZERO_CROSS_ABOVE': {
+                'name': 'MACD零轴向上穿越',
+                'description': 'MACD线从下方穿越零轴，表明由空头转为多头',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'MACD_ZERO_CROSS_BELOW': {
+                'name': 'MACD零轴向下穿越',
+                'description': 'MACD线从上方穿越零轴，表明由多头转为空头',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'MACD_BULLISH_DIVERGENCE': {
+                'name': 'MACD底背离',
+                'description': '价格创新低，但MACD未创新低，潜在看涨信号',
+                'strength': 'very_strong',
+                'type': 'bullish'
+            },
+            'MACD_BEARISH_DIVERGENCE': {
+                'name': 'MACD顶背离',
+                'description': '价格创新高，但MACD未创新高，潜在看跌信号',
+                'strength': 'very_strong',
+                'type': 'bearish'
+            },
+            'MACD_HISTOGRAM_EXPANDING': {
+                'name': 'MACD柱状图扩张',
+                'description': 'MACD柱状图连续增大，表明趋势加强',
+                'strength': 'medium',
+                'type': 'momentum'
+            },
+            'MACD_HISTOGRAM_CONTRACTING': {
+                'name': 'MACD柱状图收缩',
+                'description': 'MACD柱状图连续减小，表明趋势减弱',
+                'strength': 'medium',
+                'type': 'exhaustion'
+            },
+            'MACD_DOUBLE_BOTTOM': {
+                'name': 'MACD双底',
+                'description': 'MACD形成双底形态，看涨信号',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'MACD_DOUBLE_TOP': {
+                'name': 'MACD双顶',
+                'description': 'MACD形成双顶形态，看跌信号',
+                'strength': 'strong',
+                'type': 'bearish'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'MACD形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

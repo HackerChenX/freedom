@@ -96,19 +96,15 @@ class CompositeIndicator(BaseIndicator):
     def add_indicator(self, indicator: BaseIndicator, weight: float = 1.0):
         """
         添加指标到组合中
-        
+
         Args:
             indicator: 要添加的指标
             weight: 指标权重
         """
         self.indicators.append(indicator)
         self.weights[indicator.name] = weight
-        
-        # 重新标准化权重
-        total_weight = sum(self.weights.values())
-        if total_weight > 0:
-            for name in self.weights:
-                self.weights[name] /= total_weight
+
+        # 不自动标准化权重，保持用户设置的权重
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -155,9 +151,18 @@ class CompositeIndicator(BaseIndicator):
         if self.calculate_score_automatically:
             try:
                 result['composite_score'] = self.calculate_composite_score(result)
+
+                # 计算各子指标的评分
+                for indicator in self.indicators:
+                    try:
+                        indicator_score = indicator.calculate_raw_score(result)
+                        result[f"{indicator.name}_score"] = indicator_score
+                    except Exception as e:
+                        logger.error(f"计算指标 {indicator.name} 评分时出错: {e}")
+                        result[f"{indicator.name}_score"] = 50.0
             except Exception as e:
                 logger.error(f"计算复合指标评分时出错: {e}")
-        
+
         # 保存结果
         self._result = result
         
@@ -629,4 +634,283 @@ class CompositeIndicator(BaseIndicator):
             description="价格创新高但指标未创新高，可能预示反转向下",
             score_impact=-15.0,
             signal_type="bearish"
-        ) 
+        )
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算CompositeIndicator指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于指标数量的置信度
+        num_indicators = len(self.indicators)
+        if num_indicators >= 3:
+            confidence += 0.15  # 多指标组合置信度更高
+        elif num_indicators >= 2:
+            confidence += 0.1
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查CompositeIndicator形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 5. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取CompositeIndicator相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if not self.indicators:
+            return pd.DataFrame(index=data.index)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 收集各指标的形态
+        all_patterns = []
+        for indicator in self.indicators:
+            try:
+                # 获取指标形态
+                ind_patterns = indicator.get_patterns(data, **kwargs)
+                if isinstance(ind_patterns, pd.DataFrame):
+                    # 为每个形态列添加指标名前缀
+                    for col in ind_patterns.columns:
+                        patterns[f"{indicator.name}_{col}"] = ind_patterns[col]
+                elif isinstance(ind_patterns, list):
+                    # 处理返回列表的情况
+                    all_patterns.extend(ind_patterns)
+            except Exception as e:
+                logger.error(f"获取指标 {indicator.name} 形态时出错: {e}")
+
+        # 添加组合指标特有的形态
+        if len(self.indicators) >= 2:
+            # 多指标共振形态
+            bullish_count = 0
+            bearish_count = 0
+
+            for indicator in self.indicators:
+                try:
+                    # 计算指标评分
+                    score = indicator.calculate_raw_score(data)
+                    if not score.empty:
+                        last_score = score.iloc[-1]
+                        if last_score > 70:
+                            bullish_count += 1
+                        elif last_score < 30:
+                            bearish_count += 1
+                except:
+                    continue
+
+            # 多指标看涨共振
+            patterns['COMPOSITE_BULLISH_RESONANCE'] = bullish_count >= 2
+            # 多指标看跌共振
+            patterns['COMPOSITE_BEARISH_RESONANCE'] = bearish_count >= 2
+            # 指标分歧
+            patterns['COMPOSITE_DIVERGENCE'] = (bullish_count >= 1) & (bearish_count >= 1)
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册CompositeIndicator指标的形态到全局形态注册表
+        """
+        # 调用已有的注册方法
+        self._register_composite_patterns()
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成CompositeIndicator交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if not self.indicators:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 收集各指标的信号
+        buy_votes = pd.Series(0, index=data.index)
+        sell_votes = pd.Series(0, index=data.index)
+
+        for indicator in self.indicators:
+            try:
+                # 获取指标信号
+                ind_signals = indicator.generate_trading_signals(data, **kwargs)
+                weight = self.weights.get(indicator.name, 1.0)
+
+                if isinstance(ind_signals, dict):
+                    if 'buy_signal' in ind_signals:
+                        buy_votes += ind_signals['buy_signal'].astype(int) * weight
+                    if 'sell_signal' in ind_signals:
+                        sell_votes += ind_signals['sell_signal'].astype(int) * weight
+                    if 'signal_strength' in ind_signals:
+                        signal_strength += ind_signals['signal_strength'] * weight
+            except Exception as e:
+                logger.error(f"获取指标 {indicator.name} 信号时出错: {e}")
+
+        # 基于投票生成最终信号
+        total_weight = sum(self.weights.values()) if self.weights else len(self.indicators)
+
+        # 需要超过一半的权重支持才产生信号
+        threshold = total_weight * 0.5
+
+        buy_signal = buy_votes > threshold
+        sell_signal = sell_votes > threshold
+
+        # 标准化信号强度
+        if total_weight > 0:
+            signal_strength = signal_strength / total_weight
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def add_custom_column(self, name: str, func):
+        """
+        添加自定义列计算函数
+
+        Args:
+            name: 列名
+            func: 计算函数，接受DataFrame参数，返回Series
+        """
+        self.custom_columns[name] = func
+
+    def remove_indicator(self, indicator_name: str):
+        """
+        从组合中移除指标
+
+        Args:
+            indicator_name: 要移除的指标名称
+        """
+        # 移除指标
+        self.indicators = [ind for ind in self.indicators if ind.name != indicator_name]
+
+        # 移除权重
+        if indicator_name in self.weights:
+            del self.weights[indicator_name]
+
+        # 重新标准化权重
+        if self.weights:
+            total_weight = sum(self.weights.values())
+            if total_weight > 0:
+                for name in self.weights:
+                    self.weights[name] /= total_weight
+
+    def get_indicator_names(self) -> List[str]:
+        """
+        获取所有指标名称
+
+        Returns:
+            List[str]: 指标名称列表
+        """
+        return [indicator.name for indicator in self.indicators]
+
+    def get_indicator_weights(self) -> Dict[str, float]:
+        """
+        获取指标权重
+
+        Returns:
+            Dict[str, float]: 指标权重字典
+        """
+        return self.weights.copy()
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "COMPOSITE"
+
+    def set_market_environment(self, environment: str):
+        """
+        设置市场环境
+
+        Args:
+            environment: 市场环境字符串
+        """
+        valid_environments = ['bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal']
+        if environment not in valid_environments:
+            raise ValueError(f"无效的市场环境: {environment}. 有效值: {valid_environments}")
+
+        self.market_environment = environment
+
+        # 同时设置所有子指标的市场环境
+        for indicator in self.indicators:
+            if hasattr(indicator, 'set_market_environment'):
+                try:
+                    indicator.set_market_environment(environment)
+                except:
+                    pass  # 忽略不支持的指标

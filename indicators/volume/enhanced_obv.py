@@ -8,10 +8,11 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
+from indicators.base_indicator import BaseIndicator
 from indicators.obv import OBV
 from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs
+from utils.indicator_utils import crossover, crossunder
 
 logger = get_logger(__name__)
 
@@ -84,7 +85,10 @@ class EnhancedOBV(OBV):
             pd.DataFrame: 计算结果，包含OBV及其均线和多周期指标
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close", "volume"])
+        required_columns = ["close", "volume"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 复制输入数据
         result = data.copy()
@@ -261,9 +265,9 @@ class EnhancedOBV(OBV):
         
         # 6. OBV均线交叉评分 (根据市场环境调整)
         # OBV上穿均线信号
-        obv_cross_up_ma = self.crossover(obv_smooth, obv_ma)
+        obv_cross_up_ma = crossover(obv_smooth, obv_ma)
         # OBV下穿均线信号
-        obv_cross_down_ma = self.crossunder(obv_smooth, obv_ma)
+        obv_cross_down_ma = crossunder(obv_smooth, obv_ma)
         
         # 7. 市场环境感知评分调整
         market_env = self.market_environment
@@ -463,13 +467,13 @@ class EnhancedOBV(OBV):
         # 生成买入信号
         buy_signal = (
             (signals['score'] > 70) |  # 评分高于70
-            (self.crossover(obv_smooth, obv_ma))  # OBV上穿均线
+            (crossover(obv_smooth, obv_ma))  # OBV上穿均线
         )
-        
+
         # 生成卖出信号
         sell_signal = (
             (signals['score'] < 30) |  # 评分低于30
-            (self.crossunder(obv_smooth, obv_ma))  # OBV下穿均线
+            (crossunder(obv_smooth, obv_ma))  # OBV下穿均线
         )
         
         # 应用市场环境调整
@@ -506,7 +510,7 @@ class EnhancedOBV(OBV):
         Returns:
             pd.Series: 信号强度序列
         """
-        strength = pd.Series(SignalStrength.NEUTRAL.value, index=result.index)
+        strength = pd.Series(0.0, index=result.index)  # 中性强度为0
         
         # 买入信号强度
         for i in range(len(result)):
@@ -516,13 +520,13 @@ class EnhancedOBV(OBV):
                 momentum = result['obv_momentum'].iloc[i] if 'obv_momentum' in result else 0
                 
                 if score > 85 and momentum > 0.05:
-                    strength.iloc[i] = SignalStrength.VERY_STRONG.value
+                    strength.iloc[i] = 1.0  # 非常强
                 elif score > 75:
-                    strength.iloc[i] = SignalStrength.STRONG.value
+                    strength.iloc[i] = 0.8  # 强
                 elif score > 65:
-                    strength.iloc[i] = SignalStrength.MODERATE.value
+                    strength.iloc[i] = 0.6  # 中等
                 else:
-                    strength.iloc[i] = SignalStrength.WEAK.value
+                    strength.iloc[i] = 0.4  # 弱
             
             elif signals['sell_signal'].iloc[i]:
                 # 根据评分、OBV动量和多周期一致性确定信号强度
@@ -530,13 +534,13 @@ class EnhancedOBV(OBV):
                 momentum = result['obv_momentum'].iloc[i] if 'obv_momentum' in result else 0
                 
                 if score < 15 and momentum < -0.05:
-                    strength.iloc[i] = SignalStrength.VERY_STRONG_NEGATIVE.value
+                    strength.iloc[i] = -1.0  # 非常强（负向）
                 elif score < 25:
-                    strength.iloc[i] = SignalStrength.STRONG_NEGATIVE.value
+                    strength.iloc[i] = -0.8  # 强（负向）
                 elif score < 35:
-                    strength.iloc[i] = SignalStrength.MODERATE_NEGATIVE.value
+                    strength.iloc[i] = -0.6  # 中等（负向）
                 else:
-                    strength.iloc[i] = SignalStrength.WEAK_NEGATIVE.value
+                    strength.iloc[i] = -0.4  # 弱（负向）
         
         return strength
     
@@ -606,7 +610,7 @@ class EnhancedOBV(OBV):
         if self._result is None or self._price_data is None:
             return pd.DataFrame()
         
-        obv = self._result.get('obv_smooth', self._result['obv']).fillna(method='ffill')
+        obv = self._result.get('obv_smooth', self._result['obv']).ffill()
         price = self._price_data
         
         if len(price) < 20 or len(obv) < 20:
@@ -837,4 +841,280 @@ class EnhancedOBV(OBV):
         obv_avg_volatility = obv_volatility.rolling(30).mean()
         patterns['obv_consolidation'] = obv_volatility < (obv_avg_volatility * 0.5)
         
-        return patterns 
+        return patterns
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        if 'ma_period' in kwargs:
+            self.ma_period = kwargs['ma_period']
+        if 'sensitivity' in kwargs:
+            self.sensitivity = kwargs['sensitivity']
+        if 'noise_filter' in kwargs:
+            self.noise_filter = kwargs['noise_filter']
+        if 'multi_periods' in kwargs:
+            self.multi_periods = kwargs['multi_periods']
+        if 'smooth_period' in kwargs:
+            self.smooth_period = kwargs['smooth_period']
+        if 'adaptive' in kwargs:
+            self.adaptive = kwargs['adaptive']
+        if 'use_smoothed_obv' in kwargs:
+            self.use_smoothed_obv = kwargs['use_smoothed_obv']
+        if 'smoothing_period' in kwargs:
+            self.smoothing_period = kwargs['smoothing_period']
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedOBV指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedOBV形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EnhancedOBV相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 获取OBV数据
+        obv_smooth = self._result['obv_smooth']
+        obv_ma = self._result['obv_ma']
+
+        # 基本形态
+        patterns['OBV_ABOVE_MA'] = obv_smooth > obv_ma
+        patterns['OBV_BELOW_MA'] = obv_smooth < obv_ma
+        patterns['OBV_RISING'] = obv_smooth > obv_smooth.shift(1)
+        patterns['OBV_FALLING'] = obv_smooth < obv_smooth.shift(1)
+
+        # 交叉形态
+        patterns['OBV_CROSS_MA_UP'] = crossover(obv_smooth, obv_ma)
+        patterns['OBV_CROSS_MA_DOWN'] = crossunder(obv_smooth, obv_ma)
+
+        # 突破形态
+        obv_high = obv_smooth.rolling(window=20).max().shift(1)
+        obv_low = obv_smooth.rolling(window=20).min().shift(1)
+        patterns['OBV_BREAKOUT'] = obv_smooth > obv_high
+        patterns['OBV_BREAKDOWN'] = obv_smooth < obv_low
+
+        # 背离形态（简化版）
+        if 'obv_momentum' in self._result.columns:
+            obv_momentum = self._result['obv_momentum']
+            patterns['OBV_BULLISH_MOMENTUM'] = obv_momentum > 0.01
+            patterns['OBV_BEARISH_MOMENTUM'] = obv_momentum < -0.01
+
+        return patterns
+
+    def register_patterns(self):
+        """
+        注册EnhancedOBV指标的形态到全局形态注册表
+        """
+        # 注册OBV交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_CROSS_MA_UP",
+            display_name="OBV上穿均线",
+            description="OBV从下方穿越移动平均线，表明资金流入增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_CROSS_MA_DOWN",
+            display_name="OBV下穿均线",
+            description="OBV从上方穿越移动平均线，表明资金流出增强",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册OBV突破形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BREAKOUT",
+            display_name="OBV向上突破",
+            description="OBV突破前期高点，表明强势资金流入",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BREAKDOWN",
+            display_name="OBV向下突破",
+            description="OBV跌破前期低点，表明强势资金流出",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册OBV动量形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BULLISH_MOMENTUM",
+            display_name="OBV看涨动量",
+            description="OBV动量为正，表明资金流入加速",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BEARISH_MOMENTUM",
+            display_name="OBV看跌动量",
+            description="OBV动量为负，表明资金流出加速",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册OBV背离形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BULLISH_DIVERGENCE",
+            display_name="OBV看涨背离",
+            description="价格创新低但OBV未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BEARISH_DIVERGENCE",
+            display_name="OBV看跌背离",
+            description="价格创新高但OBV未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成EnhancedOBV交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        obv_smooth = self._result['obv_smooth']
+        obv_ma = self._result['obv_ma']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. OBV均线交叉信号
+        cross_up = crossover(obv_smooth, obv_ma)
+        cross_down = crossunder(obv_smooth, obv_ma)
+
+        buy_signal |= cross_up
+        sell_signal |= cross_down
+        signal_strength += cross_up * 0.7
+        signal_strength += cross_down * 0.7
+
+        # 2. OBV突破信号
+        obv_high = obv_smooth.rolling(window=20).max().shift(1)
+        obv_low = obv_smooth.rolling(window=20).min().shift(1)
+
+        breakout = obv_smooth > obv_high
+        breakdown = obv_smooth < obv_low
+
+        buy_signal |= breakout
+        sell_signal |= breakdown
+        signal_strength += breakout * 0.8
+        signal_strength += breakdown * 0.8
+
+        # 3. OBV动量信号
+        if 'obv_momentum' in self._result.columns:
+            obv_momentum = self._result['obv_momentum']
+            strong_momentum_up = obv_momentum > 0.05
+            strong_momentum_down = obv_momentum < -0.05
+
+            buy_signal |= strong_momentum_up
+            sell_signal |= strong_momentum_down
+            signal_strength += strong_momentum_up * 0.6
+            signal_strength += strong_momentum_down * 0.6
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }

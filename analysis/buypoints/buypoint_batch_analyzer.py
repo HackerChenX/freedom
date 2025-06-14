@@ -286,11 +286,11 @@ class BuyPointBatchAnalyzer:
                     # 遍历该周期下的所有指标
                     for indicator in indicators:
                         # 检查指标结构，确保必要的字段存在
-                        if 'indicator' not in indicator or 'pattern_id' not in indicator:
+                        if 'indicator_name' not in indicator or 'pattern_id' not in indicator:
                             continue
-                            
+
                         # 构建指标标识（指标名_形态ID）
-                        indicator_id = f"{indicator['indicator']}_{indicator['pattern_id']}"
+                        indicator_id = f"{indicator['indicator_name']}_{indicator['pattern_id']}"
                             
                         # 添加到对应周期的指标列表
                         period_indicators[period][indicator_id].append({
@@ -298,8 +298,10 @@ class BuyPointBatchAnalyzer:
                             'buypoint_date': result['buypoint_date'],
                             'score': indicator.get('score_impact', 0),
                             'details': {
-                                'display_name': indicator.get('display_name', ''),
-                                'pattern_id': indicator.get('pattern_id', '')
+                                'display_name': indicator.get('pattern_name', indicator.get('pattern_id', '')),
+                                'pattern_id': indicator.get('pattern_id', ''),
+                                'description': indicator.get('description', ''),
+                                'pattern_type': indicator.get('pattern_type', '')
                             }
                         })
             
@@ -313,7 +315,9 @@ class BuyPointBatchAnalyzer:
                 for indicator_id, hits in indicators.items():
                     # 计算命中率
                     hit_ratio = len(hits) / total_buypoints
-                    
+
+
+
                     # 如果命中率达到阈值，认为是共性指标
                     if hit_ratio >= min_hit_ratio:
                         # 计算平均得分

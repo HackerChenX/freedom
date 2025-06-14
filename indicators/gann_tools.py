@@ -95,7 +95,10 @@ class GannTools(BaseIndicator):
             pd.DataFrame: 计算结果，包含江恩角度线和时间周期
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        required_columns = ["close"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 如果未指定支点，则使用第一个点
         if pivot_idx is None:
@@ -117,7 +120,118 @@ class GannTools(BaseIndicator):
         
         # 计算时间周期
         result = self._calculate_time_cycles(data, result, pivot_idx)
-        
+
+        # 添加形态识别列（避免循环调用）
+        try:
+            # 直接进行简单的形态识别，避免调用identify_patterns
+            identified_patterns = []
+
+            if 'close' in data.columns and len(data) >= 10:
+                close_price = data['close']
+                latest_price = close_price.iloc[-1]
+
+                # 简单的江恩1x1线分析
+                for angle in GannAngle:
+                    angle_name = f"gann_{angle.name.lower().replace('angle_', '')}"
+                    if angle_name in result.columns:
+                        angle_line = result[angle_name].iloc[-1]
+
+                        if pd.notna(angle_line):
+                            distance_pct = (latest_price - angle_line) / angle_line * 100
+
+                            if abs(distance_pct) < 2:
+                                if distance_pct > 0:
+                                    identified_patterns.append(f"接近{angle.value}支撑")
+                                else:
+                                    identified_patterns.append(f"接近{angle.value}阻力")
+
+            # 初始化所有可能的形态列
+            pattern_columns = [
+                'GANN_1X1_SUPPORT', 'GANN_1X1_RESISTANCE',
+                'GANN_1X2_SUPPORT', 'GANN_1X2_RESISTANCE',
+                'GANN_2X1_SUPPORT', 'GANN_2X1_RESISTANCE',
+                'GANN_ANGLE_CLUSTER_SUPPORT', 'GANN_ANGLE_CLUSTER_RESISTANCE',
+                'GANN_1X1_BREAKOUT_UP', 'GANN_1X1_BREAKOUT_DOWN',
+                'GANN_TIME_CYCLE_LOW', 'GANN_TIME_CYCLE_HIGH',
+                'GANN_SQUARE_SUPPORT', 'GANN_SQUARE_RESISTANCE',
+                'GANN_PRICE_TARGET_UP', 'GANN_PRICE_TARGET_DOWN',
+                'GANN_VOLUME_CONFIRMATION', 'GANN_TREND_ALIGNMENT'
+            ]
+
+            for col in pattern_columns:
+                result[col] = False
+
+            # 根据识别的形态设置相应的布尔值
+            for pattern in identified_patterns:
+                if "江恩1x1线" in pattern:
+                    if "支撑" in pattern:
+                        result['GANN_1X1_SUPPORT'] = True
+                    elif "阻力" in pattern:
+                        result['GANN_1X1_RESISTANCE'] = True
+                    elif "突破" in pattern:
+                        result['GANN_1X1_BREAKOUT_UP'] = True
+                    elif "跌破" in pattern:
+                        result['GANN_1X1_BREAKOUT_DOWN'] = True
+
+                if "江恩1x2" in pattern:
+                    if "支撑" in pattern:
+                        result['GANN_1X2_SUPPORT'] = True
+                    elif "阻力" in pattern:
+                        result['GANN_1X2_RESISTANCE'] = True
+
+                if "江恩2x1" in pattern:
+                    if "支撑" in pattern:
+                        result['GANN_2X1_SUPPORT'] = True
+                    elif "阻力" in pattern:
+                        result['GANN_2X1_RESISTANCE'] = True
+
+                if "江恩多线" in pattern:
+                    if "支撑" in pattern:
+                        result['GANN_ANGLE_CLUSTER_SUPPORT'] = True
+                    elif "阻力" in pattern:
+                        result['GANN_ANGLE_CLUSTER_RESISTANCE'] = True
+
+                if "江恩周期" in pattern:
+                    if "低点" in pattern:
+                        result['GANN_TIME_CYCLE_LOW'] = True
+                    elif "高点" in pattern:
+                        result['GANN_TIME_CYCLE_HIGH'] = True
+
+                if "江恩方形" in pattern:
+                    if "支撑" in pattern:
+                        result['GANN_SQUARE_SUPPORT'] = True
+                    elif "阻力" in pattern:
+                        result['GANN_SQUARE_RESISTANCE'] = True
+
+                if "江恩上涨目标" in pattern:
+                    result['GANN_PRICE_TARGET_UP'] = True
+                elif "江恩下跌目标" in pattern:
+                    result['GANN_PRICE_TARGET_DOWN'] = True
+
+                if "放量" in pattern or "巨量" in pattern:
+                    result['GANN_VOLUME_CONFIRMATION'] = True
+
+                if "趋势" in pattern:
+                    result['GANN_TREND_ALIGNMENT'] = True
+
+        except Exception as e:
+            logger.warning(f"形态识别失败: {e}")
+            # 如果形态识别失败，至少添加空的形态列
+            pattern_columns = [
+                'GANN_1X1_SUPPORT', 'GANN_1X1_RESISTANCE',
+                'GANN_1X2_SUPPORT', 'GANN_1X2_RESISTANCE',
+                'GANN_2X1_SUPPORT', 'GANN_2X1_RESISTANCE',
+                'GANN_ANGLE_CLUSTER_SUPPORT', 'GANN_ANGLE_CLUSTER_RESISTANCE',
+                'GANN_1X1_BREAKOUT_UP', 'GANN_1X1_BREAKOUT_DOWN',
+                'GANN_TIME_CYCLE_LOW', 'GANN_TIME_CYCLE_HIGH',
+                'GANN_SQUARE_SUPPORT', 'GANN_SQUARE_RESISTANCE',
+                'GANN_PRICE_TARGET_UP', 'GANN_PRICE_TARGET_DOWN',
+                'GANN_VOLUME_CONFIRMATION', 'GANN_TREND_ALIGNMENT'
+            ]
+
+            for col in pattern_columns:
+                result[col] = False
+
         return result
     
     def _calculate_angle_lines(self, data: pd.DataFrame, result: pd.DataFrame, 
@@ -213,7 +327,10 @@ class GannTools(BaseIndicator):
             pd.DataFrame: 江恩方格计算结果
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        required_columns = ["close"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
         
         # 如果未指定支点，则使用第一个点
         if pivot_idx is None:
@@ -518,11 +635,12 @@ class GannTools(BaseIndicator):
                 # 检查最近的时间周期
                 recent_cycles = time_cycles.tail(3)
                 
-                for idx, cycle_days in recent_cycles.items():
+                for i, (idx, cycle_days) in enumerate(recent_cycles.items()):
                     cycle_days = int(cycle_days)
-                    
-                    # 计算距离当前的天数
-                    days_from_cycle = len(data) - 1 - idx
+
+                    # 计算距离当前的天数（使用数值索引）
+                    numeric_idx = data.index.get_loc(idx) if idx in data.index else len(data) - 1 - i
+                    days_from_cycle = len(data) - 1 - numeric_idx
                     
                     if days_from_cycle <= 5:
                         if cycle_days >= 144:
@@ -532,7 +650,6 @@ class GannTools(BaseIndicator):
                     
                     # 预测下一个周期
                     if days_from_cycle == 0:  # 当前就是周期点
-                        next_cycle_date = idx + pd.Timedelta(days=cycle_days)
                         patterns.append(f"下一周期预计{cycle_days}天后")
         
         # 4. 江恩角度线聚集分析
@@ -867,4 +984,413 @@ class GannTools(BaseIndicator):
                     current_confidence = signals['confidence'].iloc[i]
                     signals.loc[signals.index[i], 'confidence'] = min(90, current_confidence + 10)
         
-        return signals 
+        return signals
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含：
+                - pivot_idx: 支点索引，默认0
+                - price_unit: 价格单位，默认None（自动计算）
+                - time_unit: 时间单位，默认1
+                - levels: 江恩方格级别数，默认9
+        """
+        self.pivot_idx = kwargs.get('pivot_idx', 0)
+        self.price_unit = kwargs.get('price_unit', None)
+        self.time_unit = kwargs.get('time_unit', 1)
+        self.levels = kwargs.get('levels', 9)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取GannTools相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        patterns = pd.DataFrame(index=data.index)
+
+        # 如果没有计算结果，返回空DataFrame
+        if self._result is None or self._result.empty:
+            return patterns
+
+        # 基于识别的形态创建布尔列
+        identified_patterns = self.identify_patterns(data)
+
+        # 初始化所有可能的形态列
+        pattern_columns = [
+            'GANN_1X1_SUPPORT', 'GANN_1X1_RESISTANCE',
+            'GANN_1X2_SUPPORT', 'GANN_1X2_RESISTANCE',
+            'GANN_2X1_SUPPORT', 'GANN_2X1_RESISTANCE',
+            'GANN_ANGLE_CLUSTER_SUPPORT', 'GANN_ANGLE_CLUSTER_RESISTANCE',
+            'GANN_1X1_BREAKOUT_UP', 'GANN_1X1_BREAKOUT_DOWN',
+            'GANN_TIME_CYCLE_LOW', 'GANN_TIME_CYCLE_HIGH',
+            'GANN_SQUARE_SUPPORT', 'GANN_SQUARE_RESISTANCE',
+            'GANN_PRICE_TARGET_UP', 'GANN_PRICE_TARGET_DOWN',
+            'GANN_VOLUME_CONFIRMATION', 'GANN_TREND_ALIGNMENT'
+        ]
+
+        for col in pattern_columns:
+            patterns[col] = False
+
+        # 根据识别的形态设置相应的布尔值
+        for pattern in identified_patterns:
+            if "江恩1x1线" in pattern:
+                if "支撑" in pattern:
+                    patterns['GANN_1X1_SUPPORT'] = True
+                elif "阻力" in pattern:
+                    patterns['GANN_1X1_RESISTANCE'] = True
+                elif "突破" in pattern:
+                    patterns['GANN_1X1_BREAKOUT_UP'] = True
+                elif "跌破" in pattern:
+                    patterns['GANN_1X1_BREAKOUT_DOWN'] = True
+
+            if "江恩1x2" in pattern:
+                if "支撑" in pattern:
+                    patterns['GANN_1X2_SUPPORT'] = True
+                elif "阻力" in pattern:
+                    patterns['GANN_1X2_RESISTANCE'] = True
+
+            if "江恩2x1" in pattern:
+                if "支撑" in pattern:
+                    patterns['GANN_2X1_SUPPORT'] = True
+                elif "阻力" in pattern:
+                    patterns['GANN_2X1_RESISTANCE'] = True
+
+            if "江恩多线" in pattern:
+                if "支撑" in pattern:
+                    patterns['GANN_ANGLE_CLUSTER_SUPPORT'] = True
+                elif "阻力" in pattern:
+                    patterns['GANN_ANGLE_CLUSTER_RESISTANCE'] = True
+
+            if "江恩周期" in pattern:
+                if "低点" in pattern:
+                    patterns['GANN_TIME_CYCLE_LOW'] = True
+                elif "高点" in pattern:
+                    patterns['GANN_TIME_CYCLE_HIGH'] = True
+
+            if "江恩方形" in pattern:
+                if "支撑" in pattern:
+                    patterns['GANN_SQUARE_SUPPORT'] = True
+                elif "阻力" in pattern:
+                    patterns['GANN_SQUARE_RESISTANCE'] = True
+
+            if "江恩上涨目标" in pattern:
+                patterns['GANN_PRICE_TARGET_UP'] = True
+            elif "江恩下跌目标" in pattern:
+                patterns['GANN_PRICE_TARGET_DOWN'] = True
+
+            if "放量" in pattern or "巨量" in pattern:
+                patterns['GANN_VOLUME_CONFIRMATION'] = True
+
+            if "趋势" in pattern:
+                patterns['GANN_TREND_ALIGNMENT'] = True
+
+        return patterns
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算GannTools指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于数据质量的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            # 检查是否有江恩角度线数据
+            gann_angle_columns = [col for col in self._result.columns if 'gann_' in col]
+            if gann_angle_columns:
+                # 江恩角度线数据越完整，置信度越高
+                data_completeness = len(gann_angle_columns) / 9  # 假设最多9条角度线
+                confidence += min(data_completeness * 0.1, 0.1)
+
+        # 3. 基于形态的置信度
+        if not patterns.empty:
+            # 检查GannTools形态（只计算布尔列）
+            bool_columns = patterns.select_dtypes(include=[bool]).columns
+            if len(bool_columns) > 0:
+                pattern_count = patterns[bool_columns].sum().sum()
+                if pattern_count > 0:
+                    confidence += min(pattern_count * 0.02, 0.15)
+
+        # 4. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.05, 0.1)
+
+        # 5. 基于数据长度的置信度
+        if len(score) >= 144:  # 江恩重要周期
+            confidence += 0.1
+        elif len(score) >= 90:  # 江恩中等周期
+            confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册GannTools指标的形态到全局形态注册表
+        """
+        # 注册江恩1x1线形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_1X1_SUPPORT",
+            display_name="江恩1x1线支撑",
+            description="价格在江恩1x1角度线获得支撑，重要的买入信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_1X1_RESISTANCE",
+            display_name="江恩1x1线阻力",
+            description="价格在江恩1x1角度线遇阻，重要的卖出信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0
+        )
+
+        # 注册江恩1x2线形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_1X2_SUPPORT",
+            display_name="江恩1x2线支撑",
+            description="价格在江恩1x2角度线获得支撑",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_1X2_RESISTANCE",
+            display_name="江恩1x2线阻力",
+            description="价格在江恩1x2角度线遇阻",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册江恩2x1线形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_2X1_SUPPORT",
+            display_name="江恩2x1线支撑",
+            description="价格在江恩2x1角度线获得支撑",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_2X1_RESISTANCE",
+            display_name="江恩2x1线阻力",
+            description="价格在江恩2x1角度线遇阻",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册江恩角度线聚集形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_ANGLE_CLUSTER_SUPPORT",
+            display_name="江恩多线聚集支撑",
+            description="多条江恩角度线聚集形成强力支撑",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_ANGLE_CLUSTER_RESISTANCE",
+            display_name="江恩多线聚集阻力",
+            description="多条江恩角度线聚集形成强力阻力",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-35.0
+        )
+
+        # 注册江恩突破形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_1X1_BREAKOUT_UP",
+            display_name="江恩1x1线向上突破",
+            description="价格向上突破江恩1x1角度线",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=40.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_1X1_BREAKOUT_DOWN",
+            display_name="江恩1x1线向下突破",
+            description="价格向下突破江恩1x1角度线",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-40.0
+        )
+
+        # 注册江恩时间周期形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_TIME_CYCLE_LOW",
+            display_name="江恩时间周期低点",
+            description="在江恩重要时间周期出现低点转折",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_TIME_CYCLE_HIGH",
+            display_name="江恩时间周期高点",
+            description="在江恩重要时间周期出现高点转折",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册江恩方格形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_SQUARE_SUPPORT",
+            display_name="江恩方格支撑",
+            description="价格在江恩方格支撑位获得支撑",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_SQUARE_RESISTANCE",
+            display_name="江恩方格阻力",
+            description="价格在江恩方格阻力位遇阻",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册江恩价格目标形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_PRICE_TARGET_UP",
+            display_name="江恩上涨价格目标",
+            description="价格接近江恩理论计算的上涨目标位",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_PRICE_TARGET_DOWN",
+            display_name="江恩下跌价格目标",
+            description="价格接近江恩理论计算的下跌目标位",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册确认形态
+        self.register_pattern_to_registry(
+            pattern_id="GANN_VOLUME_CONFIRMATION",
+            display_name="江恩成交量确认",
+            description="江恩信号伴随成交量放大确认",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GANN_TREND_ALIGNMENT",
+            display_name="江恩趋势一致",
+            description="江恩信号与主趋势方向一致",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        生成GannTools交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            dict: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if not self.has_result():
+            self._calculate(data, **kwargs)
+
+        if self._result is None or self._result.empty:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        # 使用generate_signals方法生成详细信号
+        detailed_signals = self.generate_signals(data, **kwargs)
+
+        # 转换为简化的信号格式
+        buy_signal = detailed_signals['buy_signal']
+        sell_signal = detailed_signals['sell_signal']
+
+        # 计算信号强度
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 基于评分计算信号强度
+        scores = detailed_signals['score']
+
+        # 买入信号强度
+        signal_strength[buy_signal] = (scores[buy_signal] - 50) / 50.0
+
+        # 卖出信号强度（负值）
+        signal_strength[sell_signal] = -(50 - scores[sell_signal]) / 50.0
+
+        # 标准化信号强度
+        signal_strength = signal_strength.clip(-1, 1)
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+
+        Returns:
+            str: 指标类型
+        """
+        return "GANNTOOLS"

@@ -98,7 +98,7 @@ class RSI(BaseIndicator):
             return patterns_df
 
         # 金叉和死叉
-        from indicators.common import crossover, crossunder
+        from utils.indicator_utils import crossover, crossunder
         patterns_df['RSI_GOLDEN_CROSS'] = crossover(calculated_data['rsi_ma_short'], calculated_data['rsi_ma_long'])
         patterns_df['RSI_DEATH_CROSS'] = crossunder(calculated_data['rsi_ma_short'], calculated_data['rsi_ma_long'])
 
@@ -146,19 +146,19 @@ class RSI(BaseIndicator):
             short_ma = calculated_data['rsi_ma_short']
             long_ma = calculated_data['rsi_ma_long']
             
-            from indicators.common import crossover, crossunder
+            from utils.indicator_utils import crossover, crossunder
             score[crossover(short_ma, long_ma)] += 20
             score[crossunder(short_ma, long_ma)] -= 20
             
         return score.clip(0, 100)
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
         """
         计算RSI指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态列表
+            patterns: 检测到的形态DataFrame
             signals: 生成的信号字典
 
         Returns:
@@ -182,12 +182,9 @@ class RSI(BaseIndicator):
 
         # 2. 基于形态的置信度
         pattern_confidence = 0.5
-        if isinstance(patterns, (list, pd.DataFrame)):
-            if isinstance(patterns, pd.DataFrame):
-                # 统计最近几个周期的形态数量
-                recent_patterns = patterns.iloc[-5:].sum().sum() if len(patterns) >= 5 else patterns.sum().sum()
-            else:
-                recent_patterns = len(patterns)
+        if not patterns.empty:
+            # 统计最近几个周期的形态数量
+            recent_patterns = patterns.iloc[-5:].sum().sum() if len(patterns) >= 5 else patterns.sum().sum()
 
             if recent_patterns > 0:
                 pattern_confidence = min(0.5 + recent_patterns * 0.1, 0.9)
@@ -205,3 +202,121 @@ class RSI(BaseIndicator):
         confidence = (score_confidence * 0.4 + pattern_confidence * 0.3 + signal_confidence * 0.3)
 
         return min(confidence, 1.0)
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+            signals = self.generate_signals(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, signals.to_dict('series') if hasattr(signals, 'to_dict') else {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册RSI指标的形态到全局形态注册表
+        """
+        # 注册RSI超买形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_OVERBOUGHT",
+            display_name="RSI超买",
+            description="RSI指标进入超买区域，市场可能过热",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册RSI超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_OVERSOLD",
+            display_name="RSI超卖",
+            description="RSI指标进入超卖区域，市场可能过冷",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        # 注册RSI金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_GOLDEN_CROSS",
+            display_name="RSI金叉",
+            description="RSI短期均线上穿长期均线，可能是买入信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册RSI死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_DEATH_CROSS",
+            display_name="RSI死叉",
+            description="RSI短期均线下穿长期均线，可能是卖出信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册RSI极度超买形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_EXTREME_OVERBOUGHT",
+            display_name="RSI极度超买",
+            description="RSI指标进入极度超买区域(>80)，市场极度过热",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册RSI极度超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_EXTREME_OVERSOLD",
+            display_name="RSI极度超卖",
+            description="RSI指标进入极度超卖区域(<20)，市场极度过冷",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0
+        )
+
+        # 注册RSI中性形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_NEUTRAL",
+            display_name="RSI中性",
+            description="RSI指标在中性区域(40-60)，市场相对平衡",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0
+        )

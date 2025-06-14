@@ -98,194 +98,62 @@ class MTM(BaseIndicator):
         
         return df_copy
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取MTM相关形态
-        
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-            
+
         Returns:
-            List[Dict[str, Any]]: 识别的形态列表
+            pd.DataFrame: 包含形态信息的DataFrame
         """
-        patterns = []
-        
         # 确保已计算指标
         if not self.has_result():
             self.calculate(data, **kwargs)
-        
+
         if self._result is None or 'mtm' not in self._result.columns:
-            return patterns
-        
+            return pd.DataFrame(index=data.index)
+
         # 获取MTM和MTMMA值
         mtm = self._result['mtm']
         mtmma = self._result['mtmma']
-        dates = self._result.index
-        
-        # 1. 识别MTM超买
-        for i in range(1, len(mtm)):
-            if i < 1:
-                continue
-                
-            if mtm.iloc[i] > self.overbought:
-                # 计算持续时间
-                duration = 1
-                for j in range(i+1, len(mtm)):
-                    if mtm.iloc[j] > self.overbought:
-                        duration += 1
-                    else:
-                        break
-                
-                # 如果持续时间足够长，添加形态
-                if duration >= 2:
-                    pattern = {
-                        "name": "MTM超买",
-                        "start_date": dates[i],
-                        "end_date": dates[min(i+duration-1, len(dates)-1)],
-                        "duration": duration,
-                        "strength": (mtm.iloc[i] - self.overbought) / abs(self.overbought) if self.overbought != 0 else 0.5,
-                        "description": f"MTM在超买区持续{duration}天，可能暗示价格上涨过快",
-                        "type": "bearish"  # 超买是看跌信号
-                    }
-                    patterns.append(pattern)
-                
-                # 跳过已经识别的区域
-                i += duration - 1
-        
-        # 2. 识别MTM超卖
-        for i in range(1, len(mtm)):
-            if i < 1:
-                continue
-                
-            if mtm.iloc[i] < self.oversold:
-                # 计算持续时间
-                duration = 1
-                for j in range(i+1, len(mtm)):
-                    if mtm.iloc[j] < self.oversold:
-                        duration += 1
-                    else:
-                        break
-                
-                # 如果持续时间足够长，添加形态
-                if duration >= 2:
-                    pattern = {
-                        "name": "MTM超卖",
-                        "start_date": dates[i],
-                        "end_date": dates[min(i+duration-1, len(dates)-1)],
-                        "duration": duration,
-                        "strength": (self.oversold - mtm.iloc[i]) / abs(self.oversold) if self.oversold != 0 else 0.5,
-                        "description": f"MTM在超卖区持续{duration}天，可能暗示价格下跌过快",
-                        "type": "bullish"  # 超卖是看涨信号
-                    }
-                    patterns.append(pattern)
-                
-                # 跳过已经识别的区域
-                i += duration - 1
-        
-        # 3. 识别MTM金叉
-        for i in range(1, len(mtm)):
-            if i < 1:
-                continue
-                
-            # MTM上穿MTMMA，金叉信号
-            if mtm.iloc[i-1] <= mtmma.iloc[i-1] and mtm.iloc[i] > mtmma.iloc[i]:
-                # 确定信号强度（基于交叉角度）
-                angle = self._calculate_cross_angle(mtm.iloc[i-1], mtm.iloc[i], mtmma.iloc[i-1], mtmma.iloc[i])
-                
-                pattern = {
-                    "name": "MTM金叉",
-                    "start_date": dates[i-1],
-                    "end_date": dates[i],
-                    "duration": 2,
-                    "strength": min(angle / 90, 1.0),  # 归一化到0-1
-                    "description": "MTM上穿MTMMA，动量由负转正，可能是买入信号",
-                    "type": "bullish"
-                }
-                patterns.append(pattern)
-        
-        # 4. 识别MTM死叉
-        for i in range(1, len(mtm)):
-            if i < 1:
-                continue
-                
-            # MTM下穿MTMMA，死叉信号
-            if mtm.iloc[i-1] >= mtmma.iloc[i-1] and mtm.iloc[i] < mtmma.iloc[i]:
-                # 确定信号强度（基于交叉角度）
-                angle = self._calculate_cross_angle(mtm.iloc[i-1], mtm.iloc[i], mtmma.iloc[i-1], mtmma.iloc[i])
-                
-                pattern = {
-                    "name": "MTM死叉",
-                    "start_date": dates[i-1],
-                    "end_date": dates[i],
-                    "duration": 2,
-                    "strength": min(angle / 90, 1.0),  # 归一化到0-1
-                    "description": "MTM下穿MTMMA，动量由正转负，可能是卖出信号",
-                    "type": "bearish"
-                }
-                patterns.append(pattern)
-        
-        # 5. 识别MTM背离
-        if 'close' in self._result.columns:
-            # 价格新高但MTM没有新高 - 顶背离
-            for i in range(20, len(mtm)):
-                if i < 5:
-                    continue
-                
-                # 获取近期价格和MTM
-                recent_prices = self._result['close'].iloc[i-20:i+1]
-                recent_mtm = mtm.iloc[i-20:i+1]
-                
-                # 判断价格是否创新高
-                if recent_prices.iloc[-1] > recent_prices.iloc[:-1].max():
-                    # 检查MTM是否没有同步创新高
-                    if recent_mtm.iloc[-1] < recent_mtm.iloc[:-1].max():
-                        strength = self._calculate_divergence_strength(
-                            recent_prices.iloc[-1], recent_prices.iloc[:-1].max(),
-                            recent_mtm.iloc[-1], recent_mtm.iloc[:-1].max()
-                        )
-                        
-                        pattern = {
-                            "name": "MTM顶背离",
-                            "start_date": dates[i-5],
-                            "end_date": dates[i],
-                            "duration": 5,
-                            "strength": strength,
-                            "description": "价格创新高但MTM未同步创新高，可能暗示上涨动能减弱",
-                            "type": "bearish"
-                        }
-                        patterns.append(pattern)
-            
-            # 价格新低但MTM没有新低 - 底背离
-            for i in range(20, len(mtm)):
-                if i < 5:
-                    continue
-                
-                # 获取近期价格和MTM
-                recent_prices = self._result['close'].iloc[i-20:i+1]
-                recent_mtm = mtm.iloc[i-20:i+1]
-                
-                # 判断价格是否创新低
-                if recent_prices.iloc[-1] < recent_prices.iloc[:-1].min():
-                    # 检查MTM是否没有同步创新低
-                    if recent_mtm.iloc[-1] > recent_mtm.iloc[:-1].min():
-                        strength = self._calculate_divergence_strength(
-                            recent_prices.iloc[-1], recent_prices.iloc[:-1].min(),
-                            recent_mtm.iloc[-1], recent_mtm.iloc[:-1].min()
-                        )
-                        
-                        pattern = {
-                            "name": "MTM底背离",
-                            "start_date": dates[i-5],
-                            "end_date": dates[i],
-                            "duration": 5,
-                            "strength": strength,
-                            "description": "价格创新低但MTM未同步创新低，可能暗示下跌动能减弱",
-                            "type": "bullish"
-                        }
-                        patterns.append(pattern)
-        
-        return patterns
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. MTM超买超卖形态
+        patterns_df['MTM_OVERBOUGHT'] = mtm > self.overbought
+        patterns_df['MTM_OVERSOLD'] = mtm < self.oversold
+
+        # 2. MTM金叉死叉形态
+        # 需要导入crossover和crossunder函数
+        from utils.indicator_utils import crossover, crossunder
+
+        patterns_df['MTM_GOLDEN_CROSS'] = crossover(mtm, mtmma)
+        patterns_df['MTM_DEATH_CROSS'] = crossunder(mtm, mtmma)
+
+        # 3. MTM零轴穿越形态
+        patterns_df['MTM_CROSS_UP_ZERO'] = crossover(mtm, 0)
+        patterns_df['MTM_CROSS_DOWN_ZERO'] = crossunder(mtm, 0)
+
+        # 4. MTM趋势形态
+        patterns_df['MTM_ABOVE_ZERO'] = mtm > 0
+        patterns_df['MTM_BELOW_ZERO'] = mtm < 0
+        patterns_df['MTM_ABOVE_MA'] = mtm > mtmma
+        patterns_df['MTM_BELOW_MA'] = mtm < mtmma
+
+        # 5. MTM强势形态（基于阈值的倍数）
+        if len(mtm) >= 5:
+            mtm_std = mtm.rolling(window=20, min_periods=5).std()
+            patterns_df['MTM_STRONG_UP'] = mtm > (mtm_std * 1.5)
+            patterns_df['MTM_STRONG_DOWN'] = mtm < -(mtm_std * 1.5)
+        else:
+            patterns_df['MTM_STRONG_UP'] = False
+            patterns_df['MTM_STRONG_DOWN'] = False
+
+        return patterns_df
     
     def _calculate_cross_angle(self, y1_prev, y1_curr, y2_prev, y2_curr):
         """计算两条线交叉时的角度"""
@@ -333,7 +201,7 @@ class MTM(BaseIndicator):
         signals = {}
         signals['buy_signal'] = pd.Series(False, index=data.index)
         signals['sell_signal'] = pd.Series(False, index=data.index)
-        signals['signal_strength'] = pd.Series(0, index=data.index)
+        signals['signal_strength'] = pd.Series(0.0, index=data.index, dtype=float)
     
         # 如果没有结果，返回空信号
         if self._result is None or 'mtm' not in self._result.columns:
@@ -350,7 +218,7 @@ class MTM(BaseIndicator):
                 signals['buy_signal'].iloc[i] = True
                 # 计算信号强度：基于交叉角度
                 angle = self._calculate_cross_angle(mtm.iloc[i-1], mtm.iloc[i], mtmma.iloc[i-1], mtmma.iloc[i])
-                signals['signal_strength'].iloc[i] = 50 + min(angle / 90 * 40, 40)  # 50-90
+                signals['signal_strength'].iloc[i] = float(50 + min(angle / 90 * 40, 40))  # 50-90
         
         # 生成死叉卖出信号
         for i in range(1, len(mtm)):
@@ -359,7 +227,7 @@ class MTM(BaseIndicator):
                 signals['sell_signal'].iloc[i] = True
                 # 计算信号强度：基于交叉角度
                 angle = self._calculate_cross_angle(mtm.iloc[i-1], mtm.iloc[i], mtmma.iloc[i-1], mtmma.iloc[i])
-                signals['signal_strength'].iloc[i] = 50 + min(angle / 90 * 40, 40)  # 50-90
+                signals['signal_strength'].iloc[i] = float(50 + min(angle / 90 * 40, 40))  # 50-90
         
         # 生成超卖买入信号
         for i in range(1, len(mtm)):
@@ -367,7 +235,7 @@ class MTM(BaseIndicator):
             if mtm.iloc[i-1] <= self.oversold and mtm.iloc[i] > self.oversold:
                 signals['buy_signal'].iloc[i] = True
                 # 信号强度基于超卖程度
-                signals['signal_strength'].iloc[i] = 60 + min((self.oversold - mtm.iloc[i-1]) / abs(self.oversold) * 30, 30)
+                signals['signal_strength'].iloc[i] = float(60 + min((self.oversold - mtm.iloc[i-1]) / abs(self.oversold) * 30, 30))
         
         # 生成超买卖出信号
         for i in range(1, len(mtm)):
@@ -375,22 +243,28 @@ class MTM(BaseIndicator):
             if mtm.iloc[i-1] >= self.overbought and mtm.iloc[i] < self.overbought:
                 signals['sell_signal'].iloc[i] = True
                 # 信号强度基于超买程度
-                signals['signal_strength'].iloc[i] = 60 + min((mtm.iloc[i-1] - self.overbought) / abs(self.overbought) * 30, 30)
+                signals['signal_strength'].iloc[i] = float(60 + min((mtm.iloc[i-1] - self.overbought) / abs(self.overbought) * 30, 30))
         
-        # 基于MTM背离形态生成信号
-        patterns = self.get_patterns(data, **kwargs)
-        for pattern in patterns:
-            if pattern['name'] == 'MTM底背离' and pattern['type'] == 'bullish':
-                end_date = pattern['end_date']
-                if end_date in signals['buy_signal'].index:
-                    signals['buy_signal'].loc[end_date] = True
-                    signals['signal_strength'].loc[end_date] = 70 + min(pattern['strength'] * 30, 20)
-            
-            elif pattern['name'] == 'MTM顶背离' and pattern['type'] == 'bearish':
-                end_date = pattern['end_date']
-                if end_date in signals['sell_signal'].index:
-                    signals['sell_signal'].loc[end_date] = True
-                    signals['signal_strength'].loc[end_date] = 70 + min(pattern['strength'] * 30, 20)
+        # 基于MTM形态生成信号
+        patterns_df = self.get_patterns(data, **kwargs)
+
+        # 基于金叉形态增强买入信号
+        if 'MTM_GOLDEN_CROSS' in patterns_df.columns:
+            golden_cross_signals = patterns_df['MTM_GOLDEN_CROSS']
+            for i, signal in enumerate(golden_cross_signals):
+                if signal and i < len(signals['buy_signal']):
+                    signals['buy_signal'].iloc[i] = True
+                    if signals['signal_strength'].iloc[i] < 70:
+                        signals['signal_strength'].iloc[i] = float(70)
+
+        # 基于死叉形态增强卖出信号
+        if 'MTM_DEATH_CROSS' in patterns_df.columns:
+            death_cross_signals = patterns_df['MTM_DEATH_CROSS']
+            for i, signal in enumerate(death_cross_signals):
+                if signal and i < len(signals['sell_signal']):
+                    signals['sell_signal'].iloc[i] = True
+                    if signals['signal_strength'].iloc[i] < 70:
+                        signals['signal_strength'].iloc[i] = float(70)
     
         return signals
         
@@ -457,53 +331,188 @@ class MTM(BaseIndicator):
                 adjust = min(angle / 90 * 15, 15)  # 最多减少15分
                 score.iloc[i] = max(score.iloc[i] - adjust, 10)
         
-        # 结合背离形态增强评分
-        patterns = self.get_patterns(data, **kwargs)
-        for pattern in patterns:
-            if pattern['name'] == 'MTM底背离' and pattern['type'] == 'bullish':
-                # 底背离增加评分
-                end_idx = data.index.get_loc(pattern['end_date'])
-                adjust_range = min(5, len(score) - end_idx - 1)
-                for j in range(adjust_range):
-                    idx = end_idx + j
-                    strength_factor = pattern['strength'] * (1 - j/adjust_range)  # 随时间衰减
-                    score.iloc[idx] = min(score.iloc[idx] + strength_factor * 20, 90)
-            
-            elif pattern['name'] == 'MTM顶背离' and pattern['type'] == 'bearish':
-                # 顶背离降低评分
-                end_idx = data.index.get_loc(pattern['end_date'])
-                adjust_range = min(5, len(score) - end_idx - 1)
-                for j in range(adjust_range):
-                    idx = end_idx + j
-                    strength_factor = pattern['strength'] * (1 - j/adjust_range)  # 随时间衰减
-                    score.iloc[idx] = max(score.iloc[idx] - strength_factor * 20, 10)
+        # 结合形态增强评分
+        patterns_df = self.get_patterns(data, **kwargs)
+
+        # 基于强势形态调整评分
+        if 'MTM_STRONG_UP' in patterns_df.columns:
+            strong_up_mask = patterns_df['MTM_STRONG_UP']
+            score.loc[strong_up_mask] = score.loc[strong_up_mask].apply(lambda x: min(x + 10, 90))
+
+        if 'MTM_STRONG_DOWN' in patterns_df.columns:
+            strong_down_mask = patterns_df['MTM_STRONG_DOWN']
+            score.loc[strong_down_mask] = score.loc[strong_down_mask].apply(lambda x: max(x - 10, 10))
         
         return score
-    
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> float:
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
+        """
+        计算MTM指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查强势形态
+            if 'MTM_STRONG_UP' in patterns.columns and patterns['MTM_STRONG_UP'].any():
+                confidence += 0.15
+            if 'MTM_STRONG_DOWN' in patterns.columns and patterns['MTM_STRONG_DOWN'].any():
+                confidence += 0.15
+
+            # 检查金叉死叉形态
+            if 'MTM_GOLDEN_CROSS' in patterns.columns and patterns['MTM_GOLDEN_CROSS'].any():
+                confidence += 0.1
+            if 'MTM_DEATH_CROSS' in patterns.columns and patterns['MTM_DEATH_CROSS'].any():
+                confidence += 0.1
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_strength = signals.get('signal_strength', pd.Series())
+            if not signal_strength.empty:
+                avg_strength = signal_strength.mean()
+                if avg_strength > 70:
+                    confidence += 0.1
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def register_patterns(self):
+        """
+        注册MTM指标的形态到全局形态注册表
+        """
+        # 注册MTM超买形态
+        self.register_pattern_to_registry(
+            pattern_id="MTM_OVERBOUGHT",
+            display_name="MTM超买",
+            description="MTM指标进入超买区域，可能暗示价格上涨过快",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0
+        )
+
+        # 注册MTM超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="MTM_OVERSOLD",
+            display_name="MTM超卖",
+            description="MTM指标进入超卖区域，可能暗示价格下跌过快",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0
+        )
+
+        # 注册MTM金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MTM_GOLDEN_CROSS",
+            display_name="MTM金叉",
+            description="MTM上穿MTMMA，动量由负转正，可能是买入信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0
+        )
+
+        # 注册MTM死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MTM_DEATH_CROSS",
+            display_name="MTM死叉",
+            description="MTM下穿MTMMA，动量由正转负，可能是卖出信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0
+        )
+
+        # 注册MTM顶背离形态
+        self.register_pattern_to_registry(
+            pattern_id="MTM_TOP_DIVERGENCE",
+            display_name="MTM顶背离",
+            description="价格创新高但MTM未同步创新高，可能暗示上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册MTM底背离形态
+        self.register_pattern_to_registry(
+            pattern_id="MTM_BOTTOM_DIVERGENCE",
+            display_name="MTM底背离",
+            description="价格创新低但MTM未同步创新低，可能暗示下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=20.0
+        )
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
-        
+
         Args:
             data: 输入数据
             **kwargs: 其他参数
-        
+
         Returns:
-            float: 评分(0-100)
+            Dict[str, Any]: 包含评分和置信度的字典
         """
-        # 计算原始评分序列
-        raw_scores = self.calculate_raw_score(data, **kwargs)
-        
-        # 如果数据不足，返回中性评分
-        if len(raw_scores) < 3:
-            return 50.0
-        
-        # 取最近的评分作为最终评分，但考虑近期趋势
-        recent_scores = raw_scores.iloc[-3:]
-        trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
-        
-        # 最终评分 = 最新评分 + 趋势调整
-        final_score = recent_scores.iloc[-1] + trend / 2
-        
-        # 确保评分在0-100范围内
-        return max(0, min(100, final_score)) 
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}

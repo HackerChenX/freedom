@@ -8,10 +8,11 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
+from indicators.base_indicator import BaseIndicator
 from indicators.trix import TRIX
 from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs
+from utils.indicator_utils import crossover, crossunder
 
 logger = get_logger(__name__)
 
@@ -50,10 +51,10 @@ class EnhancedTRIX(TRIX):
             use_smoothed_trix: 是否使用平滑后的TRIX
             smoothing_period: 平滑周期，默认为3
         """
-        self.indicator_type = "ENHANCEDTRIX"
         super().__init__(n=n, m=m)
         self.name = "EnhancedTRIX"
         self.description = "增强型TRIX三重指数平滑移动平均线，优化参数自适应性，增加多周期协同分析和市场环境感知"
+        self.indicator_type = "ENHANCEDTRIX"
         self.secondary_n = secondary_n
         self.multi_periods = multi_periods or [6, 12, 24, 48]
         self.adaptive_period = adaptive_period
@@ -100,7 +101,8 @@ class EnhancedTRIX(TRIX):
             pd.DataFrame: 计算结果，包含TRIX及其相关指标
         """
         # 确保数据包含必需的列
-        self.ensure_columns(data, ["close"])
+        if "close" not in data.columns:
+            raise ValueError("数据必须包含'close'列")
         
         # 保存价格数据用于后续分析
         self._price_data = data['close'].copy()
@@ -110,7 +112,17 @@ class EnhancedTRIX(TRIX):
             self._adjust_period_by_volatility(data)
         
         # 使用调整后的周期计算主要TRIX
-        result = super().calculate(data, self._adaptive_n, self.m)
+        # 临时设置参数
+        original_n = self.n
+        original_m = self.m
+        self.n = self._adaptive_n
+        self.m = self.m
+
+        result = super().calculate(data)
+
+        # 恢复原始参数
+        self.n = original_n
+        self.m = original_m
         
         # 计算次要周期TRIX
         secondary_trix = TRIX(n=self.secondary_n, m=self.m)
@@ -493,10 +505,10 @@ class EnhancedTRIX(TRIX):
         synergy['multi_period_bearish_signal'] = False
         
         # 检测多周期协同交叉信号
-        primary_cross_up_zero = self.crossover(primary_trix, 0)
-        primary_cross_down_zero = self.crossunder(primary_trix, 0)
-        secondary_cross_up_zero = self.crossover(secondary_trix, 0)
-        secondary_cross_down_zero = self.crossunder(secondary_trix, 0)
+        primary_cross_up_zero = crossover(primary_trix, 0)
+        primary_cross_down_zero = crossunder(primary_trix, 0)
+        secondary_cross_up_zero = crossover(secondary_trix, 0)
+        secondary_cross_down_zero = crossunder(secondary_trix, 0)
         
         # 主要周期和次要周期同时发出信号
         bullish_signal = primary_cross_up_zero & (secondary_trix > 0)
@@ -505,8 +517,8 @@ class EnhancedTRIX(TRIX):
         # 在较短周期信号之后较长周期也发出信号，强化确认
         for period, trix_series in self._multi_period_trix.items():
             if period > self._adaptive_n:  # 只考虑长周期
-                period_cross_up_zero = self.crossover(trix_series, 0)
-                period_cross_down_zero = self.crossunder(trix_series, 0)
+                period_cross_up_zero = crossover(trix_series, 0)
+                period_cross_down_zero = crossunder(trix_series, 0)
                 
                 # 在主周期信号后10个周期内，长周期也发出相同信号
                 for i in range(len(bullish_signal)):
@@ -543,8 +555,8 @@ class EnhancedTRIX(TRIX):
         quality = pd.DataFrame(index=self._result.index)
         
         # 检测零轴交叉
-        cross_up_zero = self.crossover(trix, 0)
-        cross_down_zero = self.crossunder(trix, 0)
+        cross_up_zero = crossover(trix, 0)
+        cross_down_zero = crossunder(trix, 0)
         
         quality['cross_up_zero'] = cross_up_zero
         quality['cross_down_zero'] = cross_down_zero
@@ -632,10 +644,10 @@ class EnhancedTRIX(TRIX):
         patterns['falling'] = trix < trix.shift(1)
         
         # 计算TRIX交叉信号
-        patterns['golden_cross'] = self.crossover(trix, matrix)
-        patterns['death_cross'] = self.crossunder(trix, matrix)
-        patterns['cross_up_zero'] = self.crossover(trix, 0)
-        patterns['cross_down_zero'] = self.crossunder(trix, 0)
+        patterns['golden_cross'] = crossover(trix, matrix)
+        patterns['death_cross'] = crossunder(trix, matrix)
+        patterns['cross_up_zero'] = crossover(trix, 0)
+        patterns['cross_down_zero'] = crossunder(trix, 0)
         
         # 高质量零轴交叉
         zero_cross_quality = self.evaluate_zero_cross_quality()
@@ -1103,4 +1115,269 @@ class EnhancedTRIX(TRIX):
                         recent_high = high.iloc[i-5:i+1].max()
                         stop_loss.iloc[i] = recent_high * 1.01  # 微调1%
         
-        return stop_loss 
+        return stop_loss
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        if 'n' in kwargs:
+            self.n = kwargs['n']
+        if 'm' in kwargs:
+            self.m = kwargs['m']
+        if 'secondary_n' in kwargs:
+            self.secondary_n = kwargs['secondary_n']
+        if 'adaptive_period' in kwargs:
+            self.adaptive_period = kwargs['adaptive_period']
+        if 'volatility_lookback' in kwargs:
+            self.volatility_lookback = kwargs['volatility_lookback']
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算EnhancedTRIX指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查EnhancedTRIX形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EnhancedTRIX相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        # 使用现有的identify_patterns方法
+        return self.identify_patterns()
+
+    def register_patterns(self):
+        """
+        注册EnhancedTRIX指标的形态到全局形态注册表
+        """
+        # 注册TRIX交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_GOLDEN_CROSS",
+            display_name="TRIX金叉",
+            description="TRIX线上穿信号线，表明上升趋势开始",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_DEATH_CROSS",
+            display_name="TRIX死叉",
+            description="TRIX线下穿信号线，表明下降趋势开始",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0
+        )
+
+        # 注册TRIX零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_ZERO_CROSS_UP",
+            display_name="TRIX零轴上穿",
+            description="TRIX从下方穿越零轴，表明趋势转为看涨",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_ZERO_CROSS_DOWN",
+            display_name="TRIX零轴下穿",
+            description="TRIX从上方穿越零轴，表明趋势转为看跌",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册TRIX背离形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_BULLISH_DIVERGENCE",
+            display_name="TRIX看涨背离",
+            description="价格创新低但TRIX未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_BEARISH_DIVERGENCE",
+            display_name="TRIX看跌背离",
+            description="价格创新高但TRIX未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0
+        )
+
+        # 注册TRIX多周期协同形态
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_MULTI_PERIOD_BULLISH",
+            display_name="TRIX多周期看涨",
+            description="多周期TRIX共振发出看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_MULTI_PERIOD_BEARISH",
+            display_name="TRIX多周期看跌",
+            description="多周期TRIX共振发出看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0
+        )
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成EnhancedTRIX交易信号
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, pd.Series]: 包含买卖信号的字典
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None:
+            return {
+                'buy_signal': pd.Series(False, index=data.index),
+                'sell_signal': pd.Series(False, index=data.index),
+                'signal_strength': pd.Series(0.0, index=data.index)
+            }
+
+        trix = self._result['TRIX']
+        matrix = self._result['MATRIX']
+
+        # 生成信号
+        buy_signal = pd.Series(False, index=data.index)
+        sell_signal = pd.Series(False, index=data.index)
+        signal_strength = pd.Series(0.0, index=data.index)
+
+        # 1. TRIX金叉死叉信号
+        golden_cross = crossover(trix, matrix)
+        death_cross = crossunder(trix, matrix)
+
+        buy_signal |= golden_cross
+        sell_signal |= death_cross
+        signal_strength += golden_cross * 0.7
+        signal_strength += death_cross * 0.7
+
+        # 2. TRIX零轴穿越信号
+        zero_cross_up = crossover(trix, 0)
+        zero_cross_down = crossunder(trix, 0)
+
+        buy_signal |= zero_cross_up
+        sell_signal |= zero_cross_down
+        signal_strength += zero_cross_up * 0.8
+        signal_strength += zero_cross_down * 0.8
+
+        # 3. 高质量零轴交叉信号
+        zero_cross_quality = self.evaluate_zero_cross_quality()
+        if not zero_cross_quality.empty and 'cross_quality_score' in zero_cross_quality.columns:
+            high_quality_up = zero_cross_up & (zero_cross_quality['cross_quality_score'] > 70)
+            high_quality_down = zero_cross_down & (zero_cross_quality['cross_quality_score'] > 70)
+
+            buy_signal |= high_quality_up
+            sell_signal |= high_quality_down
+            signal_strength += high_quality_up * 1.0
+            signal_strength += high_quality_down * 1.0
+
+        return {
+            'buy_signal': buy_signal,
+            'sell_signal': sell_signal,
+            'signal_strength': signal_strength
+        }
+
+    def atr(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+        """
+        计算平均真实范围(ATR)
+
+        Args:
+            high: 最高价序列
+            low: 最低价序列
+            close: 收盘价序列
+            period: 计算周期
+
+        Returns:
+            pd.Series: ATR序列
+        """
+        # 计算真实范围
+        tr1 = high - low
+        tr2 = abs(high - close.shift(1))
+        tr3 = abs(low - close.shift(1))
+
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+        # 计算ATR
+        atr = tr.rolling(window=period).mean()
+
+        return atr

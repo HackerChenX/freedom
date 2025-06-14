@@ -9,10 +9,10 @@ VIX恐慌指数指标
 
 import numpy as np
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
-from indicators.common import crossover, crossunder
+from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -35,10 +35,9 @@ class VIX(BaseIndicator):
             period: 计算周期，默认为10
             smooth_period: 平滑周期，默认为5
         """
-        super().__init__()
+        super().__init__(name="VIX", description="VIX恐慌指数，通过价格波动幅度衡量市场恐慌程度")
         self.period = period
         self.smooth_period = smooth_period
-        self.name = "VIX"
     
     def set_parameters(self, period: int = None, smooth_period: int = None):
         """
@@ -49,23 +48,161 @@ class VIX(BaseIndicator):
         if smooth_period is not None:
             self.smooth_period = smooth_period
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
-        """
-        获取VIX指标的技术形态
-        """
-        return self.identify_patterns(data, **kwargs)
-    
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VIX指标
-        
+
         Args:
-            df: 包含OHLCV数据的DataFrame
-                
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
         Returns:
             包含VIX指标的DataFrame
         """
-        return self.calculate(df)
+        return self._calculate(data)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取VIX相关形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算指标
+        if self._result is None:
+            self.calculate(data)
+
+        if self._result is None or 'vix' not in self._result.columns:
+            return pd.DataFrame(index=data.index)
+
+        # 获取VIX数据
+        vix = self._result['vix']
+        vix_smooth = self._result['vix_smooth']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. VIX水平形态
+        patterns_df['VIX_EXTREME_PANIC'] = vix > 50
+        patterns_df['VIX_HIGH_PANIC'] = (vix > 30) & (vix <= 50)
+        patterns_df['VIX_MODERATE_PANIC'] = (vix > 20) & (vix <= 30)
+        patterns_df['VIX_LOW_PANIC'] = (vix >= 15) & (vix <= 20)
+        patterns_df['VIX_EXTREME_OPTIMISM'] = vix < 10
+        patterns_df['VIX_LOW_FEAR'] = (vix >= 10) & (vix < 15)
+
+        # 2. VIX趋势形态
+        patterns_df['VIX_RISING'] = vix > vix.shift(1)
+        patterns_df['VIX_FALLING'] = vix < vix.shift(1)
+        patterns_df['VIX_RAPID_RISE'] = vix.pct_change() > 0.3
+        patterns_df['VIX_RAPID_FALL'] = vix.pct_change() < -0.2
+
+        # 3. VIX反转形态
+        patterns_df['VIX_TOP_REVERSAL'] = (
+            (vix.shift(2) < vix.shift(1)) &
+            (vix < vix.shift(1)) &
+            (vix.shift(1) > 25)
+        )
+        patterns_df['VIX_BOTTOM_REVERSAL'] = (
+            (vix.shift(2) > vix.shift(1)) &
+            (vix > vix.shift(1)) &
+            (vix.shift(1) < 15)
+        )
+
+        # 4. VIX与平滑线关系
+        patterns_df['VIX_ABOVE_SMOOTH'] = vix > vix_smooth
+        patterns_df['VIX_BELOW_SMOOTH'] = vix < vix_smooth
+        patterns_df['VIX_FAR_ABOVE_SMOOTH'] = vix > vix_smooth * 1.2
+        patterns_df['VIX_FAR_BELOW_SMOOTH'] = vix < vix_smooth * 0.8
+
+        # 5. VIX历史位置形态
+        if len(vix) >= 60:
+            vix_60_max = vix.rolling(window=60).max()
+            vix_60_min = vix.rolling(window=60).min()
+            vix_percentile = (vix - vix_60_min) / (vix_60_max - vix_60_min)
+
+            patterns_df['VIX_HISTORICAL_HIGH'] = vix_percentile > 0.9
+            patterns_df['VIX_RELATIVE_HIGH'] = (vix_percentile > 0.7) & (vix_percentile <= 0.9)
+            patterns_df['VIX_HISTORICAL_LOW'] = vix_percentile < 0.1
+            patterns_df['VIX_RELATIVE_LOW'] = (vix_percentile >= 0.1) & (vix_percentile < 0.3)
+        else:
+            patterns_df['VIX_HISTORICAL_HIGH'] = False
+            patterns_df['VIX_RELATIVE_HIGH'] = False
+            patterns_df['VIX_HISTORICAL_LOW'] = False
+            patterns_df['VIX_RELATIVE_LOW'] = False
+
+        return patterns_df
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算VIX指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 1. 基于评分的置信度
+        last_score = score.iloc[-1]
+
+        # 极端评分置信度较高
+        if last_score > 80 or last_score < 20:
+            confidence += 0.25
+        # 中性评分置信度中等
+        elif 40 <= last_score <= 60:
+            confidence += 0.1
+        else:
+            confidence += 0.15
+
+        # 2. 基于形态的置信度
+        if not patterns.empty:
+            # 检查VIX形态
+            pattern_count = patterns.sum().sum()
+            if pattern_count > 0:
+                confidence += min(pattern_count * 0.05, 0.2)
+
+        # 3. 基于信号的置信度
+        if signals:
+            # 检查信号强度
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            if signal_count > 0:
+                confidence += min(signal_count * 0.1, 0.15)
+
+        # 4. 基于评分趋势的置信度
+        if len(score) >= 3:
+            recent_scores = score.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 明确的趋势增加置信度
+            if abs(trend) > 10:
+                confidence += 0.05
+
+        # 确保置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算VIX指标
+
+        Args:
+            df: 包含OHLCV数据的DataFrame
+
+        Returns:
+            包含VIX指标的DataFrame
+        """
+        return self._calculate(df)
         
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -133,7 +270,7 @@ class VIX(BaseIndicator):
         # VIX处于低位的买入信号
         vix_avg = result['vix'].rolling(window=20).mean()
         for i in range(20, len(vix)):
-            if vix[i] < vix_avg[i] * 0.7:  # VIX低于20日均值的70%
+            if vix[i] < vix_avg.iloc[i] * 0.7:  # VIX低于20日均值的70%
                 result.iloc[i, result.columns.get_loc('buy_signal')] = 1
                 result.iloc[i, result.columns.get_loc('vix_buy_signal')] = 1
         
@@ -160,7 +297,7 @@ class VIX(BaseIndicator):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
 
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算VIX恐慌指数的原始评分
         
@@ -275,9 +412,136 @@ class VIX(BaseIndicator):
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
-        
-        return pd.DataFrame({'score': score}, index=data.index)
-    
+
+        return score
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算最终评分
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含评分和置信度的字典
+        """
+        try:
+            # 1. 计算原始评分序列
+            raw_scores = self.calculate_raw_score(data, **kwargs)
+
+            # 如果数据不足，返回中性评分
+            if len(raw_scores) < 3:
+                return {'score': 50.0, 'confidence': 0.5}
+
+            # 取最近的评分作为最终评分，但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
+
+            # 最终评分 = 最新评分 + 趋势调整
+            final_score = recent_scores.iloc[-1] + trend / 2
+
+            # 确保评分在0-100范围内
+            final_score = max(0, min(100, final_score))
+
+            # 2. 获取形态和信号
+            patterns = self.get_patterns(data, **kwargs)
+
+            # 3. 计算置信度
+            confidence = self.calculate_confidence(raw_scores, patterns, {})
+
+            return {
+                'score': final_score,
+                'confidence': confidence
+            }
+        except Exception as e:
+            logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
+            return {'score': 50.0, 'confidence': 0.0}
+
+    def register_patterns(self):
+        """
+        注册VIX指标的形态到全局形态注册表
+        """
+        # 注册VIX极度恐慌形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_EXTREME_PANIC",
+            display_name="VIX极度恐慌",
+            description="VIX超过50，市场极度恐慌，通常是买入机会",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0
+        )
+
+        # 注册VIX高度恐慌形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_HIGH_PANIC",
+            display_name="VIX高度恐慌",
+            description="VIX在30-50之间，市场高度恐慌",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册VIX极度乐观形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_EXTREME_OPTIMISM",
+            display_name="VIX极度乐观",
+            description="VIX低于10，市场极度乐观，风险较高",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0
+        )
+
+        # 注册VIX见顶回落形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_TOP_REVERSAL",
+            display_name="VIX见顶回落",
+            description="VIX从高位回落，恐慌情绪缓解，买入机会",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0
+        )
+
+        # 注册VIX见底回升形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_BOTTOM_REVERSAL",
+            display_name="VIX见底回升",
+            description="VIX从低位回升，恐慌情绪增加，风险信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
+        # 注册VIX快速上升形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_RAPID_RISE",
+            display_name="VIX快速上升",
+            description="VIX快速上升超过30%，恐慌情绪急剧增加",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0
+        )
+
+        # 注册VIX历史高位形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_HISTORICAL_HIGH",
+            display_name="VIX历史高位",
+            description="VIX处于60日历史高位，极度恐慌",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=15.0
+        )
+
+        # 注册VIX历史低位形态
+        self.register_pattern_to_registry(
+            pattern_id="VIX_HISTORICAL_LOW",
+            display_name="VIX历史低位",
+            description="VIX处于60日历史低位，市场过度乐观",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0
+        )
+
     def identify_patterns(self, data: pd.DataFrame) -> List[str]:
         """
         识别VIX恐慌指数相关的技术形态
