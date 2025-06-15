@@ -40,11 +40,16 @@ class AutoIndicatorAnalyzer:
     def __init__(self):
         """初始化分析器"""
         self.indicator_factory = IndicatorFactory()
+
+        # 确保指标注册表正确初始化
+        from indicators.indicator_registry import get_registry
+        self.indicator_registry = get_registry()
+
         self.score_manager = IndicatorScoreManager()
-        
+
         # 获取所有可用指标
         self.all_indicators = self._get_all_indicators()
-        
+
         # 仅在可用时初始化形态分析器
         self.pattern_analyzer = None
         if PATTERN_ANALYZER_AVAILABLE:
@@ -56,14 +61,24 @@ class AutoIndicatorAnalyzer:
     def _get_all_indicators(self) -> List[str]:
         """
         获取所有可用指标
-        
+
         Returns:
             List[str]: 所有可用指标列表
         """
+        # 获取指标注册表中所有注册的指标
+        registry_indicators = self.indicator_registry.get_indicator_names()
+
         # 获取工厂中所有注册的指标
-        indicators = self.indicator_factory.get_all_registered_indicators()
-        logger.info(f"已加载 {len(indicators)} 个技术指标")
-        return indicators
+        factory_indicators = self.indicator_factory.get_all_registered_indicators()
+
+        # 合并两个列表，去重
+        all_indicators = list(set(registry_indicators + factory_indicators))
+
+        logger.info(f"已加载 {len(all_indicators)} 个技术指标")
+        logger.info(f"  - 注册表指标: {len(registry_indicators)} 个: {registry_indicators}")
+        logger.info(f"  - 工厂指标: {len(factory_indicators)} 个: {factory_indicators}")
+
+        return all_indicators
     
     def analyze_all_indicators(self, 
                       stock_data: Dict[str, pd.DataFrame],
@@ -167,9 +182,13 @@ class AutoIndicatorAnalyzer:
         # 分析所有技术指标
         for indicator_name in self.all_indicators:
             try:
-                # 创建指标实例
-                indicator = self.indicator_factory.create_indicator(indicator_name)
-                
+                # 尝试从注册表创建指标实例
+                indicator = self.indicator_registry.create_indicator(indicator_name)
+
+                # 如果注册表创建失败，尝试从工厂创建
+                if indicator is None:
+                    indicator = self.indicator_factory.create_indicator(indicator_name)
+
                 # 检查指标实例是否有效
                 if indicator is None:
                     logger.warning(f"无法创建指标 {indicator_name} 的实例，跳过分析")
@@ -180,13 +199,19 @@ class AutoIndicatorAnalyzer:
                     logger.warning(f"指标 {indicator_name} 没有calculate方法，跳过分析")
                     continue
                 
-                # 计算指标值
-                indicator_df = indicator.calculate(df)
-                
+                # 计算指标值 - 使用数据副本确保原始数据不被修改
+                df_copy = df.copy()
+                indicator_df = indicator.calculate(df_copy)
+
+                # 检查指标计算结果是否有效
+                if indicator_df is None or indicator_df.empty:
+                    logger.debug(f"指标 {indicator_name} 计算结果为空，跳过形态分析")
+                    continue
+
                 # 识别形态
                 indicator_hits = self._analyze_indicator_patterns(
                     indicator,
-                    indicator_df, 
+                    indicator_df,
                     target_idx
                 )
                 
@@ -289,32 +314,112 @@ class AutoIndicatorAnalyzer:
             List[Dict[str, Any]]: 命中的形态列表
         """
         hit_patterns = []
-        indicator_name = indicator.name
         
         try:
-            # 获取指标的所有形态
-            patterns_result = indicator.get_patterns(indicator_df)
+            # 获取指标名称（更安全的方式）
+            indicator_name = getattr(indicator, 'name', indicator.__class__.__name__)
+
+            # 尝试获取形态识别结果
+            patterns_result = None
+
+            # 方法1：尝试使用get_patterns方法
+            if hasattr(indicator, 'get_patterns') and callable(getattr(indicator, 'get_patterns')):
+                try:
+                    patterns_result = indicator.get_patterns(indicator_df)
+                except Exception as e:
+                    logger.debug(f"指标 {indicator_name} 的get_patterns方法调用失败: {e}")
+
+            # 方法2：尝试使用identify_patterns方法
+            if patterns_result is None and hasattr(indicator, 'identify_patterns') and callable(getattr(indicator, 'identify_patterns')):
+                try:
+                    patterns_result = indicator.identify_patterns(indicator_df)
+                except Exception as e:
+                    logger.debug(f"指标 {indicator_name} 的identify_patterns方法调用失败: {e}")
+
+            # 如果都没有获取到结果，直接返回
+            if patterns_result is None:
+                logger.debug(f"指标 {indicator_name} 没有返回形态识别结果")
+                return hit_patterns
             
             # 如果返回的是布尔型DataFrame
             if isinstance(patterns_result, pd.DataFrame) and not patterns_result.empty:
-                # 提取目标行的形态
-                target_patterns = patterns_result.iloc[target_idx]
-                
-                # 筛选出值为True的形态
-                hit_pattern_ids = target_patterns[target_patterns == True].index.tolist()
+                # 确保索引连续性，避免"Gaps in blk ref_locs"错误
+                try:
+                    # 检查target_idx是否在有效范围内
+                    if target_idx >= len(patterns_result):
+                        logger.debug(f"指标 {indicator_name} 的target_idx({target_idx})超出patterns_result长度({len(patterns_result)})，尝试使用最后一行数据")
+                        # 使用最后一行数据作为替代
+                        if len(patterns_result) > 0:
+                            target_idx = len(patterns_result) - 1
+                        else:
+                            return hit_patterns
+
+                    # 创建数据副本并重置索引以确保连续性
+                    patterns_result_safe = patterns_result.copy()
+                    patterns_result_safe = patterns_result_safe.reset_index(drop=True)
+
+                    # 确保所有列都是布尔类型，避免数据类型冲突
+                    for col in patterns_result_safe.columns:
+                        if patterns_result_safe[col].dtype != bool:
+                            patterns_result_safe[col] = patterns_result_safe[col].astype(bool)
+
+                    # 安全地提取目标行的形态
+                    if target_idx < len(patterns_result_safe):
+                        target_patterns = patterns_result_safe.iloc[target_idx].copy()
+                        # 筛选出值为True的形态
+                        hit_pattern_ids = target_patterns[target_patterns == True].index.tolist()
+                    else:
+                        hit_pattern_ids = []
+
+                except Exception as e:
+                    logger.warning(f"处理指标 {indicator_name} 的形态数据时出错: {e}，尝试备用方法")
+                    # 备用方法：使用最安全的方式访问数据
+                    try:
+                        hit_pattern_ids = []
+                        if target_idx < len(patterns_result):
+                            # 使用最安全的.iat方法逐列检查，避免pandas内部索引问题
+                            for i, col in enumerate(patterns_result.columns):
+                                try:
+                                    # 使用.iat进行最安全的单元格访问
+                                    cell_value = patterns_result.iat[target_idx, i]
+                                    if pd.notna(cell_value) and bool(cell_value):
+                                        hit_pattern_ids.append(col)
+                                except (IndexError, ValueError) as e:
+                                    logger.debug(f"指标 {indicator_name} 访问列 {col} 时出错: {e}")
+                                    continue
+                    except Exception as e2:
+                        logger.error(f"指标 {indicator_name} 形态数据处理完全失败: {e2}")
+                        return hit_patterns
                 
                 # 获取命中的形态信息
                 for pattern_id in hit_pattern_ids:
                     # 获取形态的详细信息
-                    pattern_info = indicator.get_pattern_info(pattern_id)
-                    
+                    try:
+                        pattern_info = indicator.get_pattern_info(pattern_id)
+
+                        # 确保pattern_info是字典类型
+                        if isinstance(pattern_info, dict):
+                            pattern_name = pattern_info.get('name', pattern_id)
+                            description = pattern_info.get('description', '')
+                            pattern_type = pattern_info.get('type', 'UNKNOWN')
+                        else:
+                            # 如果返回的不是字典，使用默认值
+                            pattern_name = str(pattern_info) if pattern_info else pattern_id
+                            description = ''
+                            pattern_type = 'UNKNOWN'
+                    except Exception as e:
+                        logger.warning(f"获取指标 {indicator_name} 形态 {pattern_id} 信息时出错: {e}")
+                        pattern_name = pattern_id
+                        description = ''
+                        pattern_type = 'UNKNOWN'
+
                     hit_patterns.append({
                         "type": "indicator",
                         "indicator_name": indicator_name,
                         "pattern_id": pattern_id,
-                        "pattern_name": pattern_info.get('name', pattern_id),
-                        "description": pattern_info.get('description', ''),
-                        "pattern_type": pattern_info.get('type', 'UNKNOWN')
+                        "pattern_name": pattern_name,
+                        "description": description,
+                        "pattern_type": pattern_type
                     })
 
             # 如果返回的是列表（已弃用的旧格式）
@@ -339,14 +444,31 @@ class AutoIndicatorAnalyzer:
                     # 检查目标日期是否在形态有效期内
                     if start_dt <= target_date <= end_dt:
                         # 确保返回格式统一
-                        pattern_info = indicator.get_pattern_info(pattern_dict.get('id'))
+                        try:
+                            pattern_info = indicator.get_pattern_info(pattern_dict.get('id'))
+
+                            # 确保pattern_info是字典类型
+                            if isinstance(pattern_info, dict):
+                                pattern_name = pattern_dict.get('name') or pattern_info.get('name')
+                                description = pattern_dict.get('description') or pattern_info.get('description')
+                                pattern_type = pattern_dict.get('type') or pattern_info.get('type', 'UNKNOWN')
+                            else:
+                                pattern_name = pattern_dict.get('name') or str(pattern_info) if pattern_info else pattern_dict.get('id')
+                                description = pattern_dict.get('description', '')
+                                pattern_type = pattern_dict.get('type', 'UNKNOWN')
+                        except Exception as e:
+                            logger.warning(f"获取指标 {indicator_name} 形态信息时出错: {e}")
+                            pattern_name = pattern_dict.get('name', pattern_dict.get('id'))
+                            description = pattern_dict.get('description', '')
+                            pattern_type = pattern_dict.get('type', 'UNKNOWN')
+
                         hit_patterns.append({
                             "type": "indicator",
                             "indicator_name": indicator_name,
                             "pattern_id": pattern_dict.get('id'),
-                            "pattern_name": pattern_dict.get('name') or pattern_info.get('name'),
-                            "description": pattern_dict.get('description') or pattern_info.get('description'),
-                            "pattern_type": pattern_dict.get('type') or pattern_info.get('type', 'UNKNOWN'),
+                            "pattern_name": pattern_name,
+                            "description": description,
+                            "pattern_type": pattern_type,
                             "details": pattern_dict # 保留原始信息
                         })
 
@@ -365,17 +487,22 @@ class AutoIndicatorAnalyzer:
     def _get_indicator_instance(self, indicator_name: str) -> Optional[BaseIndicator]:
         """
         获取指标实例
-        
+
         Args:
             indicator_name: 指标名称
-            
+
         Returns:
             Optional[BaseIndicator]: 指标实例，获取失败则返回None
         """
         try:
-            # 创建指标实例
-            indicator = self.indicator_factory.create_indicator(indicator_name)
+            # 尝试从注册表创建指标实例
+            indicator = self.indicator_registry.create_indicator(indicator_name)
+
+            # 如果注册表创建失败，尝试从工厂创建
+            if indicator is None:
+                indicator = self.indicator_factory.create_indicator(indicator_name)
+
             return indicator
         except Exception as e:
             logger.error(f"创建指标 {indicator_name} 实例时出错: {e}")
-            return None 
+            return None

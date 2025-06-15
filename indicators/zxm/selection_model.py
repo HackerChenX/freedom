@@ -64,40 +64,52 @@ class SelectionModel(BaseIndicator):
         try:
             # 1. 计算趋势指标
             trend_result = self.trend_detector.calculate(data)
-            result["TrendDirection"] = trend_result["TrendDirection"]
+            # TrendDetector返回的是TrendState，不是TrendDirection
+            result.loc[:, "TrendDirection"] = trend_result["TrendState"]
             
             # 2. 计算弹性指标
             elasticity_result = self.elasticity_indicator.calculate(data)
-            result["ElasticityRatio"] = elasticity_result["ElasticityRatio"]
-            result["BounceStrength"] = elasticity_result["BounceStrength"]
-            result["ElasticityBuySignal"] = elasticity_result["BuySignal"]
+            result.loc[:, "ElasticityRatio"] = elasticity_result["ElasticityRatio"]
+            result.loc[:, "BounceStrength"] = elasticity_result["BounceStrength"]
+            result.loc[:, "ElasticityBuySignal"] = elasticity_result["BuySignal"]
             
             # 3. 计算幅度弹性指标
             amplitude_elasticity_result = self.amplitude_elasticity_indicator.calculate(data)
-            result["AmplitudeElasticityRatio"] = amplitude_elasticity_result["AmplitudeElasticityRatio"]
+            # AmplitudeElasticity指标返回的是"Amplitude"列，不是"AmplitudeElasticityRatio"
+            if "Amplitude" in amplitude_elasticity_result.columns:
+                result.loc[:, "AmplitudeElasticityRatio"] = amplitude_elasticity_result["Amplitude"]
+            else:
+                # 如果没有Amplitude列，使用默认值
+                result.loc[:, "AmplitudeElasticityRatio"] = 0.0
             
             # 4. 计算反弹检测指标
             bounce_result = self.bounce_detector.calculate(data)
-            result["BounceSignal"] = bounce_result["BounceSignal"]
-            result["PullbackBuyPoint"] = bounce_result["PullbackBuyPoint"]
+            result.loc[:, "BounceSignal"] = bounce_result["BounceSignal"]
+            result.loc[:, "PullbackBuyPoint"] = bounce_result["PullbackBuyPoint"]
             
             # 5. 计算综合评分
             score_result = self.score_calculator.calculate(data)
-            result["TrendScore"] = score_result["TrendScore"]
-            result["MomentumScore"] = score_result["MomentumScore"]
-            result["VolatilityScore"] = score_result["VolatilityScore"]
-            result["VolumeScore"] = score_result["VolumeScore"]
-            result["ValueScore"] = score_result["ValueScore"]
-            result["FinalScore"] = score_result["FinalScore"]
+            result.loc[:, "TrendScore"] = score_result["TrendScore"]
+            result.loc[:, "MomentumScore"] = score_result["MomentumScore"]
+            result.loc[:, "VolatilityScore"] = score_result["VolatilityScore"]
+            result.loc[:, "VolumeScore"] = score_result["VolumeScore"]
+
+            # ValueScore可能不存在，需要检查
+            if "ValueScore" in score_result.columns:
+                result.loc[:, "ValueScore"] = score_result["ValueScore"]
+            else:
+                result.loc[:, "ValueScore"] = 50.0  # 默认中性评分
+
+            result.loc[:, "FinalScore"] = score_result["FinalScore"]
             
             # 6. 计算买点信号
             buypoint_result = self.buy_point_detector.calculate(data)
-            result["VolumeRiseBuyPoint"] = buypoint_result["VolumeRiseBuyPoint"]
-            result["PullbackStabilizeBuyPoint"] = buypoint_result["PullbackStabilizeBuyPoint"]
-            result["BreakoutBuyPoint"] = buypoint_result["BreakoutBuyPoint"]
-            result["BottomVolumeBuyPoint"] = buypoint_result["BottomVolumeBuyPoint"]
-            result["VolumeShrinkBuyPoint"] = buypoint_result["VolumeShrinkBuyPoint"]
-            result["AnyBuyPoint"] = (
+            result.loc[:, "VolumeRiseBuyPoint"] = buypoint_result["VolumeRiseBuyPoint"]
+            result.loc[:, "PullbackStabilizeBuyPoint"] = buypoint_result["PullbackStabilizeBuyPoint"]
+            result.loc[:, "BreakoutBuyPoint"] = buypoint_result["BreakoutBuyPoint"]
+            result.loc[:, "BottomVolumeBuyPoint"] = buypoint_result["BottomVolumeBuyPoint"]
+            result.loc[:, "VolumeShrinkBuyPoint"] = buypoint_result["VolumeShrinkBuyPoint"]
+            result.loc[:, "AnyBuyPoint"] = (
                 buypoint_result["VolumeRiseBuyPoint"] | 
                 buypoint_result["PullbackStabilizeBuyPoint"] | 
                 buypoint_result["BreakoutBuyPoint"] | 
@@ -108,21 +120,29 @@ class SelectionModel(BaseIndicator):
             # 7. 计算洗盘信号
             try:
                 washplate_result = self.wash_plate_detector.calculate(data)
-                result["ShockWash"] = washplate_result["ShockWash"]
-                result["PullbackWash"] = washplate_result["PullbackWash"]
-                result["FalseBreakWash"] = washplate_result["FalseBreakWash"]
-                result["TimeWash"] = washplate_result["TimeWash"]
-                result["ContinuousYinWash"] = washplate_result["ContinuousYinWash"]
-                result["AnyWashPlate"] = (
-                    washplate_result["ShockWash"] | 
-                    washplate_result["PullbackWash"] | 
-                    washplate_result["FalseBreakWash"] | 
-                    washplate_result["TimeWash"] | 
-                    washplate_result["ContinuousYinWash"]
+
+                # 使用正确的列名（WashPlateType枚举值）
+                result.loc[:, "ShockWash"] = washplate_result.get("横盘震荡洗盘", pd.Series(False, index=data.index))
+                result.loc[:, "PullbackWash"] = washplate_result.get("回调洗盘", pd.Series(False, index=data.index))
+                result.loc[:, "FalseBreakWash"] = washplate_result.get("假突破洗盘", pd.Series(False, index=data.index))
+                result.loc[:, "TimeWash"] = washplate_result.get("时间洗盘", pd.Series(False, index=data.index))
+                result.loc[:, "ContinuousYinWash"] = washplate_result.get("连续阴线洗盘", pd.Series(False, index=data.index))
+
+                result.loc[:, "AnyWashPlate"] = (
+                    result["ShockWash"] |
+                    result["PullbackWash"] |
+                    result["FalseBreakWash"] |
+                    result["TimeWash"] |
+                    result["ContinuousYinWash"]
                 )
             except Exception as e:
                 logger.error(f"洗盘指标计算错误: {e}")
-                result["AnyWashPlate"] = pd.Series(False, index=data.index)
+                result.loc[:, "ShockWash"] = pd.Series(False, index=data.index)
+                result.loc[:, "PullbackWash"] = pd.Series(False, index=data.index)
+                result.loc[:, "FalseBreakWash"] = pd.Series(False, index=data.index)
+                result.loc[:, "TimeWash"] = pd.Series(False, index=data.index)
+                result.loc[:, "ContinuousYinWash"] = pd.Series(False, index=data.index)
+                result.loc[:, "AnyWashPlate"] = pd.Series(False, index=data.index)
             
             # 8. 计算整合选股信号
             # a. 强趋势上涨股
@@ -141,14 +161,14 @@ class SelectionModel(BaseIndicator):
             low_buy_elastic = (result["ElasticityBuySignal"] | result["BottomVolumeBuyPoint"]) & (result["BounceStrength"] >= 50)
             
             # 整合选股结果
-            result["StrongUptrendSelect"] = strong_uptrend
-            result["VolumeBreakoutSelect"] = volume_breakout
-            result["PullbackBuySelect"] = pullback_buy
-            result["WashplateStartSelect"] = washplate_start
-            result["LowBuyElasticSelect"] = low_buy_elastic
+            result.loc[:, "StrongUptrendSelect"] = strong_uptrend
+            result.loc[:, "VolumeBreakoutSelect"] = volume_breakout
+            result.loc[:, "PullbackBuySelect"] = pullback_buy
+            result.loc[:, "WashplateStartSelect"] = washplate_start
+            result.loc[:, "LowBuyElasticSelect"] = low_buy_elastic
             
             # 综合选股信号 - 任意一种选股条件满足
-            result["FinalSelect"] = (
+            result.loc[:, "FinalSelect"] = (
                 strong_uptrend | 
                 volume_breakout | 
                 pullback_buy | 
@@ -200,7 +220,7 @@ class SelectionModel(BaseIndicator):
                 # 综合计算
                 selection_score[i] = min(100, base_score + buy_point_bonus + washplate_bonus + trend_bonus + elasticity_bonus)
             
-            result["SelectionScore"] = selection_score
+            result.loc[:, "SelectionScore"] = selection_score
             
             # 10. 计算买入优先级
             # 将选中的股票按优先级排序（1-5，1为最高）
@@ -228,14 +248,14 @@ class SelectionModel(BaseIndicator):
                 if result["SelectionScore"].iloc[i] >= 90 and priority[i] > 1:
                     priority[i] -= 1
             
-            result["BuyPriority"] = priority
+            result.loc[:, "BuyPriority"] = priority
         
         except Exception as e:
             logger.error(f"选股模型计算错误: {e}")
             # 设置默认值，确保结果不为空
-            result["FinalSelect"] = pd.Series(False, index=data.index)
-            result["SelectionScore"] = pd.Series(50, index=data.index)
-            result["BuyPriority"] = pd.Series(0, index=data.index)
+            result.loc[:, "FinalSelect"] = pd.Series(False, index=data.index)
+            result.loc[:, "SelectionScore"] = pd.Series(50, index=data.index)
+            result.loc[:, "BuyPriority"] = pd.Series(0, index=data.index)
         
         return result
     
@@ -370,23 +390,23 @@ class SelectionModel(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["FinalSelect"]
-        signals['sell_signal'] = False  # 选股模型不产生卖出信号
-        signals['neutral_signal'] = ~result["FinalSelect"]
+        signals.loc[:, 'buy_signal'] = result["FinalSelect"]
+        signals.loc[:, 'sell_signal'] = False  # 选股模型不产生卖出信号
+        signals.loc[:, 'neutral_signal'] = ~result["FinalSelect"]
         
         # 设置趋势
         if "TrendDirection" in result.columns:
-            signals['trend'] = result["TrendDirection"]
+            signals.loc[:, 'trend'] = result["TrendDirection"]
         elif "TrendState" in result.columns:
-            signals['trend'] = result["TrendState"]
+            signals.loc[:, 'trend'] = result["TrendState"]
         else:
-            signals['trend'] = 0  # 默认中性
+            signals.loc[:, 'trend'] = 0  # 默认中性
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         
         # 根据选股类型设置信号类型
         for i in signals.index:
@@ -402,7 +422,7 @@ class SelectionModel(BaseIndicator):
                 signals.loc[i, 'signal_type'] = 'low_buy_elastic'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in signals.index:
@@ -429,7 +449,7 @@ class SelectionModel(BaseIndicator):
                 signals.loc[i, 'signal_desc'] = f"选股信号：{type_desc}，得分{score_val:.1f}，优先级{priority:.0f}"
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据选股得分和优先级调整置信度
         for i in signals.index:
@@ -444,7 +464,7 @@ class SelectionModel(BaseIndicator):
                 signals.loc[i, 'confidence'] = min(95, max(50, 60 + score_adj + priority_adj))
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         
         # 高优先级选股风险较低
         signals.loc[result["BuyPriority"] <= 2, 'risk_level'] = '低'
@@ -453,7 +473,7 @@ class SelectionModel(BaseIndicator):
         signals.loc[result["BuyPriority"] >= 4, 'risk_level'] = '高'
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         
         # 根据优先级和得分设置仓位
         for i in signals.index[signals['buy_signal']]:
@@ -485,7 +505,7 @@ class SelectionModel(BaseIndicator):
             signals.loc[i, 'position_size'] = min(0.7, base_position + score_adj)
         
         # 止损位
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         
         # 根据选股类型设置不同的止损策略
         for i in signals.index[signals['buy_signal']]:
@@ -523,7 +543,7 @@ class SelectionModel(BaseIndicator):
                 continue
         
         # 市场环境
-        signals['market_env'] = 'normal'
+        signals.loc[:, 'market_env'] = 'normal'
         if "TrendDirection" in result.columns:
             signals.loc[result["TrendDirection"] == 1, 'market_env'] = 'bull_market'
             signals.loc[result["TrendDirection"] == -1, 'market_env'] = 'bear_market'
@@ -534,7 +554,7 @@ class SelectionModel(BaseIndicator):
             signals.loc[result["TrendState"] == 0, 'market_env'] = 'sideways_market'
         
         # 成交量确认
-        signals['volume_confirmation'] = True
+        signals.loc[:, 'volume_confirmation'] = True
         
         return signals
 
@@ -611,48 +631,48 @@ class SelectionModel(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础选股信号形态
-        patterns_df["选股系统买入信号"] = result["FinalSelect"]
+        patterns_df.loc[:, "选股系统买入信号"] = result["FinalSelect"]
 
         # 选股类型形态
-        patterns_df["强趋势上涨股"] = result["StrongUptrendSelect"]
-        patterns_df["放量突破股"] = result["VolumeBreakoutSelect"]
-        patterns_df["回调买点股"] = result["PullbackBuySelect"]
-        patterns_df["洗盘后启动股"] = result["WashplateStartSelect"]
-        patterns_df["低吸高弹性股"] = result["LowBuyElasticSelect"]
+        patterns_df.loc[:, "强趋势上涨股"] = result["StrongUptrendSelect"]
+        patterns_df.loc[:, "放量突破股"] = result["VolumeBreakoutSelect"]
+        patterns_df.loc[:, "回调买点股"] = result["PullbackBuySelect"]
+        patterns_df.loc[:, "洗盘后启动股"] = result["WashplateStartSelect"]
+        patterns_df.loc[:, "低吸高弹性股"] = result["LowBuyElasticSelect"]
 
         # 优先级形态
-        patterns_df["最高优先级选股"] = result["BuyPriority"] == 1
-        patterns_df["高优先级选股"] = result["BuyPriority"] == 2
-        patterns_df["中等优先级选股"] = result["BuyPriority"] == 3
-        patterns_df["低优先级选股"] = result["BuyPriority"] == 4
-        patterns_df["最低优先级选股"] = result["BuyPriority"] == 5
+        patterns_df.loc[:, "最高优先级选股"] = result["BuyPriority"] == 1
+        patterns_df.loc[:, "高优先级选股"] = result["BuyPriority"] == 2
+        patterns_df.loc[:, "中等优先级选股"] = result["BuyPriority"] == 3
+        patterns_df.loc[:, "低优先级选股"] = result["BuyPriority"] == 4
+        patterns_df.loc[:, "最低优先级选股"] = result["BuyPriority"] == 5
 
         # 趋势形态
         if "TrendDirection" in result.columns:
-            patterns_df["超强上升趋势"] = result["TrendDirection"] == 1
-            patterns_df["下降趋势"] = result["TrendDirection"] == -1
-            patterns_df["震荡趋势"] = result["TrendDirection"] == 0
+            patterns_df.loc[:, "超强上升趋势"] = result["TrendDirection"] == 1
+            patterns_df.loc[:, "下降趋势"] = result["TrendDirection"] == -1
+            patterns_df.loc[:, "震荡趋势"] = result["TrendDirection"] == 0
         elif "TrendState" in result.columns:
-            patterns_df["上升趋势"] = result["TrendState"] == 1
-            patterns_df["下降趋势"] = result["TrendState"] == -1
-            patterns_df["震荡趋势"] = result["TrendState"] == 0
+            patterns_df.loc[:, "上升趋势"] = result["TrendState"] == 1
+            patterns_df.loc[:, "下降趋势"] = result["TrendState"] == -1
+            patterns_df.loc[:, "震荡趋势"] = result["TrendState"] == 0
         else:
-            patterns_df["趋势未知"] = True
+            patterns_df.loc[:, "趋势未知"] = True
 
         # 买点信号形态
-        patterns_df["放量上涨买点"] = result["VolumeRiseBuyPoint"]
-        patterns_df["回调企稳买点"] = result["PullbackStabilizeBuyPoint"]
-        patterns_df["突破买点"] = result["BreakoutBuyPoint"]
-        patterns_df["底部放量买点"] = result["BottomVolumeBuyPoint"]
-        patterns_df["缩量整理买点"] = result["VolumeShrinkBuyPoint"]
+        patterns_df.loc[:, "放量上涨买点"] = result["VolumeRiseBuyPoint"]
+        patterns_df.loc[:, "回调企稳买点"] = result["PullbackStabilizeBuyPoint"]
+        patterns_df.loc[:, "突破买点"] = result["BreakoutBuyPoint"]
+        patterns_df.loc[:, "底部放量买点"] = result["BottomVolumeBuyPoint"]
+        patterns_df.loc[:, "缩量整理买点"] = result["VolumeShrinkBuyPoint"]
 
         # 洗盘信号形态
         if "AnyWashPlate" in result.columns:
-            patterns_df["横盘震荡洗盘"] = result.get("ShockWash", False)
-            patterns_df["回调洗盘"] = result.get("PullbackWash", False)
-            patterns_df["假突破洗盘"] = result.get("FalseBreakWash", False)
-            patterns_df["时间洗盘"] = result.get("TimeWash", False)
-            patterns_df["连续阴线洗盘"] = result.get("ContinuousYinWash", False)
+            patterns_df.loc[:, "横盘震荡洗盘"] = result.get("ShockWash", False)
+            patterns_df.loc[:, "回调洗盘"] = result.get("PullbackWash", False)
+            patterns_df.loc[:, "假突破洗盘"] = result.get("FalseBreakWash", False)
+            patterns_df.loc[:, "时间洗盘"] = result.get("TimeWash", False)
+            patterns_df.loc[:, "连续阴线洗盘"] = result.get("ContinuousYinWash", False)
 
         return patterns_df
 
@@ -676,3 +696,129 @@ class SelectionModel(BaseIndicator):
         # 设置选股模型自身的参数
         self.selection_threshold = kwargs.get('selection_threshold', 70)
         self.priority_threshold = kwargs.get('priority_threshold', 85)
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+        
+        # SelectionModel指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "超买区域": {
+                "id": "超买区域",
+                "name": "超买区域",
+                "description": "指标进入超买区域，可能面临回调压力",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            "超卖区域": {
+                "id": "超卖区域", 
+                "name": "超卖区域",
+                "description": "指标进入超卖区域，可能出现反弹机会",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "中性区域": {
+                "id": "中性区域",
+                "name": "中性区域", 
+                "description": "指标处于中性区域，趋势不明确",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            },
+            # 趋势形态
+            "上升趋势": {
+                "id": "上升趋势",
+                "name": "上升趋势",
+                "description": "指标显示上升趋势，看涨信号",
+                "type": "BULLISH", 
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "下降趋势": {
+                "id": "下降趋势",
+                "name": "下降趋势",
+                "description": "指标显示下降趋势，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG", 
+                "score_impact": -15.0
+            },
+            # 信号形态
+            "买入信号": {
+                "id": "买入信号",
+                "name": "买入信号",
+                "description": "指标产生买入信号，建议关注",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "卖出信号": {
+                "id": "卖出信号",
+                "name": "卖出信号",
+                "description": "指标产生卖出信号，建议谨慎",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            },
+            # 选股类型形态
+            "StrongUptrendSelect": {
+                "id": "StrongUptrendSelect",
+                "name": "强趋势上涨股",
+                "description": "符合强趋势上涨选股条件的股票",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 25.0
+            },
+            "VolumeBreakoutSelect": {
+                "id": "VolumeBreakoutSelect",
+                "name": "放量突破股",
+                "description": "符合放量突破选股条件的股票",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "PullbackBuySelect": {
+                "id": "PullbackBuySelect",
+                "name": "回调买点股",
+                "description": "符合回调买点选股条件的股票",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "WashplateStartSelect": {
+                "id": "WashplateStartSelect",
+                "name": "洗盘后启动股",
+                "description": "符合洗盘后启动选股条件的股票",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 18.0
+            },
+            "LowBuyElasticSelect": {
+                "id": "LowBuyElasticSelect",
+                "name": "低吸高弹性股",
+                "description": "符合低吸高弹性选股条件的股票",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            }
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

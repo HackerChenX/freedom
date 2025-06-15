@@ -141,11 +141,10 @@ class KDJ(BaseIndicator):
             patterns_df.loc[last_idx, 'KDJ_BULLISH_DIVERGENCE'] = self._detect_bullish_divergence(calculated_data)
             patterns_df.loc[last_idx, 'KDJ_BEARISH_DIVERGENCE'] = self._detect_bearish_divergence(calculated_data)
             
-            # 填充其他行为False
-            patterns_df['KDJ_BULLISH_DIVERGENCE'] = patterns_df['KDJ_BULLISH_DIVERGENCE'].fillna(False)
-            patterns_df['KDJ_BEARISH_DIVERGENCE'] = patterns_df['KDJ_BEARISH_DIVERGENCE'].fillna(False)
-            patterns_df['KDJ_BULLISH_DIVERGENCE'] = patterns_df['KDJ_BULLISH_DIVERGENCE'].astype(bool)
-            patterns_df['KDJ_BEARISH_DIVERGENCE'] = patterns_df['KDJ_BEARISH_DIVERGENCE'].astype(bool)
+            # 填充其他行为False，使用最新pandas方法避免FutureWarning
+            # 先转换为bool类型，再填充False值
+            patterns_df['KDJ_BULLISH_DIVERGENCE'] = patterns_df['KDJ_BULLISH_DIVERGENCE'].astype('boolean').fillna(False)
+            patterns_df['KDJ_BEARISH_DIVERGENCE'] = patterns_df['KDJ_BEARISH_DIVERGENCE'].astype('boolean').fillna(False)
         
         return patterns_df
 
@@ -558,7 +557,7 @@ class KDJ(BaseIndicator):
         low_n = df['low'].rolling(window=self.n, min_periods=1).min()
         high_n = df['high'].rolling(window=self.n, min_periods=1).max()
         rsv = (df['close'] - low_n) / (high_n - low_n) * 100
-        rsv.fillna(0, inplace=True)
+        rsv = rsv.fillna(0)
 
         # 使用pandas的ewm方法计算K, D, J
         # K值: RSV的指数移动平均
@@ -569,9 +568,9 @@ class KDJ(BaseIndicator):
 
         # J值
         df['J'] = 3 * df['K'] - 2 * df['D']
-        
+
         # 将初始的NaN值设置为50.0，这是常见做法
-        df.fillna(50.0, inplace=True)
+        df = df.fillna(50.0)
 
         return df
 
@@ -870,13 +869,13 @@ class KDJ(BaseIndicator):
         
         # 金叉加分，最近越近影响越大
         for i in range(5):
-            mask = golden_cross.shift(i).fillna(False)
+            mask = golden_cross.shift(i).fillna(False).astype(bool)
             score_boost = 30 * (0.8 ** i)  # 随距离衰减
             cross_score = np.where(mask, 50 + score_boost, cross_score)
-        
+
         # 死叉减分，最近越近影响越大
         for i in range(5):
-            mask = death_cross.shift(i).fillna(False)
+            mask = death_cross.shift(i).fillna(False).astype(bool)
             score_drop = 30 * (0.8 ** i)  # 随距离衰减
             cross_score = np.where(mask, 50 - score_drop, cross_score)
         

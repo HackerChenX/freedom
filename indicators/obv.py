@@ -862,3 +862,121 @@ class OBV(BaseIndicator):
         
         # 这里只是一个占位符，未来可以实现完整的背离检测算法
         return divergence
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "OBV_GOLDEN_CROSS": {
+                "id": "OBV_GOLDEN_CROSS",
+                "name": "OBV金叉",
+                "description": "OBV上穿其均线，表明买盘力量增强",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "OBV_DEATH_CROSS": {
+                "id": "OBV_DEATH_CROSS",
+                "name": "OBV死叉",
+                "description": "OBV下穿其均线，表明卖盘力量增强",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -15.0
+            },
+            "OBV_UPTREND": {
+                "id": "OBV_UPTREND",
+                "name": "OBV上升趋势",
+                "description": "OBV持续上升，表明资金持续流入",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 12.0
+            },
+            "OBV_DOWNTREND": {
+                "id": "OBV_DOWNTREND",
+                "name": "OBV下降趋势",
+                "description": "OBV持续下降，表明资金持续流出",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -12.0
+            },
+            "OBV_BULLISH_DIVERGENCE": {
+                "id": "OBV_BULLISH_DIVERGENCE",
+                "name": "OBV底背离",
+                "description": "价格创新低，但OBV未创新低，表明卖盘力量减弱",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "OBV_BEARISH_DIVERGENCE": {
+                "id": "OBV_BEARISH_DIVERGENCE",
+                "name": "OBV顶背离",
+                "description": "价格创新高，但OBV未创新高，表明买盘力量减弱",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            },
+            "OBV_RAPID_INCREASE": {
+                "id": "OBV_RAPID_INCREASE",
+                "name": "OBV快速上涨",
+                "description": "OBV短期内快速上涨，表明买盘力量强劲",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 18.0
+            },
+            "OBV_RAPID_DECREASE": {
+                "id": "OBV_RAPID_DECREASE",
+                "name": "OBV快速下跌",
+                "description": "OBV短期内快速下跌，表明卖盘力量强劲",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -18.0
+            },
+            "OBV_STABLE_POSITIVE": {
+                "id": "OBV_STABLE_POSITIVE",
+                "name": "OBV稳定正值",
+                "description": "OBV保持在高位稳定，表明买盘力量持续存在",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "OBV_STABLE_NEGATIVE": {
+                "id": "OBV_STABLE_NEGATIVE",
+                "name": "OBV稳定负值",
+                "description": "OBV保持在低位稳定，表明卖盘力量持续存在",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            "OBV_PRICE_CONFIRMATION": {
+                "id": "OBV_PRICE_CONFIRMATION",
+                "name": "OBV量价同步",
+                "description": "OBV与价格同向变动，确认当前趋势",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": 8.0
+            },
+            "OBV_PRICE_NON_CONFIRMATION": {
+                "id": "OBV_PRICE_NON_CONFIRMATION",
+                "name": "OBV量价不同步",
+                "description": "OBV与价格反向变动，表明当前趋势可能不可靠",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": -8.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })

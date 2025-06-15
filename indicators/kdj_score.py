@@ -22,8 +22,10 @@ class KDJScore(IndicatorScoreBase, PatternRecognitionMixin):
     基于KDJ指标的评分系统，包含形态识别和信号生成
     """
     
+    # KDJ指标只需要high、low、close列
+    REQUIRED_COLUMNS = ['high', 'low', 'close']
+
     def __init__(self, n: int = 9, m1: int = 3, m2: int = 3, weight: float = 1.0):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化KDJ评分指标
         

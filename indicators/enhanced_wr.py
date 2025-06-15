@@ -7,9 +7,9 @@
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Union, Optional, Any, Tuple
+from typing import List, Union
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
+from indicators.base_indicator import BaseIndicator
 from indicators.wr import WR
 from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs
@@ -86,15 +86,87 @@ class EnhancedWR(WR):
     def set_market_environment(self, environment: str) -> None:
         """
         设置市场环境
-        
+
         Args:
             environment (str): 市场环境类型 ('bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal')
         """
         valid_environments = ['bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal']
         if environment not in valid_environments:
             raise ValueError(f"无效的市场环境类型: {environment}。有效类型: {valid_environments}")
-        
+
         self.market_environment = environment
+
+    def ensure_columns(self, data: pd.DataFrame, required_columns: List[str]) -> None:
+        """
+        确保数据包含必需的列
+
+        Args:
+            data: 输入数据DataFrame
+            required_columns: 必需的列名列表
+
+        Raises:
+            ValueError: 如果缺少必需的列
+        """
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"数据缺少必需的列: {missing_columns}")
+
+    def crossover(self, series1: pd.Series, series2: Union[pd.Series, float]) -> pd.Series:
+        """
+        检测series1上穿series2的信号
+
+        Args:
+            series1: 第一个序列
+            series2: 第二个序列或数值
+
+        Returns:
+            pd.Series: 上穿信号的布尔序列
+        """
+        if isinstance(series2, (int, float)):
+            series2 = pd.Series(series2, index=series1.index)
+
+        return (series1 > series2) & (series1.shift(1) <= series2.shift(1))
+
+    def crossunder(self, series1: pd.Series, series2: Union[pd.Series, float]) -> pd.Series:
+        """
+        检测series1下穿series2的信号
+
+        Args:
+            series1: 第一个序列
+            series2: 第二个序列或数值
+
+        Returns:
+            pd.Series: 下穿信号的布尔序列
+        """
+        if isinstance(series2, (int, float)):
+            series2 = pd.Series(series2, index=series1.index)
+
+        return (series1 < series2) & (series1.shift(1) >= series2.shift(1))
+
+    def atr(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+        """
+        计算平均真实范围(ATR)
+
+        Args:
+            high: 最高价序列
+            low: 最低价序列
+            close: 收盘价序列
+            period: 计算周期
+
+        Returns:
+            pd.Series: ATR序列
+        """
+        # 计算真实范围
+        tr1 = high - low
+        tr2 = abs(high - close.shift(1))
+        tr3 = abs(low - close.shift(1))
+
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+        # 计算ATR
+        atr = tr.rolling(window=period).mean()
+
+        return atr
         
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -1023,3 +1095,87 @@ class EnhancedWR(WR):
                         stop_loss.iloc[i] = recent_high * 1.01  # 微调1%
         
         return stop_loss 
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+        
+        # EnhancedWR指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "超买区域": {
+                "id": "超买区域",
+                "name": "超买区域",
+                "description": "指标进入超买区域，可能面临回调压力",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            "超卖区域": {
+                "id": "超卖区域", 
+                "name": "超卖区域",
+                "description": "指标进入超卖区域，可能出现反弹机会",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "中性区域": {
+                "id": "中性区域",
+                "name": "中性区域", 
+                "description": "指标处于中性区域，趋势不明确",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            },
+            # 趋势形态
+            "上升趋势": {
+                "id": "上升趋势",
+                "name": "上升趋势",
+                "description": "指标显示上升趋势，看涨信号",
+                "type": "BULLISH", 
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "下降趋势": {
+                "id": "下降趋势",
+                "name": "下降趋势",
+                "description": "指标显示下降趋势，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG", 
+                "score_impact": -15.0
+            },
+            # 信号形态
+            "买入信号": {
+                "id": "买入信号",
+                "name": "买入信号",
+                "description": "指标产生买入信号，建议关注",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "卖出信号": {
+                "id": "卖出信号", 
+                "name": "卖出信号",
+                "description": "指标产生卖出信号，建议谨慎",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            }
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

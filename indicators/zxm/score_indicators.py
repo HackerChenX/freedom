@@ -82,11 +82,11 @@ class ZXMElasticityScore(BaseIndicator):
         signal = elasticity_score >= self.threshold
         
         # 添加计算结果到数据框
-        result["AmplitudeElasticity"] = amplitude_signal
-        result["RiseElasticity"] = rise_signal
-        result["ElasticityCount"] = elasticity_count
-        result["ElasticityScore"] = elasticity_score
-        result["Signal"] = signal
+        result.loc[:, "AmplitudeElasticity"] = amplitude_signal
+        result.loc[:, "RiseElasticity"] = rise_signal
+        result.loc[:, "ElasticityCount"] = elasticity_count
+        result.loc[:, "ElasticityScore"] = elasticity_score
+        result.loc[:, "Signal"] = signal
         
         return result
 
@@ -217,23 +217,23 @@ class ZXMElasticityScore(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["弹性评分信号"] = result["Signal"]
-        patterns_df["振幅弹性满足"] = result["AmplitudeElasticity"]
-        patterns_df["涨幅弹性满足"] = result["RiseElasticity"]
+        patterns_df.loc[:, "弹性评分信号"] = result["Signal"]
+        patterns_df.loc[:, "振幅弹性满足"] = result["AmplitudeElasticity"]
+        patterns_df.loc[:, "涨幅弹性满足"] = result["RiseElasticity"]
 
         # 弹性评分等级形态
         score = result["ElasticityScore"]
-        patterns_df["极高弹性评分"] = score >= 90
-        patterns_df["高弹性评分"] = (score >= 75) & (score < 90)
-        patterns_df["中等弹性评分"] = (score >= 50) & (score < 75)
-        patterns_df["低弹性评分"] = (score >= 25) & (score < 50)
-        patterns_df["极低弹性评分"] = score < 25
+        patterns_df.loc[:, "极高弹性评分"] = score >= 90
+        patterns_df.loc[:, "高弹性评分"] = (score >= 75) & (score < 90)
+        patterns_df.loc[:, "中等弹性评分"] = (score >= 50) & (score < 75)
+        patterns_df.loc[:, "低弹性评分"] = (score >= 25) & (score < 50)
+        patterns_df.loc[:, "极低弹性评分"] = score < 25
 
         # 弹性指标满足情况形态
         count = result["ElasticityCount"]
-        patterns_df["全部弹性指标满足"] = count == 2
-        patterns_df["部分弹性指标满足"] = count == 1
-        patterns_df["无弹性指标满足"] = count == 0
+        patterns_df.loc[:, "全部弹性指标满足"] = count == 2
+        patterns_df.loc[:, "部分弹性指标满足"] = count == 1
+        patterns_df.loc[:, "无弹性指标满足"] = count == 0
 
         return patterns_df
 
@@ -321,12 +321,12 @@ class ZXMBuyPointScore(BaseIndicator):
         signal = buy_point_score >= self.threshold
         
         # 添加计算结果到数据框
-        result["MACDBuyPoint"] = macd_signal
-        result["TurnoverBuyPoint"] = turnover_signal
-        result["MACallbackBuyPoint"] = ma_callback_signal
-        result["BuyPointCount"] = buy_point_count
-        result["BuyPointScore"] = buy_point_score
-        result["Signal"] = signal
+        result.loc[:, "MACDBuyPoint"] = macd_signal
+        result.loc[:, "TurnoverBuyPoint"] = turnover_signal
+        result.loc[:, "MACallbackBuyPoint"] = ma_callback_signal
+        result.loc[:, "BuyPointCount"] = buy_point_count
+        result.loc[:, "BuyPointScore"] = buy_point_score
+        result.loc[:, "Signal"] = signal
         
         return result
 
@@ -463,25 +463,25 @@ class ZXMBuyPointScore(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["买点评分信号"] = result["Signal"]
-        patterns_df["MACD买点满足"] = result["MACDBuyPoint"]
-        patterns_df["换手买点满足"] = result["TurnoverBuyPoint"]
-        patterns_df["均线回调买点满足"] = result["MACallbackBuyPoint"]
+        patterns_df.loc[:, "买点评分信号"] = result["Signal"]
+        patterns_df.loc[:, "MACD买点满足"] = result["MACDBuyPoint"]
+        patterns_df.loc[:, "换手买点满足"] = result["TurnoverBuyPoint"]
+        patterns_df.loc[:, "均线回调买点满足"] = result["MACallbackBuyPoint"]
 
         # 买点评分等级形态
         score = result["BuyPointScore"]
-        patterns_df["极高买点评分"] = score >= 90
-        patterns_df["高买点评分"] = (score >= 75) & (score < 90)
-        patterns_df["中等买点评分"] = (score >= 50) & (score < 75)
-        patterns_df["低买点评分"] = (score >= 25) & (score < 50)
-        patterns_df["极低买点评分"] = score < 25
+        patterns_df.loc[:, "极高买点评分"] = score >= 90
+        patterns_df.loc[:, "高买点评分"] = (score >= 75) & (score < 90)
+        patterns_df.loc[:, "中等买点评分"] = (score >= 50) & (score < 75)
+        patterns_df.loc[:, "低买点评分"] = (score >= 25) & (score < 50)
+        patterns_df.loc[:, "极低买点评分"] = score < 25
 
         # 买点指标满足情况形态
         count = result["BuyPointCount"]
-        patterns_df["全部买点指标满足"] = count == 3
-        patterns_df["多数买点指标满足"] = count == 2
-        patterns_df["少数买点指标满足"] = count == 1
-        patterns_df["无买点指标满足"] = count == 0
+        patterns_df.loc[:, "全部买点指标满足"] = count == 3
+        patterns_df.loc[:, "多数买点指标满足"] = count == 2
+        patterns_df.loc[:, "少数买点指标满足"] = count == 1
+        patterns_df.loc[:, "无买点指标满足"] = count == 0
 
         return patterns_df
 
@@ -567,20 +567,21 @@ class StockScoreCalculator(BaseIndicator):
             if score_name in result.columns:
                 total_score += result[score_name] * weight
         
-        result["TotalScore"] = total_score
-        
+        result.loc[:, "TotalScore"] = total_score
+        result.loc[:, "FinalScore"] = total_score  # 添加FinalScore列，与TotalScore相同
+
         # 7. 评分等级
-        result["ScoreGrade"] = pd.cut(
+        result.loc[:, "ScoreGrade"] = pd.cut(
             result["TotalScore"],
             bins=[0, 20, 40, 60, 80, 100],
             labels=["很差", "较差", "一般", "较好", "很好"]
         )
-        
+
         # 8. 买入信号 - 当总分超过70分时
-        result["BuySignal"] = result["TotalScore"] > 70
-        
+        result.loc[:, "BuySignal"] = result["TotalScore"] > 70
+
         # 9. 卖出信号 - 当总分低于30分时
-        result["SellSignal"] = result["TotalScore"] < 30
+        result.loc[:, "SellSignal"] = result["TotalScore"] < 30
         
         return result
     
@@ -640,7 +641,7 @@ class StockScoreCalculator(BaseIndicator):
         trend_score = trend_score.clip(0, 100)
         
         # 添加到结果
-        result["TrendScore"] = trend_score
+        result.loc[:, "TrendScore"] = trend_score
         
         return result
     
@@ -687,7 +688,7 @@ class StockScoreCalculator(BaseIndicator):
         momentum_score = momentum_score.clip(0, 100)
         
         # 添加到结果
-        result["MomentumScore"] = momentum_score
+        result.loc[:, "MomentumScore"] = momentum_score
         
         return result
     
@@ -741,7 +742,7 @@ class StockScoreCalculator(BaseIndicator):
         volatility_score = volatility_score.clip(0, 100)
         
         # 添加到结果
-        result["VolatilityScore"] = volatility_score
+        result.loc[:, "VolatilityScore"] = volatility_score
         
         return result
     
@@ -808,7 +809,7 @@ class StockScoreCalculator(BaseIndicator):
         volume_score = volume_score.clip(0, 100)
         
         # 添加到结果
-        result["VolumeScore"] = volume_score
+        result.loc[:, "VolumeScore"] = volume_score
         
         return result
     
@@ -857,27 +858,27 @@ class StockScoreCalculator(BaseIndicator):
         value_score = value_score.clip(0, 100)
         
         # 添加到结果
-        result["ValueScore"] = value_score
+        result.loc[:, "ValueScore"] = value_score
         
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM股票综合评分指标的原始评分
-        
+
         Args:
             data: 输入数据，包含OHLCV数据
             **kwargs: 其他参数
-            
+
         Returns:
             pd.Series: 评分结果，0-100分
         """
         # 计算指标
         result = self.calculate(data)
-        
-        # 直接使用计算的总分作为原始评分
-        score = result["TotalScore"]
-        
+
+        # 使用FinalScore作为原始评分（与TotalScore相同）
+        score = result["FinalScore"]
+
         return score
     
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
@@ -904,12 +905,12 @@ class StockScoreCalculator(BaseIndicator):
                 patterns.append(f"综合评分等级：{last_row['ScoreGrade']}")
             
             # 总分形态
-            total_score = last_row["TotalScore"]
-            if total_score >= 80:
+            final_score = last_row["FinalScore"]
+            if final_score >= 80:
                 patterns.append("高分股票(80+)")
-            elif total_score >= 70:
+            elif final_score >= 70:
                 patterns.append("优质股票(70-80)")
-            elif total_score <= 30:
+            elif final_score <= 30:
                 patterns.append("低分股票(<30)")
             
             # 各分项评分形态
@@ -960,43 +961,43 @@ class StockScoreCalculator(BaseIndicator):
         """
         # 计算指标和评分
         result = self.calculate(data)
-        score = result["TotalScore"]
-        
+        score = result["FinalScore"]  # 使用FinalScore
+
         # 初始化信号DataFrame
         signals = pd.DataFrame(index=data.index)
-        
+
         # 设置买卖信号
-        signals['buy_signal'] = result["BuySignal"]
-        signals['sell_signal'] = result["SellSignal"]
-        signals['neutral_signal'] = ~(result["BuySignal"] | result["SellSignal"])
-        
+        signals.loc[:, 'buy_signal'] = result["BuySignal"]
+        signals.loc[:, 'sell_signal'] = result["SellSignal"]
+        signals.loc[:, 'neutral_signal'] = ~(result["BuySignal"] | result["SellSignal"])
+
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
-        signals.loc[result["TotalScore"] >= 60, 'trend'] = 1  # 高分看涨
-        signals.loc[result["TotalScore"] <= 40, 'trend'] = -1  # 低分看跌
+        signals.loc[:, 'trend'] = 0  # 默认中性
+        signals.loc[result["FinalScore"] >= 60, 'trend'] = 1  # 高分看涨
+        signals.loc[result["FinalScore"] <= 40, 'trend'] = -1  # 低分看跌
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["BuySignal"], 'signal_type'] = 'zxm_high_score_buy'
         signals.loc[result["SellSignal"], 'signal_type'] = 'zxm_low_score_sell'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in signals.index:
             desc_parts = []
             
             # 添加总分
-            desc_parts.append(f"总分{result.loc[i, 'TotalScore']:.1f}")
-            
+            desc_parts.append(f"总分{result.loc[i, 'FinalScore']:.1f}")
+
             # 添加评分等级
             if "ScoreGrade" in result.columns:
                 desc_parts.append(f"等级{result.loc[i, 'ScoreGrade']}")
-            
+
             # 添加优势项
             strengths = []
             if result.loc[i, "TrendScore"] >= 70:
@@ -1009,10 +1010,10 @@ class StockScoreCalculator(BaseIndicator):
                 strengths.append("成交量")
             if "ValueScore" in result.columns and result.loc[i, "ValueScore"] >= 70:
                 strengths.append("价值")
-            
+
             if strengths:
                 desc_parts.append("优势:" + "/".join(strengths))
-            
+
             # 添加劣势项
             weaknesses = []
             if result.loc[i, "TrendScore"] <= 30:
@@ -1025,21 +1026,21 @@ class StockScoreCalculator(BaseIndicator):
                 weaknesses.append("成交量")
             if "ValueScore" in result.columns and result.loc[i, "ValueScore"] <= 30:
                 weaknesses.append("价值")
-            
+
             if weaknesses:
                 desc_parts.append("劣势:" + "/".join(weaknesses))
-            
+
             signals.loc[i, 'signal_desc'] = "，".join(desc_parts)
-        
+
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
-        
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
+
         # 根据分数和项目一致性调整置信度
         for i in signals.index:
             # 高分或低分的置信度更高
-            if result.loc[i, "TotalScore"] >= 80:
+            if result.loc[i, "FinalScore"] >= 80:
                 signals.loc[i, 'confidence'] = 80
-            elif result.loc[i, "TotalScore"] <= 20:
+            elif result.loc[i, "FinalScore"] <= 20:
                 signals.loc[i, 'confidence'] = 80
             
             # 分项一致性高的置信度更高
@@ -1064,23 +1065,23 @@ class StockScoreCalculator(BaseIndicator):
                     signals.loc[i, 'confidence'] = min(90, signals.loc[i, 'confidence'] + 20)
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         signals.loc[result["VolatilityScore"] <= 30, 'risk_level'] = '高'  # 高波动性，高风险
         signals.loc[result["VolatilityScore"] >= 70, 'risk_level'] = '低'  # 低波动性，低风险
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[signals['buy_signal'], 'position_size'] = 0.3  # 基础仓位
         
         # 根据总分和置信度调整仓位
-        high_score_high_conf = (result["TotalScore"] >= 80) & (signals['confidence'] >= 80)
+        high_score_high_conf = (result["FinalScore"] >= 80) & (signals['confidence'] >= 80)
         signals.loc[high_score_high_conf, 'position_size'] = 0.5  # 高分高置信度，加大仓位
-        
-        exceptional_score = result["TotalScore"] >= 90
+
+        exceptional_score = result["FinalScore"] >= 90
         signals.loc[exceptional_score, 'position_size'] = 0.7  # 极高分，最大仓位
         
         # 止损位 - 使用近期低点或移动平均线
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         ma20 = data["close"].rolling(window=20).mean()
         
         for i in signals.index[signals['buy_signal']]:
@@ -1100,17 +1101,17 @@ class StockScoreCalculator(BaseIndicator):
                 continue
         
         # 市场环境和成交量确认
-        signals['market_env'] = 'normal'
+        signals.loc[:, 'market_env'] = 'normal'
         
         # 判断市场环境
         # 使用市场趋势得分作为参考
         market_trend = pd.Series('normal', index=data.index)
         market_trend[result["TrendScore"] >= 75] = 'bull_market'
         market_trend[result["TrendScore"] <= 25] = 'bear_market'
-        signals['market_env'] = market_trend
+        signals.loc[:, 'market_env'] = market_trend
         
         # 成交量确认
-        signals['volume_confirmation'] = result["VolumeScore"] >= 60
+        signals.loc[:, 'volume_confirmation'] = result["VolumeScore"] >= 60
         
         return signals
 
@@ -1179,30 +1180,30 @@ class StockScoreCalculator(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础信号形态
-        patterns_df["买入信号"] = result["BuySignal"]
-        patterns_df["卖出信号"] = result["SellSignal"]
+        patterns_df.loc[:, "买入信号"] = result["BuySignal"]
+        patterns_df.loc[:, "卖出信号"] = result["SellSignal"]
 
         # 总分等级形态
-        total_score = result["TotalScore"]
-        patterns_df["高分股票"] = total_score >= 80
-        patterns_df["优质股票"] = (total_score >= 70) & (total_score < 80)
-        patterns_df["中等股票"] = (total_score >= 40) & (total_score < 70)
-        patterns_df["低分股票"] = total_score < 30
+        final_score = result["FinalScore"]
+        patterns_df.loc[:, "高分股票"] = final_score >= 80
+        patterns_df.loc[:, "优质股票"] = (final_score >= 70) & (final_score < 80)
+        patterns_df.loc[:, "中等股票"] = (final_score >= 40) & (final_score < 70)
+        patterns_df.loc[:, "低分股票"] = final_score < 30
 
         # 各分项强弱形态
-        patterns_df["趋势强劲"] = result["TrendScore"] >= 70
-        patterns_df["趋势疲软"] = result["TrendScore"] <= 30
-        patterns_df["动量强劲"] = result["MomentumScore"] >= 70
-        patterns_df["动量疲软"] = result["MomentumScore"] <= 30
-        patterns_df["低波动性"] = result["VolatilityScore"] >= 70
-        patterns_df["高波动性"] = result["VolatilityScore"] <= 30
-        patterns_df["成交量理想"] = result["VolumeScore"] >= 70
-        patterns_df["成交量不佳"] = result["VolumeScore"] <= 30
+        patterns_df.loc[:, "趋势强劲"] = result["TrendScore"] >= 70
+        patterns_df.loc[:, "趋势疲软"] = result["TrendScore"] <= 30
+        patterns_df.loc[:, "动量强劲"] = result["MomentumScore"] >= 70
+        patterns_df.loc[:, "动量疲软"] = result["MomentumScore"] <= 30
+        patterns_df.loc[:, "低波动性"] = result["VolatilityScore"] >= 70
+        patterns_df.loc[:, "高波动性"] = result["VolatilityScore"] <= 30
+        patterns_df.loc[:, "成交量理想"] = result["VolumeScore"] >= 70
+        patterns_df.loc[:, "成交量不佳"] = result["VolumeScore"] <= 30
 
         # 价值评分形态（如果存在）
         if "ValueScore" in result.columns:
-            patterns_df["高价值股"] = result["ValueScore"] >= 70
-            patterns_df["低价值股"] = result["ValueScore"] <= 30
+            patterns_df.loc[:, "高价值股"] = result["ValueScore"] >= 70
+            patterns_df.loc[:, "低价值股"] = result["ValueScore"] <= 30
 
         return patterns_df
 
@@ -1217,3 +1218,87 @@ class StockScoreCalculator(BaseIndicator):
         """
         self.buy_threshold = kwargs.get('buy_threshold', 70)
         self.sell_threshold = kwargs.get('sell_threshold', 30)
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+        
+        # ZXMScoreIndicator指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "超买区域": {
+                "id": "超买区域",
+                "name": "超买区域",
+                "description": "指标进入超买区域，可能面临回调压力",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            "超卖区域": {
+                "id": "超卖区域", 
+                "name": "超卖区域",
+                "description": "指标进入超卖区域，可能出现反弹机会",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "中性区域": {
+                "id": "中性区域",
+                "name": "中性区域", 
+                "description": "指标处于中性区域，趋势不明确",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            },
+            # 趋势形态
+            "上升趋势": {
+                "id": "上升趋势",
+                "name": "上升趋势",
+                "description": "指标显示上升趋势，看涨信号",
+                "type": "BULLISH", 
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "下降趋势": {
+                "id": "下降趋势",
+                "name": "下降趋势",
+                "description": "指标显示下降趋势，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG", 
+                "score_impact": -15.0
+            },
+            # 信号形态
+            "买入信号": {
+                "id": "买入信号",
+                "name": "买入信号",
+                "description": "指标产生买入信号，建议关注",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "卖出信号": {
+                "id": "卖出信号", 
+                "name": "卖出信号",
+                "description": "指标产生卖出信号，建议谨慎",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            }
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

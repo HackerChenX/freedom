@@ -231,22 +231,46 @@ class BaseIndicator(abc.ABC):
     def _preserve_base_columns(self, source_df: pd.DataFrame, result_df: pd.DataFrame) -> pd.DataFrame:
         """
         在计算结果中保留基础数据列，确保链式计算能够正常进行
-        
+
         Args:
             source_df: 源数据DataFrame
             result_df: 计算结果DataFrame
-            
+
         Returns:
             pd.DataFrame: 包含原始基础列的结果DataFrame
         """
         # 检查源数据中有哪些基础列
         available_columns = [col for col in BASE_COLUMNS if col in source_df.columns]
-        
+
+        # 记录调试信息
+        logger.debug(f"指标 {self.name}: 源数据列 {list(source_df.columns)}, 结果列 {list(result_df.columns)}, 基础列 {available_columns}")
+
         # 如果结果中缺少这些列，则从源数据中复制
         for col in available_columns:
             if col not in result_df.columns:
-                result_df[col] = source_df[col]
-        
+                try:
+                    # 确保源数据的列是Series而不是DataFrame
+                    if isinstance(source_df[col], pd.Series):
+                        result_df[col] = source_df[col]
+                        logger.debug(f"指标 {self.name}: 成功复制基础列 {col}")
+                    elif isinstance(source_df[col], pd.DataFrame):
+                        # 如果是DataFrame，取第一列
+                        result_df[col] = source_df[col].iloc[:, 0]
+                        logger.debug(f"指标 {self.name}: 从DataFrame复制基础列 {col}")
+                    else:
+                        # 其他情况，尝试直接赋值
+                        result_df[col] = source_df[col]
+                        logger.debug(f"指标 {self.name}: 直接复制基础列 {col}")
+                except Exception as e:
+                    logger.error(f"指标 {self.name}: 无法复制列 {col}: {e}")
+            else:
+                logger.debug(f"指标 {self.name}: 基础列 {col} 已存在于结果中")
+
+        # 验证结果
+        missing_base_cols = [col for col in available_columns if col not in result_df.columns]
+        if missing_base_cols:
+            logger.error(f"指标 {self.name}: 保留基础列后仍缺少: {missing_base_cols}")
+
         return result_df
     
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
@@ -531,3 +555,36 @@ class BaseIndicator(abc.ABC):
         
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}(name='{self.name}')>"
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取形态信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态信息字典
+        """
+        # 默认形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
+            'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
+            'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
+            
+            # 通用形态
+            'strong_signal': {'name': '强信号', 'description': '强烈的技术信号', 'type': 'STRONG'},
+            'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
+            'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
+            'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
+        
+        # 默认形态信息
+        default_pattern = {
+            'name': pattern_id.replace('_', ' ').title(),
+            'description': f'{pattern_id}形态',
+            'type': 'UNKNOWN'
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

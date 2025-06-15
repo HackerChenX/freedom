@@ -75,6 +75,12 @@ class BIAS(BaseIndicator):
                 result_df['BIAS_MA'] = result_df['BIAS'].rolling(window=main_period, min_periods=1).mean()
 
         # 将新计算的列与原始DataFrame合并，避免重复列
+        # 检查是否有重复列，如果有则使用suffix
+        overlapping_cols = set(data.columns).intersection(set(result_df.columns))
+        if overlapping_cols:
+            # 如果有重复列，先删除result_df中的重复列，保留data中的原始列
+            result_df = result_df.drop(columns=list(overlapping_cols))
+
         return data.join(result_df, how='left')
 
     def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -91,11 +97,47 @@ class BIAS(BaseIndicator):
              # 返回一个空的DataFrame，但保留索引和原始列
              return data.assign(**{col: pd.NA for col in required_cols if col not in data})
 
-        # --- 形态识别逻辑将在这里实现 ---
-        # 当前版本仅确保数据流正确，并返回计算后的DataFrame
-        # 实际的形态识别可以基于'calculated_data'中的'BIAS'和'BIAS_MA'列
-        
-        return calculated_data
+        # 实现BIAS形态识别逻辑
+        bias_values = calculated_data['BIAS']
+
+        # 创建形态识别结果DataFrame，只保留原始数据列
+        patterns_df = data.copy()
+
+        # 添加计算后的BIAS列（避免列重叠）
+        for col in calculated_data.columns:
+            if col not in patterns_df.columns:
+                patterns_df[col] = calculated_data[col]
+
+        # 1. BIAS极值形态
+        patterns_df['BIAS_EXTREME_HIGH'] = bias_values > 15.0
+        patterns_df['BIAS_EXTREME_LOW'] = bias_values < -15.0
+
+        # 2. BIAS中度偏离形态
+        patterns_df['BIAS_MODERATE_HIGH'] = (bias_values > 5.0) & (bias_values <= 15.0)
+        patterns_df['BIAS_MODERATE_LOW'] = (bias_values < -5.0) & (bias_values >= -15.0)
+
+        # 3. BIAS中性形态
+        patterns_df['BIAS_NEUTRAL'] = (bias_values >= -5.0) & (bias_values <= 5.0)
+
+        # 4. BIAS背离形态（简化版本）
+        if len(bias_values) >= 10:
+            # 计算价格和BIAS的相关性来检测背离
+            price_trend = calculated_data['close'].diff(5)  # 5日价格变化
+            bias_trend = bias_values.diff(5)  # 5日BIAS变化
+
+            # 背离：价格上涨但BIAS下降，或价格下跌但BIAS上升
+            bullish_divergence = (price_trend < 0) & (bias_trend > 0)
+            bearish_divergence = (price_trend > 0) & (bias_trend < 0)
+
+            patterns_df['BIAS_BULLISH_DIVERGENCE'] = bullish_divergence
+            patterns_df['BIAS_BEARISH_DIVERGENCE'] = bearish_divergence
+            patterns_df['BIAS_DIVERGENCE'] = bullish_divergence | bearish_divergence
+        else:
+            patterns_df['BIAS_BULLISH_DIVERGENCE'] = False
+            patterns_df['BIAS_BEARISH_DIVERGENCE'] = False
+            patterns_df['BIAS_DIVERGENCE'] = False
+
+        return patterns_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -223,3 +265,59 @@ class BIAS(BaseIndicator):
             default_strength="MEDIUM",
             score_impact=10.0
         )
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典
+        """
+        pattern_info_map = {
+            'BIAS_EXTREME_HIGH': {
+                'name': 'BIAS极高值',
+                'description': 'BIAS值超过+15%，表示严重超买',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'BIAS_EXTREME_LOW': {
+                'name': 'BIAS极低值',
+                'description': 'BIAS值低于-15%，表示严重超卖',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'BIAS_DIVERGENCE': {
+                'name': 'BIAS背离',
+                'description': '价格与BIAS指标出现背离',
+                'strength': 'medium',
+                'type': 'neutral'
+            },
+            'BIAS_MODERATE_HIGH': {
+                'name': 'BIAS中度偏高',
+                'description': 'BIAS值在+5%到+15%之间，表示轻度超买',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'BIAS_MODERATE_LOW': {
+                'name': 'BIAS中度偏低',
+                'description': 'BIAS值在-15%到-5%之间，表示轻度超卖',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'BIAS_NEUTRAL': {
+                'name': 'BIAS中性',
+                'description': 'BIAS值在-5%到+5%之间，表示价格相对均衡',
+                'strength': 'weak',
+                'type': 'neutral'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'BIAS形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

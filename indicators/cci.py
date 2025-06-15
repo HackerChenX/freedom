@@ -642,14 +642,16 @@ class CCI(BaseIndicator):
             pd.DataFrame: 包含形态信息的DataFrame
         """
         # 确保已计算CCI
-        if not self.has_result():
-            self.calculate(data, **kwargs)
+        calculated_data = self.calculate(data, **kwargs)
 
-        if self._result is None:
-            return pd.DataFrame(index=data.index)
+        if calculated_data is None or calculated_data.empty:
+            return data.copy()
 
-        cci = self._result['CCI']
-        patterns_df = pd.DataFrame(index=data.index)
+        if 'CCI' not in calculated_data.columns:
+            return data.copy()
+
+        cci = calculated_data['CCI']
+        patterns_df = calculated_data.copy()
 
         # 1. 超买超卖形态
         patterns_df['CCI_OVERSOLD'] = cci <= -100
@@ -657,11 +659,18 @@ class CCI(BaseIndicator):
         patterns_df['CCI_OVERBOUGHT'] = cci >= 100
         patterns_df['CCI_EXTREME_OVERBOUGHT'] = cci >= 200
 
-        # 2. 穿越形态
-        patterns_df['CCI_CROSS_UP_OVERSOLD'] = crossover(cci, -100)
-        patterns_df['CCI_CROSS_DOWN_OVERBOUGHT'] = crossunder(cci, 100)
-        patterns_df['CCI_CROSS_UP_ZERO'] = crossover(cci, 0)
-        patterns_df['CCI_CROSS_DOWN_ZERO'] = crossunder(cci, 0)
+        # 2. 穿越形态（使用简化的穿越逻辑）
+        if len(cci) >= 2:
+            cci_prev = cci.shift(1)
+            patterns_df['CCI_CROSS_UP_OVERSOLD'] = (cci_prev <= -100) & (cci > -100)
+            patterns_df['CCI_CROSS_DOWN_OVERBOUGHT'] = (cci_prev >= 100) & (cci < 100)
+            patterns_df['CCI_CROSS_UP_ZERO'] = (cci_prev <= 0) & (cci > 0)
+            patterns_df['CCI_CROSS_DOWN_ZERO'] = (cci_prev >= 0) & (cci < 0)
+        else:
+            patterns_df['CCI_CROSS_UP_OVERSOLD'] = False
+            patterns_df['CCI_CROSS_DOWN_OVERBOUGHT'] = False
+            patterns_df['CCI_CROSS_UP_ZERO'] = False
+            patterns_df['CCI_CROSS_DOWN_ZERO'] = False
 
         # 3. 趋势形态
         if len(cci) >= 5:
@@ -753,3 +762,83 @@ class CCI(BaseIndicator):
             default_strength="MEDIUM",
             score_impact=-15.0
         )
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典
+        """
+        pattern_info_map = {
+            'CCI_EXTREME_OVERSOLD': {
+                'name': 'CCI极度超卖',
+                'description': 'CCI值低于-200，表示严重超卖',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'CCI_OVERSOLD': {
+                'name': 'CCI超卖',
+                'description': 'CCI值低于-100，表示超卖',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'CCI_EXTREME_OVERBOUGHT': {
+                'name': 'CCI极度超买',
+                'description': 'CCI值高于+200，表示严重超买',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'CCI_OVERBOUGHT': {
+                'name': 'CCI超买',
+                'description': 'CCI值高于+100，表示超买',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'CCI_CROSS_UP_OVERSOLD': {
+                'name': 'CCI上穿超卖线',
+                'description': 'CCI从超卖区上穿-100线',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'CCI_CROSS_DOWN_OVERBOUGHT': {
+                'name': 'CCI下穿超买线',
+                'description': 'CCI从超买区下穿+100线',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'CCI_CROSS_UP_ZERO': {
+                'name': 'CCI上穿零轴',
+                'description': 'CCI上穿零轴线',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'CCI_CROSS_DOWN_ZERO': {
+                'name': 'CCI下穿零轴',
+                'description': 'CCI下穿零轴线',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'CCI_STRONG_UPTREND': {
+                'name': 'CCI强势上升趋势',
+                'description': 'CCI持续上升，表示强势上涨',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'CCI_STRONG_DOWNTREND': {
+                'name': 'CCI强势下降趋势',
+                'description': 'CCI持续下降，表示强势下跌',
+                'strength': 'strong',
+                'type': 'bearish'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'CCI形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

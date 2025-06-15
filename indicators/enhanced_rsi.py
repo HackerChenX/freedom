@@ -44,11 +44,26 @@ class EnhancedRSI(RSI):
     def get_indicator_type(self) -> str:
         """
         获取指标类型
-        
+
         Returns:
             str: 指标类型
         """
         return self.indicator_type
+
+    def ensure_columns(self, data: pd.DataFrame, required_columns: List[str]) -> None:
+        """
+        确保数据包含必需的列
+
+        Args:
+            data: 输入数据
+            required_columns: 必需的列名列表
+
+        Raises:
+            ValueError: 如果缺少必需的列
+        """
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"数据缺少必需的列: {missing_columns}")
         
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -208,8 +223,21 @@ class EnhancedRSI(RSI):
         oversold = oversold.where(data['volatility'] <= 0.3, 25.0)
         oversold = oversold.where(data['volatility'] >= 0.15, 35.0)
         
-        # 考虑市场环境调整阈值
-        market_env = self.get_market_environment()
+        # 考虑市场环境调整阈值（避免递归调用）
+        market_env_str = self._get_simple_market_environment(data)
+
+        # 将字符串转换为MarketEnvironment枚举
+        from indicators.base_indicator import MarketEnvironment
+        market_env = MarketEnvironment.SIDEWAYS_MARKET  # 默认值
+
+        if market_env_str == 'bullish':
+            market_env = MarketEnvironment.BULL_MARKET
+        elif market_env_str == 'bearish':
+            market_env = MarketEnvironment.BEAR_MARKET
+        elif market_env_str == 'volatile':
+            market_env = MarketEnvironment.VOLATILE_MARKET
+        else:
+            market_env = MarketEnvironment.SIDEWAYS_MARKET
         
         if market_env == MarketEnvironment.BULL_MARKET:
             # 牛市中提高超买阈值，降低超卖阈值
@@ -635,5 +663,120 @@ class EnhancedRSI(RSI):
                 strength.loc[idx] = SignalStrength.SELL.value
             else:
                 strength.loc[idx] = SignalStrength.WEAK_SELL.value
-                
+
         return strength
+
+    def _get_simple_market_environment(self, data: pd.DataFrame) -> str:
+        """
+        简单的市场环境评估（避免递归调用）
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            str: 市场环境类型
+        """
+        try:
+            if 'close' not in data.columns or len(data) < 20:
+                return 'neutral'
+
+            # 使用价格数据简单判断市场环境
+            close_prices = data['close'].tail(20)
+            price_change = (close_prices.iloc[-1] - close_prices.iloc[0]) / close_prices.iloc[0]
+            price_volatility = close_prices.pct_change().std()
+
+            if price_change > 0.05:
+                return 'bullish'
+            elif price_change < -0.05:
+                return 'bearish'
+            elif price_volatility > 0.03:
+                return 'volatile'
+            else:
+                return 'neutral'
+
+        except Exception:
+            return 'neutral'
+
+    def get_market_environment(self, data: pd.DataFrame) -> str:
+        """
+        获取市场环境评估
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            str: 市场环境类型 ('bullish', 'bearish', 'neutral', 'volatile')
+        """
+        try:
+            # 计算RSI指标
+            result = self.calculate(data)
+
+            if result.empty or len(result) < 20:
+                return 'neutral'
+
+            # 获取最近的RSI值
+            rsi_col = f"rsi_{self.period}"
+            if rsi_col not in result.columns:
+                return 'neutral'
+
+            recent_rsi = result[rsi_col].tail(20)
+            latest_rsi = recent_rsi.iloc[-1]
+
+            # 计算RSI趋势
+            rsi_trend = recent_rsi.diff().tail(10).mean()
+
+            # 计算RSI波动性
+            rsi_volatility = recent_rsi.std()
+
+            # 市场环境判断逻辑
+            if latest_rsi > 70 and rsi_trend > 0:
+                return 'bullish'  # 强势上涨市场
+            elif latest_rsi < 30 and rsi_trend < 0:
+                return 'bearish'  # 弱势下跌市场
+            elif rsi_volatility > 15:
+                return 'volatile'  # 高波动市场
+            elif 40 <= latest_rsi <= 60 and abs(rsi_trend) < 0.5:
+                return 'neutral'  # 中性市场
+            elif rsi_trend > 1:
+                return 'bullish'  # 上升趋势
+            elif rsi_trend < -1:
+                return 'bearish'  # 下降趋势
+            else:
+                return 'neutral'  # 默认中性
+
+        except Exception as e:
+            logger.warning(f"EnhancedRSI获取市场环境时出错: {e}")
+            return 'neutral'
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取形态信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态信息字典
+        """
+        # 默认形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
+            'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
+            'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
+            
+            # 通用形态
+            'strong_signal': {'name': '强信号', 'description': '强烈的技术信号', 'type': 'STRONG'},
+            'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
+            'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
+            'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
+        
+        # 默认形态信息
+        default_pattern = {
+            'name': pattern_id.replace('_', ' ').title(),
+            'description': f'{pattern_id}形态',
+            'type': 'UNKNOWN'
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

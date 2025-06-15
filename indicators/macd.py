@@ -276,7 +276,68 @@ class MACD(BaseIndicator):
             slow_period=self.slow_period,
             signal_period=self.signal_period
         )
-        
+
+        # 确保返回的是Series而不是数组，并处理可能的多维数组
+        if not isinstance(macd_line, pd.Series):
+            # 处理多维数组的情况
+            if hasattr(macd_line, 'shape') and len(macd_line.shape) > 1:
+                # 如果是多维数组，转换为numpy数组并取第一列
+                macd_line = np.array(macd_line)
+                if macd_line.shape[1] > 0:
+                    macd_line = macd_line[:, 0]
+                else:
+                    macd_line = macd_line.flatten()
+            elif hasattr(macd_line, 'flatten'):
+                macd_line = macd_line.flatten()
+            # 确保长度匹配
+            if len(macd_line) != len(data.index):
+                # 如果长度不匹配，用NaN填充或截断
+                if len(macd_line) < len(data.index):
+                    macd_line = np.concatenate([np.full(len(data.index) - len(macd_line), np.nan), macd_line])
+                else:
+                    macd_line = macd_line[:len(data.index)]
+            macd_line = pd.Series(macd_line, index=data.index)
+
+        if not isinstance(macd_signal, pd.Series):
+            # 处理多维数组的情况
+            if hasattr(macd_signal, 'shape') and len(macd_signal.shape) > 1:
+                # 如果是多维数组，转换为numpy数组并取第一列
+                macd_signal = np.array(macd_signal)
+                if macd_signal.shape[1] > 0:
+                    macd_signal = macd_signal[:, 0]
+                else:
+                    macd_signal = macd_signal.flatten()
+            elif hasattr(macd_signal, 'flatten'):
+                macd_signal = macd_signal.flatten()
+            # 确保长度匹配
+            if len(macd_signal) != len(data.index):
+                # 如果长度不匹配，用NaN填充或截断
+                if len(macd_signal) < len(data.index):
+                    macd_signal = np.concatenate([np.full(len(data.index) - len(macd_signal), np.nan), macd_signal])
+                else:
+                    macd_signal = macd_signal[:len(data.index)]
+            macd_signal = pd.Series(macd_signal, index=data.index)
+
+        if not isinstance(macd_histogram, pd.Series):
+            # 处理多维数组的情况
+            if hasattr(macd_histogram, 'shape') and len(macd_histogram.shape) > 1:
+                # 如果是多维数组，转换为numpy数组并取第一列
+                macd_histogram = np.array(macd_histogram)
+                if macd_histogram.shape[1] > 0:
+                    macd_histogram = macd_histogram[:, 0]
+                else:
+                    macd_histogram = macd_histogram.flatten()
+            elif hasattr(macd_histogram, 'flatten'):
+                macd_histogram = macd_histogram.flatten()
+            # 确保长度匹配
+            if len(macd_histogram) != len(data.index):
+                # 如果长度不匹配，用NaN填充或截断
+                if len(macd_histogram) < len(data.index):
+                    macd_histogram = np.concatenate([np.full(len(data.index) - len(macd_histogram), np.nan), macd_histogram])
+                else:
+                    macd_histogram = macd_histogram[:len(data.index)]
+            macd_histogram = pd.Series(macd_histogram, index=data.index)
+
         # 统一列名
         result_df = pd.DataFrame({
             'macd_line': macd_line,

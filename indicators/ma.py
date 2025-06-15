@@ -12,7 +12,8 @@ class MA(BaseIndicator):
     分类：趋势类指标
     描述：计算价格的简单移动平均。
     """
-    REQUIRED_COLUMNS = ['close', 'high', 'low']
+    # MA指标只需要close列
+    REQUIRED_COLUMNS = ['close']
 
     def __init__(self, periods: List[int] = None, ma_type: str = 'SMA'):
         """
@@ -40,9 +41,43 @@ class MA(BaseIndicator):
         """
         计算简单移动平均线(SMA)
         """
-        result_df = pd.DataFrame(index=data.index)
+        # 从原始数据开始，确保保留所有基础列
+        result_df = data.copy()
+
+        # 确保close列存在
+        if 'close' not in data.columns:
+            raise ValueError("数据中缺少'close'列")
+
+        close_series = data['close']
+
+        # 处理close列不是Series的情况
+        if not isinstance(close_series, pd.Series):
+            # 获取close列的值
+            close_values = close_series.values if hasattr(close_series, 'values') else close_series
+
+            # 如果是多维数组，展平它
+            if hasattr(close_values, 'flatten'):
+                close_values = close_values.flatten()
+
+            # 确保数据长度与索引长度匹配
+            expected_length = len(data.index)
+            if len(close_values) != expected_length:
+                # 如果长度不匹配，只取需要的长度
+                if len(close_values) > expected_length:
+                    close_values = close_values[:expected_length]
+                else:
+                    # 如果数据不足，用NaN填充
+                    close_values = np.pad(close_values, (0, expected_length - len(close_values)),
+                                        constant_values=np.nan)
+
+            # 创建正确的Series
+            close_series = pd.Series(close_values, index=data.index)
+
+        # 计算移动平均线
         for p in self.periods:
-            result_df[f'{self.ma_type}{p}'] = data['close'].rolling(window=p).mean()
+            ma_values = close_series.rolling(window=p).mean()
+            result_df[f'{self.ma_type}{p}'] = ma_values
+
         return result_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -212,4 +247,72 @@ class MA(BaseIndicator):
             display_name="MA空头排列",
             description=f"短期MA({p_short})在长期MA({p_long})之下，表明市场处于强劲下降趋势。",
             pattern_type=PatternType.BEARISH
-        ) 
+        )
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        if len(self.periods) < 2:
+            return {
+                "id": pattern_id,
+                "name": "未知形态",
+                "description": "未定义的形态",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            }
+
+        sorted_periods = sorted(self.periods)
+        p_short, p_medium = sorted_periods[0], sorted_periods[1]
+        p_long = sorted_periods[-1]
+
+        pattern_info_map = {
+            f"MA_{p_short}_{p_medium}_GOLDEN_CROSS": {
+                "id": f"MA_{p_short}_{p_medium}_GOLDEN_CROSS",
+                "name": f"MA({p_short},{p_medium})金叉",
+                "description": f"短期MA({p_short})上穿中期MA({p_medium})，看涨信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            f"MA_{p_short}_{p_medium}_DEATH_CROSS": {
+                "id": f"MA_{p_short}_{p_medium}_DEATH_CROSS",
+                "name": f"MA({p_short},{p_medium})死叉",
+                "description": f"短期MA({p_short})下穿中期MA({p_medium})，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            },
+            "MA_BULLISH_ARRANGEMENT": {
+                "id": "MA_BULLISH_ARRANGEMENT",
+                "name": "MA多头排列",
+                "description": f"短期MA({p_short})在长期MA({p_long})之上，强劲上升趋势",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 25.0
+            },
+            "MA_BEARISH_ARRANGEMENT": {
+                "id": "MA_BEARISH_ARRANGEMENT",
+                "name": "MA空头排列",
+                "description": f"短期MA({p_short})在长期MA({p_long})之下，强劲下降趋势",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -25.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })

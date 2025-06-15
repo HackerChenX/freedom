@@ -1381,3 +1381,89 @@ class EnhancedTRIX(TRIX):
         atr = tr.rolling(window=period).mean()
 
         return atr
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "TRIX_GOLDEN_CROSS": {
+                "id": "TRIX_GOLDEN_CROSS",
+                "name": "TRIX金叉",
+                "description": "TRIX线上穿信号线，表明上升趋势开始",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 20.0
+            },
+            "TRIX_DEATH_CROSS": {
+                "id": "TRIX_DEATH_CROSS",
+                "name": "TRIX死叉",
+                "description": "TRIX线下穿信号线，表明下降趋势开始",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -20.0
+            },
+            "TRIX_ZERO_CROSS_UP": {
+                "id": "TRIX_ZERO_CROSS_UP",
+                "name": "TRIX零轴上穿",
+                "description": "TRIX从下方穿越零轴，表明趋势转为看涨",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "TRIX_ZERO_CROSS_DOWN": {
+                "id": "TRIX_ZERO_CROSS_DOWN",
+                "name": "TRIX零轴下穿",
+                "description": "TRIX从上方穿越零轴，表明趋势转为看跌",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -15.0
+            },
+            "TRIX_BULLISH_DIVERGENCE": {
+                "id": "TRIX_BULLISH_DIVERGENCE",
+                "name": "TRIX看涨背离",
+                "description": "价格创新低但TRIX未创新低，表明下跌动能减弱",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 25.0
+            },
+            "TRIX_BEARISH_DIVERGENCE": {
+                "id": "TRIX_BEARISH_DIVERGENCE",
+                "name": "TRIX看跌背离",
+                "description": "价格创新高但TRIX未创新高，表明上涨动能减弱",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -25.0
+            },
+            "TRIX_MULTI_PERIOD_BULLISH": {
+                "id": "TRIX_MULTI_PERIOD_BULLISH",
+                "name": "TRIX多周期看涨",
+                "description": "多周期TRIX共振发出看涨信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 30.0
+            },
+            "TRIX_MULTI_PERIOD_BEARISH": {
+                "id": "TRIX_MULTI_PERIOD_BEARISH",
+                "name": "TRIX多周期看跌",
+                "description": "多周期TRIX共振发出看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -30.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })

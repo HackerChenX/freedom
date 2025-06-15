@@ -62,11 +62,11 @@ class ZXMDailyTrendUp(BaseIndicator):
         xg = j1 | j2
         
         # 添加计算结果到数据框
-        result["MA60"] = ma60
-        result["MA120"] = ma120
-        result["J1"] = j1
-        result["J2"] = j2
-        result["XG"] = xg
+        result.loc[:, "MA60"] = ma60
+        result.loc[:, "MA120"] = ma120
+        result.loc[:, "J1"] = j1
+        result.loc[:, "J2"] = j2
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -206,32 +206,32 @@ class ZXMDailyTrendUp(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["XG"]
-        signals['sell_signal'] = ~result["XG"]
-        signals['neutral_signal'] = False
+        signals.loc[:, 'buy_signal'] = result["XG"]
+        signals.loc[:, 'sell_signal'] = ~result["XG"]
+        signals.loc[:, 'neutral_signal'] = False
         
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
+        signals.loc[:, 'trend'] = 0  # 默认中性
         signals.loc[result["XG"], 'trend'] = 1  # 均线上移看涨
         signals.loc[~result["XG"], 'trend'] = -1  # 均线不上移看跌
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["XG"], 'signal_type'] = 'daily_ma_up'
         signals.loc[~result["XG"], 'signal_type'] = 'daily_ma_down'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         signals.loc[result["XG"] & result["J1"] & result["J2"], 'signal_desc'] = '双均线上移，趋势强劲'
         signals.loc[result["XG"] & result["J1"] & ~result["J2"], 'signal_desc'] = '60日均线上移，中期趋势向好'
         signals.loc[result["XG"] & ~result["J1"] & result["J2"], 'signal_desc'] = '120日均线上移，长期趋势向好'
         signals.loc[~result["XG"], 'signal_desc'] = '均线不上移，趋势走弱'
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         # 双均线上移，置信度更高
         signals.loc[result["XG"] & result["J1"] & result["J2"], 'confidence'] = 80
         # 评分高的信号，置信度更高
@@ -239,16 +239,16 @@ class ZXMDailyTrendUp(BaseIndicator):
         signals.loc[score > 85, 'confidence'] = 90
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[result["XG"], 'position_size'] = 0.3  # 基础仓位
         signals.loc[(result["XG"]) & (score > 70), 'position_size'] = 0.5  # 高分仓位
         signals.loc[(result["XG"]) & (score > 85), 'position_size'] = 0.7  # 极高分仓位
         
         # 止损位 - 使用均线作为参考
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         mask = result["XG"]
         for i in data.index[mask]:
             ma60_val = result.loc[i, "MA60"]
@@ -267,8 +267,8 @@ class ZXMDailyTrendUp(BaseIndicator):
                     continue
         
         # 市场环境和成交量确认
-        signals['market_env'] = 'normal'
-        signals['volume_confirmation'] = False
+        signals.loc[:, 'market_env'] = 'normal'
+        signals.loc[:, 'volume_confirmation'] = False
         
         return signals
 
@@ -326,19 +326,19 @@ class ZXMDailyTrendUp(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["均线上移"] = result["XG"]
-        patterns_df["双均线上移"] = result["J1"] & result["J2"]
-        patterns_df["60日均线上移"] = result["J1"] & ~result["J2"]
-        patterns_df["120日均线上移"] = ~result["J1"] & result["J2"]
+        patterns_df.loc[:, "均线上移"] = result["XG"]
+        patterns_df.loc[:, "双均线上移"] = result["J1"] & result["J2"]
+        patterns_df.loc[:, "60日均线上移"] = result["J1"] & ~result["J2"]
+        patterns_df.loc[:, "120日均线上移"] = ~result["J1"] & result["J2"]
 
         # 价格与均线关系
         price_above_ma60 = data["close"] > result["MA60"]
         price_above_ma120 = data["close"] > result["MA120"]
         ma_bull_alignment = result["MA60"] > result["MA120"]
 
-        patterns_df["价格站上双均线"] = price_above_ma60 & price_above_ma120 & ma_bull_alignment
-        patterns_df["价格回踩60日线"] = ma_bull_alignment & ~price_above_ma60 & (data["close"] > result["MA120"])
-        patterns_df["均线空头排列"] = result["MA60"] < result["MA120"]
+        patterns_df.loc[:, "价格站上双均线"] = price_above_ma60 & price_above_ma120 & ma_bull_alignment
+        patterns_df.loc[:, "价格回踩60日线"] = ma_bull_alignment & ~price_above_ma60 & (data["close"] > result["MA120"])
+        patterns_df.loc[:, "均线空头排列"] = result["MA60"] < result["MA120"]
 
         # 趋势变化
         if len(result) >= 10:
@@ -351,8 +351,8 @@ class ZXMDailyTrendUp(BaseIndicator):
                 elif result["XG"].iloc[i-10:i-5].all() and not result["XG"].iloc[i-5:i+1].any():
                     trend_strong_to_weak.iloc[i] = True
 
-            patterns_df["趋势由弱转强"] = trend_weak_to_strong
-            patterns_df["趋势由强转弱"] = trend_strong_to_weak
+            patterns_df.loc[:, "趋势由弱转强"] = trend_weak_to_strong
+            patterns_df.loc[:, "趋势由强转弱"] = trend_strong_to_weak
 
         return patterns_df
 
@@ -416,13 +416,13 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         xg = a1 | b1 | c1
         
         # 添加计算结果到数据框
-        result["MA10"] = ma10
-        result["MA20"] = ma20
-        result["MA30"] = ma30
-        result["A1"] = a1
-        result["B1"] = b1
-        result["C1"] = c1
-        result["XG"] = xg
+        result.loc[:, "MA10"] = ma10
+        result.loc[:, "MA20"] = ma20
+        result.loc[:, "MA30"] = ma30
+        result.loc[:, "A1"] = a1
+        result.loc[:, "B1"] = b1
+        result.loc[:, "C1"] = c1
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -591,26 +591,26 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["XG"]
-        signals['sell_signal'] = ~result["XG"]
-        signals['neutral_signal'] = False
+        signals.loc[:, 'buy_signal'] = result["XG"]
+        signals.loc[:, 'sell_signal'] = ~result["XG"]
+        signals.loc[:, 'neutral_signal'] = False
         
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
+        signals.loc[:, 'trend'] = 0  # 默认中性
         signals.loc[result["XG"], 'trend'] = 1  # 均线上移看涨
         signals.loc[~result["XG"], 'trend'] = -1  # 均线不上移看跌
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["XG"] & result["A1"] & result["B1"] & result["C1"], 'signal_type'] = 'weekly_three_ma_up'
         signals.loc[result["XG"] & ~(result["A1"] & result["B1"] & result["C1"]), 'signal_type'] = 'weekly_some_ma_up'
         signals.loc[~result["XG"], 'signal_type'] = 'weekly_ma_down'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in signals.index:
@@ -627,7 +627,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
                 signals.loc[i, 'signal_desc'] = "周均线不上移，趋势走弱"
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据上移均线数量调整置信度
         up_ma_count = result["A1"].astype(int) + result["B1"].astype(int) + result["C1"].astype(int)
@@ -639,15 +639,15 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         signals.loc[ma_bull_alignment, 'confidence'] += 10
         
         # 确保置信度在0-100范围内
-        signals['confidence'] = signals['confidence'].clip(0, 100)
+        signals.loc[:, 'confidence'] = signals['confidence'].clip(0, 100)
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         signals.loc[score >= 75, 'risk_level'] = '低'
         signals.loc[score <= 30, 'risk_level'] = '高'
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[signals['buy_signal'], 'position_size'] = 0.3  # 基础仓位
         
         # 根据上移均线数量和排列调整仓位
@@ -658,7 +658,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         signals.loc[three_ma_up & ma_bull_alignment, 'position_size'] = 0.7  # 三均线上移且多头排列，大仓位
         
         # 止损位 - 使用均线作为参考
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         for i in signals.index[signals['buy_signal']]:
             ma10_val = result.loc[i, "MA10"]
             ma20_val = result.loc[i, "MA20"]
@@ -680,7 +680,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
                     continue
         
         # 市场环境
-        signals['market_env'] = 'normal'
+        signals.loc[:, 'market_env'] = 'normal'
         bull_market = result["XG"] & ma_bull_alignment
         bear_market = ~result["XG"] & (result["MA10"] < result["MA20"]) & (result["MA20"] < result["MA30"])
         
@@ -689,7 +689,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         signals.loc[~bull_market & ~bear_market, 'market_env'] = 'sideways_market'
         
         # 成交量确认 - 简单设为True，实际应结合成交量指标
-        signals['volume_confirmation'] = True
+        signals.loc[:, 'volume_confirmation'] = True
         
         return signals
 
@@ -749,14 +749,14 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["周均线上移"] = result["XG"]
-        patterns_df["三均线同时上移"] = result["A1"] & result["B1"] & result["C1"]
-        patterns_df["10周均线上移"] = result["A1"] & ~result["B1"] & ~result["C1"]
-        patterns_df["20周均线上移"] = ~result["A1"] & result["B1"] & ~result["C1"]
-        patterns_df["30周均线上移"] = ~result["A1"] & ~result["B1"] & result["C1"]
-        patterns_df["10周和20周均线上移"] = result["A1"] & result["B1"] & ~result["C1"]
-        patterns_df["10周和30周均线上移"] = result["A1"] & ~result["B1"] & result["C1"]
-        patterns_df["20周和30周均线上移"] = ~result["A1"] & result["B1"] & result["C1"]
+        patterns_df.loc[:, "周均线上移"] = result["XG"]
+        patterns_df.loc[:, "三均线同时上移"] = result["A1"] & result["B1"] & result["C1"]
+        patterns_df.loc[:, "10周均线上移"] = result["A1"] & ~result["B1"] & ~result["C1"]
+        patterns_df.loc[:, "20周均线上移"] = ~result["A1"] & result["B1"] & ~result["C1"]
+        patterns_df.loc[:, "30周均线上移"] = ~result["A1"] & ~result["B1"] & result["C1"]
+        patterns_df.loc[:, "10周和20周均线上移"] = result["A1"] & result["B1"] & ~result["C1"]
+        patterns_df.loc[:, "10周和30周均线上移"] = result["A1"] & ~result["B1"] & result["C1"]
+        patterns_df.loc[:, "20周和30周均线上移"] = ~result["A1"] & result["B1"] & result["C1"]
 
         # 价格与均线关系
         price_above_ma10 = data["close"] > result["MA10"]
@@ -765,11 +765,11 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         ma_bull_alignment = (result["MA10"] > result["MA20"]) & (result["MA20"] > result["MA30"])
         ma_bear_alignment = (result["MA10"] < result["MA20"]) & (result["MA20"] < result["MA30"])
 
-        patterns_df["价格站上三均线"] = price_above_ma10 & price_above_ma20 & price_above_ma30 & ma_bull_alignment
-        patterns_df["均线多头排列"] = ma_bull_alignment
-        patterns_df["均线空头排列"] = ma_bear_alignment
-        patterns_df["价格回踩10周线"] = ma_bull_alignment & ~price_above_ma10 & price_above_ma20
-        patterns_df["价格反弹站上10周线"] = ma_bear_alignment & price_above_ma10
+        patterns_df.loc[:, "价格站上三均线"] = price_above_ma10 & price_above_ma20 & price_above_ma30 & ma_bull_alignment
+        patterns_df.loc[:, "均线多头排列"] = ma_bull_alignment
+        patterns_df.loc[:, "均线空头排列"] = ma_bear_alignment
+        patterns_df.loc[:, "价格回踩10周线"] = ma_bull_alignment & ~price_above_ma10 & price_above_ma20
+        patterns_df.loc[:, "价格反弹站上10周线"] = ma_bear_alignment & price_above_ma10
 
         # 趋势变化
         if len(result) >= 8:
@@ -782,8 +782,8 @@ class ZXMWeeklyTrendUp(BaseIndicator):
                 elif result["XG"].iloc[i-8:i-4].all() and not result["XG"].iloc[i-4:i+1].any():
                     trend_strong_to_weak.iloc[i] = True
 
-            patterns_df["周线趋势由弱转强"] = trend_weak_to_strong
-            patterns_df["周线趋势由强转弱"] = trend_strong_to_weak
+            patterns_df.loc[:, "周线趋势由弱转强"] = trend_weak_to_strong
+            patterns_df.loc[:, "周线趋势由强转弱"] = trend_strong_to_weak
 
         return patterns_df
 
@@ -855,11 +855,11 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         xg = (d >= d.shift(1)) & (k >= k.shift(1))
         
         # 添加计算结果到数据框
-        result["RSV"] = rsv
-        result["K"] = k
-        result["D"] = d
-        result["J"] = j
-        result["XG"] = xg
+        result.loc[:, "RSV"] = rsv
+        result.loc[:, "K"] = k
+        result.loc[:, "D"] = d
+        result.loc[:, "J"] = j
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -1034,19 +1034,19 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
             patterns.append(self.identify_patterns(data.iloc[:i+1], **kwargs))
         
         # 设置基本信号列
-        signals["buy_signal"] = False
-        signals["sell_signal"] = False 
-        signals["neutral_signal"] = True
-        signals["trend"] = 0
-        signals["score"] = score
-        signals["signal_type"] = "中性"
-        signals["signal_desc"] = ""
-        signals["confidence"] = 0
-        signals["risk_level"] = "中"
-        signals["position_size"] = 0.0
-        signals["stop_loss"] = 0.0
-        signals["market_env"] = "未知"
-        signals["volume_confirmation"] = False
+        signals.loc[:, "buy_signal"] = False
+        signals.loc[:, "sell_signal"] = False 
+        signals.loc[:, "neutral_signal"] = True
+        signals.loc[:, "trend"] = 0
+        signals.loc[:, "score"] = score
+        signals.loc[:, "signal_type"] = "中性"
+        signals.loc[:, "signal_desc"] = ""
+        signals.loc[:, "confidence"] = 0
+        signals.loc[:, "risk_level"] = "中"
+        signals.loc[:, "position_size"] = 0.0
+        signals.loc[:, "stop_loss"] = 0.0
+        signals.loc[:, "market_env"] = "未知"
+        signals.loc[:, "volume_confirmation"] = False
         
         # 填充信号描述和置信度
         for i in range(len(signals)):
@@ -1097,7 +1097,7 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         
         # 计算置信度
         # 置信度基于评分、KDJ值和KD关系
-        signals["confidence"] = signals["score"].apply(lambda x: min(100, x + 20) if x > 50 else max(0, x - 20))
+        signals.loc[:, "confidence"] = signals["score"].apply(lambda x: min(100, x + 20) if x > 50 else max(0, x - 20))
         
         # KD关系影响置信度
         kd_relation = (result["K"] - result["D"]) / 100 * 40  # 将差值归一化，影响置信度±20
@@ -1105,11 +1105,11 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
             if pd.notna(kd_relation.iloc[i]):
                 current_confidence = signals["confidence"].iloc[i]
                 new_confidence = max(0, min(100, current_confidence + kd_relation.iloc[i]))
-                signals["confidence"].iloc[i] = new_confidence
+                signals.at[signals.index[i], "confidence"] = new_confidence
         
         # 月线KDJ信号更重要，置信度整体提高
-        signals["confidence"] = signals["confidence"] + 10
-        signals["confidence"] = signals["confidence"].clip(0, 100)
+        signals.loc[:, "confidence"] = signals["confidence"] + 10
+        signals.loc[:, "confidence"] = signals["confidence"].clip(0, 100)
         
         # 设置风险等级
         signals.loc[signals["score"] >= 70, "risk_level"] = "低"
@@ -1118,7 +1118,7 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         
         # 设置仓位建议
         # 基于评分和风险设置仓位大小，月线信号更重要，整体仓位更大
-        signals["position_size"] = signals["score"].apply(lambda x: min(1.0, max(0.0, (x - 40) / 60 * 0.8)))
+        signals.loc[:, "position_size"] = signals["score"].apply(lambda x: min(1.0, max(0.0, (x - 40) / 60 * 0.8)))
         
         # 设置止损位
         # 月线级别止损应更宽松
@@ -1145,7 +1145,7 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         
         # 设置成交量确认
         # 月线级别可能不太依赖成交量确认
-        signals["volume_confirmation"] = False
+        signals.loc[:, "volume_confirmation"] = False
         
         return signals
 
@@ -1206,30 +1206,30 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["月KDJ指标K值上移"] = result["XG"]
+        patterns_df.loc[:, "月KDJ指标K值上移"] = result["XG"]
 
         # KDJ值区间形态
         k_value = result["K"]
         d_value = result["D"]
         j_value = result["J"]
 
-        patterns_df["月KDJ严重超卖区域"] = k_value < 20
-        patterns_df["月KDJ超卖区域"] = (k_value >= 20) & (k_value < 40)
-        patterns_df["月KDJ严重超买区域"] = k_value > 80
-        patterns_df["月KDJ超买区域"] = (k_value <= 80) & (k_value > 60)
+        patterns_df.loc[:, "月KDJ严重超卖区域"] = k_value < 20
+        patterns_df.loc[:, "月KDJ超卖区域"] = (k_value >= 20) & (k_value < 40)
+        patterns_df.loc[:, "月KDJ严重超买区域"] = k_value > 80
+        patterns_df.loc[:, "月KDJ超买区域"] = (k_value <= 80) & (k_value > 60)
 
         # KD关系形态
         k_cross_above_d = (k_value > d_value) & (k_value.shift(1) <= d_value.shift(1))
         k_cross_below_d = (k_value < d_value) & (k_value.shift(1) >= d_value.shift(1))
 
-        patterns_df["月线KDJ金叉形成"] = k_cross_above_d
-        patterns_df["月线KDJ死叉形成"] = k_cross_below_d
-        patterns_df["月线KDJ金叉后持续上行"] = (k_value > d_value) & ~k_cross_above_d
-        patterns_df["月线KDJ死叉后持续下行"] = (k_value < d_value) & ~k_cross_below_d
+        patterns_df.loc[:, "月线KDJ金叉形成"] = k_cross_above_d
+        patterns_df.loc[:, "月线KDJ死叉形成"] = k_cross_below_d
+        patterns_df.loc[:, "月线KDJ金叉后持续上行"] = (k_value > d_value) & ~k_cross_above_d
+        patterns_df.loc[:, "月线KDJ死叉后持续下行"] = (k_value < d_value) & ~k_cross_below_d
 
         # J值极值形态
-        patterns_df["月KDJ-J值低于0"] = j_value < 0
-        patterns_df["月KDJ-J值高于100"] = j_value > 100
+        patterns_df.loc[:, "月KDJ-J值低于0"] = j_value < 0
+        patterns_df.loc[:, "月KDJ-J值高于100"] = j_value > 100
 
         # 趋势变化
         if len(result) >= 6:
@@ -1242,8 +1242,8 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
                 elif result["XG"].iloc[i-6:i-3].all() and not result["XG"].iloc[i-3:i+1].any():
                     trend_strong_to_weak.iloc[i] = True
 
-            patterns_df["月KDJ趋势由弱转强"] = trend_weak_to_strong
-            patterns_df["月KDJ趋势由强转弱"] = trend_strong_to_weak
+            patterns_df.loc[:, "月KDJ趋势由弱转强"] = trend_weak_to_strong
+            patterns_df.loc[:, "月KDJ趋势由强转弱"] = trend_strong_to_weak
 
         return patterns_df
 
@@ -1327,13 +1327,13 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         xg = (d >= d.shift(1)) | (dea >= dea.shift(1))
         
         # 添加计算结果到数据框
-        result["RSV"] = rsv
-        result["K"] = k
-        result["D"] = d
-        result["J"] = j
-        result["DIFF"] = diff
-        result["DEA"] = dea
-        result["XG"] = xg
+        result.loc[:, "RSV"] = rsv
+        result.loc[:, "K"] = k
+        result.loc[:, "D"] = d
+        result.loc[:, "J"] = j
+        result.loc[:, "DIFF"] = diff
+        result.loc[:, "DEA"] = dea
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -1544,25 +1544,25 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["XG"]
-        signals['sell_signal'] = ~result["XG"]
-        signals['neutral_signal'] = False
+        signals.loc[:, 'buy_signal'] = result["XG"]
+        signals.loc[:, 'sell_signal'] = ~result["XG"]
+        signals.loc[:, 'neutral_signal'] = False
         
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
+        signals.loc[:, 'trend'] = 0  # 默认中性
         signals.loc[result["XG"], 'trend'] = 1  # 均线上移看涨
         signals.loc[~result["XG"], 'trend'] = -1  # 均线不上移看跌
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["XG"], 'signal_type'] = 'trend_reversal_bullish'
         signals.loc[~result["XG"], 'signal_type'] = 'trend_reversal_bearish'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in signals.index:
@@ -1572,24 +1572,24 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
                 signals.loc[i, 'signal_desc'] = "周KDJ·D/DEA不上移，趋势走弱"
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据趋势强度调整置信度
-        signals['confidence'] = signals['confidence'] + (score / 10).clip(0, 10)
+        signals.loc[:, 'confidence'] = signals['confidence'] + (score / 10).clip(0, 10)
         
         # 趋势反转信号有更高的置信度
         signals.loc[~result["XG"], 'confidence'] = 70
         
         # 确保置信度在0-100范围内
-        signals['confidence'] = signals['confidence'].clip(0, 100)
+        signals.loc[:, 'confidence'] = signals['confidence'].clip(0, 100)
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         signals.loc[score >= 70, 'risk_level'] = '低'  # 强趋势风险较低
         signals.loc[score < 40, 'risk_level'] = '高'  # 弱趋势风险较高
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[signals['buy_signal'], 'position_size'] = 0.3  # 基础仓位
         
         # 根据趋势强度调整仓位
@@ -1600,7 +1600,7 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         signals.loc[reversal_signal, 'position_size'] = 0.4  # 反转信号，中等偏大仓位
         
         # 止损位 - 使用支撑位或移动平均线
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         ma_long = data["close"].rolling(window=30).mean()
         
         for i in signals.index[signals['buy_signal']]:
@@ -1613,12 +1613,12 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
                 continue
         
         # 市场环境
-        signals['market_env'] = 'normal'
+        signals.loc[:, 'market_env'] = 'normal'
         signals.loc[result["XG"], 'market_env'] = 'bull_market'
         signals.loc[~result["XG"], 'market_env'] = 'bear_market'
         
         # 成交量确认 - 简单设为True，实际应结合成交量指标
-        signals['volume_confirmation'] = True
+        signals.loc[:, 'volume_confirmation'] = True
         
         return signals
 
@@ -1679,31 +1679,31 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["周KDJ·D/DEA上移"] = result["XG"]
+        patterns_df.loc[:, "周KDJ·D/DEA上移"] = result["XG"]
 
         # KDJ值区间形态
         d_value = result["D"]
         dea_value = result.get("DEA", pd.Series(0, index=data.index))
 
-        patterns_df["周KDJ严重超卖区域"] = d_value < 20
-        patterns_df["周KDJ超卖区域"] = (d_value >= 20) & (d_value < 40)
-        patterns_df["周KDJ严重超买区域"] = d_value > 80
-        patterns_df["周KDJ超买区域"] = (d_value <= 80) & (d_value > 60)
+        patterns_df.loc[:, "周KDJ严重超卖区域"] = d_value < 20
+        patterns_df.loc[:, "周KDJ超卖区域"] = (d_value >= 20) & (d_value < 40)
+        patterns_df.loc[:, "周KDJ严重超买区域"] = d_value > 80
+        patterns_df.loc[:, "周KDJ超买区域"] = (d_value <= 80) & (d_value > 60)
 
         # KD关系形态
         k_value = result.get("K", pd.Series(50, index=data.index))
         k_cross_above_d = (k_value > d_value) & (k_value.shift(1) <= d_value.shift(1))
         k_cross_below_d = (k_value < d_value) & (k_value.shift(1) >= d_value.shift(1))
 
-        patterns_df["周线KDJ金叉形成"] = k_cross_above_d
-        patterns_df["周线KDJ死叉形成"] = k_cross_below_d
+        patterns_df.loc[:, "周线KDJ金叉形成"] = k_cross_above_d
+        patterns_df.loc[:, "周线KDJ死叉形成"] = k_cross_below_d
 
         # DEA相关形态
         if "DEA" in result.columns:
-            patterns_df["DEA向上穿越0轴"] = (dea_value > 0) & (dea_value.shift(1) <= 0)
-            patterns_df["DEA向下穿越0轴"] = (dea_value < 0) & (dea_value.shift(1) >= 0)
-            patterns_df["DEA低于0"] = dea_value < 0
-            patterns_df["DEA高于0"] = dea_value > 0
+            patterns_df.loc[:, "DEA向上穿越0轴"] = (dea_value > 0) & (dea_value.shift(1) <= 0)
+            patterns_df.loc[:, "DEA向下穿越0轴"] = (dea_value < 0) & (dea_value.shift(1) >= 0)
+            patterns_df.loc[:, "DEA低于0"] = dea_value < 0
+            patterns_df.loc[:, "DEA高于0"] = dea_value > 0
 
         # 趋势变化
         if len(result) >= 6:
@@ -1716,8 +1716,8 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
                 elif result["XG"].iloc[i-6:i-3].all() and not result["XG"].iloc[i-3:i+1].any():
                     trend_strong_to_weak.iloc[i] = True
 
-            patterns_df["周KDJ趋势由弱转强"] = trend_weak_to_strong
-            patterns_df["周KDJ趋势由强转弱"] = trend_strong_to_weak
+            patterns_df.loc[:, "周KDJ趋势由弱转强"] = trend_weak_to_strong
+            patterns_df.loc[:, "周KDJ趋势由强转弱"] = trend_strong_to_weak
 
         return patterns_df
 
@@ -1799,11 +1799,11 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         xg = d >= d.shift(1)
         
         # 添加计算结果到数据框
-        result["RSV"] = rsv
-        result["K"] = k
-        result["D"] = d
-        result["J"] = j
-        result["XG"] = xg
+        result.loc[:, "RSV"] = rsv
+        result.loc[:, "K"] = k
+        result.loc[:, "D"] = d
+        result.loc[:, "J"] = j
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -1973,25 +1973,25 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["XG"]
-        signals['sell_signal'] = ~result["XG"]
-        signals['neutral_signal'] = False
+        signals.loc[:, 'buy_signal'] = result["XG"]
+        signals.loc[:, 'sell_signal'] = ~result["XG"]
+        signals.loc[:, 'neutral_signal'] = False
         
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
+        signals.loc[:, 'trend'] = 0  # 默认中性
         signals.loc[result["XG"], 'trend'] = 1  # 均线上移看涨
         signals.loc[~result["XG"], 'trend'] = -1  # 均线不上移看跌
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["XG"], 'signal_type'] = 'trend_reversal_bullish'
         signals.loc[~result["XG"], 'signal_type'] = 'trend_reversal_bearish'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in signals.index:
@@ -2001,24 +2001,24 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
                 signals.loc[i, 'signal_desc'] = "周KDJ·D不上移，趋势走弱"
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据趋势强度调整置信度
-        signals['confidence'] = signals['confidence'] + (score / 10).clip(0, 10)
+        signals.loc[:, 'confidence'] = signals['confidence'] + (score / 10).clip(0, 10)
         
         # 趋势反转信号有更高的置信度
         signals.loc[~result["XG"], 'confidence'] = 70
         
         # 确保置信度在0-100范围内
-        signals['confidence'] = signals['confidence'].clip(0, 100)
+        signals.loc[:, 'confidence'] = signals['confidence'].clip(0, 100)
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         signals.loc[score >= 70, 'risk_level'] = '低'  # 强趋势风险较低
         signals.loc[score < 40, 'risk_level'] = '高'  # 弱趋势风险较高
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[signals['buy_signal'], 'position_size'] = 0.3  # 基础仓位
         
         # 根据趋势强度调整仓位
@@ -2029,7 +2029,7 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         signals.loc[reversal_signal, 'position_size'] = 0.4  # 反转信号，中等偏大仓位
         
         # 止损位 - 使用支撑位或移动平均线
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         ma_long = data["close"].rolling(window=30).mean()
         
         for i in signals.index[signals['buy_signal']]:
@@ -2042,12 +2042,12 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
                 continue
         
         # 市场环境
-        signals['market_env'] = 'normal'
+        signals.loc[:, 'market_env'] = 'normal'
         signals.loc[result["XG"], 'market_env'] = 'bull_market'
         signals.loc[~result["XG"], 'market_env'] = 'bear_market'
         
         # 成交量确认 - 简单设为True，实际应结合成交量指标
-        signals['volume_confirmation'] = True
+        signals.loc[:, 'volume_confirmation'] = True
         
         return signals
 
@@ -2108,30 +2108,30 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["周KDJ·D上移"] = result["XG"]
+        patterns_df.loc[:, "周KDJ·D上移"] = result["XG"]
 
         # KDJ值区间形态
         k_value = result["K"]
         d_value = result["D"]
         j_value = result["J"]
 
-        patterns_df["周KDJ严重超卖区域"] = k_value < 20
-        patterns_df["周KDJ超卖区域"] = (k_value >= 20) & (k_value < 40)
-        patterns_df["周KDJ严重超买区域"] = k_value > 80
-        patterns_df["周KDJ超买区域"] = (k_value <= 80) & (k_value > 60)
+        patterns_df.loc[:, "周KDJ严重超卖区域"] = k_value < 20
+        patterns_df.loc[:, "周KDJ超卖区域"] = (k_value >= 20) & (k_value < 40)
+        patterns_df.loc[:, "周KDJ严重超买区域"] = k_value > 80
+        patterns_df.loc[:, "周KDJ超买区域"] = (k_value <= 80) & (k_value > 60)
 
         # KD关系形态
         k_cross_above_d = (k_value > d_value) & (k_value.shift(1) <= d_value.shift(1))
         k_cross_below_d = (k_value < d_value) & (k_value.shift(1) >= d_value.shift(1))
 
-        patterns_df["周线KDJ金叉形成"] = k_cross_above_d
-        patterns_df["周线KDJ死叉形成"] = k_cross_below_d
-        patterns_df["周线KDJ金叉后持续上行"] = (k_value > d_value) & ~k_cross_above_d
-        patterns_df["周线KDJ死叉后持续下行"] = (k_value < d_value) & ~k_cross_below_d
+        patterns_df.loc[:, "周线KDJ金叉形成"] = k_cross_above_d
+        patterns_df.loc[:, "周线KDJ死叉形成"] = k_cross_below_d
+        patterns_df.loc[:, "周线KDJ金叉后持续上行"] = (k_value > d_value) & ~k_cross_above_d
+        patterns_df.loc[:, "周线KDJ死叉后持续下行"] = (k_value < d_value) & ~k_cross_below_d
 
         # J值极值形态
-        patterns_df["周KDJ-J值低于0"] = j_value < 0
-        patterns_df["周KDJ-J值高于100"] = j_value > 100
+        patterns_df.loc[:, "周KDJ-J值低于0"] = j_value < 0
+        patterns_df.loc[:, "周KDJ-J值高于100"] = j_value > 100
 
         # 趋势变化
         if len(result) >= 6:
@@ -2144,8 +2144,8 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
                 elif result["XG"].iloc[i-6:i-3].all() and not result["XG"].iloc[i-3:i+1].any():
                     trend_strong_to_weak.iloc[i] = True
 
-            patterns_df["周KDJ趋势由弱转强"] = trend_weak_to_strong
-            patterns_df["周KDJ趋势由强转弱"] = trend_strong_to_weak
+            patterns_df.loc[:, "周KDJ趋势由弱转强"] = trend_weak_to_strong
+            patterns_df.loc[:, "周KDJ趋势由强转弱"] = trend_strong_to_weak
 
         return patterns_df
 
@@ -2211,12 +2211,12 @@ class ZXMMonthlyMACD(BaseIndicator):
         xg = (dif > dea) & (dif.shift(1) <= dea.shift(1))
         
         # 添加计算结果到数据框
-        result["EMA12"] = ema12
-        result["EMA26"] = ema26
-        result["DIF"] = dif
-        result["DEA"] = dea
-        result["MACD"] = macd
-        result["XG"] = xg
+        result.loc[:, "EMA12"] = ema12
+        result.loc[:, "EMA26"] = ema26
+        result.loc[:, "DIF"] = dif
+        result.loc[:, "DEA"] = dea
+        result.loc[:, "MACD"] = macd
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -2410,19 +2410,19 @@ class ZXMMonthlyMACD(BaseIndicator):
             patterns.append(self.identify_patterns(data.iloc[:i+1], **kwargs))
         
         # 设置基本信号列
-        signals["buy_signal"] = False
-        signals["sell_signal"] = False 
-        signals["neutral_signal"] = True
-        signals["trend"] = 0
-        signals["score"] = score
-        signals["signal_type"] = "中性"
-        signals["signal_desc"] = ""
-        signals["confidence"] = 0
-        signals["risk_level"] = "中"
-        signals["position_size"] = 0.0
-        signals["stop_loss"] = 0.0
-        signals["market_env"] = "未知"
-        signals["volume_confirmation"] = False
+        signals.loc[:, "buy_signal"] = False
+        signals.loc[:, "sell_signal"] = False 
+        signals.loc[:, "neutral_signal"] = True
+        signals.loc[:, "trend"] = 0
+        signals.loc[:, "score"] = score
+        signals.loc[:, "signal_type"] = "中性"
+        signals.loc[:, "signal_desc"] = ""
+        signals.loc[:, "confidence"] = 0
+        signals.loc[:, "risk_level"] = "中"
+        signals.loc[:, "position_size"] = 0.0
+        signals.loc[:, "stop_loss"] = 0.0
+        signals.loc[:, "market_env"] = "未知"
+        signals.loc[:, "volume_confirmation"] = False
         
         # 填充信号描述和置信度
         for i in range(len(signals)):
@@ -2479,7 +2479,7 @@ class ZXMMonthlyMACD(BaseIndicator):
         
         # 计算置信度
         # 置信度基于评分、DIF/DEA差值和零轴位置
-        signals["confidence"] = signals["score"].apply(lambda x: min(100, x + 10) if x > 50 else max(0, x - 10))
+        signals.loc[:, "confidence"] = signals["score"].apply(lambda x: min(100, x + 10) if x > 50 else max(0, x - 10))
         
         # MACD金叉/死叉提高置信度
         signals.loc[dif_cross_above_dea, "confidence"] = signals.loc[dif_cross_above_dea, "confidence"].apply(lambda x: min(100, x + 20))
@@ -2499,7 +2499,7 @@ class ZXMMonthlyMACD(BaseIndicator):
         
         # 设置仓位建议
         # 基于评分和风险设置仓位大小，月线信号更重要，整体仓位更大
-        signals["position_size"] = signals["score"].apply(lambda x: min(1.0, max(0.0, (x - 40) / 60 * 0.8)))
+        signals.loc[:, "position_size"] = signals["score"].apply(lambda x: min(1.0, max(0.0, (x - 40) / 60 * 0.8)))
         
         # 设置止损位
         # 月线级别止损应更宽松
@@ -2526,7 +2526,7 @@ class ZXMMonthlyMACD(BaseIndicator):
         
         # 设置成交量确认
         # 月线级别可能不太依赖成交量确认
-        signals["volume_confirmation"] = False
+        signals.loc[:, "volume_confirmation"] = False
         
         return signals
 
@@ -2592,10 +2592,10 @@ class ZXMMonthlyMACD(BaseIndicator):
         dif_cross_above_dea = (result["DIF"] > result["DEA"]) & (result["DIF"].shift(1) <= result["DEA"].shift(1))
         dif_cross_below_dea = (result["DIF"] < result["DEA"]) & (result["DIF"].shift(1) >= result["DEA"].shift(1))
 
-        patterns_df["月线MACD金叉形成"] = dif_cross_above_dea
-        patterns_df["月线MACD死叉形成"] = dif_cross_below_dea
-        patterns_df["月线MACD多头排列"] = result["DIF"] > result["DEA"]
-        patterns_df["月线MACD空头排列"] = result["DIF"] < result["DEA"]
+        patterns_df.loc[:, "月线MACD金叉形成"] = dif_cross_above_dea
+        patterns_df.loc[:, "月线MACD死叉形成"] = dif_cross_below_dea
+        patterns_df.loc[:, "月线MACD多头排列"] = result["DIF"] > result["DEA"]
+        patterns_df.loc[:, "月线MACD空头排列"] = result["DIF"] < result["DEA"]
 
         # MACD柱状图形态
         macd_turn_positive = (result["MACD"] > 0) & (result["MACD"].shift(1) <= 0)
@@ -2603,18 +2603,18 @@ class ZXMMonthlyMACD(BaseIndicator):
         macd_expanding = result["MACD"] > result["MACD"].shift(1)
         macd_contracting = result["MACD"] < result["MACD"].shift(1)
 
-        patterns_df["月线MACD由负转正"] = macd_turn_positive
-        patterns_df["月线MACD由正转负"] = macd_turn_negative
-        patterns_df["月线MACD柱状图扩大"] = macd_expanding & (result["MACD"] > 0)
-        patterns_df["月线MACD柱状图收缩"] = macd_contracting & (result["MACD"] > 0)
-        patterns_df["月线MACD柱状图负向扩大"] = macd_contracting & (result["MACD"] < 0)
-        patterns_df["月线MACD柱状图负向收缩"] = macd_expanding & (result["MACD"] < 0)
+        patterns_df.loc[:, "月线MACD由负转正"] = macd_turn_positive
+        patterns_df.loc[:, "月线MACD由正转负"] = macd_turn_negative
+        patterns_df.loc[:, "月线MACD柱状图扩大"] = macd_expanding & (result["MACD"] > 0)
+        patterns_df.loc[:, "月线MACD柱状图收缩"] = macd_contracting & (result["MACD"] > 0)
+        patterns_df.loc[:, "月线MACD柱状图负向扩大"] = macd_contracting & (result["MACD"] < 0)
+        patterns_df.loc[:, "月线MACD柱状图负向收缩"] = macd_expanding & (result["MACD"] < 0)
 
         # 零轴位置形态
-        patterns_df["月线MACD双线位于零轴上方"] = (result["DIF"] > 0) & (result["DEA"] > 0)
-        patterns_df["月线MACD双线位于零轴下方"] = (result["DIF"] < 0) & (result["DEA"] < 0)
-        patterns_df["月线MACD-DIF位于零轴上方，DEA位于零轴下方"] = (result["DIF"] > 0) & (result["DEA"] < 0)
-        patterns_df["月线MACD-DIF位于零轴下方，DEA位于零轴上方"] = (result["DIF"] < 0) & (result["DEA"] > 0)
+        patterns_df.loc[:, "月线MACD双线位于零轴上方"] = (result["DIF"] > 0) & (result["DEA"] > 0)
+        patterns_df.loc[:, "月线MACD双线位于零轴下方"] = (result["DIF"] < 0) & (result["DEA"] < 0)
+        patterns_df.loc[:, "月线MACD-DIF位于零轴上方，DEA位于零轴下方"] = (result["DIF"] > 0) & (result["DEA"] < 0)
+        patterns_df.loc[:, "月线MACD-DIF位于零轴下方，DEA位于零轴上方"] = (result["DIF"] < 0) & (result["DEA"] > 0)
 
         # 背离形态（简化版）
         if len(data) >= 6:
@@ -2623,9 +2623,9 @@ class ZXMMonthlyMACD(BaseIndicator):
             dif_change_6 = result["DIF"].diff(6)
 
             # 顶背离：价格上涨但DIF下跌
-            patterns_df["月线MACD可能顶背离"] = (price_change_6 > 0) & (dif_change_6 < 0)
+            patterns_df.loc[:, "月线MACD可能顶背离"] = (price_change_6 > 0) & (dif_change_6 < 0)
             # 底背离：价格下跌但DIF上涨
-            patterns_df["月线MACD可能底背离"] = (price_change_6 < 0) & (dif_change_6 > 0)
+            patterns_df.loc[:, "月线MACD可能底背离"] = (price_change_6 < 0) & (dif_change_6 > 0)
 
         return patterns_df
 
@@ -2673,16 +2673,16 @@ class TrendDetector(BaseIndicator):
         result = data.copy()
         
         # 计算短期和长期移动平均线
-        result['MA20'] = data['close'].rolling(window=20).mean()
-        result['MA60'] = data['close'].rolling(window=60).mean()
+        result.loc[:, 'MA20'] = data['close'].rolling(window=20).mean()
+        result.loc[:, 'MA60'] = data['close'].rolling(window=60).mean()
         
         # 计算趋势方向（基于MA线的斜率）
-        result['MA20_Slope'] = result['MA20'].diff(5) / 5
-        result['MA60_Slope'] = result['MA60'].diff(10) / 10
+        result.loc[:, 'MA20_Slope'] = result['MA20'].diff(5) / 5
+        result.loc[:, 'MA60_Slope'] = result['MA60'].diff(10) / 10
         
         # 确定趋势状态
         # 1: 上升趋势, -1: 下降趋势, 0: 横盘/无趋势
-        result['TrendState'] = 0
+        result.loc[:, 'TrendState'] = 0
         
         # 上升趋势条件: 短期均线向上 且 短期均线高于长期均线
         up_trend = (result['MA20_Slope'] > 0) & (result['MA20'] > result['MA60'])
@@ -2693,10 +2693,10 @@ class TrendDetector(BaseIndicator):
         result.loc[down_trend, 'TrendState'] = -1
         
         # 计算趋势变化点
-        result['TrendChange'] = result['TrendState'].diff().abs() > 0
+        result.loc[:, 'TrendChange'] = result['TrendState'].diff().abs() > 0
         
         # 计算趋势持续时间
-        result['TrendDuration'] = 0
+        result.loc[:, 'TrendDuration'] = 0
         
         # 遍历计算趋势持续时间
         current_trend = 0
@@ -2716,10 +2716,10 @@ class TrendDetector(BaseIndicator):
                     current_trend = result['TrendState'].iloc[i]
                     duration = 1
             
-            result['TrendDuration'].iloc[i] = duration
+            result.at[result.index[i], 'TrendDuration'] = duration
         
         # 计算趋势强度
-        result['TrendStrength'] = 0
+        result.loc[:, 'TrendStrength'] = 0
         
         # 上升趋势强度: 基于价格与MA20的距离和MA20斜率
         up_strength = ((data['close'] - result['MA20']) / result['MA20'] * 100 + 
@@ -2729,20 +2729,29 @@ class TrendDetector(BaseIndicator):
         down_strength = ((result['MA20'] - data['close']) / result['MA20'] * 100 + 
                         abs(result['MA20_Slope']) * 20).clip(0, 100)
         
-        # 根据趋势方向选择强度
-        result.loc[result['TrendState'] == 1, 'TrendStrength'] = up_strength.loc[result['TrendState'] == 1]
-        result.loc[result['TrendState'] == -1, 'TrendStrength'] = down_strength.loc[result['TrendState'] == -1]
+        # 根据趋势方向选择强度 - 确保数据类型兼容
+        # 先将TrendStrength列转换为float64类型
+        result['TrendStrength'] = result['TrendStrength'].astype('float64')
+
+        # 使用布尔索引安全地赋值
+        up_mask = result['TrendState'] == 1
+        down_mask = result['TrendState'] == -1
+
+        if up_mask.any():
+            result.loc[up_mask, 'TrendStrength'] = up_strength.loc[up_mask].astype('float64')
+        if down_mask.any():
+            result.loc[down_mask, 'TrendStrength'] = down_strength.loc[down_mask].astype('float64')
         
         # 计算趋势成熟度（基于持续时间的相对值）
         max_duration = 60  # 最大参考持续时间
-        result['TrendMaturity'] = (result['TrendDuration'] / max_duration * 100).clip(0, 100)
+        result.loc[:, 'TrendMaturity'] = (result['TrendDuration'] / max_duration * 100).clip(0, 100)
         
         # 计算趋势健康度（基于强度和价格波动）
-        result['PriceVolatility'] = data['close'].pct_change().rolling(window=20).std() * 100
+        result.loc[:, 'PriceVolatility'] = data['close'].pct_change().rolling(window=20).std() * 100
         
         # 健康度计算：考虑趋势强度和稳定性
         volatility_factor = 1 - (result['PriceVolatility'] / 5).clip(0, 1)  # 波动率对健康度的影响
-        result['TrendHealth'] = (result['TrendStrength'] * volatility_factor).clip(0, 100)
+        result.loc[:, 'TrendHealth'] = (result['TrendStrength'] * volatility_factor).clip(0, 100)
         
         return result
     
@@ -2925,30 +2934,30 @@ class TrendDetector(BaseIndicator):
         # 2. 上升趋势初期（成熟度<30）且健康度高（>=70）
         buy_condition1 = result["TrendChange"] & (result["TrendState"] == 1)
         buy_condition2 = (result["TrendState"] == 1) & (result["TrendMaturity"] < 30) & (result["TrendHealth"] >= 70)
-        signals['buy_signal'] = buy_condition1 | buy_condition2
+        signals.loc[:, 'buy_signal'] = buy_condition1 | buy_condition2
         
         # 卖出信号：
         # 1. 趋势由上升转为下降
         # 2. 上升趋势后期（成熟度>80）且健康度低（<60）
         sell_condition1 = result["TrendChange"] & (result["TrendState"] == -1)
         sell_condition2 = (result["TrendState"] == 1) & (result["TrendMaturity"] > 80) & (result["TrendHealth"] < 60)
-        signals['sell_signal'] = sell_condition1 | sell_condition2
+        signals.loc[:, 'sell_signal'] = sell_condition1 | sell_condition2
         
-        signals['neutral_signal'] = ~(signals['buy_signal'] | signals['sell_signal'])
+        signals.loc[:, 'neutral_signal'] = ~(signals['buy_signal'] | signals['sell_signal'])
         
         # 设置趋势
-        signals['trend'] = result["TrendState"]
+        signals.loc[:, 'trend'] = result["TrendState"]
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[signals['buy_signal'], 'signal_type'] = 'trend_reversal_bullish'
         signals.loc[signals['sell_signal'], 'signal_type'] = 'trend_reversal_bearish'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in signals.index:
@@ -2975,14 +2984,14 @@ class TrendDetector(BaseIndicator):
                 signals.loc[i, 'signal_desc'] = "震荡/无趋势"
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据趋势健康度调整置信度
-        signals['confidence'] = signals['confidence'] + ((result["TrendHealth"] - 50) / 50 * 20).clip(-20, 20)
+        signals.loc[:, 'confidence'] = signals['confidence'] + ((result["TrendHealth"] - 50) / 50 * 20).clip(-20, 20)
         
         # 根据趋势持续时间调整置信度
         duration_confidence = ((result["TrendDuration"].clip(0, 30)) / 30 * 10)
-        signals['confidence'] = signals['confidence'] + duration_confidence
+        signals.loc[:, 'confidence'] = signals['confidence'] + duration_confidence
         
         # 趋势变化点的置信度根据前期趋势强度调整
         for i in range(1, len(signals)):
@@ -2991,15 +3000,15 @@ class TrendDetector(BaseIndicator):
                 signals.loc[signals.index[i], 'confidence'] = signals.loc[signals.index[i], 'confidence'] + (prev_strength / 10)
         
         # 确保置信度在0-100范围内
-        signals['confidence'] = signals['confidence'].clip(0, 100)
+        signals.loc[:, 'confidence'] = signals['confidence'].clip(0, 100)
         
         # 添加风险等级
-        signals['risk_level'] = '中'
+        signals.loc[:, 'risk_level'] = '中'
         signals.loc[signals['confidence'] >= 80, 'risk_level'] = '低'
         signals.loc[signals['confidence'] <= 40, 'risk_level'] = '高'
         
         # 设置仓位建议
-        signals['position_size'] = signals['confidence'] / 200  # 0-0.5范围
+        signals.loc[:, 'position_size'] = signals['confidence'] / 200  # 0-0.5范围
         
         # 设置止损建议 (基于ATR的简单实现)
         if 'high' in data.columns and 'low' in data.columns:
@@ -3011,13 +3020,13 @@ class TrendDetector(BaseIndicator):
             atr = true_range.rolling(window=14).mean()
             
             # 根据趋势设置止损
-            signals['stop_loss'] = data['close']
+            signals.loc[:, 'stop_loss'] = data['close']
             signals.loc[signals['buy_signal'], 'stop_loss'] = data.loc[signals['buy_signal'], 'close'] - (atr.loc[signals['buy_signal']] * 2)
             signals.loc[signals['sell_signal'], 'stop_loss'] = data.loc[signals['sell_signal'], 'close'] + (atr.loc[signals['sell_signal']] * 2)
         else:
             # 如果没有高低价数据，使用收盘价的波动率作为替代
             volatility = data['close'].pct_change().rolling(window=20).std() * data['close']
-            signals['stop_loss'] = data['close']
+            signals.loc[:, 'stop_loss'] = data['close']
             signals.loc[signals['buy_signal'], 'stop_loss'] = data.loc[signals['buy_signal'], 'close'] - (volatility.loc[signals['buy_signal']] * 2)
             signals.loc[signals['sell_signal'], 'stop_loss'] = data.loc[signals['sell_signal'], 'close'] + (volatility.loc[signals['sell_signal']] * 2)
         
@@ -3081,35 +3090,35 @@ class TrendDetector(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 趋势状态形态
-        patterns_df["上升趋势"] = result["TrendState"] == 1
-        patterns_df["下降趋势"] = result["TrendState"] == -1
-        patterns_df["震荡/无趋势"] = result["TrendState"] == 0
+        patterns_df.loc[:, "上升趋势"] = result["TrendState"] == 1
+        patterns_df.loc[:, "下降趋势"] = result["TrendState"] == -1
+        patterns_df.loc[:, "震荡/无趋势"] = result["TrendState"] == 0
 
         # 趋势变化形态
-        patterns_df["趋势转折：由空转多"] = result["TrendChange"] & (result["TrendState"] == 1)
-        patterns_df["趋势转折：由多转空"] = result["TrendChange"] & (result["TrendState"] == -1)
+        patterns_df.loc[:, "趋势转折：由空转多"] = result["TrendChange"] & (result["TrendState"] == 1)
+        patterns_df.loc[:, "趋势转折：由多转空"] = result["TrendChange"] & (result["TrendState"] == -1)
 
         # 趋势成熟度形态
-        patterns_df["上升趋势初期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] < 30)
-        patterns_df["上升趋势中期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] >= 30) & (result["TrendMaturity"] < 70)
-        patterns_df["上升趋势后期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] >= 70)
-        patterns_df["下降趋势初期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] < 30)
-        patterns_df["下降趋势中期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] >= 30) & (result["TrendMaturity"] < 70)
-        patterns_df["下降趋势后期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] >= 70)
+        patterns_df.loc[:, "上升趋势初期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] < 30)
+        patterns_df.loc[:, "上升趋势中期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] >= 30) & (result["TrendMaturity"] < 70)
+        patterns_df.loc[:, "上升趋势后期"] = (result["TrendState"] == 1) & (result["TrendMaturity"] >= 70)
+        patterns_df.loc[:, "下降趋势初期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] < 30)
+        patterns_df.loc[:, "下降趋势中期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] >= 30) & (result["TrendMaturity"] < 70)
+        patterns_df.loc[:, "下降趋势后期"] = (result["TrendState"] == -1) & (result["TrendMaturity"] >= 70)
 
         # 趋势健康度形态
-        patterns_df["健康上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] >= 80)
-        patterns_df["稳定上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] >= 60) & (result["TrendHealth"] < 80)
-        patterns_df["虚弱上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] < 60)
-        patterns_df["健康下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] >= 80)
-        patterns_df["稳定下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] >= 60) & (result["TrendHealth"] < 80)
-        patterns_df["虚弱下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] < 60)
+        patterns_df.loc[:, "健康上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] >= 80)
+        patterns_df.loc[:, "稳定上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] >= 60) & (result["TrendHealth"] < 80)
+        patterns_df.loc[:, "虚弱上升趋势"] = (result["TrendState"] == 1) & (result["TrendHealth"] < 60)
+        patterns_df.loc[:, "健康下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] >= 80)
+        patterns_df.loc[:, "稳定下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] >= 60) & (result["TrendHealth"] < 80)
+        patterns_df.loc[:, "虚弱下降趋势"] = (result["TrendState"] == -1) & (result["TrendHealth"] < 60)
 
         # 趋势持续性形态
-        patterns_df["超长期趋势"] = result["TrendDuration"] >= 60
-        patterns_df["长期趋势"] = (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
-        patterns_df["中期趋势"] = (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
-        patterns_df["短期趋势"] = result["TrendDuration"] < 10
+        patterns_df.loc[:, "超长期趋势"] = result["TrendDuration"] >= 60
+        patterns_df.loc[:, "长期趋势"] = (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
+        patterns_df.loc[:, "中期趋势"] = (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
+        patterns_df.loc[:, "短期趋势"] = result["TrendDuration"] < 10
 
         return patterns_df
 
@@ -3157,18 +3166,18 @@ class TrendDuration(BaseIndicator):
         result = data.copy()
         
         # 计算多个周期的移动平均线
-        result['MA10'] = data['close'].rolling(window=10).mean()
-        result['MA20'] = data['close'].rolling(window=20).mean()
-        result['MA60'] = data['close'].rolling(window=60).mean()
+        result.loc[:, 'MA10'] = data['close'].rolling(window=10).mean()
+        result.loc[:, 'MA20'] = data['close'].rolling(window=20).mean()
+        result.loc[:, 'MA60'] = data['close'].rolling(window=60).mean()
         
         # 计算均线斜率
-        result['MA10_Slope'] = result['MA10'].diff(5) / 5
-        result['MA20_Slope'] = result['MA20'].diff(5) / 5
-        result['MA60_Slope'] = result['MA60'].diff(10) / 10
+        result.loc[:, 'MA10_Slope'] = result['MA10'].diff(5) / 5
+        result.loc[:, 'MA20_Slope'] = result['MA20'].diff(5) / 5
+        result.loc[:, 'MA60_Slope'] = result['MA60'].diff(10) / 10
         
         # 确定趋势状态
         # 1: 上升趋势, -1: 下降趋势, 0: 横盘/无趋势
-        result['TrendState'] = 0
+        result.loc[:, 'TrendState'] = 0
         
         # 上升趋势条件: 短期均线和中期均线向上 且 短期均线高于中期均线
         up_trend = (result['MA10_Slope'] > 0) & (result['MA20_Slope'] > 0) & (result['MA10'] > result['MA20'])
@@ -3179,10 +3188,10 @@ class TrendDuration(BaseIndicator):
         result.loc[down_trend, 'TrendState'] = -1
         
         # 计算趋势变化点
-        result['TrendChange'] = result['TrendState'].diff().abs() > 0
+        result.loc[:, 'TrendChange'] = result['TrendState'].diff().abs() > 0
         
         # 计算趋势持续时间
-        result['TrendDuration'] = 0
+        result.loc[:, 'TrendDuration'] = 0
         
         # 遍历计算趋势持续时间
         current_trend = 0
@@ -3202,7 +3211,7 @@ class TrendDuration(BaseIndicator):
                     current_trend = result['TrendState'].iloc[i]
                     duration = 1
             
-            result['TrendDuration'].iloc[i] = duration
+            result.at[result.index[i], 'TrendDuration'] = duration
         
         # 计算典型趋势持续期的统计特性
         # 获取历史趋势的持续时间数据
@@ -3228,12 +3237,12 @@ class TrendDuration(BaseIndicator):
         
         # 计算趋势生命周期阶段
         # 0: 初始阶段, 1: 发展阶段, 2: 成熟阶段, 3: 衰退阶段
-        result['TrendLifecyclePhase'] = 0
+        result.loc[:, 'TrendLifecyclePhase'] = 0
         
         for i in range(len(result)):
             if result['TrendState'].iloc[i] == 0:
                 # 无趋势
-                result['TrendLifecyclePhase'].iloc[i] = 0
+                result.at[result.index[i], 'TrendLifecyclePhase'] = 0
             else:
                 # 有趋势
                 duration = result['TrendDuration'].iloc[i]
@@ -3248,56 +3257,56 @@ class TrendDuration(BaseIndicator):
                 
                 if ratio < 0.3:
                     # 初始阶段
-                    result['TrendLifecyclePhase'].iloc[i] = 0
+                    result.at[result.index[i], 'TrendLifecyclePhase'] = 0
                 elif ratio < 0.7:
                     # 发展阶段
-                    result['TrendLifecyclePhase'].iloc[i] = 1
+                    result.at[result.index[i], 'TrendLifecyclePhase'] = 1
                 elif ratio < 1.1:
                     # 成熟阶段
-                    result['TrendLifecyclePhase'].iloc[i] = 2
+                    result.at[result.index[i], 'TrendLifecyclePhase'] = 2
                 else:
                     # 衰退阶段
-                    result['TrendLifecyclePhase'].iloc[i] = 3
+                    result.at[result.index[i], 'TrendLifecyclePhase'] = 3
         
         # 计算趋势成熟度（0-100）
-        result['TrendMaturity'] = 0
-        
+        result.loc[:, 'TrendMaturity'] = 0.0  # 使用float类型初始化
+
         for i in range(len(result)):
             if result['TrendState'].iloc[i] == 0:
                 # 无趋势
-                result['TrendMaturity'].iloc[i] = 0
+                result.at[result.index[i], 'TrendMaturity'] = 0.0
             else:
                 # 有趋势
                 duration = result['TrendDuration'].iloc[i]
                 avg_duration = avg_up_duration if result['TrendState'].iloc[i] == 1 else avg_down_duration
-                
+
                 if avg_duration == 0:
                     # 没有历史数据，使用默认值
                     avg_duration = 30 if result['TrendState'].iloc[i] == 1 else 20
-                
+
                 # 计算成熟度百分比
-                maturity = min(100, (duration / avg_duration) * 100)
-                result['TrendMaturity'].iloc[i] = maturity
+                maturity = min(100.0, (duration / avg_duration) * 100.0)
+                result.at[result.index[i], 'TrendMaturity'] = maturity
         
         # 计算趋势剩余寿命估计
-        result['EstimatedRemainingDuration'] = 0
-        
+        result.loc[:, 'EstimatedRemainingDuration'] = 0.0  # 使用float类型初始化
+
         for i in range(len(result)):
             if result['TrendState'].iloc[i] == 0:
                 # 无趋势
-                result['EstimatedRemainingDuration'].iloc[i] = 0
+                result.at[result.index[i], 'EstimatedRemainingDuration'] = 0.0
             else:
                 # 有趋势
                 duration = result['TrendDuration'].iloc[i]
                 avg_duration = avg_up_duration if result['TrendState'].iloc[i] == 1 else avg_down_duration
-                
+
                 if avg_duration == 0:
                     # 没有历史数据，使用默认值
                     avg_duration = 30 if result['TrendState'].iloc[i] == 1 else 20
-                
+
                 # 估计剩余寿命
-                remaining = max(0, avg_duration - duration)
-                result['EstimatedRemainingDuration'].iloc[i] = remaining
+                remaining = max(0.0, avg_duration - duration)
+                result.at[result.index[i], 'EstimatedRemainingDuration'] = remaining
         
         # 计算周期规律性（低值表示更规律）
         # 计算趋势持续时间的标准差与平均值的比率
@@ -3308,16 +3317,94 @@ class TrendDuration(BaseIndicator):
         down_cv = down_std / avg_down_duration if avg_down_duration else 0
         
         # 存储周期规律性指标
-        result['CycleRegularity'] = 0
-        
+        result.loc[:, 'CycleRegularity'] = 0.0  # 使用float类型初始化
+
         for i in range(len(result)):
             if result['TrendState'].iloc[i] == 1:
-                result['CycleRegularity'].iloc[i] = min(1, up_cv)
+                result.at[result.index[i], 'CycleRegularity'] = min(1.0, up_cv)
             elif result['TrendState'].iloc[i] == -1:
-                result['CycleRegularity'].iloc[i] = min(1, down_cv)
+                result.at[result.index[i], 'CycleRegularity'] = min(1.0, down_cv)
         
         return result
-    
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "超长期趋势": {
+                "id": "超长期趋势",
+                "name": "超长期趋势",
+                "description": "趋势持续时间超过60个周期，表明强势趋势",
+                "type": "BULLISH",
+                "strength": "VERY_STRONG",
+                "score_impact": 25.0
+            },
+            "长期趋势": {
+                "id": "长期趋势",
+                "name": "长期趋势",
+                "description": "趋势持续时间30-60个周期，表明稳定趋势",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "中期趋势": {
+                "id": "中期趋势",
+                "name": "中期趋势",
+                "description": "趋势持续时间10-30个周期，表明中等趋势",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "短期趋势": {
+                "id": "短期趋势",
+                "name": "短期趋势",
+                "description": "趋势持续时间少于10个周期，表明短期趋势",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 10.0
+            },
+            "趋势转换": {
+                "id": "趋势转换",
+                "name": "趋势转换",
+                "description": "趋势方向发生转换，需要关注",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": 0.0
+            },
+            "趋势加速": {
+                "id": "趋势加速",
+                "name": "趋势加速",
+                "description": "趋势强度增强，动能增加",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 18.0
+            },
+            "趋势减速": {
+                "id": "趋势减速",
+                "name": "趋势减速",
+                "description": "趋势强度减弱，动能减少",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -12.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": f"TrendDuration形态: {pattern_id}",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })
+
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算趋势持续性指标的原始评分
@@ -3531,7 +3618,7 @@ class TrendDuration(BaseIndicator):
         # 2. 上升趋势初期（生命周期阶段为0或1）
         buy_condition1 = result['TrendChange'] & (result['TrendState'] == 1)
         buy_condition2 = (result['TrendState'] == 1) & (result['TrendLifecyclePhase'].isin([0, 1]))
-        signals['buy_signal'] = buy_condition1 | buy_condition2
+        signals.loc[:, 'buy_signal'] = buy_condition1 | buy_condition2
         
         # 卖出信号：
         # 1. 趋势刚转为下降
@@ -3540,19 +3627,19 @@ class TrendDuration(BaseIndicator):
         sell_condition1 = result['TrendChange'] & (result['TrendState'] == -1)
         sell_condition2 = (result['TrendState'] == 1) & (result['TrendMaturity'] > 90)
         sell_condition3 = (result['TrendState'] == -1) & (result['TrendLifecyclePhase'] == 0)
-        signals['sell_signal'] = sell_condition1 | sell_condition2 | sell_condition3
+        signals.loc[:, 'sell_signal'] = sell_condition1 | sell_condition2 | sell_condition3
         
         # 中性信号
-        signals['neutral_signal'] = ~(signals['buy_signal'] | signals['sell_signal'])
+        signals.loc[:, 'neutral_signal'] = ~(signals['buy_signal'] | signals['sell_signal'])
         
         # 设置趋势
-        signals['trend'] = result['TrendState']
+        signals.loc[:, 'trend'] = result['TrendState']
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[buy_condition1, 'signal_type'] = 'trend_start_bullish'
         signals.loc[buy_condition2 & ~buy_condition1, 'signal_type'] = 'early_trend_bullish'
         signals.loc[sell_condition1, 'signal_type'] = 'trend_start_bearish'
@@ -3560,7 +3647,7 @@ class TrendDuration(BaseIndicator):
         signals.loc[sell_condition3 & ~sell_condition1, 'signal_type'] = 'early_trend_bearish'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in range(len(signals)):
@@ -3568,27 +3655,27 @@ class TrendDuration(BaseIndicator):
                 continue
                 
             if buy_condition1.iloc[i]:
-                signals['signal_desc'].iloc[i] = "趋势刚转为上升，买入时机"
+                signals.at[signals.index[i], 'signal_desc'] = "趋势刚转为上升，买入时机"
             elif buy_condition2.iloc[i] and not buy_condition1.iloc[i]:
                 lifecycle = "初始" if result['TrendLifecyclePhase'].iloc[i] == 0 else "发展"
-                signals['signal_desc'].iloc[i] = f"上升趋势{lifecycle}阶段，持续{result['TrendDuration'].iloc[i]:.0f}天"
+                signals.at[signals.index[i], 'signal_desc'] = f"上升趋势{lifecycle}阶段，持续{result['TrendDuration'].iloc[i]:.0f}天"
             elif sell_condition1.iloc[i]:
-                signals['signal_desc'].iloc[i] = "趋势刚转为下降，卖出时机"
+                signals.at[signals.index[i], 'signal_desc'] = "趋势刚转为下降，卖出时机"
             elif sell_condition2.iloc[i]:
-                signals['signal_desc'].iloc[i] = f"上升趋势接近尾声，成熟度{result['TrendMaturity'].iloc[i]:.1f}%"
+                signals.at[signals.index[i], 'signal_desc'] = f"上升趋势接近尾声，成熟度{result['TrendMaturity'].iloc[i]:.1f}%"
             elif sell_condition3.iloc[i] and not sell_condition1.iloc[i]:
-                signals['signal_desc'].iloc[i] = f"下降趋势初期，持续{result['TrendDuration'].iloc[i]:.0f}天"
+                signals.at[signals.index[i], 'signal_desc'] = f"下降趋势初期，持续{result['TrendDuration'].iloc[i]:.0f}天"
             elif result['TrendState'].iloc[i] == 1:
                 phase = ["初始", "发展", "成熟", "衰退"][int(result['TrendLifecyclePhase'].iloc[i])]
-                signals['signal_desc'].iloc[i] = f"上升趋势{phase}阶段，持续{result['TrendDuration'].iloc[i]:.0f}天，成熟度{result['TrendMaturity'].iloc[i]:.1f}%"
+                signals.at[signals.index[i], 'signal_desc'] = f"上升趋势{phase}阶段，持续{result['TrendDuration'].iloc[i]:.0f}天，成熟度{result['TrendMaturity'].iloc[i]:.1f}%"
             elif result['TrendState'].iloc[i] == -1:
                 phase = ["初始", "发展", "成熟", "衰退"][int(result['TrendLifecyclePhase'].iloc[i])]
-                signals['signal_desc'].iloc[i] = f"下降趋势{phase}阶段，持续{result['TrendDuration'].iloc[i]:.0f}天，成熟度{result['TrendMaturity'].iloc[i]:.1f}%"
+                signals.at[signals.index[i], 'signal_desc'] = f"下降趋势{phase}阶段，持续{result['TrendDuration'].iloc[i]:.0f}天，成熟度{result['TrendMaturity'].iloc[i]:.1f}%"
             else:
-                signals['signal_desc'].iloc[i] = "震荡/无趋势"
+                signals.at[signals.index[i], 'signal_desc'] = "震荡/无趋势"
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据生命周期阶段和规律性调整置信度
         for i in range(len(signals)):
@@ -3616,15 +3703,15 @@ class TrendDuration(BaseIndicator):
                 signals['confidence'].iloc[i] -= 5
         
         # 确保置信度在0-100范围内
-        signals['confidence'] = signals['confidence'].clip(0, 100)
+        signals.loc[:, 'confidence'] = signals['confidence'].clip(0, 100)
         
         # 添加风险等级
-        signals['risk_level'] = '中'
+        signals.loc[:, 'risk_level'] = '中'
         signals.loc[signals['confidence'] >= 80, 'risk_level'] = '低'
         signals.loc[signals['confidence'] <= 40, 'risk_level'] = '高'
         
         # 设置仓位建议
-        signals['position_size'] = signals['confidence'] / 200  # 0-0.5范围
+        signals.loc[:, 'position_size'] = signals['confidence'] / 200  # 0-0.5范围
         
         # 设置止损建议
         # 对于上升趋势，使用预计趋势剩余寿命来调整止损位置
@@ -3632,7 +3719,7 @@ class TrendDuration(BaseIndicator):
             if i < 60:  # 跳过没有足够数据的点
                 continue
                 
-            signals['stop_loss'].iloc[i] = data['close'].iloc[i]  # 默认值
+            signals.at[signals.index[i], 'stop_loss'] = data['close'].iloc[i]  # 默认值
             
             if signals['buy_signal'].iloc[i]:
                 # 计算止损位：基于波动率和趋势剩余寿命
@@ -3647,7 +3734,7 @@ class TrendDuration(BaseIndicator):
                 else:
                     stop_distance = 1.5 * volatility
                 
-                signals['stop_loss'].iloc[i] = data['close'].iloc[i] - stop_distance
+                signals.at[signals.index[i], 'stop_loss'] = data['close'].iloc[i] - stop_distance
                 
             elif signals['sell_signal'].iloc[i]:
                 # 类似逻辑用于卖出信号
@@ -3661,14 +3748,14 @@ class TrendDuration(BaseIndicator):
                 else:
                     stop_distance = 1.5 * volatility
                 
-                signals['stop_loss'].iloc[i] = data['close'].iloc[i] + stop_distance
+                signals.at[signals.index[i], 'stop_loss'] = data['close'].iloc[i] + stop_distance
         
         # 确保所有必要的列都存在
         if 'market_env' not in signals.columns:
-            signals['market_env'] = 'normal'
+            signals.loc[:, 'market_env'] = 'normal'
         
         if 'volume_confirmation' not in signals.columns:
-            signals['volume_confirmation'] = False
+            signals.loc[:, 'volume_confirmation'] = False
         
         return signals
 
@@ -3730,42 +3817,42 @@ class TrendDuration(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 趋势状态形态
-        patterns_df["上升趋势"] = result["TrendState"] == 1
-        patterns_df["下降趋势"] = result["TrendState"] == -1
-        patterns_df["震荡/无趋势"] = result["TrendState"] == 0
+        patterns_df.loc[:, "上升趋势"] = result["TrendState"] == 1
+        patterns_df.loc[:, "下降趋势"] = result["TrendState"] == -1
+        patterns_df.loc[:, "震荡/无趋势"] = result["TrendState"] == 0
 
         # 趋势变化形态
-        patterns_df["趋势刚转为上升"] = result["TrendChange"] & (result["TrendState"] == 1)
-        patterns_df["趋势刚转为下降"] = result["TrendChange"] & (result["TrendState"] == -1)
+        patterns_df.loc[:, "趋势刚转为上升"] = result["TrendChange"] & (result["TrendState"] == 1)
+        patterns_df.loc[:, "趋势刚转为下降"] = result["TrendChange"] & (result["TrendState"] == -1)
 
         # 生命周期阶段形态
-        patterns_df["上升趋势初始阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 0)
-        patterns_df["上升趋势发展阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 1)
-        patterns_df["上升趋势成熟阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 2)
-        patterns_df["上升趋势衰退阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 3)
-        patterns_df["下降趋势初始阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 0)
-        patterns_df["下降趋势发展阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 1)
-        patterns_df["下降趋势成熟阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 2)
-        patterns_df["下降趋势衰退阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 3)
+        patterns_df.loc[:, "上升趋势初始阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 0)
+        patterns_df.loc[:, "上升趋势发展阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 1)
+        patterns_df.loc[:, "上升趋势成熟阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 2)
+        patterns_df.loc[:, "上升趋势衰退阶段"] = (result["TrendState"] == 1) & (result["TrendLifecyclePhase"] == 3)
+        patterns_df.loc[:, "下降趋势初始阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 0)
+        patterns_df.loc[:, "下降趋势发展阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 1)
+        patterns_df.loc[:, "下降趋势成熟阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 2)
+        patterns_df.loc[:, "下降趋势衰退阶段"] = (result["TrendState"] == -1) & (result["TrendLifecyclePhase"] == 3)
 
         # 趋势持续时间形态
-        patterns_df["超长期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 60)
-        patterns_df["长期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
-        patterns_df["中期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
-        patterns_df["短期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] < 10)
-        patterns_df["超长期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 60)
-        patterns_df["长期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
-        patterns_df["中期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
-        patterns_df["短期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] < 10)
+        patterns_df.loc[:, "超长期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 60)
+        patterns_df.loc[:, "长期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
+        patterns_df.loc[:, "中期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
+        patterns_df.loc[:, "短期上升趋势"] = (result["TrendState"] == 1) & (result["TrendDuration"] < 10)
+        patterns_df.loc[:, "超长期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 60)
+        patterns_df.loc[:, "长期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 30) & (result["TrendDuration"] < 60)
+        patterns_df.loc[:, "中期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] >= 10) & (result["TrendDuration"] < 30)
+        patterns_df.loc[:, "短期下降趋势"] = (result["TrendState"] == -1) & (result["TrendDuration"] < 10)
 
         # 趋势成熟度形态
-        patterns_df["趋势接近尾声"] = result["TrendMaturity"] > 90
-        patterns_df["趋势成熟期"] = (result["TrendMaturity"] > 70) & (result["TrendMaturity"] <= 90)
-        patterns_df["趋势初期"] = result["TrendMaturity"] < 30
+        patterns_df.loc[:, "趋势接近尾声"] = result["TrendMaturity"] > 90
+        patterns_df.loc[:, "趋势成熟期"] = (result["TrendMaturity"] > 70) & (result["TrendMaturity"] <= 90)
+        patterns_df.loc[:, "趋势初期"] = result["TrendMaturity"] < 30
 
         # 周期规律性形态
-        patterns_df["高规律性周期"] = result["CycleRegularity"] < 0.3
-        patterns_df["低规律性周期"] = result["CycleRegularity"] > 0.7
+        patterns_df.loc[:, "高规律性周期"] = result["CycleRegularity"] < 0.3
+        patterns_df.loc[:, "低规律性周期"] = result["CycleRegularity"] > 0.7
 
         return patterns_df
 
@@ -4073,19 +4160,19 @@ class ZXMWeeklyMACD(BaseIndicator):
         
         # 初始化信号DataFrame
         signals = pd.DataFrame(index=data.index)
-        signals['buy_signal'] = False
-        signals['sell_signal'] = False
-        signals['neutral_signal'] = True  # 默认中性信号
-        signals['score'] = scores
-        signals['trend'] = 0  # 默认中性趋势
-        signals['signal_type'] = 'neutral'
-        signals['signal_desc'] = ''
-        signals['confidence'] = 70.0  # 默认置信度
-        signals['risk_level'] = 'medium'  # 默认风险等级
-        signals['position_size'] = 0.0  # 默认仓位
-        signals['stop_loss'] = np.nan  # 默认止损
-        signals['market_env'] = 'normal'  # 默认市场环境
-        signals['volume_confirmation'] = False  # 默认成交量确认
+        signals.loc[:, 'buy_signal'] = False
+        signals.loc[:, 'sell_signal'] = False
+        signals.loc[:, 'neutral_signal'] = True  # 默认中性信号
+        signals.loc[:, 'score'] = scores
+        signals.loc[:, 'trend'] = 0  # 默认中性趋势
+        signals.loc[:, 'signal_type'] = 'neutral'
+        signals.loc[:, 'signal_desc'] = ''
+        signals.loc[:, 'confidence'] = 70.0  # 默认置信度
+        signals.loc[:, 'risk_level'] = 'medium'  # 默认风险等级
+        signals.loc[:, 'position_size'] = 0.0  # 默认仓位
+        signals.loc[:, 'stop_loss'] = np.nan  # 默认止损
+        signals.loc[:, 'market_env'] = 'normal'  # 默认市场环境
+        signals.loc[:, 'volume_confirmation'] = False  # 默认成交量确认
         
         # 生成买入信号
         buy_conditions = (
@@ -4111,8 +4198,8 @@ class ZXMWeeklyMACD(BaseIndicator):
         for i in range(len(signals)):
             # 跳过开头几个不完整的数据点
             if i < 30:
-                signals['signal_type'].iloc[i] = 'insufficient_data'
-                signals['signal_desc'].iloc[i] = '数据不足'
+                signals.at[signals.index[i], 'signal_type'] = 'insufficient_data'
+                signals.at[signals.index[i], 'signal_desc'] = '数据不足'
                 continue
                 
             if signals['buy_signal'].iloc[i]:
@@ -4217,7 +4304,7 @@ class ZXMWeeklyMACD(BaseIndicator):
         try:
             # 初始化趋势稳定性列
             result = result.copy()
-            result['TrendStability'] = 0.0
+            result.loc[:, 'TrendStability'] = 0.0
             
             if 'TrendDirection' not in result.columns:
                 logger.warning("没有TrendDirection列，无法计算趋势稳定性")
@@ -4312,29 +4399,29 @@ class ZXMWeeklyMACD(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # MACD金叉死叉形态
-        patterns_df["周线MACD金叉"] = result["golden_cross"]
-        patterns_df["周线MACD死叉"] = result["death_cross"]
-        patterns_df["周线MACD多头排列"] = result["DIF"] > result["DEA"]
-        patterns_df["周线MACD空头排列"] = result["DIF"] < result["DEA"]
+        patterns_df.loc[:, "周线MACD金叉"] = result["golden_cross"]
+        patterns_df.loc[:, "周线MACD死叉"] = result["death_cross"]
+        patterns_df.loc[:, "周线MACD多头排列"] = result["DIF"] > result["DEA"]
+        patterns_df.loc[:, "周线MACD空头排列"] = result["DIF"] < result["DEA"]
 
         # 零轴位置形态
-        patterns_df["周线MACD零轴上方"] = result["above_zero"]
-        patterns_df["周线MACD零轴下方"] = result["below_zero"]
-        patterns_df["周线MACD-DIF上穿零轴"] = (result["DIF"] > 0) & (result["DIF"].shift(1) <= 0)
-        patterns_df["周线MACD-DIF下穿零轴"] = (result["DIF"] < 0) & (result["DIF"].shift(1) >= 0)
+        patterns_df.loc[:, "周线MACD零轴上方"] = result["above_zero"]
+        patterns_df.loc[:, "周线MACD零轴下方"] = result["below_zero"]
+        patterns_df.loc[:, "周线MACD-DIF上穿零轴"] = (result["DIF"] > 0) & (result["DIF"].shift(1) <= 0)
+        patterns_df.loc[:, "周线MACD-DIF下穿零轴"] = (result["DIF"] < 0) & (result["DIF"].shift(1) >= 0)
 
         # 背离形态
-        patterns_df["周线MACD底背离"] = result["bullish_divergence"]
-        patterns_df["周线MACD顶背离"] = result["bearish_divergence"]
+        patterns_df.loc[:, "周线MACD底背离"] = result["bullish_divergence"]
+        patterns_df.loc[:, "周线MACD顶背离"] = result["bearish_divergence"]
 
         # MACD柱状图形态
         macd_histogram = result["MACD"]
-        patterns_df["周线MACD柱状图扩大"] = (macd_histogram > 0) & (macd_histogram > macd_histogram.shift(1))
-        patterns_df["周线MACD柱状图收缩"] = (macd_histogram > 0) & (macd_histogram < macd_histogram.shift(1))
-        patterns_df["周线MACD柱状图负向扩大"] = (macd_histogram < 0) & (macd_histogram < macd_histogram.shift(1))
-        patterns_df["周线MACD柱状图负向收缩"] = (macd_histogram < 0) & (macd_histogram > macd_histogram.shift(1))
-        patterns_df["周线MACD由负转正"] = (macd_histogram > 0) & (macd_histogram.shift(1) <= 0)
-        patterns_df["周线MACD由正转负"] = (macd_histogram < 0) & (macd_histogram.shift(1) >= 0)
+        patterns_df.loc[:, "周线MACD柱状图扩大"] = (macd_histogram > 0) & (macd_histogram > macd_histogram.shift(1))
+        patterns_df.loc[:, "周线MACD柱状图收缩"] = (macd_histogram > 0) & (macd_histogram < macd_histogram.shift(1))
+        patterns_df.loc[:, "周线MACD柱状图负向扩大"] = (macd_histogram < 0) & (macd_histogram < macd_histogram.shift(1))
+        patterns_df.loc[:, "周线MACD柱状图负向收缩"] = (macd_histogram < 0) & (macd_histogram > macd_histogram.shift(1))
+        patterns_df.loc[:, "周线MACD由负转正"] = (macd_histogram > 0) & (macd_histogram.shift(1) <= 0)
+        patterns_df.loc[:, "周线MACD由正转负"] = (macd_histogram < 0) & (macd_histogram.shift(1) >= 0)
 
         return patterns_df
 
@@ -4353,3 +4440,78 @@ class ZXMWeeklyMACD(BaseIndicator):
         self.slow_period = kwargs.get('slow_period', 26)
         self.signal_period = kwargs.get('signal_period', 9)
         self.divergence_lookback = kwargs.get('divergence_lookback', 10)
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+
+        # ZXMWeeklyMACD指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "周线MACD零轴上方金叉": {
+                "id": "周线MACD零轴上方金叉",
+                "name": "周线MACD零轴上方金叉",
+                "description": "周线MACD在零轴上方形成金叉，强势上涨信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 25.0
+            },
+            "周线MACD零轴下方金叉": {
+                "id": "周线MACD零轴下方金叉",
+                "name": "周线MACD零轴下方金叉",
+                "description": "周线MACD在零轴下方形成金叉，反转向上信号",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "周线MACD零轴上方死叉": {
+                "id": "周线MACD零轴上方死叉",
+                "name": "周线MACD零轴上方死叉",
+                "description": "周线MACD在零轴上方形成死叉，反转向下信号",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -15.0
+            },
+            "周线MACD零轴下方死叉": {
+                "id": "周线MACD零轴下方死叉",
+                "name": "周线MACD零轴下方死叉",
+                "description": "周线MACD在零轴下方形成死叉，强势下跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -25.0
+            },
+            "周线MACD底背离": {
+                "id": "周线MACD底背离",
+                "name": "周线MACD底背离",
+                "description": "周线MACD与价格形成底背离，强烈反转向上信号",
+                "type": "BULLISH",
+                "strength": "VERY_STRONG",
+                "score_impact": 30.0
+            },
+            "周线MACD顶背离": {
+                "id": "周线MACD顶背离",
+                "name": "周线MACD顶背离",
+                "description": "周线MACD与价格形成顶背离，强烈反转向下信号",
+                "type": "BEARISH",
+                "strength": "VERY_STRONG",
+                "score_impact": -30.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, default_pattern)

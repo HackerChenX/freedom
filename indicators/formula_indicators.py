@@ -36,6 +36,11 @@ class CrossOver(BaseIndicator):
         self.fast_line = fast_line
         self.slow_line = slow_line
 
+        # 如果没有提供线表达式，设置一个默认的示例
+        if not self.fast_line and not self.slow_line:
+            self.fast_line = "MA(close, 5)"  # 默认5日均线
+            self.slow_line = "MA(close, 10)"  # 默认10日均线
+
     def set_parameters(self, **kwargs):
         """设置指标参数"""
         if 'fast_line' in kwargs:
@@ -60,16 +65,6 @@ class CrossOver(BaseIndicator):
 
         return patterns_df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
-        result = self._calculate(data)
-        score = pd.Series(50.0, index=data.index)  # 默认中性评分
-
-        if 'crossover' in result.columns:
-            score[result['crossover']] = 80.0  # 交叉时给高分
-
-        return score
-        
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
@@ -98,7 +93,38 @@ class CrossOver(BaseIndicator):
             result['cross_signal'] = cross_signal
             
         return result
-    
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算交叉指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.6
+
+        # 基于最近交叉信号的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            if 'cross_signal' in self._result.columns:
+                recent_signals = self._result['cross_signal'].iloc[-5:].sum()
+                if recent_signals > 0:
+                    confidence += 0.2
+
+        # 基于形态数量的置信度调整
+        if isinstance(patterns, list):
+            confidence += min(len(patterns) * 0.05, 0.2)
+
+        return min(confidence, 1.0)
+
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算交叉指标原始评分 (0-100分)
@@ -190,43 +216,92 @@ class CrossOver(BaseIndicator):
     def _parse_line_expression(self, expression: str, data: pd.DataFrame) -> Optional[np.ndarray]:
         """
         解析线表达式
-        
+
         Args:
             expression: 线表达式
             data: 输入数据
-            
+
         Returns:
             解析后的数值数组
         """
         try:
+            # 检查表达式是否为空或无效
+            if not expression or not expression.strip():
+                logger.warning(f"指标 {self.__class__.__name__} 表达式为空或无效: '{expression}' (快线: {getattr(self, 'fast_line', 'N/A')}, 慢线: {getattr(self, 'slow_line', 'N/A')})")
+                return None
+
+            expression = expression.strip()
+
             # 简单的价格引用替换
             expression = expression.replace('C', 'close').replace('O', 'open') \
                                    .replace('H', 'high').replace('L', 'low') \
                                    .replace('V', 'volume')
-            
+
             # 检查表达式中的函数调用
             ma_match = re.search(r'MA\s*\(\s*(\w+)\s*,\s*(\d+)\s*\)', expression)
             if ma_match:
                 series_name = ma_match.group(1).lower()
                 period = int(ma_match.group(2))
-                
+
                 if series_name in data.columns:
                     ma_indicator = MA(periods=[period])
                     result = ma_indicator.calculate(data)
-                    return result[f'MA{period}'].values
-            
+
+                    # 查找实际的MA列名（可能是SMA5、MA5等）
+                    ma_col_name = None
+                    for col in result.columns:
+                        if col.endswith(str(period)) and any(col.startswith(prefix) for prefix in ['MA', 'SMA', 'EMA', 'WMA']):
+                            ma_col_name = col
+                            break
+
+                    if ma_col_name:
+                        return result[ma_col_name].values
+                    else:
+                        logger.error(f"无法找到周期为{period}的MA列")
+                        return None
+
             # 简单的列引用
             if expression.lower() in data.columns:
                 return data[expression.lower()].values
-                
+
             # 其他复杂表达式解析
             # 这里可以扩展更多的解析逻辑
-            
+
             logger.warning(f"无法解析表达式: {expression}")
             return None
         except Exception as e:
             logger.error(f"解析表达式 {expression} 出错: {e}")
             return None
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "CROSS_OVER": {
+                "id": "CROSS_OVER",
+                "name": "交叉信号",
+                "description": f"快线({self.fast_line})上穿慢线({self.slow_line})",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 20.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })
 
 
 class KDJCondition(BaseIndicator):
@@ -287,16 +362,37 @@ class KDJCondition(BaseIndicator):
 
         return patterns_df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
-        result = self._calculate(data)
-        score = pd.Series(50.0, index=data.index)  # 默认中性评分
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算KDJ条件指标的置信度
 
-        if 'condition_met' in result.columns:
-            score[result['condition_met']] = 70.0  # 条件满足时给较高分
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
 
-        return score
-        
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.7
+
+        # 基于最近条件满足情况的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            if 'condition_met' in self._result.columns:
+                recent_conditions = self._result['condition_met'].iloc[-5:].sum()
+                if recent_conditions > 0:
+                    confidence += 0.15
+
+        # 基于形态数量的置信度调整
+        if isinstance(patterns, list):
+            confidence += min(len(patterns) * 0.05, 0.15)
+
+        return min(confidence, 1.0)
+
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
@@ -318,9 +414,33 @@ class KDJCondition(BaseIndicator):
         
         # 检查条件
         if self.line in ['K', 'D', 'J']:
-            line_value = result[self.line.lower()].values
-            condition = self._evaluate_condition(line_value, self.operator, self.value)
-            result['condition_met'] = condition
+            # 尝试小写列名，如果不存在则尝试大写列名
+            line_col = self.line.lower()
+            if line_col not in result.columns:
+                line_col = self.line.upper()
+
+            if line_col in result.columns:
+                line_value = result[line_col].values
+                # 确保line_value是1D数组且长度正确
+                if line_value.ndim > 1:
+                    # 如果是2D数组，取第一列
+                    line_value = line_value[:, 0] if line_value.shape[1] > 0 else line_value.flatten()
+
+                # 确保长度与DataFrame索引一致
+                if len(line_value) != len(result):
+                    logger.warning(f"KDJ条件指标数据长度不匹配: {len(line_value)} vs {len(result)}，截取匹配长度")
+                    line_value = line_value[:len(result)]
+
+                condition = self._evaluate_condition(line_value, self.operator, self.value)
+
+                # 确保condition长度与DataFrame索引一致
+                if len(condition) != len(result):
+                    condition = condition[:len(result)]
+
+                result['condition_met'] = condition
+            else:
+                logger.warning(f"KDJ条件指标找不到列 {self.line}（尝试了 {self.line.lower()} 和 {self.line.upper()}）")
+                result['condition_met'] = pd.Series(False, index=result.index)
             
         return result
     
@@ -346,17 +466,21 @@ class KDJCondition(BaseIndicator):
         score = pd.Series(50.0, index=data.index)
         
         # 检查结果是否有效
-        if result.empty or 'condition_met' not in result.columns or self.line.lower() not in result.columns:
+        line_col = self.line.lower()
+        if line_col not in result.columns:
+            line_col = self.line.upper()
+
+        if result.empty or 'condition_met' not in result.columns or line_col not in result.columns:
             return score
-            
+
         # 1. 基于条件满足的评分
         # 条件满足时给予高分或低分，取决于条件性质
         condition_score = 90 if self._is_bullish_condition() else 10
         score[result['condition_met'] > 0] = condition_score
-        
+
         # 2. 基于指标线值与阈值的差距评分
         try:
-            line_values = result[self.line.lower()].values
+            line_values = result[line_col].values
             
             # 计算与阈值的差距
             diff = line_values - self.value
@@ -464,6 +588,36 @@ class KDJCondition(BaseIndicator):
         
         return condition
 
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            f"KDJ_{self.line}_{self.operator}_{self.value}": {
+                "id": f"KDJ_{self.line}_{self.operator}_{self.value}",
+                "name": f"KDJ {self.line}线条件",
+                "description": f"KDJ {self.line}线 {self.operator} {self.value}",
+                "type": "BULLISH" if self._is_bullish_condition() else "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0 if self._is_bullish_condition() else -15.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })
+
 
 class MACDCondition(BaseIndicator):
     """
@@ -524,16 +678,37 @@ class MACDCondition(BaseIndicator):
 
         return patterns_df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
-        result = self._calculate(data)
-        score = pd.Series(50.0, index=data.index)  # 默认中性评分
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算MACD条件指标的置信度
 
-        if 'condition_met' in result.columns:
-            score[result['condition_met']] = 75.0  # 条件满足时给较高分
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
 
-        return score
-        
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.75
+
+        # 基于最近条件满足情况的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            if 'condition_met' in self._result.columns:
+                recent_conditions = self._result['condition_met'].iloc[-5:].sum()
+                if recent_conditions > 0:
+                    confidence += 0.15
+
+        # 基于形态数量的置信度调整
+        if isinstance(patterns, list):
+            confidence += min(len(patterns) * 0.05, 0.1)
+
+        return min(confidence, 1.0)
+
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
@@ -729,6 +904,36 @@ class MACDCondition(BaseIndicator):
         
         return condition
 
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            f"MACD_{self.line}_{self.operator}_{self.value}": {
+                "id": f"MACD_{self.line}_{self.operator}_{self.value}",
+                "name": f"MACD {self.line}线条件",
+                "description": f"MACD {self.line}线 {self.operator} {self.value}",
+                "type": "BULLISH" if self._is_bullish_condition() else "BEARISH",
+                "strength": "STRONG",
+                "score_impact": 20.0 if self._is_bullish_condition() else -20.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })
+
 
 class MACondition(BaseIndicator):
     """
@@ -781,7 +986,38 @@ class MACondition(BaseIndicator):
             patterns_df[f'MA_{self.ma_type}{self.ma_period}_{self.operator}_{self.compare_value}'] = result['condition_met']
 
         return patterns_df
-        
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算均线条件指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.8
+
+        # 基于最近条件满足情况的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            if 'condition_met' in self._result.columns:
+                recent_conditions = self._result['condition_met'].iloc[-5:].sum()
+                if recent_conditions > 0:
+                    confidence += 0.1
+
+        # 基于形态数量的置信度调整
+        if isinstance(patterns, list):
+            confidence += min(len(patterns) * 0.05, 0.1)
+
+        return min(confidence, 1.0)
+
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
@@ -797,19 +1033,30 @@ class MACondition(BaseIndicator):
         # 计算均线
         ma = MA(periods=[self.ma_period])
         ma_result = ma.calculate(data)
-        
+
         # 合并结果
         for col in ma_result.columns:
             result[col] = ma_result[col]
-        
+
         # 解析比较值
-        compare_values = self._parse_compare_value(self.compare_value, data)
-        
+        compare_values = self._parse_compare_value(self.compare_value, result)  # 使用result而不是data
+
         # 检查条件
         if compare_values is not None:
-            ma_values = result[f'MA{self.ma_period}'].values
-            condition = self._evaluate_condition(ma_values, self.operator, compare_values)
-            result['condition_met'] = condition
+            # 查找实际的MA列名（可能是SMA5、MA5等）
+            ma_col_name = None
+            for col in result.columns:
+                if col.endswith(str(self.ma_period)) and any(col.startswith(prefix) for prefix in ['MA', 'SMA', 'EMA', 'WMA']):
+                    ma_col_name = col
+                    break
+
+            if ma_col_name is not None:
+                ma_values = result[ma_col_name].values
+                condition = self._evaluate_condition(ma_values, self.operator, compare_values)
+                result['condition_met'] = condition
+            else:
+                logger.error(f"无法找到周期为{self.ma_period}的均线列")
+                result['condition_met'] = pd.Series(0, index=data.index)
             
         return result
     
@@ -985,13 +1232,29 @@ class MACondition(BaseIndicator):
                 
                 # 处理常见的价格列引用
                 if compare_value == 'CLOSE':
-                    return data['close'].values
+                    if 'close' in data.columns:
+                        return data['close'].values
+                    else:
+                        logger.error(f"解析比较值 {compare_value} 出错: 缺少列 'close'")
+                        return None
                 elif compare_value == 'OPEN':
-                    return data['open'].values
+                    if 'open' in data.columns:
+                        return data['open'].values
+                    else:
+                        logger.error(f"解析比较值 {compare_value} 出错: 缺少列 'open'")
+                        return None
                 elif compare_value == 'HIGH':
-                    return data['high'].values
+                    if 'high' in data.columns:
+                        return data['high'].values
+                    else:
+                        logger.error(f"解析比较值 {compare_value} 出错: 缺少列 'high'")
+                        return None
                 elif compare_value == 'LOW':
-                    return data['low'].values
+                    if 'low' in data.columns:
+                        return data['low'].values
+                    else:
+                        logger.error(f"解析比较值 {compare_value} 出错: 缺少列 'low'")
+                        return None
                 
                 # 处理均线引用，如MA10
                 ma_match = re.match(r'(MA|EMA|SMA|WMA)(\d+)', compare_value)
@@ -1046,6 +1309,36 @@ class MACondition(BaseIndicator):
         
         return condition
 
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            f"MA_{self.ma_type}{self.ma_period}_{self.operator}_{self.compare_value}": {
+                "id": f"MA_{self.ma_type}{self.ma_period}_{self.operator}_{self.compare_value}",
+                "name": f"均线{self.ma_type}{self.ma_period}条件",
+                "description": f"均线{self.ma_type}{self.ma_period} {self.operator} {self.compare_value}",
+                "type": "BULLISH" if self._is_bullish_condition() else "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": 18.0 if self._is_bullish_condition() else -18.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })
+
 
 class GenericCondition(BaseIndicator):
     """
@@ -1053,16 +1346,20 @@ class GenericCondition(BaseIndicator):
     """
     
     def __init__(self, condition: str = "", **kwargs):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化通用条件指标
-        
+
         Args:
             condition: 条件表达式
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.condition = condition
+
+        # 如果没有提供条件表达式，设置一个默认的示例
+        if not self.condition:
+            self.condition = "MA5>MA10"  # 默认5日均线上穿10日均线
 
     def set_parameters(self, **kwargs):
         """设置指标参数"""
@@ -1087,46 +1384,115 @@ class GenericCondition(BaseIndicator):
             patterns_df[f'GENERIC_{condition_name}'] = result['condition_met']
 
         return patterns_df
-        
+
+    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        计算通用条件指标的置信度
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态列表
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        if score.empty:
+            return 0.5
+
+        # 基础置信度
+        confidence = 0.6
+
+        # 基于最近条件满足情况的置信度
+        if hasattr(self, '_result') and self._result is not None:
+            if 'condition_met' in self._result.columns:
+                recent_conditions = self._result['condition_met'].iloc[-5:].sum()
+                if recent_conditions > 0:
+                    confidence += 0.2
+
+        # 基于形态数量的置信度调整
+        if isinstance(patterns, list):
+            confidence += min(len(patterns) * 0.05, 0.2)
+
+        return min(confidence, 1.0)
+
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
-        
+
         Args:
             data: 输入数据
-            
+
         Returns:
             包含指标值的DataFrame
         """
         result = data.copy()
-        
+
+        # 检查条件表达式是否为空或无效
+        if not self.condition or not self.condition.strip():
+            logger.warning(f"指标 {self.__class__.__name__} 通用条件表达式为空或无效: '{self.condition}' (指标名称: {getattr(self, 'name', 'N/A')})")
+            # 返回默认的条件不满足结果
+            result['condition_met'] = pd.Series(0, index=data.index)
+            return result
+
+        condition = self.condition.strip()
+
         # 解析条件表达式
         # 这里需要实现通达信条件表达式的解析逻辑
         # 为了简化，我们暂时只实现一个示例
-        
+
         # 示例：解析 "MA5>MA10"
-        if ">" in self.condition:
-            parts = self.condition.split(">")
+        if ">" in condition:
+            parts = condition.split(">")
             left = parts[0].strip()
             right = parts[1].strip()
-            
+
             # 解析左右两边的表达式
             # 这里需要完善以支持更复杂的表达式
-            
+
             # 示例实现
             if left.startswith("MA") and right.startswith("MA"):
                 try:
                     left_period = int(left[2:])
                     right_period = int(right[2:])
-                    
+
                     ma_indicator = MA(periods=[left_period, right_period])
                     ma_result = ma_indicator.calculate(data)
-                    
-                    result = pd.concat([result, ma_result], axis=1)
-                    result['condition_met'] = (result[f'MA{left_period}'] > result[f'MA{right_period}']).astype(int)
+
+                    # 查找实际的MA列名（可能是SMA5、MA5等）
+                    left_col_name = None
+                    right_col_name = None
+
+                    for col in ma_result.columns:
+                        if col.endswith(str(left_period)) and any(col.startswith(prefix) for prefix in ['MA', 'SMA', 'EMA', 'WMA']):
+                            left_col_name = col
+                        if col.endswith(str(right_period)) and any(col.startswith(prefix) for prefix in ['MA', 'SMA', 'EMA', 'WMA']):
+                            right_col_name = col
+
+                    if left_col_name and right_col_name:
+                        # 只添加需要的MA列到结果中，避免列名冲突
+                        if left_col_name not in result.columns:
+                            result[left_col_name] = ma_result[left_col_name]
+                        if right_col_name not in result.columns:
+                            result[right_col_name] = ma_result[right_col_name]
+
+                        # 计算条件
+                        condition_result = (result[left_col_name] > result[right_col_name]).astype(int)
+                        result['condition_met'] = condition_result
+                    else:
+                        logger.error(f"无法找到MA列: left_period={left_period}, right_period={right_period}")
+                        result['condition_met'] = pd.Series(0, index=data.index)
+
                 except Exception as e:
-                    logger.error(f"解析条件 {self.condition} 出错: {e}")
-            
+                    logger.error(f"解析条件 {condition} 出错: {e}")
+                    result['condition_met'] = pd.Series(0, index=data.index)
+            else:
+                logger.warning(f"不支持的条件表达式: {condition}")
+                result['condition_met'] = pd.Series(0, index=data.index)
+        else:
+            logger.warning(f"不支持的条件表达式格式: {condition}")
+            result['condition_met'] = pd.Series(0, index=data.index)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -1177,11 +1543,21 @@ class GenericCondition(BaseIndicator):
                     try:
                         left_period = int(left[2:])
                         right_period = int(right[2:])
-                        
-                        if f'MA{left_period}' in result.columns and f'MA{right_period}' in result.columns:
+
+                        # 查找实际的MA列名
+                        left_col_name = None
+                        right_col_name = None
+
+                        for col in result.columns:
+                            if col.endswith(str(left_period)) and any(col.startswith(prefix) for prefix in ['MA', 'SMA', 'EMA', 'WMA']):
+                                left_col_name = col
+                            if col.endswith(str(right_period)) and any(col.startswith(prefix) for prefix in ['MA', 'SMA', 'EMA', 'WMA']):
+                                right_col_name = col
+
+                        if left_col_name and right_col_name and left_col_name in result.columns and right_col_name in result.columns:
                             # 计算均线差距的百分比
-                            ma_left = result[f'MA{left_period}']
-                            ma_right = result[f'MA{right_period}']
+                            ma_left = result[left_col_name]
+                            ma_right = result[right_col_name]
                             price_avg = np.nanmean(data['close']) if 'close' in data.columns else 1
                             diff_percent = (ma_left - ma_right) / price_avg * 100
                             
@@ -1283,6 +1659,39 @@ class GenericCondition(BaseIndicator):
             result.loc[result['condition_met'] > 0, 'signal'] = 1
             
         return result
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        # 从条件表达式生成形态名称
+        condition_name = self.condition.replace('>', '_GT_').replace('<', '_LT_').replace('=', '_EQ_')
+
+        pattern_info_map = {
+            f"GENERIC_{condition_name}": {
+                "id": f"GENERIC_{condition_name}",
+                "name": f"通用条件: {self.condition}",
+                "description": f"自定义条件表达式: {self.condition}",
+                "type": "BULLISH" if self._infer_condition_bullishness() else "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0 if self._infer_condition_bullishness() else -15.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })
 
 
 # 注册指标到工厂

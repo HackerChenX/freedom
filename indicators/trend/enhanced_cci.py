@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
 from typing import Optional, Dict, Any, Tuple, List
+import logging
 
 from indicators.base_indicator import BaseIndicator
 from utils.technical_utils import find_peaks_and_troughs
+
+logger = logging.getLogger(__name__)
 from utils.indicator_utils import crossover, crossunder
 
 
@@ -550,7 +553,29 @@ class EnhancedCCI(BaseIndicator):
                         m_top[peaks[i]] = True
         patterns['m_top'] = pd.Series(m_top, index=cci.index)
 
-        return patterns.reindex(self._result.index).fillna(False).infer_objects(copy=False)
+        # 安全的DataFrame重索引操作，避免"Gaps in blk ref_locs"错误
+        try:
+            # 方法1：使用更安全的重索引方式
+            result_patterns = pd.DataFrame(index=self._result.index)
+            for col in patterns.columns:
+                # 逐列进行安全的重索引
+                col_data = patterns[col].reindex(self._result.index, fill_value=False)
+                result_patterns[col] = col_data.astype(bool)
+            return result_patterns
+        except Exception as e:
+            # 方法2：如果还是失败，使用最安全的方式
+            logger.warning(f"Enhanced CCI patterns reindex failed: {e}, using fallback method")
+            result_patterns = pd.DataFrame(index=self._result.index)
+            for col in patterns.columns:
+                result_patterns[col] = pd.Series(False, index=self._result.index, dtype=bool)
+                # 安全地复制匹配的索引值
+                for idx in patterns.index:
+                    if idx in self._result.index:
+                        try:
+                            result_patterns.at[idx, col] = bool(patterns.at[idx, col])
+                        except (KeyError, IndexError):
+                            continue
+            return result_patterns
     
     def detect_divergence(self) -> pd.DataFrame:
         """
@@ -1134,3 +1159,36 @@ class EnhancedCCI(BaseIndicator):
             'sell_signal': sell_signal,
             'signal_strength': signal_strength
         }
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取形态信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态信息字典
+        """
+        # 默认形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
+            'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
+            'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
+            
+            # 通用形态
+            'strong_signal': {'name': '强信号', 'description': '强烈的技术信号', 'type': 'STRONG'},
+            'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
+            'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
+            'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
+        
+        # 默认形态信息
+        default_pattern = {
+            'name': pattern_id.replace('_', ' ').title(),
+            'description': f'{pattern_id}形态',
+            'type': 'UNKNOWN'
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

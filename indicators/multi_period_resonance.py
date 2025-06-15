@@ -695,4 +695,4 @@ class MULTI_PERIOD_RESONANCE(BaseIndicator):
         return patterns
 
 # 创建符合驼峰命名法的别名，供导入使用
-MultiPeriodResonance = MULTI_PERIOD_RESONANCE 
+MultiPeriodResonance = MULTI_PERIOD_RESONANCE

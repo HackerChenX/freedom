@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from typing import Dict, List
+from typing import Dict, List, Any
 
 import numpy as np
 import pandas as pd
@@ -582,3 +582,74 @@ class DMA(BaseIndicator):
             default_strength="MEDIUM",
             score_impact=-15.0
         )
+
+    def get_pattern_info(self, pattern_id: str = None) -> Dict[str, Any]:
+        """
+        获取DMA指标的形态信息
+
+        Args:
+            pattern_id: 形态ID，如果为None则返回所有形态信息
+
+        Returns:
+            Dict[str, Any]: 形态信息字典
+        """
+        all_patterns = {
+            'DMA_UPTREND': {
+                'name': 'DMA上升趋势',
+                'description': 'DMA大于0且DMA大于AMA，表示强势上升趋势',
+                'type': 'trend',
+                'strength': 'strong'
+            },
+            'DMA_DOWNTREND': {
+                'name': 'DMA下降趋势',
+                'description': 'DMA小于0且DMA小于AMA，表示强势下降趋势',
+                'type': 'trend',
+                'strength': 'strong'
+            },
+            'DMA_GOLDEN_CROSS': {
+                'name': 'DMA金叉',
+                'description': 'DMA上穿AMA，显示由空头转为多头趋势',
+                'type': 'reversal',
+                'strength': 'strong'
+            },
+            'DMA_DEATH_CROSS': {
+                'name': 'DMA死叉',
+                'description': 'DMA下穿AMA，显示由多头转为空头趋势',
+                'type': 'reversal',
+                'strength': 'strong'
+            },
+            'DMA_CROSS_UP_ZERO': {
+                'name': 'DMA上穿零轴',
+                'description': 'DMA从负值区域穿越零轴，趋势转正',
+                'type': 'trend',
+                'strength': 'medium'
+            },
+            'DMA_CROSS_DOWN_ZERO': {
+                'name': 'DMA下穿零轴',
+                'description': 'DMA从正值区域穿越零轴，趋势转负',
+                'type': 'trend',
+                'strength': 'medium'
+            },
+            'DMA_STRONG_UPTREND': {
+                'name': 'DMA强势上涨',
+                'description': 'DMA百分比差值大于5%，表示强势上涨',
+                'type': 'trend',
+                'strength': 'medium'
+            },
+            'DMA_STRONG_DOWNTREND': {
+                'name': 'DMA强势下跌',
+                'description': 'DMA百分比差值小于-5%，表示强势下跌',
+                'type': 'trend',
+                'strength': 'medium'
+            }
+        }
+
+        if pattern_id is None:
+            return all_patterns
+        else:
+            return all_patterns.get(pattern_id, {
+                'name': pattern_id,
+                'description': f'未知形态: {pattern_id}',
+                'type': 'unknown',
+                'strength': 'low'
+            })

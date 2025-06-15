@@ -706,18 +706,26 @@ class Chaikin(BaseIndicator):
             pd.DataFrame: 包含形态信息的DataFrame
         """
         # 确保已计算Chaikin
-        if not self.has_result():
-            self.calculate(data, **kwargs)
+        calculated_data = self.calculate(data, **kwargs)
 
-        if self._result is None:
-            return pd.DataFrame(index=data.index)
+        if calculated_data is None or calculated_data.empty:
+            return data.copy()
 
-        chaikin_oscillator = self._result['chaikin_oscillator']
-        patterns_df = pd.DataFrame(index=data.index)
+        if 'chaikin_oscillator' not in calculated_data.columns:
+            return data.copy()
 
-        # 1. 零轴穿越形态
-        patterns_df['CHAIKIN_CROSS_UP_ZERO'] = crossover(chaikin_oscillator, 0)
-        patterns_df['CHAIKIN_CROSS_DOWN_ZERO'] = crossunder(chaikin_oscillator, 0)
+        chaikin_oscillator = calculated_data['chaikin_oscillator']
+        patterns_df = calculated_data.copy()
+
+        # 1. 零轴穿越形态（使用简化的穿越逻辑）
+        if len(chaikin_oscillator) >= 2:
+            chaikin_prev = chaikin_oscillator.shift(1)
+            patterns_df['CHAIKIN_CROSS_UP_ZERO'] = (chaikin_prev <= 0) & (chaikin_oscillator > 0)
+            patterns_df['CHAIKIN_CROSS_DOWN_ZERO'] = (chaikin_prev >= 0) & (chaikin_oscillator < 0)
+        else:
+            patterns_df['CHAIKIN_CROSS_UP_ZERO'] = False
+            patterns_df['CHAIKIN_CROSS_DOWN_ZERO'] = False
+
         patterns_df['CHAIKIN_ABOVE_ZERO'] = chaikin_oscillator > 0
         patterns_df['CHAIKIN_BELOW_ZERO'] = chaikin_oscillator < 0
 
@@ -809,3 +817,89 @@ class Chaikin(BaseIndicator):
             default_strength="MEDIUM",
             score_impact=-15.0
         )
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典
+        """
+        pattern_info_map = {
+            'CHAIKIN_CROSS_UP_ZERO': {
+                'name': 'Chaikin上穿零轴',
+                'description': 'Chaikin震荡器从下方穿越零轴',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'CHAIKIN_CROSS_DOWN_ZERO': {
+                'name': 'Chaikin下穿零轴',
+                'description': 'Chaikin震荡器从上方穿越零轴',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'CHAIKIN_ABOVE_ZERO': {
+                'name': 'Chaikin零轴上方',
+                'description': 'Chaikin震荡器位于零轴上方',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'CHAIKIN_BELOW_ZERO': {
+                'name': 'Chaikin零轴下方',
+                'description': 'Chaikin震荡器位于零轴下方',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'CHAIKIN_CONSECUTIVE_RISING': {
+                'name': 'Chaikin连续上升',
+                'description': 'Chaikin震荡器连续上升',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'CHAIKIN_CONSECUTIVE_FALLING': {
+                'name': 'Chaikin连续下降',
+                'description': 'Chaikin震荡器连续下降',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'CHAIKIN_LARGE_RISE': {
+                'name': 'Chaikin大幅上升',
+                'description': 'Chaikin震荡器大幅上升',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'CHAIKIN_LARGE_FALL': {
+                'name': 'Chaikin大幅下降',
+                'description': 'Chaikin震荡器大幅下降',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'CHAIKIN_RISING': {
+                'name': 'Chaikin上升',
+                'description': 'Chaikin震荡器上升',
+                'strength': 'weak',
+                'type': 'bullish'
+            },
+            'CHAIKIN_FALLING': {
+                'name': 'Chaikin下降',
+                'description': 'Chaikin震荡器下降',
+                'strength': 'weak',
+                'type': 'bearish'
+            },
+            'CHAIKIN_RAPID_CHANGE': {
+                'name': 'Chaikin快速变化',
+                'description': 'Chaikin震荡器快速变化',
+                'strength': 'medium',
+                'type': 'neutral'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'Chaikin形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

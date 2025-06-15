@@ -1071,3 +1071,83 @@ class DMI(BaseIndicator):
             default_strength="WEAK",
             score_impact=-10.0
         )
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典
+        """
+        pattern_info_map = {
+            'DMI_GOLDEN_CROSS': {
+                'name': 'DMI金叉',
+                'description': '+DI上穿-DI，显示多头趋势开始',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'DMI_DEATH_CROSS': {
+                'name': 'DMI死叉',
+                'description': '-DI上穿+DI，显示空头趋势开始',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'ADX_STRONG_TREND': {
+                'name': 'ADX强趋势',
+                'description': 'ADX大于25，表示趋势强劲',
+                'strength': 'medium',
+                'type': 'neutral'
+            },
+            'ADX_WEAK_TREND': {
+                'name': 'ADX弱趋势',
+                'description': 'ADX小于20，表示趋势疲弱',
+                'strength': 'weak',
+                'type': 'neutral'
+            },
+            'ADX_RISING': {
+                'name': 'ADX上升',
+                'description': 'ADX上升，趋势强度增强',
+                'strength': 'medium',
+                'type': 'neutral'
+            },
+            'ADX_FALLING': {
+                'name': 'ADX下降',
+                'description': 'ADX下降，趋势强度减弱',
+                'strength': 'weak',
+                'type': 'neutral'
+            },
+            'DMI_STRONG_UPTREND': {
+                'name': 'DMI强多头趋势',
+                'description': '+DI明显高于-DI且ADX上升',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'DMI_STRONG_DOWNTREND': {
+                'name': 'DMI强空头趋势',
+                'description': '-DI明显高于+DI且ADX上升',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'DMI_TREND_WEAKENING': {
+                'name': 'DMI趋势减弱',
+                'description': 'ADX下降，当前趋势强度减弱',
+                'strength': 'medium',
+                'type': 'neutral'
+            },
+            'DMI_NO_TREND': {
+                'name': 'DMI无趋势',
+                'description': 'ADX低于15，市场处于无趋势状态',
+                'strength': 'weak',
+                'type': 'neutral'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'DMI形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })

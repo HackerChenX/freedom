@@ -1109,3 +1109,89 @@ class Ichimoku(BaseIndicator):
             'patterns': patterns,
             'raw_score': raw_score
         }
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "ICHIMOKU_TK_GOLDEN_CROSS": {
+                "id": "ICHIMOKU_TK_GOLDEN_CROSS",
+                "name": "一目均衡表金叉",
+                "description": "转换线上穿基准线，看涨信号",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 20.0
+            },
+            "ICHIMOKU_TK_DEATH_CROSS": {
+                "id": "ICHIMOKU_TK_DEATH_CROSS",
+                "name": "一目均衡表死叉",
+                "description": "转换线下穿基准线，看跌信号",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -20.0
+            },
+            "ICHIMOKU_PRICE_ABOVE_KUMO": {
+                "id": "ICHIMOKU_PRICE_ABOVE_KUMO",
+                "name": "价格位于云层之上",
+                "description": "价格位于云层上方，看涨信号",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "ICHIMOKU_PRICE_BELOW_KUMO": {
+                "id": "ICHIMOKU_PRICE_BELOW_KUMO",
+                "name": "价格位于云层之下",
+                "description": "价格位于云层下方，看跌信号",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -15.0
+            },
+            "ICHIMOKU_PRICE_BREAK_KUMO_UP": {
+                "id": "ICHIMOKU_PRICE_BREAK_KUMO_UP",
+                "name": "价格向上突破云层",
+                "description": "价格从下方突破云层，强烈看涨信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 25.0
+            },
+            "ICHIMOKU_PRICE_BREAK_KUMO_DOWN": {
+                "id": "ICHIMOKU_PRICE_BREAK_KUMO_DOWN",
+                "name": "价格向下突破云层",
+                "description": "价格从上方突破云层，强烈看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -25.0
+            },
+            "ICHIMOKU_STRONG_BULLISH": {
+                "id": "ICHIMOKU_STRONG_BULLISH",
+                "name": "一目均衡表强烈看涨",
+                "description": "价格位于云层上方，转换线上穿基准线，云层看涨",
+                "type": "BULLISH",
+                "strength": "VERY_STRONG",
+                "score_impact": 30.0
+            },
+            "ICHIMOKU_STRONG_BEARISH": {
+                "id": "ICHIMOKU_STRONG_BEARISH",
+                "name": "一目均衡表强烈看跌",
+                "description": "价格位于云层下方，转换线下穿基准线，云层看跌",
+                "type": "BEARISH",
+                "strength": "VERY_STRONG",
+                "score_impact": -30.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })

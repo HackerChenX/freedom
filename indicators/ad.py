@@ -136,8 +136,8 @@ class AD(BaseIndicator):
         
         # 检测量价背离
         if len(data) >= 30 and 'close' in data.columns:
-            price_trend = data['close'].pct_change(5).iloc[-1]
-            ad_trend = ad_data.pct_change(5).iloc[-1]
+            price_trend = data['close'].pct_change(5, fill_method=None).iloc[-1]
+            ad_trend = ad_data.pct_change(5, fill_method=None).iloc[-1]
             
             # 价格上涨但AD下降（顶背离）
             if price_trend > 0.02 and ad_trend < -0.02:
@@ -170,7 +170,7 @@ class AD(BaseIndicator):
         
         # 检测量能变化
         if len(ad_data) >= 2:
-            ad_change = ad_data.pct_change().iloc[-1]
+            ad_change = ad_data.pct_change(fill_method=None).iloc[-1]
             
             # AD快速上涨
             if ad_change > 0.05:
@@ -666,3 +666,36 @@ class AD(BaseIndicator):
                     patterns.append("AD负背离（价格创新高但AD未创新高）")
         
         return patterns 
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取形态信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态信息字典
+        """
+        # 默认形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
+            'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
+            'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
+            
+            # 通用形态
+            'strong_signal': {'name': '强信号', 'description': '强烈的技术信号', 'type': 'STRONG'},
+            'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
+            'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
+            'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
+        
+        # 默认形态信息
+        default_pattern = {
+            'name': pattern_id.replace('_', ' ').title(),
+            'description': f'{pattern_id}形态',
+            'type': 'UNKNOWN'
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

@@ -11,7 +11,12 @@ import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 import warnings
-import talib
+
+try:
+    import talib
+    HAS_TALIB = True
+except ImportError:
+    HAS_TALIB = False
 
 from indicators.base_indicator import BaseIndicator
 from indicators.common import crossover, crossunder
@@ -662,7 +667,7 @@ class ADX(BaseIndicator):
         
         if pdi_cross_above.any():
             # PDI上穿MDI - 看涨信号
-            cross_idx = pdi_cross_above.to_numpy().nonzero()[0]
+            cross_idx = np.array(pdi_cross_above).nonzero()[0]
             if len(cross_idx) > 0:
                 last_cross = cross_idx[-1]
                 days_since_cross = len(pdi_cross_above) - 1 - last_cross
@@ -678,7 +683,7 @@ class ADX(BaseIndicator):
         
         if mdi_cross_above.any():
             # MDI上穿PDI - 看跌信号
-            cross_idx = mdi_cross_above.to_numpy().nonzero()[0]
+            cross_idx = np.array(mdi_cross_above).nonzero()[0]
             if len(cross_idx) > 0:
                 last_cross = cross_idx[-1]
                 days_since_cross = len(mdi_cross_above) - 1 - last_cross
@@ -971,3 +976,36 @@ class ADX(BaseIndicator):
         ax.grid(True, alpha=0.3)
         
         return ax 
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取形态信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态信息字典
+        """
+        # 默认形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
+            'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
+            'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
+            
+            # 通用形态
+            'strong_signal': {'name': '强信号', 'description': '强烈的技术信号', 'type': 'STRONG'},
+            'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
+            'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
+            'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
+        
+        # 默认形态信息
+        default_pattern = {
+            'name': pattern_id.replace('_', ' ').title(),
+            'description': f'{pattern_id}形态',
+            'type': 'UNKNOWN'
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

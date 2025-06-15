@@ -215,36 +215,93 @@ class VolumeRatio(BaseIndicator):
     def _validate_dataframe(self, df: pd.DataFrame) -> None:
         """
         验证DataFrame是否包含计算所需的列
-        
+
         Args:
             df: 数据源DataFrame
-            
+
         Raises:
             ValueError: 如果DataFrame缺少所需的列
         """
-        if 'volume' not in df.columns:
-            raise ValueError("DataFrame必须包含'volume'列")
-            
+        # 检查成交量列，支持多种列名格式
+        volume_columns = ['volume', 'Volume', 'VOLUME', 'vol', 'Vol', 'VOL', 'v', 'V',
+                         'amount', 'Amount', 'AMOUNT', 'turnover', 'Turnover', 'TURNOVER']
+        volume_col = None
+
+        for col in volume_columns:
+            if col in df.columns:
+                volume_col = col
+                break
+
+        if volume_col is None:
+            # 检查是否已经是VOLUME_RATIO的计算结果
+            if 'volume_ratio' in df.columns:
+                logger.debug("数据已包含volume_ratio列，直接返回")
+                return df
+
+            # 尝试从数值列中找到可能的成交量列
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            potential_volume_cols = [col for col in numeric_cols if 'vol' in col.lower() or 'amount' in col.lower()]
+
+            if potential_volume_cols:
+                volume_col = potential_volume_cols[0]
+                logger.debug(f"VOLUME_RATIO指标使用 {volume_col} 列作为成交量")
+            else:
+                logger.warning(f"VOLUME_RATIO指标无法找到成交量列，数据列名: {list(df.columns)}")
+                logger.warning(f"支持的成交量列名: {volume_columns}")
+                # 返回空的结果而不是抛出异常
+                result = pd.DataFrame(index=df.index)
+                result['volume_ratio'] = 0.0
+                result['volume_ratio_ma'] = 0.0
+                return result
+
+        # 统一列名为'volume'
+        if volume_col != 'volume':
+            df = df.copy()
+            df['volume'] = df[volume_col]
+
         if df['volume'].isnull().all():
             raise ValueError("所有成交量数据都是缺失的")
     
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算量比指标
-        
+
         Args:
             df: 包含OHLCV数据的DataFrame
-            
+
         Returns:
             pd.DataFrame: 包含量比指标计算结果的DataFrame
         """
         self._validate_dataframe(df)
-        
+
         # 创建结果DataFrame
         result = pd.DataFrame(index=df.index)
-        
-        # 获取成交量数据
-        volume = df['volume'].values
+
+        # 获取成交量数据，支持多种列名格式
+        volume_columns = ['volume', 'Volume', 'VOLUME', 'vol', 'Vol', 'VOL', 'v', 'V',
+                         'amount', 'Amount', 'AMOUNT', 'turnover', 'Turnover', 'TURNOVER']
+        volume_col = None
+
+        for col in volume_columns:
+            if col in df.columns:
+                volume_col = col
+                break
+
+        if volume_col is None:
+            # 尝试从数值列中找到可能的成交量列
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            potential_volume_cols = [col for col in numeric_cols if 'vol' in col.lower() or 'amount' in col.lower()]
+
+            if potential_volume_cols:
+                volume_col = potential_volume_cols[0]
+                logger.debug(f"VOLUME_RATIO指标使用 {volume_col} 列作为成交量")
+            else:
+                logger.warning(f"VOLUME_RATIO指标无法找到成交量列，数据列名: {list(df.columns)}")
+                logger.warning(f"支持的成交量列名: {volume_columns}")
+                # 返回默认值而不是抛出异常
+                return np.zeros(len(df), dtype=float)
+
+        volume = df[volume_col].values
         
         # 计算量比
         volume_ratio = np.zeros_like(volume, dtype=float)
@@ -598,3 +655,96 @@ class VolumeRatio(BaseIndicator):
         # 此处提供默认实现
     
         return signals
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+
+        # VOLUME_RATIO指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "量比极高": {
+                "id": "量比极高",
+                "name": "量比极高",
+                "description": "量比超过3倍，市场极度活跃，可能是重大消息或主力行为",
+                "type": "BULLISH",
+                "strength": "VERY_STRONG",
+                "score_impact": 25.0
+            },
+            "量比偏高": {
+                "id": "量比偏高",
+                "name": "量比偏高",
+                "description": "量比在1.5-2倍之间，市场活跃度较高",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "量比极低": {
+                "id": "量比极低",
+                "name": "量比极低",
+                "description": "量比低于0.3倍，市场极度冷清",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            },
+            "量比偏低": {
+                "id": "量比偏低",
+                "name": "量比偏低",
+                "description": "量比在0.5-0.8倍之间，市场活跃度较低",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            # 突破形态
+            "量比突破": {
+                "id": "量比突破",
+                "name": "量比突破",
+                "description": "量比突破1.5倍，市场活跃度显著提升",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "量比跌破": {
+                "id": "量比跌破",
+                "name": "量比跌破",
+                "description": "量比跌破0.7倍，市场活跃度显著下降",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -15.0
+            },
+            # 交叉形态
+            "量比金叉": {
+                "id": "量比金叉",
+                "name": "量比金叉",
+                "description": "量比上穿均线，活跃度趋势向好",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 12.0
+            },
+            "量比死叉": {
+                "id": "量比死叉",
+                "name": "量比死叉",
+                "description": "量比下穿均线，活跃度趋势转弱",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -12.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, default_pattern)

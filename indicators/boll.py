@@ -1386,27 +1386,28 @@ class BOLL(BaseIndicator):
             patterns_df[pattern_name] = False
 
         # 根据识别的形态设置相应的列
+        last_index = patterns_df.index[-1]
         for pattern in pattern_list:
             if "超买" in pattern:
-                patterns_df['BOLL_OVERBOUGHT'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_OVERBOUGHT'] = True
             elif "超卖" in pattern:
-                patterns_df['BOLL_OVERSOLD'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_OVERSOLD'] = True
             elif "突破" in pattern and "上轨" in pattern:
-                patterns_df['BOLL_UPPER_BREAKOUT'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_UPPER_BREAKOUT'] = True
             elif "突破" in pattern and "下轨" in pattern:
-                patterns_df['BOLL_LOWER_BREAKOUT'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_LOWER_BREAKOUT'] = True
             elif "收窄" in pattern or "挤压" in pattern:
-                patterns_df['BOLL_SQUEEZE'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_SQUEEZE'] = True
             elif "扩张" in pattern:
-                patterns_df['BOLL_EXPANSION'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_EXPANSION'] = True
             elif "W底" in pattern:
-                patterns_df['BOLL_W_BOTTOM'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_W_BOTTOM'] = True
             elif "M顶" in pattern:
-                patterns_df['BOLL_M_TOP'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_M_TOP'] = True
             elif "同步" in pattern:
-                patterns_df['BOLL_TREND_FOLLOWING'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_TREND_FOLLOWING'] = True
             elif "背离" in pattern:
-                patterns_df['BOLL_MEAN_REVERSION'].iloc[-1] = True
+                patterns_df.loc[last_index, 'BOLL_MEAN_REVERSION'] = True
 
         return patterns_df
 
@@ -1462,7 +1463,7 @@ class BOLL(BaseIndicator):
             }
             
             return result
-            
+
         except Exception as e:
             self._error = e
             import traceback
@@ -1477,6 +1478,76 @@ class BOLL(BaseIndicator):
                 'confidence': 0.0,
                 'error': str(e)
             }
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "BOLL_UPPER_BREAKOUT": {
+                "id": "BOLL_UPPER_BREAKOUT",
+                "name": "布林带上轨突破",
+                "description": "价格突破布林带上轨，表明强势上涨",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 25.0
+            },
+            "BOLL_LOWER_BREAKOUT": {
+                "id": "BOLL_LOWER_BREAKOUT",
+                "name": "布林带下轨突破",
+                "description": "价格跌破布林带下轨，表明强势下跌",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -25.0
+            },
+            "BOLL_SQUEEZE": {
+                "id": "BOLL_SQUEEZE",
+                "name": "布林带收缩",
+                "description": "布林带收缩，表明波动率降低，可能酝酿突破",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": 0.0
+            },
+            "BOLL_EXPANSION": {
+                "id": "BOLL_EXPANSION",
+                "name": "布林带扩张",
+                "description": "布林带扩张，表明波动率增加，趋势可能延续",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": 0.0
+            },
+            "BOLL_MEAN_REVERSION": {
+                "id": "BOLL_MEAN_REVERSION",
+                "name": "布林带均值回归",
+                "description": "价格向中轨回归，表明超买超卖修正",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": 0.0
+            },
+            "BOLL_TREND_FOLLOWING": {
+                "id": "BOLL_TREND_FOLLOWING",
+                "name": "布林带趋势跟随",
+                "description": "价格沿布林带边缘运行，表明趋势强劲",
+                "type": "NEUTRAL",
+                "strength": "STRONG",
+                "score_impact": 15.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })
             
     def apply_market_environment_adjustment(self, score: pd.Series, market_env: MarketEnvironment) -> pd.Series:
         """

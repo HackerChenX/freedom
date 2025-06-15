@@ -320,3 +320,81 @@ class RSI(BaseIndicator):
             default_strength="WEAK",
             score_impact=0.0
         )
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "RSI_OVERBOUGHT": {
+                "id": "RSI_OVERBOUGHT",
+                "name": "RSI超买",
+                "description": "RSI指标进入超买区域，市场可能过热",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -15.0
+            },
+            "RSI_OVERSOLD": {
+                "id": "RSI_OVERSOLD",
+                "name": "RSI超卖",
+                "description": "RSI指标进入超卖区域，市场可能过冷",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "RSI_GOLDEN_CROSS": {
+                "id": "RSI_GOLDEN_CROSS",
+                "name": "RSI金叉",
+                "description": "RSI短期均线上穿长期均线，可能是买入信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "RSI_DEATH_CROSS": {
+                "id": "RSI_DEATH_CROSS",
+                "name": "RSI死叉",
+                "description": "RSI短期均线下穿长期均线，可能是卖出信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            },
+            "RSI_EXTREME_OVERBOUGHT": {
+                "id": "RSI_EXTREME_OVERBOUGHT",
+                "name": "RSI极度超买",
+                "description": "RSI指标进入极度超买区域(>80)，市场极度过热",
+                "type": "BEARISH",
+                "strength": "VERY_STRONG",
+                "score_impact": -25.0
+            },
+            "RSI_EXTREME_OVERSOLD": {
+                "id": "RSI_EXTREME_OVERSOLD",
+                "name": "RSI极度超卖",
+                "description": "RSI指标进入极度超卖区域(<20)，市场极度过冷",
+                "type": "BULLISH",
+                "strength": "VERY_STRONG",
+                "score_impact": 25.0
+            },
+            "RSI_NEUTRAL": {
+                "id": "RSI_NEUTRAL",
+                "name": "RSI中性",
+                "description": "RSI指标在中性区域(40-60)，市场相对平衡",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })

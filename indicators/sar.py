@@ -284,7 +284,28 @@ class SAR(BaseIndicator):
         # 获取SAR和价格数据
         sar = self._result['sar']
         trend = self._result['trend']
-        close = data['close']
+
+        # 支持多种收盘价列名格式，包括中文列名
+        close_columns = ['close', 'Close', 'CLOSE', 'c', 'C', '收盘', '收盘价', 'close_price']
+        close_col = None
+
+        for col in close_columns:
+            if col in data.columns:
+                close_col = col
+                break
+
+        if close_col is None:
+            # 尝试从数值列中找到可能的收盘价列
+            numeric_cols = data.select_dtypes(include=[np.number]).columns
+            if len(numeric_cols) > 0:
+                # 如果有数值列，使用第一个作为收盘价（通常是价格数据）
+                close_col = numeric_cols[0]
+                logger.debug(f"SAR指标使用 {close_col} 列作为收盘价")
+            else:
+                logger.warning(f"SAR指标无法找到收盘价列，数据列名: {list(data.columns)}")
+                return pd.DataFrame(index=data.index)
+
+        close = data[close_col]
 
         # 创建形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
@@ -403,7 +424,27 @@ class SAR(BaseIndicator):
             return score
 
         sar = self._result['sar']
-        close = data['close']
+
+        # 支持多种收盘价列名格式，包括中文列名
+        close_columns = ['close', 'Close', 'CLOSE', 'c', 'C', '收盘', '收盘价', 'close_price']
+        close_col = None
+
+        for col in close_columns:
+            if col in data.columns:
+                close_col = col
+                break
+
+        if close_col is None:
+            # 尝试从数值列中找到可能的收盘价列
+            numeric_cols = data.select_dtypes(include=[np.number]).columns
+            if len(numeric_cols) > 0:
+                close_col = numeric_cols[0]
+                logger.debug(f"SAR指标使用 {close_col} 列作为收盘价")
+            else:
+                logger.warning(f"SAR指标无法找到收盘价列，数据列名: {list(data.columns)}")
+                return score
+
+        close = data[close_col]
 
         # 计算SAR与价格的相对距离
         distance_pct = abs(close - sar) / close * 100
@@ -771,3 +812,37 @@ class SAR(BaseIndicator):
         # 此处提供默认实现
         
         return signals
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取形态信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态信息字典
+        """
+        # 默认形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
+            'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
+            'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
+            
+            # 通用形态
+            'strong_signal': {'name': '强信号', 'description': '强烈的技术信号', 'type': 'STRONG'},
+            'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
+            'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
+            'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
+        
+        # 默认形态信息
+        default_pattern = {
+            'name': pattern_id.replace('_', ' ').title(),
+            'description': f'{pattern_id}形态',
+            'type': 'UNKNOWN'
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)
+

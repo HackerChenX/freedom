@@ -59,10 +59,10 @@ class ZXMMarketBreadth(BaseIndicator):
         ma_periods = kwargs.get('ma_periods', [20, 50, 200])
         index_code = kwargs.get('index_code', None)
         
-        # 检查数据结构，如果不是多层索引，则无法计算，返回空DataFrame
+        # 检查数据结构，如果不是多层索引，则使用简化计算
         if not isinstance(data.index, pd.MultiIndex):
-            logger.warning(f"{self.name}: 输入数据不是多层索引DataFrame，无法计算市场宽度指标。")
-            return pd.DataFrame(index=data.index)
+            logger.debug(f"{self.name}: 输入数据不是多层索引DataFrame，使用简化的市场宽度计算。")
+            return self._calculate_simplified_breadth(data, **kwargs)
             
         # 获取唯一的日期列表
         dates = data.index.get_level_values(0).unique()
@@ -72,14 +72,14 @@ class ZXMMarketBreadth(BaseIndicator):
         
         # 1. 计算涨跌家数比率
         advance_decline = self._calculate_advance_decline_ratio(data)
-        result['ad_ratio'] = advance_decline['ad_ratio']
-        result['ad_line'] = advance_decline['ad_line']
+        result.loc[:, 'ad_ratio'] = advance_decline['ad_ratio']
+        result.loc[:, 'ad_line'] = advance_decline['ad_line']
         
         # 2. 计算新高新低比率
         highs_lows = self._calculate_new_highs_lows_ratio(data, lookback_period)
-        result['new_highs_ratio'] = highs_lows['new_highs_ratio']
-        result['new_lows_ratio'] = highs_lows['new_lows_ratio']
-        result['hl_ratio'] = highs_lows['hl_ratio']
+        result.loc[:, 'new_highs_ratio'] = highs_lows['new_highs_ratio']
+        result.loc[:, 'new_lows_ratio'] = highs_lows['new_lows_ratio']
+        result.loc[:, 'hl_ratio'] = highs_lows['hl_ratio']
         
         # 3. 计算站上各均线的股票比例
         for period in ma_periods:
@@ -89,30 +89,30 @@ class ZXMMarketBreadth(BaseIndicator):
         # 4. 计算板块强度
         if 'sector' in data.columns or 'industry' in data.columns:
             sector_strength = self._calculate_sector_strength(data)
-            result['strongest_sector'] = sector_strength['strongest_sector']
-            result['weakest_sector'] = sector_strength['weakest_sector']
-            result['sector_rotation'] = sector_strength['sector_rotation']
+            result.loc[:, 'strongest_sector'] = sector_strength['strongest_sector']
+            result.loc[:, 'weakest_sector'] = sector_strength['weakest_sector']
+            result.loc[:, 'sector_rotation'] = sector_strength['sector_rotation']
         
         # 5. 计算成交量宽度
         volume_breadth = self._calculate_volume_breadth(data)
-        result['volume_surge_ratio'] = volume_breadth['volume_surge_ratio']
-        result['volume_decline_ratio'] = volume_breadth['volume_decline_ratio']
+        result.loc[:, 'volume_surge_ratio'] = volume_breadth['volume_surge_ratio']
+        result.loc[:, 'volume_decline_ratio'] = volume_breadth['volume_decline_ratio']
         
         # 6. 计算动量宽度
         momentum_breadth = self._calculate_momentum_breadth(data)
-        result['momentum_positive_ratio'] = momentum_breadth['positive_ratio']
-        result['momentum_negative_ratio'] = momentum_breadth['negative_ratio']
+        result.loc[:, 'momentum_positive_ratio'] = momentum_breadth['positive_ratio']
+        result.loc[:, 'momentum_negative_ratio'] = momentum_breadth['negative_ratio']
         
         # 7. 如果有大盘指数，计算市场与指数的相对强度
         if index_code is not None and index_code in data.index.get_level_values(1):
             relative_strength = self._calculate_market_relative_strength(data, index_code)
-            result['market_relative_strength'] = relative_strength
+            result.loc[:, 'market_relative_strength'] = relative_strength
         
         # 8. 计算综合市场宽度指标 (0-100)
-        result['market_breadth_indicator'] = self._calculate_breadth_indicator(result)
+        result.loc[:, 'market_breadth_indicator'] = self._calculate_breadth_indicator(result)
         
         # 9. 市场状态分类
-        result['market_state'] = self._classify_market_state(result)
+        result.loc[:, 'market_state'] = self._classify_market_state(result)
         
         return result
         
@@ -265,19 +265,19 @@ class ZXMMarketBreadth(BaseIndicator):
         # 初始化信号DataFrame
         dates = data.index.get_level_values(0).unique()
         signals = pd.DataFrame(index=dates)
-        signals['buy_signal'] = False
-        signals['sell_signal'] = False
-        signals['neutral_signal'] = True  # 默认为中性信号
-        signals['trend'] = 0  # 0表示中性
-        signals['score'] = 50.0  # 默认评分50分
-        signals['signal_type'] = None
-        signals['signal_desc'] = None
-        signals['confidence'] = 50.0
-        signals['risk_level'] = '中'
-        signals['position_size'] = 0.0
-        signals['stop_loss'] = None
-        signals['market_env'] = 'sideways_market'
-        signals['volume_confirmation'] = False
+        signals.loc[:, 'buy_signal'] = False
+        signals.loc[:, 'sell_signal'] = False
+        signals.loc[:, 'neutral_signal'] = True  # 默认为中性信号
+        signals.loc[:, 'trend'] = 0  # 0表示中性
+        signals.loc[:, 'score'] = 50.0  # 默认评分50分
+        signals.loc[:, 'signal_type'] = None
+        signals.loc[:, 'signal_desc'] = None
+        signals.loc[:, 'confidence'] = 50.0
+        signals.loc[:, 'risk_level'] = '中'
+        signals.loc[:, 'position_size'] = 0.0
+        signals.loc[:, 'stop_loss'] = None
+        signals.loc[:, 'market_env'] = 'sideways_market'
+        signals.loc[:, 'volume_confirmation'] = False
         
         # 计算市场宽度指标
         breadth_result = self.calculate(data, *args, **kwargs)
@@ -494,7 +494,7 @@ class ZXMMarketBreadth(BaseIndicator):
                 result.loc[date, 'ad_ratio'] = 0
 
         # 计算AD线（累积）
-        result['ad_line'] = result['ad_ratio'].cumsum()
+        result.loc[:, 'ad_line'] = result['ad_ratio'].cumsum()
         return result
 
     def _calculate_new_highs_lows_ratio(self, data: pd.DataFrame, lookback_period: int) -> pd.DataFrame:
@@ -608,9 +608,9 @@ class ZXMMarketBreadth(BaseIndicator):
         result = pd.DataFrame(index=dates)
 
         # 简化实现，返回默认值
-        result['strongest_sector'] = 'Technology'
-        result['weakest_sector'] = 'Energy'
-        result['sector_rotation'] = 0.5
+        result.loc[:, 'strongest_sector'] = 'Technology'
+        result.loc[:, 'weakest_sector'] = 'Energy'
+        result.loc[:, 'sector_rotation'] = 0.5
 
         return result
 
@@ -808,6 +808,173 @@ class ZXMMarketBreadth(BaseIndicator):
         """检测市场超跌"""
         if 'market_breadth_indicator' not in result.columns:
             return False
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+        
+        # ZXMVolumeShrink指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "超买区域": {
+                "id": "超买区域",
+                "name": "超买区域",
+                "description": "指标进入超买区域，可能面临回调压力",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            "超卖区域": {
+                "id": "超卖区域", 
+                "name": "超卖区域",
+                "description": "指标进入超卖区域，可能出现反弹机会",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "中性区域": {
+                "id": "中性区域",
+                "name": "中性区域", 
+                "description": "指标处于中性区域，趋势不明确",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            },
+            # 趋势形态
+            "上升趋势": {
+                "id": "上升趋势",
+                "name": "上升趋势",
+                "description": "指标显示上升趋势，看涨信号",
+                "type": "BULLISH", 
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "下降趋势": {
+                "id": "下降趋势",
+                "name": "下降趋势",
+                "description": "指标显示下降趋势，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG", 
+                "score_impact": -15.0
+            },
+            # 信号形态
+            "买入信号": {
+                "id": "买入信号",
+                "name": "买入信号",
+                "description": "指标产生买入信号，建议关注",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "卖出信号": {
+                "id": "卖出信号", 
+                "name": "卖出信号",
+                "description": "指标产生卖出信号，建议谨慎",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            }
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)
 
-        current_breadth = result['market_breadth_indicator'].iloc[index]
-        return current_breadth < 10
+    def _calculate_simplified_breadth(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        为单股票数据计算简化的市场宽度指标
+
+        Args:
+            data: 单股票的OHLC数据
+            **kwargs: 其他参数
+
+        Returns:
+            DataFrame: 包含简化市场宽度指标的DataFrame
+        """
+        if data.empty or len(data) < 20:
+            return pd.DataFrame(index=data.index)
+
+        result = pd.DataFrame(index=data.index)
+
+        # 使用单股票数据模拟市场宽度指标
+        try:
+            # 1. 基于价格动量的简化涨跌比率
+            if 'close' in data.columns:
+                price_change = data['close'].pct_change()
+                # 使用滚动窗口计算涨跌比率
+                window = min(20, len(data) // 4)
+                positive_days = (price_change > 0).rolling(window=window).sum()
+                negative_days = (price_change < 0).rolling(window=window).sum()
+                total_days = positive_days + negative_days
+
+                # 避免除零错误
+                ad_ratio = np.where(total_days > 0, (positive_days - negative_days) / total_days, 0)
+                result['ad_ratio'] = ad_ratio
+                result['ad_line'] = pd.Series(ad_ratio).cumsum()
+
+            # 2. 基于均线的简化指标
+            ma_periods = kwargs.get('ma_periods', [20, 50])
+            for period in ma_periods:
+                if len(data) >= period and 'close' in data.columns:
+                    ma = data['close'].rolling(window=period).mean()
+                    above_ma = (data['close'] > ma).astype(float)
+                    result[f'above_ma{period}'] = above_ma
+
+            # 3. 基于成交量的简化指标
+            if 'volume' in data.columns:
+                volume_ma = data['volume'].rolling(window=20).mean()
+                volume_surge = (data['volume'] > volume_ma * 1.5).astype(float)
+                result['volume_surge_ratio'] = volume_surge
+                result['volume_decline_ratio'] = 1 - volume_surge
+
+            # 4. 计算简化的市场宽度指标 (0-100)
+            breadth_components = []
+
+            if 'ad_ratio' in result.columns:
+                # 将涨跌比率标准化到0-100
+                ad_normalized = ((result['ad_ratio'] + 1) / 2 * 100).fillna(50)
+                breadth_components.append(ad_normalized * 0.4)
+
+            if 'above_ma20' in result.columns:
+                breadth_components.append(result['above_ma20'] * 100 * 0.3)
+
+            if 'volume_surge_ratio' in result.columns:
+                breadth_components.append(result['volume_surge_ratio'] * 100 * 0.3)
+
+            if breadth_components:
+                market_breadth = sum(breadth_components)
+                result['market_breadth_indicator'] = market_breadth.fillna(50)
+            else:
+                result['market_breadth_indicator'] = 50
+
+            # 5. 市场状态分类
+            if 'market_breadth_indicator' in result.columns:
+                conditions = [
+                    result['market_breadth_indicator'] >= 80,
+                    result['market_breadth_indicator'] >= 60,
+                    result['market_breadth_indicator'] <= 20,
+                    result['market_breadth_indicator'] <= 40
+                ]
+                choices = ['bull', 'neutral_bull', 'bear', 'neutral_bear']
+                result['market_state'] = np.select(conditions, choices, default='neutral')
+
+        except Exception as e:
+            logger.debug(f"{self.name}: 简化计算出错: {e}")
+            # 返回默认值
+            result['market_breadth_indicator'] = 50
+            result['market_state'] = 'neutral'
+
+        return result

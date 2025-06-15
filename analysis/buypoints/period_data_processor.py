@@ -134,12 +134,140 @@ class PeriodDataProcessor:
             )
             
             # 转换为DataFrame
-            return stock_info.to_dataframe()
+            df = stock_info.to_dataframe()
+
+            # 确保列名正确映射
+            if not df.empty:
+                logger.debug(f"原始DataFrame列名: {list(df.columns)}")
+
+                # 标准化列名，确保使用英文列名
+                df = self._standardize_column_names(df)
+                logger.debug(f"标准化后DataFrame列名: {list(df.columns)}")
+
+                # 添加衍生数据列，确保MA5、k等列存在
+                df = self._add_derived_columns(df)
+                logger.debug(f"添加衍生列后DataFrame列名: {list(df.columns)}")
+
+            return df
             
         except Exception as e:
             logger.error(f"获取K线数据失败: {e}")
             return pd.DataFrame()
-    
+
+    def _standardize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        标准化列名，确保使用英文列名
+
+        Args:
+            df: 原始DataFrame
+
+        Returns:
+            pd.DataFrame: 标准化列名后的DataFrame
+        """
+        if df.empty:
+            return df
+
+        # 列名映射：中文 -> 英文
+        column_mapping = {
+            '代码': 'code',
+            '名称': 'name',
+            '日期': 'date',
+            '开盘': 'open',
+            '收盘': 'close',
+            '最高': 'high',
+            '最低': 'low',
+            '成交量': 'volume',
+            '换手率': 'turnover_rate',
+            '涨跌幅': 'price_change',
+            '振幅': 'price_range',
+            '行业': 'industry',
+            '时间': 'datetime',
+            '序号': 'seq'
+        }
+
+        # 应用列名映射
+        df_copy = df.copy()
+        for chinese_name, english_name in column_mapping.items():
+            if chinese_name in df_copy.columns:
+                df_copy = df_copy.rename(columns={chinese_name: english_name})
+
+        # 确保基本的OHLCV列存在
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        for col in required_columns:
+            if col not in df_copy.columns:
+                # 如果缺少某列，尝试用其他列填充或设为默认值
+                if col in ['open', 'high', 'low'] and 'close' in df_copy.columns:
+                    df_copy[col] = df_copy['close']
+                elif col == 'volume':
+                    df_copy[col] = 0
+                else:
+                    df_copy[col] = 0
+
+        return df_copy
+
+    def _add_derived_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        添加衍生数据列，确保指标计算所需的列存在
+
+        Args:
+            df: 标准化后的DataFrame
+
+        Returns:
+            pd.DataFrame: 添加衍生列后的DataFrame
+        """
+        if df.empty:
+            return df
+
+        df_copy = df.copy()
+
+        # 确保基础OHLCV列存在
+        if 'close' in df_copy.columns:
+            # 添加MA5列（5日移动平均线）
+            if 'MA5' not in df_copy.columns:
+                df_copy['MA5'] = df_copy['close'].rolling(window=5, min_periods=1).mean()
+
+            # 添加MA10列（10日移动平均线）
+            if 'MA10' not in df_copy.columns:
+                df_copy['MA10'] = df_copy['close'].rolling(window=10, min_periods=1).mean()
+
+            # 添加MA20列（20日移动平均线）
+            if 'MA20' not in df_copy.columns:
+                df_copy['MA20'] = df_copy['close'].rolling(window=20, min_periods=1).mean()
+
+            # 添加更多常用的MA列
+            for period in [30, 60]:
+                ma_col = f'MA{period}'
+                if ma_col not in df_copy.columns:
+                    df_copy[ma_col] = df_copy['close'].rolling(window=period, min_periods=1).mean()
+
+        # 添加KDJ相关的k、d、j列（简化版本）
+        if all(col in df_copy.columns for col in ['high', 'low', 'close']):
+            if 'k' not in df_copy.columns:
+                # 计算RSV（未成熟随机值）
+                low_min = df_copy['low'].rolling(window=9, min_periods=1).min()
+                high_max = df_copy['high'].rolling(window=9, min_periods=1).max()
+                rsv = (df_copy['close'] - low_min) / (high_max - low_min) * 100
+                rsv = rsv.fillna(50)  # 填充NaN值
+
+                # 计算K值（使用简化的移动平均）
+                df_copy['k'] = rsv.rolling(window=3, min_periods=1).mean()
+
+            if 'd' not in df_copy.columns and 'k' in df_copy.columns:
+                # 计算D值
+                df_copy['d'] = df_copy['k'].rolling(window=3, min_periods=1).mean()
+
+            if 'j' not in df_copy.columns and all(col in df_copy.columns for col in ['k', 'd']):
+                # 计算J值
+                df_copy['j'] = 3 * df_copy['k'] - 2 * df_copy['d']
+
+        # 添加成交量相关列
+        if 'volume' in df_copy.columns:
+            # 添加成交量移动平均
+            if 'volume_ma5' not in df_copy.columns:
+                df_copy['volume_ma5'] = df_copy['volume'].rolling(window=5, min_periods=1).mean()
+
+        return df_copy
+
     def _get_stock_min_date(self, stock_code: str, period: KlinePeriod) -> str:
         """
         获取股票在特定周期下的最早日期
@@ -239,6 +367,9 @@ class PeriodDataProcessor:
             
             # 标准化列名
             if not data.empty:
+                data = self._standardize_column_names(data)
+                # 添加衍生数据列
+                data = self._add_derived_columns(data)
                 # 确保日期列是日期类型
                 if 'date' in data.columns:
                     data['date'] = pd.to_datetime(data['date'])

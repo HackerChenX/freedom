@@ -6,6 +6,7 @@ from typing import Dict, List
 
 import numpy as np
 import pandas as pd
+from typing import Dict, List, Any
 from enums.indicator_enum import IndicatorEnum
 
 from enums.indicator_types import TrendType, CrossType
@@ -591,3 +592,62 @@ class CMO(BaseIndicator):
             default_strength="MEDIUM",
             score_impact=-15.0
         )
+
+    def get_pattern_info(self, pattern_id: str = None) -> Dict[str, Any]:
+        """
+        获取CMO指标的形态信息
+
+        Args:
+            pattern_id: 形态ID，如果为None则返回所有形态信息
+
+        Returns:
+            Dict[str, Any]: 形态信息字典
+        """
+        all_patterns = {
+            'CMO_OVERSOLD': {
+                'name': 'CMO超卖',
+                'description': f'CMO指标低于{self.oversold}，表示超卖状态',
+                'type': 'reversal',
+                'strength': 'medium'
+            },
+            'CMO_OVERBOUGHT': {
+                'name': 'CMO超买',
+                'description': f'CMO指标高于{self.overbought}，表示超买状态',
+                'type': 'reversal',
+                'strength': 'medium'
+            },
+            'CMO_CROSS_UP_ZERO': {
+                'name': 'CMO上穿零轴',
+                'description': 'CMO从负值区域穿越零轴，动量转正',
+                'type': 'trend',
+                'strength': 'strong'
+            },
+            'CMO_CROSS_DOWN_ZERO': {
+                'name': 'CMO下穿零轴',
+                'description': 'CMO从正值区域穿越零轴，动量转负',
+                'type': 'trend',
+                'strength': 'strong'
+            },
+            'CMO_CROSS_UP_OVERSOLD': {
+                'name': 'CMO上穿超卖线',
+                'description': f'CMO从超卖区域上穿{self.oversold}线，可能反弹',
+                'type': 'reversal',
+                'strength': 'medium'
+            },
+            'CMO_CROSS_DOWN_OVERBOUGHT': {
+                'name': 'CMO下穿超买线',
+                'description': f'CMO从超买区域下穿{self.overbought}线，可能回调',
+                'type': 'reversal',
+                'strength': 'medium'
+            }
+        }
+
+        if pattern_id is None:
+            return all_patterns
+        else:
+            return all_patterns.get(pattern_id, {
+                'name': pattern_id,
+                'description': f'未知形态: {pattern_id}',
+                'type': 'unknown',
+                'strength': 'low'
+            })

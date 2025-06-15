@@ -60,12 +60,12 @@ class ZXMDailyMACD(BaseIndicator):
         xg = macd < 0.9
         
         # 添加计算结果到数据框
-        result["EMA12"] = ema12
-        result["EMA26"] = ema26
-        result["DIFF"] = diff
-        result["DEA"] = dea
-        result["MACD"] = macd
-        result["XG"] = xg
+        result.loc[:, "EMA12"] = ema12
+        result.loc[:, "EMA26"] = ema26
+        result.loc[:, "DIFF"] = diff
+        result.loc[:, "DEA"] = dea
+        result.loc[:, "MACD"] = macd
+        result.loc[:, "XG"] = xg
         
         return result
 
@@ -199,24 +199,24 @@ class ZXMDailyMACD(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
 
         # 设置买卖信号
-        signals['buy_signal'] = result["XG"]
-        signals['sell_signal'] = ~result["XG"]
-        signals['neutral_signal'] = False
+        signals.loc[:, 'buy_signal'] = result["XG"]
+        signals.loc[:, 'sell_signal'] = ~result["XG"]
+        signals.loc[:, 'neutral_signal'] = False
 
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
+        signals.loc[:, 'trend'] = 0  # 默认中性
         signals.loc[result["MACD"] > 0, 'trend'] = 1  # MACD为正看涨
         signals.loc[result["MACD"] < 0, 'trend'] = -1  # MACD为负看跌
 
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
 
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["XG"], 'signal_type'] = 'buy_point'
 
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         for i in signals.index:
             if result.loc[i, "XG"]:
                 signals.loc[i, 'signal_desc'] = f"日线MACD买点信号，MACD值{result.loc[i, 'MACD']:.3f}"
@@ -278,27 +278,27 @@ class ZXMDailyMACD(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["日线MACD买点信号"] = result["XG"]
-        patterns_df["日线MACD为正值"] = result["MACD"] > 0
-        patterns_df["日线MACD为负值"] = result["MACD"] < 0
-        patterns_df["日线MACD上升趋势"] = result["MACD"] > result["MACD"].shift(1)
-        patterns_df["日线MACD下降趋势"] = result["MACD"] < result["MACD"].shift(1)
+        patterns_df.loc[:, "日线MACD买点信号"] = result["XG"]
+        patterns_df.loc[:, "日线MACD为正值"] = result["MACD"] > 0
+        patterns_df.loc[:, "日线MACD为负值"] = result["MACD"] < 0
+        patterns_df.loc[:, "日线MACD上升趋势"] = result["MACD"] > result["MACD"].shift(1)
+        patterns_df.loc[:, "日线MACD下降趋势"] = result["MACD"] < result["MACD"].shift(1)
 
         # DIFF和DEA关系形态
-        patterns_df["日线MACD多头排列"] = result["DIFF"] > result["DEA"]
-        patterns_df["日线MACD空头排列"] = result["DIFF"] < result["DEA"]
+        patterns_df.loc[:, "日线MACD多头排列"] = result["DIFF"] > result["DEA"]
+        patterns_df.loc[:, "日线MACD空头排列"] = result["DIFF"] < result["DEA"]
 
         # 金叉死叉形态
         diff_cross_above_dea = (result["DIFF"] > result["DEA"]) & (result["DIFF"].shift(1) <= result["DEA"].shift(1))
         diff_cross_below_dea = (result["DIFF"] < result["DEA"]) & (result["DIFF"].shift(1) >= result["DEA"].shift(1))
 
-        patterns_df["日线MACD金叉形成"] = diff_cross_above_dea
-        patterns_df["日线MACD死叉形成"] = diff_cross_below_dea
+        patterns_df.loc[:, "日线MACD金叉形成"] = diff_cross_above_dea
+        patterns_df.loc[:, "日线MACD死叉形成"] = diff_cross_below_dea
 
         # MACD值区间形态
-        patterns_df["日线MACD接近零轴"] = abs(result["MACD"]) < 0.5
-        patterns_df["日线MACD严重超卖"] = result["MACD"] < -2
-        patterns_df["日线MACD严重超买"] = result["MACD"] > 2
+        patterns_df.loc[:, "日线MACD接近零轴"] = abs(result["MACD"]) < 0.5
+        patterns_df.loc[:, "日线MACD严重超卖"] = result["MACD"] < -2
+        patterns_df.loc[:, "日线MACD严重超买"] = result["MACD"] > 2
 
         return patterns_df
 
@@ -359,8 +359,8 @@ class ZXMTurnover(BaseIndicator):
         xg = turnover > 0.7
         
         # 添加计算结果到数据框
-        result["Turnover"] = turnover
-        result["XG"] = xg
+        result.loc[:, "Turnover"] = turnover
+        result.loc[:, "XG"] = xg
         
         return result
 
@@ -516,28 +516,28 @@ class ZXMTurnover(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["换手率买点信号"] = result["XG"]
+        patterns_df.loc[:, "换手率买点信号"] = result["XG"]
 
         # 换手率活跃度形态
         turnover = result["Turnover"]
-        patterns_df["换手率极度活跃"] = turnover > 5.0
-        patterns_df["换手率非常活跃"] = (turnover > 2.0) & (turnover <= 5.0)
-        patterns_df["换手率活跃"] = (turnover > 1.0) & (turnover <= 2.0)
-        patterns_df["换手率一般活跃"] = (turnover > 0.7) & (turnover <= 1.0)
-        patterns_df["换手率低迷"] = turnover <= 0.7
+        patterns_df.loc[:, "换手率极度活跃"] = turnover > 5.0
+        patterns_df.loc[:, "换手率非常活跃"] = (turnover > 2.0) & (turnover <= 5.0)
+        patterns_df.loc[:, "换手率活跃"] = (turnover > 1.0) & (turnover <= 2.0)
+        patterns_df.loc[:, "换手率一般活跃"] = (turnover > 0.7) & (turnover <= 1.0)
+        patterns_df.loc[:, "换手率低迷"] = turnover <= 0.7
 
         # 相对活跃度形态
         if len(result) >= 20:
             avg_turnover_20 = turnover.rolling(window=20).mean()
-            patterns_df["换手率相对历史极度活跃"] = turnover > avg_turnover_20 * 2
-            patterns_df["换手率相对历史活跃"] = (turnover > avg_turnover_20 * 1.5) & (turnover <= avg_turnover_20 * 2)
-            patterns_df["换手率相对历史低迷"] = turnover < avg_turnover_20 * 0.5
+            patterns_df.loc[:, "换手率相对历史极度活跃"] = turnover > avg_turnover_20 * 2
+            patterns_df.loc[:, "换手率相对历史活跃"] = (turnover > avg_turnover_20 * 1.5) & (turnover <= avg_turnover_20 * 2)
+            patterns_df.loc[:, "换手率相对历史低迷"] = turnover < avg_turnover_20 * 0.5
 
         # 换手率趋势形态
         if len(result) >= 5:
             recent_trend = turnover.rolling(window=5).mean()
-            patterns_df["换手率突然放大"] = turnover > recent_trend * 1.3
-            patterns_df["换手率突然缩小"] = turnover < recent_trend * 0.7
+            patterns_df.loc[:, "换手率突然放大"] = turnover > recent_trend * 1.3
+            patterns_df.loc[:, "换手率突然缩小"] = turnover < recent_trend * 0.7
 
         return patterns_df
 
@@ -594,9 +594,9 @@ class ZXMVolumeShrink(BaseIndicator):
         xg = vol_ratio < 0.9
         
         # 添加计算结果到数据框
-        result["MA_VOL_2"] = ma_vol_2
-        result["VOL_RATIO"] = vol_ratio
-        result["XG"] = xg
+        result.loc[:, "MA_VOL_2"] = ma_vol_2
+        result.loc[:, "VOL_RATIO"] = vol_ratio
+        result.loc[:, "XG"] = xg
         
         return result
 
@@ -748,14 +748,14 @@ class ZXMVolumeShrink(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["缩量买点信号"] = result["XG"]
+        patterns_df.loc[:, "缩量买点信号"] = result["XG"]
 
         # 缩量程度形态
         vol_ratio = result["VOL_RATIO"]
-        patterns_df["严重缩量"] = vol_ratio < 0.5
-        patterns_df["明显缩量"] = (vol_ratio >= 0.5) & (vol_ratio < 0.7)
-        patterns_df["轻微缩量"] = (vol_ratio >= 0.7) & (vol_ratio < 0.9)
-        patterns_df["成交量正常"] = vol_ratio >= 0.9
+        patterns_df.loc[:, "严重缩量"] = vol_ratio < 0.5
+        patterns_df.loc[:, "明显缩量"] = (vol_ratio >= 0.5) & (vol_ratio < 0.7)
+        patterns_df.loc[:, "轻微缩量"] = (vol_ratio >= 0.7) & (vol_ratio < 0.9)
+        patterns_df.loc[:, "成交量正常"] = vol_ratio >= 0.9
 
         # 连续缩量形态
         if len(result) >= 3:
@@ -763,12 +763,12 @@ class ZXMVolumeShrink(BaseIndicator):
             for i in range(2, len(result)):
                 if all(result["XG"].iloc[i-2:i+1]):
                     consecutive_shrink.iloc[i] = True
-            patterns_df["连续缩量"] = consecutive_shrink
+            patterns_df.loc[:, "连续缩量"] = consecutive_shrink
 
         # 缩量整理形态
         if 'close' in data.columns and len(data) >= 3:
             price_stable = abs(data['close'].pct_change(3)) < 0.05
-            patterns_df["缩量整理"] = result["XG"] & price_stable
+            patterns_df.loc[:, "缩量整理"] = result["XG"] & price_stable
 
         return patterns_df
 
@@ -843,15 +843,15 @@ class ZXMMACallback(BaseIndicator):
         xg = a20 | a30 | a60 | a120
         
         # 添加计算结果到数据框
-        result["MA20"] = ma20
-        result["MA30"] = ma30
-        result["MA60"] = ma60
-        result["MA120"] = ma120
-        result["A20"] = a20
-        result["A30"] = a30
-        result["A60"] = a60
-        result["A120"] = a120
-        result["XG"] = xg
+        result.loc[:, "MA20"] = ma20
+        result.loc[:, "MA30"] = ma30
+        result.loc[:, "MA60"] = ma60
+        result.loc[:, "MA120"] = ma120
+        result.loc[:, "A20"] = a20
+        result.loc[:, "A30"] = a30
+        result.loc[:, "A60"] = a60
+        result.loc[:, "A120"] = a120
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -1020,17 +1020,17 @@ class ZXMMACallback(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["均线回调买点信号"] = result["XG"]
-        patterns_df["回踩20日均线"] = result["A20"]
-        patterns_df["回踩30日均线"] = result["A30"]
-        patterns_df["回踩60日均线"] = result["A60"]
-        patterns_df["回踩120日均线"] = result["A120"]
+        patterns_df.loc[:, "均线回调买点信号"] = result["XG"]
+        patterns_df.loc[:, "回踩20日均线"] = result["A20"]
+        patterns_df.loc[:, "回踩30日均线"] = result["A30"]
+        patterns_df.loc[:, "回踩60日均线"] = result["A60"]
+        patterns_df.loc[:, "回踩120日均线"] = result["A120"]
 
         # 多重回调形态
         ma_count = result["A20"].astype(int) + result["A30"].astype(int) + result["A60"].astype(int) + result["A120"].astype(int)
-        patterns_df["多重均线回调"] = ma_count >= 3
-        patterns_df["双重均线回调"] = ma_count == 2
-        patterns_df["单一均线回调"] = ma_count == 1
+        patterns_df.loc[:, "多重均线回调"] = ma_count >= 3
+        patterns_df.loc[:, "双重均线回调"] = ma_count == 2
+        patterns_df.loc[:, "单一均线回调"] = ma_count == 1
 
         # 支撑有效性形态
         if 'close' in data.columns:
@@ -1137,12 +1137,12 @@ class ZXMBSAbsorb(BaseIndicator):
             xg.iloc[i] = np.sum((aa | bb).iloc[i-5:i+1])
         
         # 添加计算结果到数据框
-        result["V11"] = v11
-        result["EMA_V11_3"] = ema_v11_3
-        result["V12"] = v12
-        result["AA"] = aa
-        result["BB"] = bb
-        result["XG"] = xg
+        result.loc[:, "V11"] = v11
+        result.loc[:, "EMA_V11_3"] = ema_v11_3
+        result.loc[:, "V12"] = v12
+        result.loc[:, "AA"] = aa
+        result.loc[:, "BB"] = bb
+        result.loc[:, "XG"] = xg
         
         return result
     
@@ -1354,30 +1354,30 @@ class ZXMBSAbsorb(BaseIndicator):
 
         # 吸筹强度形态
         xg_value = result["XG"]
-        patterns_df["强烈吸筹信号"] = xg_value >= 5
-        patterns_df["明显吸筹信号"] = (xg_value >= 3) & (xg_value < 5)
-        patterns_df["轻微吸筹信号"] = (xg_value >= 1) & (xg_value < 3)
-        patterns_df["无吸筹信号"] = xg_value == 0
+        patterns_df.loc[:, "强烈吸筹信号"] = xg_value >= 5
+        patterns_df.loc[:, "明显吸筹信号"] = (xg_value >= 3) & (xg_value < 5)
+        patterns_df.loc[:, "轻微吸筹信号"] = (xg_value >= 1) & (xg_value < 3)
+        patterns_df.loc[:, "无吸筹信号"] = xg_value == 0
 
         # V11位置形态
         v11_ema = result["EMA_V11_3"]
-        patterns_df["V11极低位"] = v11_ema <= 10
-        patterns_df["V11低位"] = (v11_ema > 10) & (v11_ema <= 13)
-        patterns_df["V11中位"] = (v11_ema > 13) & (v11_ema < 80)
-        patterns_df["V11高位"] = v11_ema >= 80
+        patterns_df.loc[:, "V11极低位"] = v11_ema <= 10
+        patterns_df.loc[:, "V11低位"] = (v11_ema > 10) & (v11_ema <= 13)
+        patterns_df.loc[:, "V11中位"] = (v11_ema > 13) & (v11_ema < 80)
+        patterns_df.loc[:, "V11高位"] = v11_ema >= 80
 
         # V12动量形态
         v12_value = result["V12"]
-        patterns_df["强烈上升动量"] = v12_value > 20
-        patterns_df["上升动量"] = (v12_value > 13) & (v12_value <= 20)
-        patterns_df["动量平稳"] = (v12_value >= -20) & (v12_value <= 13)
-        patterns_df["下降动量"] = v12_value < -20
+        patterns_df.loc[:, "强烈上升动量"] = v12_value > 20
+        patterns_df.loc[:, "上升动量"] = (v12_value > 13) & (v12_value <= 20)
+        patterns_df.loc[:, "动量平稳"] = (v12_value >= -20) & (v12_value <= 13)
+        patterns_df.loc[:, "下降动量"] = v12_value < -20
 
         # 条件满足形态
-        patterns_df["AA条件满足"] = result["AA"]
-        patterns_df["BB条件满足"] = result["BB"]
-        patterns_df["双重吸筹确认"] = result["AA"] & result["BB"]
-        patterns_df["低位反弹信号"] = (v11_ema <= 13) & (v12_value > 13)
+        patterns_df.loc[:, "AA条件满足"] = result["AA"]
+        patterns_df.loc[:, "BB条件满足"] = result["BB"]
+        patterns_df.loc[:, "双重吸筹确认"] = result["AA"] & result["BB"]
+        patterns_df.loc[:, "低位反弹信号"] = (v11_ema <= 13) & (v12_value > 13)
 
         return patterns_df
 
@@ -1419,11 +1419,46 @@ class BuyPointDetector(BaseIndicator):
         # 买点侦测器通常没有可变参数，但为了符合接口要求，提供此方法
         pass
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取买点侦测器的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信号的DataFrame
         """
-        return self.identify_patterns(data, **kwargs)
+        # 计算指标
+        result = self.calculate(data)
+
+        # 初始化形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基础买点形态
+        patterns_df.loc[:, "放量上涨买点"] = result["VolumeRiseBuyPoint"]
+        patterns_df.loc[:, "回调企稳买点"] = result["PullbackStabilizeBuyPoint"]
+        patterns_df.loc[:, "突破买点"] = result["BreakoutBuyPoint"]
+        patterns_df.loc[:, "底部放量买点"] = result["BottomVolumeBuyPoint"]
+        patterns_df.loc[:, "缩量整理买点"] = result["VolumeShrinkBuyPoint"]
+        patterns_df.loc[:, "组合买点"] = result["CombinedBuyPoint"]
+
+        # 买点组合形态
+        buy_point_count = (
+            result["VolumeRiseBuyPoint"].astype(int) +
+            result["PullbackStabilizeBuyPoint"].astype(int) +
+            result["BreakoutBuyPoint"].astype(int) +
+            result["BottomVolumeBuyPoint"].astype(int) +
+            result["VolumeShrinkBuyPoint"].astype(int)
+        )
+
+        patterns_df.loc[:, "强势多重买点组合"] = buy_point_count >= 3
+        patterns_df.loc[:, "双重买点组合"] = buy_point_count == 2
+        patterns_df.loc[:, "单一买点"] = buy_point_count == 1
+        patterns_df.loc[:, "无买点形态"] = buy_point_count == 0
+
+        return patterns_df
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -1462,7 +1497,7 @@ class BuyPointDetector(BaseIndicator):
         result = self._calculate_volume_shrink_buy_point(data, result)
         
         # 6. 组合买点 - 满足多个买点的组合
-        result["CombinedBuyPoint"] = (
+        result.loc[:, "CombinedBuyPoint"] = (
             result["VolumeRiseBuyPoint"] | 
             result["PullbackStabilizeBuyPoint"] | 
             result["BreakoutBuyPoint"] | 
@@ -1510,7 +1545,7 @@ class BuyPointDetector(BaseIndicator):
                 buy_signal[i] = True
         
         # 添加到结果
-        result["VolumeRiseBuyPoint"] = buy_signal
+        result.loc[:, "VolumeRiseBuyPoint"] = buy_signal
         
         return result
     
@@ -1561,7 +1596,7 @@ class BuyPointDetector(BaseIndicator):
                 buy_signal[i] = True
         
         # 添加到结果
-        result["PullbackStabilizeBuyPoint"] = buy_signal
+        result.loc[:, "PullbackStabilizeBuyPoint"] = buy_signal
         
         return result
     
@@ -1608,7 +1643,7 @@ class BuyPointDetector(BaseIndicator):
                 buy_signal[i] = True
         
         # 添加到结果
-        result["BreakoutBuyPoint"] = buy_signal
+        result.loc[:, "BreakoutBuyPoint"] = buy_signal
         
         return result
     
@@ -1662,7 +1697,7 @@ class BuyPointDetector(BaseIndicator):
                 buy_signal[i] = True
         
         # 添加到结果
-        result["BottomVolumeBuyPoint"] = buy_signal
+        result.loc[:, "BottomVolumeBuyPoint"] = buy_signal
         
         return result
     
@@ -1710,7 +1745,7 @@ class BuyPointDetector(BaseIndicator):
                 buy_signal[i] = True
         
         # 添加到结果
-        result["VolumeShrinkBuyPoint"] = buy_signal
+        result.loc[:, "VolumeShrinkBuyPoint"] = buy_signal
         
         return result
     
@@ -1862,19 +1897,19 @@ class BuyPointDetector(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["CombinedBuyPoint"]
-        signals['sell_signal'] = False  # 买点检测器不生成卖出信号
-        signals['neutral_signal'] = ~result["CombinedBuyPoint"]
+        signals.loc[:, 'buy_signal'] = result["CombinedBuyPoint"]
+        signals.loc[:, 'sell_signal'] = False  # 买点检测器不生成卖出信号
+        signals.loc[:, 'neutral_signal'] = ~result["CombinedBuyPoint"]
         
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
+        signals.loc[:, 'trend'] = 0  # 默认中性
         signals.loc[result["CombinedBuyPoint"], 'trend'] = 1  # 买点看涨
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         
         # 为每个买点设置特定的信号类型
         for i in signals.index:
@@ -1900,7 +1935,7 @@ class BuyPointDetector(BaseIndicator):
                     signals.loc[i, 'signal_type'] = f"buy_point_{'_'.join(buy_types)}"
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个买点设置详细描述
         for i in signals.index:
@@ -1926,7 +1961,7 @@ class BuyPointDetector(BaseIndicator):
                     signals.loc[i, 'signal_desc'] = "买点特征：" + "，".join(desc_parts)
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 计算每天满足的买点数量
         buy_point_count = pd.Series(0, index=data.index)
@@ -1941,16 +1976,16 @@ class BuyPointDetector(BaseIndicator):
         signals.loc[buy_point_count >= 3, 'confidence'] = 90  # 三重及以上买点
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[result["CombinedBuyPoint"], 'position_size'] = 0.3  # 基础仓位
         signals.loc[(buy_point_count == 2), 'position_size'] = 0.5  # 双重买点
         signals.loc[(buy_point_count >= 3), 'position_size'] = 0.7  # 三重及以上买点
         
         # 止损位 - 使用近期低点
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         mask = result["CombinedBuyPoint"]
         for i in data.index[mask]:
             try:
@@ -1962,13 +1997,111 @@ class BuyPointDetector(BaseIndicator):
                 continue
         
         # 市场环境和成交量确认
-        signals['market_env'] = 'normal'
+        signals.loc[:, 'market_env'] = 'normal'
         
         # 成交量确认 - 当日成交量是否大于20日均量
-        volume_ratio = data["volume"] / data["volume"].rolling(window=20).mean()
-        signals['volume_confirmation'] = volume_ratio > 1.2
+        # 支持多种成交量列名格式
+        volume_columns = ['volume', 'Volume', 'VOLUME', 'vol', 'Vol', 'VOL']
+        volume_col = None
+
+        for col in volume_columns:
+            if col in data.columns:
+                volume_col = col
+                break
+
+        if volume_col is not None:
+            volume_ratio = data[volume_col] / data[volume_col].rolling(window=20).mean()
+            signals.loc[:, 'volume_confirmation'] = volume_ratio > 1.2
+        else:
+            # 如果没有成交量数据，设置为False
+            signals.loc[:, 'volume_confirmation'] = False
         
         return signals
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+        
+        # ZXMBuyPointScore指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "超买区域": {
+                "id": "超买区域",
+                "name": "超买区域",
+                "description": "指标进入超买区域，可能面临回调压力",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            "超卖区域": {
+                "id": "超卖区域", 
+                "name": "超卖区域",
+                "description": "指标进入超卖区域，可能出现反弹机会",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "中性区域": {
+                "id": "中性区域",
+                "name": "中性区域", 
+                "description": "指标处于中性区域，趋势不明确",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            },
+            # 趋势形态
+            "上升趋势": {
+                "id": "上升趋势",
+                "name": "上升趋势",
+                "description": "指标显示上升趋势，看涨信号",
+                "type": "BULLISH", 
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "下降趋势": {
+                "id": "下降趋势",
+                "name": "下降趋势",
+                "description": "指标显示下降趋势，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG", 
+                "score_impact": -15.0
+            },
+            # 信号形态
+            "买入信号": {
+                "id": "买入信号",
+                "name": "买入信号",
+                "description": "指标产生买入信号，建议关注",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "卖出信号": {
+                "id": "卖出信号", 
+                "name": "卖出信号",
+                "description": "指标产生卖出信号，建议谨慎",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            }
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)
+
 
     def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """

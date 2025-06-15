@@ -1209,4 +1209,138 @@ class VOL(BaseIndicator):
         # 波动率小
         is_stable = recent_vol.std() / recent_vol.mean() < 0.2
         
-        return is_stable 
+        return is_stable
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "VOL_BREAKOUT_UP": {
+                "id": "VOL_BREAKOUT_UP",
+                "name": "放量上涨",
+                "description": "成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "VOL_BREAKOUT_DOWN": {
+                "id": "VOL_BREAKOUT_DOWN",
+                "name": "放量下跌",
+                "description": "成交量显著放大，同时价格下跌，通常是恐慌性抛售或趋势反转的信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -15.0
+            },
+            "VOL_WEAK_UP": {
+                "id": "VOL_WEAK_UP",
+                "name": "缩量上涨",
+                "description": "价格上涨但成交量萎缩，可能表示上涨动力不足",
+                "type": "BEARISH",
+                "strength": "WEAK",
+                "score_impact": -10.0
+            },
+            "VOL_WEAK_DOWN": {
+                "id": "VOL_WEAK_DOWN",
+                "name": "缩量下跌",
+                "description": "价格下跌且成交量萎缩，可能表示下跌动能衰竭",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "VOL_PEAK": {
+                "id": "VOL_PEAK",
+                "name": "天量",
+                "description": "成交量达到近期峰值，可能预示趋势即将反转",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -8.0
+            },
+            "VOL_TROUGH": {
+                "id": "VOL_TROUGH",
+                "name": "地量",
+                "description": "成交量达到近期谷底，可能表示市场极度冷清或惜售",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 8.0
+            },
+            "VOL_GOLDEN_CROSS": {
+                "id": "VOL_GOLDEN_CROSS",
+                "name": "成交量金叉",
+                "description": "短期成交量均线上穿长期均线，表示成交量趋势向好",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 12.0
+            },
+            "VOL_DEATH_CROSS": {
+                "id": "VOL_DEATH_CROSS",
+                "name": "成交量死叉",
+                "description": "短期成交量均线下穿长期均线，表示成交量趋势转弱",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -12.0
+            },
+            "VOL_MA_BULLISH": {
+                "id": "VOL_MA_BULLISH",
+                "name": "均量线多头排列",
+                "description": "成交量均线呈多头排列，表示成交量趋势强劲",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "VOL_MA_BEARISH": {
+                "id": "VOL_MA_BEARISH",
+                "name": "均量线空头排列",
+                "description": "成交量均线呈空头排列，表示成交量趋势疲弱",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -15.0
+            },
+            "VOL_HIGH": {
+                "id": "VOL_HIGH",
+                "name": "成交量偏高",
+                "description": "成交量高于平均水平，市场活跃度较高",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": 5.0
+            },
+            "VOL_VERY_HIGH": {
+                "id": "VOL_VERY_HIGH",
+                "name": "成交量极高",
+                "description": "成交量极高，可能存在异常交易或重大消息",
+                "type": "NEUTRAL",
+                "strength": "STRONG",
+                "score_impact": 0.0
+            },
+            "VOL_LOW": {
+                "id": "VOL_LOW",
+                "name": "成交量偏低",
+                "description": "成交量低于平均水平，市场活跃度较低",
+                "type": "NEUTRAL",
+                "strength": "MEDIUM",
+                "score_impact": -5.0
+            },
+            "VOL_VERY_LOW": {
+                "id": "VOL_VERY_LOW",
+                "name": "成交量极低",
+                "description": "成交量极低，市场极度冷清",
+                "type": "NEUTRAL",
+                "strength": "STRONG",
+                "score_impact": -10.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })

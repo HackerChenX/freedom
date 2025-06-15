@@ -62,9 +62,9 @@ class AmplitudeElasticity(BaseIndicator):
             xg.iloc[i] = np.sum(a1.iloc[i-119:i+1]) > 1
         
         # 添加计算结果到数据框
-        result["Amplitude"] = amplitude
-        result["A1"] = a1
-        result["XG"] = xg
+        result.loc[:, "Amplitude"] = amplitude
+        result.loc[:, "A1"] = a1
+        result.loc[:, "XG"] = xg
         
         return result
 
@@ -200,23 +200,23 @@ class AmplitudeElasticity(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["振幅弹性信号"] = result["XG"]
-        patterns_df["大振幅日"] = result["A1"]
+        patterns_df.loc[:, "振幅弹性信号"] = result["XG"]
+        patterns_df.loc[:, "大振幅日"] = result["A1"]
 
         # 振幅大小形态
         amplitude = result["Amplitude"]
-        patterns_df["极大振幅"] = amplitude > 15
-        patterns_df["大振幅"] = (amplitude > 12) & (amplitude <= 15)
-        patterns_df["中等振幅"] = (amplitude > 8.1) & (amplitude <= 12)
-        patterns_df["小振幅"] = amplitude <= 8.1
+        patterns_df.loc[:, "极大振幅"] = amplitude > 15
+        patterns_df.loc[:, "大振幅"] = (amplitude > 12) & (amplitude <= 15)
+        patterns_df.loc[:, "中等振幅"] = (amplitude > 8.1) & (amplitude <= 12)
+        patterns_df.loc[:, "小振幅"] = amplitude <= 8.1
 
         # 历史振幅统计形态
         if len(result) >= 120:
             amplitude_count_120 = result["A1"].rolling(window=120).sum()
-            patterns_df["频繁大振幅"] = amplitude_count_120 > 10
-            patterns_df["偶尔大振幅"] = (amplitude_count_120 > 5) & (amplitude_count_120 <= 10)
-            patterns_df["少量大振幅"] = (amplitude_count_120 > 1) & (amplitude_count_120 <= 5)
-            patterns_df["无大振幅"] = amplitude_count_120 <= 1
+            patterns_df.loc[:, "频繁大振幅"] = amplitude_count_120 > 10
+            patterns_df.loc[:, "偶尔大振幅"] = (amplitude_count_120 > 5) & (amplitude_count_120 <= 10)
+            patterns_df.loc[:, "少量大振幅"] = (amplitude_count_120 > 1) & (amplitude_count_120 <= 5)
+            patterns_df.loc[:, "无大振幅"] = amplitude_count_120 <= 1
 
         return patterns_df
 
@@ -277,9 +277,9 @@ class ZXMRiseElasticity(BaseIndicator):
             xg.iloc[i] = np.sum(a1.iloc[i-79:i+1]) > 0
         
         # 添加计算结果到数据框
-        result["RiseRatio"] = rise_ratio
-        result["A1"] = a1
-        result["XG"] = xg
+        result.loc[:, "RiseRatio"] = rise_ratio
+        result.loc[:, "A1"] = a1
+        result.loc[:, "XG"] = xg
         
         return result
 
@@ -417,23 +417,23 @@ class ZXMRiseElasticity(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["涨幅弹性信号"] = result["XG"]
-        patterns_df["大涨日"] = result["A1"]
+        patterns_df.loc[:, "涨幅弹性信号"] = result["XG"]
+        patterns_df.loc[:, "大涨日"] = result["A1"]
 
         # 涨幅大小形态
         rise_ratio = result["RiseRatio"]
-        patterns_df["极大涨幅"] = rise_ratio > 1.15
-        patterns_df["大涨幅"] = (rise_ratio > 1.10) & (rise_ratio <= 1.15)
-        patterns_df["中等涨幅"] = (rise_ratio > 1.07) & (rise_ratio <= 1.10)
-        patterns_df["小涨幅"] = rise_ratio <= 1.07
+        patterns_df.loc[:, "极大涨幅"] = rise_ratio > 1.15
+        patterns_df.loc[:, "大涨幅"] = (rise_ratio > 1.10) & (rise_ratio <= 1.15)
+        patterns_df.loc[:, "中等涨幅"] = (rise_ratio > 1.07) & (rise_ratio <= 1.10)
+        patterns_df.loc[:, "小涨幅"] = rise_ratio <= 1.07
 
         # 历史涨幅统计形态
         if len(result) >= 80:
             rise_count_80 = result["A1"].rolling(window=80).sum()
-            patterns_df["频繁大涨"] = rise_count_80 > 10
-            patterns_df["偶尔大涨"] = (rise_count_80 > 5) & (rise_count_80 <= 10)
-            patterns_df["少量大涨"] = (rise_count_80 > 0) & (rise_count_80 <= 5)
-            patterns_df["无大涨"] = rise_count_80 == 0
+            patterns_df.loc[:, "频繁大涨"] = rise_count_80 > 10
+            patterns_df.loc[:, "偶尔大涨"] = (rise_count_80 > 5) & (rise_count_80 <= 10)
+            patterns_df.loc[:, "少量大涨"] = (rise_count_80 > 0) & (rise_count_80 <= 5)
+            patterns_df.loc[:, "无大涨"] = rise_count_80 == 0
 
         return patterns_df
 
@@ -515,12 +515,12 @@ class Elasticity(BaseIndicator):
         volume_ratio = data["volume"] / data["volume"].rolling(window=self.period).mean()
         
         # 添加计算结果到数据框
-        result["ElasticityUp"] = elasticity_up
-        result["ElasticityDown"] = elasticity_down
-        result["ElasticityRatio"] = elasticity_ratio
-        result["BounceStrength"] = bounce_strength
-        result["RangePct"] = range_pct
-        result["VolumeRatio"] = volume_ratio
+        result.loc[:, "ElasticityUp"] = elasticity_up
+        result.loc[:, "ElasticityDown"] = elasticity_down
+        result.loc[:, "ElasticityRatio"] = elasticity_ratio
+        result.loc[:, "BounceStrength"] = bounce_strength
+        result.loc[:, "RangePct"] = range_pct
+        result.loc[:, "VolumeRatio"] = volume_ratio
         
         # 6. 弹性买点 - 同时满足以下条件：
         # - 弹性比率大于1.2（上涨幅度大于下跌幅度）
@@ -534,7 +534,7 @@ class Elasticity(BaseIndicator):
             (volume_ratio > 0.8)
         )
         
-        result["BuySignal"] = elasticity_buy_signal
+        result.loc[:, "BuySignal"] = elasticity_buy_signal
         
         return result
 
@@ -675,23 +675,23 @@ class Elasticity(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["BuySignal"]
-        signals['sell_signal'] = False  # 弹性指标主要用于识别买点
-        signals['neutral_signal'] = ~result["BuySignal"]
+        signals.loc[:, 'buy_signal'] = result["BuySignal"]
+        signals.loc[:, 'sell_signal'] = False  # 弹性指标主要用于识别买点
+        signals.loc[:, 'neutral_signal'] = ~result["BuySignal"]
         
         # 设置趋势
-        signals['trend'] = 0  # 默认中性
+        signals.loc[:, 'trend'] = 0  # 默认中性
         signals.loc[result["BuySignal"], 'trend'] = 1  # 弹性买点看涨
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["BuySignal"], 'signal_type'] = 'elasticity_buy'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 根据弹性强度和比率设置详细描述
         for i in signals.index[result["BuySignal"]]:
@@ -725,7 +725,7 @@ class Elasticity(BaseIndicator):
             signals.loc[i, 'signal_desc'] = "弹性买点：" + "，".join(desc_parts)
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据弹性比率和反弹强度调整置信度
         for i in signals.index:
@@ -760,16 +760,16 @@ class Elasticity(BaseIndicator):
                 signals.loc[i, 'confidence'] = min(95, 60 + confidence_adj)
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[result["BuySignal"], 'position_size'] = 0.3  # 基础仓位
         signals.loc[(result["BuySignal"]) & (score > 70), 'position_size'] = 0.5  # 高分仓位
         signals.loc[(result["BuySignal"]) & (score > 85), 'position_size'] = 0.7  # 极高分仓位
         
         # 止损位 - 使用区间最低价
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         mask = result["BuySignal"]
         for i in data.index[mask]:
             period = self.period
@@ -782,8 +782,8 @@ class Elasticity(BaseIndicator):
                 continue
         
         # 市场环境和成交量确认
-        signals['market_env'] = 'normal'
-        signals['volume_confirmation'] = result["VolumeRatio"] > 1.0
+        signals.loc[:, 'market_env'] = 'normal'
+        signals.loc[:, 'volume_confirmation'] = result["VolumeRatio"] > 1.0
         
         return signals
 
@@ -844,33 +844,33 @@ class Elasticity(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础形态
-        patterns_df["弹性买点"] = result["BuySignal"]
+        patterns_df.loc[:, "弹性买点"] = result["BuySignal"]
 
         # 弹性比率形态
         elasticity_ratio = result["ElasticityRatio"]
-        patterns_df["高弹性比率"] = elasticity_ratio > 2
-        patterns_df["中等弹性比率"] = (elasticity_ratio > 1.5) & (elasticity_ratio <= 2)
-        patterns_df["轻微弹性比率"] = (elasticity_ratio > 1.2) & (elasticity_ratio <= 1.5)
-        patterns_df["低弹性比率"] = elasticity_ratio < 0.8
+        patterns_df.loc[:, "高弹性比率"] = elasticity_ratio > 2
+        patterns_df.loc[:, "中等弹性比率"] = (elasticity_ratio > 1.5) & (elasticity_ratio <= 2)
+        patterns_df.loc[:, "轻微弹性比率"] = (elasticity_ratio > 1.2) & (elasticity_ratio <= 1.5)
+        patterns_df.loc[:, "低弹性比率"] = elasticity_ratio < 0.8
 
         # 反弹强度形态
         bounce_strength = result["BounceStrength"]
-        patterns_df["强反弹"] = bounce_strength > 0.7
-        patterns_df["中等反弹"] = (bounce_strength > 0.5) & (bounce_strength <= 0.7)
-        patterns_df["轻微反弹"] = (bounce_strength > 0.3) & (bounce_strength <= 0.5)
-        patterns_df["接近低点"] = bounce_strength < 0.2
+        patterns_df.loc[:, "强反弹"] = bounce_strength > 0.7
+        patterns_df.loc[:, "中等反弹"] = (bounce_strength > 0.5) & (bounce_strength <= 0.7)
+        patterns_df.loc[:, "轻微反弹"] = (bounce_strength > 0.3) & (bounce_strength <= 0.5)
+        patterns_df.loc[:, "接近低点"] = bounce_strength < 0.2
 
         # 成交量配合形态
         volume_ratio = result["VolumeRatio"]
-        patterns_df["放量反弹"] = volume_ratio > 1.5
-        patterns_df["缩量反弹"] = volume_ratio < 0.7
-        patterns_df["量能正常"] = (volume_ratio >= 0.7) & (volume_ratio <= 1.5)
+        patterns_df.loc[:, "放量反弹"] = volume_ratio > 1.5
+        patterns_df.loc[:, "缩量反弹"] = volume_ratio < 0.7
+        patterns_df.loc[:, "量能正常"] = (volume_ratio >= 0.7) & (volume_ratio <= 1.5)
 
         # 区间波动形态
         range_pct = result["RangePct"]
-        patterns_df["大幅波动区间"] = range_pct > 0.15
-        patterns_df["窄幅波动区间"] = range_pct < 0.05
-        patterns_df["正常波动区间"] = (range_pct >= 0.05) & (range_pct <= 0.15)
+        patterns_df.loc[:, "大幅波动区间"] = range_pct > 0.15
+        patterns_df.loc[:, "窄幅波动区间"] = range_pct < 0.05
+        patterns_df.loc[:, "正常波动区间"] = (range_pct >= 0.05) & (range_pct <= 0.15)
 
         return patterns_df
 
@@ -948,12 +948,12 @@ class BounceDetector(BaseIndicator):
         pullback_from_high = (long_high - data["close"]) / long_high * 100
         
         # 记录这些基础指标
-        result["ShortLow"] = short_low
-        result["LongLow"] = long_low
-        result["ShortHigh"] = short_high
-        result["LongHigh"] = long_high
-        result["BounceFromLow"] = bounce_from_low
-        result["PullbackFromHigh"] = pullback_from_high
+        result.loc[:, "ShortLow"] = short_low
+        result.loc[:, "LongLow"] = long_low
+        result.loc[:, "ShortHigh"] = short_high
+        result.loc[:, "LongHigh"] = long_high
+        result.loc[:, "BounceFromLow"] = bounce_from_low
+        result.loc[:, "PullbackFromHigh"] = pullback_from_high
         
         # 5. 计算价格趋势方向
         # 使用短期均线的斜率
@@ -967,7 +967,7 @@ class BounceDetector(BaseIndicator):
             elif ma5.iloc[i] < ma5.iloc[i-5]:
                 price_trend[i] = -1  # 下降趋势
         
-        result["PriceTrend"] = price_trend
+        result.loc[:, "PriceTrend"] = price_trend
         
         # 6. 计算量能变化
         volume_ma5 = data["volume"].rolling(window=5).mean()
@@ -976,8 +976,8 @@ class BounceDetector(BaseIndicator):
         volume_change = (data["volume"] / volume_ma5 - 1) * 100
         volume_trend = (volume_ma5 / volume_ma20 - 1) * 100
         
-        result["VolumeChange"] = volume_change
-        result["VolumeTrend"] = volume_trend
+        result.loc[:, "VolumeChange"] = volume_change
+        result.loc[:, "VolumeTrend"] = volume_trend
         
         # 7. 检测反弹信号
         # 反弹信号条件：
@@ -993,8 +993,8 @@ class BounceDetector(BaseIndicator):
         # - 近期成交量萎缩
         pullback_signal = (pullback_from_high > 5) & (price_trend == 1) & (volume_change < -10)
         
-        result["BounceSignal"] = bounce_signal
-        result["PullbackSignal"] = pullback_signal
+        result.loc[:, "BounceSignal"] = bounce_signal
+        result.loc[:, "PullbackSignal"] = pullback_signal
         
         # 9. 计算反弹强度 (0-100)
         bounce_strength = np.zeros(len(data))
@@ -1020,7 +1020,7 @@ class BounceDetector(BaseIndicator):
             # 综合反弹强度得分
             bounce_strength[i] = base_score + trend_score + volume_score + speed_score
         
-        result["BounceStrength"] = bounce_strength
+        result.loc[:, "BounceStrength"] = bounce_strength
         
         # 10. 计算回调买点
         # 回调买点条件：
@@ -1039,7 +1039,7 @@ class BounceDetector(BaseIndicator):
                 volume_change.iloc[i] < 0):  # 成交量萎缩
                 pullback_buy_point.iloc[i] = True
         
-        result["PullbackBuyPoint"] = pullback_buy_point
+        result.loc[:, "PullbackBuyPoint"] = pullback_buy_point
         
         # 11. 计算反弹卖点
         # 反弹卖点条件：
@@ -1058,7 +1058,7 @@ class BounceDetector(BaseIndicator):
                 data["close"].iloc[i] < data["open"].iloc[i]):  # 收阴（滞涨）
                 bounce_sell_point.iloc[i] = True
         
-        result["BounceSellPoint"] = bounce_sell_point
+        result.loc[:, "BounceSellPoint"] = bounce_sell_point
         
         return result
     
@@ -1223,24 +1223,24 @@ class BounceDetector(BaseIndicator):
         signals = pd.DataFrame(index=data.index)
         
         # 设置买卖信号
-        signals['buy_signal'] = result["PullbackBuyPoint"] | result["BounceSignal"]
-        signals['sell_signal'] = result["BounceSellPoint"]
-        signals['neutral_signal'] = ~(signals['buy_signal'] | signals['sell_signal'])
+        signals.loc[:, 'buy_signal'] = result["PullbackBuyPoint"] | result["BounceSignal"]
+        signals.loc[:, 'sell_signal'] = result["BounceSellPoint"]
+        signals.loc[:, 'neutral_signal'] = ~(signals['buy_signal'] | signals['sell_signal'])
         
         # 设置趋势
-        signals['trend'] = result["PriceTrend"]
+        signals.loc[:, 'trend'] = result["PriceTrend"]
         
         # 设置评分
-        signals['score'] = score
+        signals.loc[:, 'score'] = score
         
         # 设置信号类型
-        signals['signal_type'] = 'neutral'
+        signals.loc[:, 'signal_type'] = 'neutral'
         signals.loc[result["PullbackBuyPoint"], 'signal_type'] = 'pullback_buy'
         signals.loc[result["BounceSignal"] & ~result["PullbackBuyPoint"], 'signal_type'] = 'bounce_signal'
         signals.loc[result["BounceSellPoint"], 'signal_type'] = 'bounce_sell'
         
         # 设置信号描述
-        signals['signal_desc'] = ''
+        signals.loc[:, 'signal_desc'] = ''
         
         # 为每个信号设置详细描述
         for i in signals.index:
@@ -1258,7 +1258,7 @@ class BounceDetector(BaseIndicator):
                 signals.loc[i, 'signal_desc'] = f"回调信号：从高点回调{pullback_pct:.1f}%"
         
         # 置信度设置
-        signals['confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度
         
         # 根据反弹/回调幅度和成交量配合调整置信度
         for i in signals.index:
@@ -1306,7 +1306,7 @@ class BounceDetector(BaseIndicator):
                 signals.loc[i, 'confidence'] = min(95, 60 + confidence_adj)
         
         # 风险等级
-        signals['risk_level'] = '中'  # 默认中等风险
+        signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         
         # 标准回调买点风险较低
         perfect_pullback = result["PullbackBuyPoint"] & (result["PullbackFromHigh"] >= 10) & (result["PullbackFromHigh"] <= 20)
@@ -1317,14 +1317,14 @@ class BounceDetector(BaseIndicator):
         signals.loc[result["BounceFromLow"] > 30, 'risk_level'] = '高'
         
         # 建议仓位
-        signals['position_size'] = 0.0
+        signals.loc[:, 'position_size'] = 0.0
         signals.loc[signals['buy_signal'], 'position_size'] = 0.3  # 基础仓位
         
         # 标准回调买点可以加大仓位
         signals.loc[perfect_pullback, 'position_size'] = 0.5
         
         # 止损位
-        signals['stop_loss'] = 0.0
+        signals.loc[:, 'stop_loss'] = 0.0
         
         for i in signals.index[signals['buy_signal']]:
             try:
@@ -1337,7 +1337,7 @@ class BounceDetector(BaseIndicator):
                 continue
         
         # 市场环境
-        signals['market_env'] = 'normal'
+        signals.loc[:, 'market_env'] = 'normal'
         
         ma20 = data["close"].rolling(window=20).mean()
         ma60 = data["close"].rolling(window=60).mean()
@@ -1357,7 +1357,7 @@ class BounceDetector(BaseIndicator):
                 continue
         
         # 成交量确认
-        signals['volume_confirmation'] = result["VolumeChange"] > 0
+        signals.loc[:, 'volume_confirmation'] = result["VolumeChange"] > 0
         
         return signals
 
@@ -1424,35 +1424,35 @@ class BounceDetector(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 基础信号形态
-        patterns_df["反弹确认信号"] = result["BounceSignal"]
-        patterns_df["回调确认信号"] = result["PullbackSignal"]
-        patterns_df["回调买入机会"] = result["PullbackBuyPoint"]
-        patterns_df["反弹卖出机会"] = result["BounceSellPoint"]
+        patterns_df.loc[:, "反弹确认信号"] = result["BounceSignal"]
+        patterns_df.loc[:, "回调确认信号"] = result["PullbackSignal"]
+        patterns_df.loc[:, "回调买入机会"] = result["PullbackBuyPoint"]
+        patterns_df.loc[:, "反弹卖出机会"] = result["BounceSellPoint"]
 
         # 反弹幅度形态
         bounce_pct = result["BounceFromLow"]
-        patterns_df["大幅反弹"] = bounce_pct > 20
-        patterns_df["中等反弹"] = (bounce_pct > 10) & (bounce_pct <= 20)
-        patterns_df["小幅反弹"] = (bounce_pct > 5) & (bounce_pct <= 10)
+        patterns_df.loc[:, "大幅反弹"] = bounce_pct > 20
+        patterns_df.loc[:, "中等反弹"] = (bounce_pct > 10) & (bounce_pct <= 20)
+        patterns_df.loc[:, "小幅反弹"] = (bounce_pct > 5) & (bounce_pct <= 10)
 
         # 回调幅度形态
         pullback_pct = result["PullbackFromHigh"]
-        patterns_df["深度回调"] = pullback_pct > 20
-        patterns_df["中等回调"] = (pullback_pct > 10) & (pullback_pct <= 20)
-        patterns_df["浅度回调"] = (pullback_pct > 5) & (pullback_pct <= 10)
+        patterns_df.loc[:, "深度回调"] = pullback_pct > 20
+        patterns_df.loc[:, "中等回调"] = (pullback_pct > 10) & (pullback_pct <= 20)
+        patterns_df.loc[:, "浅度回调"] = (pullback_pct > 5) & (pullback_pct <= 10)
 
         # 趋势形态
-        patterns_df["短期上升趋势"] = result["PriceTrend"] == 1
-        patterns_df["短期下降趋势"] = result["PriceTrend"] == -1
+        patterns_df.loc[:, "短期上升趋势"] = result["PriceTrend"] == 1
+        patterns_df.loc[:, "短期下降趋势"] = result["PriceTrend"] == -1
 
         # 成交量形态
         vol_change = result["VolumeChange"]
-        patterns_df["明显放量"] = vol_change > 20
-        patterns_df["明显缩量"] = vol_change < -20
+        patterns_df.loc[:, "明显放量"] = vol_change > 20
+        patterns_df.loc[:, "明显缩量"] = vol_change < -20
 
         # 综合形态
-        patterns_df["强势反弹"] = (bounce_pct > 5) & (result["PriceTrend"] == 1) & (vol_change > 0)
-        patterns_df["健康回调"] = (pullback_pct > 5) & (result["PriceTrend"] == 1) & (vol_change < 0)
+        patterns_df.loc[:, "强势反弹"] = (bounce_pct > 5) & (result["PriceTrend"] == 1) & (vol_change > 0)
+        patterns_df.loc[:, "健康回调"] = (pullback_pct > 5) & (result["PriceTrend"] == 1) & (vol_change < 0)
 
         return patterns_df
 
@@ -1467,3 +1467,88 @@ class BounceDetector(BaseIndicator):
         """
         self.short_period = kwargs.get('short_period', 5)
         self.long_period = kwargs.get('long_period', 20)
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+        
+        Args:
+            pattern_id: 形态ID
+            
+        Returns:
+            dict: 形态详细信息
+        """
+        # 默认形态信息
+        default_pattern = {
+            "id": pattern_id,
+            "name": pattern_id,
+            "description": f"{pattern_id}形态",
+            "type": "NEUTRAL",
+            "strength": "MEDIUM",
+            "score_impact": 0.0
+        }
+        
+        # ZXMRiseElasticity指标特定的形态信息映射
+        pattern_info_map = {
+            # 基础形态
+            "超买区域": {
+                "id": "超买区域",
+                "name": "超买区域",
+                "description": "指标进入超买区域，可能面临回调压力",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -10.0
+            },
+            "超卖区域": {
+                "id": "超卖区域", 
+                "name": "超卖区域",
+                "description": "指标进入超卖区域，可能出现反弹机会",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 10.0
+            },
+            "中性区域": {
+                "id": "中性区域",
+                "name": "中性区域", 
+                "description": "指标处于中性区域，趋势不明确",
+                "type": "NEUTRAL",
+                "strength": "WEAK",
+                "score_impact": 0.0
+            },
+            # 趋势形态
+            "上升趋势": {
+                "id": "上升趋势",
+                "name": "上升趋势",
+                "description": "指标显示上升趋势，看涨信号",
+                "type": "BULLISH", 
+                "strength": "STRONG",
+                "score_impact": 15.0
+            },
+            "下降趋势": {
+                "id": "下降趋势",
+                "name": "下降趋势",
+                "description": "指标显示下降趋势，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG", 
+                "score_impact": -15.0
+            },
+            # 信号形态
+            "买入信号": {
+                "id": "买入信号",
+                "name": "买入信号",
+                "description": "指标产生买入信号，建议关注",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "卖出信号": {
+                "id": "卖出信号", 
+                "name": "卖出信号",
+                "description": "指标产生卖出信号，建议谨慎",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            }
+        }
+        
+        return pattern_info_map.get(pattern_id, default_pattern)

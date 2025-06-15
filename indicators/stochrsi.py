@@ -559,3 +559,89 @@ class STOCHRSI(BaseIndicator):
             default_strength="VERY_STRONG",
             score_impact=-18.0
         )
+
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态详细信息
+        """
+        pattern_info_map = {
+            "STOCHRSI_GOLDEN_CROSS": {
+                "id": "STOCHRSI_GOLDEN_CROSS",
+                "name": "StochRSI金叉",
+                "description": "StochRSI K线上穿D线，产生看涨信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 25.0
+            },
+            "STOCHRSI_DEATH_CROSS": {
+                "id": "STOCHRSI_DEATH_CROSS",
+                "name": "StochRSI死叉",
+                "description": "StochRSI K线下穿D线，产生看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -25.0
+            },
+            "STOCHRSI_OVERBOUGHT": {
+                "id": "STOCHRSI_OVERBOUGHT",
+                "name": "StochRSI超买",
+                "description": "StochRSI进入超买区域，可能出现回调",
+                "type": "BEARISH",
+                "strength": "MEDIUM",
+                "score_impact": -15.0
+            },
+            "STOCHRSI_OVERSOLD": {
+                "id": "STOCHRSI_OVERSOLD",
+                "name": "StochRSI超卖",
+                "description": "StochRSI进入超卖区域，可能出现反弹",
+                "type": "BULLISH",
+                "strength": "MEDIUM",
+                "score_impact": 15.0
+            },
+            "STOCHRSI_OVERSOLD_REVERSAL": {
+                "id": "STOCHRSI_OVERSOLD_REVERSAL",
+                "name": "StochRSI超卖反转",
+                "description": "StochRSI从超卖区域向上突破，看涨信号",
+                "type": "BULLISH",
+                "strength": "STRONG",
+                "score_impact": 20.0
+            },
+            "STOCHRSI_OVERBOUGHT_REVERSAL": {
+                "id": "STOCHRSI_OVERBOUGHT_REVERSAL",
+                "name": "StochRSI超买反转",
+                "description": "StochRSI从超买区域向下突破，看跌信号",
+                "type": "BEARISH",
+                "strength": "STRONG",
+                "score_impact": -20.0
+            },
+            "STOCHRSI_STRONG_BULLISH": {
+                "id": "STOCHRSI_STRONG_BULLISH",
+                "name": "StochRSI强势看涨",
+                "description": "StochRSI K线在高位且上升，强势看涨",
+                "type": "BULLISH",
+                "strength": "VERY_STRONG",
+                "score_impact": 18.0
+            },
+            "STOCHRSI_STRONG_BEARISH": {
+                "id": "STOCHRSI_STRONG_BEARISH",
+                "name": "StochRSI强势看跌",
+                "description": "StochRSI K线在低位且下降，强势看跌",
+                "type": "BEARISH",
+                "strength": "VERY_STRONG",
+                "score_impact": -18.0
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            "id": pattern_id,
+            "name": "未知形态",
+            "description": "未定义的形态",
+            "type": "NEUTRAL",
+            "strength": "WEAK",
+            "score_impact": 0.0
+        })

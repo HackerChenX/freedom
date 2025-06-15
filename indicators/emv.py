@@ -673,6 +673,122 @@ class EMV(BaseIndicator):
             score_impact=-30.0
         )
 
+    def get_pattern_info(self, pattern_id: str) -> dict:
+        """
+        获取指定形态的详细信息
+
+        Args:
+            pattern_id: 形态ID
+
+        Returns:
+            dict: 形态信息字典
+        """
+        pattern_info_map = {
+            'EMV_CROSS_UP_ZERO': {
+                'name': 'EMV上穿零轴',
+                'description': 'EMV从负值区域穿越零轴，表示买盘力量增强',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'EMV_CROSS_DOWN_ZERO': {
+                'name': 'EMV下穿零轴',
+                'description': 'EMV从正值区域穿越零轴，表示卖盘力量增强',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'EMV_ABOVE_ZERO': {
+                'name': 'EMV零轴上方',
+                'description': 'EMV位于零轴上方，买盘力量占优',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'EMV_BELOW_ZERO': {
+                'name': 'EMV零轴下方',
+                'description': 'EMV位于零轴下方，卖盘力量占优',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'EMV_CROSS_UP_MA': {
+                'name': 'EMV上穿均线',
+                'description': 'EMV上穿其移动平均线，趋势转强',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'EMV_CROSS_DOWN_MA': {
+                'name': 'EMV下穿均线',
+                'description': 'EMV下穿其移动平均线，趋势转弱',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'EMV_ABOVE_MA': {
+                'name': 'EMV均线上方',
+                'description': 'EMV位于移动平均线上方',
+                'strength': 'weak',
+                'type': 'bullish'
+            },
+            'EMV_BELOW_MA': {
+                'name': 'EMV均线下方',
+                'description': 'EMV位于移动平均线下方',
+                'strength': 'weak',
+                'type': 'bearish'
+            },
+            'EMV_STRONG_RISE': {
+                'name': 'EMV强势上升',
+                'description': 'EMV大幅上升，买盘力量强劲',
+                'strength': 'medium',
+                'type': 'bullish'
+            },
+            'EMV_STRONG_FALL': {
+                'name': 'EMV强势下降',
+                'description': 'EMV大幅下降，卖盘力量强劲',
+                'strength': 'medium',
+                'type': 'bearish'
+            },
+            'EMV_BULLISH_DIVERGENCE': {
+                'name': 'EMV底背离',
+                'description': '价格下跌但EMV上升，可能反转向上',
+                'strength': 'strong',
+                'type': 'bullish'
+            },
+            'EMV_BEARISH_DIVERGENCE': {
+                'name': 'EMV顶背离',
+                'description': '价格上涨但EMV下降，可能反转向下',
+                'strength': 'strong',
+                'type': 'bearish'
+            },
+            'EMV_RISING': {
+                'name': 'EMV上升',
+                'description': 'EMV值上升',
+                'strength': 'weak',
+                'type': 'bullish'
+            },
+            'EMV_FALLING': {
+                'name': 'EMV下降',
+                'description': 'EMV值下降',
+                'strength': 'weak',
+                'type': 'bearish'
+            },
+            'EMV_HIGH_EXTREME': {
+                'name': 'EMV极高值',
+                'description': 'EMV达到近期高点',
+                'strength': 'medium',
+                'type': 'neutral'
+            },
+            'EMV_LOW_EXTREME': {
+                'name': 'EMV极低值',
+                'description': 'EMV达到近期低点',
+                'strength': 'medium',
+                'type': 'neutral'
+            }
+        }
+
+        return pattern_info_map.get(pattern_id, {
+            'name': pattern_id,
+            'description': f'EMV形态: {pattern_id}',
+            'strength': 'medium',
+            'type': 'neutral'
+        })
+
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算并生成EMV指标信号
