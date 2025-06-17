@@ -487,7 +487,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI K线上穿D线，产生看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册StochRSI死叉形态
@@ -497,7 +498,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI K线下穿D线，产生看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册StochRSI超买形态
@@ -507,7 +509,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI进入超买区域，可能出现回调",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册StochRSI超卖形态
@@ -517,7 +520,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI进入超卖区域，可能出现反弹",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册StochRSI超卖反转形态
@@ -527,7 +531,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI从超卖区域向上突破，看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册StochRSI超买反转形态
@@ -537,7 +542,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI从超买区域向下突破，看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册StochRSI强势看涨形态
@@ -547,7 +553,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI K线在高位且上升，强势看涨",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         # 注册StochRSI强势看跌形态
@@ -557,7 +564,8 @@ class STOCHRSI(BaseIndicator):
             description="StochRSI K线在低位且下降，强势看跌",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

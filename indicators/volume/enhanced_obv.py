@@ -982,7 +982,8 @@ class EnhancedOBV(OBV):
             description="OBV从下方穿越移动平均线，表明资金流入增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -991,7 +992,8 @@ class EnhancedOBV(OBV):
             description="OBV从上方穿越移动平均线，表明资金流出增强",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册OBV突破形态
@@ -1001,7 +1003,8 @@ class EnhancedOBV(OBV):
             description="OBV突破前期高点，表明强势资金流入",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1010,7 +1013,8 @@ class EnhancedOBV(OBV):
             description="OBV跌破前期低点，表明强势资金流出",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册OBV动量形态
@@ -1020,7 +1024,8 @@ class EnhancedOBV(OBV):
             description="OBV动量为正，表明资金流入加速",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1029,7 +1034,8 @@ class EnhancedOBV(OBV):
             description="OBV动量为负，表明资金流出加速",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册OBV背离形态
@@ -1039,7 +1045,8 @@ class EnhancedOBV(OBV):
             description="价格创新低但OBV未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1048,7 +1055,8 @@ class EnhancedOBV(OBV):
             description="价格创新高但OBV未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

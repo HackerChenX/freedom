@@ -94,13 +94,13 @@ class CCI(BaseIndicator):
         # 计算CCI指标
         df_copy['CCI'] = (df_copy['TP'] - df_copy['MA']) / (0.015 * df_copy['MD'])
         
-        # 删除中间计算列
-        df_copy.drop(['TP', 'MA', 'MD'], axis=1, inplace=True)
-        
+        # 只保留CCI指标列
+        result_df = df_copy[['CCI']].copy()
+
         # 保存结果
-        self._result = df_copy
-        
-        return df_copy
+        self._result = result_df
+
+        return result_df
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -645,13 +645,14 @@ class CCI(BaseIndicator):
         calculated_data = self.calculate(data, **kwargs)
 
         if calculated_data is None or calculated_data.empty:
-            return data.copy()
+            return pd.DataFrame(index=data.index)
 
         if 'CCI' not in calculated_data.columns:
-            return data.copy()
+            return pd.DataFrame(index=data.index)
 
         cci = calculated_data['CCI']
-        patterns_df = calculated_data.copy()
+        # 只创建包含形态的DataFrame，不包含原始数据列
+        patterns_df = pd.DataFrame(index=calculated_data.index)
 
         # 1. 超买超卖形态
         patterns_df['CCI_OVERSOLD'] = cci <= -100
@@ -696,7 +697,8 @@ class CCI(BaseIndicator):
             description="CCI值低于-200，表示严重超卖",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -705,7 +707,8 @@ class CCI(BaseIndicator):
             description="CCI值低于-100，表示超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -714,7 +717,8 @@ class CCI(BaseIndicator):
             description="CCI值高于+200，表示严重超买",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -723,7 +727,8 @@ class CCI(BaseIndicator):
             description="CCI值高于+100，表示超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册CCI穿越形态
@@ -733,7 +738,8 @@ class CCI(BaseIndicator):
             description="CCI从超卖区上穿-100线",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -742,7 +748,8 @@ class CCI(BaseIndicator):
             description="CCI从超买区下穿+100线",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -751,7 +758,8 @@ class CCI(BaseIndicator):
             description="CCI上穿零轴线",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -760,7 +768,8 @@ class CCI(BaseIndicator):
             description="CCI下穿零轴线",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

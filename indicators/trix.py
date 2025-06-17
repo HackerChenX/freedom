@@ -230,7 +230,8 @@ class TRIX(BaseIndicator):
             description="TRIX上穿信号线，中长期趋势转好",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册TRIX死叉形态
@@ -240,7 +241,8 @@ class TRIX(BaseIndicator):
             description="TRIX下穿信号线，中长期趋势转弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册TRIX上穿零轴形态
@@ -250,7 +252,8 @@ class TRIX(BaseIndicator):
             description="TRIX上穿零轴，中长期趋势由负转正",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册TRIX下穿零轴形态
@@ -260,7 +263,8 @@ class TRIX(BaseIndicator):
             description="TRIX下穿零轴，中长期趋势由正转负",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册TRIX连续上升形态
@@ -270,7 +274,8 @@ class TRIX(BaseIndicator):
             description="TRIX连续3个周期上升，趋势强劲",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         # 注册TRIX连续下降形态
@@ -280,27 +285,30 @@ class TRIX(BaseIndicator):
             description="TRIX连续3个周期下降，趋势疲弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
         # 注册TRIX强势形态
         self.register_pattern_to_registry(
             pattern_id="TRIX_STRONG",
             display_name="TRIX强势",
-            description="TRIX绝对值大于2%，趋势强劲",
+            description="TRIX绝对值大于2%，趋势强劲但方向需结合其他信号判断",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         # 注册TRIX弱势形态
         self.register_pattern_to_registry(
             pattern_id="TRIX_WEAK",
             display_name="TRIX弱势",
-            description="TRIX绝对值小于0.5%，趋势疲弱",
+            description="TRIX绝对值小于0.5%，趋势疲弱，可能进入盘整",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=-5.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
     
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

@@ -258,7 +258,8 @@ class RSI(BaseIndicator):
             description="RSI指标进入超买区域，市场可能过热",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册RSI超卖形态
@@ -268,7 +269,8 @@ class RSI(BaseIndicator):
             description="RSI指标进入超卖区域，市场可能过冷",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册RSI金叉形态
@@ -278,7 +280,8 @@ class RSI(BaseIndicator):
             description="RSI短期均线上穿长期均线，可能是买入信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册RSI死叉形态
@@ -288,7 +291,8 @@ class RSI(BaseIndicator):
             description="RSI短期均线下穿长期均线，可能是卖出信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册RSI极度超买形态
@@ -298,7 +302,8 @@ class RSI(BaseIndicator):
             description="RSI指标进入极度超买区域(>80)，市场极度过热",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册RSI极度超卖形态
@@ -308,7 +313,8 @@ class RSI(BaseIndicator):
             description="RSI指标进入极度超卖区域(<20)，市场极度过冷",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册RSI中性形态
@@ -318,7 +324,8 @@ class RSI(BaseIndicator):
             description="RSI指标在中性区域(40-60)，市场相对平衡",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

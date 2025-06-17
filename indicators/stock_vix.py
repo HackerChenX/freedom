@@ -686,7 +686,8 @@ class StockVIX(BaseIndicator):
             description="VIX处于极低水平，市场恐慌情绪极低，可能是买入机会",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -695,7 +696,8 @@ class StockVIX(BaseIndicator):
             description="VIX处于极高水平，市场恐慌情绪极高，存在超跌反弹机会",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEGATIVE"
         )
 
         # 注册异常波动形态
@@ -705,7 +707,8 @@ class StockVIX(BaseIndicator):
             description="VIX异常飙升，市场恐慌情绪爆发，可能是短期底部信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -714,7 +717,8 @@ class StockVIX(BaseIndicator):
             description="VIX异常下跌，市场过度乐观，需警惕风险",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEUTRAL"
         )
 
         # 注册趋势形态
@@ -724,7 +728,8 @@ class StockVIX(BaseIndicator):
             description="VIX处于上升趋势，市场恐慌情绪增加",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -733,7 +738,8 @@ class StockVIX(BaseIndicator):
             description="VIX处于下降趋势，市场恐慌情绪减少",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         # 注册百分位形态
@@ -743,7 +749,8 @@ class StockVIX(BaseIndicator):
             description="VIX处于历史极低百分位，市场可能过度乐观",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-5.0
+            score_impact=-5.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -752,7 +759,8 @@ class StockVIX(BaseIndicator):
             description="VIX处于历史极高百分位，市场可能过度悲观",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="NEUTRAL"
         )
 
         # 注册VIX位置形态
@@ -762,7 +770,8 @@ class StockVIX(BaseIndicator):
             description="VIX接近近期高点，恐慌情绪接近峰值",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -771,7 +780,8 @@ class StockVIX(BaseIndicator):
             description="VIX接近近期低点，市场情绪过于乐观",
             pattern_type="BEARISH",
             default_strength="WEAK",
-            score_impact=-5.0
+            score_impact=-5.0,
+            polarity="NEGATIVE"
         )
 
     def get_indicator_type(self) -> str:

@@ -104,7 +104,135 @@ class Fibonacci(BaseIndicator):
         # 暂时返回空列表
         
         return patterns
-    
+
+    def register_patterns(self):
+        """
+        注册Fibonacci指标的形态到全局形态注册表
+        """
+        # 注册斐波那契回撤支撑形态
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_SUPPORT_236",
+            display_name="斐波那契23.6%支撑",
+            description="价格在23.6%回撤位获得支撑，轻微看涨信号",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=8.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_SUPPORT_382",
+            display_name="斐波那契38.2%支撑",
+            description="价格在38.2%回撤位获得支撑，中等看涨信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_SUPPORT_500",
+            display_name="斐波那契50%支撑",
+            description="价格在50%回撤位获得支撑，较强看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_SUPPORT_618",
+            display_name="斐波那契61.8%支撑",
+            description="价格在61.8%黄金回撤位获得支撑，强烈看涨信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册斐波那契回撤阻力形态
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_RESISTANCE_236",
+            display_name="斐波那契23.6%阻力",
+            description="价格在23.6%回撤位遇到阻力，轻微看跌信号",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-8.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_RESISTANCE_382",
+            display_name="斐波那契38.2%阻力",
+            description="价格在38.2%回撤位遇到阻力，中等看跌信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_RESISTANCE_500",
+            display_name="斐波那契50%阻力",
+            description="价格在50%回撤位遇到阻力，较强看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_RESISTANCE_618",
+            display_name="斐波那契61.8%阻力",
+            description="价格在61.8%黄金回撤位遇到阻力，强烈看跌信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册斐波那契扩展形态
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_EXTENSION_1272",
+            display_name="斐波那契127.2%扩展",
+            description="价格达到127.2%扩展位，可能的目标位",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_EXTENSION_1618",
+            display_name="斐波那契161.8%扩展",
+            description="价格达到161.8%黄金扩展位，重要目标位",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册斐波那契突破形态
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_BREAKOUT_UP",
+            display_name="斐波那契向上突破",
+            description="价格突破斐波那契阻力位，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=22.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FIBONACCI_BREAKDOWN",
+            display_name="斐波那契向下跌破",
+            description="价格跌破斐波那契支撑位，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-22.0,
+            polarity="NEGATIVE"
+        )
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号

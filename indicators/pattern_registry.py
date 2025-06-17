@@ -40,6 +40,13 @@ class PatternType(Enum):
     BREAKOUT = "突破形态"  # 突破形态
 
 
+class PatternPolarity(Enum):
+    """模式极性枚举 - 用于买点分析过滤"""
+    POSITIVE = "POSITIVE"    # 正面/看涨信号，适合买点分析
+    NEGATIVE = "NEGATIVE"    # 负面/看跌信号，不适合买点分析
+    NEUTRAL = "NEUTRAL"      # 中性信号，信息性质
+
+
 class PatternStrength(Enum):
     """形态强度枚举"""
     VERY_STRONG = 5  # 非常强
@@ -52,7 +59,7 @@ class PatternStrength(Enum):
 class PatternInfo:
     """形态信息类"""
     
-    def __init__(self, 
+    def __init__(self,
                 pattern_id: str,
                 display_name: str,
                 indicator_id: str,
@@ -60,10 +67,11 @@ class PatternInfo:
                 description: str = "",
                 default_strength: PatternStrength = PatternStrength.MEDIUM,
                 score_impact: int = 0,
-                detection_function: Optional[Callable] = None):
+                detection_function: Optional[Callable] = None,
+                polarity: PatternPolarity = PatternPolarity.NEUTRAL):
         """
         初始化形态信息
-        
+
         Args:
             pattern_id: 形态唯一标识符
             display_name: 形态显示名称
@@ -73,6 +81,7 @@ class PatternInfo:
             default_strength: 默认形态强度
             score_impact: 形态对评分的影响 (-100 到 100)
             detection_function: 形态检测函数
+            polarity: 模式极性，用于买点分析过滤
         """
         self.pattern_id = pattern_id
         self.display_name = display_name
@@ -82,6 +91,7 @@ class PatternInfo:
         self.default_strength = default_strength
         self.score_impact = score_impact
         self.detection_function = detection_function
+        self.polarity = polarity
         
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -97,7 +107,8 @@ class PatternInfo:
             'pattern_type': self.pattern_type.value,
             'description': self.description,
             'default_strength': self.default_strength.value,
-            'score_impact': self.score_impact
+            'score_impact': self.score_impact,
+            'polarity': self.polarity.value
         }
 
 
@@ -136,19 +147,20 @@ class PatternRegistry:
         # 否则添加指标前缀
         return f"{indicator_id}_{pattern_id}".upper()
     
-    def register(self, 
-                pattern_id: str, 
-                display_name: str, 
-                indicator_id: str, 
-                pattern_type: PatternType = PatternType.NEUTRAL, 
+    def register(self,
+                pattern_id: str,
+                display_name: str,
+                indicator_id: str,
+                pattern_type: PatternType = PatternType.NEUTRAL,
                 default_strength: PatternStrength = PatternStrength.MEDIUM,
                 description: str = '',
                 score_impact: float = 0.0,
                 detection_function = None,
+                polarity: PatternPolarity = None,
                 _allow_override: bool = None) -> None:
         """
         注册形态（统一入口）
-        
+
         Args:
             pattern_id: 形态ID
             display_name: 显示名称
@@ -158,20 +170,25 @@ class PatternRegistry:
             description: 形态描述
             score_impact: 对评分的影响值
             detection_function: 形态检测函数
+            polarity: 模式极性，用于买点分析过滤
             _allow_override: 是否允许覆盖已注册的形态，默认使用类属性
         """
         # 规范化形态ID
         normalized_pattern_id = self._normalize_pattern_id(pattern_id, indicator_id)
-        
+
         # 如果未指定是否允许覆盖，使用类属性
         if _allow_override is None:
             _allow_override = self.__class__._allow_override
-            
+
         # 检查形态是否已存在
         if normalized_pattern_id in self._registered_patterns and not _allow_override:
             return
         elif normalized_pattern_id in self._registered_patterns:
             logger.debug(f"形态 {normalized_pattern_id} 已存在，将被覆盖")
+
+        # 自动推断极性（如果未指定）
+        if polarity is None:
+            polarity = self._infer_polarity(pattern_type, score_impact, display_name)
             
         # 创建形态信息
         pattern_info = {
@@ -182,7 +199,8 @@ class PatternRegistry:
             'description': description,
             'default_strength': default_strength,
             'score_impact': score_impact,
-            'detection_function': detection_function
+            'detection_function': detection_function,
+            'polarity': polarity
         }
         
         # 存储形态信息
@@ -195,7 +213,59 @@ class PatternRegistry:
         self._patterns_by_indicator[indicator_id].add(normalized_pattern_id)
         
         logger.debug(f"注册形态: {normalized_pattern_id} ({display_name})")
-    
+
+    def _infer_polarity(self, pattern_type: PatternType, score_impact: float, display_name: str) -> PatternPolarity:
+        """
+        根据形态类型、评分影响和显示名称自动推断极性
+
+        Args:
+            pattern_type: 形态类型
+            score_impact: 评分影响
+            display_name: 显示名称
+
+        Returns:
+            PatternPolarity: 推断的极性
+        """
+        # 基于显示名称的关键词判断
+        negative_keywords = [
+            '空头', '下行', '死叉', '下降', '负值', '超卖', '弱', '低于', '看跌',
+            '下跌', '回调', '深度', '短期下降', '无', '极低', '严重', '虚弱',
+            'FALLING', 'BEARISH', 'BELOW', 'NEGATIVE', 'WEAK', 'DOWN'
+        ]
+
+        positive_keywords = [
+            '多头', '上行', '金叉', '上升', '正值', '超买', '强', '高于', '看涨',
+            '上涨', '突破', '买点', '信号', '满足', '极高', '强烈',
+            'RISING', 'BULLISH', 'ABOVE', 'POSITIVE', 'STRONG', 'UP', 'BUY'
+        ]
+
+        # 检查显示名称中的关键词
+        display_lower = display_name.lower()
+
+        # 优先基于关键词判断
+        for keyword in negative_keywords:
+            if keyword.lower() in display_lower:
+                return PatternPolarity.NEGATIVE
+
+        for keyword in positive_keywords:
+            if keyword.lower() in display_lower:
+                return PatternPolarity.POSITIVE
+
+        # 基于形态类型判断
+        if pattern_type == PatternType.BEARISH:
+            return PatternPolarity.NEGATIVE
+        elif pattern_type == PatternType.BULLISH:
+            return PatternPolarity.POSITIVE
+
+        # 基于评分影响判断
+        if score_impact < -5:
+            return PatternPolarity.NEGATIVE
+        elif score_impact > 5:
+            return PatternPolarity.POSITIVE
+
+        # 默认为中性
+        return PatternPolarity.NEUTRAL
+
     @classmethod
     def register_all_patterns(cls) -> None:
         """
@@ -462,6 +532,36 @@ class PatternRegistry:
         """获取所有形态信息"""
         instance = cls()
         return instance._patterns.copy()
+
+    @classmethod
+    def get_patterns_by_polarity(cls, polarity: PatternPolarity) -> List[str]:
+        """
+        根据极性获取形态ID列表
+
+        Args:
+            polarity: 要筛选的极性
+
+        Returns:
+            List[str]: 符合极性的形态ID列表
+        """
+        instance = cls()
+        return [pattern_id for pattern_id, pattern_info in instance._patterns.items()
+                if pattern_info.get('polarity') == polarity]
+
+    @classmethod
+    def get_positive_patterns(cls) -> List[str]:
+        """获取所有正面极性的形态ID"""
+        return cls.get_patterns_by_polarity(PatternPolarity.POSITIVE)
+
+    @classmethod
+    def get_negative_patterns(cls) -> List[str]:
+        """获取所有负面极性的形态ID"""
+        return cls.get_patterns_by_polarity(PatternPolarity.NEGATIVE)
+
+    @classmethod
+    def get_neutral_patterns(cls) -> List[str]:
+        """获取所有中性极性的形态ID"""
+        return cls.get_patterns_by_polarity(PatternPolarity.NEUTRAL)
     
     @classmethod
     def calculate_combined_score_impact(cls, patterns: List[str]) -> float:

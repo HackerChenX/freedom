@@ -221,6 +221,133 @@ class DIVERGENCE(BaseIndicator):
         
         return result
 
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取背离指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+                indicator_name: 用于对比的技术指标列名，默认为'macd'
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 获取参数
+        indicator_name = kwargs.get('indicator_name', 'macd')
+
+        # 确保已计算背离
+        if not self.has_result():
+            self._calculate(data, indicator_name, **kwargs)
+
+        result = self._result.copy()
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基本背离形态
+        patterns_df['POSITIVE_DIVERGENCE'] = result.get('positive_divergence', False)
+        patterns_df['NEGATIVE_DIVERGENCE'] = result.get('negative_divergence', False)
+        patterns_df['HIDDEN_POSITIVE_DIVERGENCE'] = result.get('hidden_positive_divergence', False)
+        patterns_df['HIDDEN_NEGATIVE_DIVERGENCE'] = result.get('hidden_negative_divergence', False)
+
+        # 综合背离形态
+        patterns_df['ANY_POSITIVE_DIVERGENCE'] = result.get('any_positive_divergence', False)
+        patterns_df['ANY_NEGATIVE_DIVERGENCE'] = result.get('any_negative_divergence', False)
+        patterns_df['ANY_DIVERGENCE'] = result.get('any_divergence', False)
+
+        # 价格与成交量背离（如果有）
+        if 'price_volume_divergence' in result.columns:
+            patterns_df['PRICE_VOLUME_DIVERGENCE'] = result['price_volume_divergence']
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册DIVERGENCE指标的形态到全局形态注册表
+        """
+        # 注册基本背离形态
+        self.register_pattern_to_registry(
+            pattern_id="POSITIVE_DIVERGENCE",
+            display_name="正背离(底背离)",
+            description="价格创新低但指标未创新低，表明下跌动能减弱，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="NEGATIVE_DIVERGENCE",
+            display_name="负背离(顶背离)",
+            description="价格创新高但指标未创新高，表明上涨动能减弱，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册隐藏背离形态
+        self.register_pattern_to_registry(
+            pattern_id="HIDDEN_POSITIVE_DIVERGENCE",
+            display_name="隐藏正背离",
+            description="价格未创新低但指标创新低，表明上升趋势中的调整，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="HIDDEN_NEGATIVE_DIVERGENCE",
+            display_name="隐藏负背离",
+            description="价格未创新高但指标创新高，表明下降趋势中的反弹，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册综合背离形态
+        self.register_pattern_to_registry(
+            pattern_id="ANY_POSITIVE_DIVERGENCE",
+            display_name="任意正背离",
+            description="出现任意类型的正背离，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ANY_NEGATIVE_DIVERGENCE",
+            display_name="任意负背离",
+            description="出现任意类型的负背离，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ANY_DIVERGENCE",
+            display_name="任意背离",
+            description="出现任意类型的背离，表明趋势可能发生变化",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册价格成交量背离
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_VOLUME_DIVERGENCE",
+            display_name="量价背离",
+            description="价格与成交量出现背离，需要谨慎观察",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算量价背离指标原始评分 (0-100分)

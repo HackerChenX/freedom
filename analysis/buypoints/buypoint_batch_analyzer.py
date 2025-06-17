@@ -28,6 +28,69 @@ from strategy.strategy_generator import StrategyGenerator
 
 logger = get_logger(__name__)
 
+
+class PatternPolarityFilter:
+    """模式极性过滤器 - 基于注册信息过滤负面模式"""
+
+    def __init__(self):
+        from indicators.pattern_registry import PatternRegistry, PatternPolarity
+        self.registry = PatternRegistry()
+        self.polarity_enum = PatternPolarity
+
+        # 保留关键词作为后备机制（用于未明确标注的模式）
+        self.negative_keywords = {
+            '空头', '下行', '死叉', '下降', '负值', '弱', '低于', '看跌',
+            '下跌', '回调', '深度', '短期下降', '无', '极低', '严重', '虚弱',
+            '耗尽', '阻力', '压制', '破位', '跌破', '失守', '恶化', '疲软',
+            '衰竭', '反转向下', '顶部', '高位', '过热', '泡沫', '风险',
+            'falling', 'bearish', 'below', 'negative', 'weak', 'down',
+            'decline', 'drop', 'sell', 'short', 'resistance', 'break_down',
+            'oversold', 'exhaustion', 'reversal_down', 'top', 'high', 'risk'
+        }
+
+    def is_negative_pattern(self, indicator_name: str, pattern_name: str, display_name: str = "") -> bool:
+        """
+        判断模式是否为负面模式
+
+        优先级：
+        1. 从模式注册信息中获取极性
+        2. 关键词匹配作为后备机制
+
+        Args:
+            indicator_name: 指标名称
+            pattern_name: 模式名称
+            display_name: 显示名称
+
+        Returns:
+            bool: 是否为负面模式
+        """
+        # 1. 优先从模式注册信息中获取极性
+        pattern_id = f"{indicator_name}_{pattern_name}"
+        pattern_info = self.registry.get_pattern(pattern_id)
+
+        if pattern_info and 'polarity' in pattern_info:
+            polarity = pattern_info['polarity']
+            if polarity == self.polarity_enum.NEGATIVE:
+                return True
+            elif polarity == self.polarity_enum.POSITIVE:
+                return False
+            # NEUTRAL 继续使用关键词判断
+
+        # 2. 关键词匹配作为后备机制
+        text = f"{indicator_name} {pattern_name} {display_name}".lower()
+
+        # 特殊规则：包含"无...信号"的模式
+        if '无' in text and '信号' in text:
+            return True
+
+        # 检查负面关键词
+        for keyword in self.negative_keywords:
+            if keyword.lower() in text:
+                return True
+
+        return False
+
+
 class BuyPointBatchAnalyzer:
     """买点批量分析器"""
     
@@ -36,6 +99,7 @@ class BuyPointBatchAnalyzer:
         self.data_processor = PeriodDataProcessor()
         self.indicator_analyzer = AutoIndicatorAnalyzer()
         self.strategy_generator = StrategyGenerator()
+        self.polarity_filter = PatternPolarityFilter()
         
     def load_buypoints_from_csv(self, csv_file: str) -> pd.DataFrame:
         """
@@ -264,16 +328,18 @@ class BuyPointBatchAnalyzer:
         logger.info(f"已完成 {len(results)}/{len(buypoints_df)} 个买点的分析")
         return results
     
-    def extract_common_indicators(self, 
+    def extract_common_indicators(self,
                               buypoint_results: List[Dict[str, Any]],
-                              min_hit_ratio: float = 0.6) -> Dict[str, List[Dict[str, Any]]]:
+                              min_hit_ratio: float = 0.6,
+                              filter_negative_patterns: bool = True) -> Dict[str, List[Dict[str, Any]]]:
         """
         提取共性指标
-        
+
         Args:
             buypoint_results: 买点分析结果列表
             min_hit_ratio: 最小命中比例，默认0.6（60%）
-            
+            filter_negative_patterns: 是否过滤负面模式，默认True
+
         Returns:
             Dict[str, List[Dict[str, Any]]]: 按周期分组的共性指标列表
         """
@@ -297,7 +363,17 @@ class BuyPointBatchAnalyzer:
 
                         # 构建指标标识（指标名_形态ID）
                         indicator_id = f"{indicator['indicator_name']}_{indicator['pattern_id']}"
-                            
+
+                        # 如果启用负面模式过滤，检查是否为负面模式
+                        if filter_negative_patterns:
+                            indicator_name = indicator['indicator_name']
+                            pattern_name = indicator.get('pattern_name', indicator.get('pattern_id', ''))
+                            display_name = indicator.get('pattern_name', '')
+
+                            if self.polarity_filter.is_negative_pattern(indicator_name, pattern_name, display_name):
+                                logger.debug(f"过滤负面模式: {indicator_name} - {pattern_name}")
+                                continue
+
                         # 添加到对应周期的指标列表
                         period_indicators[period][indicator_id].append({
                             'stock_code': result['stock_code'],
@@ -314,40 +390,58 @@ class BuyPointBatchAnalyzer:
             # 计算每个周期下各指标的命中率和平均得分
             common_indicators = {}
             total_buypoints = len(buypoint_results)
-            
+
+            logger.info(f"开始提取共性指标，总买点数量: {total_buypoints}, 最小命中率阈值: {min_hit_ratio:.1%}, "
+                       f"负面模式过滤: {'启用' if filter_negative_patterns else '禁用'}")
+
             for period, indicators in period_indicators.items():
                 period_common = []
-                
+
                 for indicator_id, hits in indicators.items():
-                    # 计算命中率
-                    hit_ratio = len(hits) / total_buypoints
+                    # 修复命中率计算：计算包含该指标的唯一股票数量
+                    # 每个股票在每个模式中只计算一次，无论该模式出现多少次
+                    unique_stocks = set()
+                    for hit in hits:
+                        # 使用股票代码和买点日期组合作为唯一标识
+                        stock_key = f"{hit['stock_code']}_{hit['buypoint_date']}"
+                        unique_stocks.add(stock_key)
 
+                    # 正确的命中率计算：唯一股票数量 / 总买点数量
+                    hit_ratio = len(unique_stocks) / total_buypoints
+                    unique_stock_count = len(unique_stocks)
 
+                    # 验证命中率在合理范围内
+                    assert 0.0 <= hit_ratio <= 1.0, f"命中率计算错误: {hit_ratio:.3f} for {indicator_id}"
+
+                    # 添加详细日志用于调试
+                    logger.debug(f"指标 {indicator_id}: 总出现次数={len(hits)}, 唯一股票数={unique_stock_count}, "
+                               f"总买点数={total_buypoints}, 命中率={hit_ratio:.1%}")
 
                     # 如果命中率达到阈值，认为是共性指标
                     if hit_ratio >= min_hit_ratio:
                         # 计算平均得分
                         avg_score = sum(hit.get('score', 0) for hit in hits) / len(hits)
-                        
+
                         # 拆分指标ID
                         parts = indicator_id.split('_', 1)
-                        
+
                         if len(parts) >= 2:
                             indicator_name = parts[0]
                             pattern_name = parts[1]
-                            
+
                             # 使用实际的display_name（如果有）
                             display_name = hits[0].get('details', {}).get('display_name', pattern_name)
-                            
+
                             period_common.append({
                                 'type': 'indicator',
                                 'name': indicator_name,
                                 'pattern': pattern_name,
                                 'display_name': display_name,
                                 'hit_ratio': hit_ratio,
-                                'hit_count': len(hits),
+                                'hit_count': unique_stock_count,  # 使用唯一股票数量，不是总出现次数
                                 'avg_score': avg_score,
-                                'hits': hits
+                                'hits': hits,
+                                'unique_stocks': list(unique_stocks)  # 添加调试信息
                             })
                         else:
                             # 如果无法正确解析，使用完整的indicator_id作为名称
@@ -357,9 +451,10 @@ class BuyPointBatchAnalyzer:
                                 'pattern': '',
                                 'display_name': indicator_id,
                                 'hit_ratio': hit_ratio,
-                                'hit_count': len(hits),
+                                'hit_count': unique_stock_count,  # 使用唯一股票数量，不是总出现次数
                                 'avg_score': avg_score,
-                                'hits': hits
+                                'hits': hits,
+                                'unique_stocks': list(unique_stocks)  # 添加调试信息
                             })
                 
                 # 按平均得分排序
@@ -368,6 +463,9 @@ class BuyPointBatchAnalyzer:
                 # 存储到结果字典
                 if period_common:
                     common_indicators[period] = period_common
+                    logger.info(f"{period}周期找到 {len(period_common)} 个共性指标")
+                else:
+                    logger.warning(f"{period}周期未找到满足阈值的共性指标")
             
             return common_indicators
             
@@ -501,27 +599,29 @@ class BuyPointBatchAnalyzer:
             report.append("本报告基于ZXM买点分析系统，对不同时间周期的共性指标进行统计分析。通过对买点样本的深度挖掘，识别出在买点形成过程中具有共性特征的技术指标，为投资决策提供数据支撑。\n\n")
 
             report.append("### 🎯 关键指标说明\n")
-            report.append("- **命中率**: 指标在买点样本中出现的频率 (命中数量/总样本数量 × 100%)\n")
-            report.append("- **命中数量**: 该指标形态在所有买点样本中出现的次数\n")
+            report.append("- **命中率**: 包含该指标的股票数量占总股票数量的比例 (包含该指标的唯一股票数/总股票数 × 100%)\n")
+            report.append("- **命中数量**: 包含该指标形态的唯一股票数量（每个股票只计算一次）\n")
             report.append("- **平均得分**: 该指标在买点分析中的平均评分 (0-100分制)\n\n")
 
             # 计算总体统计
             total_indicators = sum(len(indicators) for indicators in common_indicators.values())
             total_periods = len(common_indicators)
 
+            # 计算总买点数量 - 从共性指标数据中推断
+            total_samples = 0
+            if common_indicators:
+                # 从第一个周期的第一个指标中获取总买点数量
+                first_period = next(iter(common_indicators.values()))
+                if first_period:
+                    first_indicator = first_period[0]
+                    # 从命中率和命中数量反推总样本数
+                    if first_indicator.get('hit_ratio', 0) > 0:
+                        total_samples = int(first_indicator['hit_count'] / first_indicator['hit_ratio'])
+                    else:
+                        total_samples = first_indicator.get('hit_count', 0)
+
             # 添加各周期的共性指标
             for period, indicators in common_indicators.items():
-                # 计算样本数量（从第一个指标的命中数量和命中率推算）
-                if indicators:
-                    first_indicator = indicators[0]
-                    hit_count = first_indicator['hit_count']
-                    hit_ratio = first_indicator['hit_ratio']
-                    # 确保命中率在0-1之间
-                    if hit_ratio > 1.0:
-                        hit_ratio = hit_ratio / 100.0  # 如果是百分比形式，转换为小数
-                    total_samples = int(hit_count / hit_ratio) if hit_ratio > 0 else hit_count
-                else:
-                    total_samples = 0
 
                 report.append(f"## 📈 {period} 周期共性指标\n\n")
 
@@ -544,31 +644,16 @@ class BuyPointBatchAnalyzer:
                     indicator_name = indicator['name']
                     pattern = indicator.get('pattern', '-')
 
-                    # 修复命中率计算 - 确保在0-100%范围内
-                    raw_hit_ratio = indicator['hit_ratio']
-                    if raw_hit_ratio > 1.0:
-                        # 如果大于1，说明可能是百分比形式，需要除以100
-                        corrected_hit_ratio = min(raw_hit_ratio / 100.0, 1.0)
-                    else:
-                        corrected_hit_ratio = min(raw_hit_ratio, 1.0)
+                    # 命中率现在已经正确计算，直接使用
+                    hit_ratio = indicator['hit_ratio']
+                    # 验证命中率在正确范围内
+                    assert 0.0 <= hit_ratio <= 1.0, f"报告生成时发现无效命中率: {hit_ratio:.3f}"
 
-                    hit_ratio_str = f"{corrected_hit_ratio:.1%}"
+                    hit_ratio_str = f"{hit_ratio:.1%}"
                     hit_count = indicator['hit_count']
 
-                    # 修复平均得分 - 如果为0，尝试从hits中重新计算
+                    # 使用已计算的平均得分
                     avg_score = indicator['avg_score']
-                    if avg_score == 0 and 'hits' in indicator:
-                        hits = indicator['hits']
-                        if hits:
-                            # 重新计算平均得分
-                            scores = [hit.get('score', 0) for hit in hits]
-                            valid_scores = [s for s in scores if s > 0]
-                            if valid_scores:
-                                avg_score = sum(valid_scores) / len(valid_scores)
-                            else:
-                                # 如果没有有效得分，给一个基于命中率的估算分数
-                                avg_score = 50 + (corrected_hit_ratio * 30)  # 50-80分范围
-
                     avg_score_str = f"{avg_score:.1f}"
 
                     report.append(f"| {indicator_type} | {indicator_name} | {pattern} | {hit_ratio_str} | {hit_count} | {avg_score_str} |\n")
@@ -584,15 +669,15 @@ class BuyPointBatchAnalyzer:
                     if high_hit_indicators:
                         report.append(f"#### 🎯 高命中率指标 (≥80%)\n")
                         for ind in high_hit_indicators[:5]:  # 显示前5个
-                            corrected_ratio = min(ind['hit_ratio'], 1.0) if ind['hit_ratio'] <= 1.0 else ind['hit_ratio'] / 100.0
-                            report.append(f"- **{ind['name']}**: {corrected_ratio:.1%}命中率，平均得分{ind['avg_score']:.1f}分\n")
+                            hit_ratio = ind['hit_ratio']
+                            report.append(f"- **{ind['name']}**: {hit_ratio:.1%}命中率，平均得分{ind['avg_score']:.1f}分\n")
                         report.append("\n")
 
                     if medium_hit_indicators:
                         report.append(f"#### 🔄 中等命中率指标 (60-80%)\n")
                         for ind in medium_hit_indicators[:3]:  # 显示前3个
-                            corrected_ratio = min(ind['hit_ratio'], 1.0) if ind['hit_ratio'] <= 1.0 else ind['hit_ratio'] / 100.0
-                            report.append(f"- **{ind['name']}**: {corrected_ratio:.1%}命中率，平均得分{ind['avg_score']:.1f}分\n")
+                            hit_ratio = ind['hit_ratio']
+                            report.append(f"- **{ind['name']}**: {hit_ratio:.1%}命中率，平均得分{ind['avg_score']:.1f}分\n")
                         report.append("\n")
 
                 report.append("---\n\n")
@@ -639,19 +724,21 @@ class BuyPointBatchAnalyzer:
         except Exception as e:
             logger.error(f"生成共性指标报告时出错: {e}")
     
-    def run_analysis(self, 
-                  input_csv: str, 
+    def run_analysis(self,
+                  input_csv: str,
                   output_dir: str,
                   min_hit_ratio: float = 0.6,
-                  strategy_name: str = "BuyPointCommonStrategy"):
+                  strategy_name: str = "BuyPointCommonStrategy",
+                  filter_negative_patterns: bool = True):
         """
         运行买点批量分析
-        
+
         Args:
             input_csv: 输入CSV文件路径
             output_dir: 输出目录
             min_hit_ratio: 最小命中比例
             strategy_name: 生成的策略名称
+            filter_negative_patterns: 是否过滤负面模式
         """
         try:
             # 加载买点数据
@@ -669,7 +756,8 @@ class BuyPointBatchAnalyzer:
             # 提取共性指标
             common_indicators = self.extract_common_indicators(
                 buypoint_results=buypoint_results,
-                min_hit_ratio=min_hit_ratio
+                min_hit_ratio=min_hit_ratio,
+                filter_negative_patterns=filter_negative_patterns
             )
             if not common_indicators:
                 logger.warning(f"未能提取到共性指标")

@@ -292,7 +292,8 @@ class ChipDistribution(BaseIndicator):
             description="筹码集中度较高，通常表明主力控盘程度较强",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -301,7 +302,8 @@ class ChipDistribution(BaseIndicator):
             description="筹码分散度较高，通常表明散户持股较多",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册获利盘形态
@@ -311,7 +313,8 @@ class ChipDistribution(BaseIndicator):
             description="获利盘比例较高，存在获利回吐压力",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -320,7 +323,8 @@ class ChipDistribution(BaseIndicator):
             description="获利盘比例较低，上涨阻力相对较小",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         # 注册成本偏离形态
@@ -330,7 +334,8 @@ class ChipDistribution(BaseIndicator):
             description="当前价格远高于平均成本，存在回调风险",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -339,7 +344,8 @@ class ChipDistribution(BaseIndicator):
             description="当前价格远低于平均成本，具有反弹潜力",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -348,7 +354,8 @@ class ChipDistribution(BaseIndicator):
             description="当前价格接近平均成本，处于相对均衡状态",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         # 注册综合形态
@@ -358,7 +365,8 @@ class ChipDistribution(BaseIndicator):
             description="高集中度低获利盘，通常表明底部吸筹阶段",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -367,7 +375,8 @@ class ChipDistribution(BaseIndicator):
             description="低集中度高获利盘，通常表明顶部派发阶段",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -376,7 +385,8 @@ class ChipDistribution(BaseIndicator):
             description="中等集中度中等获利盘，通常表明主升浪阶段",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册解套难度形态
@@ -386,7 +396,8 @@ class ChipDistribution(BaseIndicator):
             description="解套难度较低，套牢盘压力较小",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -395,7 +406,8 @@ class ChipDistribution(BaseIndicator):
             description="解套难度较高，套牢盘压力较大",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
     
     def _calculate_day_chip_distribution(self, day_data: pd.Series, 

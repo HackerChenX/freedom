@@ -1451,7 +1451,8 @@ class ElliottWave(BaseIndicator):
             description="完整的五浪推动结构，强烈的趋势信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0
+            score_impact=35.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1460,7 +1461,8 @@ class ElliottWave(BaseIndicator):
             description="锯齿形调整浪，强烈的调整信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1469,7 +1471,8 @@ class ElliottWave(BaseIndicator):
             description="平台形调整浪，温和的调整信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1478,7 +1481,8 @@ class ElliottWave(BaseIndicator):
             description="三角形调整浪，通常预示突破",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="NEUTRAL"
         )
 
         # 注册具体波浪
@@ -1488,7 +1492,8 @@ class ElliottWave(BaseIndicator):
             description="新趋势的起始浪，重要的趋势确认信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1497,7 +1502,8 @@ class ElliottWave(BaseIndicator):
             description="主推动浪，最强烈的趋势信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0
+            score_impact=40.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1506,7 +1512,8 @@ class ElliottWave(BaseIndicator):
             description="推动浪结束浪，趋势即将完成",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="NEUTRAL"
         )
 
         # 注册调整浪
@@ -1516,7 +1523,8 @@ class ElliottWave(BaseIndicator):
             description="第二浪调整，为第三浪做准备",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1525,7 +1533,8 @@ class ElliottWave(BaseIndicator):
             description="第四浪调整，为第五浪做准备",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册ABC调整浪
@@ -1535,7 +1544,8 @@ class ElliottWave(BaseIndicator):
             description="调整浪的第一段，调整开始",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1544,7 +1554,8 @@ class ElliottWave(BaseIndicator):
             description="调整浪的反弹段，通常是假突破",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=-5.0
+            score_impact=-5.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1553,7 +1564,8 @@ class ElliottWave(BaseIndicator):
             description="调整浪的最后段，调整即将结束",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册比例关系
@@ -1563,7 +1575,8 @@ class ElliottWave(BaseIndicator):
             description="波浪符合1.618黄金比例关系",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -1572,7 +1585,8 @@ class ElliottWave(BaseIndicator):
             description="波浪符合斐波那契比例关系",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="NEUTRAL"
         )
 
         # 注册确认形态
@@ -1582,7 +1596,8 @@ class ElliottWave(BaseIndicator):
             description="波浪伴随成交量确认",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -1591,7 +1606,8 @@ class ElliottWave(BaseIndicator):
             description="波浪结构即将完成",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

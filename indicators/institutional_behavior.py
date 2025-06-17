@@ -919,16 +919,18 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构处于吸筹阶段，通常是买入良机",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
             pattern_id="INST_CONTROL_PHASE",
             display_name="机构控盘期",
-            description="机构处于控盘阶段，价格相对稳定",
+            description="机构处于控盘阶段，价格相对稳定，观察后续变化",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=5.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -937,7 +939,8 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构处于拉升阶段，价格快速上涨",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -946,7 +949,8 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构处于出货阶段，存在下跌风险",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册行为模式形态
@@ -956,16 +960,18 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构强势吸筹，买入信号强烈",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
             pattern_id="INST_WASHOUT",
             display_name="机构洗盘",
-            description="机构洗盘操作，短期调整后可能继续上涨",
+            description="机构洗盘操作，短期调整后可能继续上涨，保持观察",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -974,7 +980,8 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构加速拉升，但需警惕顶部风险",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -983,7 +990,8 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构集中出货，卖出信号强烈",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         # 注册转换形态
@@ -993,7 +1001,8 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构吸筹完成，即将进入拉升阶段",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1002,7 +1011,8 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构开始拉升，买入时机",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1011,17 +1021,19 @@ class InstitutionalBehavior(BaseIndicator):
             description="机构开始出货，卖出时机",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册活动强度形态
         self.register_pattern_to_registry(
             pattern_id="INST_EXTREME_ACTIVITY",
             display_name="机构极强活动",
-            description="机构活动极其活跃，重要变化即将发生",
+            description="机构活动极其活跃，重要变化即将发生，密切关注",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

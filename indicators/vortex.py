@@ -993,7 +993,8 @@ class Vortex(BaseIndicator):
             description="VI+上穿VI-，表明趋势由空转多",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1002,7 +1003,8 @@ class Vortex(BaseIndicator):
             description="VI-上穿VI+，表明趋势由多转空",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册Vortex阈值形态
@@ -1012,7 +1014,8 @@ class Vortex(BaseIndicator):
             description="VI+高于1.1，表明上升趋势强烈",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1021,7 +1024,8 @@ class Vortex(BaseIndicator):
             description="VI-高于1.1，表明下降趋势强烈",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

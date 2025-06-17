@@ -74,14 +74,8 @@ class BIAS(BaseIndicator):
                 result_df['BIAS'] = result_df[main_bias_col]
                 result_df['BIAS_MA'] = result_df['BIAS'].rolling(window=main_period, min_periods=1).mean()
 
-        # 将新计算的列与原始DataFrame合并，避免重复列
-        # 检查是否有重复列，如果有则使用suffix
-        overlapping_cols = set(data.columns).intersection(set(result_df.columns))
-        if overlapping_cols:
-            # 如果有重复列，先删除result_df中的重复列，保留data中的原始列
-            result_df = result_df.drop(columns=list(overlapping_cols))
-
-        return data.join(result_df, how='left')
+        # 只返回计算出的指标列，不包含原始数据列
+        return result_df
 
     def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -94,19 +88,14 @@ class BIAS(BaseIndicator):
         required_cols = ['BIAS', 'BIAS_MA']
         if not all(col in calculated_data.columns for col in required_cols):
              logger.warning(f"BIAS指标在形态识别时缺少必要的计算列: {required_cols}")
-             # 返回一个空的DataFrame，但保留索引和原始列
-             return data.assign(**{col: pd.NA for col in required_cols if col not in data})
+             # 返回一个空的DataFrame，但保留索引
+             return pd.DataFrame(index=data.index)
 
         # 实现BIAS形态识别逻辑
         bias_values = calculated_data['BIAS']
 
-        # 创建形态识别结果DataFrame，只保留原始数据列
-        patterns_df = data.copy()
-
-        # 添加计算后的BIAS列（避免列重叠）
-        for col in calculated_data.columns:
-            if col not in patterns_df.columns:
-                patterns_df[col] = calculated_data[col]
+        # 创建形态识别结果DataFrame，只包含形态列
+        patterns_df = pd.DataFrame(index=data.index)
 
         # 1. BIAS极值形态
         patterns_df['BIAS_EXTREME_HIGH'] = bias_values > 15.0
@@ -244,7 +233,8 @@ class BIAS(BaseIndicator):
             description="BIAS值超过+15%，表示严重超买",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -253,17 +243,61 @@ class BIAS(BaseIndicator):
             description="BIAS值低于-15%，表示严重超卖",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册BIAS中度偏离形态
+        self.register_pattern_to_registry(
+            pattern_id="BIAS_MODERATE_HIGH",
+            display_name="BIAS中度偏高",
+            description="BIAS值在+5%到+15%之间，表示轻度超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BIAS_MODERATE_LOW",
+            display_name="BIAS中度偏低",
+            description="BIAS值在-15%到-5%之间，表示轻度超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         # 注册BIAS背离形态
         self.register_pattern_to_registry(
-            pattern_id="BIAS_DIVERGENCE",
-            display_name="BIAS背离",
-            description="价格与BIAS指标出现背离",
+            pattern_id="BIAS_BULLISH_DIVERGENCE",
+            display_name="BIAS底背离",
+            description="价格创新低但BIAS未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BIAS_BEARISH_DIVERGENCE",
+            display_name="BIAS顶背离",
+            description="价格创新高但BIAS未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册BIAS中性形态
+        self.register_pattern_to_registry(
+            pattern_id="BIAS_NEUTRAL",
+            display_name="BIAS中性",
+            description="BIAS值在-5%到+5%之间，表示价格相对均衡",
             pattern_type="NEUTRAL",
-            default_strength="MEDIUM",
-            score_impact=10.0
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

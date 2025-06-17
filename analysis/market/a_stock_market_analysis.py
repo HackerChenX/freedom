@@ -14,7 +14,7 @@ from enums.kline_period import KlinePeriod
 
 # 获取默认配置
 config = get_default_config()
-config['password'] = '223826'
+config['password'] = '123456'
 ch_db = get_clickhouse_db(config=config)
 
 # 中国市值前三的股票

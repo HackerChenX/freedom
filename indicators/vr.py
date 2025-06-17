@@ -249,7 +249,8 @@ class VR(BaseIndicator):
             description="VR值低于50，表明市场极度超卖，可能出现反弹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -258,7 +259,8 @@ class VR(BaseIndicator):
             description="VR值在50-70之间，表明市场超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -267,7 +269,8 @@ class VR(BaseIndicator):
             description="VR值在160-200之间，表明市场超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -276,7 +279,8 @@ class VR(BaseIndicator):
             description="VR值高于200，表明市场极度超买，可能出现回调",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VR金叉死叉形态
@@ -286,7 +290,8 @@ class VR(BaseIndicator):
             description="VR上穿其均线，表明买盘力量增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -295,7 +300,8 @@ class VR(BaseIndicator):
             description="VR下穿其均线，表明买盘力量减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VR趋势形态
@@ -305,7 +311,8 @@ class VR(BaseIndicator):
             description="VR连续上升，表明市场活跃度和买盘力量增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -314,7 +321,8 @@ class VR(BaseIndicator):
             description="VR连续下降，表明市场活跃度和买盘力量减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VR阈值穿越形态
@@ -324,7 +332,8 @@ class VR(BaseIndicator):
             description="VR从超卖区域向上突破，看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -333,7 +342,8 @@ class VR(BaseIndicator):
             description="VR从超买区域向下突破，看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:

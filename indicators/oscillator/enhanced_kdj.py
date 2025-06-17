@@ -894,7 +894,8 @@ class EnhancedKDJ(KDJ):
             description="K线上穿D线，表明上升趋势开始",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -903,7 +904,8 @@ class EnhancedKDJ(KDJ):
             description="K线下穿D线，表明下降趋势开始",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册KDJ超买超卖形态
@@ -913,7 +915,8 @@ class EnhancedKDJ(KDJ):
             description="K线和D线均低于20，表明市场超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -922,7 +925,8 @@ class EnhancedKDJ(KDJ):
             description="K线和D线均高于80，表明市场超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册J线极值形态
@@ -932,7 +936,8 @@ class EnhancedKDJ(KDJ):
             description="J线低于0，表明极度超卖",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -941,7 +946,8 @@ class EnhancedKDJ(KDJ):
             description="J线高于100，表明极度超买",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册强势交叉形态
@@ -951,7 +957,8 @@ class EnhancedKDJ(KDJ):
             description="K线以大角度上穿D线，表明强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -960,7 +967,8 @@ class EnhancedKDJ(KDJ):
             description="K线以大角度下穿D线，表明强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

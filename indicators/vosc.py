@@ -806,7 +806,8 @@ class VOSC(BaseIndicator):
             description="VOSC从下方穿越零轴，表明短期成交量超过长期成交量",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -815,7 +816,8 @@ class VOSC(BaseIndicator):
             description="VOSC从上方穿越零轴，表明短期成交量低于长期成交量",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VOSC金叉死叉形态
@@ -825,7 +827,8 @@ class VOSC(BaseIndicator):
             description="VOSC上穿信号线，表明成交量动量增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -834,7 +837,8 @@ class VOSC(BaseIndicator):
             description="VOSC下穿信号线，表明成交量动量减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VOSC趋势形态
@@ -844,7 +848,8 @@ class VOSC(BaseIndicator):
             description="VOSC连续上升，表明成交量持续增加",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -853,7 +858,8 @@ class VOSC(BaseIndicator):
             description="VOSC连续下降，表明成交量持续萎缩",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VOSC极值形态
@@ -863,7 +869,8 @@ class VOSC(BaseIndicator):
             description="VOSC值异常高，表明短期成交量远超长期成交量",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -872,7 +879,8 @@ class VOSC(BaseIndicator):
             description="VOSC值异常低，表明短期成交量远低于长期成交量",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEUTRAL"
         )
 
         # 注册VOSC价格关系形态
@@ -882,7 +890,8 @@ class VOSC(BaseIndicator):
             description="VOSC与价格同向变动，成交量确认价格趋势",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -891,7 +900,8 @@ class VOSC(BaseIndicator):
             description="VOSC与价格反向变动，成交量不支持价格趋势",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
     def _register_vosc_patterns(self):

@@ -675,7 +675,8 @@ class PSY(BaseIndicator):
             description="PSY指标进入超买区域，市场情绪过热",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册PSY超卖形态
@@ -685,7 +686,8 @@ class PSY(BaseIndicator):
             description="PSY指标进入超卖区域，市场情绪过冷",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         # 注册PSY极度超买形态
@@ -695,7 +697,8 @@ class PSY(BaseIndicator):
             description="PSY指标进入极度超买区域，市场情绪极度过热",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册PSY极度超卖形态
@@ -705,7 +708,8 @@ class PSY(BaseIndicator):
             description="PSY指标进入极度超卖区域，市场情绪极度过冷",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册PSY金叉形态
@@ -715,7 +719,8 @@ class PSY(BaseIndicator):
             description="PSY上穿信号线，市场情绪转好",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         # 注册PSY死叉形态
@@ -725,7 +730,8 @@ class PSY(BaseIndicator):
             description="PSY下穿信号线，市场情绪转差",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )
 
         # 注册PSY上穿50形态
@@ -735,7 +741,8 @@ class PSY(BaseIndicator):
             description="PSY上穿50中性线，市场情绪转向乐观",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册PSY下穿50形态
@@ -745,7 +752,8 @@ class PSY(BaseIndicator):
             description="PSY下穿50中性线，市场情绪转向悲观",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def set_parameters(self, **kwargs):

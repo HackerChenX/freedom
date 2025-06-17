@@ -666,7 +666,8 @@ class ZXMAbsorb(BaseIndicator):
             description="基于KDJ衍生指标的低位吸筹信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -675,7 +676,8 @@ class ZXMAbsorb(BaseIndicator):
             description="强度≥5的ZXM吸筹信号，主力大量吸筹",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0
+            score_impact=40.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -684,7 +686,8 @@ class ZXMAbsorb(BaseIndicator):
             description="强度4的ZXM吸筹信号，主力适度吸筹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -693,17 +696,19 @@ class ZXMAbsorb(BaseIndicator):
             description="强度3的ZXM吸筹信号，主力轻度吸筹",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册V11指标形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_V11_LOW",
             display_name="ZXM V11指标低位",
-            description="V11指标处于低位区域，具备吸筹基础",
+            description="V11指标处于低位区域，具备吸筹基础，观察信号",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -712,7 +717,8 @@ class ZXMAbsorb(BaseIndicator):
             description="V11低位且V12上升，吸筹动能增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -721,7 +727,8 @@ class ZXMAbsorb(BaseIndicator):
             description="V11低位且V12快速上升，强烈吸筹信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册持续性形态
@@ -731,7 +738,8 @@ class ZXMAbsorb(BaseIndicator):
             description="15天内满足10次低位条件，持续吸筹环境",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -740,17 +748,19 @@ class ZXMAbsorb(BaseIndicator):
             description="10天内满足5次低位回升条件，吸筹后启动",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册成交量确认形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_SHRINK",
             display_name="ZXM成交量萎缩",
-            description="吸筹过程中成交量萎缩，主力控盘",
+            description="吸筹过程中成交量萎缩，主力控盘特征，观察信号",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=8.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -759,7 +769,8 @@ class ZXMAbsorb(BaseIndicator):
             description="低位区域放量，主力积极吸筹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -768,7 +779,8 @@ class ZXMAbsorb(BaseIndicator):
             description="综合确认的ZXM吸筹信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

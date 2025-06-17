@@ -129,9 +129,10 @@ class Chaikin(BaseIndicator):
         df_copy['chaikin_signal'] = df_copy['chaikin_oscillator'].ewm(span=5).mean()
         
         # 存储结果
-        self._result = df_copy[['ad_line', 'chaikin_oscillator', 'chaikin_signal']]
-        
-        return df_copy
+        result_df = df_copy[['ad_line', 'chaikin_oscillator', 'chaikin_signal']].copy()
+        self._result = result_df
+
+        return result_df
         
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -709,13 +710,14 @@ class Chaikin(BaseIndicator):
         calculated_data = self.calculate(data, **kwargs)
 
         if calculated_data is None or calculated_data.empty:
-            return data.copy()
+            return pd.DataFrame(index=data.index)
 
         if 'chaikin_oscillator' not in calculated_data.columns:
-            return data.copy()
+            return pd.DataFrame(index=data.index)
 
         chaikin_oscillator = calculated_data['chaikin_oscillator']
-        patterns_df = calculated_data.copy()
+        # 只创建包含形态的DataFrame，不包含原始数据列
+        patterns_df = pd.DataFrame(index=calculated_data.index)
 
         # 1. 零轴穿越形态（使用简化的穿越逻辑）
         if len(chaikin_oscillator) >= 2:
@@ -768,7 +770,8 @@ class Chaikin(BaseIndicator):
             description="Chaikin震荡器从下方穿越零轴",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -777,7 +780,8 @@ class Chaikin(BaseIndicator):
             description="Chaikin震荡器从上方穿越零轴",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册Chaikin趋势形态
@@ -787,7 +791,8 @@ class Chaikin(BaseIndicator):
             description="Chaikin震荡器连续上升",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -796,7 +801,8 @@ class Chaikin(BaseIndicator):
             description="Chaikin震荡器连续下降",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
         # 注册Chaikin强度形态
@@ -806,7 +812,8 @@ class Chaikin(BaseIndicator):
             description="Chaikin震荡器大幅上升",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -815,7 +822,8 @@ class Chaikin(BaseIndicator):
             description="Chaikin震荡器大幅下降",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

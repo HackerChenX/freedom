@@ -764,7 +764,8 @@ class Momentum(BaseIndicator):
             description="Momentum从负值区域穿越零轴，表示动量转为正向",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
     def get_pattern_info(self, pattern_id: str) -> dict:
         """
@@ -858,7 +859,8 @@ class Momentum(BaseIndicator):
             description="Momentum从正值区域穿越零轴，表示动量转为负向",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册Momentum与信号线交叉形态
@@ -868,7 +870,8 @@ class Momentum(BaseIndicator):
             description="Momentum上穿其移动平均线，买入信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -877,7 +880,8 @@ class Momentum(BaseIndicator):
             description="Momentum下穿其移动平均线，卖出信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册Momentum背离形态
@@ -887,7 +891,8 @@ class Momentum(BaseIndicator):
             description="价格创新低但Momentum未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -896,7 +901,8 @@ class Momentum(BaseIndicator):
             description="价格创新高但Momentum未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册Momentum趋势形态
@@ -906,7 +912,8 @@ class Momentum(BaseIndicator):
             description="Momentum连续3个周期上升，表明上涨动能持续增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -915,7 +922,8 @@ class Momentum(BaseIndicator):
             description="Momentum连续3个周期下降，表明下跌动能持续增强",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册Momentum强度形态
@@ -925,7 +933,8 @@ class Momentum(BaseIndicator):
             description="Momentum处于极值高位，表明强烈的上涨动能",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -934,5 +943,6 @@ class Momentum(BaseIndicator):
             description="Momentum处于极值低位，表明强烈的下跌动能",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )

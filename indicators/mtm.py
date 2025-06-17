@@ -421,7 +421,8 @@ class MTM(BaseIndicator):
             description="MTM指标进入超买区域，可能暗示价格上涨过快",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MTM超卖形态
@@ -431,7 +432,8 @@ class MTM(BaseIndicator):
             description="MTM指标进入超卖区域，可能暗示价格下跌过快",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         # 注册MTM金叉形态
@@ -441,7 +443,8 @@ class MTM(BaseIndicator):
             description="MTM上穿MTMMA，动量由负转正，可能是买入信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册MTM死叉形态
@@ -451,7 +454,8 @@ class MTM(BaseIndicator):
             description="MTM下穿MTMMA，动量由正转负，可能是卖出信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MTM顶背离形态
@@ -461,7 +465,8 @@ class MTM(BaseIndicator):
             description="价格创新高但MTM未同步创新高，可能暗示上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MTM底背离形态
@@ -471,7 +476,8 @@ class MTM(BaseIndicator):
             description="价格创新低但MTM未同步创新低，可能暗示下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:

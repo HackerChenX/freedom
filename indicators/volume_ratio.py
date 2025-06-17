@@ -537,7 +537,8 @@ class VolumeRatio(BaseIndicator):
             description="量比超过3倍，市场极度活跃，可能是重大消息或主力行为",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="NEUTRAL"
         )
 
         # 注册量比高形态
@@ -547,7 +548,8 @@ class VolumeRatio(BaseIndicator):
             description="量比在1.5-2倍之间，市场活跃度较高",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册量比极低形态
@@ -557,7 +559,8 @@ class VolumeRatio(BaseIndicator):
             description="量比低于0.3倍，市场极度冷清",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEUTRAL"
         )
 
         # 注册量比低形态
@@ -567,7 +570,8 @@ class VolumeRatio(BaseIndicator):
             description="量比在0.5-0.8倍之间，市场活跃度较低",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册量比突破形态
@@ -577,7 +581,8 @@ class VolumeRatio(BaseIndicator):
             description="量比突破1.5倍，市场活跃度显著提升",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册量比跌破形态
@@ -587,7 +592,8 @@ class VolumeRatio(BaseIndicator):
             description="量比跌破0.7倍，市场活跃度显著下降",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册量比金叉形态
@@ -597,7 +603,8 @@ class VolumeRatio(BaseIndicator):
             description="量比上穿均线，活跃度趋势向好",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         # 注册量比死叉形态
@@ -607,7 +614,8 @@ class VolumeRatio(BaseIndicator):
             description="量比下穿均线，活跃度趋势转弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )
 
         # 注册量比加速上升形态
@@ -617,7 +625,8 @@ class VolumeRatio(BaseIndicator):
             description="量比连续上升，市场活跃度快速提升",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         # 注册量比加速下降形态
@@ -627,7 +636,8 @@ class VolumeRatio(BaseIndicator):
             description="量比连续下降，市场活跃度快速下降",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

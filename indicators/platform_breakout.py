@@ -422,6 +422,75 @@ class PlatformBreakout(BaseIndicator):
         
         return patterns
 
+    def register_patterns(self):
+        """
+        注册PlatformBreakout指标的形态到全局形态注册表
+        """
+        # 注册平台突破形态
+        self.register_pattern_to_registry(
+            pattern_id="PLATFORM_UP_BREAKOUT",
+            display_name="平台向上突破",
+            description="价格突破平台上边界，表明上升趋势开始",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PLATFORM_DOWN_BREAKOUT",
+            display_name="平台向下突破",
+            description="价格跌破平台下边界，表明下降趋势开始",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册平台整理形态
+        self.register_pattern_to_registry(
+            pattern_id="PLATFORM_CONSOLIDATION",
+            display_name="平台整理",
+            description="价格在平台区间内震荡整理，等待方向选择",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册强势突破形态
+        self.register_pattern_to_registry(
+            pattern_id="PLATFORM_STRONG_BREAKOUT",
+            display_name="平台强势突破",
+            description="价格强势突破平台，伴随放量确认",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册假突破形态
+        self.register_pattern_to_registry(
+            pattern_id="PLATFORM_FALSE_BREAKOUT",
+            display_name="平台假突破",
+            description="价格突破平台后快速回落，可能是假突破",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册平台回测形态
+        self.register_pattern_to_registry(
+            pattern_id="PLATFORM_RETEST",
+            display_name="平台回测",
+            description="价格突破后回测平台边界，确认支撑或阻力",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
     def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成平台突破指标信号

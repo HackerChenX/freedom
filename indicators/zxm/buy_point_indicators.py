@@ -302,6 +302,136 @@ class ZXMDailyMACD(BaseIndicator):
 
         return patterns_df
 
+    def register_patterns(self):
+        """
+        注册ZXMDailyMACD指标的形态到全局形态注册表
+        """
+        # 注册主要买点信号
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_BUY_POINT",
+            display_name="ZXM日线MACD买点信号",
+            description="日线MACD值小于0.9，ZXM体系买点信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册MACD值状态形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_POSITIVE",
+            display_name="ZXM日线MACD为正值",
+            description="日线MACD值为正，表明多头力量占优",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_NEGATIVE",
+            display_name="ZXM日线MACD为负值",
+            description="日线MACD值为负，表明空头力量占优",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_RISING",
+            display_name="ZXM日线MACD上升趋势",
+            description="日线MACD呈上升趋势，动能增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_FALLING",
+            display_name="ZXM日线MACD下降趋势",
+            description="日线MACD呈下降趋势，动能减弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD排列形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_BULLISH_ALIGNMENT",
+            display_name="ZXM日线MACD多头排列",
+            description="DIFF大于DEA，多头排列",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_BEARISH_ALIGNMENT",
+            display_name="ZXM日线MACD空头排列",
+            description="DIFF小于DEA，空头排列",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_GOLDEN_CROSS",
+            display_name="ZXM日线MACD金叉",
+            description="DIFF上穿DEA，金叉形成",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_DEATH_CROSS",
+            display_name="ZXM日线MACD死叉",
+            description="DIFF下穿DEA，死叉形成",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD极值形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_NEAR_ZERO",
+            display_name="ZXM日线MACD接近零轴",
+            description="MACD值接近零轴，可能变盘",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_OVERSOLD",
+            display_name="ZXM日线MACD严重超卖",
+            description="MACD值严重超卖，可能反弹",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_MACD_OVERBOUGHT",
+            display_name="ZXM日线MACD严重超买",
+            description="MACD值严重超买，可能回调",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
     def set_parameters(self, **kwargs):
         """
         设置指标参数
@@ -540,6 +670,124 @@ class ZXMTurnover(BaseIndicator):
             patterns_df.loc[:, "换手率突然缩小"] = turnover < recent_trend * 0.7
 
         return patterns_df
+
+    def register_patterns(self):
+        """
+        注册ZXMTurnover指标的形态到全局形态注册表
+        """
+        # 注册主要买点信号
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_BUY_POINT",
+            display_name="ZXM换手率买点信号",
+            description="换手率大于0.7%，ZXM体系买点信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册换手率活跃度形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_EXTREMELY_ACTIVE",
+            display_name="ZXM换手率极度活跃",
+            description="换手率>5%，极度活跃，需要谨慎",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_VERY_ACTIVE",
+            display_name="ZXM换手率非常活跃",
+            description="换手率2%-5%，非常活跃",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_ACTIVE",
+            display_name="ZXM换手率活跃",
+            description="换手率1%-2%，活跃",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=8.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_NORMAL_ACTIVE",
+            display_name="ZXM换手率一般活跃",
+            description="换手率0.7%-1%，一般活跃",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=5.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_LOW",
+            display_name="ZXM换手率低迷",
+            description="换手率≤0.7%，低迷",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-5.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册相对活跃度形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_RELATIVE_EXTREMELY_ACTIVE",
+            display_name="ZXM换手率相对历史极度活跃",
+            description="换手率相对20日均值极度活跃",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_RELATIVE_ACTIVE",
+            display_name="ZXM换手率相对历史活跃",
+            description="换手率相对20日均值活跃",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_RELATIVE_LOW",
+            display_name="ZXM换手率相对历史低迷",
+            description="换手率相对20日均值低迷",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-8.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册换手率变化形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_SUDDEN_INCREASE",
+            display_name="ZXM换手率突然放大",
+            description="换手率突然放大，关注资金流入",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_SUDDEN_DECREASE",
+            display_name="ZXM换手率突然缩小",
+            description="换手率突然缩小，关注资金流出",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-8.0,
+            polarity="NEGATIVE"
+        )
 
     def set_parameters(self, **kwargs):
         """

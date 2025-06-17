@@ -56,7 +56,8 @@ class KDJ(BaseIndicator):
             description="K线从下方突破D线，买入信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="KDJ_DEATH_CROSS",
@@ -64,7 +65,8 @@ class KDJ(BaseIndicator):
             description="K线从上方跌破D线，卖出信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="KDJ_OVERBOUGHT",
@@ -72,7 +74,8 @@ class KDJ(BaseIndicator):
             description="K值高于80，超买信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="KDJ_OVERSOLD",
@@ -80,7 +83,8 @@ class KDJ(BaseIndicator):
             description="K值低于20，超卖信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="KDJ_BULLISH_DIVERGENCE",
@@ -88,7 +92,8 @@ class KDJ(BaseIndicator):
             description="价格创新低而KDJ未创新低，底部反转信号",
             pattern_type="REVERSAL",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="KDJ_BEARISH_DIVERGENCE",
@@ -96,7 +101,8 @@ class KDJ(BaseIndicator):
             description="价格创新高而KDJ未创新高，顶部反转信号",
             pattern_type="REVERSAL",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
     
     def set_parameters(self, **kwargs):

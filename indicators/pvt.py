@@ -177,7 +177,8 @@ class PVT(BaseIndicator):
             description="PVT上穿信号线，量价配合向好",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册PVT死叉形态
@@ -187,7 +188,8 @@ class PVT(BaseIndicator):
             description="PVT下穿信号线，量价配合转弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册PVT连续上升形态
@@ -197,7 +199,8 @@ class PVT(BaseIndicator):
             description="PVT连续3个周期上升，量价趋势强劲",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         # 注册PVT连续下降形态
@@ -207,7 +210,8 @@ class PVT(BaseIndicator):
             description="PVT连续3个周期下降，量价趋势疲弱",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
         # 注册PVT强势上涨形态
@@ -217,7 +221,8 @@ class PVT(BaseIndicator):
             description="PVT大幅上升，量价配合强劲",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册PVT强势下跌形态
@@ -227,7 +232,8 @@ class PVT(BaseIndicator):
             description="PVT大幅下降，量价配合疲弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:

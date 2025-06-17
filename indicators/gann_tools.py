@@ -1172,7 +1172,8 @@ class GannTools(BaseIndicator):
             description="价格在江恩1x1角度线获得支撑，重要的买入信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1181,7 +1182,8 @@ class GannTools(BaseIndicator):
             description="价格在江恩1x1角度线遇阻，重要的卖出信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         # 注册江恩1x2线形态
@@ -1191,7 +1193,8 @@ class GannTools(BaseIndicator):
             description="价格在江恩1x2角度线获得支撑",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1200,7 +1203,8 @@ class GannTools(BaseIndicator):
             description="价格在江恩1x2角度线遇阻",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册江恩2x1线形态
@@ -1210,7 +1214,8 @@ class GannTools(BaseIndicator):
             description="价格在江恩2x1角度线获得支撑",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1219,7 +1224,8 @@ class GannTools(BaseIndicator):
             description="价格在江恩2x1角度线遇阻",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册江恩角度线聚集形态
@@ -1229,7 +1235,8 @@ class GannTools(BaseIndicator):
             description="多条江恩角度线聚集形成强力支撑",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0
+            score_impact=35.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1238,7 +1245,8 @@ class GannTools(BaseIndicator):
             description="多条江恩角度线聚集形成强力阻力",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-35.0
+            score_impact=-35.0,
+            polarity="NEGATIVE"
         )
 
         # 注册江恩突破形态
@@ -1248,7 +1256,8 @@ class GannTools(BaseIndicator):
             description="价格向上突破江恩1x1角度线",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0
+            score_impact=40.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1257,7 +1266,8 @@ class GannTools(BaseIndicator):
             description="价格向下突破江恩1x1角度线",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-40.0
+            score_impact=-40.0,
+            polarity="NEGATIVE"
         )
 
         # 注册江恩时间周期形态
@@ -1267,7 +1277,8 @@ class GannTools(BaseIndicator):
             description="在江恩重要时间周期出现低点转折",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1276,7 +1287,8 @@ class GannTools(BaseIndicator):
             description="在江恩重要时间周期出现高点转折",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册江恩方格形态
@@ -1286,7 +1298,8 @@ class GannTools(BaseIndicator):
             description="价格在江恩方格支撑位获得支撑",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1295,45 +1308,50 @@ class GannTools(BaseIndicator):
             description="价格在江恩方格阻力位遇阻",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册江恩价格目标形态
         self.register_pattern_to_registry(
             pattern_id="GANN_PRICE_TARGET_UP",
             display_name="江恩上涨价格目标",
-            description="价格接近江恩理论计算的上涨目标位",
+            description="价格接近江恩理论计算的上涨目标位，需要观察反应",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="GANN_PRICE_TARGET_DOWN",
             display_name="江恩下跌价格目标",
-            description="价格接近江恩理论计算的下跌目标位",
+            description="价格接近江恩理论计算的下跌目标位，需要观察反应",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         # 注册确认形态
         self.register_pattern_to_registry(
             pattern_id="GANN_VOLUME_CONFIRMATION",
             display_name="江恩成交量确认",
-            description="江恩信号伴随成交量放大确认",
+            description="江恩信号伴随成交量放大确认，增强信号可靠性",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="GANN_TREND_ALIGNMENT",
             display_name="江恩趋势一致",
-            description="江恩信号与主趋势方向一致",
+            description="江恩信号与主趋势方向一致，增强信号可靠性",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

@@ -120,7 +120,8 @@ class MACD(BaseIndicator):
             description="MACD快线从下向上穿越慢线，看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
         
         # 注册MACD死叉形态
@@ -130,7 +131,8 @@ class MACD(BaseIndicator):
             description="MACD快线从上向下穿越慢线，看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
         
         # 注册MACD零轴穿越形态
@@ -140,7 +142,8 @@ class MACD(BaseIndicator):
             description="MACD线从下方穿越零轴，表明由空头转为多头",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
         
         self.register_pattern_to_registry(
@@ -149,7 +152,8 @@ class MACD(BaseIndicator):
             description="MACD线从上方穿越零轴，表明由多头转为空头",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
         
         # 注册MACD背离形态
@@ -159,16 +163,18 @@ class MACD(BaseIndicator):
             description="价格创新低，但MACD未创新低，潜在看涨信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
-        
+
         self.register_pattern_to_registry(
             pattern_id="MACD_BEARISH_DIVERGENCE",
             display_name="MACD顶背离",
             description="价格创新高，但MACD未创新高，潜在看跌信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
         
         # 注册MACD柱状图形态
@@ -178,16 +184,18 @@ class MACD(BaseIndicator):
             description="MACD柱状图连续增大，表明趋势加强",
             pattern_type="MOMENTUM",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
-        
+
         self.register_pattern_to_registry(
             pattern_id="MACD_HISTOGRAM_CONTRACTING",
             display_name="MACD柱状图收缩",
             description="MACD柱状图连续减小，表明趋势减弱",
             pattern_type="EXHAUSTION",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
         
         # 注册MACD趋势形态
@@ -197,16 +205,18 @@ class MACD(BaseIndicator):
             description="MACD值处于高位且继续上升，表明强劲上涨趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
-        
+
         self.register_pattern_to_registry(
             pattern_id="MACD_STRONG_BEARISH",
             display_name="MACD强势空头",
             description="MACD值处于低位且继续下降，表明强劲下跌趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
         
         # 注册新增的MACD双顶双底形态
@@ -216,16 +226,18 @@ class MACD(BaseIndicator):
             description="MACD形成双底形态，看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=22.0
+            score_impact=22.0,
+            polarity="POSITIVE"
         )
-        
+
         self.register_pattern_to_registry(
             pattern_id="MACD_DOUBLE_TOP",
             display_name="MACD双顶",
             description="MACD形成双顶形态，看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-22.0
+            score_impact=-22.0,
+            polarity="NEGATIVE"
         )
         
         # 注册新增的MACD形态
@@ -235,16 +247,18 @@ class MACD(BaseIndicator):
             description="MACD短期内多次穿越信号线，表明市场不稳定",
             pattern_type="VOLATILITY",
             default_strength="WEAK",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
-        
+
         self.register_pattern_to_registry(
             pattern_id="MACD_ZERO_LINE_HESITATION",
             display_name="MACD零轴徘徊",
             description="MACD在零轴附近徘徊，表明市场处于犹豫状态",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
     
     def parameters(self) -> Dict[str, Any]:
@@ -344,8 +358,8 @@ class MACD(BaseIndicator):
             'macd_signal': macd_signal,
             'macd_histogram': macd_histogram
         }, index=data.index)
-        
-        return self._preserve_base_columns(data, result_df)
+
+        return result_df
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

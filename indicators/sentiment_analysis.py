@@ -401,7 +401,196 @@ class SentimentAnalysis(BaseIndicator):
             probability = probability.clip(0, 100)
         
         return probability
-    
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取情绪分析指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算情绪分析
+        if not self.has_result():
+            self._calculate(data)
+
+        result = self._result.copy()
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基于情绪分类的形态
+        if 'sentiment_category' in result.columns:
+            sentiment_cat = result['sentiment_category']
+            patterns_df['EXTREME_FEAR'] = sentiment_cat == "极度恐慌"
+            patterns_df['FEAR'] = sentiment_cat == "恐慌"
+            patterns_df['SLIGHT_FEAR'] = sentiment_cat == "轻微恐慌"
+            patterns_df['NEUTRAL'] = sentiment_cat == "中性"
+            patterns_df['SLIGHT_GREED'] = sentiment_cat == "轻微贪婪"
+            patterns_df['GREED'] = sentiment_cat == "贪婪"
+            patterns_df['EXTREME_GREED'] = sentiment_cat == "极度贪婪"
+
+        # 基于情绪转变的形态
+        if 'sentiment_change' in result.columns:
+            sentiment_change = result['sentiment_change']
+            patterns_df['SENTIMENT_TURN_BULLISH'] = sentiment_change == 1
+            patterns_df['SENTIMENT_TURN_BEARISH'] = sentiment_change == -1
+
+        # 基于极端情绪的形态
+        if 'extreme_sentiment' in result.columns:
+            extreme_sentiment = result['extreme_sentiment']
+            patterns_df['EXTREME_SENTIMENT_BULLISH'] = extreme_sentiment == -1  # 过度恐慌，反转看涨
+            patterns_df['EXTREME_SENTIMENT_BEARISH'] = extreme_sentiment == 1   # 过度贪婪，反转看跌
+
+        # 基于反转概率的形态
+        if 'reversal_probability' in result.columns:
+            reversal_prob = result['reversal_probability']
+            patterns_df['HIGH_REVERSAL_PROBABILITY'] = reversal_prob > 70
+            patterns_df['MEDIUM_REVERSAL_PROBABILITY'] = (reversal_prob >= 60) & (reversal_prob <= 70)
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册SentimentAnalysis指标的形态到全局形态注册表
+        """
+        # 注册极端恐慌情绪形态
+        self.register_pattern_to_registry(
+            pattern_id="EXTREME_FEAR",
+            display_name="极度恐慌",
+            description="市场情绪极度恐慌，可能是买入机会",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FEAR",
+            display_name="恐慌情绪",
+            description="市场情绪恐慌，可能接近底部",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="SLIGHT_FEAR",
+            display_name="轻微恐慌",
+            description="市场情绪轻微恐慌，谨慎乐观",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=8.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册极端贪婪情绪形态
+        self.register_pattern_to_registry(
+            pattern_id="EXTREME_GREED",
+            display_name="极度贪婪",
+            description="市场情绪极度贪婪，可能是卖出机会",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="GREED",
+            display_name="贪婪情绪",
+            description="市场情绪贪婪，可能接近顶部",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="SLIGHT_GREED",
+            display_name="轻微贪婪",
+            description="市场情绪轻微贪婪，谨慎看跌",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-8.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册中性情绪形态
+        self.register_pattern_to_registry(
+            pattern_id="NEUTRAL",
+            display_name="中性情绪",
+            description="市场情绪中性，观望为主",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册情绪转变形态
+        self.register_pattern_to_registry(
+            pattern_id="SENTIMENT_TURN_BULLISH",
+            display_name="情绪转向看涨",
+            description="市场情绪从恐慌转向贪婪，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=22.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="SENTIMENT_TURN_BEARISH",
+            display_name="情绪转向看跌",
+            description="市场情绪从贪婪转向恐慌，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-22.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册极端情绪反转形态
+        self.register_pattern_to_registry(
+            pattern_id="EXTREME_SENTIMENT_BULLISH",
+            display_name="极端恐慌反转",
+            description="极度恐慌情绪，反转看涨机会",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="EXTREME_SENTIMENT_BEARISH",
+            display_name="极端贪婪反转",
+            description="极度贪婪情绪，反转看跌机会",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册反转概率形态
+        self.register_pattern_to_registry(
+            pattern_id="HIGH_REVERSAL_PROBABILITY",
+            display_name="高反转概率",
+            description="情绪反转概率较高，需要关注趋势变化",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MEDIUM_REVERSAL_PROBABILITY",
+            display_name="中等反转概率",
+            description="情绪反转概率中等，保持观察",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号

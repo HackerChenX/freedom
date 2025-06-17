@@ -604,7 +604,8 @@ class EMV(BaseIndicator):
             description="EMV从负值区域穿越零轴，表示买盘力量增强",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -613,7 +614,8 @@ class EMV(BaseIndicator):
             description="EMV从正值区域穿越零轴，表示卖盘力量增强",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册EMV与移动平均线交叉形态
@@ -623,7 +625,8 @@ class EMV(BaseIndicator):
             description="EMV上穿其移动平均线，趋势转强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -632,7 +635,8 @@ class EMV(BaseIndicator):
             description="EMV下穿其移动平均线，趋势转弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册EMV强度形态
@@ -642,7 +646,8 @@ class EMV(BaseIndicator):
             description="EMV大幅上升，买盘力量强劲",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -651,7 +656,8 @@ class EMV(BaseIndicator):
             description="EMV大幅下降，卖盘力量强劲",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
         # 注册EMV背离形态
@@ -661,7 +667,8 @@ class EMV(BaseIndicator):
             description="价格下跌但EMV上升，可能反转向上",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -670,7 +677,8 @@ class EMV(BaseIndicator):
             description="价格上涨但EMV下降，可能反转向下",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

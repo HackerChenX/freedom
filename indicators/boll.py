@@ -11,7 +11,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
 from indicators.common import boll as calc_boll
 from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
 
 logger = get_logger(__name__)
 
@@ -68,9 +68,10 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.RESISTANCE,
             default_strength=PatternStrength.MEDIUM,
             score_impact=-10.0,
-            detection_function=self._detect_price_touch_upper
+            detection_function=self._detect_price_touch_upper,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 价格触及下轨形态
         registry.register(
             pattern_id="PRICE_TOUCH_LOWER",
@@ -80,7 +81,8 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.SUPPORT,
             default_strength=PatternStrength.MEDIUM,
             score_impact=10.0,
-            detection_function=self._detect_price_touch_lower
+            detection_function=self._detect_price_touch_lower,
+            polarity=PatternPolarity.POSITIVE
         )
         
         # 价格突破上轨形态
@@ -92,9 +94,10 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.BREAKOUT,
             default_strength=PatternStrength.STRONG,
             score_impact=15.0,
-            detection_function=self._detect_price_break_upper
+            detection_function=self._detect_price_break_upper,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         # 价格突破下轨形态
         registry.register(
             pattern_id="PRICE_BREAK_LOWER",
@@ -104,7 +107,8 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.BREAKOUT,
             default_strength=PatternStrength.STRONG,
             score_impact=-15.0,
-            detection_function=self._detect_price_break_lower
+            detection_function=self._detect_price_break_lower,
+            polarity=PatternPolarity.NEGATIVE
         )
         
         # 带宽扩大形态
@@ -116,9 +120,10 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.VOLATILITY,
             default_strength=PatternStrength.MEDIUM,
             score_impact=0.0,
-            detection_function=self._detect_bandwidth_expanding
+            detection_function=self._detect_bandwidth_expanding,
+            polarity=PatternPolarity.NEUTRAL
         )
-        
+
         # 带宽收缩形态
         registry.register(
             pattern_id="BANDWIDTH_CONTRACTING",
@@ -128,7 +133,8 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.VOLATILITY,
             default_strength=PatternStrength.MEDIUM,
             score_impact=0.0,
-            detection_function=self._detect_bandwidth_contracting
+            detection_function=self._detect_bandwidth_contracting,
+            polarity=PatternPolarity.NEUTRAL
         )
         
         # 价格上穿中轨形态
@@ -140,9 +146,10 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
             score_impact=5.0,
-            detection_function=self._detect_price_cross_up_middle
+            detection_function=self._detect_price_cross_up_middle,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         # 价格下穿中轨形态
         registry.register(
             pattern_id="PRICE_CROSS_DOWN_MIDDLE",
@@ -152,9 +159,10 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
             score_impact=-5.0,
-            detection_function=self._detect_price_cross_down_middle
+            detection_function=self._detect_price_cross_down_middle,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 布林带平行形态
         registry.register(
             pattern_id="PARALLEL_BANDS",
@@ -164,7 +172,8 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.TREND,
             default_strength=PatternStrength.WEAK,
             score_impact=0.0,
-            detection_function=self._detect_parallel_bands
+            detection_function=self._detect_parallel_bands,
+            polarity=PatternPolarity.NEUTRAL
         )
         
         # W底形态
@@ -176,9 +185,10 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
             score_impact=20.0,
-            detection_function=self._detect_w_bottom
+            detection_function=self._detect_w_bottom,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         # M顶形态
         registry.register(
             pattern_id="M_TOP",
@@ -188,7 +198,8 @@ class BOLL(BaseIndicator):
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
             score_impact=-20.0,
-            detection_function=self._detect_m_top
+            detection_function=self._detect_m_top,
+            polarity=PatternPolarity.NEGATIVE
         )
     
     def _detect_price_touch_upper(self, data: pd.DataFrame) -> bool:
@@ -1410,6 +1421,115 @@ class BOLL(BaseIndicator):
                 patterns_df.loc[last_index, 'BOLL_MEAN_REVERSION'] = True
 
         return patterns_df
+
+    def register_patterns(self):
+        """
+        注册BOLL指标的形态到全局形态注册表
+        """
+        # 注册布林带突破形态
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_UPPER_BREAKOUT",
+            display_name="布林带上轨突破",
+            description="价格突破布林带上轨，表明强势上涨",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_LOWER_BREAKOUT",
+            display_name="布林带下轨突破",
+            description="价格跌破布林带下轨，表明强势下跌",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册布林带超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_OVERBOUGHT",
+            display_name="布林带超买",
+            description="价格接近或触及上轨，可能超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_OVERSOLD",
+            display_name="布林带超卖",
+            description="价格接近或触及下轨，可能超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册布林带收缩扩张形态
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_SQUEEZE",
+            display_name="布林带收缩",
+            description="布林带收缩，表明波动率降低，可能酝酿突破",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_EXPANSION",
+            display_name="布林带扩张",
+            description="布林带扩张，表明波动率增加，趋势可能延续",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册布林带经典形态
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_W_BOTTOM",
+            display_name="布林带W底",
+            description="价格在下轨附近形成W底，强烈看涨信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_M_TOP",
+            display_name="布林带M顶",
+            description="价格在上轨附近形成M顶，强烈看跌信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册布林带趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_TREND_FOLLOWING",
+            display_name="布林带趋势跟随",
+            description="价格沿布林带边缘运行，表明趋势强劲",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="BOLL_MEAN_REVERSION",
+            display_name="布林带均值回归",
+            description="价格向中轨回归，表明超买超卖修正",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """

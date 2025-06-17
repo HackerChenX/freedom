@@ -347,7 +347,127 @@ class TrendClassification(BaseIndicator):
             一个空的DataFrame。
         """
         return pd.DataFrame(columns=['pattern_id', 'start_index', 'end_index'])
-    
+
+    def register_patterns(self):
+        """
+        注册TrendClassification指标的形态到全局形态注册表
+        """
+        # 注册强势趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="STRONG_UPTREND",
+            display_name="强势上升趋势",
+            description="价格处于强势上升趋势，多头力量强劲",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="STRONG_DOWNTREND",
+            display_name="强势下降趋势",
+            description="价格处于强势下降趋势，空头力量强劲",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册一般趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="UPTREND",
+            display_name="上升趋势",
+            description="价格处于上升趋势，多头占优",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DOWNTREND",
+            display_name="下降趋势",
+            description="价格处于下降趋势，空头占优",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册弱势趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="WEAK_UPTREND",
+            display_name="弱势上升趋势",
+            description="价格处于弱势上升趋势，上涨动能有限",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WEAK_DOWNTREND",
+            display_name="弱势下降趋势",
+            description="价格处于弱势下降趋势，下跌动能有限",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册横盘整理形态
+        self.register_pattern_to_registry(
+            pattern_id="SIDEWAYS",
+            display_name="横盘整理",
+            description="价格处于横盘整理状态，多空力量均衡",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册趋势转换形态
+        self.register_pattern_to_registry(
+            pattern_id="TREND_REVERSAL_BULLISH",
+            display_name="趋势转为看涨",
+            description="趋势从下降转为上升，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TREND_REVERSAL_BEARISH",
+            display_name="趋势转为看跌",
+            description="趋势从上升转为下降，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册趋势加速形态
+        self.register_pattern_to_registry(
+            pattern_id="TREND_ACCELERATION_UP",
+            display_name="上升趋势加速",
+            description="上升趋势加速，多头力量增强",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=28.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TREND_ACCELERATION_DOWN",
+            display_name="下降趋势加速",
+            description="下降趋势加速，空头力量增强",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-28.0,
+            polarity="NEGATIVE"
+        )
+
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算原始评分

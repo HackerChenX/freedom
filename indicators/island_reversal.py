@@ -110,7 +110,97 @@ class IslandReversal(BaseIndicator):
                         break
         
         return result
-    
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取岛型反转指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算岛型反转
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        result = self._result.copy()
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基本岛型反转形态
+        patterns_df['ISLAND_TOP_REVERSAL'] = result.get('top_island_reversal', False)
+        patterns_df['ISLAND_BOTTOM_REVERSAL'] = result.get('bottom_island_reversal', False)
+
+        # 跳空形态
+        patterns_df['UP_GAP'] = result.get('up_gap', False)
+        patterns_df['DOWN_GAP'] = result.get('down_gap', False)
+
+        # 组合形态
+        patterns_df['ISLAND_REVERSAL_ANY'] = (
+            patterns_df['ISLAND_TOP_REVERSAL'] | patterns_df['ISLAND_BOTTOM_REVERSAL']
+        )
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册IslandReversal指标的形态到全局形态注册表
+        """
+        # 注册岛型反转形态
+        self.register_pattern_to_registry(
+            pattern_id="ISLAND_TOP_REVERSAL",
+            display_name="顶部岛型反转",
+            description="价格形成顶部岛型反转，强烈看跌信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-35.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ISLAND_BOTTOM_REVERSAL",
+            display_name="底部岛型反转",
+            description="价格形成底部岛型反转，强烈看涨信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册跳空形态
+        self.register_pattern_to_registry(
+            pattern_id="UP_GAP",
+            display_name="向上跳空",
+            description="价格向上跳空，表明买盘强劲",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DOWN_GAP",
+            display_name="向下跳空",
+            description="价格向下跳空，表明卖盘强劲",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册组合形态
+        self.register_pattern_to_registry(
+            pattern_id="ISLAND_REVERSAL_ANY",
+            display_name="岛型反转",
+            description="出现岛型反转形态，表明趋势可能发生重大转折",
+            pattern_type="NEUTRAL",
+            default_strength="VERY_STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
     def get_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         生成岛型反转信号

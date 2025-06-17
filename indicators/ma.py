@@ -228,25 +228,33 @@ class MA(BaseIndicator):
             pattern_id=f"MA_{p_short}_{p_medium}_GOLDEN_CROSS",
             display_name=f"MA({p_short},{p_medium})金叉",
             description=f"当短期MA({p_short})上穿中期MA({p_medium})时，被视为看涨信号。",
-            pattern_type=PatternType.BULLISH
+            pattern_type=PatternType.BULLISH,
+            polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id=f"MA_{p_short}_{p_medium}_DEATH_CROSS",
             display_name=f"MA({p_short},{p_medium})死叉",
             description=f"当短期MA({p_short})下穿中期MA({p_medium})时，被视为看跌信号。",
-            pattern_type=PatternType.BEARISH
+            pattern_type=PatternType.BEARISH,
+            polarity="NEGATIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="MA_BULLISH_ARRANGEMENT",
             display_name="MA多头排列",
             description=f"短期MA({p_short})在长期MA({p_long})之上，表明市场处于强劲上升趋势。",
-            pattern_type=PatternType.BULLISH
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="MA_BEARISH_ARRANGEMENT",
             display_name="MA空头排列",
             description=f"短期MA({p_short})在长期MA({p_long})之下，表明市场处于强劲下降趋势。",
-            pattern_type=PatternType.BEARISH
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

@@ -469,7 +469,8 @@ class VIX(BaseIndicator):
             description="VIX超过50，市场极度恐慌，通常是买入机会",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         # 注册VIX高度恐慌形态
@@ -479,7 +480,8 @@ class VIX(BaseIndicator):
             description="VIX在30-50之间，市场高度恐慌",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册VIX极度乐观形态
@@ -489,7 +491,8 @@ class VIX(BaseIndicator):
             description="VIX低于10，市场极度乐观，风险较高",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VIX见顶回落形态
@@ -499,7 +502,8 @@ class VIX(BaseIndicator):
             description="VIX从高位回落，恐慌情绪缓解，买入机会",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册VIX见底回升形态
@@ -509,7 +513,8 @@ class VIX(BaseIndicator):
             description="VIX从低位回升，恐慌情绪增加，风险信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册VIX快速上升形态
@@ -519,7 +524,8 @@ class VIX(BaseIndicator):
             description="VIX快速上升超过30%，恐慌情绪急剧增加",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册VIX历史高位形态
@@ -529,7 +535,8 @@ class VIX(BaseIndicator):
             description="VIX处于60日历史高位，极度恐慌",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册VIX历史低位形态
@@ -539,7 +546,8 @@ class VIX(BaseIndicator):
             description="VIX处于60日历史低位，市场过度乐观",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def identify_patterns(self, data: pd.DataFrame) -> List[str]:

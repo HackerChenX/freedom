@@ -1288,7 +1288,8 @@ class FibonacciTools(BaseIndicator):
             description="价格在0.618黄金分割位获得支撑，强烈的买入信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1297,7 +1298,8 @@ class FibonacciTools(BaseIndicator):
             description="价格在0.618黄金分割位遇阻，强烈的卖出信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         # 注册回调位形态
@@ -1307,7 +1309,8 @@ class FibonacciTools(BaseIndicator):
             description="价格接近50%斐波那契回调位，重要的支撑/阻力位",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -1316,7 +1319,8 @@ class FibonacciTools(BaseIndicator):
             description="价格接近38.2%斐波那契回调位，浅度回调支撑",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1325,7 +1329,8 @@ class FibonacciTools(BaseIndicator):
             description="价格接近61.8%斐波那契回调位，深度回调支撑",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册扩展位形态
@@ -1335,7 +1340,8 @@ class FibonacciTools(BaseIndicator):
             description="价格接近1.618黄金扩展位，重要的目标位",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -1344,7 +1350,8 @@ class FibonacciTools(BaseIndicator):
             description="价格接近100%扩展位，等幅扩展目标",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="NEUTRAL"
         )
 
         # 注册聚集区形态
@@ -1354,7 +1361,8 @@ class FibonacciTools(BaseIndicator):
             description="多个斐波那契水平聚集形成强力支撑",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0
+            score_impact=35.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1363,7 +1371,8 @@ class FibonacciTools(BaseIndicator):
             description="多个斐波那契水平聚集形成强力阻力",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-35.0
+            score_impact=-35.0,
+            polarity="NEGATIVE"
         )
 
         # 注册突破形态
@@ -1373,7 +1382,8 @@ class FibonacciTools(BaseIndicator):
             description="价格向上突破重要斐波那契水平",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1382,7 +1392,8 @@ class FibonacciTools(BaseIndicator):
             description="价格向下突破重要斐波那契水平",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册反弹回调形态
@@ -1392,7 +1403,8 @@ class FibonacciTools(BaseIndicator):
             description="价格在斐波那契水平获得支撑并反弹",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1401,7 +1413,8 @@ class FibonacciTools(BaseIndicator):
             description="价格在斐波那契水平遇阻并回调",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
         # 注册时间周期形态
@@ -1411,7 +1424,8 @@ class FibonacciTools(BaseIndicator):
             description="接近重要的斐波那契时间节点",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="NEUTRAL"
         )
 
         # 注册确认形态
@@ -1421,7 +1435,8 @@ class FibonacciTools(BaseIndicator):
             description="斐波那契水平附近伴随成交量放大",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -1430,7 +1445,8 @@ class FibonacciTools(BaseIndicator):
             description="斐波那契信号与主趋势方向一致",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

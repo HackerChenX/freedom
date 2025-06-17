@@ -514,7 +514,8 @@ class DMA(BaseIndicator):
             description="DMA大于0且DMA大于AMA，表示强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -523,7 +524,8 @@ class DMA(BaseIndicator):
             description="DMA小于0且DMA小于AMA，表示强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册DMA交叉形态
@@ -533,7 +535,8 @@ class DMA(BaseIndicator):
             description="DMA上穿AMA，显示由空头转为多头趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -542,7 +545,8 @@ class DMA(BaseIndicator):
             description="DMA下穿AMA，显示由多头转为空头趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         # 注册DMA零轴穿越形态
@@ -552,7 +556,8 @@ class DMA(BaseIndicator):
             description="DMA从负值区域穿越零轴",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -561,7 +566,8 @@ class DMA(BaseIndicator):
             description="DMA从正值区域穿越零轴",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册DMA强度形态
@@ -571,7 +577,8 @@ class DMA(BaseIndicator):
             description="DMA百分比差值大于5%，表示强势上涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -580,7 +587,8 @@ class DMA(BaseIndicator):
             description="DMA百分比差值小于-5%，表示强势下跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str = None) -> Dict[str, Any]:

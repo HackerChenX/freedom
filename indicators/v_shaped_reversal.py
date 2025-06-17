@@ -132,7 +132,99 @@ class VShapedReversal(BaseIndicator):
                         result.iloc[i, result.columns.get_loc("v_bottom")] = True
         
         return result
-    
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取V形反转指标的技术形态
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
+        # 确保已计算V形反转
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        result = self._result.copy()
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 基本V形反转形态
+        patterns_df['V_SHAPED_REVERSAL'] = result.get('v_reversal', False)
+        patterns_df['V_BOTTOM'] = result.get('v_bottom', False)
+
+        # 根据反转方向分类
+        if 'decline_rate' in result.columns and 'rebound_rate' in result.columns:
+            decline_rate = result['decline_rate']
+            rebound_rate = result['rebound_rate']
+
+            # 看涨V形反转（下跌后反弹）
+            patterns_df['V_BULLISH_REVERSAL'] = (
+                patterns_df['V_SHAPED_REVERSAL'] &
+                (decline_rate < 0) & (rebound_rate > 0)
+            )
+
+            # 看跌倒V形反转（上涨后回落）
+            patterns_df['V_BEARISH_REVERSAL'] = (
+                patterns_df['V_SHAPED_REVERSAL'] &
+                (decline_rate > 0) & (rebound_rate < 0)
+            )
+        else:
+            patterns_df['V_BULLISH_REVERSAL'] = False
+            patterns_df['V_BEARISH_REVERSAL'] = False
+
+        return patterns_df
+
+    def register_patterns(self):
+        """
+        注册VShapedReversal指标的形态到全局形态注册表
+        """
+        # 注册V形反转基本形态
+        self.register_pattern_to_registry(
+            pattern_id="V_SHAPED_REVERSAL",
+            display_name="V形反转",
+            description="价格形成V形反转形态，表明趋势可能发生转折",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册看涨V形反转
+        self.register_pattern_to_registry(
+            pattern_id="V_BULLISH_REVERSAL",
+            display_name="看涨V形反转",
+            description="价格急速下跌后快速反弹，形成V形底部，强烈看涨信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册看跌倒V形反转
+        self.register_pattern_to_registry(
+            pattern_id="V_BEARISH_REVERSAL",
+            display_name="看跌倒V形反转",
+            description="价格急速上涨后快速回落，形成倒V形顶部，强烈看跌信号",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册V形底部
+        self.register_pattern_to_registry(
+            pattern_id="V_BOTTOM",
+            display_name="V形底部",
+            description="价格形成V形底部，表明下跌趋势结束，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
     def get_signals(self, data: pd.DataFrame, confirmation_days: int = 2) -> pd.DataFrame:
         """
         生成V形反转信号

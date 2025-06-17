@@ -1223,7 +1223,8 @@ class EnhancedTRIX(TRIX):
             description="TRIX线上穿信号线，表明上升趋势开始",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1232,7 +1233,8 @@ class EnhancedTRIX(TRIX):
             description="TRIX线下穿信号线，表明下降趋势开始",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册TRIX零轴穿越形态
@@ -1242,7 +1244,8 @@ class EnhancedTRIX(TRIX):
             description="TRIX从下方穿越零轴，表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1251,7 +1254,8 @@ class EnhancedTRIX(TRIX):
             description="TRIX从上方穿越零轴，表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册TRIX背离形态
@@ -1261,7 +1265,8 @@ class EnhancedTRIX(TRIX):
             description="价格创新低但TRIX未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1270,7 +1275,8 @@ class EnhancedTRIX(TRIX):
             description="价格创新高但TRIX未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册TRIX多周期协同形态
@@ -1280,7 +1286,8 @@ class EnhancedTRIX(TRIX):
             description="多周期TRIX共振发出看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1289,7 +1296,8 @@ class EnhancedTRIX(TRIX):
             description="多周期TRIX共振发出看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

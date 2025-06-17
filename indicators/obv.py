@@ -13,7 +13,7 @@ from typing import Dict, List, Union, Optional, Any
 
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
 from indicators.common import crossover, crossunder
 from utils.technical_utils import calculate_ma
 from utils.decorators import log_calls, error_handling, cache_result
@@ -57,6 +57,125 @@ class OBV(BaseIndicator):
         获取OBV指标的技术形态
         """
         return pd.DataFrame(index=data.index)
+
+    def register_patterns(self):
+        """
+        注册OBV指标的形态到全局形态注册表
+        """
+        # 注册OBV趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_UPTREND",
+            display_name="OBV上升趋势",
+            description="OBV持续上升，表明买盘资金持续流入",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_DOWNTREND",
+            display_name="OBV下降趋势",
+            description="OBV持续下降，表明卖盘资金持续流出",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_SIDEWAYS",
+            display_name="OBV横盘整理",
+            description="OBV横盘整理，表明资金流向不明确",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册OBV均线交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_GOLDEN_CROSS",
+            display_name="OBV上穿均线",
+            description="OBV上穿其均线，表明资金流入加速",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_DEATH_CROSS",
+            display_name="OBV下穿均线",
+            description="OBV下穿其均线，表明资金流出加速",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册OBV背离形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BULLISH_DIVERGENCE",
+            display_name="OBV正背离",
+            description="价格创新低但OBV未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BEARISH_DIVERGENCE",
+            display_name="OBV负背离",
+            description="价格创新高但OBV未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册OBV突破形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BREAKOUT_HIGH",
+            display_name="OBV突破前期高点",
+            description="OBV突破前期高点，表明资金流入创新高",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=22.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_BREAKDOWN_LOW",
+            display_name="OBV跌破前期低点",
+            description="OBV跌破前期低点，表明资金流出创新低",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-22.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册量价配合形态
+        self.register_pattern_to_registry(
+            pattern_id="OBV_VOLUME_PRICE_HARMONY",
+            display_name="OBV量价配合良好",
+            description="OBV与价格趋势一致，量价配合良好",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="OBV_VOLUME_PRICE_DIVERGENCE",
+            display_name="OBV量价背离",
+            description="OBV与价格趋势背离，需要谨慎",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0,
+            polarity="NEGATIVE"
+        )
     
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -702,9 +821,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=15.0
+            score_impact=15.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="OBV_DEATH_CROSS",
             display_name="OBV死叉",
@@ -712,9 +832,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 注册OBV趋势形态
         registry.register(
             pattern_id="OBV_UPTREND",
@@ -723,9 +844,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=12.0
+            score_impact=12.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="OBV_DOWNTREND",
             display_name="OBV下降趋势",
@@ -733,7 +855,8 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity=PatternPolarity.NEGATIVE
         )
         
         # 注册OBV背离形态
@@ -744,9 +867,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=20.0
+            score_impact=20.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="OBV_BEARISH_DIVERGENCE",
             display_name="OBV顶背离",
@@ -754,9 +878,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 注册OBV爆量形态
         registry.register(
             pattern_id="OBV_RAPID_INCREASE",
@@ -765,9 +890,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=18.0
+            score_impact=18.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="OBV_RAPID_DECREASE",
             display_name="OBV快速下跌",
@@ -775,7 +901,8 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity=PatternPolarity.NEGATIVE
         )
         
         # 注册OBV稳定形态
@@ -786,9 +913,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=10.0
+            score_impact=10.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="OBV_STABLE_NEGATIVE",
             display_name="OBV稳定负值",
@@ -796,9 +924,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 注册OBV量价关系形态
         registry.register(
             pattern_id="OBV_PRICE_CONFIRMATION",
@@ -807,9 +936,10 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.NEUTRAL,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=8.0
+            score_impact=8.0,
+            polarity=PatternPolarity.NEUTRAL
         )
-        
+
         registry.register(
             pattern_id="OBV_PRICE_NON_CONFIRMATION",
             display_name="OBV量价不同步",
@@ -817,7 +947,8 @@ class OBV(BaseIndicator):
             indicator_id="OBV",
             pattern_type=PatternType.NEUTRAL,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-8.0
+            score_impact=0.0,
+            polarity=PatternPolarity.NEUTRAL
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

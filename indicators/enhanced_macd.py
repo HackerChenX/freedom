@@ -111,7 +111,157 @@ class EnhancedMACD(BaseIndicator):
             return pd.DataFrame(index=data.index)
             
         return data[existing_patterns].copy()
-    
+
+    def register_patterns(self):
+        """
+        注册EnhancedMACD指标的形态到全局形态注册表
+        """
+        # 注册MACD金叉死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="golden_cross",
+            display_name="MACD金叉",
+            description="DIF上穿DEA，表明上升动能增强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="death_cross",
+            display_name="MACD死叉",
+            description="DIF下穿DEA，表明下降动能增强",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD背离形态
+        self.register_pattern_to_registry(
+            pattern_id="bullish_divergence",
+            display_name="MACD看涨背离",
+            description="价格创新低但MACD未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="bearish_divergence",
+            display_name="MACD看跌背离",
+            description="价格创新高但MACD未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD隐藏背离形态
+        self.register_pattern_to_registry(
+            pattern_id="hidden_bullish_divergence",
+            display_name="MACD隐藏看涨背离",
+            description="价格未创新低但MACD创新低，表明上升趋势中的调整",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="hidden_bearish_divergence",
+            display_name="MACD隐藏看跌背离",
+            description="价格未创新高但MACD创新高，表明下降趋势中的反弹",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="DIF_cross_zero_up",
+            display_name="DIF上穿零轴",
+            description="DIF上穿零轴，表明多头力量占优",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DIF_cross_zero_down",
+            display_name="DIF下穿零轴",
+            description="DIF下穿零轴，表明空头力量占优",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD柱状图变化形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_turn_positive",
+            display_name="MACD柱状图转正",
+            description="MACD柱状图由负转正，表明动能转强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_turn_negative",
+            display_name="MACD柱状图转负",
+            description="MACD柱状图由正转负，表明动能转弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册双MACD协同形态（如果启用）
+        self.register_pattern_to_registry(
+            pattern_id="dual_macd_agree_bullish",
+            display_name="双MACD看涨共振",
+            description="主次MACD同时发出看涨信号，信号更可靠",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=28.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="dual_macd_agree_bearish",
+            display_name="双MACD看跌共振",
+            description="主次MACD同时发出看跌信号，信号更可靠",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-28.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="dual_macd_both_positive",
+            display_name="双MACD同时为正",
+            description="主次MACD的DIF都在零轴以上，表明强势多头市场",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="dual_macd_both_negative",
+            display_name="双MACD同时为负",
+            description="主次MACD的DIF都在零轴以下，表明强势空头市场",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强版MACD指标

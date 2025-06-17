@@ -686,7 +686,8 @@ class EnhancedDMI(BaseIndicator):
             description="+DI上穿-DI，表明上升趋势开始",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -695,7 +696,8 @@ class EnhancedDMI(BaseIndicator):
             description="-DI上穿+DI，表明下降趋势开始",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册DMI趋势强度形态
@@ -705,7 +707,8 @@ class EnhancedDMI(BaseIndicator):
             description="+DI > -DI且ADX > 25，表明强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -714,7 +717,8 @@ class EnhancedDMI(BaseIndicator):
             description="-DI > +DI且ADX > 25，表明强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册DMI趋势强度形态
@@ -724,16 +728,18 @@ class EnhancedDMI(BaseIndicator):
             description="ADX < 20，表明趋势较弱或无趋势",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="DMI_STRONG_TREND",
             display_name="DMI强趋势",
-            description="ADX > 40，表明趋势非常强烈",
+            description="ADX > 40，表明趋势非常强烈但方向需结合DI判断",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

@@ -998,7 +998,8 @@ class EnhancedMFI(MFI):
             description="MFI指标进入超买区域，表明市场可能过热",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1007,7 +1008,8 @@ class EnhancedMFI(MFI):
             description="MFI指标进入超卖区域，表明市场可能超跌",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册MFI交叉形态
@@ -1017,7 +1019,8 @@ class EnhancedMFI(MFI):
             description="MFI从下方穿越50中线，表明资金流入增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1026,7 +1029,8 @@ class EnhancedMFI(MFI):
             description="MFI从上方穿越50中线，表明资金流出增强",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MFI背离形态
@@ -1036,7 +1040,8 @@ class EnhancedMFI(MFI):
             description="价格创新低但MFI未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1045,7 +1050,8 @@ class EnhancedMFI(MFI):
             description="价格创新高但MFI未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MFI超买超卖反转形态
@@ -1055,7 +1061,8 @@ class EnhancedMFI(MFI):
             description="MFI从超卖区域向上突破，表明反弹开始",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1064,7 +1071,8 @@ class EnhancedMFI(MFI):
             description="MFI从超买区域向下突破，表明回调开始",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

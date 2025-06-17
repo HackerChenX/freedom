@@ -1022,7 +1022,8 @@ class DMI(BaseIndicator):
             description="+DI上穿-DI，显示多头趋势开始",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1031,7 +1032,8 @@ class DMI(BaseIndicator):
             description="-DI上穿+DI，显示空头趋势开始",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         # 注册ADX趋势强度形态
@@ -1041,16 +1043,18 @@ class DMI(BaseIndicator):
             description="ADX大于25，表示趋势强劲",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="ADX_WEAK_TREND",
             display_name="ADX弱趋势",
-            description="ADX小于20，表示趋势疲弱",
+            description="ADX小于20，表示趋势疲弱，可能进入盘整",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=-10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         # 注册ADX趋势方向形态
@@ -1060,16 +1064,18 @@ class DMI(BaseIndicator):
             description="ADX上升，趋势强度增强",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="ADX_FALLING",
             display_name="ADX下降",
-            description="ADX下降，趋势强度减弱",
+            description="ADX下降，趋势强度减弱，可能预示反转或盘整",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=-10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

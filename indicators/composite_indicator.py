@@ -580,60 +580,66 @@ class CompositeIndicator(BaseIndicator):
         注册组合指标特有的形态
         """
         # 注册共振形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="COMPOSITE",
+        self.register_pattern_to_registry(
             pattern_id="BULLISH_RESONANCE",
             display_name="多指标看涨共振",
             description="多个技术指标同时出现看涨信号，确认强烈的买入机会",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
             score_impact=20.0,
-            signal_type="bullish"
+            polarity="POSITIVE"
         )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="COMPOSITE",
+
+        self.register_pattern_to_registry(
             pattern_id="BEARISH_RESONANCE",
             display_name="多指标看跌共振",
             description="多个技术指标同时出现看跌信号，确认强烈的卖出机会",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
             score_impact=-20.0,
-            signal_type="bearish"
+            polarity="NEGATIVE"
         )
-        
+
         # 注册趋势确认形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="COMPOSITE",
+        self.register_pattern_to_registry(
             pattern_id="TREND_OSCILLATOR_BULLISH_CONFIRMATION",
             display_name="趋势与震荡指标看涨确认",
             description="趋势指标和震荡指标同时出现看涨信号，提供更可靠的买入机会",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
             score_impact=25.0,
-            signal_type="bullish"
+            polarity="POSITIVE"
         )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="COMPOSITE",
+
+        self.register_pattern_to_registry(
             pattern_id="TREND_OSCILLATOR_BEARISH_CONFIRMATION",
             display_name="趋势与震荡指标看跌确认",
             description="趋势指标和震荡指标同时出现看跌信号，提供更可靠的卖出机会",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
             score_impact=-25.0,
-            signal_type="bearish"
+            polarity="NEGATIVE"
         )
-        
+
         # 注册背离形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="COMPOSITE",
+        self.register_pattern_to_registry(
             pattern_id="BULLISH_DIVERGENCE",
             display_name="看涨背离",
             description="价格创新低但指标未创新低，可能预示反转向上",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
             score_impact=15.0,
-            signal_type="bullish"
+            polarity="POSITIVE"
         )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="COMPOSITE",
+
+        self.register_pattern_to_registry(
             pattern_id="BEARISH_DIVERGENCE",
             display_name="看跌背离",
             description="价格创新高但指标未创新高，可能预示反转向下",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
             score_impact=-15.0,
-            signal_type="bearish"
+            polarity="NEGATIVE"
         )
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:

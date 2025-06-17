@@ -174,7 +174,8 @@ class ROC(BaseIndicator):
             description="ROC指标进入超买区域，价格变动率过高",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity="NEGATIVE"
         )
 
         # 注册ROC超卖形态
@@ -184,7 +185,8 @@ class ROC(BaseIndicator):
             description="ROC指标进入超卖区域，价格变动率过低",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         # 注册ROC金叉形态
@@ -194,7 +196,8 @@ class ROC(BaseIndicator):
             description="ROC上穿ROCMA，动量由负转正，可能是买入信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册ROC死叉形态
@@ -204,7 +207,8 @@ class ROC(BaseIndicator):
             description="ROC下穿ROCMA，动量由正转负，可能是卖出信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册ROC顶背离形态
@@ -214,7 +218,8 @@ class ROC(BaseIndicator):
             description="价格创新高但ROC未同步创新高，可能暗示上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册ROC底背离形态
@@ -224,7 +229,8 @@ class ROC(BaseIndicator):
             description="价格创新低但ROC未同步创新低，可能暗示下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册ROC零轴穿越形态
@@ -234,7 +240,8 @@ class ROC(BaseIndicator):
             description="ROC上穿零轴，价格变动率由负转正",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=8.0
+            score_impact=8.0,
+            polarity="POSITIVE"
         )
 
         # 注册ROC零轴穿越形态
@@ -244,7 +251,8 @@ class ROC(BaseIndicator):
             description="ROC下穿零轴，价格变动率由正转负",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-8.0
+            score_impact=-8.0,
+            polarity="NEGATIVE"
         )
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:

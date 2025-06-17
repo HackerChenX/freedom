@@ -1082,7 +1082,8 @@ class WMA(BaseIndicator):
             description="短期WMA上穿长期WMA，表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1091,7 +1092,8 @@ class WMA(BaseIndicator):
             description="短期WMA下穿长期WMA，表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册价格与WMA关系形态
@@ -1101,7 +1103,8 @@ class WMA(BaseIndicator):
             description="价格从下方突破WMA，看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1110,7 +1113,8 @@ class WMA(BaseIndicator):
             description="价格从上方跌破WMA，看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册WMA排列形态
@@ -1120,7 +1124,8 @@ class WMA(BaseIndicator):
             description="短期WMA在长期WMA上方，表明强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1129,7 +1134,8 @@ class WMA(BaseIndicator):
             description="短期WMA在长期WMA下方，表明强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:

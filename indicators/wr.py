@@ -15,7 +15,7 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 from indicators.base_indicator import BaseIndicator
 from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
 
 logger = get_logger(__name__)
 
@@ -472,9 +472,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         registry.register(
             pattern_id="WR_OVERSOLD",
             display_name="WR超卖",
@@ -482,9 +483,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=15.0
+            score_impact=15.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         # 注册WR趋势形态
         registry.register(
             pattern_id="WR_UPTREND",
@@ -493,9 +495,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=12.0
+            score_impact=12.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="WR_DOWNTREND",
             display_name="WR下降趋势",
@@ -503,7 +506,8 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity=PatternPolarity.NEGATIVE
         )
         
         # 注册WR零轴穿越形态
@@ -514,9 +518,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=10.0
+            score_impact=10.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="WR_CROSS_BELOW_MID",
             display_name="WR下穿中轴",
@@ -524,9 +529,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 注册WR背离形态
         registry.register(
             pattern_id="WR_BULLISH_DIVERGENCE",
@@ -535,9 +541,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=20.0
+            score_impact=20.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="WR_BEARISH_DIVERGENCE",
             display_name="WR顶背离",
@@ -545,9 +552,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 注册WR反转形态
         registry.register(
             pattern_id="WR_BULLISH_REVERSAL",
@@ -556,9 +564,10 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=18.0
+            score_impact=18.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="WR_BEARISH_REVERSAL",
             display_name="WR超买反转",
@@ -566,7 +575,8 @@ class WR(BaseIndicator):
             indicator_id="WR",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity=PatternPolarity.NEGATIVE
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
@@ -769,7 +779,8 @@ class WR(BaseIndicator):
             description="WR值低于-90，表明市场极度超卖，存在强烈反弹机会",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
     def get_pattern_info(self, pattern_id: str) -> dict:
         """
@@ -863,7 +874,8 @@ class WR(BaseIndicator):
             description="WR值在-90到-80之间，表明市场超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -872,7 +884,8 @@ class WR(BaseIndicator):
             description="WR值在-20到-10之间，表明市场超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -881,7 +894,8 @@ class WR(BaseIndicator):
             description="WR值高于-10，表明市场极度超买，存在强烈回调风险",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册WR穿越形态
@@ -891,7 +905,8 @@ class WR(BaseIndicator):
             description="WR从超卖区域向上突破-80线，看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -900,7 +915,8 @@ class WR(BaseIndicator):
             description="WR从超买区域向下突破-20线，看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册WR反转形态
@@ -910,7 +926,8 @@ class WR(BaseIndicator):
             description="WR在超卖区见底回升，表明可能形成底部",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -919,5 +936,6 @@ class WR(BaseIndicator):
             description="WR在超买区触顶回落，表明可能形成顶部",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )

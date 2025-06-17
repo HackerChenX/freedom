@@ -692,7 +692,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="主升浪启动买点，前期横盘整理后放量突破",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0
+            score_impact=40.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -701,7 +702,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="主升浪调整后买点，回调至支撑位后反弹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -710,7 +712,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="超跌反弹买点，连续下跌后出现反转信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -719,7 +722,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="突破后小幅回踩不破颈线位，再次上攻",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -728,7 +732,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="连续缩量横盘整理后KDJ底部金叉突破",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -737,7 +742,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="在支撑位附近出现长下影线并获得确认",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -746,26 +752,29 @@ class ZXMPatternIndicator(BaseIndicator):
             description="均线粘合后首次放量突破发散",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册吸筹形态
         self.register_pattern_to_registry(
             pattern_id="VOLUME_DECREASE",
             display_name="缩量阴线吸筹",
-            description="初期吸筹特征，缩量小实体阴线",
+            description="初期吸筹特征，缩量小实体阴线，观察信号",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=5.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="DECLINE_SLOW_DOWN",
             display_name="下跌趋势变缓",
-            description="均线下跌斜率变缓，吸筹迹象",
+            description="均线下跌斜率变缓，吸筹迹象，观察信号",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=5.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -774,7 +783,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="在关键支撑位获得精准支撑",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -783,7 +793,8 @@ class ZXMPatternIndicator(BaseIndicator):
             description="价格创新低但MACD未创新低的背离",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -792,16 +803,18 @@ class ZXMPatternIndicator(BaseIndicator):
             description="后期吸筹特征，缩量横盘整理",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=5.0
+            score_impact=5.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="MA_CONVERGENCE",
             display_name="均线开始粘合",
-            description="均线从发散转为粘合，吸筹末期特征",
+            description="均线从发散转为粘合，吸筹末期特征，观察信号",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=8.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

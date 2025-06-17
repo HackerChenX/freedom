@@ -566,7 +566,8 @@ class SAR(BaseIndicator):
             description="SAR由下降趋势转为上升趋势，产生看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册SAR看跌反转形态
@@ -576,7 +577,8 @@ class SAR(BaseIndicator):
             description="SAR由上升趋势转为下降趋势，产生看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册SAR上升趋势形态
@@ -586,7 +588,8 @@ class SAR(BaseIndicator):
             description="SAR保持在价格下方，表示上升趋势",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册SAR下降趋势形态
@@ -596,17 +599,40 @@ class SAR(BaseIndicator):
             description="SAR保持在价格上方，表示下降趋势",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册SAR高加速形态
         self.register_pattern_to_registry(
             pattern_id="SAR_HIGH_ACCELERATION",
             display_name="SAR高加速",
-            description="SAR加速因子较高，趋势强劲",
+            description="SAR加速因子较高，趋势强劲但方向需结合位置判断",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册SAR距离形态
+        self.register_pattern_to_registry(
+            pattern_id="SAR_CLOSE_TO_PRICE",
+            display_name="SAR接近价格",
+            description="SAR与价格距离较近，可能即将反转",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="SAR_FAR_FROM_PRICE",
+            display_name="SAR远离价格",
+            description="SAR与价格距离较远，趋势强劲但方向需结合位置判断",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def _register_sar_patterns(self):

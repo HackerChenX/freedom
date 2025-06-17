@@ -32,6 +32,94 @@ class AD(BaseIndicator):
         """设置指标参数"""
         pass
 
+    def register_patterns(self):
+        """
+        注册AD指标的形态到全局形态注册表
+        """
+        # 注册AD金叉死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="AD_GOLDEN_CROSS",
+            display_name="AD金叉",
+            description="AD上穿其均线，表明买盘资金增加",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="AD_DEATH_CROSS",
+            display_name="AD死叉",
+            description="AD下穿其均线，表明卖盘资金增加",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册AD背离形态
+        self.register_pattern_to_registry(
+            pattern_id="AD_PRICE_DIVERGENCE_TOP",
+            display_name="AD与价格顶背离",
+            description="价格创新高但AD未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="AD_PRICE_DIVERGENCE_BOTTOM",
+            display_name="AD与价格底背离",
+            description="价格创新低但AD未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册AD趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="AD_UPTREND",
+            display_name="AD上升趋势",
+            description="AD持续上升，表明买盘持续涌入",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="AD_DOWNTREND",
+            display_name="AD下降趋势",
+            description="AD持续下降，表明卖盘持续涌出",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册AD快速变化形态
+        self.register_pattern_to_registry(
+            pattern_id="AD_RAPID_INCREASE",
+            display_name="AD快速上涨",
+            description="AD快速上涨，表明买盘资金快速涌入",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="AD_RAPID_DECREASE",
+            display_name="AD快速下跌",
+            description="AD快速下跌，表明卖盘资金快速涌出",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0,
+            polarity="NEGATIVE"
+        )
+
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算AD指标的置信度。

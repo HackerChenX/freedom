@@ -716,7 +716,8 @@ class ZXMWashPlate(BaseIndicator):
             description="价格区间震荡，成交量忽大忽小的洗盘形态",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -725,7 +726,8 @@ class ZXMWashPlate(BaseIndicator):
             description="短期回调后在支撑位止跌的洗盘形态",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -734,7 +736,8 @@ class ZXMWashPlate(BaseIndicator):
             description="向下假突破后快速收复的洗盘形态",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -743,7 +746,8 @@ class ZXMWashPlate(BaseIndicator):
             description="长时间小幅波动，成交量萎缩的洗盘形态",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=22.0
+            score_impact=22.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -752,7 +756,8 @@ class ZXMWashPlate(BaseIndicator):
             description="连续阴线但实体缩小，下影线增多的洗盘形态",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         # 注册综合形态
@@ -762,7 +767,8 @@ class ZXMWashPlate(BaseIndicator):
             description="任何类型的ZXM洗盘形态",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -771,7 +777,8 @@ class ZXMWashPlate(BaseIndicator):
             description="同时出现多种洗盘形态，洗盘更充分",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -780,7 +787,8 @@ class ZXMWashPlate(BaseIndicator):
             description="洗盘形态完成，准备上攻",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册确认形态
@@ -790,7 +798,8 @@ class ZXMWashPlate(BaseIndicator):
             description="洗盘伴随成交量确认",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -799,7 +808,8 @@ class ZXMWashPlate(BaseIndicator):
             description="洗盘过程中获得重要支撑",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -808,7 +818,8 @@ class ZXMWashPlate(BaseIndicator):
             description="洗盘后的突破信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

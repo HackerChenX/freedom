@@ -356,6 +356,43 @@ class ZXMDailyTrendUp(BaseIndicator):
 
         return patterns_df
 
+    def register_patterns(self):
+        """
+        注册ZXMDailyTrendUp指标的形态到全局形态注册表
+        """
+        # 注册日线均线上移形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_TREND_UP",
+            display_name="ZXM日线趋势向上",
+            description="60日或120日均线向上移动，表明中长期趋势向好",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册双均线上移形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_DOUBLE_MA_UP",
+            display_name="ZXM日线双均线上移",
+            description="60日和120日均线同时向上移动，趋势更强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册单均线上移形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DAILY_SINGLE_MA_UP",
+            display_name="ZXM日线单均线上移",
+            description="仅有一条均线向上移动，趋势较弱",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
     def set_parameters(self, **kwargs):
         """
         设置指标参数
@@ -786,6 +823,43 @@ class ZXMWeeklyTrendUp(BaseIndicator):
             patterns_df.loc[:, "周线趋势由强转弱"] = trend_strong_to_weak
 
         return patterns_df
+
+    def register_patterns(self):
+        """
+        注册ZXMWeeklyTrendUp指标的形态到全局形态注册表
+        """
+        # 注册周线均线上移形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WEEKLY_TREND_UP",
+            display_name="ZXM周线趋势向上",
+            description="10周、20周或30周均线向上移动，表明中期趋势向好",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册三均线同时上移形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WEEKLY_THREE_MA_UP",
+            display_name="ZXM周线三均线上移",
+            description="10周、20周、30周均线同时向上移动，趋势强劲",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册均线多头排列形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_WEEKLY_BULLISH_ALIGNMENT",
+            display_name="ZXM周线多头排列",
+            description="周线均线呈多头排列，价格站上均线",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
 
     def set_parameters(self, **kwargs):
         """

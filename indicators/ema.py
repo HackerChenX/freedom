@@ -142,25 +142,33 @@ class EMA(BaseIndicator):
             pattern_id=f"EMA_{p_short}_{p_long}_GOLDEN_CROSS",
             display_name=f"EMA({p_short},{p_long})金叉",
             description=f"当短期EMA({p_short})上穿长期EMA({p_long})时，被视为看涨信号。",
-            pattern_type="BULLISH"
+            pattern_type="BULLISH",
+            polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id=f"EMA_{p_short}_{p_long}_DEATH_CROSS",
             display_name=f"EMA({p_short},{p_long})死叉",
             description=f"当短期EMA({p_short})下穿长期EMA({p_long})时，被视为看跌信号。",
-            pattern_type="BEARISH"
+            pattern_type="BEARISH",
+            polarity="NEGATIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="EMA_BULLISH_ARRANGEMENT",
             display_name="EMA多头排列",
             description=f"短期EMA在长期EMA之上，表明市场处于上升趋势。",
-            pattern_type="BULLISH"
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id="EMA_BEARISH_ARRANGEMENT",
             display_name="EMA空头排列",
             description=f"短期EMA在长期EMA之下，表明市场处于下降趋势。",
-            pattern_type="BEARISH"
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
     def get_pattern_info(self, pattern_id: str) -> dict:
         """

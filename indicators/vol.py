@@ -911,7 +911,8 @@ class VOL(BaseIndicator):
             description="成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册放量下跌形态
@@ -921,17 +922,19 @@ class VOL(BaseIndicator):
             description="成交量显著放大，同时价格下跌，通常是恐慌性抛售或趋势反转的信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册缩量上涨形态
         self.register_pattern_to_registry(
             pattern_id="VOL_WEAK_UP",
             display_name="缩量上涨",
-            description="价格上涨但成交量萎缩，可能表示上涨动力不足",
-            pattern_type="BEARISH",
+            description="价格上涨但成交量萎缩，需要结合位置判断意义",
+            pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=-10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         # 注册缩量下跌形态
@@ -941,17 +944,19 @@ class VOL(BaseIndicator):
             description="价格下跌且成交量萎缩，可能表示下跌动能衰竭",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=10.0,
+            polarity="POSITIVE"
         )
 
         # 注册天量形态
         self.register_pattern_to_registry(
             pattern_id="VOL_PEAK",
             display_name="天量",
-            description="成交量达到近期峰值，可能预示趋势即将反转",
-            pattern_type="BEARISH",
+            description="成交量达到近期峰值，需要结合价格行为判断意义",
+            pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=-8.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         # 注册地量形态
@@ -961,7 +966,8 @@ class VOL(BaseIndicator):
             description="成交量达到近期谷底，可能表示市场极度冷清或惜售",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=8.0
+            score_impact=8.0,
+            polarity="POSITIVE"
         )
 
         # 注册成交量金叉形态
@@ -971,7 +977,8 @@ class VOL(BaseIndicator):
             description="短期成交量均线上穿长期均线，表示成交量趋势向好",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         # 注册成交量死叉形态
@@ -981,7 +988,8 @@ class VOL(BaseIndicator):
             description="短期成交量均线下穿长期均线，表示成交量趋势转弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )
 
         # 注册均量线多头排列形态
@@ -991,7 +999,8 @@ class VOL(BaseIndicator):
             description="成交量均线呈多头排列，表示成交量趋势强劲",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         # 注册均量线空头排列形态
@@ -1001,7 +1010,8 @@ class VOL(BaseIndicator):
             description="成交量均线呈空头排列，表示成交量趋势疲弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

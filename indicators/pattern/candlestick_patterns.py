@@ -88,8 +88,8 @@ class CandlestickPatterns(BaseIndicator):
             if col not in data.columns:
                 raise ValueError(f"数据必须包含'{col}'列")
         
-        # 初始化结果数据框
-        result = data.copy()
+        # 初始化结果数据框，只保留索引，不复制原始数据列
+        result = pd.DataFrame(index=data.index)
         
         # 计算单日K线形态
         result = self._calculate_single_patterns(data, result)
@@ -901,7 +901,8 @@ class CandlestickPatterns(BaseIndicator):
             description="小实体，长下影线，几乎无上影线，底部反转信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -910,7 +911,8 @@ class CandlestickPatterns(BaseIndicator):
             description="十字星带长下影线，表明买卖力量均衡但下方有支撑",
             pattern_type="BULLISH",
             default_strength="WEAK",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -919,7 +921,8 @@ class CandlestickPatterns(BaseIndicator):
             description="长下影线，表明下方有强力买盘支撑",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册单日看跌形态
@@ -929,7 +932,8 @@ class CandlestickPatterns(BaseIndicator):
             description="小实体，长上影线，几乎无下影线，顶部反转信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -938,7 +942,8 @@ class CandlestickPatterns(BaseIndicator):
             description="十字星带长上影线，表明上方抛压沉重",
             pattern_type="BEARISH",
             default_strength="WEAK",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -947,7 +952,8 @@ class CandlestickPatterns(BaseIndicator):
             description="小实体，长上影线，短下影线，顶部反转信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册组合看涨形态
@@ -957,7 +963,8 @@ class CandlestickPatterns(BaseIndicator):
             description="阳线完全包含前一天阴线，强烈的底部反转信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -966,7 +973,8 @@ class CandlestickPatterns(BaseIndicator):
             description="阴线后接长阳线，阳线开盘价低于前日最低价",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -975,7 +983,8 @@ class CandlestickPatterns(BaseIndicator):
             description="长阴线+十字星+长阳线，经典的底部反转形态",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0
+            score_impact=35.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -984,7 +993,8 @@ class CandlestickPatterns(BaseIndicator):
             description="长阴线后第二天以低于前日收盘价开盘，收于前日开盘价之上",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册组合看跌形态
@@ -994,7 +1004,8 @@ class CandlestickPatterns(BaseIndicator):
             description="阴线完全包含前一天阳线，强烈的顶部反转信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1003,7 +1014,8 @@ class CandlestickPatterns(BaseIndicator):
             description="阳线后接长阴线，阴线开盘价高于前日最高价",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1012,7 +1024,8 @@ class CandlestickPatterns(BaseIndicator):
             description="长阳线+十字星+长阴线，经典的顶部反转形态",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-35.0
+            score_impact=-35.0,
+            polarity="NEGATIVE"
         )
 
         # 注册复合形态
@@ -1022,7 +1035,8 @@ class CandlestickPatterns(BaseIndicator):
             description="三个波谷，中间低于两侧，强烈的底部反转形态",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0
+            score_impact=40.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1031,7 +1045,8 @@ class CandlestickPatterns(BaseIndicator):
             description="三个波峰，中间高于两侧，强烈的顶部反转形态",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-40.0
+            score_impact=-40.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1040,7 +1055,8 @@ class CandlestickPatterns(BaseIndicator):
             description="W形价格形态，强烈的底部反转信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0
+            score_impact=35.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1049,7 +1065,8 @@ class CandlestickPatterns(BaseIndicator):
             description="M形价格形态，强烈的顶部反转信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-35.0
+            score_impact=-35.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1058,16 +1075,18 @@ class CandlestickPatterns(BaseIndicator):
             description="急速下跌后快速反弹，快速反转形态",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
             pattern_id="ISLAND_REVERSAL",
             display_name="岛型反转",
-            description="跳空+反向跳空形成孤岛，强烈的反转信号",
+            description="跳空+反向跳空形成孤岛，强烈的反转信号，方向需结合趋势判断",
             pattern_type="NEUTRAL",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         # 注册中性形态
@@ -1077,7 +1096,8 @@ class CandlestickPatterns(BaseIndicator):
             description="开盘价与收盘价接近，上下影线明显，表明市场犹豫",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=0.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

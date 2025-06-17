@@ -179,7 +179,8 @@ class MFI(BaseIndicator):
             description="MFI值低于10，表示严重超卖，可能出现反弹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -188,7 +189,8 @@ class MFI(BaseIndicator):
             description="MFI值低于20，表示超卖，可能出现反弹",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -197,7 +199,8 @@ class MFI(BaseIndicator):
             description="MFI值高于90，表示严重超买，可能出现回调",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -206,7 +209,8 @@ class MFI(BaseIndicator):
             description="MFI值高于80，表示超买，可能出现回调",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MFI零轴穿越形态
@@ -216,7 +220,8 @@ class MFI(BaseIndicator):
             description="MFI从下方穿越50，表明资金流入增加",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -225,7 +230,8 @@ class MFI(BaseIndicator):
             description="MFI从上方穿越50，表明资金流出增加",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MFI阈值穿越形态
@@ -235,7 +241,8 @@ class MFI(BaseIndicator):
             description="MFI从超卖区域上穿20，买入信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -244,7 +251,8 @@ class MFI(BaseIndicator):
             description="MFI从超买区域下穿80，卖出信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MFI背离形态
@@ -254,7 +262,8 @@ class MFI(BaseIndicator):
             description="价格创新低但MFI未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -263,7 +272,8 @@ class MFI(BaseIndicator):
             description="价格创新高但MFI未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MFI趋势形态
@@ -273,7 +283,8 @@ class MFI(BaseIndicator):
             description="MFI连续3个周期上升，表明资金流入持续增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -282,7 +293,8 @@ class MFI(BaseIndicator):
             description="MFI连续3个周期下降，表明资金流出持续增强",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MFI强度变化形态
@@ -292,7 +304,8 @@ class MFI(BaseIndicator):
             description="MFI单日上升超过10点，表明资金大量流入",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -301,7 +314,8 @@ class MFI(BaseIndicator):
             description="MFI单日下降超过10点，表明资金大量流出",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )
 
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: list) -> None:
@@ -1096,7 +1110,7 @@ class MFI(BaseIndicator):
         """
         注册MFI指标相关形态
         """
-        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
         
         # 获取PatternRegistry实例
         registry = PatternRegistry()
@@ -1109,9 +1123,10 @@ class MFI(BaseIndicator):
             indicator_id="MFI",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         registry.register(
             pattern_id="MFI_OVERSOLD",
             display_name="MFI超卖",
@@ -1119,7 +1134,8 @@ class MFI(BaseIndicator):
             indicator_id="MFI",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=15.0
+            score_impact=15.0,
+            polarity=PatternPolarity.POSITIVE
         )
         
         # 注册MFI零轴穿越形态

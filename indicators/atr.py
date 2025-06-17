@@ -71,7 +71,83 @@ class ATR(BaseIndicator):
         
         # 注册ATR形态
         self._register_atr_patterns()
-    
+
+    def _register_atr_patterns(self):
+        """
+        注册ATR指标形态
+        """
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
+
+        # 获取PatternRegistry实例
+        registry = PatternRegistry()
+
+        # 注册ATR波动性形态
+        registry.register(
+            pattern_id="ATR_HIGH_VOLATILITY",
+            display_name="ATR高波动",
+            description="ATR值较高，表示市场波动性增强",
+            indicator_id="ATR",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=10.0,
+            polarity=PatternPolarity.NEUTRAL
+        )
+
+        registry.register(
+            pattern_id="ATR_LOW_VOLATILITY",
+            display_name="ATR低波动",
+            description="ATR值较低，表示市场波动性减弱，可能预示变盘",
+            indicator_id="ATR",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=15.0,
+            polarity=PatternPolarity.NEUTRAL
+        )
+
+        registry.register(
+            pattern_id="ATR_RISING",
+            display_name="ATR上升",
+            description="ATR持续上升，表示波动性增强",
+            indicator_id="ATR",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=8.0,
+            polarity=PatternPolarity.NEUTRAL
+        )
+
+        registry.register(
+            pattern_id="ATR_FALLING",
+            display_name="ATR下降",
+            description="ATR持续下降，表示波动性减弱",
+            indicator_id="ATR",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.MEDIUM,
+            score_impact=5.0,
+            polarity=PatternPolarity.NEUTRAL
+        )
+
+        registry.register(
+            pattern_id="ATR_BREAKOUT",
+            display_name="ATR突破",
+            description="ATR突破历史高点，表示波动性显著增强",
+            indicator_id="ATR",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=20.0,
+            polarity=PatternPolarity.NEUTRAL
+        )
+
+        registry.register(
+            pattern_id="ATR_CONVERGENCE",
+            display_name="ATR收敛",
+            description="ATR收敛，表示波动性减弱，可能预示突破",
+            indicator_id="ATR",
+            pattern_type=PatternType.NEUTRAL,
+            default_strength=PatternStrength.STRONG,
+            score_impact=15.0,
+            polarity=PatternPolarity.NEUTRAL
+        )
+
     def set_parameters(self, **kwargs):
         """
         设置指标参数
@@ -670,7 +746,187 @@ class ATR(BaseIndicator):
                 break
         
         return duration
-    
+
+    def register_patterns(self):
+        """
+        注册ATR指标的形态到全局形态注册表
+        """
+        # 注册ATR波动性水平形态
+        self.register_pattern_to_registry(
+            pattern_id="HIGH_VOLATILITY",
+            display_name="ATR高波动性",
+            description="ATR相对值高于阈值，表示市场波动性大",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="LOW_VOLATILITY",
+            display_name="ATR低波动性",
+            description="ATR相对值低于阈值，表示市场波动性小",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="NORMAL_VOLATILITY",
+            display_name="ATR正常波动性",
+            description="ATR相对值处于正常范围，表示市场波动性正常",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册ATR趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="RISING_STRONG",
+            display_name="ATR快速上升",
+            description="ATR快速上升，表示波动性显著增加",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="RISING",
+            display_name="ATR上升",
+            description="ATR上升，表示波动性增加",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FALLING_STRONG",
+            display_name="ATR快速下降",
+            description="ATR快速下降，表示波动性显著减少",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FALLING",
+            display_name="ATR下降",
+            description="ATR下降，表示波动性减少",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="FLAT",
+            display_name="ATR平稳",
+            description="ATR保持平稳，表示波动性稳定",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册ATR突破形态
+        self.register_pattern_to_registry(
+            pattern_id="BREAKOUT",
+            display_name="ATR突破",
+            description="ATR突破上升，表示波动性快速增加",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册ATR与价格关系形态
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_VOLATILE",
+            display_name="价格波动超ATR预期",
+            description="价格波动范围大于ATR预期，表示市场可能超预期变化",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PRICE_STABLE",
+            display_name="价格波动低于ATR预期",
+            description="价格波动范围小于ATR预期，表示市场可能被压制",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册ATR收敛发散形态
+        self.register_pattern_to_registry(
+            pattern_id="CONVERGENCE",
+            display_name="ATR收敛",
+            description="ATR逐渐收敛，表示波动性减弱",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="DIVERGENCE",
+            display_name="ATR发散",
+            description="ATR逐渐发散，表示波动性增强",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册市场状态形态
+        self.register_pattern_to_registry(
+            pattern_id="VOLATILITY_EXPLOSION",
+            display_name="ATR波动爆发",
+            description="ATR波动性爆发式增长，表示市场可能剧烈波动",
+            pattern_type="NEUTRAL",
+            default_strength="VERY_STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VOLATILITY_COLLAPSE",
+            display_name="ATR波动崩塌",
+            description="ATR波动性急剧下降，表示市场可能进入平静期",
+            pattern_type="NEUTRAL",
+            default_strength="VERY_STRONG",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MARKET_VOLATILE",
+            display_name="ATR高波动市场",
+            description="ATR表明市场处于高波动状态",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MARKET_QUIET",
+            display_name="ATR低波动市场",
+            description="ATR表明市场处于低波动状态",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
@@ -697,170 +953,7 @@ class ATR(BaseIndicator):
     
         return signals
     
-    def _register_atr_patterns(self):
-        """
-        注册ATR形态
-        """
-        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
-        
-        # 波动性水平形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="HIGH_VOLATILITY",
-            display_name="ATR高波动性",
-            description="ATR相对值高于阈值，表示市场波动性大",
-            score_impact=10.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="LOW_VOLATILITY",
-            display_name="ATR低波动性",
-            description="ATR相对值低于0.5，表示市场波动性小",
-            score_impact=8.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="NORMAL_VOLATILITY",
-            display_name="ATR正常波动性",
-            description="ATR相对值处于正常范围，表示市场波动性正常",
-            score_impact=0.0,
-            signal_type="neutral"
-        )
-        
-        # ATR趋势形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="RISING_STRONG",
-            display_name="ATR快速上升",
-            description="ATR快速上升，表示波动性显著增加",
-            score_impact=15.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="RISING",
-            display_name="ATR上升",
-            description="ATR上升，表示波动性增加",
-            score_impact=10.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="FALLING_STRONG",
-            display_name="ATR快速下降",
-            description="ATR快速下降，表示波动性显著减少",
-            score_impact=-10.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="FALLING",
-            display_name="ATR下降",
-            description="ATR下降，表示波动性减少",
-            score_impact=-5.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="FLAT",
-            display_name="ATR平稳",
-            description="ATR保持平稳，表示波动性稳定",
-            score_impact=0.0,
-            signal_type="neutral"
-        )
-        
-        # ATR突破形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="BREAKOUT",
-            display_name="ATR突破",
-            description="ATR突破上升，表示波动性快速增加",
-            score_impact=20.0,
-            signal_type="neutral"
-        )
-        
-        # ATR与价格关系
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="PRICE_VOLATILE",
-            display_name="价格波动超ATR预期",
-            description="价格波动范围大于ATR预期，表示市场可能超预期变化",
-            score_impact=15.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="PRICE_STABLE",
-            display_name="价格波动低于ATR预期",
-            description="价格波动范围小于ATR预期，表示市场可能被压制",
-            score_impact=-15.0,
-            signal_type="neutral"
-        )
-        
-        # ATR收敛/发散形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="CONVERGENCE",
-            display_name="ATR收敛",
-            description="ATR逐渐收敛，表示波动性减弱",
-            score_impact=-10.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="DIVERGENCE",
-            display_name="ATR发散",
-            description="ATR逐渐发散，表示波动性增强",
-            score_impact=10.0,
-            signal_type="neutral"
-        )
-        
-        # 市场状态形态
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="VOLATILITY_EXPLOSION",
-            display_name="ATR波动爆发",
-            description="ATR波动性爆发式增长，表示市场可能剧烈波动",
-            score_impact=25.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="VOLATILITY_COLLAPSE",
-            display_name="ATR波动崩塌",
-            description="ATR波动性急剧下降，表示市场可能进入平静期",
-            score_impact=-25.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="MARKET_VOLATILE",
-            display_name="ATR高波动市场",
-            description="ATR表明市场处于高波动状态",
-            score_impact=15.0,
-            signal_type="neutral"
-        )
-        
-        PatternRegistry.register_indicator_pattern(
-            indicator_type="ATR",
-            pattern_id="MARKET_QUIET",
-            display_name="ATR低波动市场",
-            description="ATR表明市场处于低波动状态",
-            score_impact=-15.0,
-            signal_type="neutral"
-        )
+
     def get_pattern_info(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息

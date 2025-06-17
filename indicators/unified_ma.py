@@ -781,7 +781,8 @@ class UnifiedMA(BaseIndicator):
             description="短期移动平均线上穿长期移动平均线，通常是看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册死叉形态
@@ -791,7 +792,8 @@ class UnifiedMA(BaseIndicator):
             description="短期移动平均线下穿长期移动平均线，通常是看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册多头排列形态
@@ -801,7 +803,8 @@ class UnifiedMA(BaseIndicator):
             description="短期、中期、长期移动平均线呈多头排列，表明强劲上升趋势",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册空头排列形态
@@ -811,7 +814,8 @@ class UnifiedMA(BaseIndicator):
             description="短期、中期、长期移动平均线呈空头排列，表明强劲下降趋势",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册价格突破形态
@@ -821,7 +825,8 @@ class UnifiedMA(BaseIndicator):
             description="价格向上突破长期移动平均线，可能是趋势转换信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -830,17 +835,19 @@ class UnifiedMA(BaseIndicator):
             description="价格向下跌破长期移动平均线，可能是趋势转换信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册盘整突破形态
         self.register_pattern_to_registry(
             pattern_id="MA_BREAKOUT_FROM_CONSOLIDATION",
             display_name="MA盘整突破",
-            description="移动平均线从盘整状态突破，可能预示新趋势开始",
+            description="移动平均线从盘整状态突破，方向需要进一步确认",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=10.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

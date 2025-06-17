@@ -543,7 +543,8 @@ class CMO(BaseIndicator):
             description=f"CMO值低于{self.oversold}，表示超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -552,7 +553,8 @@ class CMO(BaseIndicator):
             description=f"CMO值高于{self.overbought}，表示超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册CMO零轴穿越形态
@@ -562,7 +564,8 @@ class CMO(BaseIndicator):
             description="CMO从负值区域穿越零轴",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -571,7 +574,8 @@ class CMO(BaseIndicator):
             description="CMO从正值区域穿越零轴",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册CMO超买超卖区域穿越形态
@@ -581,7 +585,8 @@ class CMO(BaseIndicator):
             description=f"CMO从超卖区域上穿{self.oversold}线",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -590,7 +595,8 @@ class CMO(BaseIndicator):
             description=f"CMO从超买区域下穿{self.overbought}线",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
     def get_pattern_info(self, pattern_id: str = None) -> Dict[str, Any]:

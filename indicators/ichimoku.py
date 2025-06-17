@@ -70,7 +70,7 @@ class Ichimoku(BaseIndicator):
         """
         注册一目均衡表指标形态
         """
-        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
         
         # 获取PatternRegistry实例
         registry = PatternRegistry()
@@ -83,9 +83,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=15.0
+            score_impact=15.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_TK_CROSS_BEARISH",
             display_name="一目均衡表死叉",
@@ -93,7 +94,8 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity=PatternPolarity.NEGATIVE
         )
         
         # 价格与云图关系形态
@@ -104,9 +106,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=12.0
+            score_impact=12.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_PRICE_BELOW_KUMO",
             display_name="价格位于云层之下",
@@ -114,9 +117,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_PRICE_IN_KUMO",
             display_name="价格位于云层之中",
@@ -124,9 +128,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.NEUTRAL,
             default_strength=PatternStrength.WEAK,
-            score_impact=0.0
+            score_impact=0.0,
+            polarity=PatternPolarity.NEUTRAL
         )
-        
+
         # 价格突破云层形态
         registry.register(
             pattern_id="ICHIMOKU_PRICE_BREAK_KUMO_UP",
@@ -135,9 +140,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=20.0
+            score_impact=20.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_PRICE_BREAK_KUMO_DOWN",
             display_name="价格向下突破云层",
@@ -145,7 +151,8 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity=PatternPolarity.NEGATIVE
         )
         
         # 滞后线相关形态
@@ -156,9 +163,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=10.0
+            score_impact=10.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_CHIKOU_BELOW_PRICE",
             display_name="滞后线位于价格之下",
@@ -166,9 +174,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=-10.0
+            score_impact=-10.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 云层形态
         registry.register(
             pattern_id="ICHIMOKU_KUMO_TWIST_BULLISH",
@@ -177,9 +186,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=18.0
+            score_impact=18.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_KUMO_TWIST_BEARISH",
             display_name="云层看跌翻转",
@@ -187,7 +197,8 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.STRONG,
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity=PatternPolarity.NEGATIVE
         )
         
         registry.register(
@@ -197,9 +208,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.NEUTRAL,
             default_strength=PatternStrength.MEDIUM,
-            score_impact=5.0
+            score_impact=5.0,
+            polarity=PatternPolarity.NEUTRAL
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_KUMO_THIN",
             display_name="云层变薄",
@@ -207,9 +219,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.NEUTRAL,
             default_strength=PatternStrength.WEAK,
-            score_impact=-5.0
+            score_impact=-5.0,
+            polarity=PatternPolarity.NEGATIVE
         )
-        
+
         # 组合形态
         registry.register(
             pattern_id="ICHIMOKU_STRONG_BULLISH",
@@ -218,9 +231,10 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BULLISH,
             default_strength=PatternStrength.VERY_STRONG,
-            score_impact=25.0
+            score_impact=25.0,
+            polarity=PatternPolarity.POSITIVE
         )
-        
+
         registry.register(
             pattern_id="ICHIMOKU_STRONG_BEARISH",
             display_name="一目均衡表强烈看跌",
@@ -228,7 +242,8 @@ class Ichimoku(BaseIndicator):
             indicator_id="ICHIMOKU",
             pattern_type=PatternType.BEARISH,
             default_strength=PatternStrength.VERY_STRONG,
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity=PatternPolarity.NEGATIVE
         )
     
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
@@ -993,7 +1008,8 @@ class Ichimoku(BaseIndicator):
             description="转换线上穿基准线，看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1002,7 +1018,8 @@ class Ichimoku(BaseIndicator):
             description="转换线下穿基准线，看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册价格与云图关系形态
@@ -1012,7 +1029,8 @@ class Ichimoku(BaseIndicator):
             description="价格位于云层上方，看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1021,7 +1039,8 @@ class Ichimoku(BaseIndicator):
             description="价格位于云层下方，看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册价格突破云图形态
@@ -1031,7 +1050,8 @@ class Ichimoku(BaseIndicator):
             description="价格从下方突破云层，强烈看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1040,7 +1060,8 @@ class Ichimoku(BaseIndicator):
             description="价格从上方突破云层，强烈看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
         # 注册云图翻转形态
@@ -1050,7 +1071,8 @@ class Ichimoku(BaseIndicator):
             description="先行带A上穿先行带B，云层由红变绿",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0
+            score_impact=18.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1059,7 +1081,8 @@ class Ichimoku(BaseIndicator):
             description="先行带A下穿先行带B，云层由绿变红",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0
+            score_impact=-18.0,
+            polarity="NEGATIVE"
         )
 
         # 注册综合形态
@@ -1069,7 +1092,8 @@ class Ichimoku(BaseIndicator):
             description="价格位于云层上方，转换线上穿基准线，云层看涨",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1078,7 +1102,8 @@ class Ichimoku(BaseIndicator):
             description="价格位于云层下方，转换线下穿基准线，云层看跌",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
     def calculate_score(self, data):

@@ -120,8 +120,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         # 计算基础K线形态
         basic_patterns = self.basic_patterns.calculate(data)
         
-        # 初始化结果数据框
-        result = data.copy()
+        # 初始化结果数据框，只保留索引，不复制原始数据列
+        result = pd.DataFrame(index=data.index)
         
         # 计算三星形态
         result = self._calculate_three_star_patterns(data, result)
@@ -1607,13 +1607,11 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         if not self.has_result():
             self._calculate(data, **kwargs)
 
-        patterns = pd.DataFrame(index=data.index)
-
         # 如果没有计算结果，返回空DataFrame
         if self._result is None or self._result.empty:
-            return patterns
+            return pd.DataFrame(index=data.index)
 
-        # 直接返回计算结果，因为_calculate已经包含了所有形态
+        # 返回计算结果，因为_calculate现在只包含形态列
         return self._result
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
@@ -1692,7 +1690,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="连续三根阳线，每根都收于接近最高点，强烈的上涨信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0
+            score_impact=35.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1701,7 +1700,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="连续三根阴线，每根都收于接近最低点，强烈的下跌信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-35.0
+            score_impact=-35.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1710,7 +1710,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="大阴线+小阳线在阴线实体内+突破阴线收盘价的阳线",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0
+            score_impact=30.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1719,7 +1720,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="大阳线+小阴线在阳线实体内+突破阳线收盘价的阴线",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0
+            score_impact=-30.0,
+            polarity="NEGATIVE"
         )
 
         # 注册高级复合形态
@@ -1729,7 +1731,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="大阳线后三根小K线在大阳线范围内整理，然后一根突破的阳线",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=28.0
+            score_impact=28.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1738,7 +1741,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="大阴线后三根小K线在大阴线范围内整理，然后一根突破的阴线",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-28.0
+            score_impact=-28.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1747,7 +1751,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="大阳线后2-3根小阴线在大阳线上部整理，然后一根大阳线",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         # 注册复杂形态
@@ -1757,7 +1762,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="三个波峰，中间高于两侧，强烈的顶部反转形态",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-40.0
+            score_impact=-40.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1766,7 +1772,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="三个波谷，中间低于两侧，强烈的底部反转形态",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0
+            score_impact=40.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1775,7 +1782,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="两个相近高点的顶部反转形态",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-35.0
+            score_impact=-35.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1784,26 +1792,29 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="两个相近低点的底部反转形态",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0
+            score_impact=35.0,
+            polarity="POSITIVE"
         )
 
         # 注册其他重要形态
         self.register_pattern_to_registry(
             pattern_id="BREAKAWAY",
             display_name="脱离形态",
-            description="五根K线组成的反转形态，突破性强",
+            description="五根K线组成的反转形态，突破性强，方向需结合趋势判断",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="KICKING",
             display_name="反冲形态",
-            description="两根相反方向的光头光脚K线，反转信号强烈",
+            description="两根相反方向的光头光脚K线，反转信号强烈，方向需结合趋势判断",
             pattern_type="NEUTRAL",
             default_strength="VERY_STRONG",
-            score_impact=30.0
+            score_impact=0.0,
+            polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
@@ -1812,7 +1823,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="水平上轨+上升下轨的整理形态，通常向上突破",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=8.0
+            score_impact=8.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1821,7 +1833,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="下降上轨+水平下轨的整理形态，通常向下突破",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-8.0
+            score_impact=-8.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1830,7 +1843,8 @@ class AdvancedCandlestickPatterns(BaseIndicator):
             description="U形底部+小幅回调形成柄部，长期看涨形态",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=32.0
+            score_impact=32.0,
+            polarity="POSITIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:

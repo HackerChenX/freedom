@@ -897,7 +897,8 @@ class EnhancedMACD(MACD):
             description="MACD线上穿信号线，表明上升趋势开始",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -906,7 +907,8 @@ class EnhancedMACD(MACD):
             description="MACD线下穿信号线，表明下降趋势开始",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MACD零轴穿越形态
@@ -916,7 +918,8 @@ class EnhancedMACD(MACD):
             description="MACD线从下方穿越零轴，表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -925,7 +928,8 @@ class EnhancedMACD(MACD):
             description="MACD线从上方穿越零轴，表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册MACD强度形态
@@ -935,7 +939,8 @@ class EnhancedMACD(MACD):
             description="MACD柱状体为正且趋势强度高，表明强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0
+            score_impact=25.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -944,7 +949,8 @@ class EnhancedMACD(MACD):
             description="MACD柱状体为负且趋势强度低，表明强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0
+            score_impact=-25.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

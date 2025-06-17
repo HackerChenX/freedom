@@ -1048,7 +1048,8 @@ class EnhancedCCI(BaseIndicator):
             description="CCI从下方穿越零轴，表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0
+            score_impact=15.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1057,7 +1058,8 @@ class EnhancedCCI(BaseIndicator):
             description="CCI从上方穿越零轴，表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0
+            score_impact=-15.0,
+            polarity="NEGATIVE"
         )
 
         # 注册CCI超买超卖形态
@@ -1067,7 +1069,8 @@ class EnhancedCCI(BaseIndicator):
             description="CCI值高于200，表明市场极度超买",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0
+            score_impact=-20.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1076,7 +1079,8 @@ class EnhancedCCI(BaseIndicator):
             description="CCI值低于-200，表明市场极度超卖",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0
+            score_impact=20.0,
+            polarity="POSITIVE"
         )
 
         # 注册CCI趋势形态
@@ -1086,7 +1090,8 @@ class EnhancedCCI(BaseIndicator):
             description="CCI连续上升，表明强势上升趋势",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0
+            score_impact=12.0,
+            polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
@@ -1095,7 +1100,8 @@ class EnhancedCCI(BaseIndicator):
             description="CCI连续下降，表明强势下降趋势",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0
+            score_impact=-12.0,
+            polarity="NEGATIVE"
         )
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:

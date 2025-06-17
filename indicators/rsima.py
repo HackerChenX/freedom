@@ -61,7 +61,116 @@ class RSIMA(BaseIndicator):
             "description": "RSI线下穿其移动平均线，可能预示下跌趋势。",
         }
         return patterns
-    
+
+    def register_patterns(self):
+        """
+        注册RSIMA指标的形态到全局形态注册表
+        """
+        # 注册RSI均线交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_MA_GOLDEN_CROSS",
+            display_name="RSI均线金叉",
+            description="RSI短期均线上穿长期均线，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="RSI_MA_DEATH_CROSS",
+            display_name="RSI均线死叉",
+            description="RSI短期均线下穿长期均线，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册RSI中轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_CROSS_50_UP",
+            display_name="RSI上穿50",
+            description="RSI上穿50中轴，表明多头力量增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="RSI_CROSS_50_DOWN",
+            display_name="RSI下穿50",
+            description="RSI下穿50中轴，表明空头力量增强",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册RSI超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_OVERBOUGHT",
+            display_name="RSI超买",
+            description="RSI进入超买区域(>70)，可能回调",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="RSI_OVERSOLD",
+            display_name="RSI超卖",
+            description="RSI进入超卖区域(<30)，可能反弹",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册RSI均线趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_MA_UPTREND",
+            display_name="RSI均线上升趋势",
+            description="RSI均线呈上升趋势，多头占优",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="RSI_MA_DOWNTREND",
+            display_name="RSI均线下降趋势",
+            description="RSI均线呈下降趋势，空头占优",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册RSI背离形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_BULLISH_DIVERGENCE",
+            display_name="RSI看涨背离",
+            description="价格创新低但RSI未创新低，看涨背离",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="RSI_BEARISH_DIVERGENCE",
+            display_name="RSI看跌背离",
+            description="价格创新高但RSI未创新高，看跌背离",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证DataFrame是否包含所需的列

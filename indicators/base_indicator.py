@@ -148,14 +148,15 @@ class BaseIndicator(abc.ABC):
                 except Exception as e:
                     logger.error(f"调用 {method_name} 注册形态时出错: {e}")
     
-    def register_pattern_to_registry(self, pattern_id: str, display_name: str, 
+    def register_pattern_to_registry(self, pattern_id: str, display_name: str,
                                    description: str, pattern_type: str,
-                                   default_strength: str = "MEDIUM", 
+                                   default_strength: str = "MEDIUM",
                                    score_impact: float = 0.0,
-                                   detection_function=None):
+                                   detection_function=None,
+                                   polarity: str = None):
         """
         将形态注册到全局形态注册表
-        
+
         Args:
             pattern_id: 形态ID
             display_name: 显示名称
@@ -164,12 +165,13 @@ class BaseIndicator(abc.ABC):
             default_strength: 默认强度（如 VERY_STRONG, STRONG, MEDIUM, WEAK, VERY_WEAK）
             score_impact: 对评分的影响（-100到100）
             detection_function: 形态检测函数
+            polarity: 模式极性（POSITIVE, NEGATIVE, NEUTRAL），用于买点分析过滤
         """
-        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
-        
+        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
+
         # 获取指标类型
         indicator_id = self.get_indicator_type()
-        
+
         # 获取PatternRegistry实例
         registry = PatternRegistry()
         
@@ -193,6 +195,17 @@ class BaseIndicator(abc.ABC):
             logger.warning(f"未知的强度类型: {default_strength}，使用默认MEDIUM")
             strength_enum = PatternStrength.MEDIUM
         
+        # 转换极性字符串为枚举
+        polarity_enum = None
+        if polarity:
+            polarity_upper = polarity.upper()
+            if polarity_upper == "POSITIVE":
+                polarity_enum = PatternPolarity.POSITIVE
+            elif polarity_upper == "NEGATIVE":
+                polarity_enum = PatternPolarity.NEGATIVE
+            elif polarity_upper == "NEUTRAL":
+                polarity_enum = PatternPolarity.NEUTRAL
+
         # 注册形态
         registry.register(
             pattern_id=pattern_id,
@@ -202,7 +215,8 @@ class BaseIndicator(abc.ABC):
             pattern_type=pattern_type_enum,
             default_strength=strength_enum,
             score_impact=score_impact,
-            detection_function=detection_function
+            detection_function=detection_function,
+            polarity=polarity_enum
         )
     
     @property
