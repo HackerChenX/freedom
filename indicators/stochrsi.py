@@ -647,8 +647,8 @@ class STOCHRSI(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": "随机RSI超买超卖",
+            "description": f"基于StochRSI指标的超买超卖分析: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0

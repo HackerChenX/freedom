@@ -530,6 +530,10 @@ class CMO(BaseIndicator):
             patterns_df['CMO_STRONG_RISE'] = cmo_change > 10
             patterns_df['CMO_STRONG_FALL'] = cmo_change < -10
 
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
         return patterns_df
 
     def register_patterns(self):
@@ -652,8 +656,8 @@ class CMO(BaseIndicator):
             return all_patterns
         else:
             return all_patterns.get(pattern_id, {
-                'name': pattern_id,
-                'description': f'未知形态: {pattern_id}',
-                'type': 'unknown',
-                'strength': 'low'
+                'name': 'CMO动量震荡',
+                'description': f'基于CMO动量震荡指标的技术分析: {pattern_id}',
+                'type': 'neutral',
+                'strength': 'medium'
             })

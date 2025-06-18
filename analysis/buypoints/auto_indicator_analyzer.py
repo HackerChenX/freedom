@@ -358,10 +358,31 @@ class AutoIndicatorAnalyzer:
                     patterns_result_safe = patterns_result.copy()
                     patterns_result_safe = patterns_result_safe.reset_index(drop=True)
 
-                    # 确保所有列都是布尔类型，避免数据类型冲突
+                    # 只处理布尔类型的列，过滤掉非形态数据列
+                    pattern_columns = []
                     for col in patterns_result_safe.columns:
-                        if patterns_result_safe[col].dtype != bool:
-                            patterns_result_safe[col] = patterns_result_safe[col].astype(bool)
+                        # 检查列是否是形态列（布尔类型或可转换为布尔类型）
+                        try:
+                            # 尝试检查列的数据类型和内容
+                            col_data = patterns_result_safe[col]
+                            if col_data.dtype == bool:
+                                pattern_columns.append(col)
+                            elif col_data.dtype in ['int64', 'float64'] and col_data.isin([0, 1, True, False]).all():
+                                # 如果是0/1的数值列，转换为布尔类型
+                                patterns_result_safe[col] = col_data.astype(bool)
+                                pattern_columns.append(col)
+                            else:
+                                # 跳过非布尔类型的列（如stockInfo字段、价格数据等）
+                                logger.debug(f"指标 {indicator_name} 跳过非形态列: {col} (类型: {col_data.dtype})")
+                        except Exception as e:
+                            logger.debug(f"指标 {indicator_name} 检查列 {col} 时出错: {e}")
+
+                    # 只保留形态列
+                    if pattern_columns:
+                        patterns_result_safe = patterns_result_safe[pattern_columns]
+                    else:
+                        logger.debug(f"指标 {indicator_name} 没有找到有效的形态列")
+                        return hit_patterns
 
                     # 安全地提取目标行的形态
                     if target_idx < len(patterns_result_safe):

@@ -37,7 +37,7 @@ class WavePattern(Enum):
     TRIANGLE = "三角形调整"        # 三角形调整(3-3-3-3-3)
     DIAGONAL = "对角线三角形"      # 对角线三角形
     COMBINATION = "组合调整"       # 组合调整
-    UNKNOWN = "未知形态"           # 未知形态
+    UNKNOWN = "波浪结构待确认"     # 波浪结构待确认
 
 
 class ElliottWave(BaseIndicator):

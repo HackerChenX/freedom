@@ -270,8 +270,8 @@ class MA(BaseIndicator):
         if len(self.periods) < 2:
             return {
                 "id": pattern_id,
-                "name": "未知形态",
-                "description": "未定义的形态",
+                "name": "均线趋势分析",
+                "description": f"基于移动平均线的趋势分析: {pattern_id}",
                 "type": "NEUTRAL",
                 "strength": "WEAK",
                 "score_impact": 0.0
@@ -318,8 +318,8 @@ class MA(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": "均线趋势分析",
+            "description": f"基于移动平均线的趋势分析: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0

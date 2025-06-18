@@ -296,8 +296,8 @@ class CrossOver(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": f"{self.fast_line}与{self.slow_line}技术形态",
+            "description": f"基于{self.fast_line}和{self.slow_line}的技术分析形态",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0
@@ -611,8 +611,8 @@ class KDJCondition(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": "KDJ条件信号",
+            "description": f"基于KDJ指标的条件判断: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0
@@ -927,8 +927,8 @@ class MACDCondition(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": f"MACD {self.line}线技术形态",
+            "description": f"基于MACD {self.line}线的技术分析形态",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0
@@ -1332,8 +1332,8 @@ class MACondition(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": f"均线{self.ma_type}{self.ma_period}技术形态",
+            "description": f"基于{self.ma_type}{self.ma_period}均线的技术分析形态",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0
@@ -1686,8 +1686,8 @@ class GenericCondition(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": f"自定义条件信号",
+            "description": f"基于条件表达式 {self.condition} 的技术分析形态",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0

@@ -1214,8 +1214,8 @@ class Ichimoku(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": "云层支撑阻力",
+            "description": f"基于一目均衡表云层的支撑阻力分析: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0

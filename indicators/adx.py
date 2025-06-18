@@ -669,173 +669,58 @@ class ADX(BaseIndicator):
         # 如果没有结果或数据不足，返回空DataFrame
         if self._result is None or len(self._result) < 2:
             return pd.DataFrame(index=data.index)
-        
+
         # 提取参数
         period = self.params["period"]
         strong_trend = self.params["strong_trend"]
-        
+
         # 获取ADX和DI数据
         adx = self._result[f'ADX{period}']
         pdi = self._result[f'PDI{period}']
         mdi = self._result[f'MDI{period}']
-        
-        # 获取最近的数据点
-        current_adx = adx.iloc[-1]
-        prev_adx = adx.iloc[-2]
-        current_pdi = pdi.iloc[-1]
-        current_mdi = mdi.iloc[-1]
-        
-        # 1. 检测ADX强度趋势
-        if current_adx > strong_trend:
-            if current_adx > prev_adx:
-                # 强趋势且ADX上升
-                strength = min(90, 50 + (current_adx - strong_trend) * 2)
-                patterns.append(PatternResult(
-                    pattern_id="ADX_STRONG_RISING",
-                    display_name="ADX强度上升趋势",
-                    strength=strength,
-                    duration=self._detect_pattern_duration(adx > strong_trend),
-                    details={"adx_value": current_adx, "threshold": strong_trend}
-                ).to_dict())
-            else:
-                # 强趋势但ADX下降
-                strength = min(80, 50 + (current_adx - strong_trend) * 1.5)
-                patterns.append(PatternResult(
-                    pattern_id="ADX_STRONG_FALLING",
-                    display_name="ADX强度下降趋势",
-                    strength=strength,
-                    duration=self._detect_pattern_duration(adx > strong_trend),
-                    details={"adx_value": current_adx, "threshold": strong_trend}
-                ).to_dict())
-        else:
-            # 弱趋势
-            strength = max(20, 40 - (strong_trend - current_adx) * 1.5)
-            patterns.append(PatternResult(
-                pattern_id="ADX_WEAK_TREND",
-                display_name="ADX弱趋势",
-                strength=strength,
-                duration=self._detect_pattern_duration(adx <= strong_trend),
-                details={"adx_value": current_adx, "threshold": strong_trend}
-            ).to_dict())
-        
-        # 2. 检测PDI和MDI的交叉
-        cross_window = min(10, len(pdi))
-        recent_pdi = pdi.tail(cross_window)
-        recent_mdi = mdi.tail(cross_window)
-        
-        pdi_cross_above = self.crossover(recent_pdi, recent_mdi)
-        mdi_cross_above = self.crossover(recent_mdi, recent_pdi)
-        
-        if pdi_cross_above.any():
-            # PDI上穿MDI - 看涨信号
-            cross_idx = np.array(pdi_cross_above).nonzero()[0]
-            if len(cross_idx) > 0:
-                last_cross = cross_idx[-1]
-                days_since_cross = len(pdi_cross_above) - 1 - last_cross
-                strength = max(60, 80 - days_since_cross * 5)
-                
-                patterns.append(PatternResult(
-                    pattern_id="ADX_BULLISH_CROSS",
-                    display_name="ADX看涨交叉",
-                    strength=strength,
-                    duration=days_since_cross + 1,
-                    details={"pdi": current_pdi, "mdi": current_mdi, "days_since_cross": days_since_cross}
-                ).to_dict())
-        
-        if mdi_cross_above.any():
-            # MDI上穿PDI - 看跌信号
-            cross_idx = np.array(mdi_cross_above).nonzero()[0]
-            if len(cross_idx) > 0:
-                last_cross = cross_idx[-1]
-                days_since_cross = len(mdi_cross_above) - 1 - last_cross
-                strength = max(60, 80 - days_since_cross * 5)
-                
-                patterns.append(PatternResult(
-                    pattern_id="ADX_BEARISH_CROSS",
-                    display_name="ADX看跌交叉",
-                    strength=strength,
-                    duration=days_since_cross + 1,
-                    details={"pdi": current_pdi, "mdi": current_mdi, "days_since_cross": days_since_cross}
-                ).to_dict())
-        
-        # 3. 检测趋势方向
-        if current_pdi > current_mdi:
-            # 上升趋势
-            pdi_mdi_diff = current_pdi - current_mdi
-            diff_ratio = pdi_mdi_diff / ((current_pdi + current_mdi) / 2)
-            strength = min(90, 50 + diff_ratio * 100)
-            
-            patterns.append(PatternResult(
-                pattern_id="ADX_UPTREND",
-                display_name="ADX上升趋势",
-                strength=strength,
-                duration=self._detect_pattern_duration(pdi > mdi),
-                details={"pdi": current_pdi, "mdi": current_mdi, "diff_ratio": diff_ratio}
-            ).to_dict())
-        else:
-            # 下降趋势
-            mdi_pdi_diff = current_mdi - current_pdi
-            diff_ratio = mdi_pdi_diff / ((current_pdi + current_mdi) / 2)
-            strength = min(90, 50 + diff_ratio * 100)
-            
-            patterns.append(PatternResult(
-                pattern_id="ADX_DOWNTREND",
-                display_name="ADX下降趋势",
-                strength=strength,
-                duration=self._detect_pattern_duration(mdi > pdi),
-                details={"pdi": current_pdi, "mdi": current_mdi, "diff_ratio": diff_ratio}
-            ).to_dict())
-        
-        # 4. 检测ADX趋势反转
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=self._result.index)
+
+        # 1. ADX强度趋势形态
+        patterns_df['ADX_STRONG_RISING'] = (adx > strong_trend) & (adx > adx.shift(1))
+        patterns_df['ADX_STRONG_FALLING'] = (adx > strong_trend) & (adx < adx.shift(1))
+        patterns_df['ADX_WEAK_TREND'] = adx <= strong_trend
+
+        # 2. PDI和MDI交叉形态
+        patterns_df['ADX_BULLISH_CROSS'] = (pdi > pdi.shift(1)) & (pdi.shift(1) <= mdi.shift(1)) & (pdi > mdi)
+        patterns_df['ADX_BEARISH_CROSS'] = (mdi > mdi.shift(1)) & (mdi.shift(1) <= pdi.shift(1)) & (mdi > pdi)
+
+        # 3. 趋势方向形态
+        patterns_df['ADX_UPTREND'] = pdi > mdi
+        patterns_df['ADX_DOWNTREND'] = mdi > pdi
+
+        # 4. ADX趋势反转形态
         if len(adx) >= 5:
-            adx_5days = adx.tail(5)
-            if adx_5days.iloc[-1] > adx_5days.iloc[-2] > adx_5days.iloc[-3] and adx_5days.iloc[-3] < adx_5days.iloc[-4] < adx_5days.iloc[-5]:
-                # ADX由下降转为上升 - 趋势即将增强
-                patterns.append(PatternResult(
-                    pattern_id="ADX_TREND_STRENGTHENING",
-                    display_name="ADX趋势增强",
-                    strength=75,
-                    duration=3,
-                    details={"adx_value": current_adx, "adx_change": current_adx - adx_5days.iloc[-5]}
-                ).to_dict())
-            
-            if adx_5days.iloc[-1] < adx_5days.iloc[-2] < adx_5days.iloc[-3] and adx_5days.iloc[-3] > adx_5days.iloc[-4] > adx_5days.iloc[-5]:
-                # ADX由上升转为下降 - 趋势即将减弱
-                patterns.append(PatternResult(
-                    pattern_id="ADX_TREND_WEAKENING",
-                    display_name="ADX趋势减弱",
-                    strength=75,
-                    duration=3,
-                    details={"adx_value": current_adx, "adx_change": adx_5days.iloc[-5] - current_adx}
-                ).to_dict())
+            # ADX趋势增强：连续3天上升且之前连续下降
+            adx_rising_3 = (adx > adx.shift(1)) & (adx.shift(1) > adx.shift(2)) & (adx.shift(2) > adx.shift(3))
+            adx_falling_before = (adx.shift(3) < adx.shift(4)) & (adx.shift(4) < adx.shift(5))
+            patterns_df['ADX_TREND_STRENGTHENING'] = adx_rising_3 & adx_falling_before
+
+            # ADX趋势减弱：连续3天下降且之前连续上升
+            adx_falling_3 = (adx < adx.shift(1)) & (adx.shift(1) < adx.shift(2)) & (adx.shift(2) < adx.shift(3))
+            adx_rising_before = (adx.shift(3) > adx.shift(4)) & (adx.shift(4) > adx.shift(5))
+            patterns_df['ADX_TREND_WEAKENING'] = adx_falling_3 & adx_rising_before
         
-        # 5. 检测PDI和MDI的极端分离
-        if current_pdi > 0 and current_mdi > 0:
-            pdi_mdi_ratio = max(current_pdi, current_mdi) / min(current_pdi, current_mdi)
-            if pdi_mdi_ratio > 3:
-                # 极端趋势，可能即将反转
-                if current_pdi > current_mdi:
-                    patterns.append(PatternResult(
-                        pattern_id="ADX_EXTREME_UPTREND",
-                        display_name="ADX极端上升趋势",
-                        strength=85,
-                        duration=self._detect_pattern_duration(pdi / mdi > 3),
-                        details={"pdi_mdi_ratio": pdi_mdi_ratio}
-                    ).to_dict())
-                else:
-                    patterns.append(PatternResult(
-                        pattern_id="ADX_EXTREME_DOWNTREND",
-                        display_name="ADX极端下降趋势",
-                        strength=85,
-                        duration=self._detect_pattern_duration(mdi / pdi > 3),
-                        details={"pdi_mdi_ratio": pdi_mdi_ratio}
-                    ).to_dict())
-        
-        # 将结果转换为DataFrame
-        if not patterns:
-            return pd.DataFrame(columns=['pattern_id', 'display_name', 'strength', 'duration', 'details'])
-            
-        return pd.DataFrame(patterns)
+        # 5. 极端趋势形态
+        # 计算PDI/MDI比率
+        pdi_mdi_ratio = np.where((pdi > 0) & (mdi > 0),
+                                np.maximum(pdi, mdi) / np.minimum(pdi, mdi),
+                                1.0)
+
+        patterns_df['ADX_EXTREME_UPTREND'] = (pdi > mdi) & (pdi_mdi_ratio > 3)
+        patterns_df['ADX_EXTREME_DOWNTREND'] = (mdi > pdi) & (pdi_mdi_ratio > 3)
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
+        return patterns_df
 
     def _detect_pattern_duration(self, condition_series: pd.Series) -> int:
         """

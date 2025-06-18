@@ -156,11 +156,7 @@ class ATR(BaseIndicator):
             if key in self.params:
                 self.params[key] = value
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> list:
-        """
-        获取ATR指标的技术形态
-        """
-        return self.identify_patterns(data, **kwargs)
+
     
     def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -705,6 +701,10 @@ class ATR(BaseIndicator):
         
         # 波动性扩张
         patterns_df['VOLATILITY_EXPANSION'] = self._detect_volatility_expansion(atr_series)
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return patterns_df
 

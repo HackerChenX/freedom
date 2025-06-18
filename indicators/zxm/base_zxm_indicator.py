@@ -110,9 +110,9 @@ class BaseZXMIndicator(BaseIndicator, ABC):
         
         # 默认形态信息
         default_pattern = {
-            'name': pattern_id.replace('_', ' ').title(),
-            'description': f'{pattern_id}形态',
-            'type': 'UNKNOWN'
+            'name': 'ZXM技术分析',
+            'description': f'基于ZXM指标体系的技术分析: {pattern_id}',
+            'type': 'NEUTRAL'
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)

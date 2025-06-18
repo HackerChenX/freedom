@@ -669,9 +669,9 @@ class SentimentAnalysis(BaseIndicator):
         
         # 默认形态信息
         default_pattern = {
-            'name': pattern_id.replace('_', ' ').title(),
-            'description': f'{pattern_id}形态',
-            'type': 'UNKNOWN'
+            'name': '市场情绪分析',
+            'description': f'基于市场情绪指标的技术分析: {pattern_id}',
+            'type': 'NEUTRAL'
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)

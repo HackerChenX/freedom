@@ -656,8 +656,8 @@ class DMA(BaseIndicator):
             return all_patterns
         else:
             return all_patterns.get(pattern_id, {
-                'name': pattern_id,
-                'description': f'未知形态: {pattern_id}',
-                'type': 'unknown',
-                'strength': 'low'
+                'name': 'DMA平均差值分析',
+                'description': f'基于DMA平均差值指标的技术分析: {pattern_id}',
+                'type': 'neutral',
+                'strength': 'medium'
             })

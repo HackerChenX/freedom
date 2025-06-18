@@ -388,7 +388,7 @@ class ZXMBuyPointScore(BaseIndicator):
             # 买点指标满足情况
             count = last_row["BuyPointCount"]
             if count == 3:
-                patterns.append("全部买点指标满足")
+                patterns.append("三重买点信号共振")
             elif count == 2:
                 patterns.append("多数买点指标满足")
             elif count == 1:
@@ -434,7 +434,7 @@ class ZXMBuyPointScore(BaseIndicator):
             pattern_boost += 0.2
         elif "高买点评分(75-90)" in patterns:
             pattern_boost += 0.15
-        if "全部买点指标满足" in patterns:
+        if "三重买点信号共振" in patterns:
             pattern_boost += 0.2
         elif "多数买点指标满足" in patterns:
             pattern_boost += 0.15
@@ -478,7 +478,7 @@ class ZXMBuyPointScore(BaseIndicator):
 
         # 买点指标满足情况形态
         count = result["BuyPointCount"]
-        patterns_df.loc[:, "全部买点指标满足"] = count == 3
+        patterns_df.loc[:, "三重买点信号共振"] = count == 3
         patterns_df.loc[:, "多数买点指标满足"] = count == 2
         patterns_df.loc[:, "少数买点指标满足"] = count == 1
         patterns_df.loc[:, "无买点指标满足"] = count == 0
@@ -1187,7 +1187,7 @@ class StockScoreCalculator(BaseIndicator):
         final_score = result["FinalScore"]
         patterns_df.loc[:, "高分股票"] = final_score >= 80
         patterns_df.loc[:, "优质股票"] = (final_score >= 70) & (final_score < 80)
-        patterns_df.loc[:, "中等股票"] = (final_score >= 40) & (final_score < 70)
+        patterns_df.loc[:, "综合评分适中"] = (final_score >= 40) & (final_score < 70)
         patterns_df.loc[:, "低分股票"] = final_score < 30
 
         # 各分项强弱形态

@@ -105,7 +105,11 @@ class RSI(BaseIndicator):
         # 超买和超卖
         patterns_df['RSI_OVERBOUGHT'] = calculated_data[f'rsi_{self.period}'] > self.overbought
         patterns_df['RSI_OVERSOLD'] = calculated_data[f'rsi_{self.period}'] < self.oversold
-        
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
         return patterns_df
 
     def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
@@ -399,8 +403,8 @@ class RSI(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": "RSI强弱指标形态",
+            "description": f"基于RSI强弱指标的技术分析形态: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0

@@ -111,7 +111,8 @@ class BIAS(BaseIndicator):
         # 4. BIAS背离形态（简化版本）
         if len(bias_values) >= 10:
             # 计算价格和BIAS的相关性来检测背离
-            price_trend = calculated_data['close'].diff(5)  # 5日价格变化
+            # 使用原始数据中的close列
+            price_trend = data['close'].diff(5)  # 5日价格变化
             bias_trend = bias_values.diff(5)  # 5日BIAS变化
 
             # 背离：价格上涨但BIAS下降，或价格下跌但BIAS上升
@@ -125,6 +126,10 @@ class BIAS(BaseIndicator):
             patterns_df['BIAS_BULLISH_DIVERGENCE'] = False
             patterns_df['BIAS_BEARISH_DIVERGENCE'] = False
             patterns_df['BIAS_DIVERGENCE'] = False
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return patterns_df
 

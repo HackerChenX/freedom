@@ -641,8 +641,8 @@ class CCI(BaseIndicator):
         Returns:
             pd.DataFrame: 包含形态信息的DataFrame
         """
-        # 确保已计算CCI
-        calculated_data = self.calculate(data, **kwargs)
+        # 确保已计算CCI - 使用_calculate避免包含原始数据列
+        calculated_data = self._calculate(data)
 
         if calculated_data is None or calculated_data.empty:
             return pd.DataFrame(index=data.index)
@@ -683,6 +683,10 @@ class CCI(BaseIndicator):
         if len(cci) >= 5:
             patterns_df['CCI_LOW_STAGNATION'] = cci.rolling(5).apply(lambda x: (x < -100).all(), raw=False)
             patterns_df['CCI_HIGH_STAGNATION'] = cci.rolling(5).apply(lambda x: (x > 100).all(), raw=False)
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return patterns_df
 

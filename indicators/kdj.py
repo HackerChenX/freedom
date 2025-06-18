@@ -1149,3 +1149,73 @@ class KDJ(BaseIndicator):
             'strength': 'medium',
             'type': 'neutral'
         })
+
+    def register_patterns(self):
+        """
+        注册KDJ指标的形态到全局形态注册表
+        """
+        # 注册KDJ金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_GOLDEN_CROSS",
+            display_name="KDJ金叉",
+            description="K线上穿D线形成金叉，表明短期动量转强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册KDJ死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_DEATH_CROSS",
+            display_name="KDJ死叉",
+            description="K线下穿D线形成死叉，表明短期动量转弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册KDJ超买形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_OVERBOUGHT",
+            display_name="KDJ超买",
+            description="KDJ值超过80，进入超买区域，需警惕回调风险",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册KDJ超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_OVERSOLD",
+            display_name="KDJ超卖",
+            description="KDJ值低于20，进入超卖区域，存在反弹机会",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册KDJ底背离形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_BULLISH_DIVERGENCE",
+            display_name="KDJ底背离",
+            description="价格创新低而KDJ未创新低，形成底背离",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册KDJ顶背离形态
+        self.register_pattern_to_registry(
+            pattern_id="KDJ_BEARISH_DIVERGENCE",
+            display_name="KDJ顶背离",
+            description="价格创新高而KDJ未创新高，形成顶背离",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )

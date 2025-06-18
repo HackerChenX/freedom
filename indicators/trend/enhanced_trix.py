@@ -1469,8 +1469,8 @@ class EnhancedTRIX(TRIX):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": "TRIX趋势转折",
+            "description": f"基于TRIX指标的趋势转折分析: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0

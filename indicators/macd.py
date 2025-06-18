@@ -449,11 +449,13 @@ class MACD(BaseIndicator):
             'MACD_DOUBLE_TOP': double_top,
             'MACD_DOUBLE_BOTTOM': double_bottom
         }, index=data.index)
-        
-        # 合并基础计算结果和形态结果
-        final_df = pd.concat([macd_df, patterns_df], axis=1)
-        
-        return final_df
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
+        # 只返回形态结果，不包含基础计算结果
+        return patterns_df
 
     def get_indicator_type(self) -> str:
         """
@@ -476,10 +478,13 @@ class MACD(BaseIndicator):
         """
         # 首先获取所有形态
         patterns_df = self.get_patterns(data)
-        
+
+        # 获取MACD计算结果用于额外评分
+        macd_df = self._calculate(data, **self._parameters)
+
         # 初始化得分
         total_score = pd.Series(0.0, index=data.index)
-        
+
         # 定义各形态的得分权重
         pattern_scores = {
             'MACD_GOLDEN_CROSS': 20.0,
@@ -493,7 +498,7 @@ class MACD(BaseIndicator):
             'MACD_DOUBLE_BOTTOM': 22.0,
             'MACD_DOUBLE_TOP': -22.0
         }
-        
+
         # 计算各形态得分并累加
         for pattern, score in pattern_scores.items():
             if pattern in patterns_df.columns:
@@ -501,22 +506,22 @@ class MACD(BaseIndicator):
                 pattern_signal = patterns_df[pattern].astype(int)
                 # 计算并累加得分
                 total_score += pattern_signal * score
-        
+
         # 基于MACD线和信号线的相对位置添加额外分数
-        if 'macd_line' in patterns_df.columns and 'macd_signal' in patterns_df.columns:
+        if 'macd_line' in macd_df.columns and 'macd_signal' in macd_df.columns:
             # 当MACD线在信号线上方，给予正分
-            macd_above_signal = (patterns_df['macd_line'] > patterns_df['macd_signal']).astype(int) * 5.0
+            macd_above_signal = (macd_df['macd_line'] > macd_df['macd_signal']).astype(int) * 5.0
             # 当MACD线在信号线下方，给予负分
-            macd_below_signal = (patterns_df['macd_line'] < patterns_df['macd_signal']).astype(int) * -5.0
+            macd_below_signal = (macd_df['macd_line'] < macd_df['macd_signal']).astype(int) * -5.0
             # 累加得分
             total_score += macd_above_signal + macd_below_signal
-        
+
         # 基于MACD线相对于零轴的位置添加额外分数
-        if 'macd_line' in patterns_df.columns:
+        if 'macd_line' in macd_df.columns:
             # 当MACD线在零轴上方，给予正分
-            macd_above_zero = (patterns_df['macd_line'] > 0).astype(int) * 5.0
+            macd_above_zero = (macd_df['macd_line'] > 0).astype(int) * 5.0
             # 当MACD线在零轴下方，给予负分
-            macd_below_zero = (patterns_df['macd_line'] < 0).astype(int) * -5.0
+            macd_below_zero = (macd_df['macd_line'] < 0).astype(int) * -5.0
             # 累加得分
             total_score += macd_above_zero + macd_below_zero
         
@@ -765,15 +770,18 @@ class MACD(BaseIndicator):
         """
         # 获取所有形态
         patterns_df = self.get_patterns(data)
-        
+
+        # 获取MACD计算结果用于上下文信息
+        macd_df = self._calculate(data, **self._parameters)
+
         # 检查形态ID是否存在
         if pattern_id not in patterns_df.columns:
             logger.warning(f"形态 '{pattern_id}' 未在结果中找到。")
             return []
-            
+
         # 查找形态发生的时间点
         event_dates = patterns_df[patterns_df[pattern_id]].index
-        
+
         analysis_results = []
         for date in event_dates:
             result = {
@@ -781,9 +789,9 @@ class MACD(BaseIndicator):
                 'pattern_id': pattern_id,
                 'message': f"在 {date.strftime('%Y-%m-%d')} 检测到形态 '{pattern_id}'。",
                 'context': {
-                    'macd_line': patterns_df.at[date, 'macd_line'],
-                    'macd_signal': patterns_df.at[date, 'macd_signal'],
-                    'macd_histogram': patterns_df.at[date, 'macd_histogram'],
+                    'macd_line': macd_df.at[date, 'macd_line'],
+                    'macd_signal': macd_df.at[date, 'macd_signal'],
+                    'macd_histogram': macd_df.at[date, 'macd_histogram'],
                     'close_price': data.at[date, 'close']
                 }
             }
@@ -935,3 +943,114 @@ class MACD(BaseIndicator):
             'strength': 'medium',
             'type': 'neutral'
         })
+
+    def register_patterns(self):
+        """
+        注册MACD指标的形态到全局形态注册表
+        """
+        # 注册MACD金叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_GOLDEN_CROSS",
+            display_name="MACD金叉",
+            description="MACD快线(DIF)上穿慢线(DEA)，形成金叉买入信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册MACD死叉形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_DEATH_CROSS",
+            display_name="MACD死叉",
+            description="MACD快线(DIF)下穿慢线(DEA)，形成死叉卖出信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD底背离形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_BULLISH_DIVERGENCE",
+            display_name="MACD底背离",
+            description="价格创新低而MACD未创新低，形成底背离",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册MACD顶背离形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_BEARISH_DIVERGENCE",
+            display_name="MACD顶背离",
+            description="价格创新高而MACD未创新高，形成顶背离",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD零轴突破形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_ZERO_CROSS_ABOVE",
+            display_name="MACD零轴上穿",
+            description="MACD快慢线上穿零轴，确认上升趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_ZERO_CROSS_BELOW",
+            display_name="MACD零轴下穿",
+            description="MACD快慢线下穿零轴，确认下降趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD柱状图形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_HISTOGRAM_EXPANDING",
+            display_name="MACD柱状图扩张",
+            description="MACD柱状图持续扩张，表明当前趋势动能不断增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_HISTOGRAM_CONTRACTING",
+            display_name="MACD柱状图收缩",
+            description="MACD柱状图持续收缩，表明当前趋势动能逐渐减弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MACD双顶双底形态
+        self.register_pattern_to_registry(
+            pattern_id="MACD_DOUBLE_TOP",
+            display_name="MACD双顶",
+            description="MACD形成双顶形态，可能预示价格见顶",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-22.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MACD_DOUBLE_BOTTOM",
+            display_name="MACD双底",
+            description="MACD形成双底形态，可能预示价格见底",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=22.0,
+            polarity="POSITIVE"
+        )

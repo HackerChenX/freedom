@@ -56,7 +56,109 @@ class OBV(BaseIndicator):
         """
         获取OBV指标的技术形态
         """
-        return pd.DataFrame(index=data.index)
+        # 确保已计算OBV
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        if self._result is None:
+            return pd.DataFrame(index=data.index)
+
+        obv = self._result['obv']
+        obv_ma = self._result['obv_ma']
+        close = self._result['close']
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 1. OBV趋势形态
+        patterns_df['OBV_UPTREND'] = obv > obv.shift(5)
+        patterns_df['OBV_DOWNTREND'] = obv < obv.shift(5)
+        patterns_df['OBV_SIDEWAYS'] = (obv <= obv.shift(5)) & (obv >= obv.shift(5))
+
+        # 2. OBV均线交叉形态
+        from utils.indicator_utils import crossover, crossunder
+        patterns_df['OBV_GOLDEN_CROSS'] = crossover(obv, obv_ma)
+        patterns_df['OBV_DEATH_CROSS'] = crossunder(obv, obv_ma)
+
+        # 3. OBV背离形态
+        patterns_df['OBV_BULLISH_DIVERGENCE'] = self._detect_bullish_divergence(close, obv)
+        patterns_df['OBV_BEARISH_DIVERGENCE'] = self._detect_bearish_divergence(close, obv)
+
+        # 4. OBV突破形态
+        patterns_df['OBV_BREAKOUT_HIGH'] = self._detect_obv_breakout(obv, direction='up')
+        patterns_df['OBV_BREAKDOWN_LOW'] = self._detect_obv_breakout(obv, direction='down')
+
+        # 5. 量价配合形态
+        patterns_df['OBV_VOLUME_PRICE_HARMONY'] = self._detect_volume_price_harmony_pattern(close, obv, 'positive')
+        patterns_df['OBV_VOLUME_PRICE_DIVERGENCE'] = self._detect_volume_price_harmony_pattern(close, obv, 'negative')
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
+        return patterns_df
+
+    def _detect_bullish_divergence(self, price: pd.Series, obv: pd.Series) -> pd.Series:
+        """检测OBV正背离"""
+        divergence = pd.Series(False, index=price.index)
+
+        if len(price) < 20:
+            return divergence
+
+        # 寻找价格和OBV的低点
+        window = 5
+        for i in range(window, len(price) - window):
+            price_window = price.iloc[i-window:i+window+1]
+            obv_window = obv.iloc[i-window:i+window+1]
+
+            # 价格创新低但OBV未创新低
+            if (price.iloc[i] == price_window.min() and
+                obv.iloc[i] != obv_window.min() and
+                obv.iloc[i] > obv_window.min()):
+                divergence.iloc[i:i+5] = True
+
+        return divergence
+
+    def _detect_bearish_divergence(self, price: pd.Series, obv: pd.Series) -> pd.Series:
+        """检测OBV负背离"""
+        divergence = pd.Series(False, index=price.index)
+
+        if len(price) < 20:
+            return divergence
+
+        # 寻找价格和OBV的高点
+        window = 5
+        for i in range(window, len(price) - window):
+            price_window = price.iloc[i-window:i+window+1]
+            obv_window = obv.iloc[i-window:i+window+1]
+
+            # 价格创新高但OBV未创新高
+            if (price.iloc[i] == price_window.max() and
+                obv.iloc[i] != obv_window.max() and
+                obv.iloc[i] < obv_window.max()):
+                divergence.iloc[i:i+5] = True
+
+        return divergence
+
+    def _detect_volume_price_harmony_pattern(self, price: pd.Series, obv: pd.Series, harmony_type: str) -> pd.Series:
+        """检测量价配合形态"""
+        harmony = pd.Series(False, index=price.index)
+
+        if len(price) < 5:
+            return harmony
+
+        # 计算价格和OBV的趋势
+        price_trend = price.diff(5)
+        obv_trend = obv.diff(5)
+
+        if harmony_type == 'positive':
+            # 量价配合良好：价涨量增或价跌量减
+            harmony = ((price_trend > 0) & (obv_trend > 0)) | ((price_trend < 0) & (obv_trend < 0))
+        elif harmony_type == 'negative':
+            # 量价背离：价涨量减或价跌量增
+            harmony = ((price_trend > 0) & (obv_trend < 0)) | ((price_trend < 0) & (obv_trend > 0))
+
+        return harmony
 
     def register_patterns(self):
         """
@@ -1105,8 +1207,8 @@ class OBV(BaseIndicator):
 
         return pattern_info_map.get(pattern_id, {
             "id": pattern_id,
-            "name": "未知形态",
-            "description": "未定义的形态",
+            "name": "OBV量价配合",
+            "description": f"基于OBV指标的量价配合分析: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "WEAK",
             "score_impact": 0.0

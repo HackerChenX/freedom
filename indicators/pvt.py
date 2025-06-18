@@ -164,6 +164,10 @@ class PVT(BaseIndicator):
             patterns_df['PVT_STRONG_UP'] = False
             patterns_df['PVT_STRONG_DOWN'] = False
 
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
         return patterns_df
 
     def register_patterns(self):
@@ -881,11 +885,7 @@ class PVT(BaseIndicator):
     
         return signals
         
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """
-        获取PVT指标的技术形态
-        """
-        return pd.DataFrame(index=data.index)
+
 
     def get_pattern_info(self, pattern_id: str) -> dict:
         """

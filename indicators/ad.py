@@ -185,8 +185,8 @@ class AD(BaseIndicator):
             self.calculate(data)
             
         # 获取AD指标数据
-        ad_data = self.result['AD']
-        ad_ma_data = self.result['AD_MA']
+        ad_data = self._result['AD']
+        ad_ma_data = self._result['AD_MA']
         
         # 检测金叉形态
         if len(ad_data) >= 2:

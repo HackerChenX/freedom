@@ -18,7 +18,7 @@ DEFAULT_CONFIG = {
         'host': 'localhost',
         'port': 8123, 
         'user': 'default',
-        'password': '******',  # 密码已隐藏，将从环境变量或用户输入获取
+        'password': '',  # 密码已隐藏，将从环境变量或用户输入获取
         'database': 'stock'
     },
     'paths': {

@@ -716,7 +716,7 @@ class Chaikin(BaseIndicator):
             return pd.DataFrame(index=data.index)
 
         chaikin_oscillator = calculated_data['chaikin_oscillator']
-        # 只创建包含形态的DataFrame，不包含原始数据列
+        # 只创建包含形态的DataFrame，不包含原始数据列或其他指标数据
         patterns_df = pd.DataFrame(index=calculated_data.index)
 
         # 1. 零轴穿越形态（使用简化的穿越逻辑）
@@ -756,6 +756,10 @@ class Chaikin(BaseIndicator):
             patterns_df['CHAIKIN_LARGE_RISE'] = chaikin_change > chaikin_std
             patterns_df['CHAIKIN_LARGE_FALL'] = chaikin_change < -chaikin_std
             patterns_df['CHAIKIN_RAPID_CHANGE'] = np.abs(chaikin_change) > 2 * chaikin_std
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return patterns_df
 

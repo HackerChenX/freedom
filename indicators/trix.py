@@ -214,6 +214,10 @@ class TRIX(BaseIndicator):
                 patterns_df['TRIX_STRONG'] = False
                 patterns_df['TRIX_WEAK'] = False
 
+            # 确保所有列都是布尔类型，填充NaN为False
+            for col in patterns_df.columns:
+                patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
             return patterns_df
         except Exception as e:
             logger.error(f"获取TRIX形态时出错: {e}")
@@ -1201,27 +1205,7 @@ class TRIX(BaseIndicator):
             detection_function=lambda data: self._detect_trix_divergence_patterns(data['close'])
         )
 
-    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
-        """
-        识别TRIX技术形态，并以DataFrame格式返回
-        """
-        # 确保已计算TRIX
-        if not self.has_result():
-            self.calculate(data, n=self.n, m=self.m)
 
-        # 检查'TRIX'列是否存在，如果不存在，则尝试从'trix'列获取
-        trix_col_name = 'TRIX' if 'TRIX' in self._result.columns else 'trix'
-        matrix_col_name = 'MATRIX' if 'MATRIX' in self._result.columns else 'trix_ma'
-
-        if trix_col_name not in self._result.columns:
-             # 如果两者都不存在，返回空DataFrame
-            return pd.DataFrame()
-            
-        patterns_df = pd.DataFrame(index=data.index)
-        patterns_df['TRIX_GOLDEN_CROSS'] = self._detect_golden_cross(self._result[trix_col_name], self._result[matrix_col_name])
-        patterns_df['TRIX_DEATH_CROSS'] = self._detect_death_cross(self._result[trix_col_name], self._result[matrix_col_name])
-
-        return patterns_df
 
     def _detect_golden_cross(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
         """检测金叉"""

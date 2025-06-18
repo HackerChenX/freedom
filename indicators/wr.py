@@ -667,6 +667,10 @@ class WR(BaseIndicator):
         patterns_df['WR_BULLISH_REVERSAL'] = (wr.shift(4) < -80) & (wr > -50) & (wr_change_5 > 20)
         patterns_df['WR_BEARISH_REVERSAL'] = (wr.shift(4) > -20) & (wr < -50) & (wr_change_5 < -20)
 
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
         return patterns_df
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
@@ -782,6 +786,78 @@ class WR(BaseIndicator):
             score_impact=25.0,
             polarity="POSITIVE"
         )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_OVERSOLD",
+            display_name="WR超卖",
+            description="WR值在-90到-80之间，表明市场超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_OVERBOUGHT",
+            display_name="WR超买",
+            description="WR值在-20到-10之间，表明市场超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_EXTREME_OVERBOUGHT",
+            display_name="WR极度超买",
+            description="WR值高于-10，表明市场极度超买，存在强烈回调风险",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册WR穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="WR_CROSS_ABOVE_OVERSOLD",
+            display_name="WR上穿超卖线",
+            description="WR从超卖区域向上突破-80线，看涨信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_CROSS_BELOW_OVERBOUGHT",
+            display_name="WR下穿超买线",
+            description="WR从超买区域向下突破-20线，看跌信号",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册WR反转形态
+        self.register_pattern_to_registry(
+            pattern_id="WR_BULLISH_REVERSAL",
+            display_name="WR超卖反转",
+            description="WR在超卖区见底回升，表明可能形成底部",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_BEARISH_REVERSAL",
+            display_name="WR超买反转",
+            description="WR在超买区触顶回落，表明可能形成顶部",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0,
+            polarity="NEGATIVE"
+        )
     def get_pattern_info(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
@@ -866,76 +942,3 @@ class WR(BaseIndicator):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
-
-
-        self.register_pattern_to_registry(
-            pattern_id="WR_OVERSOLD",
-            display_name="WR超卖",
-            description="WR值在-90到-80之间，表明市场超卖",
-            pattern_type="BULLISH",
-            default_strength="MEDIUM",
-            score_impact=15.0,
-            polarity="POSITIVE"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="WR_OVERBOUGHT",
-            display_name="WR超买",
-            description="WR值在-20到-10之间，表明市场超买",
-            pattern_type="BEARISH",
-            default_strength="MEDIUM",
-            score_impact=-15.0,
-            polarity="NEGATIVE"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="WR_EXTREME_OVERBOUGHT",
-            display_name="WR极度超买",
-            description="WR值高于-10，表明市场极度超买，存在强烈回调风险",
-            pattern_type="BEARISH",
-            default_strength="STRONG",
-            score_impact=-25.0,
-            polarity="NEGATIVE"
-        )
-
-        # 注册WR穿越形态
-        self.register_pattern_to_registry(
-            pattern_id="WR_CROSS_ABOVE_OVERSOLD",
-            display_name="WR上穿超卖线",
-            description="WR从超卖区域向上突破-80线，看涨信号",
-            pattern_type="BULLISH",
-            default_strength="MEDIUM",
-            score_impact=20.0,
-            polarity="POSITIVE"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="WR_CROSS_BELOW_OVERBOUGHT",
-            display_name="WR下穿超买线",
-            description="WR从超买区域向下突破-20线，看跌信号",
-            pattern_type="BEARISH",
-            default_strength="MEDIUM",
-            score_impact=-20.0,
-            polarity="NEGATIVE"
-        )
-
-        # 注册WR反转形态
-        self.register_pattern_to_registry(
-            pattern_id="WR_BULLISH_REVERSAL",
-            display_name="WR超卖反转",
-            description="WR在超卖区见底回升，表明可能形成底部",
-            pattern_type="BULLISH",
-            default_strength="STRONG",
-            score_impact=18.0,
-            polarity="POSITIVE"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="WR_BEARISH_REVERSAL",
-            display_name="WR超买反转",
-            description="WR在超买区触顶回落，表明可能形成顶部",
-            pattern_type="BEARISH",
-            default_strength="STRONG",
-            score_impact=-18.0,
-            polarity="NEGATIVE"
-        )

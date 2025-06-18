@@ -411,16 +411,99 @@ class PlatformBreakout(BaseIndicator):
             detection_function=self._detect_platform_retest
         )
     
-    def get_patterns(self, data: pd.DataFrame) -> List[PatternResult]:
+    def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        获取平台突破形态
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            pd.DataFrame: 包含形态信息的DataFrame
+        """
         self.ensure_columns(data, ['high', 'low', 'close'])
-        patterns = []
-        
-        for pattern_func in self._pattern_registry.values():
-            result = pattern_func(data)
-            if result:
-                patterns.append(result)
-        
-        return patterns
+
+        # 确保已计算指标
+        if not self.has_result():
+            self.calculate(data)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 检测各种形态
+        patterns_df['PLATFORM_UP_BREAKOUT'] = self._detect_breakout_pattern(data, direction='up')
+        patterns_df['PLATFORM_DOWN_BREAKOUT'] = self._detect_breakout_pattern(data, direction='down')
+        patterns_df['PLATFORM_CONSOLIDATION'] = self._detect_consolidation_pattern(data)
+        patterns_df['PLATFORM_STRONG_BREAKOUT'] = self._detect_strong_breakout_pattern(data)
+        patterns_df['PLATFORM_FALSE_BREAKOUT'] = self._detect_false_breakout_pattern(data)
+        patterns_df['PLATFORM_RETEST'] = self._detect_retest_pattern(data)
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
+
+        return patterns_df
+
+    def _detect_breakout_pattern(self, data: pd.DataFrame, direction: str) -> pd.Series:
+        """检测平台突破形态"""
+        if not self.has_result():
+            return pd.Series(False, index=data.index)
+
+        if direction == 'up' and 'up_breakout' in self._result.columns:
+            return self._result['up_breakout'].fillna(False).astype(bool)
+        elif direction == 'down' and 'down_breakout' in self._result.columns:
+            return self._result['down_breakout'].fillna(False).astype(bool)
+        else:
+            return pd.Series(False, index=data.index)
+
+    def _detect_consolidation_pattern(self, data: pd.DataFrame) -> pd.Series:
+        """检测平台整理形态"""
+        if not self.has_result() or 'is_consolidation' not in self._result.columns:
+            return pd.Series(False, index=data.index)
+        return self._result['is_consolidation'].fillna(False).astype(bool)
+
+    def _detect_strong_breakout_pattern(self, data: pd.DataFrame) -> pd.Series:
+        """检测强势突破形态"""
+        if not self.has_result():
+            return pd.Series(False, index=data.index)
+
+        # 基于突破和成交量放大的组合条件
+        breakout = pd.Series(False, index=data.index)
+        if 'up_breakout' in self._result.columns and 'volume' in data.columns:
+            up_breakout = self._result['up_breakout'].fillna(False)
+            volume_ratio = data['volume'] / data['volume'].rolling(10).mean()
+            strong_volume = volume_ratio > 1.5
+            breakout = up_breakout & strong_volume.fillna(False)
+
+        return breakout.astype(bool)
+
+    def _detect_false_breakout_pattern(self, data: pd.DataFrame) -> pd.Series:
+        """检测假突破形态"""
+        if not self.has_result() or 'is_false_breakout' not in self._result.columns:
+            return pd.Series(False, index=data.index)
+        return self._result['is_false_breakout'].fillna(False).astype(bool)
+
+    def _detect_retest_pattern(self, data: pd.DataFrame) -> pd.Series:
+        """检测平台回测形态"""
+        if not self.has_result():
+            return pd.Series(False, index=data.index)
+
+        # 简化的回测检测逻辑
+        retest = pd.Series(False, index=data.index)
+        if ('platform_upper' in self._result.columns and
+            'platform_lower' in self._result.columns and
+            'close' in data.columns):
+
+            close = data['close']
+            upper = self._result['platform_upper']
+            lower = self._result['platform_lower']
+
+            # 检测价格回到平台边界附近
+            near_upper = np.abs(close - upper) / upper < 0.02
+            near_lower = np.abs(close - lower) / lower < 0.02
+            retest = (near_upper | near_lower).fillna(False)
+
+        return retest.astype(bool)
 
     def register_patterns(self):
         """

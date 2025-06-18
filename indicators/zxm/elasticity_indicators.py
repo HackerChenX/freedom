@@ -348,7 +348,7 @@ class ZXMRiseElasticity(BaseIndicator):
             elif rise_ratio > 1.07:
                 patterns.append("中等涨幅(7%-10%)")
             else:
-                patterns.append("小涨幅(<7%)")
+                patterns.append("温和上涨(<7%)")
 
             # 历史涨幅判断
             if len(result) >= 80:
@@ -425,7 +425,7 @@ class ZXMRiseElasticity(BaseIndicator):
         patterns_df.loc[:, "极大涨幅"] = rise_ratio > 1.15
         patterns_df.loc[:, "大涨幅"] = (rise_ratio > 1.10) & (rise_ratio <= 1.15)
         patterns_df.loc[:, "中等涨幅"] = (rise_ratio > 1.07) & (rise_ratio <= 1.10)
-        patterns_df.loc[:, "小涨幅"] = rise_ratio <= 1.07
+        patterns_df.loc[:, "温和上涨"] = rise_ratio <= 1.07
 
         # 历史涨幅统计形态
         if len(result) >= 80:

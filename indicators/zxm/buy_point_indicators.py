@@ -277,28 +277,28 @@ class ZXMDailyMACD(BaseIndicator):
         # 初始化形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
 
-        # 基础形态
-        patterns_df.loc[:, "日线MACD买点信号"] = result["XG"]
-        patterns_df.loc[:, "日线MACD为正值"] = result["MACD"] > 0
-        patterns_df.loc[:, "日线MACD为负值"] = result["MACD"] < 0
-        patterns_df.loc[:, "日线MACD上升趋势"] = result["MACD"] > result["MACD"].shift(1)
-        patterns_df.loc[:, "日线MACD下降趋势"] = result["MACD"] < result["MACD"].shift(1)
+        # 基础形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_DAILY_MACD_BUY_POINT"] = result["XG"]
+        patterns_df.loc[:, "ZXM_DAILY_MACD_POSITIVE"] = result["MACD"] > 0
+        patterns_df.loc[:, "ZXM_DAILY_MACD_NEGATIVE"] = result["MACD"] < 0
+        patterns_df.loc[:, "ZXM_DAILY_MACD_RISING"] = result["MACD"] > result["MACD"].shift(1)
+        patterns_df.loc[:, "ZXM_DAILY_MACD_FALLING"] = result["MACD"] < result["MACD"].shift(1)
 
-        # DIFF和DEA关系形态
-        patterns_df.loc[:, "日线MACD多头排列"] = result["DIFF"] > result["DEA"]
-        patterns_df.loc[:, "日线MACD空头排列"] = result["DIFF"] < result["DEA"]
+        # DIFF和DEA关系形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_DAILY_MACD_BULLISH_ALIGNMENT"] = result["DIFF"] > result["DEA"]
+        patterns_df.loc[:, "ZXM_DAILY_MACD_BEARISH_ALIGNMENT"] = result["DIFF"] < result["DEA"]
 
-        # 金叉死叉形态
+        # 金叉死叉形态 - 使用注册的pattern_id
         diff_cross_above_dea = (result["DIFF"] > result["DEA"]) & (result["DIFF"].shift(1) <= result["DEA"].shift(1))
         diff_cross_below_dea = (result["DIFF"] < result["DEA"]) & (result["DIFF"].shift(1) >= result["DEA"].shift(1))
 
-        patterns_df.loc[:, "日线MACD金叉形成"] = diff_cross_above_dea
-        patterns_df.loc[:, "日线MACD死叉形成"] = diff_cross_below_dea
+        patterns_df.loc[:, "ZXM_DAILY_MACD_GOLDEN_CROSS"] = diff_cross_above_dea
+        patterns_df.loc[:, "ZXM_DAILY_MACD_DEATH_CROSS"] = diff_cross_below_dea
 
-        # MACD值区间形态
-        patterns_df.loc[:, "日线MACD接近零轴"] = abs(result["MACD"]) < 0.5
-        patterns_df.loc[:, "日线MACD严重超卖"] = result["MACD"] < -2
-        patterns_df.loc[:, "日线MACD严重超买"] = result["MACD"] > 2
+        # MACD值区间形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_DAILY_MACD_NEAR_ZERO"] = abs(result["MACD"]) < 0.5
+        patterns_df.loc[:, "ZXM_DAILY_MACD_OVERSOLD"] = result["MACD"] < -2
+        patterns_df.loc[:, "ZXM_DAILY_MACD_OVERBOUGHT"] = result["MACD"] > 2
 
         return patterns_df
 
@@ -558,7 +558,7 @@ class ZXMTurnover(BaseIndicator):
 
             # 基础形态判断
             if last_row["XG"]:
-                patterns.append("换手率买点信号")
+                patterns.append("换手率充分活跃")
 
             # 换手率活跃度判断
             turnover = last_row["Turnover"]
@@ -645,29 +645,29 @@ class ZXMTurnover(BaseIndicator):
         # 初始化形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
 
-        # 基础形态
-        patterns_df.loc[:, "换手率买点信号"] = result["XG"]
+        # 基础形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_TURNOVER_BUY_POINT"] = result["XG"]
 
-        # 换手率活跃度形态
+        # 换手率活跃度形态 - 使用注册的pattern_id
         turnover = result["Turnover"]
-        patterns_df.loc[:, "换手率极度活跃"] = turnover > 5.0
-        patterns_df.loc[:, "换手率非常活跃"] = (turnover > 2.0) & (turnover <= 5.0)
-        patterns_df.loc[:, "换手率活跃"] = (turnover > 1.0) & (turnover <= 2.0)
-        patterns_df.loc[:, "换手率一般活跃"] = (turnover > 0.7) & (turnover <= 1.0)
-        patterns_df.loc[:, "换手率低迷"] = turnover <= 0.7
+        patterns_df.loc[:, "ZXM_TURNOVER_EXTREMELY_ACTIVE"] = turnover > 5.0
+        patterns_df.loc[:, "ZXM_TURNOVER_VERY_ACTIVE"] = (turnover > 2.0) & (turnover <= 5.0)
+        patterns_df.loc[:, "ZXM_TURNOVER_ACTIVE"] = (turnover > 1.0) & (turnover <= 2.0)
+        patterns_df.loc[:, "ZXM_TURNOVER_NORMAL_ACTIVE"] = (turnover > 0.7) & (turnover <= 1.0)
+        patterns_df.loc[:, "ZXM_TURNOVER_LOW"] = turnover <= 0.7
 
-        # 相对活跃度形态
+        # 相对活跃度形态 - 使用注册的pattern_id
         if len(result) >= 20:
             avg_turnover_20 = turnover.rolling(window=20).mean()
-            patterns_df.loc[:, "换手率相对历史极度活跃"] = turnover > avg_turnover_20 * 2
-            patterns_df.loc[:, "换手率相对历史活跃"] = (turnover > avg_turnover_20 * 1.5) & (turnover <= avg_turnover_20 * 2)
-            patterns_df.loc[:, "换手率相对历史低迷"] = turnover < avg_turnover_20 * 0.5
+            patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_EXTREMELY_ACTIVE"] = turnover > avg_turnover_20 * 2
+            patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_ACTIVE"] = (turnover > avg_turnover_20 * 1.5) & (turnover <= avg_turnover_20 * 2)
+            patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_LOW"] = turnover < avg_turnover_20 * 0.5
 
-        # 换手率趋势形态
+        # 换手率趋势形态 - 使用注册的pattern_id
         if len(result) >= 5:
             recent_trend = turnover.rolling(window=5).mean()
-            patterns_df.loc[:, "换手率突然放大"] = turnover > recent_trend * 1.3
-            patterns_df.loc[:, "换手率突然缩小"] = turnover < recent_trend * 0.7
+            patterns_df.loc[:, "ZXM_TURNOVER_SUDDEN_INCREASE"] = turnover > recent_trend * 1.3
+            patterns_df.loc[:, "ZXM_TURNOVER_SUDDEN_DECREASE"] = turnover < recent_trend * 0.7
 
         return patterns_df
 
@@ -777,6 +777,16 @@ class ZXMTurnover(BaseIndicator):
             default_strength="MEDIUM",
             score_impact=12.0,
             polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_TURNOVER_SUDDEN_DECREASE",
+            display_name="ZXM换手率突然缩小",
+            description="换手率突然缩小，资金流出",
+            pattern_type="BEARISH",
+            default_strength="WEAK",
+            score_impact=-8.0,
+            polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
@@ -995,30 +1005,108 @@ class ZXMVolumeShrink(BaseIndicator):
         # 初始化形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
 
-        # 基础形态
-        patterns_df.loc[:, "缩量买点信号"] = result["XG"]
+        # 基础形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_VOLUME_SHRINK_BUY_POINT"] = result["XG"]
 
-        # 缩量程度形态
+        # 缩量程度形态 - 使用注册的pattern_id
         vol_ratio = result["VOL_RATIO"]
-        patterns_df.loc[:, "严重缩量"] = vol_ratio < 0.5
-        patterns_df.loc[:, "明显缩量"] = (vol_ratio >= 0.5) & (vol_ratio < 0.7)
-        patterns_df.loc[:, "轻微缩量"] = (vol_ratio >= 0.7) & (vol_ratio < 0.9)
-        patterns_df.loc[:, "成交量正常"] = vol_ratio >= 0.9
+        patterns_df.loc[:, "ZXM_VOLUME_SEVERE_SHRINK"] = vol_ratio < 0.5
+        patterns_df.loc[:, "ZXM_VOLUME_OBVIOUS_SHRINK"] = (vol_ratio >= 0.5) & (vol_ratio < 0.7)
+        patterns_df.loc[:, "ZXM_VOLUME_SLIGHT_SHRINK"] = (vol_ratio >= 0.7) & (vol_ratio < 0.9)
+        patterns_df.loc[:, "ZXM_VOLUME_NORMAL"] = vol_ratio >= 0.9
 
-        # 连续缩量形态
+        # 连续缩量形态 - 使用注册的pattern_id
         if len(result) >= 3:
             consecutive_shrink = pd.Series(False, index=data.index)
             for i in range(2, len(result)):
                 if all(result["XG"].iloc[i-2:i+1]):
                     consecutive_shrink.iloc[i] = True
-            patterns_df.loc[:, "连续缩量"] = consecutive_shrink
+            patterns_df.loc[:, "ZXM_VOLUME_CONSECUTIVE_SHRINK"] = consecutive_shrink
 
-        # 缩量整理形态
+        # 缩量整理形态 - 使用注册的pattern_id
         if 'close' in data.columns and len(data) >= 3:
             price_stable = abs(data['close'].pct_change(3)) < 0.05
-            patterns_df.loc[:, "缩量整理"] = result["XG"] & price_stable
+            patterns_df.loc[:, "ZXM_VOLUME_SHRINK_CONSOLIDATION"] = result["XG"] & price_stable
 
         return patterns_df
+
+    def register_patterns(self):
+        """
+        注册ZXMVolumeShrink指标的形态到全局形态注册表
+        """
+        # 注册主要买点信号
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_SHRINK_BUY_POINT",
+            display_name="ZXM缩量买点信号",
+            description="成交量明显缩量，ZXM体系买点信号",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册缩量程度形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_SEVERE_SHRINK",
+            display_name="ZXM严重缩量",
+            description="成交量严重缩量，量比<0.5",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=5.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_OBVIOUS_SHRINK",
+            display_name="ZXM明显缩量",
+            description="成交量明显缩量，量比0.5-0.7",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=3.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_SLIGHT_SHRINK",
+            display_name="ZXM轻微缩量",
+            description="成交量轻微缩量，量比0.7-0.9",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=1.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_NORMAL",
+            display_name="ZXM成交量正常",
+            description="成交量正常，量比≥0.9",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册连续缩量形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_CONSECUTIVE_SHRINK",
+            display_name="ZXM连续缩量",
+            description="连续3日缩量，市场观望情绪浓厚",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=8.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册缩量整理形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_SHRINK_CONSOLIDATION",
+            display_name="ZXM缩量整理",
+            description="缩量配合价格整理，蓄势待发",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
 
     def set_parameters(self, **kwargs):
         """
@@ -1267,30 +1355,158 @@ class ZXMMACallback(BaseIndicator):
         # 初始化形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
 
-        # 基础形态
-        patterns_df.loc[:, "均线回调买点信号"] = result["XG"]
-        patterns_df.loc[:, "回踩20日均线"] = result["A20"]
-        patterns_df.loc[:, "回踩30日均线"] = result["A30"]
-        patterns_df.loc[:, "回踩60日均线"] = result["A60"]
-        patterns_df.loc[:, "回踩120日均线"] = result["A120"]
+        # 基础形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_MA_CALLBACK_BUY_POINT"] = result["XG"]
+        patterns_df.loc[:, "ZXM_MA20_CALLBACK"] = result["A20"]
+        patterns_df.loc[:, "ZXM_MA30_CALLBACK"] = result["A30"]
+        patterns_df.loc[:, "ZXM_MA60_CALLBACK"] = result["A60"]
+        patterns_df.loc[:, "ZXM_MA120_CALLBACK"] = result["A120"]
 
-        # 多重回调形态
+        # 多重回调形态 - 使用注册的pattern_id
         ma_count = result["A20"].astype(int) + result["A30"].astype(int) + result["A60"].astype(int) + result["A120"].astype(int)
-        patterns_df.loc[:, "多重均线回调"] = ma_count >= 3
-        patterns_df.loc[:, "双重均线回调"] = ma_count == 2
-        patterns_df.loc[:, "单一均线回调"] = ma_count == 1
+        patterns_df.loc[:, "ZXM_MULTIPLE_MA_CALLBACK"] = ma_count >= 3
+        patterns_df.loc[:, "ZXM_DOUBLE_MA_CALLBACK"] = ma_count == 2
+        patterns_df.loc[:, "ZXM_SINGLE_MA_CALLBACK"] = ma_count == 1
 
-        # 支撑有效性形态
+        # 支撑有效性形态 - 使用注册的pattern_id
         if 'close' in data.columns:
             close_price = data['close']
             for ma_col, a_col, pattern_name in [
-                ("MA20", "A20", "20日线有效支撑"), ("MA30", "A30", "30日线有效支撑"),
-                ("MA60", "A60", "60日线有效支撑"), ("MA120", "A120", "120日线有效支撑")
+                ("MA20", "A20", "ZXM_MA20_SUPPORT"), ("MA30", "A30", "ZXM_MA30_SUPPORT"),
+                ("MA60", "A60", "ZXM_MA60_SUPPORT"), ("MA120", "A120", "ZXM_MA120_SUPPORT")
             ]:
                 if ma_col in result.columns:
                     patterns_df[pattern_name] = (close_price > result[ma_col]) & result[a_col]
 
         return patterns_df
+
+    def register_patterns(self):
+        """
+        注册ZXMMACallback指标的形态到全局形态注册表
+        """
+        # 注册主要买点信号
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA_CALLBACK_BUY_POINT",
+            display_name="ZXM均线回调买点信号",
+            description="价格回踩至关键均线附近，ZXM体系买点信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册具体均线回调形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA20_CALLBACK",
+            display_name="ZXM回踩20日均线",
+            description="价格回踩至20日均线4%范围内",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=8.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA30_CALLBACK",
+            display_name="ZXM回踩30日均线",
+            description="价格回踩至30日均线4%范围内",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA60_CALLBACK",
+            display_name="ZXM回踩60日均线",
+            description="价格回踩至60日均线4%范围内",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA120_CALLBACK",
+            display_name="ZXM回踩120日均线",
+            description="价格回踩至120日均线4%范围内",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册多重回调形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MULTIPLE_MA_CALLBACK",
+            display_name="ZXM多重均线回调",
+            description="同时回踩3条以上均线，支撑强劲",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DOUBLE_MA_CALLBACK",
+            display_name="ZXM双重均线回调",
+            description="同时回踩2条均线，支撑较强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_SINGLE_MA_CALLBACK",
+            display_name="ZXM单一均线回调",
+            description="回踩单一均线，支撑一般",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册支撑有效性形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA20_SUPPORT",
+            display_name="ZXM20日线有效支撑",
+            description="价格在20日均线上方获得支撑",
+            pattern_type="BULLISH",
+            default_strength="WEAK",
+            score_impact=5.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA30_SUPPORT",
+            display_name="ZXM30日线有效支撑",
+            description="价格在30日均线上方获得支撑",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=8.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA60_SUPPORT",
+            display_name="ZXM60日线有效支撑",
+            description="价格在60日均线上方获得支撑",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_MA120_SUPPORT",
+            display_name="ZXM120日线有效支撑",
+            description="价格在120日均线上方获得支撑",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
 
     def set_parameters(self, **kwargs):
         """
@@ -1499,16 +1715,16 @@ class ZXMBSAbsorb(BaseIndicator):
             else:
                 patterns.append("无吸筹信号")
 
-            # V11位置判断
+            # V11位置判断（基于吸筹技术含义）
             v11_ema = last_row["EMA_V11_3"]
             if v11_ema <= 10:
-                patterns.append("V11极低位")
+                patterns.append("主力大量吸筹区域")
             elif v11_ema <= 13:
-                patterns.append("V11低位")
+                patterns.append("主力吸筹区域")
             elif v11_ema >= 80:
-                patterns.append("V11高位")
+                patterns.append("高位调整区域")
             else:
-                patterns.append("V11中位")
+                patterns.append("吸筹观察区间")
 
             # V12动量判断
             v12_value = last_row["V12"]
@@ -1600,32 +1816,28 @@ class ZXMBSAbsorb(BaseIndicator):
         # 初始化形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
 
-        # 吸筹强度形态
+        # 吸筹强度形态 - 使用注册的pattern_id
         xg_value = result["XG"]
-        patterns_df.loc[:, "强烈吸筹信号"] = xg_value >= 5
-        patterns_df.loc[:, "明显吸筹信号"] = (xg_value >= 3) & (xg_value < 5)
-        patterns_df.loc[:, "轻微吸筹信号"] = (xg_value >= 1) & (xg_value < 3)
-        patterns_df.loc[:, "无吸筹信号"] = xg_value == 0
+        patterns_df.loc[:, "ZXM_BS_ABSORB_STRONG"] = xg_value >= 5
+        patterns_df.loc[:, "ZXM_BS_ABSORB_OBVIOUS"] = (xg_value >= 3) & (xg_value < 5)
+        patterns_df.loc[:, "ZXM_BS_ABSORB_SLIGHT"] = (xg_value >= 1) & (xg_value < 3)
 
-        # V11位置形态
+        # V11位置形态（基于吸筹技术含义）- 使用注册的pattern_id
         v11_ema = result["EMA_V11_3"]
-        patterns_df.loc[:, "V11极低位"] = v11_ema <= 10
-        patterns_df.loc[:, "V11低位"] = (v11_ema > 10) & (v11_ema <= 13)
-        patterns_df.loc[:, "V11中位"] = (v11_ema > 13) & (v11_ema < 80)
-        patterns_df.loc[:, "V11高位"] = v11_ema >= 80
+        patterns_df.loc[:, "ZXM_BS_ABSORB_HEAVY_ZONE"] = v11_ema <= 10
+        patterns_df.loc[:, "ZXM_BS_ABSORB_ZONE"] = (v11_ema > 10) & (v11_ema <= 13)
+        patterns_df.loc[:, "ZXM_BS_ABSORB_WATCH_ZONE"] = (v11_ema > 13) & (v11_ema < 80)
+        patterns_df.loc[:, "ZXM_BS_HIGH_ADJUSTMENT"] = v11_ema >= 80
 
-        # V12动量形态
+        # V12动量形态 - 使用注册的pattern_id
         v12_value = result["V12"]
-        patterns_df.loc[:, "强烈上升动量"] = v12_value > 20
-        patterns_df.loc[:, "上升动量"] = (v12_value > 13) & (v12_value <= 20)
-        patterns_df.loc[:, "动量平稳"] = (v12_value >= -20) & (v12_value <= 13)
-        patterns_df.loc[:, "下降动量"] = v12_value < -20
+        patterns_df.loc[:, "ZXM_BS_STRONG_MOMENTUM"] = v12_value > 20
+        patterns_df.loc[:, "ZXM_BS_UP_MOMENTUM"] = (v12_value > 13) & (v12_value <= 20)
+        patterns_df.loc[:, "ZXM_BS_STABLE_MOMENTUM"] = (v12_value >= -20) & (v12_value <= 13)
 
-        # 条件满足形态
-        patterns_df.loc[:, "AA条件满足"] = result["AA"]
-        patterns_df.loc[:, "BB条件满足"] = result["BB"]
-        patterns_df.loc[:, "双重吸筹确认"] = result["AA"] & result["BB"]
-        patterns_df.loc[:, "低位反弹信号"] = (v11_ema <= 13) & (v12_value > 13)
+        # 条件满足形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_BS_DOUBLE_CONFIRM"] = result["AA"] & result["BB"]
+        patterns_df.loc[:, "ZXM_BS_LOW_REBOUND"] = (v11_ema <= 13) & (v12_value > 13)
 
         return patterns_df
 
@@ -1684,15 +1896,15 @@ class BuyPointDetector(BaseIndicator):
         # 初始化形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
 
-        # 基础买点形态
-        patterns_df.loc[:, "放量上涨买点"] = result["VolumeRiseBuyPoint"]
-        patterns_df.loc[:, "回调企稳买点"] = result["PullbackStabilizeBuyPoint"]
-        patterns_df.loc[:, "突破买点"] = result["BreakoutBuyPoint"]
-        patterns_df.loc[:, "底部放量买点"] = result["BottomVolumeBuyPoint"]
-        patterns_df.loc[:, "缩量整理买点"] = result["VolumeShrinkBuyPoint"]
-        patterns_df.loc[:, "组合买点"] = result["CombinedBuyPoint"]
+        # 基础买点形态 - 使用注册的pattern_id
+        patterns_df.loc[:, "ZXM_VOLUME_RISE_BUY"] = result["VolumeRiseBuyPoint"]
+        patterns_df.loc[:, "ZXM_PULLBACK_STABILIZE_BUY"] = result["PullbackStabilizeBuyPoint"]
+        patterns_df.loc[:, "ZXM_BREAKOUT_BUY"] = result["BreakoutBuyPoint"]
+        patterns_df.loc[:, "ZXM_BOTTOM_VOLUME_BUY"] = result["BottomVolumeBuyPoint"]
+        patterns_df.loc[:, "ZXM_VOLUME_SHRINK_BUY"] = result["VolumeShrinkBuyPoint"]
+        patterns_df.loc[:, "ZXM_COMBINED_BUY"] = result["CombinedBuyPoint"]
 
-        # 买点组合形态
+        # 买点组合形态 - 使用注册的pattern_id
         buy_point_count = (
             result["VolumeRiseBuyPoint"].astype(int) +
             result["PullbackStabilizeBuyPoint"].astype(int) +
@@ -1701,13 +1913,108 @@ class BuyPointDetector(BaseIndicator):
             result["VolumeShrinkBuyPoint"].astype(int)
         )
 
-        patterns_df.loc[:, "强势多重买点组合"] = buy_point_count >= 3
-        patterns_df.loc[:, "双重买点组合"] = buy_point_count == 2
-        patterns_df.loc[:, "单一买点"] = buy_point_count == 1
-        patterns_df.loc[:, "无买点形态"] = buy_point_count == 0
+        patterns_df.loc[:, "ZXM_STRONG_MULTI_BUY"] = buy_point_count >= 3
+        patterns_df.loc[:, "ZXM_DOUBLE_BUY"] = buy_point_count == 2
+        patterns_df.loc[:, "ZXM_SINGLE_BUY"] = buy_point_count == 1
 
         return patterns_df
-    
+
+    def register_patterns(self):
+        """
+        注册BuyPointDetector指标的形态到全局形态注册表
+        """
+        # 注册基础买点形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_RISE_BUY",
+            display_name="ZXM放量上涨买点",
+            description="价格上涨配合成交量放大，涨幅适中的买点信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_PULLBACK_STABILIZE_BUY",
+            display_name="ZXM回调企稳买点",
+            description="前期上涨后小幅回调，缩量企稳回升的买点信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BREAKOUT_BUY",
+            display_name="ZXM突破买点",
+            description="突破前期高点，放量确认的买点信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BOTTOM_VOLUME_BUY",
+            display_name="ZXM底部放量买点",
+            description="底部横盘后突然放量，价格站上短期均线的买点信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_VOLUME_SHRINK_BUY",
+            display_name="ZXM缩量整理买点",
+            description="前期上涨后缩量整理，再次放量上涨的买点信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_COMBINED_BUY",
+            display_name="ZXM组合买点",
+            description="满足多种买点条件的综合买点信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册买点组合形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_STRONG_MULTI_BUY",
+            display_name="ZXM强势多重买点组合",
+            description="同时满足3种以上买点条件，买点信号极强",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=40.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_DOUBLE_BUY",
+            display_name="ZXM双重买点组合",
+            description="同时满足2种买点条件，买点信号较强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_SINGLE_BUY",
+            display_name="ZXM单一买点",
+            description="满足单一买点条件，买点信号一般",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM买点指标
@@ -2278,8 +2585,8 @@ class BuyPointDetector(BaseIndicator):
         # 默认形态信息
         default_pattern = {
             "id": pattern_id,
-            "name": pattern_id,
-            "description": f"{pattern_id}形态",
+            "name": "买点信号检测",
+            "description": f"基于ZXM买点检测的技术分析: {pattern_id}",
             "type": "NEUTRAL",
             "strength": "MEDIUM",
             "score_impact": 0.0

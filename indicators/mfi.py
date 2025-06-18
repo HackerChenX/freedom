@@ -114,28 +114,38 @@ class MFI(BaseIndicator):
         patterns_df = pd.DataFrame(index=data.index)
         mfi = self._result['mfi']
 
-        # 1. MFI超买超卖形态
+        # 只实现已注册的形态，确保形态注册与实现一致
+
+        # 1. MFI超买超卖形态（已注册）
         patterns_df['MFI_EXTREME_OVERSOLD'] = mfi < 10
         patterns_df['MFI_OVERSOLD'] = (mfi >= 10) & (mfi < 20)
         patterns_df['MFI_EXTREME_OVERBOUGHT'] = mfi > 90
         patterns_df['MFI_OVERBOUGHT'] = (mfi <= 90) & (mfi > 80)
-        patterns_df['MFI_NEUTRAL'] = (mfi >= 45) & (mfi <= 55)
 
-        # 2. MFI零轴穿越形态
+        # 2. MFI零轴穿越形态（已注册）
         patterns_df['MFI_CROSS_ABOVE_50'] = crossover(mfi, 50)
         patterns_df['MFI_CROSS_BELOW_50'] = crossunder(mfi, 50)
-        patterns_df['MFI_ABOVE_50'] = mfi > 50
-        patterns_df['MFI_BELOW_50'] = mfi < 50
 
-        # 3. MFI阈值穿越形态
+        # 3. MFI阈值穿越形态（已注册）
         patterns_df['MFI_CROSS_ABOVE_20'] = crossover(mfi, 20)
         patterns_df['MFI_CROSS_BELOW_80'] = crossunder(mfi, 80)
 
-        # 4. MFI趋势形态
-        patterns_df['MFI_RISING'] = mfi > mfi.shift(1)
-        patterns_df['MFI_FALLING'] = mfi < mfi.shift(1)
+        # 4. MFI背离形态（已注册）
+        if 'close' in data.columns and len(data) >= 20:
+            close_price = data['close']
 
-        # 连续上升/下降
+            # 计算20周期的价格和MFI趋势
+            price_trend = close_price.rolling(20).apply(lambda x: x.iloc[-1] - x.iloc[0])
+            mfi_trend = mfi.rolling(20).apply(lambda x: x.iloc[-1] - x.iloc[0])
+
+            # 背离检测
+            patterns_df['MFI_BULLISH_DIVERGENCE'] = (price_trend < -0.02) & (mfi_trend > 2)
+            patterns_df['MFI_BEARISH_DIVERGENCE'] = (price_trend > 0.02) & (mfi_trend < -2)
+        else:
+            patterns_df['MFI_BULLISH_DIVERGENCE'] = False
+            patterns_df['MFI_BEARISH_DIVERGENCE'] = False
+
+        # 5. MFI趋势形态（已注册）
         if len(mfi) >= 3:
             patterns_df['MFI_CONSECUTIVE_RISING'] = (
                 (mfi > mfi.shift(1)) &
@@ -147,24 +157,18 @@ class MFI(BaseIndicator):
                 (mfi.shift(1) < mfi.shift(2)) &
                 (mfi.shift(2) < mfi.shift(3))
             )
+        else:
+            patterns_df['MFI_CONSECUTIVE_RISING'] = False
+            patterns_df['MFI_CONSECUTIVE_FALLING'] = False
 
-        # 5. MFI背离形态（简化版）
-        if 'close' in data.columns and len(data) >= 20:
-            close_price = data['close']
-
-            # 计算20周期的价格和MFI趋势
-            price_trend = close_price.rolling(20).apply(lambda x: x.iloc[-1] - x.iloc[0])
-            mfi_trend = mfi.rolling(20).apply(lambda x: x.iloc[-1] - x.iloc[0])
-
-            # 背离检测
-            patterns_df['MFI_BULLISH_DIVERGENCE'] = (price_trend < -0.02) & (mfi_trend > 2)
-            patterns_df['MFI_BEARISH_DIVERGENCE'] = (price_trend > 0.02) & (mfi_trend < -2)
-
-        # 6. MFI强度变化形态
+        # 6. MFI强度变化形态（已注册）
         mfi_change = mfi.diff()
         patterns_df['MFI_LARGE_RISE'] = mfi_change > 10
         patterns_df['MFI_LARGE_FALL'] = mfi_change < -10
-        patterns_df['MFI_RAPID_CHANGE'] = np.abs(mfi_change) > 15
+
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return patterns_df
 
