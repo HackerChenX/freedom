@@ -51,57 +51,10 @@ COMPLETE_INDICATOR_PATTERNS_MAP = {
         'strong_bullish_consensus': {'name': 'TRIX强烈看涨共振', 'description': 'TRIX多重信号共振，形成强烈看涨态势'},
         'strong_bearish_consensus': {'name': 'TRIX强烈看跌共振', 'description': 'TRIX多重信号共振，形成强烈看跌态势'},
     },
-    'MACD': {
-        'golden_cross': {'name': 'MACD金叉', 'description': 'MACD快线(DIF)上穿慢线(DEA)，形成金叉买入信号'},
-        'death_cross': {'name': 'MACD死叉', 'description': 'MACD快线(DIF)下穿慢线(DEA)，形成死叉卖出信号'},
-        'histogram_expanding': {'name': 'MACD柱状图扩张', 'description': 'MACD柱状图持续扩张，表明当前趋势动能不断增强'},
-        'histogram_shrinking': {'name': 'MACD柱状图收缩', 'description': 'MACD柱状图持续收缩，表明当前趋势动能逐渐减弱'},
-        'zero_axis_breakthrough': {'name': 'MACD零轴突破', 'description': 'MACD快慢线突破零轴，确认趋势方向'},
-        'bullish_divergence': {'name': 'MACD底背离', 'description': '价格创新低而MACD未创新低，形成底背离'},
-        'bearish_divergence': {'name': 'MACD顶背离', 'description': '价格创新高而MACD未创新高，形成顶背离'},
-    },
-    'EnhancedMACD': {
-        'golden_cross': {'name': 'MACD金叉', 'description': 'MACD快线(DIF)上穿慢线(DEA)，形成金叉买入信号'},
-        'death_cross': {'name': 'MACD死叉', 'description': 'MACD快线(DIF)下穿慢线(DEA)，形成死叉卖出信号'},
-        'histogram_expanding': {'name': 'MACD柱状图扩张', 'description': 'MACD柱状图持续扩张，表明当前趋势动能不断增强'},
-        'histogram_shrinking': {'name': 'MACD柱状图收缩', 'description': 'MACD柱状图持续收缩，表明当前趋势动能逐渐减弱'},
-        'zero_axis_breakthrough': {'name': 'MACD零轴突破', 'description': 'MACD快慢线突破零轴，确认趋势方向'},
-        'bullish_divergence': {'name': 'MACD底背离', 'description': '价格创新低而MACD未创新低，形成底背离'},
-        'bearish_divergence': {'name': 'MACD顶背离', 'description': '价格创新高而MACD未创新高，形成顶背离'},
-    },
-    'KDJ': {
-        'golden_cross': {'name': 'KDJ金叉', 'description': 'K线上穿D线形成金叉，表明短期动量转强'},
-        'death_cross': {'name': 'KDJ死叉', 'description': 'K线下穿D线形成死叉，表明短期动量转弱'},
-        'overbought': {'name': 'KDJ超买', 'description': 'KDJ值超过80，进入超买区域，需警惕回调风险'},
-        'oversold': {'name': 'KDJ超卖', 'description': 'KDJ值低于20，进入超卖区域，存在反弹机会'},
-        'j_line_extreme': {'name': 'J线极值', 'description': 'J线达到极值水平，表明市场情绪极端'},
-    },
-    'EnhancedKDJ': {
-        'golden_cross': {'name': 'KDJ金叉', 'description': 'K线上穿D线形成金叉，表明短期动量转强'},
-        'death_cross': {'name': 'KDJ死叉', 'description': 'K线下穿D线形成死叉，表明短期动量转弱'},
-        'overbought': {'name': 'KDJ超买', 'description': 'KDJ值超过80，进入超买区域，需警惕回调风险'},
-        'oversold': {'name': 'KDJ超卖', 'description': 'KDJ值低于20，进入超卖区域，存在反弹机会'},
-        'j_line_extreme': {'name': 'J线极值', 'description': 'J线达到极值水平，表明市场情绪极端'},
-    },
-    'RSI': {
-        'overbought': {'name': 'RSI超买', 'description': 'RSI指标超过70，进入超买区域，存在回调压力'},
-        'oversold': {'name': 'RSI超卖', 'description': 'RSI指标低于30，进入超卖区域，存在反弹机会'},
-        'bullish_divergence': {'name': 'RSI底背离', 'description': '价格创新低而RSI未创新低，形成底背离'},
-        'bearish_divergence': {'name': 'RSI顶背离', 'description': '价格创新高而RSI未创新高，警示上涨动能不足'},
-    },
-    'EnhancedRSI': {
-        'overbought': {'name': 'RSI超买', 'description': 'RSI指标超过70，进入超买区域，存在回调压力'},
-        'oversold': {'name': 'RSI超卖', 'description': 'RSI指标低于30，进入超卖区域，存在反弹机会'},
-        'bullish_divergence': {'name': 'RSI底背离', 'description': '价格创新低而RSI未创新低，形成底背离'},
-        'bearish_divergence': {'name': 'RSI顶背离', 'description': '价格创新高而RSI未创新高，警示上涨动能不足'},
-    },
-    'BOLL': {
-        'upper_breakout': {'name': '布林上轨突破', 'description': '价格突破布林带上轨，表明强势上涨'},
-        'lower_breakdown': {'name': '布林下轨跌破', 'description': '价格跌破布林带下轨，表明强势下跌'},
-        'squeeze': {'name': '布林带收缩', 'description': '布林带上下轨收缩，表明波动率降低，可能酝酿突破'},
-        'expansion': {'name': '布林带扩张', 'description': '布林带上下轨扩张，表明波动率增加，趋势可能加速'},
-        'middle_line_support': {'name': '布林中轨支撑', 'description': '价格在布林带中轨获得支撑，趋势延续可能性大'},
-    },
+    # MACD相关指标已经在指标类中直接注册形态，不需要在这里重复定义
+    # KDJ相关指标已经在指标类中直接注册形态，不需要在这里重复定义
+    # RSI相关指标已经在指标类中直接注册形态，不需要在这里重复定义
+    # BOLL相关指标已经在指标类中直接注册形态，不需要在这里重复定义
 
     # 2. 成交量指标
     'VOL': {
@@ -216,6 +169,66 @@ COMPLETE_INDICATOR_PATTERNS_MAP = {
         'MTM_DEATH_CROSS': {'name': '动量死叉', 'description': '动量指标形成死叉，动量转弱'},
         'MTM_EXTREME_LOW': {'name': '动量极低', 'description': '动量指标处于极低水平'},
         'MTM_ABOVE_MA': {'name': '动量均线上方', 'description': '动量指标位于移动平均线上方'},
+        'MTM_CONSECUTIVE_RISING': {'name': '动量连续上升', 'description': '动量指标连续多日上升，上涨动能持续增强'},
+        'MTM_BULLISH_DIVERGENCE': {'name': '动量看涨背离', 'description': '动量指标与价格形成看涨背离，底部信号'},
+    },
+    'EnhancedMACD': {
+        'MACD柱状体为正': {'name': 'MACD柱状体为正', 'description': 'MACD柱状体大于零，表示上升动能'},
+        'MACD柱状体减少': {'name': 'MACD柱状体减少', 'description': 'MACD柱状体连续减少，表示动能减弱'},
+        'MACD柱状体增长': {'name': 'MACD柱状体增长', 'description': 'MACD柱状体连续增长，表示动能增强'},
+        'MACD强上升趋势': {'name': 'MACD强上升趋势', 'description': 'MACD柱状体为正且趋势强度高，表明强势上升趋势'},
+    },
+    'EnhancedTRIX': {
+        'above_zero': {'name': 'TRIX零轴上方', 'description': 'TRIX位于零轴上方，长期趋势偏多'},
+        'below_zero': {'name': 'TRIX零轴下方', 'description': 'TRIX位于零轴下方，长期趋势偏空'},
+        'rising': {'name': 'TRIX上升', 'description': 'TRIX指标上升，长期动量增强'},
+        'falling': {'name': 'TRIX下降', 'description': 'TRIX指标下降，长期动量减弱'},
+        'strong_bullish_consensus': {'name': 'TRIX强烈看涨共振', 'description': 'TRIX多重信号共振，形成强烈看涨态势'},
+        'deceleration': {'name': 'TRIX减速', 'description': 'TRIX指标减速变化，动能转变'},
+        'acceleration': {'name': 'TRIX加速上升', 'description': 'TRIX指标加速上升，表明价格上涨动能不断增强'},
+        'golden_cross': {'name': 'TRIX金叉', 'description': 'TRIX上穿其信号线，形成金叉，看涨信号'},
+    },
+    'TRIX': {
+        'Trix Above Signal': {'name': 'TRIX信号线上方', 'description': 'TRIX位于信号线上方，短期看涨'},
+        'Trix Above Zero': {'name': 'TRIX零轴上方', 'description': 'TRIX位于零轴上方，中长期看涨'},
+    },
+    'Aroon': {
+        'AROON_STRONG_UPTREND': {'name': 'Aroon强势上升趋势', 'description': 'Aroon指标显示强势上升趋势'},
+        'AROON_OSC_EXTREME_BULLISH': {'name': 'Aroon震荡指标极度看涨', 'description': 'Aroon震荡指标显示极度看涨信号'},
+    },
+    'Ichimoku': {
+        '价格位于云层之下': {'name': '价格位于云层之下', 'description': '价格位于云层下方，看跌信号'},
+    },
+    'WR': {
+        'WR_EXTREME_OVERBOUGHT': {'name': 'WR极度超买', 'description': 'WR指标处于极度超买区域，可能面临回调'},
+    },
+    'EnhancedWR': {
+        'WR_EXTREME_OVERBOUGHT': {'name': 'WR极度超买', 'description': 'WR指标处于极度超买区域，可能面临回调'},
+    },
+    'EnhancedDMI': {
+        'trend_reversal_warning': {'name': '趋势反转警告', 'description': 'DMI指标显示趋势可能即将反转的警告信号'},
+    },
+    'UnifiedMA': {
+        '均线盘整': {'name': '均线盘整', 'description': '移动平均线呈盘整状态'},
+        '价格站上长期均线': {'name': '价格站上长期均线', 'description': '价格位于长期移动平均线上方'},
+        '均线多头排列': {'name': '均线多头排列', 'description': '移动平均线呈多头排列'},
+        '长期均线上升': {'name': '长期均线上升', 'description': '长期移动平均线呈上升趋势'},
+    },
+    'MA': {
+        'MA多头排列': {'name': 'MA多头排列', 'description': '短期MA(5)在长期MA(60)之上，强劲上升趋势'},
+    },
+    'EMA': {
+        'EMA多头排列': {'name': 'EMA多头排列', 'description': '指数移动平均线呈多头排列，趋势向上'},
+    },
+    'STOCHRSI': {
+        'StochRSI超买': {'name': 'StochRSI超买', 'description': 'StochRSI进入超买区域，可能出现回调'},
+        'STOCHRSI_K_RISING': {'name': '随机RSI K线上升', 'description': '随机RSI的K线上升，动量增强'},
+    },
+    'EnhancedKDJ': {
+        'J线超卖': {'name': 'J线超卖', 'description': 'J线低于0，表明极度超卖'},
+    },
+    'KDJ': {
+        'KDJ超买': {'name': 'KDJ超买', 'description': 'KDJ值超过80，进入超买区域，需警惕回调风险'},
     },
     'MTM': {
         'MTM_ABOVE_ZERO': {'name': '动量零轴上方', 'description': '动量指标位于零轴上方，价格上涨动量积极'},
@@ -261,6 +274,46 @@ COMPLETE_INDICATOR_PATTERNS_MAP = {
         'PSY_ABOVE_MA': {'name': 'PSY均线上方', 'description': 'PSY心理线位于移动平均线上方'},
         'PSY_BELOW_MA': {'name': 'PSY均线下方', 'description': 'PSY心理线位于移动平均线下方'},
         'PSY_DEATH_CROSS': {'name': 'PSY死叉', 'description': 'PSY心理线形成死叉'},
+        'PSY_CROSS_DOWN_50': {'name': 'PSY下穿50', 'description': 'PSY心理线下穿50水平线，市场情绪转弱'},
+        'PSY_STRONG_DOWN': {'name': 'PSY强势下跌', 'description': 'PSY心理线强势下跌，市场情绪悲观'},
+        'PSY_STRONG_UP': {'name': 'PSY强势上涨', 'description': 'PSY心理线强势上涨，市场情绪乐观'},
+        'PSY_OVERSOLD': {'name': 'PSY超卖', 'description': 'PSY心理线处于超卖区域，可能出现反弹'},
+        'PSY_GOLDEN_CROSS': {'name': 'PSY金叉', 'description': 'PSY心理线形成金叉，看涨信号'},
+    },
+    'MFI': {
+        'MFI连续上升': {'name': 'MFI连续上升', 'description': 'MFI指标连续上升，资金流入持续'},
+        'MFI_LARGE_RISE': {'name': 'MFI大幅上升', 'description': 'MFI指标大幅上升，资金大量流入'},
+        'MFI_BULLISH_DIVERGENCE': {'name': 'MFI看涨背离', 'description': 'MFI与价格形成看涨背离，底部信号'},
+    },
+    'EnhancedMFI': {
+        'Mfi Overbought': {'name': 'MFI超买', 'description': 'MFI值超过80，表示超买状态'},
+        'Mfi Above 50': {'name': 'MFI高于50', 'description': 'MFI值高于50，表示资金净流入'},
+    },
+    'OBV': {
+        'OBV上升趋势': {'name': 'OBV上升趋势', 'description': 'OBV持续上升，表明资金持续流入'},
+        'OBV金叉': {'name': 'OBV金叉', 'description': 'OBV上穿其均线，表明买盘力量增强'},
+        'OBV量价配合': {'name': 'OBV量价配合', 'description': 'OBV指标与价格走势协调，量价关系健康'},
+    },
+    'VR': {
+        'VR正常': {'name': 'VR正常', 'description': '成交量比率处于正常范围'},
+        'VR_DEATH_CROSS': {'name': 'VR死叉', 'description': 'VR指标形成死叉，买盘力量减弱'},
+    },
+    'VOSC': {
+        'VOSC零轴上方': {'name': 'VOSC零轴上方', 'description': 'VOSC位于零轴上方，成交量相对活跃'},
+        'VOSC信号线上方': {'name': 'VOSC信号线上方', 'description': 'VOSC位于信号线上方，成交量趋势向好'},
+        'VOSC价格背离': {'name': 'VOSC价格背离', 'description': 'VOSC与价格走势出现背离'},
+    },
+    'VOL': {
+        '放量上涨': {'name': '放量上涨', 'description': '成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号'},
+        '均量线多头排列': {'name': '均量线多头排列', 'description': '成交量均线呈多头排列，表示成交量趋势强劲'},
+        'VOL_FALLING': {'name': '成交量下降', 'description': '成交量持续下降，交投活跃度降低'},
+    },
+    'EMV': {
+        'EMV零轴上方': {'name': 'EMV零轴上方', 'description': 'EMV位于零轴上方，买盘力量占优'},
+        'EMV均线上方': {'name': 'EMV均线上方', 'description': 'EMV位于移动平均线上方'},
+        'EMV上升': {'name': 'EMV上升', 'description': 'EMV值上升'},
+        'EMV强势上升': {'name': 'EMV强势上升', 'description': 'EMV大幅上升，买盘力量强劲'},
+        'EMV极高值': {'name': 'EMV极高值', 'description': 'EMV达到近期高点'},
     },
     'BIAS': {
         'neutral': {'name': 'BIAS中性', 'description': 'BIAS值在-5%到+5%之间，价格相对均衡'},
@@ -282,6 +335,35 @@ COMPLETE_INDICATOR_PATTERNS_MAP = {
         'KC_EXPANDING': {'name': 'KC通道扩张', 'description': '肯特纳通道扩张，波动率增加'},
         'KC_WIDE_CHANNEL': {'name': 'KC宽幅通道', 'description': '肯特纳通道处于宽幅状态'},
         'KC_BREAK_MIDDLE_UP': {'name': 'KC向上突破中轨', 'description': '价格向上突破肯特纳通道中轨'},
+        'KC_OSCILLATING': {'name': 'KC震荡', 'description': '价格在肯特纳通道中震荡'},
+    },
+    'Vortex': {
+        'VORTEX_BULLISH_CROSS': {'name': '涡旋指标金叉', 'description': 'VI+上穿VI-，形成金叉信号，看涨'},
+        'VORTEX_BEARISH_CROSS': {'name': '涡旋指标死叉', 'description': 'VI+下穿VI-，形成死叉信号，看跌'},
+        'VORTEX_VI_PLUS_ABOVE': {'name': '涡旋正值大于负值', 'description': 'VI+大于VI-，多头占优势'},
+        'VORTEX_VI_MINUS_ABOVE': {'name': '涡旋负值大于正值', 'description': 'VI-大于VI+，空头占优势'},
+        'VORTEX_VI_PLUS_STRONG': {'name': '涡旋正值强势', 'description': 'VI+值较高，多头力量强劲'},
+        'VORTEX_VI_MINUS_STRONG': {'name': '涡旋负值强势', 'description': 'VI-值较高，空头力量强劲'},
+        'VORTEX_VI_PLUS_RISING': {'name': '涡旋正值上升', 'description': 'VI+值持续上升，多头力量增强'},
+        'VORTEX_VI_MINUS_RISING': {'name': '涡旋负值上升', 'description': 'VI-值持续上升，空头力量增强'},
+        'VORTEX_VI_DIFF_RISING': {'name': '涡旋指标差值扩大', 'description': 'VI+与VI-的差值扩大，趋势增强'},
+        'VORTEX_VI_PLUS_UPTREND': {'name': '涡旋指标多头趋势', 'description': 'VI+持续大于VI-，确认多头趋势'},
+        'VORTEX_VI_MINUS_UPTREND': {'name': '涡旋负值上升趋势', 'description': 'VI-值呈上升趋势，空头力量逐渐增强'},
+        'VORTEX_VI_PLUS_BREAK_HIGH': {'name': '涡旋正值突破新高', 'description': 'VI+突破前期高点，多头力量创新高'},
+    },
+    'SAR': {
+        'SAR_BULLISH_REVERSAL': {'name': 'SAR看涨反转', 'description': 'SAR从价格上方转到下方，产生看涨反转信号'},
+        'SAR_BEARISH_REVERSAL': {'name': 'SAR看跌反转', 'description': 'SAR从价格下方转到上方，产生看跌反转信号'},
+        'SAR_UPTREND': {'name': 'SAR上升趋势', 'description': 'SAR位于价格下方，确认上升趋势'},
+        'SAR_DOWNTREND': {'name': 'SAR下降趋势', 'description': 'SAR位于价格上方，确认下降趋势'},
+        'SAR_BELOW_PRICE': {'name': 'SAR位于价格下方', 'description': 'SAR点位于价格下方，看涨信号'},
+        'SAR_ABOVE_PRICE': {'name': 'SAR位于价格上方', 'description': 'SAR点位于价格上方，看跌信号'},
+        'SAR_CLOSE_TO_PRICE': {'name': 'SAR接近价格', 'description': 'SAR点与价格距离较近，可能即将反转'},
+        'SAR_MODERATE_DISTANCE': {'name': 'SAR与价格距离适中', 'description': 'SAR点与价格保持适中距离'},
+        'SAR_FAR_FROM_PRICE': {'name': 'SAR远离价格', 'description': 'SAR点与价格距离较远，趋势强劲'},
+        'SAR_HIGH_ACCELERATION': {'name': 'SAR高加速因子', 'description': 'SAR加速因子较高，趋势动能强'},
+        'SAR_MEDIUM_ACCELERATION': {'name': 'SAR中等加速因子', 'description': 'SAR加速因子适中，趋势稳定发展'},
+        'SAR_LOW_ACCELERATION': {'name': 'SAR低加速因子', 'description': 'SAR加速因子较低，趋势刚起步'},
     },
     'StockVIX': {
         'VIX_NORMAL': {'name': 'VIX正常', 'description': '波动率指数处于正常水平'},
@@ -291,6 +373,165 @@ COMPLETE_INDICATOR_PATTERNS_MAP = {
         'VIX_STRONG_STRENGTH': {'name': 'VIX强势', 'description': 'VIX显示强势波动'},
         'VIX_SIDEWAYS': {'name': 'VIX横盘', 'description': 'VIX呈横盘整理'},
         'VIX_ANOMALY_SPIKE': {'name': 'VIX异常飙升', 'description': 'VIX出现异常飙升'},
+    },
+    'StockScoreCalculator': {
+        '综合评分适中': {'name': '综合评分适中', 'description': '股票综合评分处于适中水平，表现一般'},
+        '低波动性': {'name': '低波动性', 'description': '股票价格波动较小，走势平稳'},
+        '高波动性': {'name': '高波动性', 'description': '股票价格波动较大，走势剧烈'},
+        '趋势强劲': {'name': '趋势强劲', 'description': '股票价格趋势明显且强劲'},
+    },
+    'BounceDetector': {
+        '短期上升趋势': {'name': '短期上升趋势', 'description': '价格形成短期上升趋势，看涨信号'},
+        '明显放量': {'name': '明显放量', 'description': '成交量明显放大，表明交投活跃'},
+        '明显缩量': {'name': '明显缩量', 'description': '成交量明显减少，表明交投清淡'},
+        '大幅反弹': {'name': '大幅反弹', 'description': '价格在短期内出现大幅反弹'},
+    },
+    'TrendDetector': {
+        '上升趋势': {'name': '上升趋势', 'description': '价格处于上升趋势中'},
+        '上升趋势初期': {'name': '上升趋势初期', 'description': '价格刚开始形成上升趋势'},
+        '虚弱上升趋势': {'name': '虚弱上升趋势', 'description': '价格上升趋势不够强劲'},
+        '短期趋势': {'name': '短期趋势', 'description': '价格形成短期趋势'},
+    },
+    'TrendDuration': {
+        '上升趋势': {'name': '上升趋势', 'description': '价格处于上升趋势中'},
+        '上升趋势发展阶段': {'name': '上升趋势发展阶段', 'description': '价格上升趋势正在发展中'},
+        '短期上升趋势': {'name': '短期上升趋势', 'description': '价格处于短期上升趋势中'},
+    },
+    'AmplitudeElasticity': {
+        '振幅弹性信号': {'name': '振幅弹性信号', 'description': '价格振幅显示良好的弹性'},
+        '小振幅': {'name': '小振幅', 'description': '价格振幅较小，波动平稳'},
+        '少量大振幅': {'name': '少量大振幅', 'description': '价格偶尔出现大振幅波动'},
+    },
+    'Elasticity': {
+        '中等弹性比率': {'name': '中等弹性比率', 'description': '价格弹性比率处于中等水平'},
+        '轻微反弹': {'name': '轻微反弹', 'description': '价格出现轻微反弹'},
+        '缩量反弹': {'name': '缩量反弹', 'description': '价格在成交量减少的情况下反弹'},
+        '大幅波动区间': {'name': '大幅波动区间', 'description': '价格在较大区间内波动'},
+    },
+    'InstitutionalBehavior': {
+        'INST_ABSORPTION_PHASE': {'name': '机构吸筹阶段', 'description': '机构正在进行吸筹操作'},
+        'INST_LOW_PROFIT': {'name': '机构低位获利', 'description': '机构在低位建仓并获利'},
+        'INST_WAITING_PHASE': {'name': '机构观望阶段', 'description': '机构处于观望状态'},
+    },
+    'ChipDistribution': {
+        'CHIP_BOTTOM_ACCUMULATION': {'name': '底部筹码累积', 'description': '筹码在底部区域累积，表明可能形成支撑'},
+        'PRICE_NEAR_COST': {'name': '价格接近成本', 'description': '当前价格接近平均成本，套牢盘压力不大'},
+        'CHIP_LOW_PROFIT': {'name': '筹码低位获利', 'description': '低位筹码开始获利，但获利比例不高'},
+        'CHIP_TIGHT': {'name': '筹码密集', 'description': '筹码分布集中，表明持股者成本相近'},
+    },
+    'SelectionModel': {
+        '选股系统买入信号': {'name': '选股系统买入信号', 'description': '选股系统给出买入信号'},
+        '强趋势上涨股': {'name': '强趋势上涨股', 'description': '股票处于强劲的上涨趋势中'},
+        '超强上升趋势': {'name': '超强上升趋势', 'description': '股票处于超强上升趋势中'},
+    },
+    'ADX': {
+        'Adx Strong Rising': {'name': 'ADX强势上升', 'description': 'ADX指标强势上升，趋势增强'},
+        'Adx Uptrend': {'name': 'ADX上升趋势', 'description': 'ADX指标显示明确的上升趋势'},
+        'Adx Extreme Uptrend': {'name': 'ADX极强上升趋势', 'description': 'ADX指标显示极强的上升趋势'},
+    },
+    # ZXM系列指标形态映射
+    'ZXMDailyMACD': {
+        'ZXM_DAILY_MACD_BUY_POINT': {'name': '日线MACD买点信号', 'description': '日线MACD值小于0.9，ZXM体系买点信号'},
+        'ZXM_DAILY_MACD_POSITIVE': {'name': '日线MACD为正值', 'description': '日线MACD值为正，表明多头力量占优'},
+        'ZXM_DAILY_MACD_NEGATIVE': {'name': '日线MACD为负值', 'description': '日线MACD值为负，表明空头力量占优'},
+        'ZXM_DAILY_MACD_RISING': {'name': '日线MACD上升趋势', 'description': '日线MACD呈上升趋势，动能增强'},
+        'ZXM_DAILY_MACD_FALLING': {'name': '日线MACD下降趋势', 'description': '日线MACD呈下降趋势，动能减弱'},
+        'ZXM_DAILY_MACD_BULLISH_ALIGNMENT': {'name': '日线MACD多头排列', 'description': 'DIFF大于DEA，多头排列'},
+        'ZXM_DAILY_MACD_BEARISH_ALIGNMENT': {'name': '日线MACD空头排列', 'description': 'DIFF小于DEA，空头排列'},
+        'ZXM_DAILY_MACD_GOLDEN_CROSS': {'name': '日线MACD金叉', 'description': 'DIFF上穿DEA，金叉形成'},
+        'ZXM_DAILY_MACD_DEATH_CROSS': {'name': '日线MACD死叉', 'description': 'DIFF下穿DEA，死叉形成'},
+        'ZXM_DAILY_MACD_NEAR_ZERO': {'name': '日线MACD接近零轴', 'description': 'MACD值接近零轴，可能变盘'},
+        'ZXM_DAILY_MACD_OVERSOLD': {'name': '日线MACD严重超卖', 'description': 'MACD值严重超卖，可能反弹'},
+        'ZXM_DAILY_MACD_OVERBOUGHT': {'name': '日线MACD严重超买', 'description': 'MACD值严重超买，可能回调'},
+    },
+    'ZXMTurnover': {
+        'ZXM_TURNOVER_BUY_POINT': {'name': '换手率买点信号', 'description': '换手率大于0.7%，ZXM体系买点信号'},
+        'ZXM_TURNOVER_EXTREMELY_ACTIVE': {'name': '换手率极度活跃', 'description': '换手率>5%，极度活跃，需要谨慎'},
+        'ZXM_TURNOVER_VERY_ACTIVE': {'name': '换手率非常活跃', 'description': '换手率2%-5%，非常活跃'},
+        'ZXM_TURNOVER_ACTIVE': {'name': '换手率活跃', 'description': '换手率1%-2%，活跃'},
+        'ZXM_TURNOVER_NORMAL_ACTIVE': {'name': '换手率一般活跃', 'description': '换手率0.7%-1%，一般活跃'},
+        'ZXM_TURNOVER_LOW': {'name': '换手率低迷', 'description': '换手率≤0.7%，低迷'},
+        'ZXM_TURNOVER_RELATIVE_EXTREMELY_ACTIVE': {'name': '换手率相对历史极度活跃', 'description': '换手率相对20日均值极度活跃'},
+        'ZXM_TURNOVER_RELATIVE_ACTIVE': {'name': '换手率相对历史活跃', 'description': '换手率相对20日均值活跃'},
+        'ZXM_TURNOVER_RELATIVE_LOW': {'name': '换手率相对历史低迷', 'description': '换手率相对20日均值低迷'},
+        'ZXM_TURNOVER_SUDDEN_INCREASE': {'name': '换手率突然放大', 'description': '换手率突然放大，关注资金流入'},
+        'ZXM_TURNOVER_SUDDEN_DECREASE': {'name': '换手率突然缩小', 'description': '换手率突然缩小，关注资金流出'},
+    },
+    'ZXMVolumeShrink': {
+        'ZXM_VOLUME_SHRINK_BUY_POINT': {'name': '缩量买点信号', 'description': '成交量较2日平均成交量缩减10%以上，ZXM体系买点信号'},
+        'ZXM_VOLUME_EXTREME_SHRINK': {'name': '极度缩量', 'description': '成交量较2日平均成交量缩减30%以上，表明主力控盘'},
+        'ZXM_VOLUME_MODERATE_SHRINK': {'name': '中度缩量', 'description': '成交量较2日平均成交量缩减10%-30%，表明主力逐步控盘'},
+        'ZXM_VOLUME_SLIGHT_SHRINK': {'name': '轻度缩量', 'description': '成交量较2日平均成交量缩减5%-10%，交投趋于平稳'},
+        'ZXM_VOLUME_NORMAL': {'name': '成交量正常', 'description': '成交量处于正常水平，无明显缩量特征'},
+    },
+    'ZXMMACallback': {
+        'ZXM_MA_CALLBACK_BUY_POINT': {'name': '均线回调买点信号', 'description': 'ZXM均线回调指标显示买点信号'},
+        'ZXM_MA_CALLBACK_20': {'name': '回踩20日均线', 'description': '价格回调至20日均线附近获得支撑'},
+        'ZXM_MA_CALLBACK_30': {'name': '回踩30日均线', 'description': '价格回调至30日均线附近获得支撑'},
+        'ZXM_MA_CALLBACK_60': {'name': '回踩60日均线', 'description': '价格回调至60日均线附近获得支撑'},
+        'ZXM_MA_CALLBACK_MULTIPLE': {'name': '多重均线回调', 'description': '价格同时回调至多条均线附近获得支撑'},
+        'ZXM_MA_SUPPORT_20': {'name': '20日线有效支撑', 'description': '价格获得20日均线的有效支撑后反弹'},
+        'ZXM_MA_SUPPORT_30': {'name': '30日线有效支撑', 'description': '价格获得30日均线的有效支撑后反弹'},
+    },
+
+    'ZXMBuyPointScore': {
+        'MACD买点满足': {'name': 'MACD买点', 'description': 'MACD指标满足ZXM买点条件'},
+        '换手买点满足': {'name': '换手率买点', 'description': '换手率指标满足ZXM买点条件'},
+        '均线回调买点满足': {'name': '均线回调买点', 'description': '均线回调指标满足ZXM买点条件'},
+        '买点评分信号': {'name': '综合买点评分', 'description': 'ZXM体系综合买点评分信号'},
+        '极高买点评分': {'name': '极高买点评分', 'description': '买点评分极高，多项指标共振'},
+        '三重买点信号共振': {'name': '三重买点共振', 'description': '三个主要买点指标同时满足条件'},
+        '多数买点指标满足': {'name': '多数买点指标满足', 'description': '多数ZXM买点指标满足条件'},
+        '中等买点评分': {'name': '中等买点评分', 'description': '买点评分中等，部分指标满足条件'},
+    },
+    'ZXMPattern': {
+        'macd_double_diverge': {'name': 'MACD双重背离', 'description': 'MACD形成双重底背离形态，强烈买入信号'},
+        'ma_precise_support': {'name': '均线精准支撑', 'description': '价格在重要均线位置获得精准支撑'},
+        'small_alternating': {'name': '小幅震荡整理', 'description': '价格在关键位置小幅震荡整理，蓄势待发'},
+    },
+    'ZXMRiseElasticity': {
+        '温和上涨': {'name': '温和上涨', 'description': '价格呈现温和上涨态势，涨幅适中'},
+        '无大涨': {'name': '无大涨', 'description': '近期无大幅上涨，累积能量中'},
+    },
+    'ZXMElasticityScore': {
+        '振幅弹性满足': {'name': '振幅弹性满足', 'description': '价格振幅弹性指标满足买入条件'},
+        '中等弹性评分': {'name': '中等弹性评分', 'description': '价格弹性评分处于中等水平'},
+        '部分弹性指标满足': {'name': '部分弹性指标满足', 'description': '部分价格弹性指标满足条件'},
+    },
+    'ZXMMACallback': {
+        'ZXM_MA_CALLBACK_BUY_POINT': {'name': '均线回调买点信号', 'description': 'ZXM均线回调指标显示买点信号'},
+        'ZXM_MA_CALLBACK_20': {'name': '回踩20日均线', 'description': '价格回调至20日均线附近获得支撑'},
+        'ZXM_MA_CALLBACK_30': {'name': '回踩30日均线', 'description': '价格回调至30日均线附近获得支撑'},
+        'ZXM_MA_CALLBACK_60': {'name': '回踩60日均线', 'description': '价格回调至60日均线附近获得支撑'},
+        'ZXM_MA_CALLBACK_MULTIPLE': {'name': '多重均线回调', 'description': '价格同时回调至多条均线附近获得支撑'},
+        'ZXM_MA_SUPPORT_20': {'name': '20日线有效支撑', 'description': '价格获得20日均线的有效支撑后反弹'},
+        'ZXM_MA_SUPPORT_30': {'name': '30日线有效支撑', 'description': '价格获得30日均线的有效支撑后反弹'},
+    },
+    'PSY': {
+        'PSY_ABOVE_50': {'name': 'PSY心理线50上方', 'description': 'PSY心理线位于50上方，市场情绪偏乐观'},
+        'PSY_BELOW_50': {'name': 'PSY心理线50下方', 'description': 'PSY心理线位于50下方，市场情绪偏悲观'},
+        'PSY_ABOVE_MA': {'name': 'PSY均线上方', 'description': 'PSY心理线位于移动平均线上方'},
+        'PSY_BELOW_MA': {'name': 'PSY均线下方', 'description': 'PSY心理线位于移动平均线下方'},
+        'PSY_DEATH_CROSS': {'name': 'PSY死叉', 'description': 'PSY心理线形成死叉'},
+        'PSY_CROSS_DOWN_50': {'name': 'PSY下穿50', 'description': 'PSY心理线下穿50水平线，市场情绪转弱'},
+        'PSY_STRONG_DOWN': {'name': 'PSY强势下跌', 'description': 'PSY心理线强势下跌，市场情绪悲观'},
+        'PSY_STRONG_UP': {'name': 'PSY强势上涨', 'description': 'PSY心理线强势上涨，市场情绪乐观'},
+        'PSY_OVERSOLD': {'name': 'PSY超卖', 'description': 'PSY心理线处于超卖区域，可能出现反弹'},
+        'PSY_GOLDEN_CROSS': {'name': 'PSY金叉', 'description': 'PSY心理线形成金叉，看涨信号'},
+    },
+    'Vortex': {
+        'VORTEX_BULLISH_CROSS': {'name': '涡旋指标金叉', 'description': 'VI+上穿VI-，形成金叉信号，看涨'},
+        'VORTEX_BEARISH_CROSS': {'name': '涡旋指标死叉', 'description': 'VI+下穿VI-，形成死叉信号，看跌'},
+        'VORTEX_VI_PLUS_ABOVE': {'name': '涡旋正值大于负值', 'description': 'VI+大于VI-，多头占优势'},
+        'VORTEX_VI_MINUS_ABOVE': {'name': '涡旋负值大于正值', 'description': 'VI-大于VI+，空头占优势'},
+        'VORTEX_VI_PLUS_STRONG': {'name': '涡旋正值强势', 'description': 'VI+值较高，多头力量强劲'},
+        'VORTEX_VI_MINUS_STRONG': {'name': '涡旋负值强势', 'description': 'VI-值较高，空头力量强劲'},
+        'VORTEX_VI_PLUS_RISING': {'name': '涡旋正值上升', 'description': 'VI+值持续上升，多头力量增强'},
+        'VORTEX_VI_MINUS_RISING': {'name': '涡旋负值上升', 'description': 'VI-值持续上升，空头力量增强'},
+        'VORTEX_VI_DIFF_RISING': {'name': '涡旋指标差值扩大', 'description': 'VI+与VI-的差值扩大，趋势增强'},
+        'VORTEX_VI_PLUS_UPTREND': {'name': '涡旋指标多头趋势', 'description': 'VI+持续大于VI-，确认多头趋势'},
+        'VORTEX_VI_MINUS_UPTREND': {'name': '涡旋负值上升趋势', 'description': 'VI-值呈上升趋势，空头力量逐渐增强'},
+        'VORTEX_VI_PLUS_BREAK_HIGH': {'name': '涡旋正值突破新高', 'description': 'VI+突破前期高点，多头力量创新高'},
     },
 }
 
@@ -816,83 +1057,228 @@ class BuyPointBatchAnalyzer:
 
     def _standardize_pattern_description(self, original_name: str, indicator_name: str, pattern_id: str) -> str:
         """
-        标准化形态描述，使用标准技术分析术语
-
+        标准化形态描述，使用更专业的术语
+        
         Args:
             original_name: 原始形态名称
             indicator_name: 指标名称
             pattern_id: 形态ID
-
+            
         Returns:
             str: 标准化后的形态描述
         """
-        # 模糊描述到标准术语的映射
-        standardization_map = {
-            'AA条件满足': '技术指标买入信号',
-            '低分股票': '技术指标弱势信号',
-            '大幅波动区间': '高波动率区间',
-            '高规律性周期': '周期性技术形态',
-            '强势上涨': '强势上涨趋势',
-            '弱势下跌': '弱势下跌趋势',
-            '震荡整理': '横盘整理形态',
-            '突破上涨': '向上突破形态',
-            '跌破下跌': '向下跌破形态',
-            # 添加更多常见的模糊描述
-            '窄幅波动区间': '低波动率区间',
-            '中等反弹': '中等强度反弹',
-            '轻微反弹': '弱势反弹',
-            '强反弹': '强势反弹',
-            '放量反弹': '成交量放大反弹',
-            '缩量反弹': '成交量萎缩反弹',
-            '量能正常': '成交量正常水平',
-            '接近低点': '价格接近低位',
-            '接近高点': '价格接近高位',
-        }
+        # 如果原始名称为空，则使用形态ID
+        if not original_name or original_name == '-':
+            return f"{indicator_name}指标{pattern_id}形态"
+            
+        # 如果原始名称包含"基于"，则尝试提取更具体的形态描述
+        if "基于" in original_name and "分析:" in original_name:
+            parts = original_name.split("分析:")
+            if len(parts) > 1:
+                specific_pattern = parts[1].strip()
+                if specific_pattern:
+                    return f"{indicator_name}指标{specific_pattern}形态"
+        
+        # 如果没有特殊处理，则直接返回原始名称
+        return original_name
+        
+    def get_precise_pattern_info(self, indicator_name: str, pattern: str, description: str) -> Dict[str, str]:
+        """
+        获取精确的形态信息，从指标形态映射字典中查找
+        
+        Args:
+            indicator_name: 指标名称
+            pattern: 形态名称
+            description: 形态描述
+            
+        Returns:
+            Dict[str, str]: 包含形态名称和描述的字典
+        """
+        # 1. 首先检查指标名称是否在映射表中
+        if indicator_name in COMPLETE_INDICATOR_PATTERNS_MAP:
+            pattern_map = COMPLETE_INDICATOR_PATTERNS_MAP[indicator_name]
+            
+            # 1.1 尝试直接匹配形态ID
+            if pattern in pattern_map:
+                pattern_info = pattern_map[pattern]
+                return pattern_info
+            
+            # 1.2 尝试匹配大小写不敏感的形态ID
+            pattern_upper = pattern.replace(" ", "_").upper()
+            if pattern_upper in pattern_map:
+                pattern_info = pattern_map[pattern_upper]
+                return pattern_info
+            
+            # 1.3 尝试匹配首字母大写的形式（如"Sar Uptrend"对应"SAR_UPTREND"）
+            if pattern.replace(" ", "_").upper() in pattern_map:
+                key = pattern.replace(" ", "_").upper()
+                pattern_info = pattern_map[key]
+                return pattern_info
+            
+            # 1.4 尝试通过形态名称模糊匹配
+            for pattern_id, pattern_info in pattern_map.items():
+                if pattern == pattern_info['name'] or pattern in pattern_info['name'] or pattern_info['name'] in pattern:
+                    return pattern_info
+        
+        # 2. 特殊处理ZXM系列指标
+        if indicator_name.startswith('ZXM'):
+            # ZXM系列指标已经在指标类中直接注册形态，不需要在这里处理
+            pass
+        
+        # 3. 处理常见的英文形态命名模式，转换为中文
+        # 3.1 处理"Xxx Yyy Zzz"格式的形态名称
+        if ' ' in pattern and pattern[0].isupper() and '_' not in pattern and not pattern.isupper():
+            # 如果是英文单词组合的形态名称，尝试转换为更友好的中文表述
+            if pattern.startswith("Above"):
+                chinese_pattern = f"位于{pattern.replace('Above', '').strip()}上方"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标{chinese_pattern}"}
+            elif pattern.startswith("Below"):
+                chinese_pattern = f"位于{pattern.replace('Below', '').strip()}下方"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标{chinese_pattern}"}
+            elif pattern.startswith("Cross"):
+                chinese_pattern = f"{pattern.replace('Cross', '').strip()}交叉"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标形成{chinese_pattern}"}
+            elif "Bullish" in pattern:
+                chinese_pattern = f"看涨{pattern.replace('Bullish', '').strip()}"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标显示{chinese_pattern}形态"}
+            elif "Bearish" in pattern:
+                chinese_pattern = f"看跌{pattern.replace('Bearish', '').strip()}"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标显示{chinese_pattern}形态"}
+            elif "Rising" in pattern:
+                chinese_pattern = f"{pattern.replace('Rising', '').strip()}上升"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标{chinese_pattern}"}
+            elif "Falling" in pattern:
+                chinese_pattern = f"{pattern.replace('Falling', '').strip()}下降"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标{chinese_pattern}"}
+            elif "Uptrend" in pattern:
+                chinese_pattern = f"上升趋势"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标显示{chinese_pattern}"}
+            elif "Downtrend" in pattern:
+                chinese_pattern = f"下降趋势"
+                return {'name': chinese_pattern, 'description': f"{indicator_name}指标显示{chinese_pattern}"}
+        
+        # 3.2 处理"XXX_YYY_ZZZ"格式的形态ID
+        if '_' in pattern and pattern.isupper():
+            # 将下划线分隔的大写单词转换为空格分隔的首字母大写单词
+            words = pattern.split('_')
+            readable_name = ' '.join(word.title() for word in words)
+            
+            # 尝试将常见的技术术语翻译为中文
+            translations = {
+                'BULLISH': '看涨',
+                'BEARISH': '看跌',
+                'CROSS': '交叉',
+                'GOLDEN': '金叉',
+                'DEATH': '死叉',
+                'ABOVE': '上方',
+                'BELOW': '下方',
+                'RISING': '上升',
+                'FALLING': '下降',
+                'UPTREND': '上升趋势',
+                'DOWNTREND': '下降趋势',
+                'OVERBOUGHT': '超买',
+                'OVERSOLD': '超卖',
+                'DIVERGENCE': '背离',
+                'CONVERGENCE': '收敛',
+                'SUPPORT': '支撑',
+                'RESISTANCE': '阻力',
+                'BREAKOUT': '突破',
+                'REVERSAL': '反转',
+                'STRONG': '强势',
+                'WEAK': '弱势',
+                'SIGNAL': '信号',
+                'PATTERN': '形态',
+                'CONSOLIDATION': '盘整',
+                'VOLATILITY': '波动性',
+                'MOMENTUM': '动量',
+                'TREND': '趋势'
+            }
+            
+            # 尝试翻译形态名称
+            chinese_words = []
+            for word in words:
+                if word in translations:
+                    chinese_words.append(translations[word])
+                else:
+                    chinese_words.append(word.title())
+            
+            chinese_pattern = ''.join(chinese_words)
+            return {'name': chinese_pattern, 'description': f"{indicator_name}指标显示{chinese_pattern}形态"}
+        
+        # 4. 处理其他常见指标
+        if indicator_name == 'PSY':
+            if pattern == 'PSY_CROSS_DOWN_50':
+                return {'name': 'PSY下穿50', 'description': 'PSY心理线下穿50水平线，市场情绪转弱'}
+            elif pattern == 'PSY_BELOW_50':
+                return {'name': 'PSY心理线50下方', 'description': 'PSY心理线位于50下方，市场情绪偏悲观'}
+            elif pattern == 'PSY_BELOW_MA':
+                return {'name': 'PSY均线下方', 'description': 'PSY心理线位于移动平均线下方'}
+            elif pattern == 'PSY_STRONG_DOWN':
+                return {'name': 'PSY强势下跌', 'description': 'PSY心理线强势下跌，市场情绪悲观'}
+            elif pattern == 'PSY_ABOVE_50':
+                return {'name': 'PSY心理线50上方', 'description': 'PSY心理线位于50上方，市场情绪偏乐观'}
+            elif pattern == 'PSY_ABOVE_MA':
+                return {'name': 'PSY均线上方', 'description': 'PSY心理线位于移动平均线上方'}
+            elif pattern == 'PSY_DEATH_CROSS':
+                return {'name': 'PSY死叉', 'description': 'PSY心理线形成死叉'}
+        
+        elif indicator_name == 'Vortex':
+            if pattern == 'VORTEX_BULLISH_CROSS':
+                return {'name': '涡旋指标金叉', 'description': 'VI+上穿VI-，形成金叉信号，看涨'}
+            elif pattern == 'VORTEX_VI_PLUS_ABOVE':
+                return {'name': '涡旋正值大于负值', 'description': 'VI+大于VI-，多头占优势'}
+            elif pattern == 'VORTEX_VI_MINUS_ABOVE':
+                return {'name': '涡旋负值大于正值', 'description': 'VI-大于VI+，空头占优势'}
+            elif pattern == 'VORTEX_VI_MINUS_RISING':
+                return {'name': '涡旋负值上升', 'description': 'VI-值持续上升，空头力量增强'}
+            elif pattern == 'VORTEX_VI_MINUS_UPTREND':
+                return {'name': '涡旋负值上升趋势', 'description': 'VI-值呈上升趋势，空头力量逐渐增强'}
+        
+        elif indicator_name == 'EnhancedTRIX':
+            if pattern.startswith('TRIX趋势转折') and description:
+                if '基于' in description and '分析:' in description:
+                    parts = description.split('分析:')
+                    if len(parts) > 1:
+                        specific_pattern = parts[1].strip()
+                        if specific_pattern == 'above_zero':
+                            return {'name': 'TRIX零轴上方', 'description': 'TRIX位于零轴上方，长期趋势偏多'}
+                        elif specific_pattern == 'below_zero':
+                            return {'name': 'TRIX零轴下方', 'description': 'TRIX位于零轴下方，长期趋势偏空'}
+                        elif specific_pattern == 'falling':
+                            return {'name': 'TRIX下降', 'description': 'TRIX指标下降，长期动量减弱'}
+                        elif specific_pattern == 'rising':
+                            return {'name': 'TRIX上升', 'description': 'TRIX指标上升，长期动量增强'}
+                        elif specific_pattern == 'acceleration':
+                            return {'name': 'TRIX加速上升', 'description': 'TRIX指标加速上升，表明价格上涨动能不断增强'}
+                        elif specific_pattern == 'strong_bullish_consensus':
+                            return {'name': 'TRIX强烈看涨共振', 'description': 'TRIX多重信号共振，形成强烈看涨态势'}
+                        elif specific_pattern == 'deceleration':
+                            return {'name': 'TRIX减速', 'description': 'TRIX指标减速变化，动能转变'}
+        
+        # 5. 如果是技术指标分析，尝试提取更具体的形态描述
+        if pattern in ['技术指标分析', 'Technical Analysis', '指标分析'] and description:
+            if '基于' in description and '分析:' in description:
+                parts = description.split('分析:')
+                if len(parts) > 1:
+                    specific_pattern = parts[1].strip()
+                    if specific_pattern and len(specific_pattern) <= 30:
+                        return {'name': specific_pattern, 'description': f"{indicator_name}指标{specific_pattern}形态"}
+        
+        # 5. 处理形态名称中的常见格式问题
+        if pattern.endswith("形态"):
+            # 如果形态名称以"形态"结尾且包含下划线，说明可能是未映射的代码形式
+            if "_" in pattern or pattern.isupper():
+                # 尝试将其转换为更可读的形式
+                readable_pattern = pattern.replace("_", " ").title()
+                pattern = readable_pattern.replace("形态", "")
+                return {'name': pattern, 'description': f"{indicator_name}指标{pattern}形态"}
+        
+        # 6. 如果没有找到匹配项，则使用原始信息
+        if not description:
+            description = f"{indicator_name}指标的{pattern}技术分析"
+        
+        return {'name': pattern, 'description': description}
 
-        # 首先尝试标准化原始名称
-        standardized = original_name
-        for vague_term, standard_term in standardization_map.items():
-            if vague_term in standardized:
-                standardized = standardized.replace(vague_term, standard_term)
-
-        # 如果仍然是模糊描述，根据指标类型和形态ID生成标准描述
-        if any(vague in standardized.lower() for vague in ['aa', '低分', '大幅', '高规律']):
-            # 根据指标名称生成更具体的描述
-            if 'MACD' in indicator_name.upper():
-                if 'GOLDEN' in pattern_id.upper():
-                    standardized = 'MACD金叉信号'
-                elif 'DEATH' in pattern_id.upper():
-                    standardized = 'MACD死叉信号'
-                elif 'BULLISH' in pattern_id.upper():
-                    standardized = 'MACD看涨背离'
-                elif 'BEARISH' in pattern_id.upper():
-                    standardized = 'MACD看跌背离'
-            elif 'RSI' in indicator_name.upper():
-                if 'OVERSOLD' in pattern_id.upper():
-                    standardized = 'RSI超卖信号'
-                elif 'OVERBOUGHT' in pattern_id.upper():
-                    standardized = 'RSI超买信号'
-            elif 'BOLL' in indicator_name.upper() or 'BOLLINGER' in indicator_name.upper():
-                if 'SQUEEZE' in pattern_id.upper():
-                    standardized = '布林带收缩'
-                elif 'EXPANSION' in pattern_id.upper():
-                    standardized = '布林带扩张'
-                elif 'UPPER' in pattern_id.upper():
-                    standardized = '触及布林带上轨'
-                elif 'LOWER' in pattern_id.upper():
-                    standardized = '触及布林带下轨'
-            elif 'ATR' in indicator_name.upper():
-                if 'BREAKOUT' in pattern_id.upper():
-                    standardized = 'ATR波动率突破'
-                elif 'COMPRESSION' in pattern_id.upper():
-                    standardized = 'ATR波动率收缩'
-
-            # 如果还是没有找到合适的标准化描述，使用通用格式
-            if standardized == original_name:
-                standardized = f"{indicator_name}_{pattern_id}".replace('_', ' ')
-
-        return standardized
-    
     def generate_strategy(self, 
                        common_indicators: Dict[str, List[Dict[str, Any]]],
                        strategy_name: str = "BuyPointCommonStrategy") -> Dict[str, Any]:
@@ -1080,7 +1466,9 @@ class BuyPointBatchAnalyzer:
                             description = first_hit['details'].get('description', '')
 
                     # 使用完整的指标形态映射进行优化
-                    pattern, description = self.get_precise_pattern_info(indicator_name, pattern, description)
+                    pattern_info = self.get_precise_pattern_info(indicator_name, pattern, description)
+                    pattern = pattern_info['name']
+                    description = pattern_info['description']
 
                     # 清理描述中的换行符和特殊字符，避免破坏表格格式
                     description = description.replace('\n', ' ').replace('|', '｜').strip()
@@ -1121,15 +1509,10 @@ class BuyPointBatchAnalyzer:
                                 if 'details' in first_hit:
                                     description = first_hit['details'].get('description', '')
 
-                            # 优化形态名称和描述（与上面的逻辑保持一致）
-                            if pattern in ['技术指标分析', 'Technical Analysis', '指标分析'] and description:
-                                if '基于' in description and '分析:' in description:
-                                    parts = description.split('分析:')
-                                    if len(parts) > 1:
-                                        specific_pattern = parts[1].strip()
-                                        if specific_pattern and len(specific_pattern) <= 30:
-                                            pattern = specific_pattern
-                                            description = f"{indicator_name}指标{specific_pattern}形态"
+                            # 使用完整的指标形态映射进行优化（与上面的逻辑保持一致）
+                            pattern_info = self.get_precise_pattern_info(indicator_name, pattern, description)
+                            pattern = pattern_info['name']
+                            description = pattern_info['description']
 
                             if not description:
                                 description = f"{indicator_name}指标的{pattern}技术分析"
@@ -1153,15 +1536,10 @@ class BuyPointBatchAnalyzer:
                                 if 'details' in first_hit:
                                     description = first_hit['details'].get('description', '')
 
-                            # 优化形态名称和描述（与上面的逻辑保持一致）
-                            if pattern in ['技术指标分析', 'Technical Analysis', '指标分析'] and description:
-                                if '基于' in description and '分析:' in description:
-                                    parts = description.split('分析:')
-                                    if len(parts) > 1:
-                                        specific_pattern = parts[1].strip()
-                                        if specific_pattern and len(specific_pattern) <= 30:
-                                            pattern = specific_pattern
-                                            description = f"{indicator_name}指标{specific_pattern}形态"
+                            # 使用完整的指标形态映射进行优化（与上面的逻辑保持一致）
+                            pattern_info = self.get_precise_pattern_info(indicator_name, pattern, description)
+                            pattern = pattern_info['name']
+                            description = pattern_info['description']
 
                             if not description:
                                 description = f"{indicator_name}指标的{pattern}技术分析"

@@ -229,7 +229,7 @@ def main():
     args = parse_arguments()
     
     # 设置日志
-    setup_logger(level=args.log_level)
+    setup_logger(log_level=args.log_level)
     logger.info("股票分析系统性能测试工具启动")
     
     # 确保输出目录存在

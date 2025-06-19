@@ -31,6 +31,54 @@ class RSI(BaseIndicator):
         self.overbought = overbought
         self.oversold = oversold
 
+    def _register_rsi_patterns(self):
+        """
+        注册RSI形态到全局形态注册表
+        """
+        # 注册RSI超买形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_OVERBOUGHT",
+            display_name="RSI超买",
+            description="RSI指标超过70，进入超买区域，存在回调压力",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+        
+        # 注册RSI超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_OVERSOLD",
+            display_name="RSI超卖",
+            description="RSI指标低于30，进入超卖区域，存在反弹机会",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+        
+        # 注册RSI底背离形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_BULLISH_DIVERGENCE",
+            display_name="RSI底背离",
+            description="价格创新低而RSI未创新低，形成底背离",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+        
+        # 注册RSI顶背离形态
+        self.register_pattern_to_registry(
+            pattern_id="RSI_BEARISH_DIVERGENCE",
+            display_name="RSI顶背离",
+            description="价格创新高而RSI未创新高，警示上涨动能不足",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
     def set_parameters(self, period: int = 14, overbought: float = 70.0, oversold: float = 30.0, **kwargs):
         """
         设置RSI指标的参数
@@ -259,77 +307,44 @@ class RSI(BaseIndicator):
         self.register_pattern_to_registry(
             pattern_id="RSI_OVERBOUGHT",
             display_name="RSI超买",
-            description="RSI指标进入超买区域，市场可能过热",
+            description="RSI指标超过70，进入超买区域，存在回调压力",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-10.0,
             polarity="NEGATIVE"
         )
-
+        
         # 注册RSI超卖形态
         self.register_pattern_to_registry(
             pattern_id="RSI_OVERSOLD",
             display_name="RSI超卖",
-            description="RSI指标进入超卖区域，市场可能过冷",
+            description="RSI指标低于30，进入超卖区域，存在反弹机会",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=10.0,
             polarity="POSITIVE"
         )
-
-        # 注册RSI金叉形态
+        
+        # 注册RSI底背离形态
         self.register_pattern_to_registry(
-            pattern_id="RSI_GOLDEN_CROSS",
-            display_name="RSI金叉",
-            description="RSI短期均线上穿长期均线，可能是买入信号",
+            pattern_id="RSI_BULLISH_DIVERGENCE",
+            display_name="RSI底背离",
+            description="价格创新低而RSI未创新低，形成底背离",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,
             polarity="POSITIVE"
         )
-
-        # 注册RSI死叉形态
+        
+        # 注册RSI顶背离形态
         self.register_pattern_to_registry(
-            pattern_id="RSI_DEATH_CROSS",
-            display_name="RSI死叉",
-            description="RSI短期均线下穿长期均线，可能是卖出信号",
+            pattern_id="RSI_BEARISH_DIVERGENCE",
+            display_name="RSI顶背离",
+            description="价格创新高而RSI未创新高，警示上涨动能不足",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-20.0,
             polarity="NEGATIVE"
-        )
-
-        # 注册RSI极度超买形态
-        self.register_pattern_to_registry(
-            pattern_id="RSI_EXTREME_OVERBOUGHT",
-            display_name="RSI极度超买",
-            description="RSI指标进入极度超买区域(>80)，市场极度过热",
-            pattern_type="BEARISH",
-            default_strength="VERY_STRONG",
-            score_impact=-25.0,
-            polarity="NEGATIVE"
-        )
-
-        # 注册RSI极度超卖形态
-        self.register_pattern_to_registry(
-            pattern_id="RSI_EXTREME_OVERSOLD",
-            display_name="RSI极度超卖",
-            description="RSI指标进入极度超卖区域(<20)，市场极度过冷",
-            pattern_type="BULLISH",
-            default_strength="VERY_STRONG",
-            score_impact=25.0,
-            polarity="POSITIVE"
-        )
-
-        # 注册RSI中性形态
-        self.register_pattern_to_registry(
-            pattern_id="RSI_NEUTRAL",
-            display_name="RSI中性",
-            description="RSI指标在中性区域(40-60)，市场相对平衡",
-            pattern_type="NEUTRAL",
-            default_strength="WEAK",
-            score_impact=0.0,
-            polarity="NEUTRAL"
         )
 
     def get_pattern_info(self, pattern_id: str) -> dict:
@@ -346,58 +361,34 @@ class RSI(BaseIndicator):
             "RSI_OVERBOUGHT": {
                 "id": "RSI_OVERBOUGHT",
                 "name": "RSI超买",
-                "description": "RSI指标进入超买区域，市场可能过热",
+                "description": "RSI指标超过70，进入超买区域，存在回调压力",
                 "type": "BEARISH",
                 "strength": "MEDIUM",
-                "score_impact": -15.0
+                "score_impact": -10.0
             },
             "RSI_OVERSOLD": {
                 "id": "RSI_OVERSOLD",
                 "name": "RSI超卖",
-                "description": "RSI指标进入超卖区域，市场可能过冷",
+                "description": "RSI指标低于30，进入超卖区域，存在反弹机会",
                 "type": "BULLISH",
                 "strength": "MEDIUM",
-                "score_impact": 15.0
+                "score_impact": 10.0
             },
-            "RSI_GOLDEN_CROSS": {
-                "id": "RSI_GOLDEN_CROSS",
-                "name": "RSI金叉",
-                "description": "RSI短期均线上穿长期均线，可能是买入信号",
+            "RSI_BULLISH_DIVERGENCE": {
+                "id": "RSI_BULLISH_DIVERGENCE",
+                "name": "RSI底背离",
+                "description": "价格创新低而RSI未创新低，形成底背离",
                 "type": "BULLISH",
                 "strength": "STRONG",
                 "score_impact": 20.0
             },
-            "RSI_DEATH_CROSS": {
-                "id": "RSI_DEATH_CROSS",
-                "name": "RSI死叉",
-                "description": "RSI短期均线下穿长期均线，可能是卖出信号",
+            "RSI_BEARISH_DIVERGENCE": {
+                "id": "RSI_BEARISH_DIVERGENCE",
+                "name": "RSI顶背离",
+                "description": "价格创新高而RSI未创新高，警示上涨动能不足",
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -20.0
-            },
-            "RSI_EXTREME_OVERBOUGHT": {
-                "id": "RSI_EXTREME_OVERBOUGHT",
-                "name": "RSI极度超买",
-                "description": "RSI指标进入极度超买区域(>80)，市场极度过热",
-                "type": "BEARISH",
-                "strength": "VERY_STRONG",
-                "score_impact": -25.0
-            },
-            "RSI_EXTREME_OVERSOLD": {
-                "id": "RSI_EXTREME_OVERSOLD",
-                "name": "RSI极度超卖",
-                "description": "RSI指标进入极度超卖区域(<20)，市场极度过冷",
-                "type": "BULLISH",
-                "strength": "VERY_STRONG",
-                "score_impact": 25.0
-            },
-            "RSI_NEUTRAL": {
-                "id": "RSI_NEUTRAL",
-                "name": "RSI中性",
-                "description": "RSI指标在中性区域(40-60)，市场相对平衡",
-                "type": "NEUTRAL",
-                "strength": "WEAK",
-                "score_impact": 0.0
             }
         }
 

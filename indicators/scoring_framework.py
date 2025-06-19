@@ -368,6 +368,47 @@ class IndicatorScoreManager:
             'NEGATIVE_DIVERGENCE': 15,
             'HIDDEN_POSITIVE_DIVERGENCE': 80,
             'HIDDEN_NEGATIVE_DIVERGENCE': 20,
+            # 筹码分布相关
+            'CHIP_LOW_PROFIT': 65,
+            'CHIP_TIGHT': 60,
+            'CHIP_BOTTOM_ACCUMULATION': 75,
+            'CHIP_HIGH_CONCENTRATION': 40,
+            'PRICE_NEAR_COST': 70,
+            # 布林带相关
+            'BOLL_SQUEEZE': 65,
+            'BOLL_BREAKOUT_UP': 80,
+            'BOLL_BREAKOUT_DOWN': 20,
+            # 成交量相关
+            'VOL_BREAKOUT_UP': 75,
+            'VOL_HIGH': 60,
+            'VOL_RISING': 65,
+            # 威廉指标相关
+            'WR_EXTREME_OVERBOUGHT': 30,
+            'WR_RISING': 60,
+            'WR_UPTREND': 70,
+            # 机构行为
+            'INST_ABSORPTION_PHASE': 75,
+            'INST_GENTLE_ABSORPTION': 65,
+            'INST_LOW_PROFIT': 70,
+            # MACD相关
+            'MACD_BULLISH_DIVERGENCE': 80,
+            'MACD_ABOVE_ZERO': 65,
+            'MACD_RISING': 60,
+            # 其他常见指标
+            'TRIX_ABOVE_SIGNAL': 65,
+            'TRIX_RISING': 60,
+            'CCI_OVERBOUGHT': 35,
+            'CCI_RISING_STRONG': 70,
+            'OBV_RISING': 65,
+            'OBV_BREAKOUT': 75,
+            'MFI_BULLISH_DIVERGENCE': 80,
+            'MFI_OVERBOUGHT': 35,
+            'MFI_RISING': 60,
+            'ADX_UPTREND': 70,
+            'ADX_STRONG_RISING': 75,
+            'VIX_VERY_LOW_VOLATILITY': 60,
+            'VIX_EXTREME_LOW': 65,
+            'GENERIC_MA5_GT_MA10': 65
         }
         
         # 移除指标名称前缀，如 'CDLHAMMER' -> 'HAMMER'

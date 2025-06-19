@@ -1859,6 +1859,134 @@ class ZXMBSAbsorb(BaseIndicator):
         self.bb_filter_period = kwargs.get('bb_filter_period', 10)
         self.count_period = kwargs.get('count_period', 6)
 
+    def register_patterns(self):
+        """
+        注册ZXMBSAbsorb指标的形态到全局形态注册表
+        """
+        # 吸筹强度形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_ABSORB_STRONG",
+            display_name="ZXM强烈吸筹信号",
+            description="主力强烈吸筹，近期频繁出现吸筹特征",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_ABSORB_OBVIOUS",
+            display_name="ZXM明显吸筹信号",
+            description="主力明显吸筹，近期多次出现吸筹特征",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_ABSORB_SLIGHT",
+            display_name="ZXM轻微吸筹信号",
+            description="主力轻微吸筹，近期出现少量吸筹特征",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        # V11位置形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_ABSORB_HEAVY_ZONE",
+            display_name="ZXM主力大量吸筹区域",
+            description="V11指标极低，处于主力大量吸筹区域",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_ABSORB_ZONE",
+            display_name="ZXM主力吸筹区域",
+            description="V11指标较低，处于主力吸筹区域",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_ABSORB_WATCH_ZONE",
+            display_name="ZXM吸筹观察区间",
+            description="V11指标处于中间区域，需要观察吸筹动向",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=5.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_HIGH_ADJUSTMENT",
+            display_name="ZXM高位调整区域",
+            description="V11指标较高，处于高位调整区域",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        # V12动量形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_STRONG_MOMENTUM",
+            display_name="ZXM强烈上升动量",
+            description="V12指标显示强烈的上升动量",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_UP_MOMENTUM",
+            display_name="ZXM上升动量",
+            description="V12指标显示上升动量",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_STABLE_MOMENTUM",
+            display_name="ZXM动量平稳",
+            description="V12指标显示动量平稳",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 条件满足形态
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_DOUBLE_CONFIRM",
+            display_name="ZXM双重吸筹确认",
+            description="AA和BB条件同时满足，形成双重吸筹确认信号",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=35.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ZXM_BS_LOW_REBOUND",
+            display_name="ZXM低位反弹信号",
+            description="V11处于低位且V12显示上升动量，形成低位反弹信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
 
 class BuyPointDetector(BaseIndicator):
     """

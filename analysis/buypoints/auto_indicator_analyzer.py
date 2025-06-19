@@ -434,13 +434,23 @@ class AutoIndicatorAnalyzer:
                         description = ''
                         pattern_type = 'UNKNOWN'
 
+                    # 使用评分框架计算该形态的评分
+                    pattern_score = self.score_manager.score_pattern(pattern_id, {
+                        "name": pattern_name,
+                        "type": pattern_type,
+                        "indicator": indicator_name
+                    })
+                    
                     hit_patterns.append({
                         "type": "indicator",
                         "indicator_name": indicator_name,
                         "pattern_id": pattern_id,
                         "pattern_name": pattern_name,
                         "description": description,
-                        "pattern_type": pattern_type
+                        "pattern_type": pattern_type,
+                        "score_impact": pattern_score,  # 使用评分框架计算的评分
+                        "score": pattern_score,  # 使用评分框架计算的评分
+                        "strength_score": pattern_score  # 使用评分框架计算的评分
                     })
 
             # 如果返回的是列表（已弃用的旧格式）
@@ -483,6 +493,13 @@ class AutoIndicatorAnalyzer:
                             description = pattern_dict.get('description', '')
                             pattern_type = pattern_dict.get('type', 'UNKNOWN')
 
+                        # 使用评分框架计算该形态的评分
+                        pattern_score = self.score_manager.score_pattern(pattern_dict.get('id'), {
+                            "name": pattern_name,
+                            "type": pattern_type,
+                            "indicator": indicator_name
+                        })
+                        
                         hit_patterns.append({
                             "type": "indicator",
                             "indicator_name": indicator_name,
@@ -490,7 +507,9 @@ class AutoIndicatorAnalyzer:
                             "pattern_name": pattern_name,
                             "description": description,
                             "pattern_type": pattern_type,
-                            "details": pattern_dict # 保留原始信息
+                            "score_impact": pattern_score,  # 使用评分框架计算的评分
+                            "score": pattern_score,  # 使用评分框架计算的评分
+                            "strength_score": pattern_score  # 使用评分框架计算的评分
                         })
 
         except Exception as e:
