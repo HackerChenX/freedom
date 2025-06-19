@@ -271,6 +271,87 @@ class TRIX(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册TRIX趋势状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_ABOVE_ZERO",
+            display_name="TRIX零轴上方",
+            description="TRIX位于零轴上方，表明长期趋势偏多",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_BELOW_ZERO",
+            display_name="TRIX零轴下方",
+            description="TRIX位于零轴下方，表明长期趋势偏空",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_RISING",
+            display_name="TRIX上升趋势",
+            description="TRIX三重指数平滑移动平均线呈上升趋势，表明长期价格动量增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_FALLING",
+            display_name="TRIX下降趋势",
+            description="TRIX三重指数平滑移动平均线呈下降趋势，表明长期价格动量减弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_ACCELERATION",
+            display_name="TRIX加速上升",
+            description="TRIX指标加速上升，表明价格上涨动能不断增强",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_DECELERATION",
+            display_name="TRIX减速下降",
+            description="TRIX指标减速下降，表明下跌动能逐渐减弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_STRONG_BULLISH_CONSENSUS",
+            display_name="TRIX强烈看涨共振",
+            description="TRIX多重信号共振，形成强烈看涨态势",
+            pattern_type="BULLISH",
+            default_strength="VERY_STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="TRIX_STRONG_BEARISH_CONSENSUS",
+            display_name="TRIX强烈看跌共振",
+            description="TRIX多重信号共振，形成强烈看跌态势",
+            pattern_type="BEARISH",
+            default_strength="VERY_STRONG",
+            score_impact=-30.0,
+            polarity="NEGATIVE"
+        )
+
         # 注册TRIX连续上升形态
         self.register_pattern_to_registry(
             pattern_id="TRIX_CONSECUTIVE_RISING",

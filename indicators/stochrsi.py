@@ -568,6 +568,67 @@ class STOCHRSI(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册StochRSI位置和趋势形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_K_ABOVE_D",
+            display_name="随机RSI K线上穿D线",
+            description="随机RSI的K线上穿D线，短期动量转强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_K_BELOW_D",
+            display_name="随机RSI K线下穿D线",
+            description="随机RSI的K线下穿D线，短期动量转弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_K_RISING",
+            display_name="随机RSI K线上升",
+            description="随机RSI的K线上升，动量增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_K_FALLING",
+            display_name="随机RSI K线下降",
+            description="随机RSI的K线下降",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_D_RISING",
+            display_name="随机RSI D线上升",
+            description="随机RSI的D线上升",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=8.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="STOCHRSI_D_FALLING",
+            display_name="随机RSI D线下降",
+            description="随机RSI的D线下降",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-8.0,
+            polarity="NEGATIVE"
+        )
+
     def get_pattern_info(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息

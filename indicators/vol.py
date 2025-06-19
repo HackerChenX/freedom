@@ -1014,6 +1014,17 @@ class VOL(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册VOL状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="VOL_FALLING",
+            display_name="成交量下降",
+            description="成交量持续下降，交投活跃度降低",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号

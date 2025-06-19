@@ -776,6 +776,37 @@ class CCI(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册CCI状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="CCI_OVERBOUGHT",
+            display_name="CCI超买",
+            description="CCI值高于+100，表示超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_OVERSOLD",
+            display_name="CCI超卖",
+            description="CCI值低于-100，表示超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_STRONG_UPTREND",
+            display_name="CCI强势上升",
+            description="CCI持续上升，表示强势上涨",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
     def get_pattern_info(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息

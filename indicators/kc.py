@@ -607,6 +607,121 @@ class KC(BaseIndicator):
             score_impact=25.0,
             polarity="POSITIVE"
         )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_BREAK_LOWER",
+            display_name="KC下轨突破",
+            description="价格跌破肯特纳通道下轨，弱势信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册中轨突破形态
+        self.register_pattern_to_registry(
+            pattern_id="KC_BREAK_MIDDLE_UP",
+            display_name="KC中轨向上突破",
+            description="价格向上突破肯特纳通道中轨，由弱转强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_BREAK_MIDDLE_DOWN",
+            display_name="KC中轨向下突破",
+            description="价格向下突破肯特纳通道中轨，由强转弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册极值形态
+        self.register_pattern_to_registry(
+            pattern_id="KC_EXTREME_OVERBOUGHT",
+            display_name="KC极度超买",
+            description="价格远超肯特纳通道上轨，极度超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_EXTREME_OVERSOLD",
+            display_name="KC极度超卖",
+            description="价格远低于肯特纳通道下轨，极度超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册通道形态
+        self.register_pattern_to_registry(
+            pattern_id="KC_WIDE_CHANNEL",
+            display_name="KC通道扩张",
+            description="肯特纳通道宽度扩张，波动性增加但方向不确定",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_NARROW_CHANNEL",
+            display_name="KC通道收缩",
+            description="肯特纳通道宽度收缩，可能酝酿突破但方向不确定",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 注册KC状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="KC_ABOVE_MIDDLE",
+            display_name="KC中轨上方",
+            description="价格位于肯特纳通道中轨上方",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_AT_MIDDLE",
+            display_name="KC中轨附近",
+            description="价格位于肯特纳通道中轨附近",
+            pattern_type="NEUTRAL",
+            default_strength="WEAK",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_CONTRACTING",
+            display_name="KC通道收缩",
+            description="肯特纳通道收缩，波动率降低",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="KC_EXPANDING",
+            display_name="KC通道扩张",
+            description="肯特纳通道扩张，波动率增加",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
     def get_pattern_info(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
@@ -691,77 +806,3 @@ class KC(BaseIndicator):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
-
-
-        self.register_pattern_to_registry(
-            pattern_id="KC_BREAK_LOWER",
-            display_name="KC下轨突破",
-            description="价格跌破肯特纳通道下轨，弱势信号",
-            pattern_type="BEARISH",
-            default_strength="STRONG",
-            score_impact=-25.0,
-            polarity="NEGATIVE"
-        )
-
-        # 注册中轨突破形态
-        self.register_pattern_to_registry(
-            pattern_id="KC_BREAK_MIDDLE_UP",
-            display_name="KC中轨向上突破",
-            description="价格向上突破肯特纳通道中轨，由弱转强",
-            pattern_type="BULLISH",
-            default_strength="MEDIUM",
-            score_impact=15.0,
-            polarity="POSITIVE"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="KC_BREAK_MIDDLE_DOWN",
-            display_name="KC中轨向下突破",
-            description="价格向下突破肯特纳通道中轨，由强转弱",
-            pattern_type="BEARISH",
-            default_strength="MEDIUM",
-            score_impact=-15.0,
-            polarity="NEGATIVE"
-        )
-
-        # 注册极值形态
-        self.register_pattern_to_registry(
-            pattern_id="KC_EXTREME_OVERBOUGHT",
-            display_name="KC极度超买",
-            description="价格远超肯特纳通道上轨，极度超买",
-            pattern_type="BEARISH",
-            default_strength="MEDIUM",
-            score_impact=-20.0,
-            polarity="NEGATIVE"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="KC_EXTREME_OVERSOLD",
-            display_name="KC极度超卖",
-            description="价格远低于肯特纳通道下轨，极度超卖",
-            pattern_type="BULLISH",
-            default_strength="MEDIUM",
-            score_impact=20.0,
-            polarity="POSITIVE"
-        )
-
-        # 注册通道形态
-        self.register_pattern_to_registry(
-            pattern_id="KC_WIDE_CHANNEL",
-            display_name="KC通道扩张",
-            description="肯特纳通道宽度扩张，波动性增加但方向不确定",
-            pattern_type="NEUTRAL",
-            default_strength="WEAK",
-            score_impact=0.0,
-            polarity="NEUTRAL"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="KC_NARROW_CHANNEL",
-            display_name="KC通道收缩",
-            description="肯特纳通道宽度收缩，可能酝酿突破但方向不确定",
-            pattern_type="NEUTRAL",
-            default_strength="MEDIUM",
-            score_impact=0.0,
-            polarity="NEUTRAL"
-        )

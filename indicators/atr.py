@@ -886,6 +886,27 @@ class ATR(BaseIndicator):
             polarity="NEUTRAL"
         )
 
+        # 注册ATR状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="ATR_UPWARD_BREAKOUT",
+            display_name="ATR向上突破",
+            description="真实波动幅度向上突破，波动率增加",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=5.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VOLATILITY_EXPANSION",
+            display_name="波动率扩张",
+            description="市场波动率扩张，价格波动加剧",
+            pattern_type="NEUTRAL",
+            default_strength="STRONG",
+            score_impact=10.0,
+            polarity="NEUTRAL"
+        )
+
         # 注册市场状态形态
         self.register_pattern_to_registry(
             pattern_id="VOLATILITY_EXPLOSION",

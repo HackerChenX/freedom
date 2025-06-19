@@ -603,6 +603,67 @@ class CMO(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册CMO状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="CMO_ABOVE_ZERO",
+            display_name="CMO零轴上方",
+            description="CMO动量指标位于零轴上方，上涨动量占优",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_BELOW_ZERO",
+            display_name="CMO零轴下方",
+            description="CMO动量指标位于零轴下方，下跌动量占优",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_RISING",
+            display_name="CMO上升",
+            description="CMO指标上升，动量增强",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_FALLING",
+            display_name="CMO下降",
+            description="CMO指标下降，动量减弱",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-12.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_STRONG_RISE",
+            display_name="CMO强势上升",
+            description="CMO指标强势上升，动量强劲",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CMO_STRONG_FALL",
+            display_name="CMO强势下降",
+            description="CMO指标强势下降，下跌动量强劲",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0,
+            polarity="NEGATIVE"
+        )
+
     def get_pattern_info(self, pattern_id: str = None) -> Dict[str, Any]:
         """
         获取CMO指标的形态信息

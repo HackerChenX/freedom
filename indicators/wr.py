@@ -817,6 +817,37 @@ class WR(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册WR状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="WR_RISING",
+            display_name="WR上升",
+            description="威廉指标上升，超卖状态缓解",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_NORMAL",
+            display_name="WR正常",
+            description="威廉指标处于正常范围",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="WR_LOW_STAGNATION",
+            display_name="WR低位停滞",
+            description="威廉指标在低位停滞",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=5.0,
+            polarity="NEUTRAL"
+        )
+
         # 注册WR穿越形态
         self.register_pattern_to_registry(
             pattern_id="WR_CROSS_ABOVE_OVERSOLD",

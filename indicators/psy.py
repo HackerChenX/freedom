@@ -756,6 +756,67 @@ class PSY(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册PSY状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="PSY_ABOVE_50",
+            display_name="PSY心理线50上方",
+            description="PSY心理线位于50上方，市场情绪偏乐观",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=8.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PSY_BELOW_50",
+            display_name="PSY心理线50下方",
+            description="PSY心理线位于50下方，市场情绪偏悲观",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-8.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PSY_ABOVE_MA",
+            display_name="PSY均线上方",
+            description="PSY心理线位于移动平均线上方",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PSY_BELOW_MA",
+            display_name="PSY均线下方",
+            description="PSY心理线位于移动平均线下方",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PSY_STRONG_DOWN",
+            display_name="PSY强势下跌",
+            description="PSY心理线强势下跌，市场情绪悲观",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-18.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="PSY_STRONG_UP",
+            display_name="PSY强势上涨",
+            description="PSY心理线强势上涨，市场情绪乐观",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=18.0,
+            polarity="POSITIVE"
+        )
+
     def set_parameters(self, **kwargs):
         """
         设置PSY指标参数

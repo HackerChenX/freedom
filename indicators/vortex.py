@@ -473,6 +473,115 @@ class Vortex(BaseIndicator):
         strength_score -= vi_minus_extreme_high * 12
         
         return strength_score
+
+    def register_patterns(self):
+        """
+        注册Vortex指标的技术形态
+        """
+        # 注册Vortex交叉形态
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_BULLISH_CROSS",
+            display_name="涡流看涨交叉",
+            description="VI+上穿VI-，表明上升趋势开始",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_BEARISH_CROSS",
+            display_name="涡流看跌交叉",
+            description="VI+下穿VI-，表明下降趋势开始",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册Vortex阈值形态
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_STRONG_BULLISH",
+            display_name="涡流强烈看涨",
+            description="VI+远高于VI-，表明强烈上升趋势",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_STRONG_BEARISH",
+            display_name="涡流强烈看跌",
+            description="VI-远高于VI+，表明强烈下降趋势",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册Vortex趋势形态
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_UPTREND",
+            display_name="涡流上升趋势",
+            description="VI+持续高于VI-，确认上升趋势",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_DOWNTREND",
+            display_name="涡流下降趋势",
+            description="VI-持续高于VI+，确认下降趋势",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册Vortex背离形态
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_BULLISH_DIVERGENCE",
+            display_name="涡流看涨背离",
+            description="价格创新低但Vortex未创新低，表明下跌动能减弱",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=30.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_BEARISH_DIVERGENCE",
+            display_name="涡流看跌背离",
+            description="价格创新高但Vortex未创新高，表明上涨动能减弱",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-30.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册Vortex状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_RISING",
+            display_name="涡流上升",
+            description="涡流指标呈上升趋势",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="VORTEX_FALLING",
+            display_name="涡流下降",
+            description="涡流指标呈下降趋势",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
     
     def _detect_vortex_cross_patterns(self) -> List[str]:
         """

@@ -689,8 +689,8 @@ class ZXMTurnover(BaseIndicator):
         # 注册换手率活跃度形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_EXTREMELY_ACTIVE",
-            display_name="ZXM换手率极度活跃",
-            description="换手率>5%，极度活跃，需要谨慎",
+            display_name="ZXM_换手率极度活跃",
+            description="换手率超过历史平均水平3倍，换手率>5%，极度活跃，需要谨慎",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -699,8 +699,8 @@ class ZXMTurnover(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_VERY_ACTIVE",
-            display_name="ZXM换手率非常活跃",
-            description="换手率2%-5%，非常活跃",
+            display_name="ZXM_换手率非常活跃",
+            description="换手率处于高活跃区间，换手率2%-5%，非常活跃",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -709,8 +709,8 @@ class ZXMTurnover(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_ACTIVE",
-            display_name="ZXM换手率活跃",
-            description="换手率1%-2%，活跃",
+            display_name="ZXM_换手率活跃",
+            description="换手率处于活跃区间，换手率1%-2%，活跃",
             pattern_type="BULLISH",
             default_strength="WEAK",
             score_impact=8.0,
@@ -719,8 +719,8 @@ class ZXMTurnover(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_NORMAL_ACTIVE",
-            display_name="ZXM换手率一般活跃",
-            description="换手率0.7%-1%，一般活跃",
+            display_name="ZXM_换手率适度活跃",
+            description="换手率处于正常活跃区间，换手率0.7%-1%，适度活跃",
             pattern_type="BULLISH",
             default_strength="WEAK",
             score_impact=5.0,
@@ -750,8 +750,8 @@ class ZXMTurnover(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_RELATIVE_ACTIVE",
-            display_name="ZXM换手率相对历史活跃",
-            description="换手率相对20日均值活跃",
+            display_name="ZXM_换手率相对活跃",
+            description="换手率高于历史平均水平1.5倍，相对20日均值活跃",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -771,8 +771,8 @@ class ZXMTurnover(BaseIndicator):
         # 注册换手率变化形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_SUDDEN_INCREASE",
-            display_name="ZXM换手率突然放大",
-            description="换手率突然放大，关注资金流入",
+            display_name="ZXM_换手率急增",
+            description="换手率较前日增长超过100%，换手率突然放大，关注资金流入",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=12.0,
@@ -781,18 +781,8 @@ class ZXMTurnover(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_SUDDEN_DECREASE",
-            display_name="ZXM换手率突然缩小",
-            description="换手率突然缩小，资金流出",
-            pattern_type="BEARISH",
-            default_strength="WEAK",
-            score_impact=-8.0,
-            polarity="NEGATIVE"
-        )
-
-        self.register_pattern_to_registry(
-            pattern_id="ZXM_TURNOVER_SUDDEN_DECREASE",
-            display_name="ZXM换手率突然缩小",
-            description="换手率突然缩小，关注资金流出",
+            display_name="ZXM_换手率急缩",
+            description="换手率较前日下降超过50%，换手率突然缩小，关注资金流出",
             pattern_type="BEARISH",
             default_strength="WEAK",
             score_impact=-8.0,
@@ -1037,8 +1027,8 @@ class ZXMVolumeShrink(BaseIndicator):
         # 注册主要买点信号
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_SHRINK_BUY_POINT",
-            display_name="ZXM缩量买点信号",
-            description="成交量明显缩量，ZXM体系买点信号",
+            display_name="ZXM_缩量买点",
+            description="缩量过程中形成的买入点位，成交量明显缩量，ZXM体系买点信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,
@@ -1048,8 +1038,8 @@ class ZXMVolumeShrink(BaseIndicator):
         # 注册缩量程度形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_SEVERE_SHRINK",
-            display_name="ZXM严重缩量",
-            description="成交量严重缩量，量比<0.5",
+            display_name="ZXM_成交量严重缩量",
+            description="成交量严重缩量，量比<0.5，市场观望情绪极强",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=5.0,
@@ -1058,8 +1048,8 @@ class ZXMVolumeShrink(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_OBVIOUS_SHRINK",
-            display_name="ZXM明显缩量",
-            description="成交量明显缩量，量比0.5-0.7",
+            display_name="ZXM_成交量明显缩量",
+            description="成交量明显缩量，量比0.5-0.7，市场交投清淡",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=3.0,
@@ -1068,8 +1058,8 @@ class ZXMVolumeShrink(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_SLIGHT_SHRINK",
-            display_name="ZXM轻微缩量",
-            description="成交量轻微缩量，量比0.7-0.9",
+            display_name="ZXM_成交量轻微缩量",
+            description="成交量较前期下降10-30%，量比0.7-0.9，轻微缩量",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=1.0,
@@ -1078,8 +1068,8 @@ class ZXMVolumeShrink(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_NORMAL",
-            display_name="ZXM成交量正常",
-            description="成交量正常，量比≥0.9",
+            display_name="ZXM_成交量正常",
+            description="成交量处于正常水平区间，量比≥0.9",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -1089,8 +1079,8 @@ class ZXMVolumeShrink(BaseIndicator):
         # 注册连续缩量形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_CONSECUTIVE_SHRINK",
-            display_name="ZXM连续缩量",
-            description="连续3日缩量，市场观望情绪浓厚",
+            display_name="ZXM_成交量连续缩量",
+            description="成交量连续3日以上缩量，市场观望情绪浓厚",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=8.0,
@@ -1100,8 +1090,8 @@ class ZXMVolumeShrink(BaseIndicator):
         # 注册缩量整理形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_SHRINK_CONSOLIDATION",
-            display_name="ZXM缩量整理",
-            description="缩量配合价格整理，蓄势待发",
+            display_name="ZXM_缩量整理蓄势",
+            description="缩量配合价格整理，蓄势待发，为后续上涨积蓄能量",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=12.0,
@@ -1387,8 +1377,8 @@ class ZXMMACallback(BaseIndicator):
         # 注册主要买点信号
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA_CALLBACK_BUY_POINT",
-            display_name="ZXM均线回调买点信号",
-            description="价格回踩至关键均线附近，ZXM体系买点信号",
+            display_name="ZXM_均线回调买点",
+            description="均线回调形成的标准买入点位，价格回踩至关键均线附近，ZXM体系买点信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,
@@ -1398,8 +1388,8 @@ class ZXMMACallback(BaseIndicator):
         # 注册具体均线回调形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA20_CALLBACK",
-            display_name="ZXM回踩20日均线",
-            description="价格回踩至20日均线4%范围内",
+            display_name="ZXM_MA20回调确认",
+            description="价格回调至MA20均线获得支撑确认，回踩至20日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="WEAK",
             score_impact=8.0,
@@ -1408,8 +1398,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA30_CALLBACK",
-            display_name="ZXM回踩30日均线",
-            description="价格回踩至30日均线4%范围内",
+            display_name="ZXM_MA30回调确认",
+            description="价格回调至MA30均线获得支撑确认，回踩至30日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=12.0,
@@ -1418,8 +1408,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA60_CALLBACK",
-            display_name="ZXM回踩60日均线",
-            description="价格回踩至60日均线4%范围内",
+            display_name="ZXM_MA60回调确认",
+            description="价格回调至MA60均线获得支撑确认，回踩至60日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=18.0,
@@ -1428,8 +1418,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA120_CALLBACK",
-            display_name="ZXM回踩120日均线",
-            description="价格回踩至120日均线4%范围内",
+            display_name="ZXM_MA120回调确认",
+            description="价格回调至MA120均线获得支撑确认，回踩至120日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=25.0,
@@ -1439,8 +1429,8 @@ class ZXMMACallback(BaseIndicator):
         # 注册多重回调形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_MULTIPLE_MA_CALLBACK",
-            display_name="ZXM多重均线回调",
-            description="同时回踩3条以上均线，支撑强劲",
+            display_name="ZXM_多均线回调共振",
+            description="价格同时获得多条均线支撑确认，多重支撑共振效应",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=30.0,
@@ -1449,8 +1439,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_DOUBLE_MA_CALLBACK",
-            display_name="ZXM双重均线回调",
-            description="同时回踩2条均线，支撑较强",
+            display_name="ZXM_双均线回调确认",
+            description="价格同时获得两条均线支撑确认，双重支撑效应",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,
@@ -1459,8 +1449,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_SINGLE_MA_CALLBACK",
-            display_name="ZXM单一均线回调",
-            description="回踩单一均线，支撑一般",
+            display_name="ZXM_单均线回调确认",
+            description="价格获得单一均线支撑确认，基础支撑效应",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -1470,8 +1460,8 @@ class ZXMMACallback(BaseIndicator):
         # 注册支撑有效性形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA20_SUPPORT",
-            display_name="ZXM20日线有效支撑",
-            description="价格在20日均线上方获得支撑",
+            display_name="ZXM_MA20强支撑",
+            description="MA20均线提供强力支撑作用，价格在20日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="WEAK",
             score_impact=5.0,
@@ -1480,8 +1470,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA30_SUPPORT",
-            display_name="ZXM30日线有效支撑",
-            description="价格在30日均线上方获得支撑",
+            display_name="ZXM_MA30强支撑",
+            description="MA30均线提供强力支撑作用，价格在30日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=8.0,
@@ -1490,8 +1480,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA60_SUPPORT",
-            display_name="ZXM60日线有效支撑",
-            description="价格在60日均线上方获得支撑",
+            display_name="ZXM_MA60强支撑",
+            description="MA60均线提供强力支撑作用，价格在60日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=15.0,
@@ -1500,8 +1490,8 @@ class ZXMMACallback(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_MA120_SUPPORT",
-            display_name="ZXM120日线有效支撑",
-            description="价格在120日均线上方获得支撑",
+            display_name="ZXM_MA120强支撑",
+            description="MA120均线提供强力支撑作用，价格在120日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=20.0,
@@ -1876,8 +1866,8 @@ class ZXMBSAbsorb(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_BS_ABSORB_OBVIOUS",
-            display_name="ZXM明显吸筹信号",
-            description="主力明显吸筹，近期多次出现吸筹特征",
+            display_name="ZXM_买卖盘明显吸筹",
+            description="买卖盘数据显示明显的主力吸筹行为，近期多次出现吸筹特征",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,
@@ -1886,8 +1876,8 @@ class ZXMBSAbsorb(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_BS_ABSORB_SLIGHT",
-            display_name="ZXM轻微吸筹信号",
-            description="主力轻微吸筹，近期出现少量吸筹特征",
+            display_name="ZXM_买卖盘轻微吸筹",
+            description="买卖盘数据显示轻微的主力吸筹行为，近期出现少量吸筹特征",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,
@@ -1917,8 +1907,8 @@ class ZXMBSAbsorb(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_BS_ABSORB_WATCH_ZONE",
-            display_name="ZXM吸筹观察区间",
-            description="V11指标处于中间区域，需要观察吸筹动向",
+            display_name="ZXM_买卖盘观察区域",
+            description="买卖盘处于关键观察区域，V11指标处于中间区域，需要观察吸筹动向",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=5.0,
@@ -1938,8 +1928,8 @@ class ZXMBSAbsorb(BaseIndicator):
         # V12动量形态
         self.register_pattern_to_registry(
             pattern_id="ZXM_BS_STRONG_MOMENTUM",
-            display_name="ZXM强烈上升动量",
-            description="V12指标显示强烈的上升动量",
+            display_name="ZXM_买卖盘强势动能",
+            description="买卖盘显示强劲的上涨动能，V12指标显示强烈的上升动量",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,
@@ -1948,8 +1938,8 @@ class ZXMBSAbsorb(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_BS_UP_MOMENTUM",
-            display_name="ZXM上升动量",
-            description="V12指标显示上升动量",
+            display_name="ZXM_买卖盘上升动能",
+            description="买卖盘显示上升动能，V12指标显示上升动量",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,
@@ -1958,8 +1948,8 @@ class ZXMBSAbsorb(BaseIndicator):
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_BS_STABLE_MOMENTUM",
-            display_name="ZXM动量平稳",
-            description="V12指标显示动量平稳",
+            display_name="ZXM_买卖盘稳定动能",
+            description="买卖盘显示稳定的上涨动能，V12指标显示动量平稳",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,

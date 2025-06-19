@@ -255,6 +255,27 @@ class ROC(BaseIndicator):
             polarity="NEGATIVE"
         )
 
+        # 注册ROC状态形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="ROC_ABOVE_ZERO",
+            display_name="ROC零轴上方",
+            description="变动率指标位于零轴上方，价格上涨动量积极",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="ROC_ABOVE_MA",
+            display_name="ROC均线上方",
+            description="ROC位于移动平均线上方",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=12.0,
+            polarity="POSITIVE"
+        )
+
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取ROC相关形态

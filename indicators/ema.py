@@ -152,6 +152,17 @@ class EMA(BaseIndicator):
             pattern_type="BEARISH",
             polarity="NEGATIVE"
         )
+
+        # 注册EMA排列形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="EMA_BULLISH_ARRANGEMENT",
+            display_name="EMA多头排列",
+            description="指数移动平均线呈多头排列，趋势向上",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
         self.register_pattern_to_registry(
             pattern_id="EMA_BULLISH_ARRANGEMENT",
             display_name="EMA多头排列",

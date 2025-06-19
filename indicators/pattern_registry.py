@@ -473,7 +473,31 @@ class PatternRegistry:
                 matched_patterns.append(pattern_id)
         
         return matched_patterns
-    
+
+    @classmethod
+    def get_pattern_infos_by_indicator(cls, indicator_id: str) -> List[Dict[str, Any]]:
+        """获取适用于指定指标类型的所有形态信息"""
+        instance = cls()
+
+        # 将指标ID转为大写以确保匹配
+        indicator_id_upper = indicator_id.upper()
+
+        matched_patterns = []
+
+        # 检查是否在_patterns_by_indicator中存在
+        if indicator_id_upper in instance._patterns_by_indicator:
+            pattern_ids = list(instance._patterns_by_indicator[indicator_id_upper])
+            for pattern_id in pattern_ids:
+                if pattern_id in instance._patterns:
+                    matched_patterns.append(instance._patterns[pattern_id].copy())
+        else:
+            # 兼容旧代码：查找所有以该指标ID开头的形态
+            for pattern_id, pattern_info in instance._patterns.items():
+                if pattern_id.startswith(f"{indicator_id_upper}_"):
+                    matched_patterns.append(pattern_info.copy())
+
+        return matched_patterns
+
     @classmethod
     def get_pattern_info(cls, pattern_id: str) -> Optional[Dict[str, Any]]:
         """获取形态信息"""

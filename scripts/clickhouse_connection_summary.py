@@ -19,7 +19,7 @@ def test_clickhouse_connection():
         'host': 'localhost',
         'port': 9000,
         'user': 'default',
-        'password': '123456',
+        'password': '',
         'database': 'stock'
     }
     

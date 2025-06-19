@@ -25,515 +25,14 @@ from utils.path_utils import ensure_dir_exists
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
 from strategy.strategy_generator import StrategyGenerator
+from indicators.pattern_registry import PatternRegistry
 
 logger = get_logger(__name__)
 
-# 完整的指标形态映射字典 - 100%覆盖所有指标
-COMPLETE_INDICATOR_PATTERNS_MAP = {
-    # 1. 基础技术指标
-    'TRIX': {
-        'falling': {'name': 'TRIX下降趋势', 'description': 'TRIX三重指数平滑移动平均线呈下降趋势，表明长期价格动量减弱'},
-        'rising': {'name': 'TRIX上升趋势', 'description': 'TRIX三重指数平滑移动平均线呈上升趋势，表明长期价格动量增强'},
-        'above_zero': {'name': 'TRIX零轴上方', 'description': 'TRIX位于零轴上方，表明长期趋势偏多'},
-        'below_zero': {'name': 'TRIX零轴下方', 'description': 'TRIX位于零轴下方，表明长期趋势偏空'},
-        'acceleration': {'name': 'TRIX加速上升', 'description': 'TRIX指标加速上升，表明价格上涨动能不断增强'},
-        'deceleration': {'name': 'TRIX减速下降', 'description': 'TRIX指标减速下降，表明下跌动能逐渐减弱'},
-        'strong_bullish_consensus': {'name': 'TRIX强烈看涨共振', 'description': 'TRIX多重信号共振，形成强烈看涨态势'},
-        'strong_bearish_consensus': {'name': 'TRIX强烈看跌共振', 'description': 'TRIX多重信号共振，形成强烈看跌态势'},
-    },
-    'EnhancedTRIX': {
-        'falling': {'name': 'TRIX下降趋势', 'description': 'TRIX三重指数平滑移动平均线呈下降趋势，表明长期价格动量减弱'},
-        'rising': {'name': 'TRIX上升趋势', 'description': 'TRIX三重指数平滑移动平均线呈上升趋势，表明长期价格动量增强'},
-        'above_zero': {'name': 'TRIX零轴上方', 'description': 'TRIX位于零轴上方，表明长期趋势偏多'},
-        'below_zero': {'name': 'TRIX零轴下方', 'description': 'TRIX位于零轴下方，表明长期趋势偏空'},
-        'acceleration': {'name': 'TRIX加速上升', 'description': 'TRIX指标加速上升，表明价格上涨动能不断增强'},
-        'deceleration': {'name': 'TRIX减速下降', 'description': 'TRIX指标减速下降，表明下跌动能逐渐减弱'},
-        'strong_bullish_consensus': {'name': 'TRIX强烈看涨共振', 'description': 'TRIX多重信号共振，形成强烈看涨态势'},
-        'strong_bearish_consensus': {'name': 'TRIX强烈看跌共振', 'description': 'TRIX多重信号共振，形成强烈看跌态势'},
-    },
-    # MACD相关指标已经在指标类中直接注册形态，不需要在这里重复定义
-    # KDJ相关指标已经在指标类中直接注册形态，不需要在这里重复定义
-    # RSI相关指标已经在指标类中直接注册形态，不需要在这里重复定义
-    # BOLL相关指标已经在指标类中直接注册形态，不需要在这里重复定义
-
-    # 2. 成交量指标
-    'VOL': {
-        'volume_surge': {'name': '放量上涨', 'description': '成交量显著放大配合价格上涨，表明资金积极入场'},
-        'volume_shrink': {'name': '缩量整理', 'description': '成交量萎缩，价格窄幅整理，表明市场观望情绪浓厚'},
-        'price_volume_divergence': {'name': '量价背离', 'description': '价格与成交量走势出现背离，需警惕趋势变化'},
-        'volume_breakout': {'name': '放量突破', 'description': '价格突破重要阻力位时伴随成交量放大，突破有效性高'},
-        'VOL_RISING': {'name': '成交量上升', 'description': '成交量呈上升趋势，表明市场活跃度增加'},
-        'VOL_FALLING': {'name': '成交量下降', 'description': '成交量呈下降趋势，表明市场活跃度减少'},
-    },
-    'OBV': {
-        'OBV_VOLUME_PRICE_HARMONY': {'name': 'OBV量价配合', 'description': 'OBV指标与价格走势协调，量价关系健康'},
-        'OBV_VOLUME_PRICE_DIVERGENCE': {'name': 'OBV量价背离', 'description': 'OBV指标与价格走势背离，需警惕趋势变化'},
-        'OBV_BREAKOUT_HIGH': {'name': 'OBV突破新高', 'description': 'OBV指标突破前期高点，表明资金持续流入'},
-        'OBV_ABOVE_MA': {'name': 'OBV均线上方', 'description': 'OBV位于移动平均线上方，资金流向积极'},
-        'OBV_RISING': {'name': 'OBV上升趋势', 'description': 'OBV持续上升，表明资金持续流入'},
-        'OBV_BULLISH_MOMENTUM': {'name': 'OBV看涨动量', 'description': 'OBV显示强劲的看涨动量'},
-        'OBV_BREAKOUT': {'name': 'OBV突破', 'description': 'OBV突破关键阻力位'},
-    },
-    'EnhancedOBV': {
-        'OBV_ABOVE_MA': {'name': 'OBV均线上方', 'description': 'OBV位于移动平均线上方，资金流向积极'},
-        'OBV_RISING': {'name': 'OBV上升趋势', 'description': 'OBV持续上升，表明资金持续流入'},
-        'OBV_BULLISH_MOMENTUM': {'name': 'OBV看涨动量', 'description': 'OBV显示强劲的看涨动量'},
-        'OBV_BREAKOUT': {'name': 'OBV突破', 'description': 'OBV突破关键阻力位'},
-    },
-    'MFI': {
-        'MFI_ABOVE_50': {'name': 'MFI资金流入', 'description': 'MFI指标超过50，表明资金净流入'},
-        'MFI_RISING': {'name': 'MFI上升', 'description': 'MFI指标上升，资金流入增强'},
-        'MFI_CONSECUTIVE_RISING': {'name': 'MFI连续上升', 'description': 'MFI指标连续上升，资金流入持续'},
-        'MFI_LARGE_FALL': {'name': 'MFI大幅下降', 'description': 'MFI指标大幅下降，资金流出加速'},
-    },
-    'EnhancedMFI': {
-        'MFI_ABOVE_50': {'name': 'MFI资金流入', 'description': 'MFI指标超过50，表明资金净流入'},
-        'MFI_RISING': {'name': 'MFI上升', 'description': 'MFI指标上升，资金流入增强'},
-    },
-    'VOSC': {
-        'VOSC_RISING': {'name': 'VOSC上升', 'description': '成交量震荡指标上升，成交量动能增强'},
-        'VOSC_ABOVE_ZERO': {'name': 'VOSC零轴上方', 'description': 'VOSC位于零轴上方，成交量相对活跃'},
-        'VOSC_ABOVE_SIGNAL': {'name': 'VOSC信号线上方', 'description': 'VOSC位于信号线上方，成交量趋势向好'},
-        'VOSC_UPTREND': {'name': 'VOSC上升趋势', 'description': 'VOSC呈现上升趋势，成交量持续活跃'},
-        'VOSC_PRICE_CONFIRMATION': {'name': 'VOSC价格确认', 'description': 'VOSC与价格走势相互确认'},
-        'VOSC_PRICE_DIVERGENCE': {'name': 'VOSC价格背离', 'description': 'VOSC与价格走势出现背离'},
-        'VOSC_LOW': {'name': 'VOSC低位', 'description': 'VOSC处于低位，成交量相对萎缩'},
-    },
-    'VR': {
-        'VR_NORMAL': {'name': 'VR正常', 'description': '成交量比率处于正常范围'},
-        'VR_RISING': {'name': 'VR上升', 'description': '成交量比率上升，买盘力量增强'},
-        'VR_OVERBOUGHT': {'name': 'VR超买', 'description': '成交量比率过高，市场可能过热'},
-        'VR_ABOVE_MA': {'name': 'VR均线上方', 'description': 'VR位于移动平均线上方'},
-        'VR_RAPID_FALL': {'name': 'VR快速下降', 'description': 'VR快速下降，成交量萎缩'},
-        'VR_STABLE': {'name': 'VR稳定', 'description': 'VR保持稳定，成交量平衡'},
-    },
-    'PVT': {
-        'PVT_RISING': {'name': 'PVT上升', 'description': '价量趋势指标上升，价量配合良好'},
-        'PVT_ABOVE_SIGNAL': {'name': 'PVT信号线上方', 'description': 'PVT位于信号线上方，趋势向好'},
-        'PVT_STRONG_UP': {'name': 'PVT强势上升', 'description': 'PVT强势上升，价量配合极佳'},
-    },
-
-    # 3. 趋势指标
-    'MA': {
-        'bullish_arrangement': {'name': '均线多头排列', 'description': '短期均线在长期均线之上，形成多头排列'},
-        'bearish_arrangement': {'name': '均线空头排列', 'description': '短期均线在长期均线之下，形成空头排列'},
-        'golden_cross': {'name': '均线金叉', 'description': '短期均线上穿长期均线，形成金叉信号'},
-        'death_cross': {'name': '均线死叉', 'description': '短期均线下穿长期均线，形成死叉信号'},
-        'support': {'name': '均线支撑', 'description': '价格在均线获得支撑'},
-        'resistance': {'name': '均线阻力', 'description': '价格在均线遇到阻力'},
-    },
-    'EMA': {
-        'EMA_BULLISH_ARRANGEMENT': {'name': 'EMA多头排列', 'description': '指数移动平均线呈多头排列，趋势向上'},
-    },
-    'UnifiedMA': {
-        'PRICE_ABOVE_LONG_MA': {'name': '价格站上长期均线', 'description': '价格位于长期移动平均线上方'},
-        'MA_BULLISH_ALIGNMENT': {'name': '均线多头排列', 'description': '移动平均线呈多头排列'},
-        'MA_LONG_UPTREND': {'name': '长期均线上升', 'description': '长期移动平均线呈上升趋势'},
-        'MA_CONSOLIDATION': {'name': '均线盘整', 'description': '移动平均线呈盘整状态'},
-    },
-    'DMI': {
-        'strong_trend': {'name': 'DMI强趋势', 'description': 'ADX大于25，表示趋势强劲'},
-        'weak_trend': {'name': 'DMI弱趋势', 'description': 'ADX小于20，表示趋势疲弱'},
-        'bullish': {'name': 'DMI看涨', 'description': '+DI大于-DI，看涨信号'},
-        'bearish': {'name': 'DMI看跌', 'description': '-DI大于+DI，看跌信号'},
-    },
-    'ADX': {
-        'ADX_UPTREND': {'name': 'ADX上升趋势', 'description': 'ADX指标上升，趋势强度增强'},
-        'ADX_STRONG_RISING': {'name': 'ADX强势上升', 'description': 'ADX强势上升，趋势非常强劲'},
-        'ADX_EXTREME_UPTREND': {'name': 'ADX极强趋势', 'description': 'ADX达到极高水平，趋势极其强劲'},
-    },
-    'SAR': {
-        'SAR_UPTREND': {'name': 'SAR上升趋势', 'description': 'SAR指标显示上升趋势'},
-        'SAR_CLOSE_TO_PRICE': {'name': 'SAR接近价格', 'description': 'SAR点位接近当前价格'},
-        'SAR_LOW_ACCELERATION': {'name': 'SAR低加速', 'description': 'SAR加速因子较低，趋势稳定'},
-    },
-
-    # 4. 动量指标
-    'ROC': {
-        'ROC_ABOVE_ZERO': {'name': 'ROC零轴上方', 'description': '变动率指标位于零轴上方，价格上涨动量积极'},
-        'ROC_OVERBOUGHT': {'name': 'ROC超买', 'description': 'ROC指标进入超买区域'},
-        'ROC_ABOVE_MA': {'name': 'ROC均线上方', 'description': 'ROC位于移动平均线上方'},
-    },
-    'CMO': {
-        'CMO_ABOVE_ZERO': {'name': 'CMO零轴上方', 'description': 'CMO动量指标位于零轴上方，上涨动量占优'},
-        'CMO_RISING': {'name': 'CMO上升', 'description': 'CMO指标上升，动量增强'},
-        'CMO_STRONG_RISE': {'name': 'CMO强势上升', 'description': 'CMO指标强势上升，动量强劲'},
-        'CMO_FALLING': {'name': 'CMO下降', 'description': 'CMO指标下降，动量减弱'},
-        'CMO_STRONG_FALL': {'name': 'CMO强势下降', 'description': 'CMO指标强势下降，下跌动量强劲'},
-        'CMO_BELOW_ZERO': {'name': 'CMO零轴下方', 'description': 'CMO动量指标位于零轴下方，下跌动量占优'},
-    },
-    'Momentum': {
-        'MTM_ABOVE_ZERO': {'name': '动量零轴上方', 'description': '动量指标位于零轴上方，价格上涨动量积极'},
-        'MTM_ABOVE_SIGNAL': {'name': '动量信号线上方', 'description': '动量指标位于信号线上方'},
-        'MTM_RISING': {'name': '动量上升', 'description': '动量指标上升，价格动量增强'},
-        'MTM_DEATH_CROSS': {'name': '动量死叉', 'description': '动量指标形成死叉，动量转弱'},
-        'MTM_EXTREME_LOW': {'name': '动量极低', 'description': '动量指标处于极低水平'},
-        'MTM_ABOVE_MA': {'name': '动量均线上方', 'description': '动量指标位于移动平均线上方'},
-        'MTM_CONSECUTIVE_RISING': {'name': '动量连续上升', 'description': '动量指标连续多日上升，上涨动能持续增强'},
-        'MTM_BULLISH_DIVERGENCE': {'name': '动量看涨背离', 'description': '动量指标与价格形成看涨背离，底部信号'},
-    },
-    'EnhancedMACD': {
-        'MACD柱状体为正': {'name': 'MACD柱状体为正', 'description': 'MACD柱状体大于零，表示上升动能'},
-        'MACD柱状体减少': {'name': 'MACD柱状体减少', 'description': 'MACD柱状体连续减少，表示动能减弱'},
-        'MACD柱状体增长': {'name': 'MACD柱状体增长', 'description': 'MACD柱状体连续增长，表示动能增强'},
-        'MACD强上升趋势': {'name': 'MACD强上升趋势', 'description': 'MACD柱状体为正且趋势强度高，表明强势上升趋势'},
-    },
-    'EnhancedTRIX': {
-        'above_zero': {'name': 'TRIX零轴上方', 'description': 'TRIX位于零轴上方，长期趋势偏多'},
-        'below_zero': {'name': 'TRIX零轴下方', 'description': 'TRIX位于零轴下方，长期趋势偏空'},
-        'rising': {'name': 'TRIX上升', 'description': 'TRIX指标上升，长期动量增强'},
-        'falling': {'name': 'TRIX下降', 'description': 'TRIX指标下降，长期动量减弱'},
-        'strong_bullish_consensus': {'name': 'TRIX强烈看涨共振', 'description': 'TRIX多重信号共振，形成强烈看涨态势'},
-        'deceleration': {'name': 'TRIX减速', 'description': 'TRIX指标减速变化，动能转变'},
-        'acceleration': {'name': 'TRIX加速上升', 'description': 'TRIX指标加速上升，表明价格上涨动能不断增强'},
-        'golden_cross': {'name': 'TRIX金叉', 'description': 'TRIX上穿其信号线，形成金叉，看涨信号'},
-    },
-    'TRIX': {
-        'Trix Above Signal': {'name': 'TRIX信号线上方', 'description': 'TRIX位于信号线上方，短期看涨'},
-        'Trix Above Zero': {'name': 'TRIX零轴上方', 'description': 'TRIX位于零轴上方，中长期看涨'},
-    },
-    'Aroon': {
-        'AROON_STRONG_UPTREND': {'name': 'Aroon强势上升趋势', 'description': 'Aroon指标显示强势上升趋势'},
-        'AROON_OSC_EXTREME_BULLISH': {'name': 'Aroon震荡指标极度看涨', 'description': 'Aroon震荡指标显示极度看涨信号'},
-    },
-    'Ichimoku': {
-        '价格位于云层之下': {'name': '价格位于云层之下', 'description': '价格位于云层下方，看跌信号'},
-    },
-    'WR': {
-        'WR_EXTREME_OVERBOUGHT': {'name': 'WR极度超买', 'description': 'WR指标处于极度超买区域，可能面临回调'},
-    },
-    'EnhancedWR': {
-        'WR_EXTREME_OVERBOUGHT': {'name': 'WR极度超买', 'description': 'WR指标处于极度超买区域，可能面临回调'},
-    },
-    'EnhancedDMI': {
-        'trend_reversal_warning': {'name': '趋势反转警告', 'description': 'DMI指标显示趋势可能即将反转的警告信号'},
-    },
-    'UnifiedMA': {
-        '均线盘整': {'name': '均线盘整', 'description': '移动平均线呈盘整状态'},
-        '价格站上长期均线': {'name': '价格站上长期均线', 'description': '价格位于长期移动平均线上方'},
-        '均线多头排列': {'name': '均线多头排列', 'description': '移动平均线呈多头排列'},
-        '长期均线上升': {'name': '长期均线上升', 'description': '长期移动平均线呈上升趋势'},
-    },
-    'MA': {
-        'MA多头排列': {'name': 'MA多头排列', 'description': '短期MA(5)在长期MA(60)之上，强劲上升趋势'},
-    },
-    'EMA': {
-        'EMA多头排列': {'name': 'EMA多头排列', 'description': '指数移动平均线呈多头排列，趋势向上'},
-    },
-    'STOCHRSI': {
-        'StochRSI超买': {'name': 'StochRSI超买', 'description': 'StochRSI进入超买区域，可能出现回调'},
-        'STOCHRSI_K_RISING': {'name': '随机RSI K线上升', 'description': '随机RSI的K线上升，动量增强'},
-    },
-    'EnhancedKDJ': {
-        'J线超卖': {'name': 'J线超卖', 'description': 'J线低于0，表明极度超卖'},
-    },
-    'KDJ': {
-        'KDJ超买': {'name': 'KDJ超买', 'description': 'KDJ值超过80，进入超买区域，需警惕回调风险'},
-    },
-    'MTM': {
-        'MTM_ABOVE_ZERO': {'name': '动量零轴上方', 'description': '动量指标位于零轴上方，价格上涨动量积极'},
-        'MTM_DEATH_CROSS': {'name': '动量死叉', 'description': '动量指标形成死叉，动量转弱'},
-        'MTM_ABOVE_MA': {'name': '动量均线上方', 'description': '动量指标位于移动平均线上方'},
-    },
-    'DMA': {
-        'DMA_ABOVE_ZERO': {'name': 'DMA零轴上方', 'description': 'DMA平均差值大于0，表示短期均线在长期均线上方'},
-        'DMA_BELOW_ZERO': {'name': 'DMA零轴下方', 'description': 'DMA平均差值小于0，表示短期均线在长期均线下方'},
-        'DMA_WEAK_UPTREND': {'name': 'DMA弱势上升', 'description': 'DMA显示弱势上升趋势'},
-        'DMA_WEAK_DOWNTREND': {'name': 'DMA弱势下降', 'description': 'DMA显示弱势下降趋势'},
-        'DMA_LARGE_DIVERGENCE_UP': {'name': 'DMA大幅上升背离', 'description': 'DMA出现大幅上升背离'},
-        'DMA_LARGE_DIVERGENCE_DOWN': {'name': 'DMA大幅下降背离', 'description': 'DMA出现大幅下降背离'},
-        'DMA_ACCELERATION_UP': {'name': 'DMA加速上升', 'description': 'DMA加速上升，趋势增强'},
-        'DMA_ACCELERATION_DOWN': {'name': 'DMA加速下降', 'description': 'DMA加速下降，下跌趋势增强'},
-    },
-    'WR': {
-        'WR_RISING': {'name': 'WR上升', 'description': '威廉指标上升，超卖状态缓解'},
-        'WR_NORMAL': {'name': 'WR正常', 'description': '威廉指标处于正常范围'},
-        'WR_LOW_STAGNATION': {'name': 'WR低位停滞', 'description': '威廉指标在低位停滞'},
-    },
-    'EnhancedWR': {
-        'WR_RISING': {'name': 'WR上升', 'description': '威廉指标上升，超卖状态缓解'},
-        'WR_NORMAL': {'name': 'WR正常', 'description': '威廉指标处于正常范围'},
-        'WR_LOW_STAGNATION': {'name': 'WR低位停滞', 'description': '威廉指标在低位停滞'},
-    },
-    'CCI': {
-        'overbought': {'name': 'CCI超买', 'description': 'CCI值高于+100，表示超买'},
-        'oversold': {'name': 'CCI超卖', 'description': 'CCI值低于-100，表示超卖'},
-        'strong_uptrend': {'name': 'CCI强势上升', 'description': 'CCI持续上升，表示强势上涨'},
-    },
-    'STOCHRSI': {
-        'STOCHRSI_K_ABOVE_D': {'name': '随机RSI K线上穿D线', 'description': '随机RSI的K线上穿D线，短期动量转强'},
-        'STOCHRSI_K_BELOW_D': {'name': '随机RSI K线下穿D线', 'description': '随机RSI的K线下穿D线，短期动量转弱'},
-        'STOCHRSI_K_RISING': {'name': '随机RSI K线上升', 'description': '随机RSI的K线上升'},
-        'STOCHRSI_K_FALLING': {'name': '随机RSI K线下降', 'description': '随机RSI的K线下降'},
-        'STOCHRSI_D_RISING': {'name': '随机RSI D线上升', 'description': '随机RSI的D线上升'},
-        'STOCHRSI_D_FALLING': {'name': '随机RSI D线下降', 'description': '随机RSI的D线下降'},
-    },
-    'PSY': {
-        'PSY_ABOVE_50': {'name': 'PSY心理线50上方', 'description': 'PSY心理线位于50上方，市场情绪偏乐观'},
-        'PSY_BELOW_50': {'name': 'PSY心理线50下方', 'description': 'PSY心理线位于50下方，市场情绪偏悲观'},
-        'PSY_ABOVE_MA': {'name': 'PSY均线上方', 'description': 'PSY心理线位于移动平均线上方'},
-        'PSY_BELOW_MA': {'name': 'PSY均线下方', 'description': 'PSY心理线位于移动平均线下方'},
-        'PSY_DEATH_CROSS': {'name': 'PSY死叉', 'description': 'PSY心理线形成死叉'},
-        'PSY_CROSS_DOWN_50': {'name': 'PSY下穿50', 'description': 'PSY心理线下穿50水平线，市场情绪转弱'},
-        'PSY_STRONG_DOWN': {'name': 'PSY强势下跌', 'description': 'PSY心理线强势下跌，市场情绪悲观'},
-        'PSY_STRONG_UP': {'name': 'PSY强势上涨', 'description': 'PSY心理线强势上涨，市场情绪乐观'},
-        'PSY_OVERSOLD': {'name': 'PSY超卖', 'description': 'PSY心理线处于超卖区域，可能出现反弹'},
-        'PSY_GOLDEN_CROSS': {'name': 'PSY金叉', 'description': 'PSY心理线形成金叉，看涨信号'},
-    },
-    'MFI': {
-        'MFI连续上升': {'name': 'MFI连续上升', 'description': 'MFI指标连续上升，资金流入持续'},
-        'MFI_LARGE_RISE': {'name': 'MFI大幅上升', 'description': 'MFI指标大幅上升，资金大量流入'},
-        'MFI_BULLISH_DIVERGENCE': {'name': 'MFI看涨背离', 'description': 'MFI与价格形成看涨背离，底部信号'},
-    },
-    'EnhancedMFI': {
-        'Mfi Overbought': {'name': 'MFI超买', 'description': 'MFI值超过80，表示超买状态'},
-        'Mfi Above 50': {'name': 'MFI高于50', 'description': 'MFI值高于50，表示资金净流入'},
-    },
-    'OBV': {
-        'OBV上升趋势': {'name': 'OBV上升趋势', 'description': 'OBV持续上升，表明资金持续流入'},
-        'OBV金叉': {'name': 'OBV金叉', 'description': 'OBV上穿其均线，表明买盘力量增强'},
-        'OBV量价配合': {'name': 'OBV量价配合', 'description': 'OBV指标与价格走势协调，量价关系健康'},
-    },
-    'VR': {
-        'VR正常': {'name': 'VR正常', 'description': '成交量比率处于正常范围'},
-        'VR_DEATH_CROSS': {'name': 'VR死叉', 'description': 'VR指标形成死叉，买盘力量减弱'},
-    },
-    'VOSC': {
-        'VOSC零轴上方': {'name': 'VOSC零轴上方', 'description': 'VOSC位于零轴上方，成交量相对活跃'},
-        'VOSC信号线上方': {'name': 'VOSC信号线上方', 'description': 'VOSC位于信号线上方，成交量趋势向好'},
-        'VOSC价格背离': {'name': 'VOSC价格背离', 'description': 'VOSC与价格走势出现背离'},
-    },
-    'VOL': {
-        '放量上涨': {'name': '放量上涨', 'description': '成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号'},
-        '均量线多头排列': {'name': '均量线多头排列', 'description': '成交量均线呈多头排列，表示成交量趋势强劲'},
-        'VOL_FALLING': {'name': '成交量下降', 'description': '成交量持续下降，交投活跃度降低'},
-    },
-    'EMV': {
-        'EMV零轴上方': {'name': 'EMV零轴上方', 'description': 'EMV位于零轴上方，买盘力量占优'},
-        'EMV均线上方': {'name': 'EMV均线上方', 'description': 'EMV位于移动平均线上方'},
-        'EMV上升': {'name': 'EMV上升', 'description': 'EMV值上升'},
-        'EMV强势上升': {'name': 'EMV强势上升', 'description': 'EMV大幅上升，买盘力量强劲'},
-        'EMV极高值': {'name': 'EMV极高值', 'description': 'EMV达到近期高点'},
-    },
-    'BIAS': {
-        'neutral': {'name': 'BIAS中性', 'description': 'BIAS值在-5%到+5%之间，价格相对均衡'},
-        'moderate_high': {'name': 'BIAS中度偏高', 'description': 'BIAS值在+5%到+15%之间，轻度超买'},
-        'moderate_low': {'name': 'BIAS中度偏低', 'description': 'BIAS值在-15%到-5%之间，轻度超卖'},
-        'extreme_high': {'name': 'BIAS极高值', 'description': 'BIAS值超过+15%，严重超买'},
-        'BIAS_BULLISH_DIVERGENCE': {'name': 'BIAS看涨背离', 'description': 'BIAS与价格形成看涨背离'},
-    },
-
-    # 5. 波动率指标
-    'ATR': {
-        'ATR_UPWARD_BREAKOUT': {'name': 'ATR向上突破', 'description': '真实波动幅度向上突破，波动率增加'},
-        'VOLATILITY_EXPANSION': {'name': '波动率扩张', 'description': '市场波动率扩张，价格波动加剧'},
-    },
-    'KC': {
-        'KC_ABOVE_MIDDLE': {'name': 'KC中轨上方', 'description': '价格位于肯特纳通道中轨上方'},
-        'KC_AT_MIDDLE': {'name': 'KC中轨附近', 'description': '价格位于肯特纳通道中轨附近'},
-        'KC_CONTRACTING': {'name': 'KC通道收缩', 'description': '肯特纳通道收缩，波动率降低'},
-        'KC_EXPANDING': {'name': 'KC通道扩张', 'description': '肯特纳通道扩张，波动率增加'},
-        'KC_WIDE_CHANNEL': {'name': 'KC宽幅通道', 'description': '肯特纳通道处于宽幅状态'},
-        'KC_BREAK_MIDDLE_UP': {'name': 'KC向上突破中轨', 'description': '价格向上突破肯特纳通道中轨'},
-        'KC_OSCILLATING': {'name': 'KC震荡', 'description': '价格在肯特纳通道中震荡'},
-    },
-    'Vortex': {
-        'VORTEX_BULLISH_CROSS': {'name': '涡旋指标金叉', 'description': 'VI+上穿VI-，形成金叉信号，看涨'},
-        'VORTEX_BEARISH_CROSS': {'name': '涡旋指标死叉', 'description': 'VI+下穿VI-，形成死叉信号，看跌'},
-        'VORTEX_VI_PLUS_ABOVE': {'name': '涡旋正值大于负值', 'description': 'VI+大于VI-，多头占优势'},
-        'VORTEX_VI_MINUS_ABOVE': {'name': '涡旋负值大于正值', 'description': 'VI-大于VI+，空头占优势'},
-        'VORTEX_VI_PLUS_STRONG': {'name': '涡旋正值强势', 'description': 'VI+值较高，多头力量强劲'},
-        'VORTEX_VI_MINUS_STRONG': {'name': '涡旋负值强势', 'description': 'VI-值较高，空头力量强劲'},
-        'VORTEX_VI_PLUS_RISING': {'name': '涡旋正值上升', 'description': 'VI+值持续上升，多头力量增强'},
-        'VORTEX_VI_MINUS_RISING': {'name': '涡旋负值上升', 'description': 'VI-值持续上升，空头力量增强'},
-        'VORTEX_VI_DIFF_RISING': {'name': '涡旋指标差值扩大', 'description': 'VI+与VI-的差值扩大，趋势增强'},
-        'VORTEX_VI_PLUS_UPTREND': {'name': '涡旋指标多头趋势', 'description': 'VI+持续大于VI-，确认多头趋势'},
-        'VORTEX_VI_MINUS_UPTREND': {'name': '涡旋负值上升趋势', 'description': 'VI-值呈上升趋势，空头力量逐渐增强'},
-        'VORTEX_VI_PLUS_BREAK_HIGH': {'name': '涡旋正值突破新高', 'description': 'VI+突破前期高点，多头力量创新高'},
-    },
-    'SAR': {
-        'SAR_BULLISH_REVERSAL': {'name': 'SAR看涨反转', 'description': 'SAR从价格上方转到下方，产生看涨反转信号'},
-        'SAR_BEARISH_REVERSAL': {'name': 'SAR看跌反转', 'description': 'SAR从价格下方转到上方，产生看跌反转信号'},
-        'SAR_UPTREND': {'name': 'SAR上升趋势', 'description': 'SAR位于价格下方，确认上升趋势'},
-        'SAR_DOWNTREND': {'name': 'SAR下降趋势', 'description': 'SAR位于价格上方，确认下降趋势'},
-        'SAR_BELOW_PRICE': {'name': 'SAR位于价格下方', 'description': 'SAR点位于价格下方，看涨信号'},
-        'SAR_ABOVE_PRICE': {'name': 'SAR位于价格上方', 'description': 'SAR点位于价格上方，看跌信号'},
-        'SAR_CLOSE_TO_PRICE': {'name': 'SAR接近价格', 'description': 'SAR点与价格距离较近，可能即将反转'},
-        'SAR_MODERATE_DISTANCE': {'name': 'SAR与价格距离适中', 'description': 'SAR点与价格保持适中距离'},
-        'SAR_FAR_FROM_PRICE': {'name': 'SAR远离价格', 'description': 'SAR点与价格距离较远，趋势强劲'},
-        'SAR_HIGH_ACCELERATION': {'name': 'SAR高加速因子', 'description': 'SAR加速因子较高，趋势动能强'},
-        'SAR_MEDIUM_ACCELERATION': {'name': 'SAR中等加速因子', 'description': 'SAR加速因子适中，趋势稳定发展'},
-        'SAR_LOW_ACCELERATION': {'name': 'SAR低加速因子', 'description': 'SAR加速因子较低，趋势刚起步'},
-    },
-    'StockVIX': {
-        'VIX_NORMAL': {'name': 'VIX正常', 'description': '波动率指数处于正常水平'},
-        'VIX_UPTREND': {'name': 'VIX上升趋势', 'description': '波动率指数呈上升趋势'},
-        'VIX_RISING': {'name': 'VIX上升', 'description': '波动率指数上升'},
-        'VIX_ABOVE_MA20': {'name': 'VIX 20日均线上方', 'description': 'VIX位于20日移动平均线上方'},
-        'VIX_STRONG_STRENGTH': {'name': 'VIX强势', 'description': 'VIX显示强势波动'},
-        'VIX_SIDEWAYS': {'name': 'VIX横盘', 'description': 'VIX呈横盘整理'},
-        'VIX_ANOMALY_SPIKE': {'name': 'VIX异常飙升', 'description': 'VIX出现异常飙升'},
-    },
-    'StockScoreCalculator': {
-        '综合评分适中': {'name': '综合评分适中', 'description': '股票综合评分处于适中水平，表现一般'},
-        '低波动性': {'name': '低波动性', 'description': '股票价格波动较小，走势平稳'},
-        '高波动性': {'name': '高波动性', 'description': '股票价格波动较大，走势剧烈'},
-        '趋势强劲': {'name': '趋势强劲', 'description': '股票价格趋势明显且强劲'},
-    },
-    'BounceDetector': {
-        '短期上升趋势': {'name': '短期上升趋势', 'description': '价格形成短期上升趋势，看涨信号'},
-        '明显放量': {'name': '明显放量', 'description': '成交量明显放大，表明交投活跃'},
-        '明显缩量': {'name': '明显缩量', 'description': '成交量明显减少，表明交投清淡'},
-        '大幅反弹': {'name': '大幅反弹', 'description': '价格在短期内出现大幅反弹'},
-    },
-    'TrendDetector': {
-        '上升趋势': {'name': '上升趋势', 'description': '价格处于上升趋势中'},
-        '上升趋势初期': {'name': '上升趋势初期', 'description': '价格刚开始形成上升趋势'},
-        '虚弱上升趋势': {'name': '虚弱上升趋势', 'description': '价格上升趋势不够强劲'},
-        '短期趋势': {'name': '短期趋势', 'description': '价格形成短期趋势'},
-    },
-    'TrendDuration': {
-        '上升趋势': {'name': '上升趋势', 'description': '价格处于上升趋势中'},
-        '上升趋势发展阶段': {'name': '上升趋势发展阶段', 'description': '价格上升趋势正在发展中'},
-        '短期上升趋势': {'name': '短期上升趋势', 'description': '价格处于短期上升趋势中'},
-    },
-    'AmplitudeElasticity': {
-        '振幅弹性信号': {'name': '振幅弹性信号', 'description': '价格振幅显示良好的弹性'},
-        '小振幅': {'name': '小振幅', 'description': '价格振幅较小，波动平稳'},
-        '少量大振幅': {'name': '少量大振幅', 'description': '价格偶尔出现大振幅波动'},
-    },
-    'Elasticity': {
-        '中等弹性比率': {'name': '中等弹性比率', 'description': '价格弹性比率处于中等水平'},
-        '轻微反弹': {'name': '轻微反弹', 'description': '价格出现轻微反弹'},
-        '缩量反弹': {'name': '缩量反弹', 'description': '价格在成交量减少的情况下反弹'},
-        '大幅波动区间': {'name': '大幅波动区间', 'description': '价格在较大区间内波动'},
-    },
-    'InstitutionalBehavior': {
-        'INST_ABSORPTION_PHASE': {'name': '机构吸筹阶段', 'description': '机构正在进行吸筹操作'},
-        'INST_LOW_PROFIT': {'name': '机构低位获利', 'description': '机构在低位建仓并获利'},
-        'INST_WAITING_PHASE': {'name': '机构观望阶段', 'description': '机构处于观望状态'},
-    },
-    'ChipDistribution': {
-        'CHIP_BOTTOM_ACCUMULATION': {'name': '底部筹码累积', 'description': '筹码在底部区域累积，表明可能形成支撑'},
-        'PRICE_NEAR_COST': {'name': '价格接近成本', 'description': '当前价格接近平均成本，套牢盘压力不大'},
-        'CHIP_LOW_PROFIT': {'name': '筹码低位获利', 'description': '低位筹码开始获利，但获利比例不高'},
-        'CHIP_TIGHT': {'name': '筹码密集', 'description': '筹码分布集中，表明持股者成本相近'},
-    },
-    'SelectionModel': {
-        '选股系统买入信号': {'name': '选股系统买入信号', 'description': '选股系统给出买入信号'},
-        '强趋势上涨股': {'name': '强趋势上涨股', 'description': '股票处于强劲的上涨趋势中'},
-        '超强上升趋势': {'name': '超强上升趋势', 'description': '股票处于超强上升趋势中'},
-    },
-    'ADX': {
-        'Adx Strong Rising': {'name': 'ADX强势上升', 'description': 'ADX指标强势上升，趋势增强'},
-        'Adx Uptrend': {'name': 'ADX上升趋势', 'description': 'ADX指标显示明确的上升趋势'},
-        'Adx Extreme Uptrend': {'name': 'ADX极强上升趋势', 'description': 'ADX指标显示极强的上升趋势'},
-    },
-    # ZXM系列指标形态映射
-    'ZXMDailyMACD': {
-        'ZXM_DAILY_MACD_BUY_POINT': {'name': '日线MACD买点信号', 'description': '日线MACD值小于0.9，ZXM体系买点信号'},
-        'ZXM_DAILY_MACD_POSITIVE': {'name': '日线MACD为正值', 'description': '日线MACD值为正，表明多头力量占优'},
-        'ZXM_DAILY_MACD_NEGATIVE': {'name': '日线MACD为负值', 'description': '日线MACD值为负，表明空头力量占优'},
-        'ZXM_DAILY_MACD_RISING': {'name': '日线MACD上升趋势', 'description': '日线MACD呈上升趋势，动能增强'},
-        'ZXM_DAILY_MACD_FALLING': {'name': '日线MACD下降趋势', 'description': '日线MACD呈下降趋势，动能减弱'},
-        'ZXM_DAILY_MACD_BULLISH_ALIGNMENT': {'name': '日线MACD多头排列', 'description': 'DIFF大于DEA，多头排列'},
-        'ZXM_DAILY_MACD_BEARISH_ALIGNMENT': {'name': '日线MACD空头排列', 'description': 'DIFF小于DEA，空头排列'},
-        'ZXM_DAILY_MACD_GOLDEN_CROSS': {'name': '日线MACD金叉', 'description': 'DIFF上穿DEA，金叉形成'},
-        'ZXM_DAILY_MACD_DEATH_CROSS': {'name': '日线MACD死叉', 'description': 'DIFF下穿DEA，死叉形成'},
-        'ZXM_DAILY_MACD_NEAR_ZERO': {'name': '日线MACD接近零轴', 'description': 'MACD值接近零轴，可能变盘'},
-        'ZXM_DAILY_MACD_OVERSOLD': {'name': '日线MACD严重超卖', 'description': 'MACD值严重超卖，可能反弹'},
-        'ZXM_DAILY_MACD_OVERBOUGHT': {'name': '日线MACD严重超买', 'description': 'MACD值严重超买，可能回调'},
-    },
-    'ZXMTurnover': {
-        'ZXM_TURNOVER_BUY_POINT': {'name': '换手率买点信号', 'description': '换手率大于0.7%，ZXM体系买点信号'},
-        'ZXM_TURNOVER_EXTREMELY_ACTIVE': {'name': '换手率极度活跃', 'description': '换手率>5%，极度活跃，需要谨慎'},
-        'ZXM_TURNOVER_VERY_ACTIVE': {'name': '换手率非常活跃', 'description': '换手率2%-5%，非常活跃'},
-        'ZXM_TURNOVER_ACTIVE': {'name': '换手率活跃', 'description': '换手率1%-2%，活跃'},
-        'ZXM_TURNOVER_NORMAL_ACTIVE': {'name': '换手率一般活跃', 'description': '换手率0.7%-1%，一般活跃'},
-        'ZXM_TURNOVER_LOW': {'name': '换手率低迷', 'description': '换手率≤0.7%，低迷'},
-        'ZXM_TURNOVER_RELATIVE_EXTREMELY_ACTIVE': {'name': '换手率相对历史极度活跃', 'description': '换手率相对20日均值极度活跃'},
-        'ZXM_TURNOVER_RELATIVE_ACTIVE': {'name': '换手率相对历史活跃', 'description': '换手率相对20日均值活跃'},
-        'ZXM_TURNOVER_RELATIVE_LOW': {'name': '换手率相对历史低迷', 'description': '换手率相对20日均值低迷'},
-        'ZXM_TURNOVER_SUDDEN_INCREASE': {'name': '换手率突然放大', 'description': '换手率突然放大，关注资金流入'},
-        'ZXM_TURNOVER_SUDDEN_DECREASE': {'name': '换手率突然缩小', 'description': '换手率突然缩小，关注资金流出'},
-    },
-    'ZXMVolumeShrink': {
-        'ZXM_VOLUME_SHRINK_BUY_POINT': {'name': '缩量买点信号', 'description': '成交量较2日平均成交量缩减10%以上，ZXM体系买点信号'},
-        'ZXM_VOLUME_EXTREME_SHRINK': {'name': '极度缩量', 'description': '成交量较2日平均成交量缩减30%以上，表明主力控盘'},
-        'ZXM_VOLUME_MODERATE_SHRINK': {'name': '中度缩量', 'description': '成交量较2日平均成交量缩减10%-30%，表明主力逐步控盘'},
-        'ZXM_VOLUME_SLIGHT_SHRINK': {'name': '轻度缩量', 'description': '成交量较2日平均成交量缩减5%-10%，交投趋于平稳'},
-        'ZXM_VOLUME_NORMAL': {'name': '成交量正常', 'description': '成交量处于正常水平，无明显缩量特征'},
-    },
-    'ZXMMACallback': {
-        'ZXM_MA_CALLBACK_BUY_POINT': {'name': '均线回调买点信号', 'description': 'ZXM均线回调指标显示买点信号'},
-        'ZXM_MA_CALLBACK_20': {'name': '回踩20日均线', 'description': '价格回调至20日均线附近获得支撑'},
-        'ZXM_MA_CALLBACK_30': {'name': '回踩30日均线', 'description': '价格回调至30日均线附近获得支撑'},
-        'ZXM_MA_CALLBACK_60': {'name': '回踩60日均线', 'description': '价格回调至60日均线附近获得支撑'},
-        'ZXM_MA_CALLBACK_MULTIPLE': {'name': '多重均线回调', 'description': '价格同时回调至多条均线附近获得支撑'},
-        'ZXM_MA_SUPPORT_20': {'name': '20日线有效支撑', 'description': '价格获得20日均线的有效支撑后反弹'},
-        'ZXM_MA_SUPPORT_30': {'name': '30日线有效支撑', 'description': '价格获得30日均线的有效支撑后反弹'},
-    },
-
-    'ZXMBuyPointScore': {
-        'MACD买点满足': {'name': 'MACD买点', 'description': 'MACD指标满足ZXM买点条件'},
-        '换手买点满足': {'name': '换手率买点', 'description': '换手率指标满足ZXM买点条件'},
-        '均线回调买点满足': {'name': '均线回调买点', 'description': '均线回调指标满足ZXM买点条件'},
-        '买点评分信号': {'name': '综合买点评分', 'description': 'ZXM体系综合买点评分信号'},
-        '极高买点评分': {'name': '极高买点评分', 'description': '买点评分极高，多项指标共振'},
-        '三重买点信号共振': {'name': '三重买点共振', 'description': '三个主要买点指标同时满足条件'},
-        '多数买点指标满足': {'name': '多数买点指标满足', 'description': '多数ZXM买点指标满足条件'},
-        '中等买点评分': {'name': '中等买点评分', 'description': '买点评分中等，部分指标满足条件'},
-    },
-    'ZXMPattern': {
-        'macd_double_diverge': {'name': 'MACD双重背离', 'description': 'MACD形成双重底背离形态，强烈买入信号'},
-        'ma_precise_support': {'name': '均线精准支撑', 'description': '价格在重要均线位置获得精准支撑'},
-        'small_alternating': {'name': '小幅震荡整理', 'description': '价格在关键位置小幅震荡整理，蓄势待发'},
-    },
-    'ZXMRiseElasticity': {
-        '温和上涨': {'name': '温和上涨', 'description': '价格呈现温和上涨态势，涨幅适中'},
-        '无大涨': {'name': '无大涨', 'description': '近期无大幅上涨，累积能量中'},
-    },
-    'ZXMElasticityScore': {
-        '振幅弹性满足': {'name': '振幅弹性满足', 'description': '价格振幅弹性指标满足买入条件'},
-        '中等弹性评分': {'name': '中等弹性评分', 'description': '价格弹性评分处于中等水平'},
-        '部分弹性指标满足': {'name': '部分弹性指标满足', 'description': '部分价格弹性指标满足条件'},
-    },
-    'ZXMMACallback': {
-        'ZXM_MA_CALLBACK_BUY_POINT': {'name': '均线回调买点信号', 'description': 'ZXM均线回调指标显示买点信号'},
-        'ZXM_MA_CALLBACK_20': {'name': '回踩20日均线', 'description': '价格回调至20日均线附近获得支撑'},
-        'ZXM_MA_CALLBACK_30': {'name': '回踩30日均线', 'description': '价格回调至30日均线附近获得支撑'},
-        'ZXM_MA_CALLBACK_60': {'name': '回踩60日均线', 'description': '价格回调至60日均线附近获得支撑'},
-        'ZXM_MA_CALLBACK_MULTIPLE': {'name': '多重均线回调', 'description': '价格同时回调至多条均线附近获得支撑'},
-        'ZXM_MA_SUPPORT_20': {'name': '20日线有效支撑', 'description': '价格获得20日均线的有效支撑后反弹'},
-        'ZXM_MA_SUPPORT_30': {'name': '30日线有效支撑', 'description': '价格获得30日均线的有效支撑后反弹'},
-    },
-    'PSY': {
-        'PSY_ABOVE_50': {'name': 'PSY心理线50上方', 'description': 'PSY心理线位于50上方，市场情绪偏乐观'},
-        'PSY_BELOW_50': {'name': 'PSY心理线50下方', 'description': 'PSY心理线位于50下方，市场情绪偏悲观'},
-        'PSY_ABOVE_MA': {'name': 'PSY均线上方', 'description': 'PSY心理线位于移动平均线上方'},
-        'PSY_BELOW_MA': {'name': 'PSY均线下方', 'description': 'PSY心理线位于移动平均线下方'},
-        'PSY_DEATH_CROSS': {'name': 'PSY死叉', 'description': 'PSY心理线形成死叉'},
-        'PSY_CROSS_DOWN_50': {'name': 'PSY下穿50', 'description': 'PSY心理线下穿50水平线，市场情绪转弱'},
-        'PSY_STRONG_DOWN': {'name': 'PSY强势下跌', 'description': 'PSY心理线强势下跌，市场情绪悲观'},
-        'PSY_STRONG_UP': {'name': 'PSY强势上涨', 'description': 'PSY心理线强势上涨，市场情绪乐观'},
-        'PSY_OVERSOLD': {'name': 'PSY超卖', 'description': 'PSY心理线处于超卖区域，可能出现反弹'},
-        'PSY_GOLDEN_CROSS': {'name': 'PSY金叉', 'description': 'PSY心理线形成金叉，看涨信号'},
-    },
-    'Vortex': {
-        'VORTEX_BULLISH_CROSS': {'name': '涡旋指标金叉', 'description': 'VI+上穿VI-，形成金叉信号，看涨'},
-        'VORTEX_BEARISH_CROSS': {'name': '涡旋指标死叉', 'description': 'VI+下穿VI-，形成死叉信号，看跌'},
-        'VORTEX_VI_PLUS_ABOVE': {'name': '涡旋正值大于负值', 'description': 'VI+大于VI-，多头占优势'},
-        'VORTEX_VI_MINUS_ABOVE': {'name': '涡旋负值大于正值', 'description': 'VI-大于VI+，空头占优势'},
-        'VORTEX_VI_PLUS_STRONG': {'name': '涡旋正值强势', 'description': 'VI+值较高，多头力量强劲'},
-        'VORTEX_VI_MINUS_STRONG': {'name': '涡旋负值强势', 'description': 'VI-值较高，空头力量强劲'},
-        'VORTEX_VI_PLUS_RISING': {'name': '涡旋正值上升', 'description': 'VI+值持续上升，多头力量增强'},
-        'VORTEX_VI_MINUS_RISING': {'name': '涡旋负值上升', 'description': 'VI-值持续上升，空头力量增强'},
-        'VORTEX_VI_DIFF_RISING': {'name': '涡旋指标差值扩大', 'description': 'VI+与VI-的差值扩大，趋势增强'},
-        'VORTEX_VI_PLUS_UPTREND': {'name': '涡旋指标多头趋势', 'description': 'VI+持续大于VI-，确认多头趋势'},
-        'VORTEX_VI_MINUS_UPTREND': {'name': '涡旋负值上升趋势', 'description': 'VI-值呈上升趋势，空头力量逐渐增强'},
-        'VORTEX_VI_PLUS_BREAK_HIGH': {'name': '涡旋正值突破新高', 'description': 'VI+突破前期高点，多头力量创新高'},
-    },
-}
+# 所有技术指标的形态定义已成功迁移到各自的register_patterns()方法中，
+# 并注册到PatternRegistry。系统现在使用完全分散式架构，无需集中式映射表。
+#
+# 如需添加新的技术指标形态，请在对应的指标类中实现register_patterns()方法。
 
 
 class PatternPolarityFilter:
@@ -1084,47 +583,59 @@ class BuyPointBatchAnalyzer:
         
     def get_precise_pattern_info(self, indicator_name: str, pattern: str, description: str) -> Dict[str, str]:
         """
-        获取精确的形态信息，从指标形态映射字典中查找
-        
+        获取精确的形态信息，优先从PatternRegistry查找，然后回退到映射字典
+
         Args:
             indicator_name: 指标名称
             pattern: 形态名称
             description: 形态描述
-            
+
         Returns:
             Dict[str, str]: 包含形态名称和描述的字典
         """
-        # 1. 首先检查指标名称是否在映射表中
-        if indicator_name in COMPLETE_INDICATOR_PATTERNS_MAP:
-            pattern_map = COMPLETE_INDICATOR_PATTERNS_MAP[indicator_name]
-            
-            # 1.1 尝试直接匹配形态ID
-            if pattern in pattern_map:
-                pattern_info = pattern_map[pattern]
-                return pattern_info
-            
-            # 1.2 尝试匹配大小写不敏感的形态ID
-            pattern_upper = pattern.replace(" ", "_").upper()
-            if pattern_upper in pattern_map:
-                pattern_info = pattern_map[pattern_upper]
-                return pattern_info
-            
-            # 1.3 尝试匹配首字母大写的形式（如"Sar Uptrend"对应"SAR_UPTREND"）
-            if pattern.replace(" ", "_").upper() in pattern_map:
-                key = pattern.replace(" ", "_").upper()
-                pattern_info = pattern_map[key]
-                return pattern_info
-            
-            # 1.4 尝试通过形态名称模糊匹配
-            for pattern_id, pattern_info in pattern_map.items():
-                if pattern == pattern_info['name'] or pattern in pattern_info['name'] or pattern_info['name'] in pattern:
-                    return pattern_info
-        
+        # 1. 优先从PatternRegistry查找
+        registry = PatternRegistry()
+
+        # 1.1 尝试直接通过指标名称和形态ID查找
+        pattern_id = f"{indicator_name}_{pattern}".upper()
+        pattern_info = registry.get_pattern(pattern_id)
+        if pattern_info:
+            return {
+                'name': pattern_info.get('display_name', pattern),
+                'description': pattern_info.get('description', description or f"{indicator_name}指标的{pattern}技术分析")
+            }
+
+        # 1.2 尝试通过形态ID直接查找（可能已经包含指标前缀）
+        pattern_info = registry.get_pattern(pattern.upper())
+        if pattern_info:
+            return {
+                'name': pattern_info.get('display_name', pattern),
+                'description': pattern_info.get('description', description or f"{indicator_name}指标的{pattern}技术分析")
+            }
+
+        # 1.3 尝试通过指标名称获取所有相关形态，然后模糊匹配
+        indicator_patterns = registry.get_pattern_infos_by_indicator(indicator_name)
+        if indicator_patterns:
+            for pattern_info in indicator_patterns:
+                display_name = pattern_info.get('display_name', '')
+                pattern_desc = pattern_info.get('description', '')
+
+                # 检查是否匹配
+                if (pattern == display_name or
+                    pattern in display_name or
+                    display_name in pattern or
+                    pattern.replace('_', ' ').lower() in display_name.lower() or
+                    display_name.lower() in pattern.replace('_', ' ').lower()):
+                    return {
+                        'name': display_name,
+                        'description': pattern_desc or description or f"{indicator_name}指标的{pattern}技术分析"
+                    }
+
         # 2. 特殊处理ZXM系列指标
         if indicator_name.startswith('ZXM'):
-            # ZXM系列指标已经在指标类中直接注册形态，不需要在这里处理
+            # ZXM系列指标已经在指标类中直接注册形态，使用PatternRegistry
             pass
-        
+
         # 3. 处理常见的英文形态命名模式，转换为中文
         # 3.1 处理"Xxx Yyy Zzz"格式的形态名称
         if ' ' in pattern and pattern[0].isupper() and '_' not in pattern and not pattern.isupper():

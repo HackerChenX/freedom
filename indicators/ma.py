@@ -238,6 +238,48 @@ class MA(BaseIndicator):
             pattern_type=PatternType.BEARISH,
             polarity="NEGATIVE"
         )
+
+        # 注册MA排列形态（从centralized mapping迁移）
+        self.register_pattern_to_registry(
+            pattern_id="MA_BULLISH_ARRANGEMENT",
+            display_name="均线多头排列",
+            description="短期均线在长期均线之上，形成多头排列",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MA_BEARISH_ARRANGEMENT",
+            display_name="均线空头排列",
+            description="短期均线在长期均线之下，形成空头排列",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册MA支撑阻力形态
+        self.register_pattern_to_registry(
+            pattern_id="MA_SUPPORT",
+            display_name="均线支撑",
+            description="价格在均线获得支撑",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="MA_RESISTANCE",
+            display_name="均线阻力",
+            description="价格在均线遇到阻力",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
         self.register_pattern_to_registry(
             pattern_id="MA_BULLISH_ARRANGEMENT",
             display_name="MA多头排列",
