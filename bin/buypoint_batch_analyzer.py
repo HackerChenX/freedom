@@ -76,11 +76,54 @@ def main():
         # 打印结果路径
         report_path = os.path.join(args.output, 'common_indicators_report.md')
         strategy_path = os.path.join(args.output, 'generated_strategy.json')
-        
-        print("\n==================== 分析完成 ====================")
-        print(f"共性指标报告: {report_path}")
-        print(f"生成的策略: {strategy_path}")
-        print("==================================================\n")
+        validation_path = os.path.join(args.output, 'validation_report.md')
+
+        # P2级任务：改进用户体验 - 更美观的输出格式
+        print("\n" + "="*60)
+        print("🎉 买点分析完成")
+        print("="*60)
+
+        print(f"📊 共性指标报告: {report_path}")
+        print(f"🎯 生成的策略: {strategy_path}")
+
+        # P0级任务：显示验证结果
+        if os.path.exists(validation_path):
+            print(f"📋 策略验证报告: {validation_path}")
+
+            # 尝试读取验证结果并显示关键信息
+            try:
+                validation_json_path = os.path.join(args.output, 'validation_report.json')
+                if os.path.exists(validation_json_path):
+                    import json
+                    with open(validation_json_path, 'r', encoding='utf-8') as f:
+                        validation_data = json.load(f)
+
+                    match_rate = validation_data.get('match_analysis', {}).get('match_rate', 0)
+                    quality_grade = validation_data.get('quality_grade', '未知')
+
+                    print(f"📈 策略匹配率: {match_rate:.2%}")
+                    print(f"⭐ 策略质量: {quality_grade}")
+
+                    if match_rate >= 0.6:
+                        print("✅ 策略验证通过 (匹配率 ≥ 60%)")
+                    else:
+                        print("⚠️  策略匹配率偏低，建议查看优化建议")
+
+                    # 显示优化信息
+                    if 'optimization_result' in validation_data:
+                        print("🔧 已执行智能优化")
+
+            except Exception as e:
+                logger.warning(f"读取验证结果时出错: {e}")
+
+        # 显示系统健康报告
+        health_report_path = os.path.join(args.output, 'system_health_report.md')
+        if os.path.exists(health_report_path):
+            print(f"💊 系统健康报告: {health_report_path}")
+
+        print("="*60)
+        print("✨ 分析完成，感谢使用选股系统！")
+        print("="*60 + "\n")
         
     except Exception as e:
         logger.error(f"运行过程中出错: {e}")
