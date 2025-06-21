@@ -25,10 +25,6 @@ from utils.path_utils import ensure_dir_exists
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
 from strategy.strategy_generator import StrategyGenerator
-from analysis.validation.buypoint_validator import BuyPointValidator
-from analysis.validation.data_quality_validator import DataQualityValidator
-from analysis.optimization.strategy_optimizer import StrategyOptimizer
-from monitoring.system_monitor import SystemHealthMonitor
 from indicators.pattern_registry import PatternRegistry
 
 logger = get_logger(__name__)
@@ -110,12 +106,6 @@ class BuyPointBatchAnalyzer:
         self.indicator_analyzer = AutoIndicatorAnalyzer()
         self.strategy_generator = StrategyGenerator()
         self.polarity_filter = PatternPolarityFilter()
-        # P0级任务：添加验证器
-        self.buypoint_validator = BuyPointValidator()
-        self.data_quality_validator = DataQualityValidator()
-        # P1级任务：添加策略优化器和系统监控器
-        self.strategy_optimizer = StrategyOptimizer()
-        self.system_monitor = SystemHealthMonitor()
         
     def load_buypoints_from_csv(self, csv_file: str) -> pd.DataFrame:
         """
@@ -195,27 +185,11 @@ class BuyPointBatchAnalyzer:
                 stock_code=stock_code,
                 end_date=buypoint_date
             )
-
+            
             # 如果没有获取到数据，返回空结果
             if not stock_data:
                 logger.warning(f"未能获取 {stock_code} 的数据")
                 return {}
-
-            # P0级任务：添加数据质量验证
-            data_quality_result = self.data_quality_validator.validate_multi_period_data(
-                stock_code=stock_code,
-                date=buypoint_date
-            )
-
-            # 检查数据质量
-            if data_quality_result['overall_quality'] in ['poor', 'error']:
-                logger.warning(f"股票 {stock_code} 数据质量较差: {data_quality_result['overall_quality']}")
-                # 记录质量问题但继续分析
-                quality_issues = data_quality_result.get('issues', [])
-                if quality_issues:
-                    logger.warning(f"数据质量问题: {quality_issues}")
-            elif data_quality_result['overall_quality'] == 'excellent':
-                logger.debug(f"股票 {stock_code} 数据质量优秀")
                 
             # 检查数据是否足够计算指标
             min_required_length = 30  # 设置最小所需数据长度
@@ -253,8 +227,7 @@ class BuyPointBatchAnalyzer:
             result = {
                 'stock_code': stock_code,
                 'buypoint_date': buypoint_date,
-                'indicator_results': indicator_results,
-                'data_quality': data_quality_result  # P0级任务：包含数据质量信息
+                'indicator_results': indicator_results
             }
             
             return result
@@ -342,36 +315,23 @@ class BuyPointBatchAnalyzer:
             List[Dict[str, Any]]: 分析结果列表
         """
         results = []
-        total_count = len(buypoints_df)
-
-        logger.info(f"开始批量分析 {total_count} 个买点")
-
+        
         # 遍历所有买点
         for idx, row in buypoints_df.iterrows():
             stock_code = row['stock_code']
             buypoint_date = row['buypoint_date']
-
-            # P2级任务：改进进度显示
-            progress_percent = (idx + 1) / total_count * 100
-            progress_bar = "█" * int(progress_percent // 5) + "░" * (20 - int(progress_percent // 5))
-            logger.info(f"📊 分析进度: [{progress_bar}] {progress_percent:.1f}% ({idx + 1}/{total_count}) - {stock_code}")
-
-            try:
-                # 分析单个买点
-                buypoint_result = self.analyze_single_buypoint(
-                    stock_code=stock_code,
-                    buypoint_date=buypoint_date
-                )
-
-                # 如果有结果，添加到列表
-                if buypoint_result:
-                    results.append(buypoint_result)
-
-            except Exception as e:
-                logger.error(f"❌ 分析买点 {stock_code} ({buypoint_date}) 时出错: {e}")
-                continue
-
-        logger.info(f"✅ 批量分析完成，成功分析 {len(results)}/{total_count} 个买点")
+            
+            # 分析单个买点
+            buypoint_result = self.analyze_single_buypoint(
+                stock_code=stock_code,
+                buypoint_date=buypoint_date
+            )
+            
+            # 如果有结果，添加到列表
+            if buypoint_result:
+                results.append(buypoint_result)
+                
+        logger.info(f"已完成 {len(results)}/{len(buypoints_df)} 个买点的分析")
         return results
     
     def extract_common_indicators(self,
@@ -889,16 +849,13 @@ class BuyPointBatchAnalyzer:
             logger.error(f"生成选股策略时出错: {e}")
             return {}
     
-    def save_results(self, output_dir: str, results: List[Dict[str, Any]],
-                    strategy: Dict[str, Any] = None, validation_result: Dict[str, Any] = None) -> None:
+    def save_results(self, output_dir: str, results: List[Dict[str, Any]]) -> None:
         """
         保存分析结果
-
+        
         Args:
             output_dir: 输出目录
             results: 分析结果列表
-            strategy: 生成的策略配置
-            validation_result: 策略验证结果
         """
         try:
             # 创建输出目录
@@ -908,23 +865,6 @@ class BuyPointBatchAnalyzer:
             results_file = os.path.join(output_dir, 'analysis_results.json')
             with open(results_file, 'w', encoding='utf-8') as f:
                 json.dump(results, f, ensure_ascii=False, indent=2, cls=CustomJSONEncoder)
-
-            # P0级任务：保存策略和验证结果
-            if strategy:
-                strategy_file = os.path.join(output_dir, 'generated_strategy.json')
-                with open(strategy_file, 'w', encoding='utf-8') as f:
-                    json.dump(strategy, f, ensure_ascii=False, indent=2, cls=CustomJSONEncoder)
-                logger.info(f"策略配置已保存: {strategy_file}")
-
-            if validation_result:
-                validation_file = os.path.join(output_dir, 'validation_report.json')
-                with open(validation_file, 'w', encoding='utf-8') as f:
-                    json.dump(validation_result, f, ensure_ascii=False, indent=2, cls=CustomJSONEncoder)
-
-                # 生成可读的验证报告
-                validation_md_file = os.path.join(output_dir, 'validation_report.md')
-                self.buypoint_validator.generate_validation_report(validation_result, validation_md_file)
-                logger.info(f"验证报告已保存: {validation_md_file}")
                 
             # 提取共性指标
             common_indicators = self.extract_common_indicators(results)
@@ -1180,28 +1120,6 @@ class BuyPointBatchAnalyzer:
             strategy_name: 生成的策略名称
             filter_negative_patterns: 是否过滤负面模式
         """
-        # P1级任务：使用监控装饰器包装核心分析逻辑
-        @self.system_monitor.monitor_analysis_performance
-        def _run_monitored_analysis():
-            return self._execute_core_analysis(input_csv, output_dir, min_hit_ratio, strategy_name, filter_negative_patterns)
-
-        # 执行被监控的分析
-        result = _run_monitored_analysis()
-
-        # P1级任务：生成系统健康报告
-        try:
-            health_report_file = os.path.join(output_dir, 'system_health_report.md')
-            self.system_monitor.generate_health_report(health_report_file)
-            logger.info(f"系统健康报告已生成: {health_report_file}")
-        except Exception as e:
-            logger.warning(f"生成系统健康报告失败: {e}")
-
-        return result
-
-    def _execute_core_analysis(self, input_csv: str, output_dir: str,
-                             min_hit_ratio: float, strategy_name: str,
-                             filter_negative_patterns: bool):
-        """执行核心分析逻辑"""
         try:
             # 加载买点数据
             buypoints_df = self.load_buypoints_from_csv(input_csv)
@@ -1229,84 +1147,14 @@ class BuyPointBatchAnalyzer:
                 common_indicators=common_indicators,
                 strategy_name=strategy_name
             )
-
-            # P0级任务：添加闭环验证机制
-            validation_result = None
-            if strategy and strategy.get('conditions'):
-                logger.info("开始执行策略闭环验证")
-                try:
-                    # 使用最新的买点日期作为验证日期
-                    validation_date = max(buypoints_df['buypoint_date'])
-
-                    validation_result = self.buypoint_validator.validate_strategy_roundtrip(
-                        original_buypoints=buypoints_df,
-                        generated_strategy=strategy,
-                        validation_date=validation_date
-                    )
-
-                    match_rate = validation_result['match_analysis'].get('match_rate', 0)
-                    logger.info(f"策略闭环验证完成，匹配率: {match_rate:.2%}")
-
-                    # P1级任务：如果匹配率低于60%，自动触发优化
-                    if match_rate < 0.6:
-                        logger.warning(f"策略匹配率 {match_rate:.2%} 低于期望阈值 60%，启动智能优化")
-
-                        try:
-                            optimization_result = self.strategy_optimizer.optimize_strategy(
-                                original_strategy=strategy,
-                                original_buypoints=buypoints_df,
-                                validation_date=validation_date,
-                                max_iterations=3
-                            )
-
-                            optimized_strategy = optimization_result.get('optimized_strategy')
-                            improvement_summary = optimization_result.get('improvement_summary', {})
-
-                            final_match_rate = improvement_summary.get('final_match_rate', match_rate)
-                            improvement = improvement_summary.get('absolute_improvement', 0)
-
-                            if improvement > 0:
-                                logger.info(f"✅ 策略优化成功！匹配率从 {match_rate:.2%} 提升到 {final_match_rate:.2%}")
-                                strategy = optimized_strategy  # 使用优化后的策略
-
-                                # 重新验证优化后的策略
-                                final_validation = self.buypoint_validator.validate_strategy_roundtrip(
-                                    original_buypoints=buypoints_df,
-                                    generated_strategy=optimized_strategy,
-                                    validation_date=validation_date
-                                )
-                                validation_result['optimization_result'] = optimization_result
-                                validation_result['final_validation'] = final_validation
-                            else:
-                                logger.warning(f"策略优化未能显著改善匹配率")
-                                validation_result['optimization_result'] = optimization_result
-
-                        except Exception as opt_e:
-                            logger.error(f"策略优化失败: {opt_e}")
-                            validation_result['optimization_error'] = str(opt_e)
-                    else:
-                        logger.info(f"✅ 策略匹配率 {match_rate:.2%} 达到期望阈值")
-
-                except Exception as e:
-                    logger.error(f"策略闭环验证失败: {e}")
-                    validation_result = {'error': str(e)}
-
-            # 保存结果（包含验证结果）
-            self.save_results(output_dir, buypoint_results, strategy, validation_result)
-
+            
+            # 保存结果
+            self.save_results(output_dir, buypoint_results)
+            
             logger.info(f"买点批量分析完成")
-
-            # 返回分析结果用于监控
-            return {
-                'buypoint_count': len(buypoint_results),
-                'strategy_generated': strategy is not None,
-                'validation_result': validation_result,
-                'match_analysis': validation_result.get('match_analysis', {}) if validation_result else {}
-            }
-
+            
         except Exception as e:
             logger.error(f"运行买点批量分析时出错: {e}")
-            raise
 
 class CustomJSONEncoder(json.JSONEncoder):
     """自定义JSON编码器，处理特殊数据类型"""

@@ -1,840 +1,684 @@
-# 选股系统架构文档
+# 可配置选股模块文档
 
-## 📊 系统概览
+## 📊 模块概览
 
-选股系统是一个**企业级可靠**的股票分析平台，基于**80个技术指标**和**ZXM专业体系**，提供从买点分析到策略生成、验证、优化的完整解决方案。系统已完成P0+P1+P2级架构完善，具备闭环验证、智能优化、实时监控等企业级功能。
+可配置选股模块是股票分析系统的高级功能，基于**86个技术指标**和**ZXM买点分析**，提供灵活的多条件筛选和智能选股服务。该模块支持复杂的选股策略配置，能够从数千只股票中快速筛选出符合条件的投资标的。
 
 ### 🎯 核心特性
 
-- **闭环验证机制**: 策略生成后自动验证，60%+匹配率保障
-- **数据质量保障**: 多时间周期数据一致性检查，95%+准确率
-- **智能策略优化**: 低匹配率时自动优化策略条件
-- **实时系统监控**: 性能监控、健康状态评估、主动告警
-- **完整测试覆盖**: 单元测试+集成测试+端到端测试
-- **优化的性能**: 内存高效使用，响应迅速
-- **优秀的体验**: 直观输出，清晰反馈
+- **多条件筛选**: 支持86个技术指标的任意组合
+- **智能评分**: 基于ZXM体系的综合评分机制
+- **高性能处理**: 支持大规模股票池筛选（10,000+股票）
+- **灵活配置**: YAML/JSON配置文件，支持复杂策略
+- **实时筛选**: 支持实时数据筛选和监控
+- **策略回测**: 内置策略效果验证功能
 
-### 🏗️ 系统架构（企业级）
+### 🏗️ 选股架构
 
-#### 核心分析层
-1. **买点批量分析器** (`BuyPointBatchAnalyzer`): 核心分析引擎
-2. **多周期数据处理器** (`PeriodDataProcessor`): 数据获取和处理
-3. **自动指标分析器** (`AutoIndicatorAnalyzer`): 80个技术指标计算
-4. **策略生成器** (`StrategyGenerator`): 智能策略生成
-
-#### 质量保障层（P0级）
-5. **买点验证器** (`BuyPointValidator`): 策略闭环验证
-6. **数据质量验证器** (`DataQualityValidator`): 数据质量保障
-
-#### 智能优化层（P1级）
-7. **策略优化器** (`StrategyOptimizer`): 智能策略优化
-8. **系统监控器** (`SystemHealthMonitor`): 实时系统监控
+1. **条件解析器**: 解析复杂的筛选条件
+2. **指标计算引擎**: 批量计算所需技术指标
+3. **筛选执行器**: 执行多条件筛选逻辑
+4. **评分排序器**: 对筛选结果进行评分排序
+5. **结果输出器**: 格式化输出筛选结果
 
 ---
 
-## 🚀 使用方式说明
+## 🔧 配置系统
 
-### 命令行使用
+### 基础配置结构
 
-#### 基础买点分析
-```bash
-# 基础买点分析（包含所有新功能）
-python bin/buypoint_batch_analyzer.py \
-    --input data/buypoints.csv \
-    --output results/ \
-    --min-hit-ratio 0.6 \
-    --strategy-name "EnhancedStrategy"
+```yaml
+# stock_selection_config.yaml
+selection_strategy:
+  name: "ZXM买点选股策略"
+  description: "基于ZXM体系的买点选股"
+  
+  # 基础筛选条件
+  basic_filters:
+    market_cap:
+      min: 50  # 最小市值（亿元）
+      max: 1000  # 最大市值（亿元）
+    price_range:
+      min: 5.0   # 最低价格
+      max: 100.0 # 最高价格
+    volume:
+      min_avg_volume: 1000000  # 最小平均成交量
+    
+  # 技术指标条件
+  technical_conditions:
+    trend_indicators:
+      - indicator: "RSI"
+        condition: "between"
+        values: [30, 70]
+        weight: 0.2
+      
+      - indicator: "MACD"
+        condition: "golden_cross"
+        lookback: 5
+        weight: 0.3
+    
+    volume_indicators:
+      - indicator: "OBV"
+        condition: "increasing"
+        periods: 10
+        weight: 0.2
+    
+    zxm_indicators:
+      - indicator: "ZXM_BUYPOINT"
+        condition: "greater_than"
+        value: 80
+        weight: 0.3
+  
+  # 排序和输出
+  sorting:
+    primary: "zxm_score"
+    secondary: "buypoint_score"
+    order: "desc"
+  
+  output:
+    max_results: 50
+    include_details: true
+    export_format: ["csv", "json"]
 ```
 
-#### 参数说明
-- `--input`: 买点数据CSV文件路径（必需）
-- `--output`: 输出目录路径（必需）
-- `--min-hit-ratio`: 最小命中率阈值（默认0.6，即60%）
-- `--strategy-name`: 策略名称（默认"BuyPointCommonStrategy"）
+### 高级策略配置
 
-#### 输出文件说明
-```
-results/
-├── analysis_results.json          # 原始分析结果
-├── common_indicators_report.md    # 共性指标报告
-├── generated_strategy.json        # 生成的策略配置
-├── validation_report.json         # 策略验证结果（JSON）
-├── validation_report.md           # 策略验证报告（可读）
-├── system_health_report.md        # 系统健康报告
-└── buypoint_analysis_summary.md   # 买点分析总结
-```
-
-### 新功能启用方法
-
-#### 1. 闭环验证（P0级功能）
-```python
-from analysis.validation.buypoint_validator import BuyPointValidator
-
-# 创建验证器
-validator = BuyPointValidator()
-
-# 执行策略闭环验证
-validation_result = validator.validate_strategy_roundtrip(
-    original_buypoints=buypoints_df,
-    generated_strategy=strategy,
-    validation_date='2024-01-20'
-)
-
-# 检查匹配率
-match_rate = validation_result['match_analysis']['match_rate']
-print(f"策略匹配率: {match_rate:.2%}")
-
-# 生成验证报告
-validator.generate_validation_report(validation_result, 'validation_report.md')
-```
-
-#### 2. 数据质量保障（P0级功能）
-```python
-from analysis.validation.data_quality_validator import DataQualityValidator
-
-# 创建数据质量验证器
-data_validator = DataQualityValidator()
-
-# 验证多时间周期数据质量
-quality_result = data_validator.validate_multi_period_data(
-    stock_code='000001',
-    date='2024-01-15'
-)
-
-# 检查数据质量
-overall_quality = quality_result['overall_quality']
-print(f"数据质量: {overall_quality}")  # excellent/good/fair/poor
-```
-
-#### 3. 智能策略优化（P1级功能）
-```python
-from analysis.optimization.strategy_optimizer import StrategyOptimizer
-
-# 创建策略优化器
-optimizer = StrategyOptimizer()
-
-# 执行策略优化（当匹配率低于60%时自动触发）
-optimization_result = optimizer.optimize_strategy(
-    original_strategy=strategy,
-    original_buypoints=buypoints_df,
-    validation_date='2024-01-20',
-    max_iterations=3
-)
-
-# 检查优化效果
-improvement = optimization_result['improvement_summary']
-print(f"优化前匹配率: {improvement['initial_match_rate']:.2%}")
-print(f"优化后匹配率: {improvement['final_match_rate']:.2%}")
-print(f"改进幅度: {improvement['percentage_improvement']:.1f}%")
-```
-
-#### 4. 系统监控告警（P1级功能）
-```python
-from monitoring.system_monitor import SystemHealthMonitor
-
-# 创建系统监控器
-monitor = SystemHealthMonitor()
-
-# 使用监控装饰器包装分析函数
-@monitor.monitor_analysis_performance
-def run_analysis():
-    # 执行分析逻辑
-    return analyzer.run_analysis(...)
-
-# 执行被监控的分析
-result = run_analysis()
-
-# 获取系统健康状态
-health = monitor.get_system_health()
-print(f"系统状态: {health['overall_status']}")
-print(f"平均分析时间: {health['statistics']['avg_analysis_time']:.2f}秒")
-print(f"错误率: {health['statistics']['error_rate']:.2%}")
-
-# 生成健康报告
-monitor.generate_health_report('system_health_report.md')
+```yaml
+# advanced_strategy.yaml
+selection_strategy:
+  name: "多因子量化选股"
+  
+  # 多阶段筛选
+  stages:
+    - name: "基础筛选"
+      conditions:
+        - "market_cap > 100"
+        - "price > 10"
+        - "avg_volume_20d > 5000000"
+    
+    - name: "技术筛选"
+      conditions:
+        - "RSI < 70 AND RSI > 30"
+        - "MACD_histogram > 0"
+        - "MA5 > MA20"
+    
+    - name: "ZXM筛选"
+      conditions:
+        - "zxm_buypoint_score > 75"
+        - "zxm_trend_score > 70"
+  
+  # 评分模型
+  scoring_model:
+    factors:
+      technical_score:
+        weight: 0.4
+        components:
+          - indicator: "RSI"
+            transform: "normalize"
+            weight: 0.3
+          - indicator: "MACD"
+            transform: "signal_strength"
+            weight: 0.4
+          - indicator: "KDJ"
+            transform: "momentum"
+            weight: 0.3
+      
+      zxm_score:
+        weight: 0.6
+        components:
+          - indicator: "ZXM_BUYPOINT"
+            weight: 0.4
+          - indicator: "ZXM_TREND"
+            weight: 0.3
+          - indicator: "ZXM_ELASTICITY"
+            weight: 0.3
 ```
 
 ---
 
-## 🔧 核心功能介绍
+## 🚀 核心功能实现
 
-### 1. 闭环验证机制（P0级功能）
+### 1. 配置解析器
 
-#### 功能概述
-- **目标**: 确保生成的策略能够重新选出原始买点个股
-- **验证标准**: 60%+匹配率验证
-- **自动化**: 策略生成后自动执行验证
-- **报告生成**: 详细的验证报告和改进建议
-
-#### 核心特性
 ```python
-# 验证结果结构
-validation_result = {
-    'total_original_stocks': 4,           # 原始买点数量
-    'validation_date': '2024-01-20',      # 验证日期
-    'strategy_summary': {...},            # 策略摘要
-    'execution_results': {                # 执行结果
-        'selected_count': 3,
-        'selected_stocks': ['000001', '000002', '000858'],
-        'execution_success': True
-    },
-    'match_analysis': {                   # 匹配分析
-        'match_rate': 0.75,              # 匹配率75%
-        'matched_count': 3,
-        'missed_count': 1,
-        'false_positive_count': 0,
-        'matched_stocks': ['000001', '000002', '000858'],
-        'missed_stocks': ['002415'],
-        'false_positive_stocks': []
-    },
-    'recommendations': [                  # 改进建议
-        {
-            'priority': 'MEDIUM',
-            'issue': '匹配率偏低',
-            'suggestion': '优化策略条件，重点分析未匹配股票的特征',
-            'action': 'analyze_missed_stocks'
+from selection.config_parser import SelectionConfigParser
+import yaml
+
+class SelectionConfigParser:
+    """选股配置解析器"""
+    
+    def __init__(self, config_path):
+        self.config_path = config_path
+        self.config = self._load_config()
+    
+    def _load_config(self):
+        """加载配置文件"""
+        with open(self.config_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+    
+    def parse_conditions(self):
+        """解析筛选条件"""
+        conditions = []
+        
+        # 解析基础筛选条件
+        basic_filters = self.config.get('basic_filters', {})
+        for filter_type, params in basic_filters.items():
+            condition = self._parse_basic_filter(filter_type, params)
+            conditions.append(condition)
+        
+        # 解析技术指标条件
+        tech_conditions = self.config.get('technical_conditions', {})
+        for category, indicators in tech_conditions.items():
+            for indicator_config in indicators:
+                condition = self._parse_technical_condition(indicator_config)
+                conditions.append(condition)
+        
+        return conditions
+    
+    def _parse_technical_condition(self, config):
+        """解析技术指标条件"""
+        return {
+            'type': 'technical',
+            'indicator': config['indicator'],
+            'condition': config['condition'],
+            'params': config.get('values') or config.get('value'),
+            'weight': config.get('weight', 1.0)
         }
-    ],
-    'quality_grade': '良好'              # 质量评级
-}
-```
-
-#### 质量评级标准
-- **优秀**: 匹配率 ≥ 80%
-- **良好**: 匹配率 ≥ 60%
-- **一般**: 匹配率 ≥ 40%
-- **需要改进**: 匹配率 < 40%
-
-### 2. 数据质量保障（P0级功能）
-
-#### 功能概述
-- **目标**: 确保多时间周期数据的一致性、完整性和准确性
-- **质量标准**: 95%+数据准确率保障
-- **检查范围**: 15分钟、30分钟、60分钟、日线、周线、月线
-- **实时监控**: 数据获取时自动质量检查
-
-#### 数据质量检查项目
-```python
-# 数据质量验证结果
-quality_result = {
-    'stock_code': '000001',
-    'validation_date': '2024-01-15',
-    'overall_quality': 'excellent',      # excellent/good/fair/poor
-    'period_results': {                   # 各周期数据质量
-        'daily': {
-            'status': 'valid',
-            'data_count': 120,
-            'issues': [],
-            'date_range': {
-                'start': '2023-09-01',
-                'end': '2024-01-15'
-            }
-        },
-        '15min': {
-            'status': 'warning',
-            'data_count': 2400,
-            'issues': ['存在1个异常价格波动'],
-            'date_range': {
-                'start': '2023-12-16',
-                'end': '2024-01-15'
-            }
-        }
-    },
-    'consistency_checks': {               # 一致性检查
-        'time_alignment': {
-            '15min_30min': {
-                'status': 'aligned',
-                'alignment_ratio': 0.95,
-                'common_dates_count': 28
-            }
-        },
-        'price_consistency': {
-            'daily_15min': {
-                'status': 'consistent',
-                'inconsistency_count': 0,
-                'inconsistencies': []
-            }
-        },
-        'overall_consistency': 'good'
-    },
-    'issues': []                          # 发现的问题
-}
-```
-
-#### 质量评估标准
-- **优秀(excellent)**: 所有检查通过，无数据问题
-- **良好(good)**: 大部分检查通过，少量警告
-- **一般(fair)**: 部分检查通过，存在一些问题
-- **较差(poor)**: 多项检查失败，数据质量堪忧
-
-### 3. 智能策略优化（P1级功能）
-
-#### 功能概述
-- **目标**: 自动优化低匹配率策略，提升策略有效性
-- **触发条件**: 策略匹配率低于60%时自动启动
-- **优化方法**: 阈值调整、条件简化、重要性评估
-- **迭代优化**: 最多3轮迭代，直到达到目标匹配率
-
-#### 优化策略
-```python
-# 优化结果结构
-optimization_result = {
-    'original_strategy': {...},           # 原始策略
-    'optimized_strategy': {...},          # 优化后策略
-    'optimization_history': [             # 优化历史
-        {
-            'iteration': 0,
-            'strategy': {...},
-            'match_rate': 0.45,
-            'optimization_type': 'initial'
-        },
-        {
-            'iteration': 1,
-            'strategy': {...},
-            'match_rate': 0.62,
-            'optimization_type': 'iterative',
-            'applied_recommendations': [...]
-        }
-    ],
-    'final_validation': {...},            # 最终验证结果
-    'improvement_summary': {              # 改进总结
-        'initial_match_rate': 0.45,
-        'final_match_rate': 0.62,
-        'absolute_improvement': 0.17,
-        'percentage_improvement': 37.8,
-        'total_iterations': 1,
-        'optimization_successful': True,
-        'best_iteration': 1
-    }
-}
-```
-
-#### 优化技术
-1. **阈值调整**: 降低过高的评分阈值（如从95降至85）
-2. **条件简化**: 减少过多的策略条件（如从150个减至75个）
-3. **逻辑优化**: 将过严格的AND逻辑调整为OR逻辑
-4. **重要性评估**: 保留最重要的指标条件
-
-### 4. 系统监控告警（P1级功能）
-
-#### 功能概述
-- **目标**: 实时监控系统性能和健康状态
-- **监控指标**: 分析时间、内存使用、错误率、匹配率
-- **告警机制**: 超过阈值时主动告警
-- **报告生成**: 自动生成系统健康报告
-
-#### 监控指标
-```python
-# 系统健康状态
-health_status = {
-    'timestamp': '2024-01-20 15:30:45',
-    'overall_status': 'healthy',         # healthy/warning/critical
-    'statistics': {                      # 性能统计
-        'total_operations': 25,
-        'success_count': 24,
-        'error_count': 1,
-        'error_rate': 0.04,             # 4%错误率
-        'avg_analysis_time': 2.35,      # 平均分析时间2.35秒
-        'max_analysis_time': 4.12,      # 最大分析时间4.12秒
-        'avg_memory_usage': 0.65,       # 平均内存使用65%
-        'max_memory_usage': 0.78,       # 最大内存使用78%
-        'avg_match_rate': 0.72,         # 平均匹配率72%
-        'min_match_rate': 0.58          # 最低匹配率58%
-    },
-    'recent_alerts': [                   # 最近告警
-        {
-            'type': 'performance',
-            'timestamp': '2024-01-20 15:25:30',
-            'message': '分析时间超过阈值: 4.12秒 > 3.00秒',
-            'severity': 'medium'
-        }
-    ],
-    'alert_count': 1,
-    'thresholds': {                      # 告警阈值
-        'analysis_time': 300,           # 5分钟
-        'memory_usage': 0.8,            # 80%
-        'error_rate': 0.05,             # 5%
-        'match_rate': 0.4               # 40%
-    },
-    'uptime': {
-        'last_activity': '2024-01-20 15:30:45',
-        'status': 'active'
-    }
-}
-```
-
-#### 告警级别
-- **高(HIGH)**: 内存使用超限、错误率过高
-- **中(MEDIUM)**: 分析时间过长、匹配率偏低
-- **低(LOW)**: 一般性能警告
-
----
-
-## 📋 API接口文档
-
-### 核心组件API
-
-#### 1. 买点批量分析器API
-
-```python
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-
-class BuyPointBatchAnalyzer:
-    """买点批量分析器 - 核心分析引擎"""
-
-    def __init__(self):
-        """初始化分析器（包含所有新增组件）"""
-        self.data_processor = PeriodDataProcessor()
-        self.indicator_analyzer = AutoIndicatorAnalyzer()
-        self.strategy_generator = StrategyGenerator()
-        # P0级组件
-        self.buypoint_validator = BuyPointValidator()
-        self.data_quality_validator = DataQualityValidator()
-        # P1级组件
-        self.strategy_optimizer = StrategyOptimizer()
-        self.system_monitor = SystemHealthMonitor()
-
-    def run_analysis(self, input_csv: str, output_dir: str,
-                    min_hit_ratio: float = 0.6,
-                    strategy_name: str = "BuyPointCommonStrategy") -> Dict:
-        """
-        运行完整的买点分析流程（包含所有新功能）
-
-        Args:
-            input_csv: 买点数据CSV文件路径
-            output_dir: 输出目录
-            min_hit_ratio: 最小命中率阈值
-            strategy_name: 策略名称
-
-        Returns:
-            Dict: 分析结果摘要
-        """
 
 # 使用示例
-analyzer = BuyPointBatchAnalyzer()
-
-# 执行完整分析（自动包含验证、优化、监控）
-result = analyzer.run_analysis(
-    input_csv='data/buypoints.csv',
-    output_dir='results/',
-    min_hit_ratio=0.6,
-    strategy_name='EnhancedStrategy'
-)
-
-print(f"分析完成，处理了 {result['buypoint_count']} 个买点")
-print(f"策略生成: {'成功' if result['strategy_generated'] else '失败'}")
-print(f"匹配率: {result['match_analysis']['match_rate']:.2%}")
+parser = SelectionConfigParser('config/stock_selection_config.yaml')
+conditions = parser.parse_conditions()
+print(f"解析到 {len(conditions)} 个筛选条件")
 ```
 
-#### 2. 买点验证器API
+### 2. 多条件筛选引擎
 
 ```python
-from analysis.validation.buypoint_validator import BuyPointValidator
-
-class BuyPointValidator:
-    """买点验证器 - 策略闭环验证"""
-
-    def validate_strategy_roundtrip(self,
-                                  original_buypoints: pd.DataFrame,
-                                  generated_strategy: Dict[str, Any],
-                                  validation_date: str) -> Dict[str, Any]:
-        """
-        执行策略闭环验证
-
-        Args:
-            original_buypoints: 原始买点数据
-            generated_strategy: 生成的策略配置
-            validation_date: 验证日期
-
-        Returns:
-            Dict: 验证结果（包含匹配率、质量评级、改进建议）
-        """
-
-    def generate_validation_report(self, validation_results: Dict[str, Any],
-                                 output_file: str) -> None:
-        """生成可读的验证报告"""
-
-# 使用示例
-validator = BuyPointValidator()
-
-validation_result = validator.validate_strategy_roundtrip(
-    original_buypoints=buypoints_df,
-    generated_strategy=strategy,
-    validation_date='2024-01-20'
-)
-
-# 检查验证结果
-match_rate = validation_result['match_analysis']['match_rate']
-if match_rate >= 0.6:
-    print(f"✅ 策略验证通过，匹配率: {match_rate:.2%}")
-else:
-    print(f"⚠️ 策略需要优化，匹配率: {match_rate:.2%}")
-
-# 生成报告
-validator.generate_validation_report(validation_result, 'validation_report.md')
-```
-
-#### 3. 策略优化器API
-
-```python
-from analysis.optimization.strategy_optimizer import StrategyOptimizer
-
-class StrategyOptimizer:
-    """策略优化器 - 智能策略优化"""
-
-    def optimize_strategy(self,
-                         original_strategy: Dict[str, Any],
-                         original_buypoints: pd.DataFrame,
-                         validation_date: str,
-                         max_iterations: int = 5) -> Dict[str, Any]:
-        """
-        优化策略以提升匹配率
-
-        Args:
-            original_strategy: 原始策略
-            original_buypoints: 原始买点数据
-            validation_date: 验证日期
-            max_iterations: 最大优化迭代次数
-
-        Returns:
-            Dict: 优化结果（包含优化历史、改进总结）
-        """
-
-# 使用示例
-optimizer = StrategyOptimizer()
-
-optimization_result = optimizer.optimize_strategy(
-    original_strategy=poor_strategy,
-    original_buypoints=buypoints_df,
-    validation_date='2024-01-20',
-    max_iterations=3
-)
-
-# 检查优化效果
-improvement = optimization_result['improvement_summary']
-print(f"优化前匹配率: {improvement['initial_match_rate']:.2%}")
-print(f"优化后匹配率: {improvement['final_match_rate']:.2%}")
-print(f"改进幅度: {improvement['percentage_improvement']:.1f}%")
-```
-
-#### 4. 系统监控器API
-
-```python
-from monitoring.system_monitor import SystemHealthMonitor
-
-class SystemHealthMonitor:
-    """系统监控器 - 实时性能监控"""
-
-    def monitor_analysis_performance(self, analysis_func: Callable) -> Callable:
-        """监控分析性能装饰器"""
-
-    def get_system_health(self) -> Dict[str, Any]:
-        """获取系统健康状态"""
-
-    def generate_health_report(self, output_file: str) -> None:
-        """生成系统健康报告"""
-
-# 使用示例
-monitor = SystemHealthMonitor()
-
-# 使用装饰器监控函数
-@monitor.monitor_analysis_performance
-def run_analysis():
-    return analyzer.run_analysis(...)
-
-# 执行被监控的分析
-result = run_analysis()
-
-# 获取健康状态
-health = monitor.get_system_health()
-print(f"系统状态: {health['overall_status']}")
-print(f"成功操作: {health['statistics']['success_count']}")
-print(f"错误率: {health['statistics']['error_rate']:.2%}")
-
-# 生成健康报告
-monitor.generate_health_report('system_health_report.md')
-```
-
----
-
-## ⚙️ 配置参数说明
-
-### 系统监控配置
-
-```python
-# 系统监控器配置
-monitor_config = {
-    'thresholds': {
-        'analysis_time': 300,        # 分析时间阈值（秒）
-        'memory_usage': 0.8,         # 内存使用阈值（80%）
-        'error_rate': 0.05,          # 错误率阈值（5%）
-        'match_rate': 0.4            # 匹配率阈值（40%）
-    },
-    'max_records': 50,               # 最大记录数（内存优化）
-    'max_alerts': 20                 # 最大告警数（内存优化）
-}
-```
-
-### 策略优化配置
-
-```python
-# 策略优化器配置
-optimization_config = {
-    'max_iterations': 5,             # 最大优化迭代次数
-    'target_match_rate': 0.6,        # 目标匹配率（60%）
-    'optimization_methods': [
-        'adjust_thresholds',         # 调整阈值
-        'simplify_conditions',       # 简化条件
-        'add_filters'                # 添加过滤器
-    ],
-    'condition_importance_weights': {
-        'MACD': 0.3,
-        'RSI': 0.2,
-        'KDJ': 0.2,
-        'BOLL': 0.1,
-        'MA': 0.2
-    }
-}
-
-### 数据质量验证配置
-
-```python
-# 数据质量验证器配置
-data_quality_config = {
-    'periods': ['15min', '30min', '60min', 'daily', 'weekly', 'monthly'],
-    'quality_thresholds': {
-        'min_data_points': 10,       # 最少数据点数
-        'max_price_change': 0.2,     # 最大价格变化（20%）
-        'consistency_threshold': 0.95 # 一致性阈值（95%）
-    },
-    'check_items': [
-        'data_completeness',         # 数据完整性
-        'logical_consistency',       # 逻辑一致性
-        'price_reasonableness',      # 价格合理性
-        'volume_validity',           # 成交量有效性
-        'time_alignment'             # 时间对齐
-    ]
-}
-```
-
-### 最佳实践配置
-
-```python
-# 推荐的生产环境配置
-production_config = {
-    'analysis': {
-        'min_hit_ratio': 0.6,        # 最小命中率60%
-        'batch_size': 100,           # 批处理大小
-        'timeout': 300               # 超时时间5分钟
-    },
-    'validation': {
-        'enable_roundtrip': True,    # 启用闭环验证
-        'target_match_rate': 0.6,    # 目标匹配率60%
-        'quality_threshold': 'good'   # 数据质量阈值
-    },
-    'optimization': {
-        'auto_optimize': True,       # 自动优化
-        'max_iterations': 3,         # 最大迭代3次
-        'improvement_threshold': 0.05 # 改进阈值5%
-    },
-    'monitoring': {
-        'enable_monitoring': True,   # 启用监控
-        'alert_on_errors': True,     # 错误告警
-        'generate_reports': True     # 生成报告
-    }
-}
-```
-
----
-
-## 🛠️ 故障排除和最佳实践
-
-### 常见问题解决方案
-
-#### 1. 策略匹配率低问题
-
-**问题**: 生成的策略匹配率低于60%
-
-**解决方案**:
-```python
-# 检查策略条件是否过于严格
-if match_rate < 0.6:
-    print("策略匹配率偏低，建议:")
-    print("1. 检查评分阈值是否过高")
-    print("2. 减少AND条件，增加OR条件")
-    print("3. 启用自动优化功能")
-
-    # 自动优化
-    optimization_result = optimizer.optimize_strategy(...)
-```
-
-#### 2. 数据质量问题
-
-**问题**: 数据质量检查失败
-
-**解决方案**:
-```python
-# 检查数据质量问题
-quality_result = data_validator.validate_multi_period_data(...)
-
-if quality_result['overall_quality'] in ['poor', 'error']:
-    print("数据质量问题:")
-    for issue in quality_result.get('issues', []):
-        print(f"- {issue}")
-
-    print("建议:")
-    print("1. 检查数据源连接")
-    print("2. 验证数据时间范围")
-    print("3. 重新获取数据")
-```
-
-#### 3. 系统性能问题
-
-**问题**: 分析时间过长或内存使用过高
-
-**解决方案**:
-```python
-# 检查系统健康状态
-health = monitor.get_system_health()
-
-if health['overall_status'] == 'warning':
-    print("性能优化建议:")
-
-    # 分析时间过长
-    if health['statistics']['avg_analysis_time'] > 300:
-        print("1. 减少买点数据量")
-        print("2. 优化指标计算")
-        print("3. 启用并行处理")
-
-    # 内存使用过高
-    if health['statistics']['avg_memory_usage'] > 0.8:
-        print("1. 减少监控记录数")
-        print("2. 清理缓存数据")
-        print("3. 分批处理数据")
-```
-
-#### 4. 策略执行失败
-
-**问题**: 策略执行器无法执行生成的策略
-
-**解决方案**:
-```python
-# 检查策略格式
-try:
-    # 标准化策略格式
-    normalized_strategy = validator._normalize_strategy_format(strategy)
-
-    # 验证必要字段
-    for condition in normalized_strategy['conditions']:
-        assert 'indicator_id' in condition, "缺少indicator_id字段"
-        assert 'period' in condition, "缺少period字段"
-
-except Exception as e:
-    print(f"策略格式问题: {e}")
-    print("建议检查策略生成器配置")
-```
-
-### 性能优化建议
-
-#### 1. 内存优化
-- 设置合理的记录数限制（推荐50条）
-- 定期清理告警历史（推荐20条）
-- 使用批处理避免大量数据同时加载
-
-#### 2. 处理速度优化
-- 启用并行处理提升分析速度
-- 使用缓存减少重复计算
-- 优化数据库查询减少I/O开销
-
-#### 3. 监控指标解读
-
-**系统状态评级**:
-- `healthy`: 所有指标正常
-- `warning`: 部分指标超过阈值
-- `critical`: 多项指标异常
-
-**关键指标含义**:
-- `error_rate`: 错误率，应低于5%
-- `avg_analysis_time`: 平均分析时间，应低于5分钟
-- `avg_memory_usage`: 平均内存使用，应低于80%
-- `avg_match_rate`: 平均匹配率，应高于40%
-
----
-
-## 📈 使用示例
-
-### 完整工作流程示例
-
-```python
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from selection.multi_condition_filter import MultiConditionFilter
 import pandas as pd
 
-# 1. 准备买点数据
-buypoints_data = pd.DataFrame({
-    'stock_code': ['000001', '000002', '000858', '002415'],
-    'buypoint_date': ['20240115', '20240115', '20240116', '20240116']
-})
-buypoints_data.to_csv('buypoints.csv', index=False)
+class MultiConditionFilter:
+    """多条件筛选引擎"""
+    
+    def __init__(self, conditions):
+        self.conditions = conditions
+        self.indicator_calculator = IndicatorCalculator()
+    
+    def filter_stocks(self, stock_pool):
+        """
+        执行多条件筛选
+        
+        Args:
+            stock_pool: 股票池列表
+        
+        Returns:
+            List: 筛选后的股票列表
+        """
+        results = []
+        
+        for stock_code in stock_pool:
+            try:
+                # 获取股票数据
+                stock_data = self._get_stock_data(stock_code)
+                
+                # 计算所需指标
+                indicators = self._calculate_indicators(stock_data)
+                
+                # 执行筛选条件
+                if self._check_conditions(stock_code, stock_data, indicators):
+                    score = self._calculate_score(indicators)
+                    results.append({
+                        'stock_code': stock_code,
+                        'score': score,
+                        'indicators': indicators
+                    })
+            
+            except Exception as e:
+                print(f"筛选 {stock_code} 时出错: {e}")
+                continue
+        
+        return sorted(results, key=lambda x: x['score'], reverse=True)
+    
+    def _check_conditions(self, stock_code, data, indicators):
+        """检查是否满足所有筛选条件"""
+        for condition in self.conditions:
+            if not self._evaluate_condition(condition, data, indicators):
+                return False
+        return True
+    
+    def _evaluate_condition(self, condition, data, indicators):
+        """评估单个条件"""
+        if condition['type'] == 'basic':
+            return self._evaluate_basic_condition(condition, data)
+        elif condition['type'] == 'technical':
+            return self._evaluate_technical_condition(condition, indicators)
+        return True
 
-# 2. 创建分析器（包含所有新功能）
-analyzer = BuyPointBatchAnalyzer()
+# 使用示例
+conditions = parser.parse_conditions()
+filter_engine = MultiConditionFilter(conditions)
 
-# 3. 执行完整分析
-print("🚀 开始执行买点分析...")
-result = analyzer.run_analysis(
-    input_csv='buypoints.csv',
-    output_dir='results/',
-    min_hit_ratio=0.6,
-    strategy_name='EnhancedStrategy'
-)
+stock_pool = ['000001', '000002', '000858', '002415', '600519']
+filtered_results = filter_engine.filter_stocks(stock_pool)
 
-# 4. 查看结果
-print(f"✅ 分析完成!")
-print(f"📊 处理买点数: {result['buypoint_count']}")
-print(f"🎯 策略生成: {'成功' if result['strategy_generated'] else '失败'}")
+print(f"筛选结果: {len(filtered_results)} 只股票")
+for result in filtered_results[:10]:
+    print(f"{result['stock_code']}: {result['score']:.2f}")
+```
 
-# 5. 检查验证结果
-if 'match_analysis' in result:
-    match_rate = result['match_analysis']['match_rate']
-    print(f"📈 策略匹配率: {match_rate:.2%}")
+### 3. 智能评分系统
 
-    if match_rate >= 0.6:
-        print("✅ 策略验证通过")
-    else:
-        print("⚠️ 策略需要优化")
+```python
+from selection.scoring_engine import ScoringEngine
 
-print("\n📋 生成的报告文件:")
-print("- results/validation_report.md")
-print("- results/system_health_report.md")
-print("- results/common_indicators_report.md")
+class ScoringEngine:
+    """智能评分引擎"""
+    
+    def __init__(self, scoring_config):
+        self.scoring_config = scoring_config
+        self.weights = self._parse_weights()
+    
+    def calculate_composite_score(self, indicators):
+        """
+        计算综合评分
+        
+        评分模型:
+        综合分 = Σ(因子分 × 权重)
+        """
+        total_score = 0
+        total_weight = 0
+        
+        for factor_name, factor_config in self.scoring_config.items():
+            factor_score = self._calculate_factor_score(
+                factor_name, factor_config, indicators
+            )
+            weight = factor_config.get('weight', 1.0)
+            
+            total_score += factor_score * weight
+            total_weight += weight
+        
+        return total_score / total_weight if total_weight > 0 else 0
+    
+    def _calculate_factor_score(self, factor_name, config, indicators):
+        """计算单个因子评分"""
+        if factor_name == 'technical_score':
+            return self._calculate_technical_score(config, indicators)
+        elif factor_name == 'zxm_score':
+            return self._calculate_zxm_score(config, indicators)
+        elif factor_name == 'momentum_score':
+            return self._calculate_momentum_score(config, indicators)
+        else:
+            return 0
+    
+    def _calculate_zxm_score(self, config, indicators):
+        """计算ZXM综合评分"""
+        zxm_components = config.get('components', [])
+        total_score = 0
+        total_weight = 0
+        
+        for component in zxm_components:
+            indicator_name = component['indicator']
+            weight = component.get('weight', 1.0)
+            
+            if indicator_name in indicators:
+                score = indicators[indicator_name]
+                total_score += score * weight
+                total_weight += weight
+        
+        return total_score / total_weight if total_weight > 0 else 0
+
+# 使用示例
+scoring_config = {
+    'technical_score': {
+        'weight': 0.4,
+        'components': [
+            {'indicator': 'RSI', 'weight': 0.3},
+            {'indicator': 'MACD', 'weight': 0.4},
+            {'indicator': 'KDJ', 'weight': 0.3}
+        ]
+    },
+    'zxm_score': {
+        'weight': 0.6,
+        'components': [
+            {'indicator': 'ZXM_BUYPOINT', 'weight': 0.4},
+            {'indicator': 'ZXM_TREND', 'weight': 0.3},
+            {'indicator': 'ZXM_ELASTICITY', 'weight': 0.3}
+        ]
+    }
+}
+
+scoring_engine = ScoringEngine(scoring_config)
+composite_score = scoring_engine.calculate_composite_score(indicators)
+print(f"综合评分: {composite_score:.2f}")
 ```
 
 ---
 
-## 📚 总结
+## 📋 API参考
 
-选股系统现已完成**企业级架构完善**，具备以下核心能力：
+### 核心选股API
 
-### ✅ 已实现功能
-- **P0级**: 闭环验证机制 + 数据质量保障
-- **P1级**: 智能策略优化 + 系统监控告警
-- **P2级**: 完善测试覆盖 + 技术债务解决 + 性能优化 + 用户体验改进
+#### 1. 基础选股API
 
-### 🎯 系统特点
-- **可靠性**: 60%+策略匹配率验证，95%+数据准确率保障
-- **智能化**: 自动策略优化，实时系统监控
-- **高性能**: 内存优化，响应迅速
-- **易用性**: 直观输出，清晰反馈
+```python
+def select_stocks(
+    stock_pool: List[str],
+    config_path: str,
+    max_results: int = 50
+) -> List[Dict]:
+    """
+    基础选股功能
+    
+    Args:
+        stock_pool: 股票池
+        config_path: 配置文件路径
+        max_results: 最大结果数量
+    
+    Returns:
+        List[Dict]: 选股结果
+    """
 
-### 🚀 使用建议
-1. **生产环境**: 启用所有验证和监控功能
-2. **开发测试**: 使用较低的命中率阈值进行快速验证
-3. **性能调优**: 根据系统健康报告调整配置参数
-4. **问题排查**: 查看验证报告和健康报告定位问题
+# 使用示例
+from selection.stock_selector import StockSelector
+
+selector = StockSelector()
+results = selector.select_stocks(
+    stock_pool=['000001', '000002', '000858'],
+    config_path='config/basic_strategy.yaml',
+    max_results=20
+)
+
+for result in results:
+    print(f"{result['stock_code']}: {result['score']:.2f} - {result['reason']}")
+```
+
+#### 2. 高级选股API
+
+```python
+def advanced_select_stocks(
+    stock_pool: List[str],
+    strategy_config: Dict,
+    enable_parallel: bool = True,
+    enable_cache: bool = True
+) -> Dict:
+    """
+    高级选股功能
+    
+    Args:
+        stock_pool: 股票池
+        strategy_config: 策略配置
+        enable_parallel: 启用并行处理
+        enable_cache: 启用缓存
+    
+    Returns:
+        Dict: 详细选股结果和统计信息
+    """
+
+# 使用示例
+from selection.advanced_stock_selector import AdvancedStockSelector
+
+advanced_selector = AdvancedStockSelector(
+    enable_parallel=True,
+    max_workers=8,
+    enable_cache=True
+)
+
+strategy_config = {
+    'name': '多因子选股',
+    'conditions': [...],
+    'scoring': {...}
+}
+
+results = advanced_selector.advanced_select_stocks(
+    stock_pool=large_stock_pool,
+    strategy_config=strategy_config
+)
+
+print(f"筛选结果: {len(results['selected_stocks'])} 只股票")
+print(f"处理时间: {results['execution_time']:.2f} 秒")
+print(f"筛选效率: {results['selection_rate']:.1%}")
+```
+
+#### 3. 实时选股API
+
+```python
+def realtime_stock_selection(
+    strategy_name: str,
+    update_interval: int = 300,
+    alert_threshold: float = 80.0
+) -> None:
+    """
+    实时选股监控
+    
+    Args:
+        strategy_name: 策略名称
+        update_interval: 更新间隔（秒）
+        alert_threshold: 提醒阈值
+    """
+
+# 使用示例
+from selection.realtime_selector import RealtimeStockSelector
+
+realtime_selector = RealtimeStockSelector()
+realtime_selector.start_realtime_selection(
+    strategy_name='ZXM买点策略',
+    update_interval=300,  # 5分钟更新
+    alert_threshold=85.0
+)
+```
 
 ---
 
-*选股系统架构文档版本: v3.0*
-*最后更新: 2025-06-20*
-*支持80个技术指标和ZXM专业体系*
-*企业级可靠性架构*
+## 🎯 使用示例
+
+### 基础选股示例
+
+```python
+from selection.stock_selector import StockSelector
+import yaml
+
+# 创建选股器
+selector = StockSelector()
+
+# 定义股票池（示例：沪深300成分股）
+stock_pool = [
+    '000001', '000002', '000858', '002415', '002594',
+    '600036', '600519', '600887', '000858', '002142'
+]
+
+# 基础选股配置
+basic_config = {
+    'basic_filters': {
+        'market_cap': {'min': 100, 'max': 2000},
+        'price_range': {'min': 10, 'max': 200}
+    },
+    'technical_conditions': [
+        {
+            'indicator': 'RSI',
+            'condition': 'between',
+            'values': [30, 70],
+            'weight': 0.3
+        },
+        {
+            'indicator': 'ZXM_BUYPOINT',
+            'condition': 'greater_than',
+            'value': 75,
+            'weight': 0.7
+        }
+    ]
+}
+
+# 执行选股
+print("开始执行选股...")
+results = selector.select_stocks_with_config(stock_pool, basic_config)
+
+print(f"\n=== 选股结果 ===")
+print(f"筛选股票数: {len(results)}")
+
+for i, result in enumerate(results[:10], 1):
+    print(f"{i:2d}. {result['stock_code']} - "
+          f"评分: {result['score']:.2f} - "
+          f"买点分: {result['indicators']['ZXM_BUYPOINT']:.1f}")
+```
+
+### 高级多因子选股示例
+
+```python
+from selection.advanced_stock_selector import AdvancedStockSelector
+
+# 创建高级选股器
+advanced_selector = AdvancedStockSelector(
+    enable_parallel=True,
+    max_workers=8,
+    enable_cache=True
+)
+
+# 多因子选股策略
+multi_factor_strategy = {
+    'name': '多因子量化选股',
+    'stages': [
+        {
+            'name': '基础筛选',
+            'conditions': [
+                'market_cap > 50',
+                'price > 5',
+                'avg_volume_20d > 1000000'
+            ]
+        },
+        {
+            'name': '技术筛选',
+            'conditions': [
+                'RSI < 80 AND RSI > 20',
+                'MACD_histogram > 0',
+                'MA5 > MA10'
+            ]
+        },
+        {
+            'name': 'ZXM筛选',
+            'conditions': [
+                'zxm_buypoint_score > 70',
+                'zxm_trend_score > 65'
+            ]
+        }
+    ],
+    'scoring_model': {
+        'technical_score': {
+            'weight': 0.4,
+            'components': [
+                {'indicator': 'RSI', 'weight': 0.25},
+                {'indicator': 'MACD', 'weight': 0.35},
+                {'indicator': 'KDJ', 'weight': 0.25},
+                {'indicator': 'BOLL', 'weight': 0.15}
+            ]
+        },
+        'zxm_score': {
+            'weight': 0.6,
+            'components': [
+                {'indicator': 'ZXM_BUYPOINT', 'weight': 0.4},
+                {'indicator': 'ZXM_TREND', 'weight': 0.3},
+                {'indicator': 'ZXM_ELASTICITY', 'weight': 0.3}
+            ]
+        }
+    }
+}
+
+# 大规模股票池
+large_stock_pool = get_all_a_shares()  # 假设获取所有A股
+
+print(f"开始多因子选股，股票池大小: {len(large_stock_pool)}")
+start_time = time.time()
+
+# 执行高级选股
+results = advanced_selector.advanced_select_stocks(
+    stock_pool=large_stock_pool,
+    strategy_config=multi_factor_strategy
+)
+
+end_time = time.time()
+execution_time = end_time - start_time
+
+print(f"\n=== 选股统计 ===")
+print(f"总处理股票: {results['total_processed']}")
+print(f"筛选通过股票: {len(results['selected_stocks'])}")
+print(f"筛选通过率: {len(results['selected_stocks'])/results['total_processed']:.2%}")
+print(f"总执行时间: {execution_time:.2f} 秒")
+print(f"平均处理速度: {results['total_processed']/execution_time:.0f} 股/秒")
+
+print(f"\n=== 性能优化效果 ===")
+print(f"并行处理提升: {results['parallel_improvement']:.1f}%")
+print(f"缓存命中率: {results['cache_hit_rate']:.1%}")
+
+print(f"\n=== 前10名选股结果 ===")
+for i, stock in enumerate(results['selected_stocks'][:10], 1):
+    print(f"{i:2d}. {stock['stock_code']} - "
+          f"综合评分: {stock['composite_score']:.2f} - "
+          f"技术分: {stock['technical_score']:.1f} - "
+          f"ZXM分: {stock['zxm_score']:.1f}")
+```
+
+### 策略回测示例
+
+```python
+from selection.strategy_backtester import StrategyBacktester
+
+# 创建策略回测器
+backtester = StrategyBacktester()
+
+# 回测配置
+backtest_config = {
+    'start_date': '2024-01-01',
+    'end_date': '2024-12-31',
+    'rebalance_frequency': 'monthly',  # 月度调仓
+    'max_positions': 20,               # 最大持仓数
+    'strategy': multi_factor_strategy
+}
+
+print("开始策略回测...")
+backtest_results = backtester.run_backtest(backtest_config)
+
+print(f"\n=== 回测结果 ===")
+print(f"总收益率: {backtest_results['total_return']:.2%}")
+print(f"年化收益率: {backtest_results['annual_return']:.2%}")
+print(f"最大回撤: {backtest_results['max_drawdown']:.2%}")
+print(f"夏普比率: {backtest_results['sharpe_ratio']:.2f}")
+print(f"胜率: {backtest_results['win_rate']:.1%}")
+
+print(f"\n=== 选股效果分析 ===")
+print(f"平均选股数量: {backtest_results['avg_selected_stocks']:.0f}")
+print(f"选股成功率: {backtest_results['selection_success_rate']:.1%}")
+print(f"平均持有期收益: {backtest_results['avg_holding_return']:.2%}")
+```
+
+---
+
+## ❓ 常见问题
+
+### Q1: 如何设计有效的选股策略？
+
+A: 有效选股策略设计原则：
+1. 多因子组合：技术指标 + ZXM评分 + 基本面
+2. 分层筛选：基础筛选 → 技术筛选 → 精选
+3. 动态权重：根据市场环境调整指标权重
+4. 回测验证：历史数据验证策略有效性
+
+### Q2: 如何处理大规模股票池筛选？
+
+A: 大规模筛选优化方案：
+1. 启用并行处理（8进程并行）
+2. 使用智能缓存减少重复计算
+3. 分批处理避免内存溢出
+4. 预筛选减少计算量
+
+### Q3: 选股结果如何验证？
+
+A: 结果验证方法：
+1. 历史回测验证策略有效性
+2. 样本外测试检验泛化能力
+3. 对比基准指数表现
+4. 风险调整后收益分析
+
+---
+
+*可配置选股模块文档版本: v2.0*  
+*最后更新: 2025-06-15*  
+*支持86个技术指标和ZXM体系*

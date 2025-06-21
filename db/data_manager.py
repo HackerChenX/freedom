@@ -145,69 +145,6 @@ class DataManager:
             end_date=end_date,
             level=level
         )
-
-    def get_stock_data(self, stock_code: str, period: str,
-                      start_date: Optional[str] = None,
-                      end_date: Optional[str] = None) -> pd.DataFrame:
-        """
-        获取股票数据的兼容性接口，用于数据质量验证
-
-        Args:
-            stock_code: 股票代码
-            period: 时间周期 ('15min', '30min', '60min', 'daily', 'weekly', 'monthly')
-            start_date: 开始日期
-            end_date: 结束日期
-
-        Returns:
-            pd.DataFrame: 股票数据，包含open, high, low, close, volume等列
-        """
-        try:
-            # 周期映射
-            period_mapping = {
-                '15min': '15分钟',
-                '30min': '30分钟',
-                '60min': '60分钟',
-                'daily': '日线',
-                'weekly': '周线',
-                'monthly': '月线'
-            }
-
-            level = period_mapping.get(period, period)
-
-            # 调用get_stock_info获取数据
-            stock_info = self.get_stock_info(
-                stock_code=stock_code,
-                level=level,
-                start_date=start_date,
-                end_date=end_date
-            )
-
-            # 转换为DataFrame格式
-            if hasattr(stock_info, 'data') and stock_info.data is not None:
-                df = stock_info.data.copy()
-
-                # 确保包含必要的列
-                required_columns = ['open', 'high', 'low', 'close', 'volume']
-                for col in required_columns:
-                    if col not in df.columns:
-                        # 如果缺少列，用0填充（实际应用中应该有真实数据）
-                        df[col] = 0.0
-
-                # 设置日期索引
-                if 'date' in df.columns:
-                    df.set_index('date', inplace=True)
-                elif 'datetime' in df.columns:
-                    df.set_index('datetime', inplace=True)
-
-                return df
-            else:
-                # 返回空DataFrame
-                return pd.DataFrame(columns=['open', 'high', 'low', 'close', 'volume'])
-
-        except Exception as e:
-            logger.warning(f"获取股票数据失败 {stock_code} {period}: {e}")
-            # 返回空DataFrame而不是抛出异常，让数据质量验证器能够处理
-            return pd.DataFrame(columns=['open', 'high', 'low', 'close', 'volume'])
     
     @performance_monitor(threshold=0.5)
     def save_selection_result(self, result: pd.DataFrame, strategy_id: str, 
