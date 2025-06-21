@@ -31,7 +31,7 @@ DEFAULT_CONFIG = {
     'host': 'localhost',
     'port': 9000,
     'user': 'default',
-    'password': '',
+    'password': '123456',
     'database': 'stock'
 }
 
@@ -274,17 +274,21 @@ class ClickHouseDBConnection:
             if not result:
                 return pd.DataFrame()
 
-            # 获取列名 - 执行一个只返回结构的查询
+            # 优化列名获取 - 避免额外查询
+            column_names = None
             try:
-                # 尝试从原始查询中获取列名
-                meta_result = self.client.execute(f"SELECT * FROM ({query}) WHERE 0=1", params or {})
-                column_names = [col[0] for col in self.client.description]
+                # 尝试从client.description获取列名（如果可用）
+                if hasattr(self.client, 'description') and self.client.description:
+                    column_names = [col[0] for col in self.client.description]
             except Exception:
-                # 如果失败，使用序号作为列名
+                pass
+
+            # 如果无法获取列名，使用序号作为列名
+            if not column_names and result:
                 column_names = [f"col_{i}" for i in range(len(result[0]))]
 
             # 创建DataFrame
-            return pd.DataFrame(result, columns=column_names)
+            return pd.DataFrame(result, columns=column_names or [])
         except Exception as e:
             logger.error(f"执行查询失败: {query}, 错误: {e}")
             raise
