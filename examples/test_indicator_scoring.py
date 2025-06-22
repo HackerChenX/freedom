@@ -19,7 +19,7 @@ from indicators.kdj_score import KDJScore
 from indicators.rsi_score import RSIScore
 from indicators.boll_score import BOLLScore
 from indicators.volume_score import VolumeScore
-from indicators.indicator_registry import indicator_registry
+from indicators.complete_indicator_registry import complete_registry
 from db.clickhouse_db import get_clickhouse_db
 from utils.logger import get_logger
 
@@ -173,9 +173,9 @@ def test_indicator_registry():
     logger.info("开始测试指标注册机制")
     
     # 获取可用的评分指标
-    available_indicators = indicator_registry.get_available_scoring_indicators()
+    available_indicators = complete_registry.get_indicator_names()
     logger.info(f"可用的评分指标: {available_indicators}")
-    
+
     # 使用注册机制创建评分管理器
     indicator_configs = [
         {'name': 'macd_score', 'weight': 1.5, 'fast_period': 12, 'slow_period': 26},
@@ -186,7 +186,8 @@ def test_indicator_registry():
     ]
     
     try:
-        score_manager = indicator_registry.create_score_manager(indicator_configs)
+        # 注意：complete_registry主要用于指标注册，评分管理器需要单独创建
+        score_manager = IndicatorScoreManager(indicator_configs)
         logger.info("成功通过注册机制创建评分管理器")
         
         # 获取测试数据

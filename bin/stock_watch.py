@@ -21,7 +21,7 @@ sys.path.append(root_dir)
 from strategy.strategy_combiner import StrategyCombiner
 from strategy.signal_watcher import SignalWatcher
 from strategy.strategy_manager import StrategyManager
-from db.data_manager import DataManager
+from db.data_manager_adapter import get_data_manager_adapter
 from utils.logger import get_logger
 
 logger = get_logger("stock_watch")
@@ -110,7 +110,7 @@ def execute_combine(args):
     
     # 如果需要保存结果
     if args.save:
-        data_manager = DataManager()
+        data_manager = get_data_manager_adapter()
         success = data_manager.save_selection_result(result)
         if success:
             logger.info(f"已成功保存 {len(result)} 条选股结果到数据库")
@@ -166,7 +166,7 @@ def execute_watch(args):
         stock_pool = [s.strip() for s in args.pool.split(",")]
     else:
         # 使用策略过滤器获取股票池
-        data_manager = DataManager()
+        data_manager = get_data_manager_adapter()
         filters = strategy_plan.get("filters", {})
         stock_list_df = data_manager.get_stock_list(filters)
         

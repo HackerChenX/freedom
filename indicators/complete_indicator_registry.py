@@ -1,3 +1,4 @@
+from typing import Dict, Any
 """
 完整的指标注册管理器
 解决循环导入问题，实现所有101个指标的完整注册
@@ -25,9 +26,23 @@ class CompleteIndicatorRegistry:
     def register_indicator_safe(self, indicator_class, name: str, description: str = ""):
         """安全注册单个指标"""
         try:
-            # 验证是否为BaseIndicator子类
+            # 验证是否为BaseIndicator子类（处理装饰器类）
             from indicators.base_indicator import BaseIndicator
-            if not issubclass(indicator_class, BaseIndicator):
+
+            # 处理装饰器包装的类
+            actual_class = indicator_class
+            if hasattr(indicator_class, '__wrapped__'):
+                actual_class = indicator_class.__wrapped__
+            elif hasattr(indicator_class, '_wrapped_class'):
+                actual_class = indicator_class._wrapped_class
+
+            # 检查是否为类
+            if not isinstance(actual_class, type):
+                logger.warning(f"❌ {name} 不是有效的类")
+                return False
+
+            # 检查继承关系
+            if not issubclass(actual_class, BaseIndicator):
                 logger.warning(f"❌ {name} 不是BaseIndicator子类")
                 return False
             
@@ -88,11 +103,11 @@ class CompleteIndicatorRegistry:
             ('indicators.wma', 'WMA', 'WMA', '加权移动平均线'),
             ('indicators.sar', 'SAR', 'SAR', '抛物线转向指标'),
             ('indicators.adx', 'ADX', 'ADX', '平均趋向指标'),
-            ('indicators.aroon', 'Aroon', 'AROON', 'Aroon指标'),
+            ('indicators.aroon', 'AROON', 'AROON', 'Aroon指标'),
             ('indicators.atr', 'ATR', 'ATR', '平均真实波幅'),
             ('indicators.kc', 'KC', 'KC', '肯特纳通道'),
             ('indicators.mfi', 'MFI', 'MFI', '资金流量指标'),
-            ('indicators.momentum', 'Momentum', 'MOMENTUM', '动量指标'),
+            ('indicators.momentum', 'MOMENTUM', 'MOMENTUM', '动量指标'),
             ('indicators.mtm', 'MTM', 'MTM', '动量指标'),
             ('indicators.obv', 'OBV', 'OBV', '能量潮指标'),
             ('indicators.psy', 'PSY', 'PSY', '心理线指标'),
@@ -100,27 +115,27 @@ class CompleteIndicatorRegistry:
             ('indicators.roc', 'ROC', 'ROC', '变动率指标'),
             ('indicators.trix', 'TRIX', 'TRIX', 'TRIX指标'),
             ('indicators.vix', 'VIX', 'VIX', '恐慌指数'),
-            ('indicators.volume_ratio', 'VolumeRatio', 'VOLUME_RATIO', '量比指标'),
+            ('indicators.volume_ratio', 'VOLUME_RATIO', 'VOLUME_RATIO', '量比指标'),
             ('indicators.vosc', 'VOSC', 'VOSC', '成交量震荡器'),
             ('indicators.vr', 'VR', 'VR', '成交量比率'),
-            ('indicators.vortex', 'Vortex', 'VORTEX', '涡流指标'),
+            ('indicators.vortex', 'VORTEX', 'VORTEX', '涡流指标'),
             ('indicators.wr', 'WR', 'WR', '威廉指标'),
             ('indicators.ad', 'AD', 'AD', '累积/派发线'),
             # 已注册的基础指标
             ('indicators.macd', 'MACD', 'MACD', '移动平均线收敛散度指标'),
             ('indicators.rsi', 'RSI', 'RSI', '相对强弱指数'),
-            ('indicators.boll', 'BollingerBands', 'BOLL', '布林带'),
+            ('indicators.boll', 'BOLL', 'BOLL', '布林带'),
             ('indicators.kdj', 'KDJ', 'KDJ', 'KDJ随机指标'),
             ('indicators.bias', 'BIAS', 'BIAS', '乖离率'),
             ('indicators.cci', 'CCI', 'CCI', '顺势指标'),
-            ('indicators.chaikin', 'ChaikinVolatility', 'CHAIKIN', 'Chaikin波动率'),
+            ('indicators.chaikin', 'CHAIKIN', 'CHAIKIN', 'Chaikin波动率'),
             ('indicators.dmi', 'DMI', 'DMI', '趋向指标'),
             ('indicators.emv', 'EMV', 'EMV', '简易波动指标'),
-            ('indicators.ichimoku', 'Ichimoku', 'ICHIMOKU', '一目均衡表'),
+            ('indicators.ichimoku', 'ICHIMOKU', 'ICHIMOKU', '一目均衡表'),
             ('indicators.cmo', 'CMO', 'CMO', '钱德动量摆动指标'),
             ('indicators.dma', 'DMA', 'DMA', '动态移动平均线'),
-            ('indicators.vol', 'Volume', 'VOL', '成交量指标'),
-            ('indicators.stochrsi', 'StochasticRSI', 'STOCHRSI', '随机RSI'),
+            ('indicators.vol', 'VOL', 'VOL', '成交量指标'),
+            ('indicators.stochrsi', 'STOCHRSI', 'STOCHRSI', '随机RSI'),
         ]
         
         success_count = 0
@@ -345,4 +360,3 @@ class CompleteIndicatorRegistry:
 
 # 创建全局实例
 complete_registry = CompleteIndicatorRegistry()
-

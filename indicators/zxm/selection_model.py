@@ -9,6 +9,7 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 from utils.decorators import log_calls, error_handling
 
@@ -21,7 +22,7 @@ from indicators.zxm_washplate import ZXMWashPlate
 logger = get_logger(__name__)
 
 
-class SelectionModel(BaseIndicator):
+class SelectionModel(BaseIndicator, PatternSignalMixin):
     """
     ZXM选股模型
     
@@ -257,6 +258,11 @@ class SelectionModel(BaseIndicator):
             result.loc[:, "SelectionScore"] = pd.Series(50, index=data.index)
             result.loc[:, "BuyPriority"] = pd.Series(0, index=data.index)
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:

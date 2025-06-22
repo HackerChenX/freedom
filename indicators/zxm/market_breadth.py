@@ -7,10 +7,11 @@ from typing import Dict, List, Tuple, Union, Optional
 import logging
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
 logger = logging.getLogger(__name__)
 
-class ZXMMarketBreadth(BaseIndicator):
+class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
     """
     ZXM市场宽度指标
     
@@ -52,7 +53,12 @@ class ZXMMarketBreadth(BaseIndicator):
             DataFrame: 包含市场宽度指标的DataFrame
         """
         if data.empty:
-            return pd.DataFrame()
+            
+        # 添加形态识别和信号生成
+        pd = self.add_pattern_detection(pd)
+        pd = self.add_signal_generation(pd)
+
+        return pd.DataFrame()
             
         # 获取参数
         lookback_period = kwargs.get('lookback_period', 60)

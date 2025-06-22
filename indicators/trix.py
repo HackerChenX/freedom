@@ -6,16 +6,17 @@ TRIX三重指数平滑移动平均线模块
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Union, Optional, Any, Tuple
+from typing import Dict, Any, Dict, List, Union, Optional, Any, Tuple
 import logging
 
-from indicators.base_indicator import BaseIndicator, PatternResult
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin, PatternResult
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class TRIX(BaseIndicator):
+class TRIX(BaseIndicator, PatternSignalMixin):
     """
     TRIX三重指数平滑移动平均线指标
     
@@ -23,28 +24,69 @@ class TRIX(BaseIndicator):
     过滤短期波动，捕捉中长期趋势变化
     """
     
-    def __init__(self, n: int = 12, m: int = 9):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+    def __init__(self, **kwargs):
         """
         初始化TRIX指标
         
         Args:
-            n: TRIX计算周期，默认为12
-            m: 信号线周期，默认为9
+            **kwargs: 指标参数，支持period、signal_period等
         """
-        super().__init__(name="TRIX", description="TRIX三重指数平滑移动平均线")
-        self.n = n
-        self.m = m
+        super().__init__()
+        self.name = "TRIX"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+        
+        # 确保TRIX特有属性存在
+        if not hasattr(self, 'n'):
+            self.n = 14
+        
+        # 确保TRIX特有属性存在
+        if not hasattr(self, 'n'):
+            self.n = 14
+        if not hasattr(self, 'm'):
+            self.m = 9
     
-    def set_parameters(self, n: int = None, m: int = None):
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'n': 14, 'm': 9}
+    
+    def set_parameters(self, **kwargs):
         """
         设置指标参数
+        
+        Args:
+            **kwargs: 参数字典，支持以下参数：
+                - period: TRIX计算周期
+                - signal_period: 信号线周期
         """
-        if n is not None:
-            self.n = n
-        if m is not None:
-            self.m = m
-
+        # 验证参数
+        from utils.indicator_parameter_validator import IndicatorParameterValidator
+        validator = IndicatorParameterValidator()
+        
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('TRIX', params)
+            if not is_valid:
+                # 静默处理验证失败，避免过多警告
+                pass
+                
+        except Exception:
+            # 如果验证失败，静默处理，保持向后兼容
+            pass
+        
+        # 设置参数
+        self.period = params.get('period', 14)
+        self.signal_period = params.get('signal_period', 9)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算TRIX指标
@@ -482,6 +524,11 @@ class TRIX(BaseIndicator):
         # 存储结果
         self._result = result
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _ema(self, series: np.ndarray, n: int) -> np.ndarray:

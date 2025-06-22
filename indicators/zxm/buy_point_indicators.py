@@ -9,12 +9,13 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class ZXMDailyMACD(BaseIndicator):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-日MACD指标
     
@@ -67,6 +68,11 @@ class ZXMDailyMACD(BaseIndicator):
         result.loc[:, "MACD"] = macd
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -449,7 +455,7 @@ class ZXMDailyMACD(BaseIndicator):
         self.threshold = kwargs.get('threshold', 0.9)
 
 
-class ZXMTurnover(BaseIndicator):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-换手率指标
     
@@ -492,6 +498,11 @@ class ZXMTurnover(BaseIndicator):
         result.loc[:, "Turnover"] = turnover
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -800,7 +811,7 @@ class ZXMTurnover(BaseIndicator):
         self.threshold = kwargs.get('threshold', 0.7)
 
 
-class ZXMVolumeShrink(BaseIndicator):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-缩量指标
     
@@ -846,6 +857,11 @@ class ZXMVolumeShrink(BaseIndicator):
         result.loc[:, "VOL_RATIO"] = vol_ratio
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -1111,7 +1127,7 @@ class ZXMVolumeShrink(BaseIndicator):
         self.shrink_threshold = kwargs.get('shrink_threshold', 0.9)
 
 
-class ZXMMACallback(BaseIndicator):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-回踩均线指标
     
@@ -1179,6 +1195,11 @@ class ZXMMACallback(BaseIndicator):
         result.loc[:, "A120"] = a120
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -1509,7 +1530,7 @@ class ZXMMACallback(BaseIndicator):
         self.callback_percent = kwargs.get('callback_percent', 4.0)
     
     
-class ZXMBSAbsorb(BaseIndicator):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-BS吸筹指标
     
@@ -1598,6 +1619,11 @@ class ZXMBSAbsorb(BaseIndicator):
         result.loc[:, "BB"] = bb
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _sma(self, series: pd.Series, n: int, m: int) -> pd.Series:
@@ -1978,7 +2004,7 @@ class ZXMBSAbsorb(BaseIndicator):
         )
 
 
-class BuyPointDetector(BaseIndicator):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点检测指标
     
@@ -2178,6 +2204,11 @@ class BuyPointDetector(BaseIndicator):
             result["VolumeShrinkBuyPoint"]
         )
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _calculate_volume_rise_buy_point(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.DataFrame:

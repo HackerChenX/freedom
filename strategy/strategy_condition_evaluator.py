@@ -13,6 +13,8 @@ import ast
 
 from utils.logger import get_logger
 from db.data_manager import DataManager
+from utils.parameter_standardizer import ParameterStandardizer
+from utils.indicator_parameter_validator import IndicatorParameterValidator
 from indicators.indicator_manager import IndicatorManager
 from utils.decorators import performance_monitor, cache_result
 
@@ -26,6 +28,12 @@ class StrategyConditionEvaluator:
         self.data_manager = DataManager()
         self.indicator_manager = IndicatorManager()
         self.condition_cache = {}
+
+        # 初始化参数标准化器和验证器
+        self.parameter_standardizer = ParameterStandardizer()
+        self.parameter_validator = IndicatorParameterValidator()
+
+        logger.info("策略条件评估器已初始化，支持参数标准化和验证")
         
         # 操作符映射
         self.operators = {
@@ -211,7 +219,7 @@ class StrategyConditionEvaluator:
             elif condition_type == "expression":
                 return self._evaluate_expression_condition(condition, stock_data, date)
             else:
-                logger.warning(f"未知的条件类型: {condition_type}")
+                logger.debug(f"未知的条件类型: {condition_type}")
                 return False
                 
         except Exception as e:
@@ -266,7 +274,7 @@ class StrategyConditionEvaluator:
         elif current_logic == "or":
             return any(results)
         else:
-            logger.warning(f"未知的逻辑操作符: {current_logic}，默认使用AND")
+            logger.debug(f"未知的逻辑操作符: {current_logic}，默认使用AND")
             return all(results)
     
     def _evaluate_price_condition(self, condition: Dict[str, Any], 
@@ -298,7 +306,7 @@ class StrategyConditionEvaluator:
         op_func = self.operators.get(operator_str)
         
         if op_func is None:
-            logger.warning(f"未知的操作符: {operator_str}")
+            logger.debug(f"未知的操作符: {operator_str}")
             return False
             
         # 执行比较
@@ -339,60 +347,80 @@ class StrategyConditionEvaluator:
         op_func = self.operators.get(operator_str)
         
         if op_func is None:
-            logger.warning(f"未知的操作符: {operator_str}")
+            logger.debug(f"未知的操作符: {operator_str}")
             return False
             
         # 执行比较
         return op_func(current_volume, value)
     
-    def _evaluate_indicator_condition(self, condition: Dict[str, Any], 
+    def _evaluate_indicator_condition(self, condition: Dict[str, Any],
                                    stock_data: pd.DataFrame,
                                    date: str) -> bool:
         """
-        评估技术指标条件
-        
+        评估技术指标条件（支持参数标准化和验证）
+
         Args:
             condition: 条件配置
             stock_data: 股票数据
             date: 评估日期
-            
+
         Returns:
             bool: 条件评估结果
         """
-        # 获取指标信息
-        indicator_name = condition.get("indicator", "")
-        parameter = condition.get("parameter", "")
-        operator_str = condition.get("operator", ">")
-        value = condition.get("value", 0)
-        
-        # 如果条件中指定了比较的指标
-        compare_indicator = condition.get("compare_indicator", "")
-        compare_parameter = condition.get("compare_parameter", "")
-        
-        # 获取指标值
-        indicator_value = self._get_indicator_value(stock_data, indicator_name, parameter, date)
-        
-        if indicator_value is None:
-            return False
-            
-        # 如果需要与其他指标比较
-        if compare_indicator:
-            compare_value = self._get_indicator_value(stock_data, compare_indicator, compare_parameter, date)
-            
-            if compare_value is None:
+        try:
+            # 步骤1：标准化条件格式
+            standardized_condition = self._standardize_condition(condition)
+
+            # 步骤2：提取标准化后的信息
+            indicator_name = standardized_condition.get("indicator_id",
+                                                      standardized_condition.get("indicator", ""))
+            parameter = standardized_condition.get("parameter", "")
+            operator_str = standardized_condition.get("operator", ">")
+            value = standardized_condition.get("value", 0)
+
+            # 步骤3：验证和应用指标参数
+            indicator_params = self._validate_and_apply_parameters(
+                indicator_name, standardized_condition.get("parameters", {}))
+
+            # 步骤4：如果条件中指定了比较的指标
+            compare_indicator = standardized_condition.get("compare_indicator", "")
+            compare_parameter = standardized_condition.get("compare_parameter", "")
+
+            # 步骤5：获取指标值（使用验证后的参数）
+            indicator_value = self._get_indicator_value_with_params(
+                stock_data, indicator_name, parameter, date, indicator_params)
+
+            if indicator_value is None:
+                logger.debug(f"无法获取指标值: {indicator_name}.{parameter}")
                 return False
-                
-            value = compare_value
-        
-        # 获取操作符函数
-        op_func = self.operators.get(operator_str)
-        
-        if op_func is None:
-            logger.warning(f"未知的操作符: {operator_str}")
-            return False
-            
-        # 执行比较
-        return op_func(indicator_value, value)
+
+            # 步骤6：如果需要与其他指标比较
+            if compare_indicator:
+                compare_value = self._get_indicator_value(stock_data, compare_indicator, compare_parameter, date)
+
+                if compare_value is None:
+                    logger.debug(f"无法获取比较指标值: {compare_indicator}.{compare_parameter}")
+                    return False
+
+                value = compare_value
+
+            # 步骤7：获取操作符函数
+            op_func = self.operators.get(operator_str)
+
+            if op_func is None:
+                logger.debug(f"未知的操作符: {operator_str}")
+                return False
+
+            # 步骤8：执行比较
+            result = op_func(indicator_value, value)
+
+            logger.debug(f"指标条件评估: {indicator_name}.{parameter} {operator_str} {value} = {result}")
+            return result
+
+        except Exception as e:
+            logger.error(f"评估指标条件时出错: {e}")
+            # 向后兼容：出错时尝试使用原始方法
+            return self._evaluate_indicator_condition_legacy(condition, stock_data, date)
     
     def _evaluate_fundamental_condition(self, condition: Dict[str, Any], 
                                      stock_data: pd.DataFrame,
@@ -423,7 +451,7 @@ class StrategyConditionEvaluator:
         op_func = self.operators.get(operator_str)
         
         if op_func is None:
-            logger.warning(f"未知的操作符: {operator_str}")
+            logger.debug(f"未知的操作符: {operator_str}")
             return False
             
         # 执行比较
@@ -471,7 +499,7 @@ class StrategyConditionEvaluator:
         if logic_operator == "not":
             # NOT只能用于单个条件
             if len(sub_conditions) != 1:
-                logger.warning(f"NOT逻辑应该只用于单个条件，但发现了{len(sub_conditions)}个条件")
+                logger.debug(f"NOT逻辑应该只用于单个条件，但发现了{len(sub_conditions)}个条件")
                 # 如果有多个条件，我们只处理第一个
                 if len(sub_conditions) == 0:
                     return True  # 没有条件就返回True
@@ -520,7 +548,7 @@ class StrategyConditionEvaluator:
             Optional[float]: 字段值，如果不存在则返回None
         """
         if field not in data.columns:
-            logger.warning(f"字段 {field} 不存在于数据中")
+            logger.debug(f"字段 {field} 不存在于数据中")
             return None
             
         # 找到日期索引
@@ -532,7 +560,7 @@ class StrategyConditionEvaluator:
                 nearest_date = data.index[data.index <= date][-1]
                 return data.loc[nearest_date, field]
             except (IndexError, KeyError):
-                logger.warning(f"未找到日期 {date} 或之前的数据")
+                logger.debug(f"未找到日期 {date} 或之前的数据")
                 return None
     
     def _get_average_value(self, data: pd.DataFrame, field: str, 
@@ -550,7 +578,7 @@ class StrategyConditionEvaluator:
             Optional[float]: 平均值，如果不存在则返回None
         """
         if field not in data.columns:
-            logger.warning(f"字段 {field} 不存在于数据中")
+            logger.debug(f"字段 {field} 不存在于数据中")
             return None
             
         # 找到日期位置
@@ -572,7 +600,7 @@ class StrategyConditionEvaluator:
                 return None
                 
         except (IndexError, KeyError):
-            logger.warning(f"未找到日期 {date} 或之前的数据")
+            logger.debug(f"未找到日期 {date} 或之前的数据")
             return None
     
     def _get_indicator_value(self, stock_data: pd.DataFrame, 
@@ -608,7 +636,7 @@ class StrategyConditionEvaluator:
                 # 返回指定日期的值
                 return self._get_value_on_date(stock_data, indicator_col, date)
             else:
-                logger.warning(f"指标 {indicator_name} 的参数 {parameter} 不存在")
+                logger.debug(f"指标 {indicator_name} 的参数 {parameter} 不存在")
                 return None
                 
         except Exception as e:
@@ -636,7 +664,7 @@ class StrategyConditionEvaluator:
         stock_code = stock_data.get("code", "").iloc[0] if "code" in stock_data.columns else ""
         
         if not stock_code:
-            logger.warning("无法获取股票代码")
+            logger.debug("无法获取股票代码")
             return None
             
         # 调用数据管理器获取基本面数据
@@ -648,7 +676,7 @@ class StrategyConditionEvaluator:
                 # 返回指定字段的值
                 return fundamental_data[field].iloc[0]
             else:
-                logger.warning(f"基本面数据 {field} 不存在")
+                logger.debug(f"基本面数据 {field} 不存在")
                 return None
                 
         except Exception as e:
@@ -678,7 +706,7 @@ class StrategyConditionEvaluator:
         # 调用形态识别器识别形态
         try:
             # 这里需要调用形态识别功能，暂时返回False
-            logger.warning(f"形态识别功能未实现: {pattern_name}")
+            logger.debug(f"形态识别功能未实现: {pattern_name}")
             return False
                 
         except Exception as e:
@@ -756,7 +784,7 @@ class StrategyConditionEvaluator:
                     return str(value) if value is not None else 'None'
             
             # 未识别的变量
-            logger.warning(f"未识别的变量: {var_name}")
+            logger.debug(f"未识别的变量: {var_name}")
             return 'None'
         
         # 替换所有变量
@@ -804,7 +832,157 @@ class StrategyConditionEvaluator:
             logger.error(f"安全执行表达式 '{expression}' 时出错: {e}")
             return False
     
+    def _standardize_condition(self, condition: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        标准化条件格式
+
+        Args:
+            condition: 原始条件
+
+        Returns:
+            Dict[str, Any]: 标准化后的条件
+        """
+        try:
+            # 如果条件已经是标准格式，直接返回
+            if condition.get("type") == "indicator" and "indicator_id" in condition:
+                return condition
+
+            # 使用参数标准化器进行标准化
+            standardized = self.parameter_standardizer.standardize_indicator_condition(condition)
+
+            logger.debug(f"条件标准化: {condition} -> {standardized}")
+            return standardized
+
+        except Exception as e:
+            logger.debug(f"条件标准化失败: {e}，使用原始条件")
+            return condition
+
+    def _validate_and_apply_parameters(self, indicator_id: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        验证并应用指标参数
+
+        Args:
+            indicator_id: 指标ID
+            parameters: 参数字典
+
+        Returns:
+            Dict[str, Any]: 验证后的参数
+        """
+        try:
+            # 获取默认参数
+            default_params = self.parameter_validator.get_default_parameters(indicator_id)
+
+            # 合并参数
+            merged_params = default_params.copy()
+            merged_params.update(parameters)
+
+            # 验证参数
+            is_valid, errors = self.parameter_validator.validate_indicator_parameters(indicator_id, merged_params)
+
+            if not is_valid:
+                logger.debug(f"指标 {indicator_id} 参数验证失败: {'; '.join(errors)}，使用默认参数")
+                return default_params
+
+            logger.debug(f"指标 {indicator_id} 参数验证成功: {merged_params}")
+            return merged_params
+
+        except Exception as e:
+            logger.debug(f"参数验证过程出错: {e}，使用空参数")
+            return {}
+
+    def _get_indicator_value_with_params(self, stock_data: pd.DataFrame,
+                                       indicator_name: str, parameter: str,
+                                       date: str, params: Dict[str, Any]) -> Optional[float]:
+        """
+        使用指定参数获取技术指标值
+
+        Args:
+            stock_data: 股票数据
+            indicator_name: 指标名称
+            parameter: 参数名
+            date: 日期
+            params: 指标参数
+
+        Returns:
+            Optional[float]: 指标值，如果不存在则返回None
+        """
+        try:
+            # 如果有参数，尝试使用参数化的指标计算
+            if params:
+                # 生成带参数的指标列名
+                param_str = "_".join([f"{k}{v}" for k, v in sorted(params.items())])
+                indicator_col = f"{indicator_name}_{parameter}_{param_str}"
+
+                # 检查是否已有计算结果
+                if indicator_col in stock_data.columns:
+                    return self._get_value_on_date(stock_data, indicator_col, date)
+
+                # 调用指标管理器计算指标（带参数）
+                indicator_data = self.indicator_manager.calculate_indicator_with_params(
+                    stock_data, indicator_name, params)
+
+                if indicator_data is not None and parameter in indicator_data.columns:
+                    # 合并指标数据到股票数据
+                    stock_data[indicator_col] = indicator_data[parameter]
+                    return self._get_value_on_date(stock_data, indicator_col, date)
+
+            # 回退到原始方法
+            return self._get_indicator_value(stock_data, indicator_name, parameter, date)
+
+        except Exception as e:
+            logger.debug(f"使用参数获取指标值失败: {e}，回退到原始方法")
+            return self._get_indicator_value(stock_data, indicator_name, parameter, date)
+
+    def _evaluate_indicator_condition_legacy(self, condition: Dict[str, Any],
+                                           stock_data: pd.DataFrame,
+                                           date: str) -> bool:
+        """
+        旧版指标条件评估方法（向后兼容）
+
+        Args:
+            condition: 条件配置
+            stock_data: 股票数据
+            date: 评估日期
+
+        Returns:
+            bool: 条件评估结果
+        """
+        # 获取指标信息
+        indicator_name = condition.get("indicator", "")
+        parameter = condition.get("parameter", "")
+        operator_str = condition.get("operator", ">")
+        value = condition.get("value", 0)
+
+        # 如果条件中指定了比较的指标
+        compare_indicator = condition.get("compare_indicator", "")
+        compare_parameter = condition.get("compare_parameter", "")
+
+        # 获取指标值
+        indicator_value = self._get_indicator_value(stock_data, indicator_name, parameter, date)
+
+        if indicator_value is None:
+            return False
+
+        # 如果需要与其他指标比较
+        if compare_indicator:
+            compare_value = self._get_indicator_value(stock_data, compare_indicator, compare_parameter, date)
+
+            if compare_value is None:
+                return False
+
+            value = compare_value
+
+        # 获取操作符函数
+        op_func = self.operators.get(operator_str)
+
+        if op_func is None:
+            logger.debug(f"未知的操作符: {operator_str}")
+            return False
+
+        # 执行比较
+        return op_func(indicator_value, value)
+
     def clear_cache(self):
         """清除缓存"""
         self.condition_cache.clear()
-        logger.info("已清除条件评估缓存") 
+        logger.info("已清除条件评估缓存")

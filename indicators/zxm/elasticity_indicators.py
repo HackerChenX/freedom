@@ -9,12 +9,13 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class AmplitudeElasticity(BaseIndicator):
+class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
     """
     ZXM弹性-振幅指标
     
@@ -66,6 +67,11 @@ class AmplitudeElasticity(BaseIndicator):
         result.loc[:, "A1"] = a1
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
 
@@ -231,7 +237,7 @@ class AmplitudeElasticity(BaseIndicator):
         """
         self.amplitude_threshold = kwargs.get('amplitude_threshold', 8.1)
         self.count_period = kwargs.get('count_period', 120)
-class ZXMRiseElasticity(BaseIndicator):
+class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
     """
     ZXM弹性-涨幅指标
     
@@ -281,6 +287,11 @@ class ZXMRiseElasticity(BaseIndicator):
         result.loc[:, "A1"] = a1
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
 
@@ -448,7 +459,7 @@ class ZXMRiseElasticity(BaseIndicator):
         """
         self.rise_threshold = kwargs.get('rise_threshold', 1.07)
         self.count_period = kwargs.get('count_period', 80)
-class Elasticity(BaseIndicator):
+class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
     """
     ZXM弹性指标
     
@@ -536,6 +547,11 @@ class Elasticity(BaseIndicator):
         
         result.loc[:, "BuySignal"] = elasticity_buy_signal
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -893,7 +909,7 @@ class Elasticity(BaseIndicator):
         self.volume_threshold = kwargs.get('volume_threshold', 0.8)
 
 
-class BounceDetector(BaseIndicator):
+class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
     """
     ZXM反弹检测器
     
@@ -1060,6 +1076,11 @@ class BounceDetector(BaseIndicator):
         
         result.loc[:, "BounceSellPoint"] = bounce_sell_point
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:

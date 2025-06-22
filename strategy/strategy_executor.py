@@ -12,15 +12,16 @@ import os
 from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime
 
-from db.data_manager import DataManager
+from db.data_manager_adapter import get_data_manager_adapter
 from strategy.strategy_manager import StrategyManager
 from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, safe_run, cache_result
 from utils.exceptions import (
-    StrategyExecutionError, 
-    StrategyValidationError, 
-    DataAccessError, 
+    StrategyExecutionError,
+    StrategyValidationError,
+    DataAccessError,
     IndicatorExecutionError
 )
 
@@ -35,16 +36,24 @@ class StrategyExecutor:
     def __init__(self, max_workers: int = None, cache_enabled: bool = True):
         """
         初始化策略执行器
-        
+
         Args:
             max_workers: 最大线程数，None表示使用默认值（CPU核心数 * 5）
             cache_enabled: 是否启用结果缓存
         """
-        self.data_manager = DataManager()
+        self.data_manager = get_data_manager_adapter()
         self.max_workers = max_workers or min(32, os.cpu_count() * 5)
         self.cache_enabled = cache_enabled
         self.cache = {}
-        
+
+        # 初始化完整指标注册系统
+        self.indicator_registry = complete_registry
+        try:
+            self.indicator_registry.register_all_indicators()
+            logger.info("✅ 策略执行器已集成CompleteIndicatorRegistry")
+        except Exception as e:
+            logger.error(f"❌ 初始化指标注册系统失败: {e}")
+
         logger.info(f"策略执行器初始化完成，最大线程数: {self.max_workers}, 缓存{'启用' if cache_enabled else '禁用'}")
     
     @performance_monitor(threshold=1.0)
@@ -545,82 +554,56 @@ class StrategyExecutor:
             logger.error(f"计算股票 {stock_code} 评分时出错: {e}")
             return base_score  # 返回默认评分
     
-    def _calculate_technical_score(self, data: pd.DataFrame, 
+    def _calculate_technical_score(self, data: pd.DataFrame,
                                  details: Dict[str, Any]) -> float:
         """
-        计算技术指标评分
-        
+        计算技术指标评分（使用CompleteIndicatorRegistry动态计算）
+
         Args:
             data: 股票数据
             details: 条件评估详情
-            
+
         Returns:
             float: 技术指标评分（0-100）
         """
         try:
-            # 基础分数
-            tech_score = 0.0
-            tech_weight = 0.0
-            
             # 优先使用通过的指标信息
             passing_indicators = details.get("passing_indicators", [])
+
+            # 如果有通过的指标，使用动态评分
+            if passing_indicators:
+                return self._calculate_dynamic_technical_score(data, passing_indicators)
+
+            # 如果没有通过的指标信息，使用CompleteIndicatorRegistry计算核心指标
+            return self._calculate_core_indicators_score(data)
             
+        except Exception as e:
+            logger.error(f"计算技术指标评分时出错: {e}")
+            return 60.0
+
+    def _calculate_dynamic_technical_score(self, data: pd.DataFrame, passing_indicators: List[str]) -> float:
+        """
+        使用CompleteIndicatorRegistry动态计算技术指标评分
+
+        Args:
+            data: 股票数据
+            passing_indicators: 通过的指标列表
+
+        Returns:
+            float: 技术指标评分（0-100）
+        """
+        try:
+            tech_score = 0.0
+            tech_weight = 0.0
+
             # 指标权重配置（重要指标权重更高）
             indicator_weights = {
-                "MACD": 1.0,     # MACD金叉/死叉
-                "KDJ": 0.9,      # KDJ交叉
-                "RSI": 0.8,      # RSI超买超卖
-                "BOLL": 0.9,     # 布林带突破
-                "MA": 0.7,       # 均线交叉
-                "VOL": 0.7,      # 成交量变化
-                "DMI": 0.8,      # 趋势方向
-                "CCI": 0.6,      # 顺势指标
-                "WR": 0.6,       # 威廉指标
-                "OBV": 0.7,      # 能量潮
-                "PSY": 0.5,      # 心理线
-                "BIAS": 0.6,     # 乖离率
-                "ROC": 0.7,      # 变动率
-                "EMV": 0.5,      # 简易波动指标
-                "SAR": 0.8,      # 抛物线指标
-                "DMA": 0.6,      # 平行线差指标
-                "MTM": 0.6,      # 动量指标
-                "ASI": 0.5,      # 振动升降指标
-                "VR": 0.6,       # 成交量比率
-                "WVAD": 0.5,     # 威廉变异离散量
-                "TRIX": 0.7,     # 三重指数平滑平均线
-                "BBI": 0.6,      # 多空指标
-                "EXPMA": 0.7,    # 指数平滑移动平均线
-                "CR": 0.6,       # 能量指标
+                "MACD": 1.0, "KDJ": 0.9, "RSI": 0.8, "BOLL": 0.9, "MA": 0.7,
+                "VOL": 0.7, "DMI": 0.8, "CCI": 0.6, "WR": 0.6, "OBV": 0.7,
+                "PSY": 0.5, "BIAS": 0.6, "ROC": 0.7, "EMV": 0.5, "SAR": 0.8,
+                "DMA": 0.6, "MTM": 0.6, "TRIX": 0.7, "STOCHRSI": 0.8
             }
-            
-            # 指标评分配置
-            indicator_scores = {
-                "MACD": 75.0,
-                "KDJ": 70.0,
-                "RSI": 65.0,
-                "BOLL": 70.0,
-                "MA": 60.0,
-                "VOL": 65.0,
-                "DMI": 70.0,
-                "CCI": 65.0,
-                "WR": 60.0,
-                "OBV": 65.0,
-                "PSY": 55.0,
-                "BIAS": 60.0,
-                "ROC": 65.0,
-                "EMV": 55.0,
-                "SAR": 70.0,
-                "DMA": 60.0,
-                "MTM": 65.0,
-                "ASI": 55.0,
-                "VR": 60.0,
-                "WVAD": 55.0,
-                "TRIX": 65.0,
-                "BBI": 60.0,
-                "EXPMA": 65.0,
-                "CR": 60.0,
-            }
-            
+
             # 根据通过的指标计算技术分数
             for indicator_id in passing_indicators:
                 # 确定指标类型
@@ -629,36 +612,115 @@ class StrategyExecutor:
                     if key in indicator_id.upper():
                         indicator_type = key
                         break
-                
+
                 if indicator_type:
                     weight = indicator_weights.get(indicator_type, 0.5)
-                    score = indicator_scores.get(indicator_type, 60.0)
+                    # 使用CompleteIndicatorRegistry动态获取指标评分
+                    score = self._get_indicator_dynamic_score(indicator_type, data)
                 else:
-                    # 未知指标类型
                     weight = 0.5
                     score = 60.0
-                
+
                 tech_score += score * weight
                 tech_weight += weight
-            
-            # 如果没有技术指标通过，使用基础评分
+
+            # 如果没有技术指标通过，返回基础评分
             if tech_weight <= 0:
                 return 60.0
-                
+
             # 计算加权平均技术分数
             tech_score = tech_score / tech_weight
-            
+
             # 如果多个重要技术指标同时满足，额外加分
-            if len([i for i in passing_indicators if any(k in i.upper() for k in ["MACD", "KDJ", "RSI", "BOLL"])]) >= 2:
+            important_indicators = [i for i in passing_indicators if any(k in i.upper() for k in ["MACD", "KDJ", "RSI", "BOLL"])]
+            if len(important_indicators) >= 2:
                 tech_score += 10.0
-                
-            # 限制最终分数范围
-            tech_score = max(0, min(100, tech_score))
-            
-            return tech_score
-            
+
+            return max(0, min(100, tech_score))
+
         except Exception as e:
-            logger.error(f"计算技术指标评分时出错: {e}")
+            logger.error(f"动态计算技术指标评分时出错: {e}")
+            return 60.0
+
+    def _calculate_core_indicators_score(self, data: pd.DataFrame) -> float:
+        """
+        使用CompleteIndicatorRegistry计算核心指标评分
+
+        Args:
+            data: 股票数据
+
+        Returns:
+            float: 核心指标评分（0-100）
+        """
+        try:
+            if not hasattr(self, 'indicator_registry') or self.indicator_registry is None:
+                return 60.0
+
+            core_indicators = ['MACD', 'KDJ', 'RSI', 'BOLL', 'MA']
+            total_score = 0.0
+            valid_count = 0
+
+            for indicator_name in core_indicators:
+                try:
+                    indicator = self.indicator_registry.create_indicator(indicator_name)
+                    if indicator:
+                        score = indicator.calculate_raw_score(data)
+                        if score is not None and len(score) > 0:
+                            total_score += float(score.iloc[-1])
+                            valid_count += 1
+                except Exception as e:
+                    logger.debug(f"计算指标 {indicator_name} 评分失败: {e}")
+                    continue
+
+            if valid_count > 0:
+                return total_score / valid_count
+            else:
+                return 60.0
+
+        except Exception as e:
+            logger.error(f"计算核心指标评分时出错: {e}")
+            return 60.0
+
+    def _get_indicator_dynamic_score(self, indicator_type: str, data: pd.DataFrame) -> float:
+        """
+        动态获取指标评分
+
+        Args:
+            indicator_type: 指标类型
+            data: 股票数据
+
+        Returns:
+            float: 指标评分
+        """
+        try:
+            if not hasattr(self, 'indicator_registry') or self.indicator_registry is None:
+                # 回退到静态评分
+                static_scores = {
+                    "MACD": 75.0, "KDJ": 70.0, "RSI": 65.0, "BOLL": 70.0, "MA": 60.0,
+                    "VOL": 65.0, "DMI": 70.0, "CCI": 65.0, "WR": 60.0, "OBV": 65.0,
+                    "PSY": 55.0, "BIAS": 60.0, "ROC": 65.0, "EMV": 55.0, "SAR": 70.0,
+                    "DMA": 60.0, "MTM": 65.0, "TRIX": 65.0, "STOCHRSI": 70.0
+                }
+                return static_scores.get(indicator_type, 60.0)
+
+            # 尝试使用CompleteIndicatorRegistry动态计算
+            indicator = self.indicator_registry.create_indicator(indicator_type)
+            if indicator:
+                score = indicator.calculate_raw_score(data)
+                if score is not None and len(score) > 0:
+                    return float(score.iloc[-1])
+
+            # 如果动态计算失败，回退到静态评分
+            static_scores = {
+                "MACD": 75.0, "KDJ": 70.0, "RSI": 65.0, "BOLL": 70.0, "MA": 60.0,
+                "VOL": 65.0, "DMI": 70.0, "CCI": 65.0, "WR": 60.0, "OBV": 65.0,
+                "PSY": 55.0, "BIAS": 60.0, "ROC": 65.0, "EMV": 55.0, "SAR": 70.0,
+                "DMA": 60.0, "MTM": 65.0, "TRIX": 65.0, "STOCHRSI": 70.0
+            }
+            return static_scores.get(indicator_type, 60.0)
+
+        except Exception as e:
+            logger.debug(f"动态获取指标 {indicator_type} 评分失败: {e}")
             return 60.0
     
     def _calculate_trend_score(self, data: pd.DataFrame) -> float:

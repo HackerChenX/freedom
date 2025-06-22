@@ -12,10 +12,11 @@ import importlib
 from typing import List, Dict, Set, Tuple
 
 def get_currently_registered_indicators() -> Set[str]:
-    """获取当前已注册的指标"""
+    """获取当前已注册的指标（已迁移到CompleteIndicatorRegistry）"""
     try:
-        from indicators.indicator_registry import get_registry
-        registry = get_registry()
+        from indicators.complete_indicator_registry import complete_registry
+        registry = complete_registry
+        registry.register_all_indicators()  # 确保所有指标已注册
         return set(registry.get_indicator_names())
     except Exception as e:
         print(f"❌ 获取已注册指标失败: {e}")

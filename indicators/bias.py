@@ -8,16 +8,18 @@
 """
 
 import pandas as pd
+from typing import Dict, Any
 import numpy as np
 from typing import List
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class BIAS(BaseIndicator):
+class BIAS(BaseIndicator, PatternSignalMixin):
     """
     均线多空指标(BIAS) (BIAS)
 
@@ -54,7 +56,9 @@ class BIAS(BaseIndicator):
         计算均线多空指标(BIAS)指标
         """
         if data.empty:
-            return data
+
+            return pd.DataFrame()
+
             
         self._validate_dataframe(data, ['close'])
         
@@ -75,6 +79,11 @@ class BIAS(BaseIndicator):
                 result_df['BIAS_MA'] = result_df['BIAS'].rolling(window=main_period, min_periods=1).mean()
 
         # 只返回计算出的指标列，不包含原始数据列
+        
+        # 添加形态识别和信号生成
+        result_df = self.add_pattern_detection(result_df)
+        result_df = self.add_signal_generation(result_df)
+
         return result_df
 
     def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -360,3 +369,71 @@ class BIAS(BaseIndicator):
             'strength': 'medium',
             'type': 'neutral'
         })
+
+    def __init__(self, **kwargs):
+        """
+        初始化BIAS指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "BIAS"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+        
+        # 确保BIAS特有属性存在
+        if not hasattr(self, 'periods'):
+            self.periods = [6, 12, 24]
+        
+        # 确保BIAS特有属性存在
+        if not hasattr(self, 'periods'):
+            self.periods = [6, 12, 24]
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'periods': [6, 12, 24]}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('BIAS', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"BIAS参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

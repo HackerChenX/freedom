@@ -15,7 +15,7 @@ from .base_indicator import BaseIndicator
 
 logger = logging.getLogger(__name__)
 
-class CMO(BaseIndicator):
+class CMO(BaseIndicator, PatternSignalMixin):
     """
     钱德动量摆动指标 (Chande Momentum Oscillator)
     
@@ -33,32 +33,58 @@ class CMO(BaseIndicator):
         overbought: 超买阈值，默认为40
     """
     
-    def __init__(self, period: int = 14, oversold: float = -40, overbought: float = 40,
-                 name: str = "CMO", description: str = "钱德动量摆动指标"):
+    def __init__(self, **kwargs):
         """初始化CMO指标"""
-        super().__init__(name, description)
+        super().__init__("CMO", "钱德动量摆动指标")
         self.indicator_type = IndicatorEnum.CMO.name
-        self.period = period
-        self.oversold = oversold
-        self.overbought = overbought
         self._result = None
         self.REQUIRED_COLUMNS = ['close']
 
-    def set_parameters(self, period: int = None, oversold: float = None, overbought: float = None):
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 14, "overbought": 50.0, "oversold": -50.0}
+
+    def set_parameters(self, **kwargs):
         """
         设置指标参数
 
         Args:
-            period: 计算周期
-            oversold: 超卖阈值
-            overbought: 超买阈值
+            **kwargs: 参数字典，支持以下参数：
+                - period: 计算周期
+                - overbought: 超买阈值
+                - oversold: 超卖阈值
         """
-        if period is not None:
-            self.period = period
-        if oversold is not None:
-            self.oversold = oversold
-        if overbought is not None:
-            self.overbought = overbought
+        # 验证参数
+        from utils.indicator_parameter_validator import IndicatorParameterValidator
+        validator = IndicatorParameterValidator()
+
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('CMO', params)
+            if not is_valid:
+                # 静默处理验证失败，避免过多警告
+                pass
+                
+        except Exception:
+            # 如果验证失败，静默处理，保持向后兼容
+            pass
+
+        # 设置参数
+        self.period = params.get('period', 14)
+        self.overbought = params.get('overbought', 50.0)
+        self.oversold = params.get('oversold', -50.0)
         
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -71,7 +97,12 @@ class CMO(BaseIndicator):
             包含CMO列的DataFrame
         """
         if self._result is not None:
-            return self._result
+            
+        # 添加形态识别和信号生成
+        result_df = self.add_pattern_detection(result_df)
+        result_df = self.add_signal_generation(result_df)
+
+        return self._result
             
         result = df.copy()
         

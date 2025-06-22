@@ -8,12 +8,14 @@
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Optional, Union, List, Dict, Any
 import logging
 
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 # from indicators.atr import ATR  # 移除ATR依赖
@@ -21,7 +23,7 @@ from utils.logger import get_logger
 logger = logging.getLogger(__name__)
 
 
-class EMV(BaseIndicator):
+class EMV(BaseIndicator, PatternSignalMixin):
     """
     量能指标 (Ease of Movement Value)
     
@@ -106,6 +108,11 @@ class EMV(BaseIndicator):
         # 保存结果
         self._result = df_copy[['EMV', 'EMV_MA']]
         
+        
+        # 添加形态识别和信号生成
+        self = self.add_pattern_detection(self)
+        self = self.add_signal_generation(self)
+
         return self._result
     
     def has_result(self) -> bool:
@@ -812,3 +819,73 @@ class EMV(BaseIndicator):
         
         return signal_df
 
+
+    def __init__(self, **kwargs):
+        """
+        初始化EMV指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "EMV"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+        
+        # 确保EMV特有属性存在
+        if not hasattr(self, 'volume_divisor'):
+            self.volume_divisor = 10000
+        
+        # 确保EMV特有属性存在
+        if not hasattr(self, 'volume_divisor'):
+            self.volume_divisor = 10000
+        if not hasattr(self, 'period'):
+            self.period = 14
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'volume_divisor': 10000, 'period': 14}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('EMV', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"EMV参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

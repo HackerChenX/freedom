@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from typing import Dict, Any
 from typing import Dict, List
 
 import numpy as np
@@ -11,10 +12,11 @@ from enums.indicator_types import TrendType, CrossType
 from enums.indicator_enum import IndicatorEnum
 from indicators.common import crossover, crossunder
 from .base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
 logger = logging.getLogger(__name__)
 
-class KC(BaseIndicator):
+class KC(BaseIndicator, PatternSignalMixin):
     """
     肯特纳通道指标 (Keltner Channel)
     
@@ -66,7 +68,7 @@ class KC(BaseIndicator):
         """
         if self._result is not None:
             return self._result
-            
+
         result = df.copy()
         
         # 计算中轨(EMA)
@@ -109,6 +111,10 @@ class KC(BaseIndicator):
         # 删除临时计算列
         result = result.drop(['TR', 'ATR'], axis=1)
         
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         self._result = result
         return result
     
@@ -806,3 +812,70 @@ class KC(BaseIndicator):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+    def __init__(self, **kwargs):
+        """
+        初始化KC指标
+
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__(name="KC", description="肯特纳通道指标")
+            except:
+                pass
+
+        self.name = "KC"
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
+        # 确保KC特有属性存在
+        if not hasattr(self, 'period'):
+            self.period = 20
+        if not hasattr(self, 'atr_period'):
+            self.atr_period = 10
+        if not hasattr(self, 'multiplier'):
+            self.multiplier = 2.0
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 20, "atr_period": 10, "multiplier": 2.0}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('KC', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"KC参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

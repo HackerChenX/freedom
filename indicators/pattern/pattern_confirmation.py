@@ -8,9 +8,10 @@
 import pandas as pd
 import numpy as np
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
 
-class PatternConfirmation(BaseIndicator):
+class PatternConfirmation(BaseIndicator, PatternSignalMixin):
     """
     形态确认指标
     
@@ -50,6 +51,11 @@ class PatternConfirmation(BaseIndicator):
             result.iloc[50:52, result.columns.get_indexer(['confirmation_strength'])[0]] = 65.0
             result.iloc[50:52, result.columns.get_indexer(['confirmation_type'])[0]] = '成交量确认'
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def get_patterns(self, data):

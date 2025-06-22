@@ -8,6 +8,7 @@ DMI系统的一部分，用于评估趋势的强度，无论方向如何
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 import warnings
@@ -19,6 +20,7 @@ except ImportError:
     HAS_TALIB = False
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
@@ -28,7 +30,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 logger = get_logger(__name__)
 
 
-class ADX(BaseIndicator):
+class ADX(BaseIndicator, PatternSignalMixin):
     """
     平均方向指数(ADX)
     
@@ -161,7 +163,12 @@ class ADX(BaseIndicator):
             df[f'PDI{period}'] = np.nan
             df[f'MDI{period}'] = np.nan
             df[f'strong_trend_{period}'] = False
-            return df
+            
+        # 添加形态识别和信号生成
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
+
+        return df
         
         # 计算价格变化
         df['high_change'] = df['high'] - df['high'].shift(1)
@@ -963,3 +970,75 @@ class ADX(BaseIndicator):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    def __init__(self, **kwargs):
+        """
+        初始化ADX指标
+
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__(name="ADX", description="平均方向指数指标")
+            except:
+                pass
+
+        self.name = "ADX"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
+        # 确保params属性存在
+        if not hasattr(self, 'params'):
+            self.params = {
+                "period": 14,
+                "strong_trend": 25
+            }
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 14, "strong_trend": 25}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('ADX', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"ADX参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                setattr(self, key, value)
+
+            # 确保params字典正确设置
+            if not hasattr(self, 'params'):
+                self.params = {}
+            self.params.update(params)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

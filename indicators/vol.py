@@ -8,13 +8,15 @@
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 from scipy import signal, stats
 import warnings
 # import talib  # 移除talib依赖
 
-from indicators.base_indicator import BaseIndicator, PatternResult
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
@@ -25,7 +27,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 logger = get_logger(__name__)
 
 
-class VOL(BaseIndicator):
+class VOL(BaseIndicator, PatternSignalMixin):
     """
     成交量(VOL) (VOL)
     
@@ -153,9 +155,16 @@ class VOL(BaseIndicator):
             添加了VOL指标列的DataFrame
         """
         if df.empty:
-            return df
+
+            return pd.DataFrame()
+
             
+            return pd.DataFrame()
+
+            
+
         # 确保数据包含必要的列
+
         required_columns = ['volume']
         self._validate_dataframe(df, required_columns)
         
@@ -203,12 +212,28 @@ class VOL(BaseIndicator):
         if self.enable_cycles_analysis and len(df_copy) >= 60:
             df_copy = self._analyze_volume_cycles(df_copy)
         
-        # 保存结果
+        # 添加形态识别和信号生成
+
+        
+        df_copy = self.add_pattern_detection(df_copy)
+
+        
+        df_copy = self.add_signal_generation(df_copy)
+
+
+        
+        # 存储结果
+
+        
         self._result = df_copy
+
+
         
         return df_copy
+
+
         
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        def     get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成成交量(VOL)指标交易信号
         
@@ -222,6 +247,10 @@ class VOL(BaseIndicator):
             - vol_signal: 1=放量信号, -1=缩量信号, 0=无信号
         """
         if df.empty:
+
+            return pd.DataFrame()
+
+            
             return df
             
         # 检查必要的指标列是否存在
@@ -242,6 +271,11 @@ class VOL(BaseIndicator):
         # 缩量信号（成交量小于N日平均的0.5倍）
         df_copy.loc[df_copy['vol_ratio'] < 0.5, 'vol_signal'] = -1
         
+        
+        # 添加形态识别和信号生成
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
+
         return df_copy
     
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
@@ -1365,3 +1399,72 @@ class VOL(BaseIndicator):
             "strength": "WEAK",
             "score_impact": 0.0
         })
+    def __init__(self, **kwargs):
+        """
+        初始化VOL指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "VOL"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+        
+        # 确保VOL特有属性存在
+        if not hasattr(self, 'enable_standardization'):
+            self.enable_standardization = True
+        
+        # 确保VOL特有属性存在
+        if not hasattr(self, 'enable_standardization'):
+            self.enable_standardization = True
+        if not hasattr(self, 'enable_cycles_analysis'):
+            self.enable_cycles_analysis = False
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'enable_standardization': True, 'enable_cycles_analysis': False}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('VOL', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"VOL参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

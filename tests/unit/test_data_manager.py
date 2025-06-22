@@ -16,7 +16,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from db.data_manager import DataManager
+from db.data_manager_adapter import DataManagerAdapter as DataManager
 from models.stock_info import StockInfo
 from enums.period import Period
 from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError

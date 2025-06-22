@@ -8,12 +8,14 @@ KDJ指标
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Tuple
 import logging
 from enum import Enum
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternInfo
 from utils.logger import get_logger
@@ -23,7 +25,7 @@ from utils.technical_utils import calculate_kdj
 logger = get_logger(__name__)
 
 
-class KDJ(BaseIndicator):
+class KDJ(BaseIndicator, PatternSignalMixin):
     """
     KDJ随机指标
     
@@ -45,7 +47,7 @@ class KDJ(BaseIndicator):
         self.m1 = m1
         self.m2 = m2
         self.is_available = True
-        self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
+        self._market_environment = 'SIDEWAYS_MARKET'  # 默认市场环境
         self._register_patterns()
     
     def _register_patterns(self):
@@ -578,6 +580,10 @@ class KDJ(BaseIndicator):
         # 将初始的NaN值设置为50.0，这是常见做法
         df = df.fillna(50.0)
 
+        # 添加形态识别和信号生成
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
+
         return df
 
     def add_signals(self, data: pd.DataFrame, k_col: str = 'K', 
@@ -677,7 +683,7 @@ class KDJ(BaseIndicator):
                 'n': self.n,
                 'm1': self.m1,
             'm2': self.m2,
-            'market_environment': self._market_environment.value,
+            'market_environment': self._market_environment,
             'has_result': self.has_result(),
             'has_error': self.has_error()
         }
@@ -1219,3 +1225,78 @@ class KDJ(BaseIndicator):
             score_impact=-25.0,
             polarity="NEGATIVE"
         )
+    def __init__(self, **kwargs):
+        """
+        初始化KDJ指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "KDJ"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+        
+        # 确保KDJ特有属性存在
+        if not hasattr(self, 'n'):
+            self.n = 9
+        if not hasattr(self, 'm1'):
+            self.m1 = 3
+        if not hasattr(self, 'm2'):
+            self.m2 = 3
+        
+        # 确保KDJ特有属性存在
+        if not hasattr(self, 'n'):
+            self.n = 9
+        if not hasattr(self, 'm1'):
+            self.m1 = 3
+        if not hasattr(self, 'm2'):
+            self.m2 = 3
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'n': 9, 'm1': 3, 'm2': 3}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('KDJ', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"KDJ参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

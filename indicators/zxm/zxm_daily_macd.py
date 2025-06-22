@@ -1,8 +1,9 @@
 import pandas as pd
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from typing import Dict
 
-class ZXMDailyMACD(BaseIndicator):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     """
     主力资金日MACD (ZXM Daily MACD)
     
@@ -133,6 +134,11 @@ class ZXMDailyMACD(BaseIndicator):
         result['macd_positive'] = macd_positive
 
         self._result = result
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
     def get_pattern_info(self, pattern_id: str) -> dict:

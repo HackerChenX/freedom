@@ -9,6 +9,7 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.obv import OBV
 from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs

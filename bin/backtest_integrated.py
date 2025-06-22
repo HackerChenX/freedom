@@ -25,7 +25,7 @@ from strategy.strategy_parser import StrategyParser
 from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
-from db.data_manager import DataManager
+from db.data_manager_adapter import get_data_manager_adapter
 from enums.period import Period
 from indicators.indicator_registry import indicator_registry, IndicatorEnum
 
@@ -147,7 +147,7 @@ def run_backtest(stock_list_file, start_date, end_date, indicator_list=None, out
     try:
         # 初始化
         init_logging(level="INFO")
-        data_manager = DataManager()
+        data_manager = get_data_manager_adapter()
         evaluator = StrategyConditionEvaluator()
         
         # 加载股票列表

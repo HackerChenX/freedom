@@ -5,16 +5,18 @@ MACD指标分析模块
 """
 
 from typing import Dict, List, Tuple, Optional, Any, Union
+from typing import Dict, Any
 import pandas as pd
 import numpy as np
 from utils.logger import get_logger
 from utils.technical_utils import calculate_macd, crossover, crossunder
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.pattern_registry import PatternRegistry
 
 logger = get_logger(__name__)
 
-class MACD(BaseIndicator):
+class MACD(BaseIndicator, PatternSignalMixin):
     """MACD指标"""
     
     def __init__(self, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9,
@@ -358,6 +360,10 @@ class MACD(BaseIndicator):
             'macd_signal': macd_signal,
             'macd_histogram': macd_histogram
         }, index=data.index)
+
+        # 添加形态识别和信号生成
+        result_df = self.add_pattern_detection(result_df)
+        result_df = self.add_signal_generation(result_df)
 
         return result_df
 
@@ -1054,3 +1060,74 @@ class MACD(BaseIndicator):
             score_impact=22.0,
             polarity="POSITIVE"
         )
+    def __init__(self, **kwargs):
+        """
+        初始化MACD指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "MACD"
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 初始化_parameters属性以保持向后兼容
+        self._parameters = {
+            'fast_period': kwargs.get('fast_period', 12),
+            'slow_period': kwargs.get('slow_period', 26),
+            'signal_period': kwargs.get('signal_period', 9),
+            'price_col': 'close',
+            'histogram_threshold': kwargs.get('histogram_threshold', 0.0),
+            'divergence_window': kwargs.get('divergence_window', 20),
+            'divergence_threshold': kwargs.get('divergence_threshold', 0.05),
+            'zero_line_sensitivity': kwargs.get('zero_line_sensitivity', 0.001)
+        }
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 14}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('MACD', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"MACD参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

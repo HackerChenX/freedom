@@ -20,7 +20,6 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
-from indicators.factory import IndicatorFactory
 from indicators.scoring_framework import IndicatorScoreManager
 from indicators.base_indicator import BaseIndicator
 
@@ -39,11 +38,21 @@ class AutoIndicatorAnalyzer:
     
     def __init__(self):
         """初始化分析器"""
-        self.indicator_factory = IndicatorFactory()
+        # 只使用完整指标注册系统
+        self.complete_registry = None
 
-        # 确保指标注册表正确初始化
-        from indicators.indicator_registry import get_registry
-        self.indicator_registry = get_registry()
+        # 初始化完整指标注册表（唯一系统）
+        try:
+            from indicators.complete_indicator_registry import complete_registry
+            self.complete_registry = complete_registry
+            # 为了向后兼容，也设置indicator_registry属性
+            self.indicator_registry = complete_registry
+            # 强制注册所有指标
+            self.complete_registry.register_all_indicators()
+            logger.info("✅ 使用完整指标注册系统")
+        except Exception as e:
+            logger.error(f"❌ 初始化完整指标注册表失败: {e}")
+            raise RuntimeError("无法初始化指标注册系统")
 
         self.score_manager = IndicatorScoreManager()
 
@@ -57,7 +66,9 @@ class AutoIndicatorAnalyzer:
                 self.pattern_analyzer = PatternRecognitionAnalyzer()
             except Exception as e:
                 logger.error(f"初始化形态分析器时出错: {e}")
-        
+
+
+
     def _get_all_indicators(self) -> List[str]:
         """
         获取所有可用指标
@@ -65,18 +76,19 @@ class AutoIndicatorAnalyzer:
         Returns:
             List[str]: 所有可用指标列表
         """
-        # 获取指标注册表中所有注册的指标
-        registry_indicators = self.indicator_registry.get_indicator_names()
+        all_indicators = []
 
-        # 获取工厂中所有注册的指标
-        factory_indicators = self.indicator_factory.get_all_registered_indicators()
-
-        # 合并两个列表，去重
-        all_indicators = list(set(registry_indicators + factory_indicators))
-
-        logger.info(f"已加载 {len(all_indicators)} 个技术指标")
-        logger.info(f"  - 注册表指标: {len(registry_indicators)} 个: {registry_indicators}")
-        logger.info(f"  - 工厂指标: {len(factory_indicators)} 个: {factory_indicators}")
+        # 只使用完整指标注册系统
+        if self.complete_registry is not None:
+            try:
+                all_indicators = list(self.complete_registry._indicators.keys())
+                logger.info(f"✅ 已加载 {len(all_indicators)} 个技术指标: {all_indicators}")
+            except Exception as e:
+                logger.error(f"❌ 获取完整注册系统指标时出错: {e}")
+                return []
+        else:
+            logger.error("❌ 完整指标注册系统未初始化")
+            return []
 
         return all_indicators
     
@@ -182,12 +194,21 @@ class AutoIndicatorAnalyzer:
         # 分析所有技术指标
         for indicator_name in self.all_indicators:
             try:
-                # 尝试从注册表创建指标实例
-                indicator = self.indicator_registry.create_indicator(indicator_name)
+                indicator = None
 
-                # 如果注册表创建失败，尝试从工厂创建
-                if indicator is None:
-                    indicator = self.indicator_factory.create_indicator(indicator_name)
+                # 只从完整注册系统创建指标实例
+                if self.complete_registry is not None:
+                    try:
+                        if indicator_name in self.complete_registry._indicators:
+                            indicator_class = self.complete_registry._indicators[indicator_name]['class']
+                            indicator = indicator_class()
+                            logger.debug(f"✅ 从完整注册系统创建指标 {indicator_name} 成功")
+                        else:
+                            logger.debug(f"❌ 指标 {indicator_name} 未在完整注册系统中找到")
+                    except Exception as e:
+                        logger.debug(f"❌ 从完整注册系统创建指标 {indicator_name} 失败: {e}")
+                else:
+                    logger.error("❌ 完整指标注册系统未初始化")
 
                 # 检查指标实例是否有效
                 if indicator is None:

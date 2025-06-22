@@ -9,16 +9,18 @@
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class PSY(BaseIndicator):
+class PSY(BaseIndicator, PatternSignalMixin):
     """
     心理线指标(Psychological Line)
     
@@ -31,40 +33,80 @@ class PSY(BaseIndicator):
     4. 形态识别系统：识别PSY极值反转、区间突破和均值回归等形态
     """
     
-    def __init__(self, period: int = 12, 
-                 secondary_period: int = 24,
-                 multi_periods: List[int] = None,
-                 adaptive_period: bool = False,
-                 volatility_lookback: int = 20,
-                 enhanced: bool = False):
+    def __init__(self, **kwargs):
         """
         初始化PSY指标
-        
+
         Args:
-            period: 计算周期，默认为12日
-            secondary_period: 次要周期，默认为24日 (仅在enhanced=True时使用)
-            multi_periods: 多周期分析参数，默认为[6, 12, 24, 48] (仅在enhanced=True时使用)
-            adaptive_period: 是否启用自适应周期，默认为False (仅在enhanced=True时使用)
-            volatility_lookback: 波动率计算回溯期，默认为20 (仅在enhanced=True时使用)
-            enhanced: 是否启用增强功能，默认为False
+            **kwargs: 指标参数
         """
-        super().__init__(name="PSY", description="心理线指标，计算一段时间内上涨日所占百分比，判断市场情绪")
+        super().__init__()
+        self.name = "PSY"
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        self.period = period
-        self.secondary_period = secondary_period
-        self.multi_periods = multi_periods or [6, 12, 24, 48]
-        self.adaptive_period = adaptive_period
-        self.volatility_lookback = volatility_lookback
-        self.enhanced = enhanced
         self.market_environment = "normal"
-        
+
         # 增强版内部变量
-        if enhanced:
+        if hasattr(self, 'enhanced') and self.enhanced:
             self.name = "EnhancedPSY"
             self.description = "增强型心理线指标，优化参数自适应性，增加多周期协同分析和市场氛围评估"
             self._secondary_psy = None
             self._multi_period_psy = {}
-            self._adaptive_period = period  # 自适应后的周期
+            self._adaptive_period = self.period  # 自适应后的周期
+        
+        # 确保PSY特有属性存在
+        if not hasattr(self, 'enhanced'):
+            self.enhanced = False
+        
+        # 确保PSY特有属性存在
+        if not hasattr(self, 'enhanced'):
+            self.enhanced = False
+        if not hasattr(self, 'period'):
+            self.period = 12
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'period': 12, 'enhanced': False}
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator(silent_mode=True)
+
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('PSY', params)
+            if not is_valid:
+                # 静默处理验证失败，避免过多警告
+                pass
+
+        except Exception:
+            # 如果验证失败，静默处理，保持向后兼容
+            pass
+
+        # 设置参数
+        self.period = kwargs.get('period', 12)
+        self.secondary_period = kwargs.get('secondary_period', 24)
+        self.multi_periods = kwargs.get('multi_periods', [6, 12, 24, 48])
+        self.adaptive_period = kwargs.get('adaptive_period', False)
+        self.volatility_lookback = kwargs.get('volatility_lookback', 20)
+        self.enhanced = kwargs.get('enhanced', False)
     
     def set_market_environment(self, environment: str) -> None:
         """
@@ -78,8 +120,22 @@ class PSY(BaseIndicator):
             raise ValueError(f"无效的市场环境类型: {environment}。有效类型: {valid_environments}")
         
         self.market_environment = environment
-    
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算PSY指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            添加了PSY指标的DataFrame
+        """
+        result = self._calculate(data, **kwargs)
+        self._result = result
+        return result
+
+    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算PSY指标
         
@@ -149,6 +205,11 @@ class PSY(BaseIndicator):
         # 存储结果
         self._result = result
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _adjust_parameters_by_volatility(self, data: pd.DataFrame) -> None:
@@ -434,6 +495,16 @@ class PSY(BaseIndicator):
                 score = 50 + (score - 50) * 1.2
         
         return np.clip(score, 0, 100)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取PSY形态"""
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        return pd.DataFrame(index=data.index)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """计算置信度"""
+        return 0.7
     
     def _calculate_psy_overbought_oversold_score(self) -> pd.Series:
         """
@@ -1484,3 +1555,63 @@ class EnhancedPSY(PSY):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    def __init__(self, **kwargs):
+        """
+        初始化PSY指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "PSY"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('PSY', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"PSY参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

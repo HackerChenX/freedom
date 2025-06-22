@@ -1,8 +1,9 @@
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 import pandas as pd
 from typing import Dict
 
-class ZXMBSAbsorb(BaseIndicator):
+class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
     """
     主力吸筹指标 (ZXM Buy/Sell Absorb)
     
@@ -129,6 +130,11 @@ class ZXMBSAbsorb(BaseIndicator):
         result['volume_ratio'] = volume_ratio
 
         self._result = result
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
     def get_pattern_info(self, pattern_id: str) -> dict:

@@ -27,7 +27,7 @@ from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
 from strategy.signal_watcher import SignalWatcher
 from strategy.result_filter import ResultFilter
-from db.data_manager import DataManager
+from db.data_manager_adapter import get_data_manager_adapter
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
 from utils.visualization import (

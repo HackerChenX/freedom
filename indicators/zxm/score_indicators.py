@@ -9,6 +9,7 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZXMRiseElasticity
 from indicators.zxm.buy_point_indicators import ZXMDailyMACD, ZXMTurnover, ZXMMACallback
 from utils.logger import get_logger
@@ -16,7 +17,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ZXMElasticityScore(BaseIndicator):
+class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
     """
     ZXM弹性评分指标
     
@@ -88,6 +89,11 @@ class ZXMElasticityScore(BaseIndicator):
         result.loc[:, "ElasticityScore"] = elasticity_score
         result.loc[:, "Signal"] = signal
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
 
@@ -246,7 +252,7 @@ class ZXMElasticityScore(BaseIndicator):
                 - threshold: 弹性评分阈值，默认75
         """
         self.threshold = kwargs.get('threshold', 75)
-class ZXMBuyPointScore(BaseIndicator):
+class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点评分指标
     
@@ -328,6 +334,11 @@ class ZXMBuyPointScore(BaseIndicator):
         result.loc[:, "BuyPointScore"] = buy_point_score
         result.loc[:, "Signal"] = signal
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
 
@@ -494,7 +505,7 @@ class ZXMBuyPointScore(BaseIndicator):
                 - threshold: 买点评分阈值，默认75
         """
         self.threshold = kwargs.get('threshold', 75)
-class StockScoreCalculator(BaseIndicator):
+class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
     """
     ZXM股票综合评分指标
     
@@ -583,6 +594,11 @@ class StockScoreCalculator(BaseIndicator):
         # 9. 卖出信号 - 当总分低于30分时
         result.loc[:, "SellSignal"] = result["TotalScore"] < 30
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _calculate_trend_score(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.DataFrame:

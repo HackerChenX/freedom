@@ -5,11 +5,13 @@
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,7 +26,7 @@ class DivergenceType(Enum):
     HIDDEN_NEGATIVE = 4  # 隐藏负背离：价格未创新高，指标创新高，看跌信号
 
 
-class DIVERGENCE(BaseIndicator):
+class DIVERGENCE(BaseIndicator, PatternSignalMixin):
     """
     量价背离指标
     
@@ -127,7 +129,12 @@ class DIVERGENCE(BaseIndicator):
         """
         # 如果没有提供指标名称，则默认计算价格与成交量的背离
         if indicator_name is None:
-            return self.price_volume_divergence(data, lookback_period, confirm_period)
+            
+        # 添加形态识别和信号生成
+        self = self.add_pattern_detection(self)
+        self = self.add_signal_generation(self)
+
+        return self.price_volume_divergence(data, lookback_period, confirm_period)
         
         # 确保数据包含必需的列
         self.ensure_columns(data, ["close", "high", "low", indicator_name])
@@ -782,3 +789,67 @@ class DIVERGENCE(BaseIndicator):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    def __init__(self, **kwargs):
+        """
+        初始化DIVERGENCE指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "DIVERGENCE"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('DIVERGENCE', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"DIVERGENCE参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """计算置信度"""
+        return 0.5

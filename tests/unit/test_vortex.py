@@ -4,7 +4,7 @@ Vortex指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.vortex import Vortex
+from indicators.vortex import VORTEX
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestVortex(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = Vortex(period=14)
+        self.indicator = VORTEX(period=14)
         self.expected_columns = ['vi_plus', 'vi_minus', 'vi_diff']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -61,7 +61,7 @@ class TestVortex(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = Vortex(period=3)
+        test_indicator = VORTEX(period=3)
         result = test_indicator.calculate(simple_data)
         
         # 验证Vortex计算逻辑

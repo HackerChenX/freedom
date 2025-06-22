@@ -8,6 +8,7 @@ RSI均线系统指标(RSIMA)
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
 
@@ -18,13 +19,14 @@ except ImportError:
     HAS_TALIB = False
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class RSIMA(BaseIndicator):
+class RSIMA(BaseIndicator, PatternSignalMixin):
     """
     RSI均线系统(RSIMA)
     
@@ -244,6 +246,11 @@ class RSIMA(BaseIndicator):
         # 记录可用的均线周期，供信号生成时使用
         self._available_periods = available_periods
         
+        
+        # 添加形态识别和信号生成
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
+
         return df_copy
     
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -408,3 +415,67 @@ class RSIMA(BaseIndicator):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    def __init__(self, **kwargs):
+        """
+        初始化RSIMA指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "RSIMA"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('RSIMA', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"RSIMA参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """计算置信度"""
+        return 0.5

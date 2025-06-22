@@ -8,9 +8,10 @@
 import pandas as pd
 import numpy as np
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
 
-class PatternQualityEvaluator(BaseIndicator):
+class PatternQualityEvaluator(BaseIndicator, PatternSignalMixin):
     """
     形态质量评估指标
     
@@ -50,6 +51,11 @@ class PatternQualityEvaluator(BaseIndicator):
             result.iloc[45:50, result.columns.get_indexer(['reliability_score'])[0]] = 60.0
             result.iloc[45:50, result.columns.get_indexer(['profit_potential'])[0]] = 70.0
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def get_patterns(self, data):

@@ -8,9 +8,10 @@
 import pandas as pd
 import numpy as np
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
 
-class PatternCombination(BaseIndicator):
+class PatternCombination(BaseIndicator, PatternSignalMixin):
     """
     形态组合指标
     
@@ -46,6 +47,11 @@ class PatternCombination(BaseIndicator):
             result.iloc[40:42, result.columns.get_indexer(['combined_pattern'])[0]] = True
             result.iloc[40:42, result.columns.get_indexer(['pattern_strength'])[0]] = 60.0
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def get_patterns(self, data):

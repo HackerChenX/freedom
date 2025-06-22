@@ -3,10 +3,11 @@ import pandas as pd
 from typing import Optional, Dict, Any, Tuple, List
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 
 
-class EnhancedDMI(BaseIndicator):
+class EnhancedDMI(BaseIndicator, PatternSignalMixin):
     """
     增强型DMI指标
     
@@ -149,7 +150,12 @@ class EnhancedDMI(BaseIndicator):
                 'tr': np.nan
             }, index=data.index)
             self._result = result
-            return result
+            
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
+        return result
         
         # 计算True Range (TR)
         tr1 = abs(high - low)

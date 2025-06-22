@@ -10,6 +10,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -53,7 +54,7 @@ class PatternType(Enum):
     V_REVERSAL = "V形反转"            # 急速下跌后快速反弹
 
 
-class CandlestickPatterns(BaseIndicator):
+class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
     """
     K线形态识别指标
     
@@ -106,6 +107,11 @@ class CandlestickPatterns(BaseIndicator):
             if pattern_name not in result.columns:
                 result[pattern_name] = False
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _calculate_single_patterns(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.DataFrame:

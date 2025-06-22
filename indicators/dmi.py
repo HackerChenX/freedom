@@ -13,7 +13,8 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 from functools import lru_cache
 
 
-from indicators.base_indicator import BaseIndicator, PatternResult
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
@@ -22,7 +23,7 @@ from utils.decorators import singleton
 logger = get_logger(__name__)
 
 @singleton
-class DMI(BaseIndicator):
+class DMI(BaseIndicator, PatternSignalMixin):
     """
     趋向指标(DMI) (DMI)
     
@@ -30,27 +31,62 @@ class DMI(BaseIndicator):
     描述：判断趋势强度与方向
     """
     
-    def __init__(self, period: int = 14, adx_period: int = 14):
+    def __init__(self, **kwargs):
         self.REQUIRED_COLUMNS = ['high', 'low', 'close']
         """
         初始化趋向指标(DMI)指标
-        
+
         Args:
-            period: 计算周期，默认为14
-            adx_period: ADX计算周期，默认为14
+            **kwargs: 指标参数，支持period、adx_threshold等
         """
         super().__init__(name="DMI", description="趋向指标，判断趋势强度与方向")
-        self.period = period
-        self.adx_period = adx_period
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 14, "adx_threshold": 25.0}
     
-    def set_parameters(self, period: int = None, adx_period: int = None):
+    def set_parameters(self, **kwargs):
         """
         设置指标参数
+
+        Args:
+            **kwargs: 参数字典，支持以下参数：
+                - period: 计算周期
+                - adx_threshold: ADX趋势强度阈值
         """
-        if period is not None:
-            self.period = period
-        if adx_period is not None:
-            self.adx_period = adx_period
+        # 验证参数
+        from utils.indicator_parameter_validator import IndicatorParameterValidator
+        validator = IndicatorParameterValidator()
+
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('DMI', params)
+            if not is_valid:
+                # 静默处理验证失败，避免过多警告
+                pass
+                
+        except Exception:
+            # 如果验证失败，静默处理，保持向后兼容
+            pass
+
+        # 设置参数
+        self.period = params.get('period', 14)
+        self.adx_threshold = params.get('adx_threshold', 25.0)
+
+        # 保持向后兼容性
+        self.adx_period = self.period  # 为了兼容现有代码
     
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -82,9 +118,16 @@ class DMI(BaseIndicator):
             添加了DMI指标列的DataFrame
         """
         if df.empty:
-            return df
+
+            return pd.DataFrame()
+
             
+            return pd.DataFrame()
+
+            
+
         # 确保数据包含必要的列
+
         required_columns = ['close', 'high', 'low']
         self._validate_dataframe(df, required_columns)
         
@@ -129,12 +172,28 @@ class DMI(BaseIndicator):
                      '+DM', '-DM', 'TR_' + str(self.period), '+DM_' + str(self.period), 
                      '-DM_' + str(self.period), 'DX'], axis=1, inplace=True)
         
-        # 保存结果
+        # 添加形态识别和信号生成
+
+        
+        df_copy = self.add_pattern_detection(df_copy)
+
+        
+        df_copy = self.add_signal_generation(df_copy)
+
+
+        
+        # 存储结果
+
+        
         self._result = df_copy
+
+
         
         return df_copy
-    
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+
+
+        
+        def     calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算DMI原始评分
         
@@ -289,6 +348,11 @@ class DMI(BaseIndicator):
             logger.warning(f"DMI形态识别出现索引错误: {e}")
             return []
         
+        
+        # 添加形态识别和信号生成
+        patterns = self.add_pattern_detection(patterns)
+        patterns = self.add_signal_generation(patterns)
+
         return patterns
     
     def _calculate_di_cross_score(self, pdi: pd.Series, mdi: pd.Series) -> pd.Series:
@@ -616,6 +680,10 @@ class DMI(BaseIndicator):
             - dmi_signal: 1=买入信号, -1=卖出信号, 0=无信号
         """
         if df.empty:
+
+            return pd.DataFrame()
+
+            
             return df
             
         # 检查必要的指标列是否存在

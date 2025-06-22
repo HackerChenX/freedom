@@ -8,17 +8,19 @@
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class PVT(BaseIndicator):
+class PVT(BaseIndicator, PatternSignalMixin):
     """
     价格成交量趋势指标(PVT) (PVT)
     
@@ -294,8 +296,8 @@ class PVT(BaseIndicator):
             添加了PVT指标列的DataFrame
         """
         if df.empty:
-            return df
-            
+            return pd.DataFrame()
+
         # 确保数据包含必要的列
         required_columns = ['close', 'volume']
         self._validate_dataframe(df, required_columns)
@@ -313,11 +315,15 @@ class PVT(BaseIndicator):
         # 计算PVT的移动平均作为信号线
         df_copy['pvt_signal'] = df_copy['pvt'].rolling(window=self.ma_period).mean()
         
+        # 添加形态识别和信号生成
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
+
         # 存储结果
         self._result = df_copy[['pvt', 'pvt_signal']]
-        
+
         return df_copy
-        
+
     def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成价格成交量趋势指标(PVT)指标交易信号
@@ -355,6 +361,11 @@ class PVT(BaseIndicator):
                  df_copy['pvt'].iloc[i] < df_copy['pvt_signal'].iloc[i]:
                 df_copy.iloc[i, df_copy.columns.get_loc('pvt_sell_signal')] = 1
         
+        
+        # 添加形态识别和信号生成
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
+
         return df_copy
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -921,3 +932,71 @@ class PVT(BaseIndicator):
         return pattern_info_map.get(pattern_id, default_pattern)
 
 
+
+    def __init__(self, **kwargs):
+        """
+        初始化PVT指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "PVT"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+        
+        # 确保PVT特有属性存在
+        if not hasattr(self, 'ma_period'):
+            self.ma_period = 10
+        
+        # 确保PVT特有属性存在
+        if not hasattr(self, 'ma_period'):
+            self.ma_period = 10
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'ma_period': 10}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('PVT', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"PVT参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

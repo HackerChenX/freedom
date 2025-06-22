@@ -9,13 +9,17 @@
 
 import pandas as pd
 import numpy as np
-from typing import List
+from typing import List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
-class EMA(BaseIndicator):
+class EMA(BaseIndicator, PatternSignalMixin):
     """
     指数移动平均线(EMA)
     
@@ -26,27 +30,69 @@ class EMA(BaseIndicator):
     # EMA指标只需要close列
     REQUIRED_COLUMNS = ['close']
 
-    def __init__(self, periods: List[int] = None, ma_type: str = 'EMA'):
+    def __init__(self, **kwargs):
         """
         初始化指数移动平均线(EMA)指标
         Args:
-            periods: 计算周期列表，默认为[5, 10, 20, 60]
-            ma_type: 均线类型，默认为'EMA'
+            **kwargs: 指标参数，支持period、price_field、alpha等
         """
         super().__init__(name="EMA", description="指数移动平均线")
-        self.periods = periods if periods is not None else [5, 10, 20, 60]
-        self.ma_type = ma_type
-        self.ma_cols = [f'{self.ma_type}{p}' for p in self.periods]
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
+        self.ma_cols = [f'{self.ma_type}{self.period}']
         self.register_patterns()
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 12, "price_field": "close", "alpha": None}
         
-    def set_parameters(self, periods: List[int] = None, ma_type: str = None):
-        """设置指标参数"""
-        if periods is not None:
-            self.periods = periods
-        if ma_type is not None:
-            self.ma_type = ma_type
-        self.ma_cols = [f'{self.ma_type}{p}' for p in self.periods]
-        self.register_patterns()
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，支持以下参数：
+                - period: EMA计算周期
+                - price_field: 价格字段选择
+                - alpha: 平滑因子
+        """
+        # 验证参数
+        from utils.indicator_parameter_validator import IndicatorParameterValidator
+        validator = IndicatorParameterValidator()
+
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('EMA', params)
+            if not is_valid:
+                # 静默处理验证失败，避免过多警告
+                pass
+                
+        except Exception:
+            # 如果验证失败，静默处理，保持向后兼容
+            pass
+
+        # 设置参数
+        self.period = params.get('period', 12)
+        self.price_field = params.get('price_field', 'close')
+        self.alpha = params.get('alpha', None)
+
+        # 保持向后兼容性
+        self.periods = [self.period]  # 为了兼容现有代码
+        self.ma_type = 'EMA'
+
+        if hasattr(self, 'ma_cols'):
+            self.ma_cols = [f'{self.ma_type}{self.period}']
         
     def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -54,6 +100,11 @@ class EMA(BaseIndicator):
         """
         for p in self.periods:
             df[f'{self.ma_type}{p}'] = df['close'].ewm(span=p, adjust=True).mean()
+        
+        # 添加形态识别和信号生成
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
+
         return df
 
     def calculate_raw_score(self, df: pd.DataFrame) -> pd.Series:

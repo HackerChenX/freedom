@@ -6,11 +6,12 @@ import numpy as np
 from typing import Dict, List, Tuple, Union, Optional
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-class ZXMDiagnostics(BaseIndicator):
+class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
     """
     ZXM智能诊断器
     
@@ -64,7 +65,12 @@ class ZXMDiagnostics(BaseIndicator):
                 data = pd.DataFrame(data)
             except Exception as e:
                 logger.error(f"ZXMDiagnostics: 无法将字典转换为DataFrame: {e}")
-                return pd.DataFrame()
+                
+        # 添加形态识别和信号生成
+        pd = self.add_pattern_detection(pd)
+        pd = self.add_signal_generation(pd)
+
+        return pd.DataFrame()
 
         if not isinstance(data, pd.DataFrame):
             logger.error(f"ZXMDiagnostics: 输入数据类型错误，期望DataFrame，实际: {type(data)}")

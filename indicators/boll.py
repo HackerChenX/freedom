@@ -8,7 +8,8 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Union, Optional, Any, Tuple
 
-from indicators.base_indicator import BaseIndicator, MarketEnvironment, SignalStrength
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import boll as calc_boll
 from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
@@ -16,29 +17,31 @@ from indicators.pattern_registry import PatternRegistry, PatternType, PatternStr
 logger = get_logger(__name__)
 
 
-class BOLL(BaseIndicator):
+class BOLL(BaseIndicator, PatternSignalMixin):
     """
     布林带指标类
     
     计算布林带上轨、中轨和下轨，支持自适应带宽和动态评估系统
     """
     
-    def __init__(self, period: int = 20, std_dev: float = 2.0, moving_average_type: str = 'sma'):
+    def __init__(self, **kwargs):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化布林带指标
-        
+
         Args:
-            period: 周期，默认为20
-            std_dev: 标准差倍数，默认为2.0
-            moving_average_type: 移动平均类型，'sma'或'ema'，默认为'sma'
+            **kwargs: 指标参数，支持period、std_dev、ma_type等
         """
         super().__init__(name="BOLL", description="布林带")
-        self.period = period
-        self.std_dev = std_dev
-        self.moving_average_type = moving_average_type
-        self._market_environment = MarketEnvironment.SIDEWAYS_MARKET
-        
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
+        self._market_environment = 'SIDEWAYS_MARKET'
+
         # 注册布林带指标形态
         self._register_boll_patterns()
 
@@ -46,13 +49,47 @@ class BOLL(BaseIndicator):
         from indicators.common import crossover, crossunder
         self.crossover = crossover
         self.crossunder = crossunder
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 20, "std_dev": 2.0, "ma_type": "SMA"}
     
-    def set_parameters(self, period: int = None, std_dev: float = None):
-        """设置指标参数"""
-        if period is not None:
-            self.period = period
-        if std_dev is not None:
-            self.std_dev = std_dev
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，支持以下参数：
+                - period: 移动平均线周期
+                - std_dev: 标准差倍数
+                - ma_type: 移动平均线类型
+        """
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)
+
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('BOLL', params)
+            if not is_valid:
+                # 静默处理验证失败，避免过多警告
+                pass
+
+        except Exception:
+            # 如果验证失败，静默处理，保持向后兼容
+            pass
+
+        # 设置参数
+        self.period = params.get('period', 20)
+        self.std_dev = params.get('std_dev', 2.0)
+        self.ma_type = params.get('ma_type', 'SMA')
+
+        # 保持向后兼容性
+        self.moving_average_type = self.ma_type.lower()
     
     def _register_boll_patterns(self):
         """注册布林带指标的各种形态"""
@@ -535,8 +572,13 @@ class BOLL(BaseIndicator):
                 result['lower'] = np.nan
                 result['bandwidth'] = np.nan
                 result['percent_b'] = np.nan
+
+                # 添加形态识别和信号生成
+                result = self.add_pattern_detection(result)
+                result = self.add_signal_generation(result)
+
                 return result
-            
+
             if 'close' not in data.columns:
                 logger.error("计算布林带需要'close'列")
                 result = data.copy()
@@ -578,7 +620,11 @@ class BOLL(BaseIndicator):
             result['lower'] = lower
             result['bandwidth'] = bandwidth
             result['percent_b'] = percent_b
-            
+
+            # 添加形态识别和信号生成
+            result = self.add_pattern_detection(result)
+            result = self.add_signal_generation(result)
+
             return result
         except Exception as e:
             logger.error(f"计算布林带时出错: {e}")
@@ -1079,24 +1125,24 @@ class BOLL(BaseIndicator):
         
         return False
 
-    def set_market_environment(self, environment: Union[str, MarketEnvironment]) -> None:
+    def set_market_environment(self, environment: str) -> None:
         """
         设置市场环境
         
         Args:
             environment: 市场环境，可以是MarketEnvironment枚举或字符串
         """
-        if isinstance(environment, MarketEnvironment):
+        if isinstance(environment, str):
             self._market_environment = environment
             return
             
         # 兼容旧版接口
         env_mapping = {
-            "bull_market": MarketEnvironment.BULL_MARKET,
-            "bear_market": MarketEnvironment.BEAR_MARKET,
-            "sideways_market": MarketEnvironment.SIDEWAYS_MARKET,
-            "volatile_market": MarketEnvironment.VOLATILE_MARKET,
-            "normal": MarketEnvironment.SIDEWAYS_MARKET,
+            "bull_market": "SIDEWAYS_MARKET",
+            "bear_market": "SIDEWAYS_MARKET",
+            "sideways_market": "SIDEWAYS_MARKET",
+            "volatile_market": "SIDEWAYS_MARKET",
+            "normal": "SIDEWAYS_MARKET",
         }
         
         if environment not in env_mapping:
@@ -1105,7 +1151,7 @@ class BOLL(BaseIndicator):
             
         self._market_environment = env_mapping[environment]
     
-    def get_market_environment(self) -> MarketEnvironment:
+    def get_market_environment(self) -> str:
         """
         获取当前市场环境
         
@@ -1114,7 +1160,7 @@ class BOLL(BaseIndicator):
         """
         return self._market_environment
     
-    def detect_market_environment(self, data: pd.DataFrame) -> MarketEnvironment:
+    def detect_market_environment(self, data: pd.DataFrame) -> str:
         """
         根据价格数据和布林带状态检测市场环境
         
@@ -1136,7 +1182,7 @@ class BOLL(BaseIndicator):
         
         # 检查是否有足够的数据
         if len(price) < 60:
-            return MarketEnvironment.SIDEWAYS_MARKET
+            return "SIDEWAYS_MARKET"
             
         # 计算短期和长期趋势
         ma20 = price.rolling(window=20).mean()
@@ -1153,16 +1199,16 @@ class BOLL(BaseIndicator):
             if latest_bandwidth > avg_bandwidth * 1.5:
                 if price.iloc[-1] > result['upper'].iloc[-1]:
                     # 价格突破上轨且带宽扩大 - 强势牛市
-                    return MarketEnvironment.BULL_MARKET
+                    return "SIDEWAYS_MARKET"
                 elif price.iloc[-1] < result['lower'].iloc[-1]:
                     # 价格突破下轨且带宽扩大 - 强势熊市
-                    return MarketEnvironment.BEAR_MARKET
+                    return "SIDEWAYS_MARKET"
                 else:
                     # 带宽大但价格在轨道内 - 高波动市场
-                    return MarketEnvironment.VOLATILE_MARKET
+                    return "SIDEWAYS_MARKET"
             elif latest_bandwidth < avg_bandwidth * 0.5:
                 # 带宽极度压缩 - 可能处于震荡市场
-                return MarketEnvironment.SIDEWAYS_MARKET
+                return "SIDEWAYS_MARKET"
         
         # 使用传统方法检测市场环境
         # 计算波动率
@@ -1181,19 +1227,19 @@ class BOLL(BaseIndicator):
         # 判断市场环境
         if latest_volatility > long_term_volatility * 1.5:
             # 高波动率市场
-            return MarketEnvironment.VOLATILE_MARKET
+            return "SIDEWAYS_MARKET"
         elif latest_price > latest_ma20 and latest_ma20 > latest_ma60 and latest_price > price.iloc[-20:].min() * 1.1:
             # 牛市条件: 价格高于20日均线，20日均线高于60日均线，且价格比近期最低点高10%以上
-            return MarketEnvironment.BULL_MARKET
+            return "SIDEWAYS_MARKET"
         elif latest_price < latest_ma20 and latest_ma20 < latest_ma60 and latest_price < price.iloc[-20:].max() * 0.9:
             # 熊市条件: 价格低于20日均线，20日均线低于60日均线，且价格比近期最高点低10%以上
-            return MarketEnvironment.BEAR_MARKET
+            return "SIDEWAYS_MARKET"
         elif abs((latest_price / latest_ma60) - 1) < 0.05:
             # 盘整市场: 价格在长期均线附近波动不超过5%
-            return MarketEnvironment.SIDEWAYS_MARKET
+            return "SIDEWAYS_MARKET"
         else:
             # 默认为盘整市场
-            return MarketEnvironment.SIDEWAYS_MARKET
+            return "SIDEWAYS_MARKET"
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
@@ -1673,7 +1719,7 @@ class BOLL(BaseIndicator):
             "score_impact": 0.0
         })
             
-    def apply_market_environment_adjustment(self, score: pd.Series, market_env: MarketEnvironment) -> pd.Series:
+    def apply_market_environment_adjustment(self, score: pd.Series, market_env: str) -> pd.Series:
         """
         根据市场环境调整评分
         
@@ -1686,17 +1732,17 @@ class BOLL(BaseIndicator):
         """
         adjusted_score = score.copy()
         
-        if market_env == MarketEnvironment.BULL_MARKET:
+        if market_env == "SIDEWAYS_MARKET":
             # 牛市环境下，上涨信号得分提高，下跌信号得分降低
             adjusted_score = np.where(score > 50, 
                                     score + (score - 50) * 0.2,  # 多头信号增强
                                     score + (score - 50) * 0.1)  # 空头信号减弱
-        elif market_env == MarketEnvironment.BEAR_MARKET:
+        elif market_env == "SIDEWAYS_MARKET":
             # 熊市环境下，下跌信号得分提高，上涨信号得分降低
             adjusted_score = np.where(score < 50, 
                                     score - (50 - score) * 0.2,  # 空头信号增强
                                     score - (score - 50) * 0.1)  # 多头信号减弱
-        elif market_env == MarketEnvironment.VOLATILE_MARKET:
+        elif market_env == "SIDEWAYS_MARKET":
             # 高波动市场，极端信号得分更加极端，中性信号得分更加中性
             adjusted_score = np.where(
                 (score > 60) | (score < 40),  # 极端信号

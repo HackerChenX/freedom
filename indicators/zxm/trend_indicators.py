@@ -10,13 +10,14 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from scipy.stats import linregress
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 from indicators.score_manager import IndicatorScoreManager
 
 logger = get_logger(__name__)
 
 
-class ZXMDailyTrendUp(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-日线上移指标
     
@@ -68,6 +69,11 @@ class ZXMDailyTrendUp(BaseIndicator):
         result.loc[:, "J2"] = j2
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -404,7 +410,7 @@ class ZXMDailyTrendUp(BaseIndicator):
         pass
     
 
-class ZXMWeeklyTrendUp(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-周线上移指标
     
@@ -461,6 +467,11 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         result.loc[:, "C1"] = c1
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -872,7 +883,7 @@ class ZXMWeeklyTrendUp(BaseIndicator):
         pass
 
 
-class ZXMMonthlyKDJTrendUp(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-月KDJ·D及K上移指标
     
@@ -935,6 +946,11 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         result.loc[:, "J"] = j
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _sma(self, series: pd.Series, n: int, m: int) -> pd.Series:
@@ -1336,7 +1352,7 @@ class ZXMMonthlyKDJTrendUp(BaseIndicator):
         self.d_period = kwargs.get('d_period', 3)
 
 
-class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-周KDJ·D/DEA上移指标
     
@@ -1409,6 +1425,11 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         result.loc[:, "DEA"] = dea
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _sma(self, series: pd.Series, n: int, m: int) -> pd.Series:
@@ -1816,7 +1837,7 @@ class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator):
         self.macd_signal = kwargs.get('macd_signal', 9)
 
 
-class ZXMWeeklyKDJDTrendUp(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-周KDJ·D上移指标
     
@@ -1879,6 +1900,11 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         result.loc[:, "J"] = j
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _sma(self, series: pd.Series, n: int, m: int) -> pd.Series:
@@ -2238,7 +2264,7 @@ class ZXMWeeklyKDJDTrendUp(BaseIndicator):
         self.d_period = kwargs.get('d_period', 3)
 
 
-class ZXMMonthlyMACD(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-月MACD指标
     
@@ -2292,6 +2318,11 @@ class ZXMMonthlyMACD(BaseIndicator):
         result.loc[:, "MACD"] = macd
         result.loc[:, "XG"] = xg
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -2718,7 +2749,7 @@ class ZXMMonthlyMACD(BaseIndicator):
         self.signal_period = kwargs.get('signal_period', 9)
 
 
-class TrendDetector(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势检测器
     
@@ -2827,6 +2858,11 @@ class TrendDetector(BaseIndicator):
         volatility_factor = 1 - (result['PriceVolatility'] / 5).clip(0, 1)  # 波动率对健康度的影响
         result.loc[:, 'TrendHealth'] = (result['TrendStrength'] * volatility_factor).clip(0, 100)
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -3211,7 +3247,7 @@ class TrendDetector(BaseIndicator):
         self.slope_period = kwargs.get('slope_period', 5)
 
 
-class TrendDuration(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势持续性指标
     
@@ -3399,6 +3435,11 @@ class TrendDuration(BaseIndicator):
             elif result['TrendState'].iloc[i] == -1:
                 result.at[result.index[i], 'CycleRegularity'] = min(1.0, down_cv)
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
 
     def get_pattern_info(self, pattern_id: str) -> dict:
@@ -3947,7 +3988,7 @@ class TrendDuration(BaseIndicator):
         self.slope_period = kwargs.get('slope_period', 5)
 
 
-class ZXMWeeklyMACD(BaseIndicator):
+class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM系统周线MACD指标
     用于检测中期趋势的变化和买卖信号
@@ -3972,7 +4013,12 @@ class ZXMWeeklyMACD(BaseIndicator):
             DataFrame: 包含计算结果的DataFrame
         """
         if len(data) < 40:  # 确保数据量足够
-            return data
+            
+        # 添加形态识别和信号生成
+        data = self.add_pattern_detection(data)
+        data = self.add_signal_generation(data)
+
+        return data
         
         result_data = data.copy()
         

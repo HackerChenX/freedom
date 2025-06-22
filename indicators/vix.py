@@ -8,17 +8,19 @@ VIX恐慌指数指标
 """
 
 import numpy as np
+from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class VIX(BaseIndicator):
+class VIX(BaseIndicator, PatternSignalMixin):
     """
     VIX恐慌指数指标
     
@@ -219,8 +221,8 @@ class VIX(BaseIndicator):
             添加了VIX指标列的DataFrame
         """
         if df.empty:
-            return df
-            
+            return pd.DataFrame()
+
         # 确保数据包含必要的列
         required_columns = ['high', 'low', 'close']
         self._validate_dataframe(df, required_columns)
@@ -235,9 +237,16 @@ class VIX(BaseIndicator):
         
         # 计算平滑后的VIX
         df_copy['vix_smooth'] = df_copy['vix'].rolling(window=self.smooth_period).mean()
-        
+
+        # 添加形态识别和信号生成
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
+
+        # 存储结果
+        self._result = df_copy[['vix', 'vix_smooth']]
+
         return df_copy
-        
+
     def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         生成交易信号
@@ -280,6 +289,11 @@ class VIX(BaseIndicator):
                 result.iloc[i, result.columns.get_loc('sell_signal')] = 1
                 result.iloc[i, result.columns.get_loc('vix_sell_signal')] = 1
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
@@ -704,3 +718,73 @@ class VIX(BaseIndicator):
         return pattern_info_map.get(pattern_id, default_pattern)
 
 
+
+    def __init__(self, **kwargs):
+        """
+        初始化VIX指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 保持原有初始化逻辑
+        if hasattr(super(), '__init__'):
+            try:
+                super().__init__()
+            except:
+                pass
+        
+        self.name = "VIX"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+        
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+        
+        # 确保VIX特有属性存在
+        if not hasattr(self, 'period'):
+            self.period = 20
+        
+        # 确保VIX特有属性存在
+        if not hasattr(self, 'period'):
+            self.period = 20
+        if not hasattr(self, 'smooth_period'):
+            self.smooth_period = 10
+    
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'period': 20, 'smooth_period': 10}
+    
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 验证参数
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('VIX', params)
+            if not is_valid:
+                from utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.warning(f"VIX参数验证失败: {'; '.join(errors)}")
+                # 使用默认参数
+                params = self._default_parameters.copy()
+            
+            # 设置参数（保持向后兼容）
+            for key, value in params.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    
+        except Exception:
+            # 如果验证失败，静默处理
+            pass

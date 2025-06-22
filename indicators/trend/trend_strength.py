@@ -13,6 +13,7 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 import warnings
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 # 静默警告
@@ -21,7 +22,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 logger = get_logger(__name__)
 
 
-class TrendStrength(BaseIndicator):
+class TrendStrength(BaseIndicator, PatternSignalMixin):
     """
     趋势强度指标
     
@@ -76,7 +77,12 @@ class TrendStrength(BaseIndicator):
             df['trend_strength'] = np.nan
             df['trend_direction'] = np.nan
             df['trend_category'] = np.nan
-            return df
+            
+        # 添加形态识别和信号生成
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
+
+        return df
         
         # 计算价格变化百分比
         df['price_change_pct'] = df['close'].pct_change(periods=1) * 100

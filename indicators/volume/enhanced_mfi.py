@@ -9,6 +9,7 @@ import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.mfi import MFI
 from utils.logger import get_logger
 
@@ -92,11 +93,21 @@ class EnhancedMFI(MFI):
         # 使用父类方法计算MFI
         result = super().calculate(processed_data, *args, **kwargs)
 
-        # 如果父类计算失败，返回基础结果
-        if result is None or 'mfi' not in result.columns:
+        # 检查父类计算结果并标准化列名
+        if result is None:
             logger.warning("父类MFI计算失败，返回基础结果")
             result = pd.DataFrame(index=data.index)
             result["mfi"] = 50.0  # 默认中性值
+        else:
+            # 查找MFI列（可能是MFI14、MFI20等格式）
+            mfi_columns = [col for col in result.columns if col.startswith('MFI')]
+            if mfi_columns:
+                # 使用第一个找到的MFI列，并重命名为标准的'mfi'
+                result["mfi"] = result[mfi_columns[0]]
+                logger.debug(f"成功获取父类MFI计算结果，列名: {mfi_columns[0]}")
+            else:
+                logger.warning("父类MFI计算结果中未找到MFI列，返回基础结果")
+                result["mfi"] = 50.0  # 默认中性值
 
         # 计算动态阈值
         self._calculate_dynamic_thresholds(data)

@@ -1,12 +1,16 @@
 import pandas as pd
 import numpy as np
-from typing import List
+from typing import List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 from indicators.pattern_registry import PatternType
+from utils.logger import get_logger
 
-class MA(BaseIndicator):
+logger = get_logger(__name__)
+
+class MA(BaseIndicator, PatternSignalMixin):
     """
     移动平均线(MA)
     分类：趋势类指标
@@ -15,27 +19,60 @@ class MA(BaseIndicator):
     # MA指标只需要close列
     REQUIRED_COLUMNS = ['close']
 
-    def __init__(self, periods: List[int] = None, ma_type: str = 'SMA'):
+    def __init__(self, **kwargs):
         """
         初始化移动平均线(MA)指标
         Args:
-            periods: 计算周期列表，默认为[5, 10, 20, 60]
-            ma_type: 均线类型，默认为'SMA' (简单移动平均)
+            **kwargs: 指标参数，支持period、price_field等
         """
         super().__init__(name="MA", description="移动平均线")
-        self.periods = periods if periods is not None else [5, 10, 20, 60]
-        # For simplicity, this class will only handle SMA. 'ma_type' is for consistency.
-        self.ma_type = 'SMA' 
-        self.ma_cols = [f'{self.ma_type}{p}' for p in self.periods]
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters()
+
+        # 应用用户参数
+        self.set_parameters(**kwargs)
+
+        self.ma_cols = [f'{self.ma_type}{self.period}']
         self.register_patterns()
 
-    def set_parameters(self, periods: List[int] = None, ma_type: str = None):
-        """设置指标参数"""
-        if periods is not None:
-            self.periods = periods
-        # ma_type is ignored to keep it simple
-        self.ma_cols = [f'{self.ma_type}{p}' for p in self.periods]
-        self.register_patterns()
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {"period": 20, "price_field": "close"}
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典，支持以下参数：
+                - period: 移动平均线周期
+                - price_field: 价格字段选择
+        """
+        # 验证参数
+        from utils.indicator_parameter_validator import IndicatorParameterValidator
+        validator = IndicatorParameterValidator()
+
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)
+
+        # 验证参数
+        is_valid, errors = validator.validate_indicator_parameters('MA', params)
+        if not is_valid:
+            # 静默处理验证失败，避免过多警告
+            pass
+
+        # 设置参数
+        self.period = params.get('period', 20)
+        self.price_field = params.get('price_field', 'close')
+
+        # 保持向后兼容性
+        self.periods = [self.period]  # 为了兼容现有代码
+        self.ma_type = 'SMA'
+
+        if hasattr(self, 'ma_cols'):
+            self.ma_cols = [f'{self.ma_type}{self.period}']
 
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -77,6 +114,11 @@ class MA(BaseIndicator):
         for p in self.periods:
             ma_values = close_series.rolling(window=p).mean()
             result_df[f'{self.ma_type}{p}'] = ma_values
+
+        
+        # 添加形态识别和信号生成
+        result_df = self.add_pattern_detection(result_df)
+        result_df = self.add_signal_generation(result_df)
 
         return result_df
 

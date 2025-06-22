@@ -17,7 +17,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from db.data_manager_adapter import get_data_manager_adapter
 from utils.logger import get_logger
 from utils.period_manager import PeriodManager
 from enums.kline_period import KlinePeriod
@@ -29,7 +29,7 @@ class PeriodDataProcessor:
     
     def __init__(self):
         """初始化数据处理器"""
-        self.db = get_clickhouse_db()
+        self.db = get_data_manager_adapter()
         self.period_manager = PeriodManager()
         self.data_cache = {}
     
@@ -125,14 +125,14 @@ class PeriodDataProcessor:
             pd.DataFrame: K线数据
         """
         try:
-            # 使用 get_stock_info 替代 get_kline_data
+            # 使用增强数据管理器获取股票数据
             stock_info = self.db.get_stock_info(
                 stock_code=stock_code,
                 level=period,
                 end_date=end_date,
                 order_by="date"
             )
-            
+
             # 转换为DataFrame
             df = stock_info.to_dataframe()
 
@@ -280,10 +280,20 @@ class PeriodDataProcessor:
             str: 最早日期，格式YYYY-MM-DD
         """
         try:
-            # 使用数据库方法获取最早日期，而不是直接构建SQL
-            min_date = self.db.get_stock_min_date(stock_code, period)
-            if min_date:
-                return min_date
+            # 使用增强数据管理器获取最早日期
+            try:
+                stock_info = self.db.get_stock_info(
+                    stock_code=stock_code,
+                    level=period,
+                    limit=1,
+                    order_by="date ASC"
+                )
+                df = stock_info.to_dataframe()
+                if not df.empty and 'date' in df.columns:
+                    return str(df['date'].iloc[0])
+            except Exception as e:
+                logger.debug(f"获取最早日期失败: {e}")
+                return None
             
             return None
             
@@ -383,11 +393,18 @@ class PeriodDataProcessor:
     def get_stock_earliest_date(self, stock_code):
         """获取股票最早的数据日期"""
         try:
-            # 使用数据库的get_stock_min_date方法获取最早日期，不再直接构建SQL
-            min_date = self.db.get_stock_min_date(stock_code)
-            
-            if min_date:
-                return self._format_date(min_date)
+            # 使用增强数据管理器获取最早日期
+            try:
+                stock_info = self.db.get_stock_info(
+                    stock_code=stock_code,
+                    limit=1,
+                    order_by="date ASC"
+                )
+                df = stock_info.to_dataframe()
+                if not df.empty and 'date' in df.columns:
+                    return self._format_date(str(df['date'].iloc[0]))
+            except Exception as e:
+                logger.debug(f"获取最早日期失败: {e}")
                     
             # 默认返回一个较早的日期
             return "2015-01-01"

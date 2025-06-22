@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-批量注册指标脚本
+批量注册指标脚本（已迁移到CompleteIndicatorRegistry）
 将所有可用但未注册的指标批量注册到系统中
 """
 
@@ -13,10 +13,10 @@ from typing import List, Dict, Tuple
 
 def batch_register_core_indicators():
     """批量注册核心指标"""
-    print("=== 批量注册核心指标 ===")
-    
-    from indicators.indicator_registry import get_registry
-    registry = get_registry()
+    print("=== 批量注册核心指标（CompleteIndicatorRegistry）===")
+
+    from indicators.complete_indicator_registry import complete_registry
+    registry = complete_registry
     
     core_indicators = [
         ('indicators.ma', 'MA', 'MA', '移动平均线'),
@@ -53,9 +53,11 @@ def batch_register_core_indicators():
             if indicator_class:
                 from indicators.base_indicator import BaseIndicator
                 if issubclass(indicator_class, BaseIndicator):
-                    registry.register_indicator(indicator_class, name=indicator_name, description=description)
-                    success_count += 1
-                    print(f"✅ 成功注册: {indicator_name}")
+                    if registry.register_indicator_safe(indicator_class, indicator_name, description):
+                        success_count += 1
+                        print(f"✅ 成功注册: {indicator_name}")
+                    else:
+                        print(f"❌ 注册失败: {indicator_name}")
                 else:
                     print(f"❌ 跳过非BaseIndicator: {class_name}")
             else:
@@ -71,10 +73,10 @@ def batch_register_core_indicators():
 
 def batch_register_enhanced_indicators():
     """批量注册增强指标"""
-    print("\n=== 批量注册增强指标 ===")
-    
-    from indicators.indicator_registry import get_registry
-    registry = get_registry()
+    print("\n=== 批量注册增强指标（CompleteIndicatorRegistry）===")
+
+    from indicators.complete_indicator_registry import complete_registry
+    registry = complete_registry
     
     enhanced_indicators = [
         ('indicators.trend.enhanced_cci', 'EnhancedCCI', 'ENHANCED_CCI', '增强版CCI'),
@@ -94,9 +96,11 @@ def batch_register_enhanced_indicators():
             if indicator_class:
                 from indicators.base_indicator import BaseIndicator
                 if issubclass(indicator_class, BaseIndicator):
-                    registry.register_indicator(indicator_class, name=indicator_name, description=description)
-                    success_count += 1
-                    print(f"✅ 成功注册: {indicator_name}")
+                    if registry.register_indicator_safe(indicator_class, indicator_name, description):
+                        success_count += 1
+                        print(f"✅ 成功注册: {indicator_name}")
+                    else:
+                        print(f"❌ 注册失败: {indicator_name}")
                 else:
                     print(f"❌ 跳过非BaseIndicator: {class_name}")
             else:
@@ -112,10 +116,10 @@ def batch_register_enhanced_indicators():
 
 def batch_register_composite_indicators():
     """批量注册复合指标"""
-    print("\n=== 批量注册复合指标 ===")
+    print("\n=== 批量注册复合指标（CompleteIndicatorRegistry）===")
     
-    from indicators.indicator_registry import get_registry
-    registry = get_registry()
+    from indicators.complete_indicator_registry import complete_registry
+    registry = complete_registry
     
     composite_indicators = [
         ('indicators.composite_indicator', 'CompositeIndicator', 'COMPOSITE', '复合指标'),
@@ -134,9 +138,11 @@ def batch_register_composite_indicators():
             if indicator_class:
                 from indicators.base_indicator import BaseIndicator
                 if issubclass(indicator_class, BaseIndicator):
-                    registry.register_indicator(indicator_class, name=indicator_name, description=description)
-                    success_count += 1
-                    print(f"✅ 成功注册: {indicator_name}")
+                    if registry.register_indicator_safe(indicator_class, indicator_name, description):
+                        success_count += 1
+                        print(f"✅ 成功注册: {indicator_name}")
+                    else:
+                        print(f"❌ 注册失败: {indicator_name}")
                 else:
                     print(f"❌ 跳过非BaseIndicator: {class_name}")
             else:
@@ -152,10 +158,10 @@ def batch_register_composite_indicators():
 
 def batch_register_pattern_indicators():
     """批量注册形态指标"""
-    print("\n=== 批量注册形态指标 ===")
+    print("\n=== 批量注册形态指标（CompleteIndicatorRegistry）===")
     
-    from indicators.indicator_registry import get_registry
-    registry = get_registry()
+    from indicators.complete_indicator_registry import complete_registry
+    registry = complete_registry
     
     pattern_indicators = [
         ('indicators.pattern.candlestick_patterns', 'CandlestickPatterns', 'CANDLESTICK_PATTERNS', 'K线形态'),
@@ -171,9 +177,11 @@ def batch_register_pattern_indicators():
             if indicator_class:
                 from indicators.base_indicator import BaseIndicator
                 if issubclass(indicator_class, BaseIndicator):
-                    registry.register_indicator(indicator_class, name=indicator_name, description=description)
-                    success_count += 1
-                    print(f"✅ 成功注册: {indicator_name}")
+                    if registry.register_indicator_safe(indicator_class, indicator_name, description):
+                        success_count += 1
+                        print(f"✅ 成功注册: {indicator_name}")
+                    else:
+                        print(f"❌ 注册失败: {indicator_name}")
                 else:
                     print(f"❌ 跳过非BaseIndicator: {class_name}")
             else:
@@ -189,10 +197,10 @@ def batch_register_pattern_indicators():
 
 def batch_register_tool_indicators():
     """批量注册工具指标"""
-    print("\n=== 批量注册工具指标 ===")
+    print("\n=== 批量注册工具指标（CompleteIndicatorRegistry）===")
     
-    from indicators.indicator_registry import get_registry
-    registry = get_registry()
+    from indicators.complete_indicator_registry import complete_registry
+    registry = complete_registry
     
     tool_indicators = [
         ('indicators.fibonacci_tools', 'FibonacciTools', 'FIBONACCI_TOOLS', '斐波那契工具'),
@@ -209,9 +217,11 @@ def batch_register_tool_indicators():
             if indicator_class:
                 from indicators.base_indicator import BaseIndicator
                 if issubclass(indicator_class, BaseIndicator):
-                    registry.register_indicator(indicator_class, name=indicator_name, description=description)
-                    success_count += 1
-                    print(f"✅ 成功注册: {indicator_name}")
+                    if registry.register_indicator_safe(indicator_class, indicator_name, description):
+                        success_count += 1
+                        print(f"✅ 成功注册: {indicator_name}")
+                    else:
+                        print(f"❌ 注册失败: {indicator_name}")
                 else:
                     print(f"❌ 跳过非BaseIndicator: {class_name}")
             else:
@@ -230,18 +240,18 @@ def main():
     print("开始批量注册未注册指标...")
     
     # 获取注册前的指标数量
-    from indicators.indicator_registry import get_registry
-    registry = get_registry()
+    from indicators.complete_indicator_registry import complete_registry
+    registry = complete_registry
     before_count = len(registry.get_indicator_names())
     print(f"注册前指标数量: {before_count}")
-    
+
     # 批量注册各类指标
     core_success = batch_register_core_indicators()
     enhanced_success = batch_register_enhanced_indicators()
     composite_success = batch_register_composite_indicators()
     pattern_success = batch_register_pattern_indicators()
     tool_success = batch_register_tool_indicators()
-    
+
     # 获取注册后的指标数量
     after_count = len(registry.get_indicator_names())
     new_registered = after_count - before_count
