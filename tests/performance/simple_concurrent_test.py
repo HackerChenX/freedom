@@ -1,0 +1,178 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+"""
+简化的并发测试
+
+验证连接池基本功能
+"""
+
+import sys
+import os
+import time
+import threading
+import concurrent.futures
+from datetime import datetime
+
+# 添加项目根目录到路径
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+
+from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def test_single_connection():
+    """测试单个连接"""
+    logger.info("测试单个连接...")
+    
+    try:
+        pool = initialize_connection_pool(
+            host='localhost',
+            port=9000,
+            database='stock',
+            max_connections=10,
+            min_connections=2
+        )
+        
+        with pool.get_connection() as conn:
+            result = conn.execute("SELECT 1")
+            logger.info(f"单连接测试成功: {result}")
+            return True
+            
+    except Exception as e:
+        logger.error(f"单连接测试失败: {e}")
+        return False
+
+
+def test_concurrent_connections(concurrent_count=5):
+    """测试并发连接"""
+    logger.info(f"测试并发连接，并发数: {concurrent_count}")
+    
+    def execute_query(thread_id):
+        """执行查询的线程函数"""
+        try:
+            pool = get_connection_pool()
+            
+            with pool.get_connection() as conn:
+                start_time = time.time()
+                result = conn.execute("SELECT COUNT(*) FROM stock_info LIMIT 1")
+                duration = time.time() - start_time
+                
+                logger.info(f"线程 {thread_id} 查询成功，耗时: {duration:.3f}秒")
+                return {
+                    'thread_id': thread_id,
+                    'success': True,
+                    'duration': duration,
+                    'result': result
+                }
+                
+        except Exception as e:
+            logger.error(f"线程 {thread_id} 查询失败: {e}")
+            return {
+                'thread_id': thread_id,
+                'success': False,
+                'error': str(e)
+            }
+    
+    # 执行并发测试
+    results = []
+    start_time = time.time()
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=concurrent_count) as executor:
+        futures = [executor.submit(execute_query, i) for i in range(concurrent_count)]
+        
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            results.append(result)
+    
+    total_time = time.time() - start_time
+    
+    # 分析结果
+    successful_queries = sum(1 for r in results if r['success'])
+    success_rate = successful_queries / len(results)
+    
+    logger.info(f"并发测试完成，成功率: {success_rate:.2%}，总耗时: {total_time:.3f}秒")
+    
+    return {
+        'success_rate': success_rate,
+        'total_time': total_time,
+        'results': results
+    }
+
+
+def test_connection_pool_stats():
+    """测试连接池统计"""
+    logger.info("测试连接池统计...")
+    
+    try:
+        pool = get_connection_pool()
+        stats = pool.get_stats()
+        
+        logger.info(f"连接池统计: {stats}")
+        return stats
+        
+    except Exception as e:
+        logger.error(f"获取连接池统计失败: {e}")
+        return None
+
+
+def main():
+    """主函数"""
+    print("=" * 60)
+    print("简化并发测试")
+    print("验证连接池基本功能")
+    print("=" * 60)
+    print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print()
+    
+    # 1. 测试单个连接
+    print("步骤 1: 测试单个连接")
+    single_success = test_single_connection()
+    
+    if not single_success:
+        print("❌ 单连接测试失败，停止测试")
+        return 1
+    
+    print("✅ 单连接测试成功")
+    print()
+    
+    # 2. 测试并发连接
+    print("步骤 2: 测试并发连接")
+    concurrent_result = test_concurrent_connections(concurrent_count=5)
+    
+    if concurrent_result['success_rate'] >= 0.8:
+        print(f"✅ 并发测试成功，成功率: {concurrent_result['success_rate']:.2%}")
+    else:
+        print(f"⚠️ 并发测试部分成功，成功率: {concurrent_result['success_rate']:.2%}")
+    
+    print()
+    
+    # 3. 测试连接池统计
+    print("步骤 3: 连接池统计")
+    stats = test_connection_pool_stats()
+    
+    if stats:
+        print(f"📊 连接池统计:")
+        print(f"  - 总创建连接数: {stats.get('total_created', 0)}")
+        print(f"  - 总销毁连接数: {stats.get('total_destroyed', 0)}")
+        print(f"  - 当前活跃连接数: {stats.get('current_active', 0)}")
+        print(f"  - 总请求数: {stats.get('total_requests', 0)}")
+        print(f"  - 平均响应时间: {stats.get('avg_response_time', 0):.3f}秒")
+    
+    print()
+    
+    # 总结
+    if single_success and concurrent_result['success_rate'] >= 0.8:
+        print("🎉 连接池测试通过！")
+        return 0
+    else:
+        print("❌ 连接池测试未完全通过")
+        return 1
+
+
+if __name__ == '__main__':
+    exit_code = main()
+    sys.exit(exit_code)

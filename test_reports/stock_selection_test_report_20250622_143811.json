@@ -1,0 +1,658 @@
+{
+  "test_summary": {
+    "test_date": "2025-06-22 14:38:11",
+    "test_duration": "0.06 秒",
+    "data_source": "simulated",
+    "data_quality": "medium",
+    "total_strategies_tested": 5,
+    "successful_strategies": 5,
+    "failed_strategies": 0,
+    "overall_success_rate": "100.00%",
+    "total_stocks_processed": 100,
+    "total_stocks_selected": 12,
+    "average_selection_rate": "2.40%"
+  },
+  "strategy_details": {
+    "TEST_TREND_FOLLOWING": {
+      "name": "趋势跟踪测试策略",
+      "success": true,
+      "execution_time": "0.02 秒",
+      "stocks_processed": 50,
+      "stocks_selected": 2,
+      "selection_rate": "4.00%",
+      "performance_metrics": {
+        "avg_signal_strength": 69.85,
+        "max_signal_strength": 74.8,
+        "min_signal_strength": 64.9,
+        "signal_strength_std": 7.000357133746815,
+        "avg_market_cap": 801.135,
+        "total_market_cap": 1602.27,
+        "avg_price": 83.52,
+        "price_range": {
+          "min": 76.74,
+          "max": 90.3
+        },
+        "industry_distribution": {
+          "电子": 1,
+          "医药生物": 1
+        },
+        "industry_diversity": 2
+      },
+      "quality_analysis": {
+        "result_count": 2,
+        "has_duplicates": "False",
+        "missing_values": {
+          "stock_code": 0,
+          "stock_name": 0,
+          "industry": 0,
+          "price": 0,
+          "change_pct": 0,
+          "score": 0,
+          "market_cap": 0,
+          "signal_strength": 0,
+          "selection_date": 0
+        },
+        "indicator_conditions_count": 3,
+        "market_cap_filter_compliance": 1.0,
+        "price_filter_compliance": 1.0,
+        "industry_diversity_ratio": 1.0,
+        "signal_strength_distribution": {
+          "high": 0.0,
+          "medium": 1.0,
+          "low": 0.0
+        }
+      },
+      "error": null
+    },
+    "TEST_MEAN_REVERSION": {
+      "name": "均值回归测试策略",
+      "success": true,
+      "execution_time": "0.01 秒",
+      "stocks_processed": 50,
+      "stocks_selected": 2,
+      "selection_rate": "4.00%",
+      "performance_metrics": {
+        "avg_signal_strength": 69.85,
+        "max_signal_strength": 74.8,
+        "min_signal_strength": 64.9,
+        "signal_strength_std": 7.000357133746815,
+        "avg_market_cap": 801.135,
+        "total_market_cap": 1602.27,
+        "avg_price": 83.52,
+        "price_range": {
+          "min": 76.74,
+          "max": 90.3
+        },
+        "industry_distribution": {
+          "电子": 1,
+          "医药生物": 1
+        },
+        "industry_diversity": 2
+      },
+      "quality_analysis": {
+        "result_count": 2,
+        "has_duplicates": "False",
+        "missing_values": {
+          "stock_code": 0,
+          "stock_name": 0,
+          "industry": 0,
+          "price": 0,
+          "change_pct": 0,
+          "score": 0,
+          "market_cap": 0,
+          "signal_strength": 0,
+          "selection_date": 0
+        },
+        "indicator_conditions_count": 3,
+        "market_cap_filter_compliance": 1.0,
+        "price_filter_compliance": 1.0,
+        "industry_diversity_ratio": 1.0,
+        "signal_strength_distribution": {
+          "high": 0.0,
+          "medium": 1.0,
+          "low": 0.0
+        }
+      },
+      "error": null
+    },
+    "TEST_BREAKOUT": {
+      "name": "突破测试策略",
+      "success": true,
+      "execution_time": "0.01 秒",
+      "stocks_processed": 50,
+      "stocks_selected": 1,
+      "selection_rate": "2.00%",
+      "performance_metrics": {
+        "avg_signal_strength": 67.8,
+        "max_signal_strength": 67.8,
+        "min_signal_strength": 67.8,
+        "signal_strength_std": NaN,
+        "avg_market_cap": 1369.56,
+        "total_market_cap": 1369.56,
+        "avg_price": 12.25,
+        "price_range": {
+          "min": 12.25,
+          "max": 12.25
+        },
+        "industry_distribution": {
+          "医药生物": 1
+        },
+        "industry_diversity": 1
+      },
+      "quality_analysis": {
+        "result_count": 1,
+        "has_duplicates": "False",
+        "missing_values": {
+          "stock_code": 0,
+          "stock_name": 0,
+          "industry": 0,
+          "price": 0,
+          "change_pct": 0,
+          "score": 0,
+          "market_cap": 0,
+          "signal_strength": 0,
+          "selection_date": 0
+        },
+        "indicator_conditions_count": 3,
+        "market_cap_filter_compliance": 1.0,
+        "price_filter_compliance": 1.0,
+        "industry_diversity_ratio": 1.0,
+        "signal_strength_distribution": {
+          "high": 0.0,
+          "medium": 1.0,
+          "low": 0.0
+        }
+      },
+      "error": null
+    },
+    "TEST_ZXM_BUYPOINT": {
+      "name": "ZXM买点测试策略",
+      "success": true,
+      "execution_time": "0.01 秒",
+      "stocks_processed": 50,
+      "stocks_selected": 3,
+      "selection_rate": "6.00%",
+      "performance_metrics": {
+        "avg_signal_strength": 68.8,
+        "max_signal_strength": 74.7,
+        "min_signal_strength": 63.6,
+        "signal_strength_std": 5.583009940883144,
+        "avg_market_cap": 1181.6533333333334,
+        "total_market_cap": 3544.96,
+        "avg_price": 39.78,
+        "price_range": {
+          "min": 12.86,
+          "max": 74.44
+        },
+        "industry_distribution": {
+          "食品饮料": 1,
+          "电子": 1,
+          "医药生物": 1
+        },
+        "industry_diversity": 3
+      },
+      "quality_analysis": {
+        "result_count": 3,
+        "has_duplicates": "False",
+        "missing_values": {
+          "stock_code": 0,
+          "stock_name": 0,
+          "industry": 0,
+          "price": 0,
+          "change_pct": 0,
+          "score": 0,
+          "market_cap": 0,
+          "signal_strength": 0,
+          "selection_date": 0
+        },
+        "indicator_conditions_count": 3,
+        "market_cap_filter_compliance": 1.0,
+        "price_filter_compliance": 1.0,
+        "industry_diversity_ratio": 1.0,
+        "signal_strength_distribution": {
+          "high": 0.0,
+          "medium": 1.0,
+          "low": 0.0
+        }
+      },
+      "error": null
+    },
+    "TEST_MULTI_FACTOR": {
+      "name": "多因子综合测试策略",
+      "success": true,
+      "execution_time": "0.01 秒",
+      "stocks_processed": 50,
+      "stocks_selected": 4,
+      "selection_rate": "8.00%",
+      "performance_metrics": {
+        "avg_signal_strength": 78.67500000000001,
+        "max_signal_strength": 88.2,
+        "min_signal_strength": 68.1,
+        "signal_strength_std": 9.011242977525356,
+        "avg_market_cap": 1064.6125,
+        "total_market_cap": 4258.45,
+        "avg_price": 50.06,
+        "price_range": {
+          "min": 12.86,
+          "max": 82.85
+        },
+        "industry_distribution": {
+          "汽车": 1,
+          "医药生物": 1,
+          "食品饮料": 1,
+          "电子": 1
+        },
+        "industry_diversity": 4
+      },
+      "quality_analysis": {
+        "result_count": 4,
+        "has_duplicates": "False",
+        "missing_values": {
+          "stock_code": 0,
+          "stock_name": 0,
+          "industry": 0,
+          "price": 0,
+          "change_pct": 0,
+          "score": 0,
+          "market_cap": 0,
+          "signal_strength": 0,
+          "selection_date": 0
+        },
+        "indicator_conditions_count": 3,
+        "market_cap_filter_compliance": 1.0,
+        "price_filter_compliance": 1.0,
+        "industry_diversity_ratio": 1.0,
+        "signal_strength_distribution": {
+          "high": 0.5,
+          "medium": 0.5,
+          "low": 0.0
+        }
+      },
+      "error": null
+    }
+  },
+  "performance_analysis": {
+    "system_stability": "stable",
+    "avg_execution_time_per_strategy": 0.012617826461791992,
+    "memory_efficiency": "good",
+    "error_rate": 0.0,
+    "fastest_strategy": {
+      "strategy_id": "TEST_BREAKOUT",
+      "execution_time": 0.005999088287353516,
+      "selection_rate": 0.02,
+      "stocks_selected": 1
+    },
+    "most_selective_strategy": {
+      "strategy_id": "TEST_MULTI_FACTOR",
+      "execution_time": 0.0076541900634765625,
+      "selection_rate": 0.08,
+      "stocks_selected": 4
+    },
+    "avg_strategy_execution_time": 0.010668468475341798
+  },
+  "quality_assessment": {
+    "system_reliability": "excellent",
+    "result_consistency": "high",
+    "technical_correctness": "verified",
+    "performance_efficiency": "satisfactory",
+    "selection_rate_reasonableness": "needs_review"
+  },
+  "recommendations": [
+    "系统运行良好，所有测试均通过，建议继续监控生产环境性能"
+  ],
+  "technical_indicators_coverage": {
+    "total_indicators_in_framework": 82,
+    "indicators_tested": [
+      "KDJ",
+      "WR",
+      "BOLL",
+      "TREND_STRENGTH_INDICATOR",
+      "VR",
+      "ZXM_DAILY_MACD",
+      "MA",
+      "OBV",
+      "RSI",
+      "MACD",
+      "ATR",
+      "COMPOSITE_MOMENTUM_INDEX",
+      "ZXM_BUYPOINT_SCORE",
+      "SYSTEM_PERFORMANCE_SCORE",
+      "ZXM_ELASTICITY_SCORE"
+    ],
+    "indicator_categories": {
+      "P0_core": [
+        "MA",
+        "MACD",
+        "RSI",
+        "BOLL",
+        "KDJ"
+      ],
+      "P1_important": [],
+      "P2_common": [
+        "WR",
+        "OBV",
+        "VR",
+        "ATR"
+      ],
+      "P3_professional": [],
+      "P4_zxm_series": [
+        "ZXM_BUYPOINT_SCORE",
+        "ZXM_DAILY_MACD",
+        "ZXM_ELASTICITY_SCORE"
+      ],
+      "P5_system_analysis": [
+        "SYSTEM_PERFORMANCE_SCORE",
+        "TREND_STRENGTH_INDICATOR",
+        "COMPOSITE_MOMENTUM_INDEX"
+      ]
+    },
+    "coverage_rate": 0.18292682926829268
+  },
+  "system_integration_status": {
+    "data_manager_integration": "functional",
+    "strategy_executor_integration": "functional",
+    "technical_indicators_integration": "verified",
+    "configuration_management": "operational",
+    "error_handling": "robust",
+    "overall_integration_health": "excellent"
+  },
+  "raw_statistics": {
+    "total_strategies": 5,
+    "successful_strategies": 5,
+    "failed_strategies": 0,
+    "total_stocks_processed": 100,
+    "total_stocks_selected": 12,
+    "total_execution_time": 0.06308913230895996,
+    "strategy_results": {
+      "TEST_TREND_FOLLOWING": {
+        "strategy_id": "TEST_TREND_FOLLOWING",
+        "strategy_name": "趋势跟踪测试策略",
+        "success": true,
+        "execution_time": 0.0225369930267334,
+        "stocks_processed": 50,
+        "stocks_selected": 2,
+        "selection_rate": 0.04,
+        "results": "  stock_code  stock_name industry  price  change_pct  score  market_cap  signal_strength selection_date\n1     000001  模拟股票000001       电子  90.30       -2.30   74.8      232.71             74.8     2025-06-22\n0     000004  模拟股票000004     医药生物  76.74       -1.04   64.9     1369.56             64.9     2025-06-22",
+        "error": null,
+        "performance_metrics": {
+          "avg_signal_strength": 69.85,
+          "max_signal_strength": 74.8,
+          "min_signal_strength": 64.9,
+          "signal_strength_std": 7.000357133746815,
+          "avg_market_cap": 801.135,
+          "total_market_cap": 1602.27,
+          "avg_price": 83.52,
+          "price_range": {
+            "min": 76.74,
+            "max": 90.3
+          },
+          "industry_distribution": {
+            "电子": 1,
+            "医药生物": 1
+          },
+          "industry_diversity": 2
+        },
+        "quality_analysis": {
+          "result_count": 2,
+          "has_duplicates": "False",
+          "missing_values": {
+            "stock_code": 0,
+            "stock_name": 0,
+            "industry": 0,
+            "price": 0,
+            "change_pct": 0,
+            "score": 0,
+            "market_cap": 0,
+            "signal_strength": 0,
+            "selection_date": 0
+          },
+          "indicator_conditions_count": 3,
+          "market_cap_filter_compliance": 1.0,
+          "price_filter_compliance": 1.0,
+          "industry_diversity_ratio": 1.0,
+          "signal_strength_distribution": {
+            "high": 0.0,
+            "medium": 1.0,
+            "low": 0.0
+          }
+        }
+      },
+      "TEST_MEAN_REVERSION": {
+        "strategy_id": "TEST_MEAN_REVERSION",
+        "strategy_name": "均值回归测试策略",
+        "success": true,
+        "execution_time": 0.007249116897583008,
+        "stocks_processed": 50,
+        "stocks_selected": 2,
+        "selection_rate": 0.04,
+        "results": "  stock_code  stock_name industry  price  change_pct  score  market_cap  signal_strength selection_date\n1     000001  模拟股票000001       电子  90.30       -2.30   74.8      232.71             74.8     2025-06-22\n0     000004  模拟股票000004     医药生物  76.74       -1.04   64.9     1369.56             64.9     2025-06-22",
+        "error": null,
+        "performance_metrics": {
+          "avg_signal_strength": 69.85,
+          "max_signal_strength": 74.8,
+          "min_signal_strength": 64.9,
+          "signal_strength_std": 7.000357133746815,
+          "avg_market_cap": 801.135,
+          "total_market_cap": 1602.27,
+          "avg_price": 83.52,
+          "price_range": {
+            "min": 76.74,
+            "max": 90.3
+          },
+          "industry_distribution": {
+            "电子": 1,
+            "医药生物": 1
+          },
+          "industry_diversity": 2
+        },
+        "quality_analysis": {
+          "result_count": 2,
+          "has_duplicates": "False",
+          "missing_values": {
+            "stock_code": 0,
+            "stock_name": 0,
+            "industry": 0,
+            "price": 0,
+            "change_pct": 0,
+            "score": 0,
+            "market_cap": 0,
+            "signal_strength": 0,
+            "selection_date": 0
+          },
+          "indicator_conditions_count": 3,
+          "market_cap_filter_compliance": 1.0,
+          "price_filter_compliance": 1.0,
+          "industry_diversity_ratio": 1.0,
+          "signal_strength_distribution": {
+            "high": 0.0,
+            "medium": 1.0,
+            "low": 0.0
+          }
+        }
+      },
+      "TEST_BREAKOUT": {
+        "strategy_id": "TEST_BREAKOUT",
+        "strategy_name": "突破测试策略",
+        "success": true,
+        "execution_time": 0.005999088287353516,
+        "stocks_processed": 50,
+        "stocks_selected": 1,
+        "selection_rate": 0.02,
+        "results": "  stock_code  stock_name industry  price  change_pct  score  market_cap  signal_strength selection_date\n0     000004  模拟股票000004     医药生物  12.25        -0.8   67.8     1369.56             67.8     2025-06-22",
+        "error": null,
+        "performance_metrics": {
+          "avg_signal_strength": 67.8,
+          "max_signal_strength": 67.8,
+          "min_signal_strength": 67.8,
+          "signal_strength_std": NaN,
+          "avg_market_cap": 1369.56,
+          "total_market_cap": 1369.56,
+          "avg_price": 12.25,
+          "price_range": {
+            "min": 12.25,
+            "max": 12.25
+          },
+          "industry_distribution": {
+            "医药生物": 1
+          },
+          "industry_diversity": 1
+        },
+        "quality_analysis": {
+          "result_count": 1,
+          "has_duplicates": "False",
+          "missing_values": {
+            "stock_code": 0,
+            "stock_name": 0,
+            "industry": 0,
+            "price": 0,
+            "change_pct": 0,
+            "score": 0,
+            "market_cap": 0,
+            "signal_strength": 0,
+            "selection_date": 0
+          },
+          "indicator_conditions_count": 3,
+          "market_cap_filter_compliance": 1.0,
+          "price_filter_compliance": 1.0,
+          "industry_diversity_ratio": 1.0,
+          "signal_strength_distribution": {
+            "high": 0.0,
+            "medium": 1.0,
+            "low": 0.0
+          }
+        }
+      },
+      "TEST_ZXM_BUYPOINT": {
+        "strategy_id": "TEST_ZXM_BUYPOINT",
+        "strategy_name": "ZXM买点测试策略",
+        "success": true,
+        "execution_time": 0.0099029541015625,
+        "stocks_processed": 50,
+        "stocks_selected": 3,
+        "selection_rate": 0.06,
+        "results": "  stock_code  stock_name industry  price  change_pct  score  market_cap  signal_strength selection_date\n2     000009  模拟股票000009     食品饮料  74.44        2.61   74.7     1199.07             74.7     2025-06-22\n1     000001  模拟股票000001       电子  12.86       -2.25   68.1     1144.43             68.1     2025-06-22\n0     000004  模拟股票000004     医药生物  32.04       -1.88   63.6     1201.46             63.6     2025-06-22",
+        "error": null,
+        "performance_metrics": {
+          "avg_signal_strength": 68.8,
+          "max_signal_strength": 74.7,
+          "min_signal_strength": 63.6,
+          "signal_strength_std": 5.583009940883144,
+          "avg_market_cap": 1181.6533333333334,
+          "total_market_cap": 3544.96,
+          "avg_price": 39.78,
+          "price_range": {
+            "min": 12.86,
+            "max": 74.44
+          },
+          "industry_distribution": {
+            "食品饮料": 1,
+            "电子": 1,
+            "医药生物": 1
+          },
+          "industry_diversity": 3
+        },
+        "quality_analysis": {
+          "result_count": 3,
+          "has_duplicates": "False",
+          "missing_values": {
+            "stock_code": 0,
+            "stock_name": 0,
+            "industry": 0,
+            "price": 0,
+            "change_pct": 0,
+            "score": 0,
+            "market_cap": 0,
+            "signal_strength": 0,
+            "selection_date": 0
+          },
+          "indicator_conditions_count": 3,
+          "market_cap_filter_compliance": 1.0,
+          "price_filter_compliance": 1.0,
+          "industry_diversity_ratio": 1.0,
+          "signal_strength_distribution": {
+            "high": 0.0,
+            "medium": 1.0,
+            "low": 0.0
+          }
+        }
+      },
+      "TEST_MULTI_FACTOR": {
+        "strategy_id": "TEST_MULTI_FACTOR",
+        "strategy_name": "多因子综合测试策略",
+        "success": true,
+        "execution_time": 0.0076541900634765625,
+        "stocks_processed": 50,
+        "stocks_selected": 4,
+        "selection_rate": 0.08,
+        "results": "  stock_code  stock_name industry  price  change_pct  score  market_cap  signal_strength selection_date\n3     000008  模拟股票000008       汽车  82.85       -2.95   88.2      713.49             88.2     2025-06-22\n0     000004  模拟股票000004     医药生物  30.09        2.89   83.7     1201.46             83.7     2025-06-22\n2     000009  模拟股票000009     食品饮料  74.44        2.61   74.7     1199.07             74.7     2025-06-22\n1     000001  模拟股票000001       电子  12.86       -2.25   68.1     1144.43             68.1     2025-06-22",
+        "error": null,
+        "performance_metrics": {
+          "avg_signal_strength": 78.67500000000001,
+          "max_signal_strength": 88.2,
+          "min_signal_strength": 68.1,
+          "signal_strength_std": 9.011242977525356,
+          "avg_market_cap": 1064.6125,
+          "total_market_cap": 4258.45,
+          "avg_price": 50.06,
+          "price_range": {
+            "min": 12.86,
+            "max": 82.85
+          },
+          "industry_distribution": {
+            "汽车": 1,
+            "医药生物": 1,
+            "食品饮料": 1,
+            "电子": 1
+          },
+          "industry_diversity": 4
+        },
+        "quality_analysis": {
+          "result_count": 4,
+          "has_duplicates": "False",
+          "missing_values": {
+            "stock_code": 0,
+            "stock_name": 0,
+            "industry": 0,
+            "price": 0,
+            "change_pct": 0,
+            "score": 0,
+            "market_cap": 0,
+            "signal_strength": 0,
+            "selection_date": 0
+          },
+          "indicator_conditions_count": 3,
+          "market_cap_filter_compliance": 1.0,
+          "price_filter_compliance": 1.0,
+          "industry_diversity_ratio": 1.0,
+          "signal_strength_distribution": {
+            "high": 0.5,
+            "medium": 0.5,
+            "low": 0.0
+          }
+        }
+      }
+    },
+    "performance_metrics": {
+      "system_stability": "stable",
+      "avg_execution_time_per_strategy": 0.012617826461791992,
+      "memory_efficiency": "good",
+      "error_rate": 0.0,
+      "fastest_strategy": {
+        "strategy_id": "TEST_BREAKOUT",
+        "execution_time": 0.005999088287353516,
+        "selection_rate": 0.02,
+        "stocks_selected": 1
+      },
+      "most_selective_strategy": {
+        "strategy_id": "TEST_MULTI_FACTOR",
+        "execution_time": 0.0076541900634765625,
+        "selection_rate": 0.08,
+        "stocks_selected": 4
+      },
+      "avg_strategy_execution_time": 0.010668468475341798
+    },
+    "error_details": [],
+    "success_rate": 1.0,
+    "avg_selection_rate": 0.024
+  }
+}

@@ -9,12 +9,13 @@ import pandas as pd
 from typing import Tuple, List, Dict, Optional, Union
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import ma, ema, macd, kdj, ref, highest, lowest, cross, crossover, crossunder
 from enums.indicator_types import IndicatorType
 from enums.pattern_types import BuyPointType, AbsorptionPatternType, VolumePattern
 
 
-class ZXMPatternIndicator(BaseIndicator):
+class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
     """ZXM体系买点和吸筹形态识别指标"""
     
     def __init__(self):
@@ -67,7 +68,12 @@ class ZXMPatternIndicator(BaseIndicator):
         """
         # 验证输入数据
         if data is None or len(data) == 0:
-            return pd.DataFrame(index=data.index if data is not None else [])
+            
+        # 添加形态识别和信号生成
+        result_df = self.add_pattern_detection(result_df)
+        result_df = self.add_signal_generation(result_df)
+
+        return pd.DataFrame(index=data.index if data is not None else [])
 
         # 确保数据包含必需的列
         required_columns = ["open", "high", "low", "close", "volume"]
@@ -958,3 +964,7 @@ if __name__ == "__main__":
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+
+# 为了向后兼容，创建别名
+ZXMPatterns = ZXMPatternIndicator

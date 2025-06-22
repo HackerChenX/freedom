@@ -1,0 +1,91 @@
+{
+  "test_date": "2025-06-22 19:06:26",
+  "adapter_tests": {
+    "single_conversion_test": {
+      "success": true,
+      "conversion_time": 0.11613798141479492,
+      "has_required_fields": true,
+      "score_range_valid": true
+    },
+    "batch_conversion_test": {
+      "success": true,
+      "conversion_time": 0.23639917373657227,
+      "input_count": 3,
+      "output_count": 3,
+      "conversion_rate": 1.0
+    },
+    "error_handling_test": {
+      "success": true,
+      "handled_errors": 4,
+      "proper_error_handling": true
+    },
+    "data_validation_test": {}
+  },
+  "format_compatibility_tests": {
+    "required_fields_test": {
+      "success": true,
+      "required_fields": [
+        "stock_code",
+        "stock_name",
+        "industry",
+        "price",
+        "change_pct",
+        "score",
+        "match_details",
+        "selection_date"
+      ],
+      "missing_fields": [],
+      "completeness": 1.0
+    },
+    "data_types_test": {
+      "success": true,
+      "type_errors": [],
+      "type_accuracy": 1.0
+    },
+    "score_consistency_test": {
+      "success": true,
+      "original_score": 75.0,
+      "converted_score": 87.0,
+      "score_valid": true,
+      "score_reasonable": true
+    },
+    "indicator_mapping_test": {
+      "success": true,
+      "passing_indicators_count": 4,
+      "mapped_indicators": true,
+      "known_indicators": true
+    }
+  },
+  "integration_workflow_tests": {
+    "end_to_end_test": {
+      "success": true,
+      "total_time": 0.0034029483795166016,
+      "input_count": 2,
+      "output_count": 2,
+      "workflow_complete": true
+    },
+    "strategy_compatibility_test": {
+      "success": true,
+      "has_score": true,
+      "has_match_details": true,
+      "score_valid": true,
+      "sample_score": 87.0
+    },
+    "performance_comparison_test": {}
+  },
+  "overall_assessment": {
+    "integration_success": true,
+    "compatibility_score": 100.0,
+    "adapter_effectiveness": "excellent",
+    "production_ready": true,
+    "issues_found": [],
+    "recommendations": [
+      "集成测试完全通过，适配器可以投入生产使用"
+    ],
+    "key_metrics": {
+      "conversion_rate": 1.0,
+      "field_completeness": 1.0,
+      "type_accuracy": 1.0
+    }
+  }
+}

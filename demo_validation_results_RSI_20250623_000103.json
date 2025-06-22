@@ -1,0 +1,103 @@
+{
+  "indicator": "RSI",
+  "total_patterns": 5,
+  "successful_patterns": 3,
+  "failed_patterns": 2,
+  "pattern_results": {
+    "RSI_OVERBOUGHT": {
+      "indicator": "RSI",
+      "pattern_name": "RSI_OVERBOUGHT",
+      "expected_patterns": [
+        "超买",
+        "高位",
+        "overbought"
+      ],
+      "identified_patterns": [
+        "RSI超买",
+        "高位"
+      ],
+      "match_score": 0.6666666666666666,
+      "is_successful": true,
+      "price_trend": "29.83%",
+      "data_points": 50,
+      "price_range": "100.00 - 131.59",
+      "analysis_method": "simplified_simulation"
+    },
+    "RSI_OVERSOLD": {
+      "indicator": "RSI",
+      "pattern_name": "RSI_OVERSOLD",
+      "expected_patterns": [
+        "超卖",
+        "低位",
+        "oversold"
+      ],
+      "identified_patterns": [
+        "RSI超卖",
+        "低位"
+      ],
+      "match_score": 0.6666666666666666,
+      "is_successful": true,
+      "price_trend": "-24.18%",
+      "data_points": 40,
+      "price_range": "71.39 - 100.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "RSI_GOLDEN_CROSS": {
+      "indicator": "RSI",
+      "pattern_name": "RSI_GOLDEN_CROSS",
+      "expected_patterns": [
+        "金叉",
+        "上升",
+        "突破"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "-15.00%",
+      "data_points": 50,
+      "price_range": "80.00 - 100.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "RSI_DEATH_CROSS": {
+      "indicator": "RSI",
+      "pattern_name": "RSI_DEATH_CROSS",
+      "expected_patterns": [
+        "死叉",
+        "下降",
+        "跌破"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "5.00%",
+      "data_points": 50,
+      "price_range": "100.00 - 120.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "RSI_DIVERGENCE": {
+      "indicator": "RSI",
+      "pattern_name": "RSI_DIVERGENCE",
+      "expected_patterns": [
+        "背离",
+        "divergence"
+      ],
+      "identified_patterns": [
+        "价格背离"
+      ],
+      "match_score": 0.5,
+      "is_successful": true,
+      "price_trend": "18.00%",
+      "data_points": 50,
+      "price_range": "100.00 - 119.86",
+      "analysis_method": "simplified_simulation"
+    }
+  },
+  "summary": {
+    "success_rate": "60.00%",
+    "average_score": "0.367",
+    "recommendation": "指标形态识别表现良好，但仍有改进空间"
+  },
+  "timestamp": "2025-06-23T00:01:03.304282",
+  "success_rate": 0.6,
+  "average_score": 0.36666666666666664
+}

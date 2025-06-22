@@ -4,13 +4,14 @@ from typing import Optional, Dict, Any, Tuple, List
 import logging
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.technical_utils import find_peaks_and_troughs
 
 logger = logging.getLogger(__name__)
 from utils.indicator_utils import crossover, crossunder
 
 
-class EnhancedCCI(BaseIndicator):
+class EnhancedCCI(BaseIndicator, PatternSignalMixin):
     """
     增强型CCI(商品通道指数)指标
     
@@ -166,6 +167,11 @@ class EnhancedCCI(BaseIndicator):
         # 计算多周期CCI结果
         self._calculate_multi_period_cci(data)
         
+        
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
     
     def _calculate_cci(self, data: pd.DataFrame, period: int) -> pd.Series:

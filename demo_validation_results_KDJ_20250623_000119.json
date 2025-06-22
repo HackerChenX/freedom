@@ -1,0 +1,98 @@
+{
+  "indicator": "KDJ",
+  "total_patterns": 5,
+  "successful_patterns": 2,
+  "failed_patterns": 3,
+  "pattern_results": {
+    "KDJ_GOLDEN_CROSS": {
+      "indicator": "KDJ",
+      "pattern_name": "KDJ_GOLDEN_CROSS",
+      "expected_patterns": [
+        "金叉",
+        "K线上穿"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "-12.00%",
+      "data_points": 45,
+      "price_range": "85.00 - 100.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "KDJ_DEATH_CROSS": {
+      "indicator": "KDJ",
+      "pattern_name": "KDJ_DEATH_CROSS",
+      "expected_patterns": [
+        "死叉",
+        "K线下穿"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "8.00%",
+      "data_points": 45,
+      "price_range": "100.00 - 115.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "KDJ_OVERBOUGHT": {
+      "indicator": "KDJ",
+      "pattern_name": "KDJ_OVERBOUGHT",
+      "expected_patterns": [
+        "超买",
+        "高位"
+      ],
+      "identified_patterns": [
+        "RSI超买",
+        "高位"
+      ],
+      "match_score": 1.0,
+      "is_successful": true,
+      "price_trend": "25.71%",
+      "data_points": 50,
+      "price_range": "100.00 - 126.39",
+      "analysis_method": "simplified_simulation"
+    },
+    "KDJ_OVERSOLD": {
+      "indicator": "KDJ",
+      "pattern_name": "KDJ_OVERSOLD",
+      "expected_patterns": [
+        "超卖",
+        "低位"
+      ],
+      "identified_patterns": [
+        "RSI超卖",
+        "低位"
+      ],
+      "match_score": 1.0,
+      "is_successful": true,
+      "price_trend": "-20.86%",
+      "data_points": 45,
+      "price_range": "74.05 - 100.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "KDJ_BLUNT": {
+      "indicator": "KDJ",
+      "pattern_name": "KDJ_BLUNT",
+      "expected_patterns": [
+        "钝化",
+        "高位钝化",
+        "低位钝化"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "19.45%",
+      "data_points": 50,
+      "price_range": "100.00 - 122.21",
+      "analysis_method": "simplified_simulation"
+    }
+  },
+  "summary": {
+    "success_rate": "40.00%",
+    "average_score": "0.400",
+    "recommendation": "指标形态识别表现一般，建议检查算法实现"
+  },
+  "timestamp": "2025-06-23T00:01:19.497387",
+  "success_rate": 0.4,
+  "average_score": 0.4
+}

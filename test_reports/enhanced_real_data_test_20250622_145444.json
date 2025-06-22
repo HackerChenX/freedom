@@ -1,0 +1,113 @@
+{
+  "test_date": "2025-06-22 14:54:43",
+  "database_performance": {
+    "stock_limit": 1000,
+    "queries": [
+      {
+        "query_type": "stock_list",
+        "duration": 0.1046762466430664,
+        "records": 1000,
+        "query": "SELECT DISTINCT code, name FROM stock_info"
+      },
+      {
+        "query_type": "recent_data",
+        "duration": 0.20273900032043457,
+        "records": 79268,
+        "query": "SELECT OHLCV data for recent period"
+      },
+      {
+        "query_type": "aggregation",
+        "duration": 0.08206510543823242,
+        "records": 200,
+        "query": "SELECT aggregated statistics"
+      },
+      {
+        "query_type": "complex_analysis",
+        "duration": 0.0672450065612793,
+        "records": 10000,
+        "query": "SELECT with window functions and calculations"
+      }
+    ],
+    "total_time": 0.6826412677764893,
+    "total_records": 90468,
+    "avg_query_time": 0.11418133974075317,
+    "optimization_suggestions": [],
+    "queries_per_second": 5.8595930085341426,
+    "records_per_second": 132526.4150740167
+  },
+  "concurrent_performance": {
+    "concurrent_count": 5,
+    "individual_results": [
+      {
+        "query_id": 2,
+        "success": false,
+        "duration": 0.0002238750457763672,
+        "error": "Attempt to execute concurrent queries within the same session.Please use a separate client instance per thread/process.",
+        "thread_id": 123145374212096
+      },
+      {
+        "query_id": 3,
+        "success": false,
+        "duration": 0.00011801719665527344,
+        "error": "Attempt to execute concurrent queries within the same session.Please use a separate client instance per thread/process.",
+        "thread_id": 123145374212096
+      },
+      {
+        "query_id": 1,
+        "success": false,
+        "duration": 0.00018095970153808594,
+        "error": "Attempt to execute concurrent queries within the same session.Please use a separate client instance per thread/process.",
+        "thread_id": 123145357422592
+      },
+      {
+        "query_id": 4,
+        "success": false,
+        "duration": 0.00012803077697753906,
+        "error": "Attempt to execute concurrent queries within the same session.Please use a separate client instance per thread/process.",
+        "thread_id": 123145374212096
+      },
+      {
+        "query_id": 0,
+        "success": true,
+        "duration": 0.04289102554321289,
+        "records": 100,
+        "thread_id": 123145340633088
+      }
+    ],
+    "total_time": 0.044126033782958984,
+    "success_count": 1,
+    "error_count": 4,
+    "avg_response_time": 0.04289102554321289,
+    "max_response_time": 0.04289102554321289,
+    "min_response_time": 0.04289102554321289,
+    "success_rate": 0.2
+  },
+  "system_metrics": {
+    "initial_memory_percent": 64.5,
+    "final_memory_percent": 64.6,
+    "memory_increase": 0.09999999999999432,
+    "initial_cpu_percent": 19.7,
+    "final_cpu_percent": 41.9,
+    "cpu_increase": 22.2
+  },
+  "overall_assessment": {
+    "database_grade": "A",
+    "concurrent_grade": "D",
+    "system_grade": "A",
+    "overall_grade": "B",
+    "production_ready": true
+  },
+  "recommendations": [
+    {
+      "category": "concurrent_optimization",
+      "priority": "medium",
+      "title": "并发性能优化",
+      "suggestions": [
+        "优化数据库连接池配置",
+        "增加数据库连接数限制",
+        "实施查询队列管理",
+        "考虑读写分离架构"
+      ]
+    }
+  ]
+}

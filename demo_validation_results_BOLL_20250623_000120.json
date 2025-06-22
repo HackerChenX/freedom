@@ -1,0 +1,76 @@
+{
+  "indicator": "BOLL",
+  "total_patterns": 5,
+  "successful_patterns": 0,
+  "failed_patterns": 5,
+  "pattern_results": {
+    "BOLL_UPPER_BREAKOUT": {
+      "indicator": "BOLL",
+      "pattern_name": "BOLL_UPPER_BREAKOUT",
+      "expected_patterns": [],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "7.17%",
+      "data_points": 40,
+      "price_range": "96.99 - 108.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "BOLL_LOWER_BREAKOUT": {
+      "indicator": "BOLL",
+      "pattern_name": "BOLL_LOWER_BREAKOUT",
+      "expected_patterns": [],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "-8.51%",
+      "data_points": 40,
+      "price_range": "92.00 - 102.25",
+      "analysis_method": "simplified_simulation"
+    },
+    "BOLL_SQUEEZE": {
+      "indicator": "BOLL",
+      "pattern_name": "BOLL_SQUEEZE",
+      "expected_patterns": [],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "0.25%",
+      "data_points": 40,
+      "price_range": "99.44 - 101.41",
+      "analysis_method": "simplified_simulation"
+    },
+    "BOLL_EXPANSION": {
+      "indicator": "BOLL",
+      "pattern_name": "BOLL_EXPANSION",
+      "expected_patterns": [],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "1.58%",
+      "data_points": 40,
+      "price_range": "92.29 - 106.19",
+      "analysis_method": "simplified_simulation"
+    },
+    "BOLL_MIDDLE_SUPPORT": {
+      "indicator": "BOLL",
+      "pattern_name": "BOLL_MIDDLE_SUPPORT",
+      "expected_patterns": [],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "2.00%",
+      "data_points": 40,
+      "price_range": "95.00 - 102.00",
+      "analysis_method": "simplified_simulation"
+    }
+  },
+  "summary": {
+    "success_rate": "0.00%",
+    "average_score": "0.000",
+    "recommendation": "指标形态识别表现较差，需要重点优化"
+  },
+  "timestamp": "2025-06-23T00:01:20.651795",
+  "success_rate": 0.0,
+  "average_score": 0.0
+}

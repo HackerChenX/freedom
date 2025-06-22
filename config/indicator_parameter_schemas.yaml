@@ -1,0 +1,1803 @@
+AD:
+  description: AD技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    AD_PATTERN:
+      description: AD形态
+      type: boolean
+  signals:
+    AD_SIGNAL:
+      description: AD信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ADAPTER:
+  description: ADAPTER技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ADAPTER_PATTERN:
+      description: ADAPTER形态
+      type: boolean
+  signals:
+    ADAPTER_SIGNAL:
+      description: ADAPTER信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ADX:
+  description: ADX技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 50
+      minimum: 1
+      type: integer
+  patterns:
+    ADX_PATTERN:
+      description: ADX形态
+      type: boolean
+  signals:
+    ADX_SIGNAL:
+      description: ADX信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+AROON:
+  description: AROON技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 50
+      minimum: 1
+      type: integer
+  patterns:
+    AROON_PATTERN:
+      description: AROON形态
+      type: boolean
+  signals:
+    AROON_SIGNAL:
+      description: AROON信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ATR:
+  description: ATR技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ATR_PATTERN:
+      description: ATR形态
+      type: boolean
+  signals:
+    ATR_SIGNAL:
+      description: ATR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+BIAS:
+  description: BIAS技术指标
+  parameters:
+    ma_type:
+      default: SMA
+      enum:
+      - SMA
+      - EMA
+      - WMA
+      type: string
+    period:
+      default: 6
+      maximum: 50
+      minimum: 1
+      type: integer
+  patterns:
+    BIAS_PATTERN:
+      description: BIAS形态
+      type: boolean
+  signals:
+    BIAS_SIGNAL:
+      description: BIAS信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+BOLL:
+  description: BOLL技术指标
+  parameters:
+    period:
+      default: 20
+      maximum: 100
+      minimum: 1
+      type: integer
+    std_dev:
+      default: 2.0
+      maximum: 5.0
+      minimum: 0.5
+      type: number
+  patterns:
+    BOLL_PATTERN:
+      description: BOLL形态
+      type: boolean
+  signals:
+    BOLL_SIGNAL:
+      description: BOLL信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+BOLL_SCORE:
+  description: BOLL_SCORE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    BOLL_SCORE_PATTERN:
+      description: BOLL_SCORE形态
+      type: boolean
+  signals:
+    BOLL_SCORE_SIGNAL:
+      description: BOLL_SCORE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+CCI:
+  description: CCI技术指标
+  parameters:
+    constant:
+      default: 0.015
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    period:
+      default: 20
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    CCI_PATTERN:
+      description: CCI形态
+      type: boolean
+  signals:
+    CCI_SIGNAL:
+      description: CCI信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+CHAIKIN:
+  description: CHAIKIN技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    CHAIKIN_PATTERN:
+      description: CHAIKIN形态
+      type: boolean
+  signals:
+    CHAIKIN_SIGNAL:
+      description: CHAIKIN信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+CHIP_DISTRIBUTION:
+  description: CHIP_DISTRIBUTION技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    CHIP_DISTRIBUTION_PATTERN:
+      description: CHIP_DISTRIBUTION形态
+      type: boolean
+  signals:
+    CHIP_DISTRIBUTION_SIGNAL:
+      description: CHIP_DISTRIBUTION信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+CMO:
+  description: CMO技术指标
+  parameters:
+    overbought:
+      default: 50.0
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    oversold:
+      default: -50.0
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    CMO_PATTERN:
+      description: CMO形态
+      type: boolean
+  signals:
+    CMO_SIGNAL:
+      description: CMO信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+COMPOSITE:
+  description: COMPOSITE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    COMPOSITE_PATTERN:
+      description: COMPOSITE形态
+      type: boolean
+  signals:
+    COMPOSITE_SIGNAL:
+      description: COMPOSITE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+COMPOSITE_INDICATOR:
+  description: COMPOSITE_INDICATOR技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    COMPOSITE_INDICATOR_PATTERN:
+      description: COMPOSITE_INDICATOR形态
+      type: boolean
+  signals:
+    COMPOSITE_INDICATOR_SIGNAL:
+      description: COMPOSITE_INDICATOR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+DIVERGENCE:
+  description: DIVERGENCE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    DIVERGENCE_PATTERN:
+      description: DIVERGENCE形态
+      type: boolean
+  signals:
+    DIVERGENCE_SIGNAL:
+      description: DIVERGENCE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+DMA:
+  description: DMA技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    DMA_PATTERN:
+      description: DMA形态
+      type: boolean
+  signals:
+    DMA_SIGNAL:
+      description: DMA信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+DMI:
+  description: DMI技术指标
+  parameters:
+    adx_threshold:
+      default: 25.0
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    DMI_PATTERN:
+      description: DMI形态
+      type: boolean
+  signals:
+    DMI_SIGNAL:
+      description: DMI信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ELLIOTT_WAVE:
+  description: ELLIOTT_WAVE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ELLIOTT_WAVE_PATTERN:
+      description: ELLIOTT_WAVE形态
+      type: boolean
+  signals:
+    ELLIOTT_WAVE_SIGNAL:
+      description: ELLIOTT_WAVE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+EMA:
+  description: 指数移动平均线指标
+  parameters:
+    period:
+      default: 12
+      maximum: 200
+      minimum: 1
+      type: integer
+    price_field:
+      default: close
+      type: string
+  patterns:
+    EMA_RESISTANCE:
+      description: EMA阻力
+      type: boolean
+    EMA_SUPPORT:
+      description: EMA支撑
+      type: boolean
+  signals:
+    EMA_TREND_DOWN:
+      description: EMA下降趋势
+      type: boolean
+    EMA_TREND_UP:
+      description: EMA上升趋势
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+EMV:
+  description: EMV技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 50
+      minimum: 1
+      type: integer
+    scale:
+      default: 1000000
+      maximum: 10000000
+      minimum: 1000
+      type: integer
+  patterns:
+    EMV_PATTERN:
+      description: EMV形态
+      type: boolean
+  signals:
+    EMV_SIGNAL:
+      description: EMV信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ENHANCED_FACTORY:
+  description: ENHANCED_FACTORY技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ENHANCED_FACTORY_PATTERN:
+      description: ENHANCED_FACTORY形态
+      type: boolean
+  signals:
+    ENHANCED_FACTORY_SIGNAL:
+      description: ENHANCED_FACTORY信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ENHANCED_MACD:
+  description: ENHANCED_MACD技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ENHANCED_MACD_PATTERN:
+      description: ENHANCED_MACD形态
+      type: boolean
+  signals:
+    ENHANCED_MACD_SIGNAL:
+      description: ENHANCED_MACD信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ENHANCED_RSI:
+  description: ENHANCED_RSI技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ENHANCED_RSI_PATTERN:
+      description: ENHANCED_RSI形态
+      type: boolean
+  signals:
+    ENHANCED_RSI_SIGNAL:
+      description: ENHANCED_RSI信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ENHANCED_STOCHRSI:
+  description: ENHANCED_STOCHRSI技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ENHANCED_STOCHRSI_PATTERN:
+      description: ENHANCED_STOCHRSI形态
+      type: boolean
+  signals:
+    ENHANCED_STOCHRSI_SIGNAL:
+      description: ENHANCED_STOCHRSI信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ENHANCED_WR:
+  description: ENHANCED_WR技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ENHANCED_WR_PATTERN:
+      description: ENHANCED_WR形态
+      type: boolean
+  signals:
+    ENHANCED_WR_SIGNAL:
+      description: ENHANCED_WR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+FACTORY:
+  description: FACTORY技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    FACTORY_PATTERN:
+      description: FACTORY形态
+      type: boolean
+  signals:
+    FACTORY_SIGNAL:
+      description: FACTORY信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+FIBONACCI:
+  description: FIBONACCI技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    FIBONACCI_PATTERN:
+      description: FIBONACCI形态
+      type: boolean
+  signals:
+    FIBONACCI_SIGNAL:
+      description: FIBONACCI信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+FIBONACCI_TOOLS:
+  description: FIBONACCI_TOOLS技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    FIBONACCI_TOOLS_PATTERN:
+      description: FIBONACCI_TOOLS形态
+      type: boolean
+  signals:
+    FIBONACCI_TOOLS_SIGNAL:
+      description: FIBONACCI_TOOLS信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+FORMULA_INDICATORS:
+  description: FORMULA_INDICATORS技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    FORMULA_INDICATORS_PATTERN:
+      description: FORMULA_INDICATORS形态
+      type: boolean
+  signals:
+    FORMULA_INDICATORS_SIGNAL:
+      description: FORMULA_INDICATORS信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+GANN_TOOLS:
+  description: GANN_TOOLS技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    GANN_TOOLS_PATTERN:
+      description: GANN_TOOLS形态
+      type: boolean
+  signals:
+    GANN_TOOLS_SIGNAL:
+      description: GANN_TOOLS信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ICHIMOKU:
+  description: ICHIMOKU技术指标
+  parameters:
+    displacement:
+      default: 26
+      maximum: 100
+      minimum: 1
+      type: integer
+    kijun_period:
+      default: 26
+      maximum: 100
+      minimum: 1
+      type: integer
+    senkou_b_period:
+      default: 52
+      maximum: 200
+      minimum: 1
+      type: integer
+    tenkan_period:
+      default: 9
+      maximum: 50
+      minimum: 1
+      type: integer
+  patterns:
+    ICHIMOKU_PATTERN:
+      description: ICHIMOKU形态
+      type: boolean
+  signals:
+    ICHIMOKU_SIGNAL:
+      description: ICHIMOKU信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+INDICATOR_MANAGER:
+  description: INDICATOR_MANAGER技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    INDICATOR_MANAGER_PATTERN:
+      description: INDICATOR_MANAGER形态
+      type: boolean
+  signals:
+    INDICATOR_MANAGER_SIGNAL:
+      description: INDICATOR_MANAGER信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+INSTITUTIONAL_BEHAVIOR:
+  description: INSTITUTIONAL_BEHAVIOR技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    INSTITUTIONAL_BEHAVIOR_PATTERN:
+      description: INSTITUTIONAL_BEHAVIOR形态
+      type: boolean
+  signals:
+    INSTITUTIONAL_BEHAVIOR_SIGNAL:
+      description: INSTITUTIONAL_BEHAVIOR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+INTRADAY_VOLATILITY:
+  description: INTRADAY_VOLATILITY技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    INTRADAY_VOLATILITY_PATTERN:
+      description: INTRADAY_VOLATILITY形态
+      type: boolean
+  signals:
+    INTRADAY_VOLATILITY_SIGNAL:
+      description: INTRADAY_VOLATILITY信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ISLAND_REVERSAL:
+  description: ISLAND_REVERSAL技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ISLAND_REVERSAL_PATTERN:
+      description: ISLAND_REVERSAL形态
+      type: boolean
+  signals:
+    ISLAND_REVERSAL_SIGNAL:
+      description: ISLAND_REVERSAL信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+KC:
+  description: KC技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    KC_PATTERN:
+      description: KC形态
+      type: boolean
+  signals:
+    KC_SIGNAL:
+      description: KC信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+KDJ:
+  description: KDJ技术指标
+  parameters:
+    m1:
+      default: 3
+      maximum: 20
+      minimum: 1
+      type: integer
+    m2:
+      default: 3
+      maximum: 20
+      minimum: 1
+      type: integer
+    n:
+      default: 9
+      maximum: 50
+      minimum: 1
+      type: integer
+  patterns:
+    KDJ_PATTERN:
+      description: KDJ形态
+      type: boolean
+  signals:
+    KDJ_SIGNAL:
+      description: KDJ信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+KDJ_SCORE:
+  description: KDJ_SCORE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    KDJ_SCORE_PATTERN:
+      description: KDJ_SCORE形态
+      type: boolean
+  signals:
+    KDJ_SCORE_SIGNAL:
+      description: KDJ_SCORE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MA:
+  description: 移动平均线指标
+  parameters:
+    period:
+      default: 20
+      maximum: 200
+      minimum: 1
+      type: integer
+    price_field:
+      default: close
+      type: string
+  patterns:
+    MA_BEARISH_ARRANGEMENT:
+      description: MA空头排列
+      type: boolean
+    MA_BULLISH_ARRANGEMENT:
+      description: MA多头排列
+      type: boolean
+  signals:
+    MA_DEATH_CROSS:
+      description: MA死叉信号
+      type: boolean
+    MA_GOLDEN_CROSS:
+      description: MA金叉信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MACD:
+  description: MACD技术指标
+  parameters:
+    fast_period:
+      default: 12
+      maximum: 50
+      minimum: 1
+      type: integer
+    signal_period:
+      default: 9
+      maximum: 50
+      minimum: 1
+      type: integer
+    slow_period:
+      default: 26
+      maximum: 100
+      minimum: 1
+      type: integer
+  patterns:
+    MACD_PATTERN:
+      description: MACD形态
+      type: boolean
+  signals:
+    MACD_SIGNAL:
+      description: MACD信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MACD_SCORE:
+  description: MACD_SCORE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    MACD_SCORE_PATTERN:
+      description: MACD_SCORE形态
+      type: boolean
+  signals:
+    MACD_SCORE_SIGNAL:
+      description: MACD_SCORE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MARKET_ENV:
+  description: MARKET_ENV技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    MARKET_ENV_PATTERN:
+      description: MARKET_ENV形态
+      type: boolean
+  signals:
+    MARKET_ENV_SIGNAL:
+      description: MARKET_ENV信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MFI:
+  description: MFI技术指标
+  parameters:
+    overbought:
+      default: 80.0
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    oversold:
+      default: 20.0
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    MFI_PATTERN:
+      description: MFI形态
+      type: boolean
+  signals:
+    MFI_SIGNAL:
+      description: MFI信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MOMENTUM:
+  description: MOMENTUM技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    MOMENTUM_PATTERN:
+      description: MOMENTUM形态
+      type: boolean
+  signals:
+    MOMENTUM_SIGNAL:
+      description: MOMENTUM信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MTM:
+  description: MTM技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    MTM_PATTERN:
+      description: MTM形态
+      type: boolean
+  signals:
+    MTM_SIGNAL:
+      description: MTM信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+MULTI_PERIOD_RESONANCE:
+  description: MULTI_PERIOD_RESONANCE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    MULTI_PERIOD_RESONANCE_PATTERN:
+      description: MULTI_PERIOD_RESONANCE形态
+      type: boolean
+  signals:
+    MULTI_PERIOD_RESONANCE_SIGNAL:
+      description: MULTI_PERIOD_RESONANCE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+OBV:
+  description: OBV技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 100
+      minimum: 1
+      type: integer
+  patterns:
+    OBV_PATTERN:
+      description: OBV形态
+      type: boolean
+  signals:
+    OBV_SIGNAL:
+      description: OBV信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+    - volume
+PATTERN_DETECTOR:
+  description: PATTERN_DETECTOR技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    PATTERN_DETECTOR_PATTERN:
+      description: PATTERN_DETECTOR形态
+      type: boolean
+  signals:
+    PATTERN_DETECTOR_SIGNAL:
+      description: PATTERN_DETECTOR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+PATTERN_MANAGER:
+  description: PATTERN_MANAGER技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    PATTERN_MANAGER_PATTERN:
+      description: PATTERN_MANAGER形态
+      type: boolean
+  signals:
+    PATTERN_MANAGER_SIGNAL:
+      description: PATTERN_MANAGER信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+PATTERN_RECOGNITION:
+  description: PATTERN_RECOGNITION技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    PATTERN_RECOGNITION_PATTERN:
+      description: PATTERN_RECOGNITION形态
+      type: boolean
+  signals:
+    PATTERN_RECOGNITION_SIGNAL:
+      description: PATTERN_RECOGNITION信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+PLATFORM_BREAKOUT:
+  description: PLATFORM_BREAKOUT技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    PLATFORM_BREAKOUT_PATTERN:
+      description: PLATFORM_BREAKOUT形态
+      type: boolean
+  signals:
+    PLATFORM_BREAKOUT_SIGNAL:
+      description: PLATFORM_BREAKOUT信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+PSY:
+  description: PSY技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    PSY_PATTERN:
+      description: PSY形态
+      type: boolean
+  signals:
+    PSY_SIGNAL:
+      description: PSY信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+PVT:
+  description: PVT技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 100
+      minimum: 1
+      type: integer
+  patterns:
+    PVT_PATTERN:
+      description: PVT形态
+      type: boolean
+  signals:
+    PVT_SIGNAL:
+      description: PVT信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ROC:
+  description: ROC技术指标
+  parameters:
+    period:
+      default: 12
+      maximum: 200
+      minimum: 1
+      type: integer
+    price_field:
+      default: close
+      type: string
+  patterns:
+    ROC_PATTERN:
+      description: ROC形态
+      type: boolean
+  signals:
+    ROC_SIGNAL:
+      description: ROC信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+RSI:
+  description: 相对强弱指标
+  parameters:
+    overbought:
+      default: 70.0
+      maximum: 90.0
+      minimum: 50.0
+      type: number
+    oversold:
+      default: 30.0
+      maximum: 50.0
+      minimum: 10.0
+      type: number
+    period:
+      default: 14
+      maximum: 100
+      minimum: 1
+      type: integer
+  patterns:
+    RSI_DIVERGENCE:
+      description: RSI背离
+      type: boolean
+    RSI_REVERSAL:
+      description: RSI反转
+      type: boolean
+  signals:
+    RSI_OVERBOUGHT:
+      description: RSI超买信号
+      type: boolean
+    RSI_OVERSOLD:
+      description: RSI超卖信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+RSIMA:
+  description: RSIMA技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    RSIMA_PATTERN:
+      description: RSIMA形态
+      type: boolean
+  signals:
+    RSIMA_SIGNAL:
+      description: RSIMA信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+RSI_DERIVATIVES:
+  description: RSI_DERIVATIVES技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    RSI_DERIVATIVES_PATTERN:
+      description: RSI_DERIVATIVES形态
+      type: boolean
+  signals:
+    RSI_DERIVATIVES_SIGNAL:
+      description: RSI_DERIVATIVES信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+RSI_SCORE:
+  description: RSI_SCORE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    RSI_SCORE_PATTERN:
+      description: RSI_SCORE形态
+      type: boolean
+  signals:
+    RSI_SCORE_SIGNAL:
+      description: RSI_SCORE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+SAR:
+  description: SAR技术指标
+  parameters:
+    acceleration:
+      default: 0.02
+      maximum: 0.1
+      minimum: 0.01
+      type: number
+    maximum:
+      default: 0.2
+      maximum: 1.0
+      minimum: 0.1
+      type: number
+  patterns:
+    SAR_PATTERN:
+      description: SAR形态
+      type: boolean
+  signals:
+    SAR_SIGNAL:
+      description: SAR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+SCORE_MANAGER:
+  description: SCORE_MANAGER技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    SCORE_MANAGER_PATTERN:
+      description: SCORE_MANAGER形态
+      type: boolean
+  signals:
+    SCORE_MANAGER_SIGNAL:
+      description: SCORE_MANAGER信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+SCORING_FRAMEWORK:
+  description: SCORING_FRAMEWORK技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    SCORING_FRAMEWORK_PATTERN:
+      description: SCORING_FRAMEWORK形态
+      type: boolean
+  signals:
+    SCORING_FRAMEWORK_SIGNAL:
+      description: SCORING_FRAMEWORK信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+SENTIMENT_ANALYSIS:
+  description: SENTIMENT_ANALYSIS技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    SENTIMENT_ANALYSIS_PATTERN:
+      description: SENTIMENT_ANALYSIS形态
+      type: boolean
+  signals:
+    SENTIMENT_ANALYSIS_SIGNAL:
+      description: SENTIMENT_ANALYSIS信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+STOCHRSI:
+  description: STOCHRSI技术指标
+  parameters:
+    d_period:
+      default: 3
+      maximum: 200
+      minimum: 1
+      type: integer
+    k_period:
+      default: 3
+      maximum: 200
+      minimum: 1
+      type: integer
+    rsi_period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+    stoch_period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    STOCHRSI_PATTERN:
+      description: STOCHRSI形态
+      type: boolean
+  signals:
+    STOCHRSI_SIGNAL:
+      description: STOCHRSI信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+STOCK_VIX:
+  description: STOCK_VIX技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    STOCK_VIX_PATTERN:
+      description: STOCK_VIX形态
+      type: boolean
+  signals:
+    STOCK_VIX_SIGNAL:
+      description: STOCK_VIX信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+SYNERGY:
+  description: SYNERGY技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    SYNERGY_PATTERN:
+      description: SYNERGY形态
+      type: boolean
+  signals:
+    SYNERGY_SIGNAL:
+      description: SYNERGY信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+TECHNICAL_INDICATORS:
+  description: TECHNICAL_INDICATORS技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    TECHNICAL_INDICATORS_PATTERN:
+      description: TECHNICAL_INDICATORS形态
+      type: boolean
+  signals:
+    TECHNICAL_INDICATORS_SIGNAL:
+      description: TECHNICAL_INDICATORS信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+TIME_CYCLE_ANALYSIS:
+  description: TIME_CYCLE_ANALYSIS技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    TIME_CYCLE_ANALYSIS_PATTERN:
+      description: TIME_CYCLE_ANALYSIS形态
+      type: boolean
+  signals:
+    TIME_CYCLE_ANALYSIS_SIGNAL:
+      description: TIME_CYCLE_ANALYSIS信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+TREND_CLASSIFICATION:
+  description: TREND_CLASSIFICATION技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    TREND_CLASSIFICATION_PATTERN:
+      description: TREND_CLASSIFICATION形态
+      type: boolean
+  signals:
+    TREND_CLASSIFICATION_SIGNAL:
+      description: TREND_CLASSIFICATION信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+TRIX:
+  description: TRIX技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+    signal_period:
+      default: 9
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    TRIX_PATTERN:
+      description: TRIX形态
+      type: boolean
+  signals:
+    TRIX_SIGNAL:
+      description: TRIX信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+UNIFIED_MA:
+  description: UNIFIED_MA技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    UNIFIED_MA_PATTERN:
+      description: UNIFIED_MA形态
+      type: boolean
+  signals:
+    UNIFIED_MA_SIGNAL:
+      description: UNIFIED_MA信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+VIX:
+  description: VIX技术指标
+  parameters:
+    multiplier:
+      default: 2.0
+      maximum: 5.0
+      minimum: 0.5
+      type: number
+    period:
+      default: 20
+      maximum: 100
+      minimum: 1
+      type: integer
+  patterns:
+    VIX_PATTERN:
+      description: VIX形态
+      type: boolean
+  signals:
+    VIX_SIGNAL:
+      description: VIX信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+VOL:
+  description: VOL技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    VOL_PATTERN:
+      description: VOL形态
+      type: boolean
+  signals:
+    VOL_SIGNAL:
+      description: VOL信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+VOLUME_RATIO:
+  description: VOLUME_RATIO技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    VOLUME_RATIO_PATTERN:
+      description: VOLUME_RATIO形态
+      type: boolean
+  signals:
+    VOLUME_RATIO_SIGNAL:
+      description: VOLUME_RATIO信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+VOLUME_SCORE:
+  description: VOLUME_SCORE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    VOLUME_SCORE_PATTERN:
+      description: VOLUME_SCORE形态
+      type: boolean
+  signals:
+    VOLUME_SCORE_SIGNAL:
+      description: VOLUME_SCORE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+VORTEX:
+  description: VORTEX技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 50
+      minimum: 1
+      type: integer
+  patterns:
+    VORTEX_PATTERN:
+      description: VORTEX形态
+      type: boolean
+  signals:
+    VORTEX_SIGNAL:
+      description: VORTEX信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+VOSC:
+  description: VOSC技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    VOSC_PATTERN:
+      description: VOSC形态
+      type: boolean
+  signals:
+    VOSC_SIGNAL:
+      description: VOSC信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+VR:
+  description: VR技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    VR_PATTERN:
+      description: VR形态
+      type: boolean
+  signals:
+    VR_SIGNAL:
+      description: VR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+V_SHAPED_REVERSAL:
+  description: V_SHAPED_REVERSAL技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    V_SHAPED_REVERSAL_PATTERN:
+      description: V_SHAPED_REVERSAL形态
+      type: boolean
+  signals:
+    V_SHAPED_REVERSAL_SIGNAL:
+      description: V_SHAPED_REVERSAL信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+WMA:
+  description: WMA技术指标
+  parameters:
+    period:
+      default: 20
+      maximum: 200
+      minimum: 1
+      type: integer
+    price_field:
+      default: close
+      type: string
+  patterns:
+    WMA_PATTERN:
+      description: WMA形态
+      type: boolean
+  signals:
+    WMA_SIGNAL:
+      description: WMA信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+WR:
+  description: WR技术指标
+  parameters:
+    overbought:
+      default: -20.0
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    oversold:
+      default: -80.0
+      maximum: 100.0
+      minimum: 0.0
+      type: number
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    WR_PATTERN:
+      description: WR形态
+      type: boolean
+  signals:
+    WR_SIGNAL:
+      description: WR信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ZXM_ABSORB:
+  description: ZXM_ABSORB技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ZXM_ABSORB_PATTERN:
+      description: ZXM_ABSORB形态
+      type: boolean
+  signals:
+    ZXM_ABSORB_SIGNAL:
+      description: ZXM_ABSORB信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close
+ZXM_WASHPLATE:
+  description: ZXM_WASHPLATE技术指标
+  parameters:
+    period:
+      default: 14
+      maximum: 200
+      minimum: 1
+      type: integer
+  patterns:
+    ZXM_WASHPLATE_PATTERN:
+      description: ZXM_WASHPLATE形态
+      type: boolean
+  signals:
+    ZXM_WASHPLATE_SIGNAL:
+      description: ZXM_WASHPLATE信号
+      type: boolean
+  validation:
+    min_data_points: 14
+    required_columns:
+    - close

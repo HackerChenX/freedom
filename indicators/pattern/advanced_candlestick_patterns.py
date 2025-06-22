@@ -10,6 +10,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.pattern.candlestick_patterns import PatternType, CandlestickPatterns
 from utils.logger import get_logger
 
@@ -55,7 +56,7 @@ class AdvancedPatternType(Enum):
     CUP_WITH_HANDLE = "杯柄形态"          # U形底部+小幅回调形成柄部
 
 
-class AdvancedCandlestickPatterns(BaseIndicator):
+class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
     """
     高级K线形态识别指标
     
@@ -107,7 +108,12 @@ class AdvancedCandlestickPatterns(BaseIndicator):
         # 验证输入数据
         if data is None or len(data) == 0:
             logger.warning("输入数据为空，无法识别K线形态")
-            return pd.DataFrame(index=data.index if data is not None else [])
+            
+        # 添加形态识别和信号生成
+        pd = self.add_pattern_detection(pd)
+        pd = self.add_signal_generation(pd)
+
+        return pd.DataFrame(index=data.index if data is not None else [])
         
         # 确保数据包含必需的列
         self.ensure_columns(data, ["open", "high", "low", "close"])

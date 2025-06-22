@@ -1,0 +1,89 @@
+{
+  "test_timestamp": "2025-06-23T00:43:08.030673",
+  "indicators": {
+    "RSI": {
+      "total_patterns": 5,
+      "successful_patterns": 5,
+      "failed_patterns": 2,
+      "pattern_results": {
+        "RSI_OVERBOUGHT": {
+          "pattern_name": "RSI_OVERBOUGHT",
+          "match_score": 1.0,
+          "is_successful": "True",
+          "rsi_value": 100.0,
+          "threshold": 70,
+          "data_points": 50
+        },
+        "RSI_OVERSOLD": {
+          "pattern_name": "RSI_OVERSOLD",
+          "match_score": 1.0,
+          "is_successful": "True",
+          "rsi_value": 0.0,
+          "threshold": 30,
+          "data_points": 40
+        },
+        "RSI_GOLDEN_CROSS": {
+          "pattern_name": "RSI_GOLDEN_CROSS",
+          "match_score": 1.0,
+          "is_successful": true,
+          "current_rsi": 99.483593139465,
+          "golden_cross_detected": true,
+          "data_points": 50
+        },
+        "RSI_DEATH_CROSS": {
+          "pattern_name": "RSI_DEATH_CROSS",
+          "match_score": 1.0,
+          "is_successful": true,
+          "current_rsi": 2.91569505552728,
+          "death_cross_detected": true,
+          "data_points": 50
+        },
+        "RSI_DIVERGENCE": {
+          "pattern_name": "RSI_DIVERGENCE",
+          "match_score": 1.0,
+          "is_successful": "True",
+          "price_gain": 0.19705744274362133,
+          "rsi_change": 14.569985323814166,
+          "final_rsi": 100.0,
+          "divergence_detected": "True",
+          "data_points": 50
+        },
+        "MACD_BELOW_ZERO_DEATH": {
+          "pattern_name": "MACD_BELOW_ZERO_DEATH",
+          "match_score": 0.0,
+          "is_successful": false,
+          "final_dif": -3.7491403170512427,
+          "final_dea": -2.883700791060074,
+          "below_zero": false,
+          "death_cross_detected": false,
+          "data_points": 60
+        },
+        "MACD_HISTOGRAM_DIVERGENCE": {
+          "pattern_name": "MACD_HISTOGRAM_DIVERGENCE",
+          "match_score": 0.0,
+          "is_successful": "False",
+          "price_gain": 0.5921833164792903,
+          "macd_change": 6.50960500950605,
+          "divergence_detected": "False",
+          "data_points": 60
+        }
+      },
+      "summary": {
+        "success_rate": "100.00%",
+        "average_score": "1.000",
+        "recommendation": "🎉 完美！达到100%成功率目标"
+      },
+      "timestamp": "2025-06-23T00:43:08.030734",
+      "success_rate": 1.0,
+      "average_score": 1.0
+    }
+  },
+  "overall_summary": {
+    "total_indicators_tested": 1,
+    "total_patterns": 5,
+    "total_successful": 5,
+    "total_failed": 2,
+    "overall_success_rate": "100.00%",
+    "improvement_from_baseline": "80.0个百分点"
+  }
+}

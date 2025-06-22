@@ -1,0 +1,564 @@
+{
+  "RSI": {
+    "indicator": "RSI",
+    "total_patterns": 5,
+    "successful_patterns": 3,
+    "failed_patterns": 2,
+    "pattern_results": {
+      "RSI_OVERBOUGHT": {
+        "indicator": "RSI",
+        "pattern_name": "RSI_OVERBOUGHT",
+        "expected_patterns": [
+          "超买",
+          "高位",
+          "overbought"
+        ],
+        "identified_patterns": [
+          "RSI超买",
+          "高位"
+        ],
+        "match_score": 0.6666666666666666,
+        "is_successful": true,
+        "price_trend": "31.03%",
+        "data_points": 50,
+        "price_range": "100.00 - 133.47",
+        "analysis_method": "simplified_simulation"
+      },
+      "RSI_OVERSOLD": {
+        "indicator": "RSI",
+        "pattern_name": "RSI_OVERSOLD",
+        "expected_patterns": [
+          "超卖",
+          "低位",
+          "oversold"
+        ],
+        "identified_patterns": [
+          "RSI超卖",
+          "低位"
+        ],
+        "match_score": 0.6666666666666666,
+        "is_successful": true,
+        "price_trend": "-23.19%",
+        "data_points": 40,
+        "price_range": "72.63 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "RSI_GOLDEN_CROSS": {
+        "indicator": "RSI",
+        "pattern_name": "RSI_GOLDEN_CROSS",
+        "expected_patterns": [
+          "金叉",
+          "上升",
+          "突破"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-15.00%",
+        "data_points": 50,
+        "price_range": "80.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "RSI_DEATH_CROSS": {
+        "indicator": "RSI",
+        "pattern_name": "RSI_DEATH_CROSS",
+        "expected_patterns": [
+          "死叉",
+          "下降",
+          "跌破"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "5.00%",
+        "data_points": 50,
+        "price_range": "100.00 - 120.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "RSI_DIVERGENCE": {
+        "indicator": "RSI",
+        "pattern_name": "RSI_DIVERGENCE",
+        "expected_patterns": [
+          "背离",
+          "divergence"
+        ],
+        "identified_patterns": [
+          "价格背离"
+        ],
+        "match_score": 0.5,
+        "is_successful": true,
+        "price_trend": "18.00%",
+        "data_points": 50,
+        "price_range": "100.00 - 119.09",
+        "analysis_method": "simplified_simulation"
+      }
+    },
+    "summary": {
+      "success_rate": "60.00%",
+      "average_score": "0.367",
+      "recommendation": "指标形态识别表现良好，但仍有改进空间"
+    },
+    "timestamp": "2025-06-22T11:16:28.921942",
+    "success_rate": 0.6,
+    "average_score": 0.36666666666666664,
+    "execution_info": {
+      "return_code": 0,
+      "stdout_lines": 64,
+      "stderr_lines": 0,
+      "result_file": "demo_validation_results_RSI_20250622_111628.json"
+    }
+  },
+  "MACD": {
+    "indicator": "MACD",
+    "total_patterns": 5,
+    "successful_patterns": 1,
+    "failed_patterns": 4,
+    "pattern_results": {
+      "MACD_GOLDEN_CROSS": {
+        "indicator": "MACD",
+        "pattern_name": "MACD_GOLDEN_CROSS",
+        "expected_patterns": [
+          "金叉",
+          "golden",
+          "上穿"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-5.00%",
+        "data_points": 55,
+        "price_range": "85.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MACD_DEATH_CROSS": {
+        "indicator": "MACD",
+        "pattern_name": "MACD_DEATH_CROSS",
+        "expected_patterns": [
+          "死叉",
+          "death",
+          "下穿"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "5.00%",
+        "data_points": 55,
+        "price_range": "100.00 - 115.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MACD_ABOVE_ZERO_GOLDEN": {
+        "indicator": "MACD",
+        "pattern_name": "MACD_ABOVE_ZERO_GOLDEN",
+        "expected_patterns": [
+          "零轴上",
+          "强势"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "28.00%",
+        "data_points": 75,
+        "price_range": "100.00 - 128.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MACD_BELOW_ZERO_DEATH": {
+        "indicator": "MACD",
+        "pattern_name": "MACD_BELOW_ZERO_DEATH",
+        "expected_patterns": [
+          "零轴下",
+          "弱势"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-22.00%",
+        "data_points": 75,
+        "price_range": "78.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MACD_HISTOGRAM_DIVERGENCE": {
+        "indicator": "MACD",
+        "pattern_name": "MACD_HISTOGRAM_DIVERGENCE",
+        "expected_patterns": [
+          "背离",
+          "柱状图"
+        ],
+        "identified_patterns": [
+          "价格背离"
+        ],
+        "match_score": 0.5,
+        "is_successful": true,
+        "price_trend": "20.00%",
+        "data_points": 55,
+        "price_range": "100.00 - 120.00",
+        "analysis_method": "simplified_simulation"
+      }
+    },
+    "summary": {
+      "success_rate": "20.00%",
+      "average_score": "0.100",
+      "recommendation": "指标形态识别表现较差，需要重点优化"
+    },
+    "timestamp": "2025-06-22T11:16:29.819266",
+    "success_rate": 0.2,
+    "average_score": 0.1,
+    "execution_info": {
+      "return_code": 1,
+      "stdout_lines": 64,
+      "stderr_lines": 0,
+      "result_file": "demo_validation_results_MACD_20250622_111629.json"
+    }
+  },
+  "KDJ": {
+    "indicator": "KDJ",
+    "total_patterns": 5,
+    "successful_patterns": 2,
+    "failed_patterns": 3,
+    "pattern_results": {
+      "KDJ_GOLDEN_CROSS": {
+        "indicator": "KDJ",
+        "pattern_name": "KDJ_GOLDEN_CROSS",
+        "expected_patterns": [
+          "金叉",
+          "K线上穿"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-12.00%",
+        "data_points": 45,
+        "price_range": "85.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "KDJ_DEATH_CROSS": {
+        "indicator": "KDJ",
+        "pattern_name": "KDJ_DEATH_CROSS",
+        "expected_patterns": [
+          "死叉",
+          "K线下穿"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "8.00%",
+        "data_points": 45,
+        "price_range": "100.00 - 115.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "KDJ_OVERBOUGHT": {
+        "indicator": "KDJ",
+        "pattern_name": "KDJ_OVERBOUGHT",
+        "expected_patterns": [
+          "超买",
+          "高位"
+        ],
+        "identified_patterns": [
+          "RSI超买",
+          "高位"
+        ],
+        "match_score": 1.0,
+        "is_successful": true,
+        "price_trend": "25.40%",
+        "data_points": 50,
+        "price_range": "100.00 - 126.42",
+        "analysis_method": "simplified_simulation"
+      },
+      "KDJ_OVERSOLD": {
+        "indicator": "KDJ",
+        "pattern_name": "KDJ_OVERSOLD",
+        "expected_patterns": [
+          "超卖",
+          "低位"
+        ],
+        "identified_patterns": [
+          "RSI超卖",
+          "低位"
+        ],
+        "match_score": 1.0,
+        "is_successful": true,
+        "price_trend": "-23.35%",
+        "data_points": 45,
+        "price_range": "74.03 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "KDJ_BLUNT": {
+        "indicator": "KDJ",
+        "pattern_name": "KDJ_BLUNT",
+        "expected_patterns": [
+          "钝化",
+          "高位钝化",
+          "低位钝化"
+        ],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "19.23%",
+        "data_points": 50,
+        "price_range": "100.00 - 122.07",
+        "analysis_method": "simplified_simulation"
+      }
+    },
+    "summary": {
+      "success_rate": "40.00%",
+      "average_score": "0.400",
+      "recommendation": "指标形态识别表现一般，建议检查算法实现"
+    },
+    "timestamp": "2025-06-22T11:16:30.710539",
+    "success_rate": 0.4,
+    "average_score": 0.4,
+    "execution_info": {
+      "return_code": 1,
+      "stdout_lines": 64,
+      "stderr_lines": 0,
+      "result_file": "demo_validation_results_KDJ_20250622_111630.json"
+    }
+  },
+  "BOLL": {
+    "indicator": "BOLL",
+    "total_patterns": 5,
+    "successful_patterns": 0,
+    "failed_patterns": 5,
+    "pattern_results": {
+      "BOLL_UPPER_BREAKOUT": {
+        "indicator": "BOLL",
+        "pattern_name": "BOLL_UPPER_BREAKOUT",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "6.80%",
+        "data_points": 40,
+        "price_range": "97.56 - 108.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "BOLL_LOWER_BREAKOUT": {
+        "indicator": "BOLL",
+        "pattern_name": "BOLL_LOWER_BREAKOUT",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-8.77%",
+        "data_points": 40,
+        "price_range": "92.00 - 103.13",
+        "analysis_method": "simplified_simulation"
+      },
+      "BOLL_SQUEEZE": {
+        "indicator": "BOLL",
+        "pattern_name": "BOLL_SQUEEZE",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-0.84%",
+        "data_points": 40,
+        "price_range": "99.31 - 101.47",
+        "analysis_method": "simplified_simulation"
+      },
+      "BOLL_EXPANSION": {
+        "indicator": "BOLL",
+        "pattern_name": "BOLL_EXPANSION",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-2.22%",
+        "data_points": 40,
+        "price_range": "94.41 - 103.39",
+        "analysis_method": "simplified_simulation"
+      },
+      "BOLL_MIDDLE_SUPPORT": {
+        "indicator": "BOLL",
+        "pattern_name": "BOLL_MIDDLE_SUPPORT",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "2.00%",
+        "data_points": 40,
+        "price_range": "95.00 - 102.00",
+        "analysis_method": "simplified_simulation"
+      }
+    },
+    "summary": {
+      "success_rate": "0.00%",
+      "average_score": "0.000",
+      "recommendation": "指标形态识别表现较差，需要重点优化"
+    },
+    "timestamp": "2025-06-22T11:16:31.583810",
+    "success_rate": 0.0,
+    "average_score": 0.0,
+    "execution_info": {
+      "return_code": 1,
+      "stdout_lines": 64,
+      "stderr_lines": 0,
+      "result_file": "demo_validation_results_BOLL_20250622_111631.json"
+    }
+  },
+  "MA": {
+    "indicator": "MA",
+    "total_patterns": 5,
+    "successful_patterns": 0,
+    "failed_patterns": 5,
+    "pattern_results": {
+      "MA_GOLDEN_CROSS": {
+        "indicator": "MA",
+        "pattern_name": "MA_GOLDEN_CROSS",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-2.00%",
+        "data_points": 55,
+        "price_range": "88.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MA_DEATH_CROSS": {
+        "indicator": "MA",
+        "pattern_name": "MA_DEATH_CROSS",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "2.00%",
+        "data_points": 55,
+        "price_range": "100.00 - 112.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MA_BULLISH_ALIGNMENT": {
+        "indicator": "MA",
+        "pattern_name": "MA_BULLISH_ALIGNMENT",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-2.00%",
+        "data_points": 55,
+        "price_range": "88.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MA_BEARISH_ALIGNMENT": {
+        "indicator": "MA",
+        "pattern_name": "MA_BEARISH_ALIGNMENT",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "2.00%",
+        "data_points": 55,
+        "price_range": "100.00 - 112.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "MA_SUPPORT": {
+        "indicator": "MA",
+        "pattern_name": "MA_SUPPORT",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-2.00%",
+        "data_points": 55,
+        "price_range": "88.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      }
+    },
+    "summary": {
+      "success_rate": "0.00%",
+      "average_score": "0.000",
+      "recommendation": "指标形态识别表现较差，需要重点优化"
+    },
+    "timestamp": "2025-06-22T11:16:32.469117",
+    "success_rate": 0.0,
+    "average_score": 0.0,
+    "execution_info": {
+      "return_code": 1,
+      "stdout_lines": 64,
+      "stderr_lines": 0,
+      "result_file": "demo_validation_results_MA_20250622_111632.json"
+    }
+  },
+  "EMA": {
+    "indicator": "EMA",
+    "total_patterns": 5,
+    "successful_patterns": 0,
+    "failed_patterns": 5,
+    "pattern_results": {
+      "EMA_GOLDEN_CROSS": {
+        "indicator": "EMA",
+        "pattern_name": "EMA_GOLDEN_CROSS",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-2.00%",
+        "data_points": 55,
+        "price_range": "88.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "EMA_DEATH_CROSS": {
+        "indicator": "EMA",
+        "pattern_name": "EMA_DEATH_CROSS",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "2.00%",
+        "data_points": 55,
+        "price_range": "100.00 - 112.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "EMA_TREND_CONFIRMATION": {
+        "indicator": "EMA",
+        "pattern_name": "EMA_TREND_CONFIRMATION",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-2.00%",
+        "data_points": 55,
+        "price_range": "88.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "EMA_DIVERGENCE": {
+        "indicator": "EMA",
+        "pattern_name": "EMA_DIVERGENCE",
+        "expected_patterns": [],
+        "identified_patterns": [
+          "价格背离"
+        ],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "18.00%",
+        "data_points": 50,
+        "price_range": "100.00 - 118.00",
+        "analysis_method": "simplified_simulation"
+      },
+      "EMA_SUPPORT_RESISTANCE": {
+        "indicator": "EMA",
+        "pattern_name": "EMA_SUPPORT_RESISTANCE",
+        "expected_patterns": [],
+        "identified_patterns": [],
+        "match_score": 0.0,
+        "is_successful": false,
+        "price_trend": "-2.00%",
+        "data_points": 55,
+        "price_range": "88.00 - 100.00",
+        "analysis_method": "simplified_simulation"
+      }
+    },
+    "summary": {
+      "success_rate": "0.00%",
+      "average_score": "0.000",
+      "recommendation": "指标形态识别表现较差，需要重点优化"
+    },
+    "timestamp": "2025-06-22T11:16:33.376362",
+    "success_rate": 0.0,
+    "average_score": 0.0,
+    "execution_info": {
+      "return_code": 1,
+      "stdout_lines": 64,
+      "stderr_lines": 0,
+      "result_file": "demo_validation_results_EMA_20250622_111633.json"
+    }
+  }
+}

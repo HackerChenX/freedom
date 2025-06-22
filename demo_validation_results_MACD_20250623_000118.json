@@ -1,0 +1,95 @@
+{
+  "indicator": "MACD",
+  "total_patterns": 5,
+  "successful_patterns": 1,
+  "failed_patterns": 4,
+  "pattern_results": {
+    "MACD_GOLDEN_CROSS": {
+      "indicator": "MACD",
+      "pattern_name": "MACD_GOLDEN_CROSS",
+      "expected_patterns": [
+        "金叉",
+        "golden",
+        "上穿"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "-5.00%",
+      "data_points": 55,
+      "price_range": "85.00 - 100.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "MACD_DEATH_CROSS": {
+      "indicator": "MACD",
+      "pattern_name": "MACD_DEATH_CROSS",
+      "expected_patterns": [
+        "死叉",
+        "death",
+        "下穿"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "5.00%",
+      "data_points": 55,
+      "price_range": "100.00 - 115.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "MACD_ABOVE_ZERO_GOLDEN": {
+      "indicator": "MACD",
+      "pattern_name": "MACD_ABOVE_ZERO_GOLDEN",
+      "expected_patterns": [
+        "零轴上",
+        "强势"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "28.00%",
+      "data_points": 75,
+      "price_range": "100.00 - 128.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "MACD_BELOW_ZERO_DEATH": {
+      "indicator": "MACD",
+      "pattern_name": "MACD_BELOW_ZERO_DEATH",
+      "expected_patterns": [
+        "零轴下",
+        "弱势"
+      ],
+      "identified_patterns": [],
+      "match_score": 0.0,
+      "is_successful": false,
+      "price_trend": "-22.00%",
+      "data_points": 75,
+      "price_range": "78.00 - 100.00",
+      "analysis_method": "simplified_simulation"
+    },
+    "MACD_HISTOGRAM_DIVERGENCE": {
+      "indicator": "MACD",
+      "pattern_name": "MACD_HISTOGRAM_DIVERGENCE",
+      "expected_patterns": [
+        "背离",
+        "柱状图"
+      ],
+      "identified_patterns": [
+        "价格背离"
+      ],
+      "match_score": 0.5,
+      "is_successful": true,
+      "price_trend": "20.00%",
+      "data_points": 55,
+      "price_range": "100.00 - 120.00",
+      "analysis_method": "simplified_simulation"
+    }
+  },
+  "summary": {
+    "success_rate": "20.00%",
+    "average_score": "0.100",
+    "recommendation": "指标形态识别表现较差，需要重点优化"
+  },
+  "timestamp": "2025-06-23T00:01:18.394889",
+  "success_rate": 0.2,
+  "average_score": 0.1
+}

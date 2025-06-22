@@ -1,0 +1,70 @@
+{
+  "test_date": "2025-06-22 15:51:25",
+  "stock_selection_test": {
+    "data_retrieval": {
+      "success": true,
+      "stock_count": 1,
+      "retrieval_time": 0.06266093254089355
+    },
+    "stock_filtering": {
+      "success": true,
+      "tested_stocks": 1,
+      "successful_queries": 1,
+      "success_rate": 1.0,
+      "filtering_time": 0.030128955841064453,
+      "results": [
+        {
+          "stock_code": "000001",
+          "success": true,
+          "records": 71
+        }
+      ]
+    },
+    "performance_metrics": {
+      "total_workflow_time": 0.09278988838195801,
+      "avg_query_time": 0.030128955841064453
+    }
+  },
+  "buypoint_analysis_test": {
+    "success": false,
+    "error": "local variable 'analysis_time' referenced before assignment"
+  },
+  "integrated_workflow_test": {
+    "end_to_end_test": {
+      "success": true,
+      "total_time": 0.07379579544067383,
+      "stocks_processed": 1,
+      "buypoint_analyses": 1,
+      "workflow_complete": true
+    },
+    "concurrent_operations": {},
+    "system_stability": {
+      "performance_stats_available": true,
+      "connection_pool_healthy": true,
+      "cache_functioning": true
+    }
+  },
+  "performance_summary": {
+    "stock_selection_performance": {
+      "total_workflow_time": 0.09278988838195801,
+      "avg_query_time": 0.030128955841064453
+    },
+    "buypoint_analysis_performance": {},
+    "integrated_workflow_performance": {
+      "total_time": 0.07379579544067383,
+      "stocks_processed": 1
+    }
+  },
+  "overall_assessment": {
+    "business_workflows_functional": false,
+    "performance_acceptable": true,
+    "system_integration_successful": true,
+    "production_deployment_ready": false,
+    "issues_identified": [
+      "买点分析流程失败"
+    ],
+    "business_recommendations": [
+      "发现业务流程问题，建议修复后重新验证"
+    ]
+  }
+}
