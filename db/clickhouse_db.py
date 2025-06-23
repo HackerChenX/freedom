@@ -26,24 +26,43 @@ except ImportError:
 # 配置日志
 logger = logging.getLogger('clickhouse_db')
 
-# 默认配置
-DEFAULT_CONFIG = {
-    'host': 'localhost',
-    'port': 9000,
-    'user': 'default',
-    'password': '',
-    'database': 'stock'
-}
+# 导入统一配置管理器
+try:
+    from config.database_config_manager import get_clickhouse_connection_config
+    HAS_CONFIG_MANAGER = True
+except ImportError:
+    HAS_CONFIG_MANAGER = False
+    # 备用默认配置
+    DEFAULT_CONFIG = {
+        'host': 'localhost',
+        'port': 9000,
+        'user': 'default',
+        'password': '123456',
+        'database': 'stock'
+    }
 
 
 def get_default_config() -> Dict[str, Any]:
     """
     获取默认ClickHouse配置
-    
+
     Returns:
         Dict[str, Any]: 配置字典
     """
-    return DEFAULT_CONFIG.copy()
+    if HAS_CONFIG_MANAGER:
+        try:
+            return get_clickhouse_connection_config()
+        except Exception as e:
+            logger.warning(f"使用统一配置管理器失败，使用备用配置: {e}")
+
+    # 备用配置
+    return DEFAULT_CONFIG.copy() if not HAS_CONFIG_MANAGER else {
+        'host': 'localhost',
+        'port': 9000,
+        'user': 'default',
+        'password': '123456',
+        'database': 'stock'
+    }
 
 
 class ClickHouseDBManager:

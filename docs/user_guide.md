@@ -87,7 +87,7 @@ DATABASE_CONFIG = {
     'port': 3306,
     'database': 'stock_analysis',
     'username': 'your_username',
-    'password': 'your_password'
+    'password': '123456'
 }
 
 # 缓存配置

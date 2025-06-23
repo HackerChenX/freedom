@@ -54,6 +54,10 @@ class StrategyExecutor:
         except Exception as e:
             logger.error(f"❌ 初始化指标注册系统失败: {e}")
 
+        # 初始化条件评估器，确保所有线程共享同一个实例
+        from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+        self._evaluator = StrategyConditionEvaluator()
+
         logger.info(f"策略执行器初始化完成，最大线程数: {self.max_workers}, 缓存{'启用' if cache_enabled else '禁用'}")
     
     @performance_monitor(threshold=1.0)
@@ -203,15 +207,20 @@ class StrategyExecutor:
                                         f"处理批次 {batch_idx//batch_size + 1}/{(total_stocks+batch_size-1)//batch_size}")
                     
                     # 提交本批次的所有任务
-                    future_to_stock = {
-                        executor.submit(
-                            self._process_stock, 
-                            stock_code=row['stock_code'],
-                            stock_name=row['stock_name'],
+                    future_to_stock = {}
+                    for _, row in batch.iterrows():
+                        stock_code = row['stock_code']
+                        # 尝试获取股票名称，如果没有则使用股票代码
+                        stock_name = row.get('stock_name', row.get('name', stock_code))
+
+                        future = executor.submit(
+                            self._process_stock,
+                            stock_code=stock_code,
+                            stock_name=stock_name,
                             conditions=conditions,
                             end_date=end_date
-                        ): row['stock_code'] for _, row in batch.iterrows()
-                    }
+                        )
+                        future_to_stock[future] = stock_code
                     
                     # 并行处理任务
                     for future in concurrent.futures.as_completed(future_to_stock):
@@ -390,8 +399,8 @@ class StrategyExecutor:
                 return None
                 
             # 3. 评估条件
-            from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-            evaluator = StrategyConditionEvaluator()
+            # 使用预初始化的evaluator实例，确保所有线程共享同一个指标注册表
+            evaluator = self._evaluator
             
             # 创建条件评估追踪对象，用于记录详细评估结果
             condition_details = {
@@ -1122,14 +1131,39 @@ class StrategyExecutor:
     def _get_filtered_stock_list(self, filters: Dict[str, Any]) -> pd.DataFrame:
         """
         获取经过过滤的股票列表
-        
+
         Args:
             filters: 过滤条件
-            
+
         Returns:
             股票列表DataFrame
         """
-        return self.data_manager.get_stock_list(filters=filters)
+        # 转换filters参数为DataManagerAdapter支持的参数
+        market = filters.get('market')
+        industry = filters.get('industry')
+        limit = filters.get('limit')
+
+        # 调用DataManagerAdapter的get_stock_list方法
+        stock_list = self.data_manager.get_stock_list(
+            market=market,
+            industry=industry,
+            limit=limit
+        )
+
+        # 如果返回的是列表，转换为DataFrame
+        if isinstance(stock_list, list):
+            if stock_list and isinstance(stock_list[0], str):
+                # 如果是股票代码列表
+                return pd.DataFrame({'stock_code': stock_list})
+            else:
+                # 如果是字典列表
+                return pd.DataFrame(stock_list)
+        elif isinstance(stock_list, pd.DataFrame):
+            return stock_list
+        else:
+            # 备用方案：获取所有股票
+            all_stocks = self.data_manager.get_all_stock_list()
+            return pd.DataFrame(all_stocks)
     
     def _validate_strategy_plan(self, strategy_plan: Dict[str, Any]) -> bool:
         """

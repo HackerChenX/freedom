@@ -1,0 +1,6 @@
+{
+  "validation_status": "failed",
+  "error": "策略执行失败: 条件缺少 indicator_id 字段",
+  "timestamp": "2025-06-23T19:48:21.801999",
+  "execution_mode": "real_data"
+}

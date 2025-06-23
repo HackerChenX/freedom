@@ -65,12 +65,11 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
                 data = pd.DataFrame(data)
             except Exception as e:
                 logger.error(f"ZXMDiagnostics: 无法将字典转换为DataFrame: {e}")
-                
-        # 添加形态识别和信号生成
-        pd = self.add_pattern_detection(pd)
-        pd = self.add_signal_generation(pd)
-
-        return pd.DataFrame()
+                # 如果转换失败，返回空DataFrame
+                result = pd.DataFrame()
+                result = self.add_pattern_detection(result)
+                result = self.add_signal_generation(result)
+                return result
 
         if not isinstance(data, pd.DataFrame):
             logger.error(f"ZXMDiagnostics: 输入数据类型错误，期望DataFrame，实际: {type(data)}")
@@ -81,14 +80,26 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
             
         # 获取参数
         lookback_period = kwargs.get('lookback_period', 60)
-        require_volume = kwargs.get('require_volume', True)
-        
-        # 检查数据完整性
+        require_volume = kwargs.get('require_volume', False)  # 改为不强制要求成交量
+
+        # 检查数据完整性 - 放宽要求
+        min_required_data = min(20, lookback_period)  # 至少需要20个数据点
+        if len(data) < min_required_data:
+            logger.warning(f"ZXMDiagnostics: 数据量不足，需要至少{min_required_data}个数据点，实际{len(data)}个")
+            # 返回空结果但保持索引
+            result = pd.DataFrame(index=data.index)
+            result = self.add_pattern_detection(result)
+            result = self.add_signal_generation(result)
+            return result
+
+        # 调整lookback_period以适应实际数据量
         if len(data) < lookback_period:
-            return pd.DataFrame()
-            
+            lookback_period = max(10, len(data) - 5)  # 保留一些数据用于计算
+            logger.debug(f"ZXMDiagnostics: 调整lookback_period为{lookback_period}")
+
         if require_volume and 'volume' not in data.columns:
-            return pd.DataFrame()
+            logger.warning("ZXMDiagnostics: 缺少成交量数据，将跳过成交量相关分析")
+            require_volume = False
             
         if not all(col in data.columns for col in ['open', 'high', 'low', 'close']):
             logger.warning(f"ZXMDiagnostics缺少必需列，尝试使用列名映射")
@@ -101,10 +112,18 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
                 # 重新检查
                 if not all(col in data.columns for col in ['open', 'high', 'low', 'close']):
                     logger.error(f"列名映射后仍缺少必需列，可用列: {list(data.columns)}")
-                    return pd.DataFrame()
+                    # 返回空结果但保持索引
+                    result = pd.DataFrame(index=data.index)
+                    result = self.add_pattern_detection(result)
+                    result = self.add_signal_generation(result)
+                    return result
             except Exception as e:
                 logger.error(f"列名映射失败: {e}")
-                return pd.DataFrame()
+                # 返回空结果但保持索引
+                result = pd.DataFrame(index=data.index)
+                result = self.add_pattern_detection(result)
+                result = self.add_signal_generation(result)
+                return result
             
         # 初始化结果DataFrame
         result = data.copy()
@@ -165,8 +184,12 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         # 13. 主要问题和建议
         result.loc[:, 'main_issues'] = self._identify_main_issues(result)
         result.loc[:, 'recommendations'] = self._generate_recommendations(result)
-        
-        return result 
+
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
+        return result
 
     def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -457,40 +480,73 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         
         # 趋势方向 (-1 到 1)
         result['direction'] = pd.Series(0.0, index=data.index)
-        for i in range(lookback_period, len(data)):
-            # 短期趋势：当前价格相对于20日均线
-            short_trend = (close.iloc[i] / ma20.iloc[i] - 1) * 10
-            # 中期趋势：20日均线相对于60日均线
-            mid_trend = (ma20.iloc[i] / ma60.iloc[i] - 1) * 10
-            # 长期趋势：通过线性回归斜率计算
-            long_trend = (close.iloc[i] / close.iloc[i-lookback_period] - 1)
-            
-            # 综合趋势方向 (-1 到 1)
-            trend_direction = (short_trend * 0.5 + mid_trend * 0.3 + long_trend * 0.2)
-            result['direction'].iloc[i] = max(-1, min(1, trend_direction))
+        start_idx = max(lookback_period, 20)  # 确保有足够数据计算均线
+        for i in range(start_idx, len(data)):
+            try:
+                # 短期趋势：当前价格相对于20日均线
+                if not pd.isna(ma20.iloc[i]) and ma20.iloc[i] != 0:
+                    short_trend = (close.iloc[i] / ma20.iloc[i] - 1) * 10
+                else:
+                    short_trend = 0
+
+                # 中期趋势：20日均线相对于60日均线
+                if not pd.isna(ma60.iloc[i]) and ma60.iloc[i] != 0 and not pd.isna(ma20.iloc[i]):
+                    mid_trend = (ma20.iloc[i] / ma60.iloc[i] - 1) * 10
+                else:
+                    mid_trend = 0
+
+                # 长期趋势：通过线性回归斜率计算
+                if i >= lookback_period and close.iloc[i-lookback_period] != 0:
+                    long_trend = (close.iloc[i] / close.iloc[i-lookback_period] - 1)
+                else:
+                    long_trend = 0
+
+                # 综合趋势方向 (-1 到 1)
+                trend_direction = (short_trend * 0.5 + mid_trend * 0.3 + long_trend * 0.2)
+                result['direction'].iloc[i] = max(-1, min(1, trend_direction))
+            except Exception as e:
+                logger.debug(f"趋势方向计算错误 at index {i}: {e}")
+                result['direction'].iloc[i] = 0.0
         
         # 趋势强度 (0 到 1)
         result['strength'] = pd.Series(0.0, index=data.index)
-        for i in range(lookback_period, len(data)):
-            # 均线排列情况
-            ma_alignment = 1 if ma20.iloc[i] > ma60.iloc[i] else -1
-            
-            # 价格与均线的关系
-            price_ma_relation = 1 if close.iloc[i] > ma20.iloc[i] else -1
-            
-            # 方向一致性
-            direction_consistency = 1 if ma_alignment == price_ma_relation else -1
-            
-            # 趋势持续性（通过标准差/均值比率）
-            recent_returns = close.pct_change().iloc[i-lookback_period:i]
-            cv = recent_returns.std() / abs(recent_returns.mean()) if recent_returns.mean() != 0 else float('inf')
-            trend_consistency = 1 / (1 + cv) if not np.isnan(cv) and not np.isinf(cv) else 0
-            
-            # 综合趋势强度
-            trend_strength = (abs(result['direction'].iloc[i]) * 0.4 +
-                             (direction_consistency > 0) * 0.3 +
-                             trend_consistency * 0.3)
-            result['strength'].iloc[i] = min(1, trend_strength)
+        for i in range(start_idx, len(data)):
+            try:
+                # 均线排列情况
+                if not pd.isna(ma20.iloc[i]) and not pd.isna(ma60.iloc[i]):
+                    ma_alignment = 1 if ma20.iloc[i] > ma60.iloc[i] else -1
+                else:
+                    ma_alignment = 0
+
+                # 价格与均线的关系
+                if not pd.isna(ma20.iloc[i]):
+                    price_ma_relation = 1 if close.iloc[i] > ma20.iloc[i] else -1
+                else:
+                    price_ma_relation = 0
+
+                # 方向一致性
+                direction_consistency = 1 if ma_alignment == price_ma_relation and ma_alignment != 0 else 0
+
+                # 趋势持续性（通过标准差/均值比率）
+                if i >= lookback_period:
+                    recent_returns = close.pct_change().iloc[i-lookback_period:i]
+                    recent_returns = recent_returns.dropna()
+                    if len(recent_returns) > 0 and recent_returns.mean() != 0:
+                        cv = recent_returns.std() / abs(recent_returns.mean())
+                        trend_consistency = 1 / (1 + cv) if not np.isnan(cv) and not np.isinf(cv) else 0
+                    else:
+                        trend_consistency = 0
+                else:
+                    trend_consistency = 0
+
+                # 综合趋势强度
+                trend_strength = (abs(result['direction'].iloc[i]) * 0.4 +
+                                 (direction_consistency > 0) * 0.3 +
+                                 trend_consistency * 0.3)
+                result['strength'].iloc[i] = min(1, max(0, trend_strength))
+            except Exception as e:
+                logger.debug(f"趋势强度计算错误 at index {i}: {e}")
+                result['strength'].iloc[i] = 0.0
         
         # 趋势健康度 (0 到 100)
         result['health'] = pd.Series(50.0, index=data.index)
@@ -526,17 +582,28 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         
         # 动量方向 (-1 到 1)
         result['direction'] = pd.Series(0.0, index=data.index)
-        for i in range(lookback_period, len(data)):
-            # RSI动量
-            rsi_momentum = (rsi.iloc[i] - 50) / 50
-            
-            # 价格动量（通过ROC）
-            price_roc = close.iloc[i] / close.iloc[i-20] - 1
-            price_momentum = price_roc * 5  # 缩放到合理范围
-            
-            # 综合动量方向
-            momentum_direction = rsi_momentum * 0.6 + price_momentum * 0.4
-            result['direction'].iloc[i] = max(-1, min(1, momentum_direction))
+        start_idx = max(lookback_period, 20)  # 确保有足够数据
+        for i in range(start_idx, len(data)):
+            try:
+                # RSI动量
+                if not pd.isna(rsi.iloc[i]):
+                    rsi_momentum = (rsi.iloc[i] - 50) / 50
+                else:
+                    rsi_momentum = 0
+
+                # 价格动量（通过ROC）
+                if i >= 20 and close.iloc[i-20] != 0:
+                    price_roc = close.iloc[i] / close.iloc[i-20] - 1
+                    price_momentum = price_roc * 5  # 缩放到合理范围
+                else:
+                    price_momentum = 0
+
+                # 综合动量方向
+                momentum_direction = rsi_momentum * 0.6 + price_momentum * 0.4
+                result['direction'].iloc[i] = max(-1, min(1, momentum_direction))
+            except Exception as e:
+                logger.debug(f"动量方向计算错误 at index {i}: {e}")
+                result['direction'].iloc[i] = 0.0
         
         # 动量强度 (0 到 1)
         result['strength'] = pd.Series(0.0, index=data.index)

@@ -108,12 +108,13 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         # 验证输入数据
         if data is None or len(data) == 0:
             logger.warning("输入数据为空，无法识别K线形态")
-            
-        # 添加形态识别和信号生成
-        pd = self.add_pattern_detection(pd)
-        pd = self.add_signal_generation(pd)
+            result = pd.DataFrame(index=data.index if data is not None else [])
 
-        return pd.DataFrame(index=data.index if data is not None else [])
+            # 添加形态识别和信号生成
+            result = self.add_pattern_detection(result)
+            result = self.add_signal_generation(result)
+
+            return result
         
         # 确保数据包含必需的列
         self.ensure_columns(data, ["open", "high", "low", "close"])

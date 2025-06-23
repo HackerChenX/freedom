@@ -155,16 +155,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             添加了VOL指标列的DataFrame
         """
         if df.empty:
-
             return pd.DataFrame()
-
-            
-            return pd.DataFrame()
-
-            
 
         # 确保数据包含必要的列
-
         required_columns = ['volume']
         self._validate_dataframe(df, required_columns)
         
@@ -213,27 +206,15 @@ class VOL(BaseIndicator, PatternSignalMixin):
             df_copy = self._analyze_volume_cycles(df_copy)
         
         # 添加形态识别和信号生成
-
-        
         df_copy = self.add_pattern_detection(df_copy)
-
-        
         df_copy = self.add_signal_generation(df_copy)
 
-
-        
         # 存储结果
-
-        
         self._result = df_copy
 
-
-        
         return df_copy
 
-
-        
-        def     get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成成交量(VOL)指标交易信号
         
@@ -247,11 +228,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
             - vol_signal: 1=放量信号, -1=缩量信号, 0=无信号
         """
         if df.empty:
-
             return pd.DataFrame()
-
-            
-            return df
             
         # 检查必要的指标列是否存在
         required_columns = ['vol', 'vol_ma5']

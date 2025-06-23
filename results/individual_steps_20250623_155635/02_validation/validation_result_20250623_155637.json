@@ -1,0 +1,5 @@
+{
+  "validation_status": "failed",
+  "error": "加载策略文件失败: [Errno 2] No such file or directory: '/Users/hacker/PycharmProjects/freedom/results/individual_steps_20250623_155635/01_analysis/generated_strategy.json'",
+  "timestamp": "2025-06-23T15:56:37.415307"
+}

@@ -40,11 +40,25 @@ class DataManagerAdapter:
             enable_monitoring: 是否启用性能监控
             enable_stability: 是否启用稳定性增强
         """
+        # 获取统一配置
+        try:
+            from config.database_config_manager import get_clickhouse_connection_config
+            db_config = get_clickhouse_connection_config()
+        except ImportError:
+            logger.warning("统一配置管理器不可用，使用默认配置")
+            db_config = {
+                'host': 'localhost',
+                'port': 9000,
+                'database': 'stock'
+            }
+
         # 初始化连接池
         self.connection_pool = initialize_connection_pool(
-            host='localhost',
-            port=9000,
-            database='stock',
+            host=db_config.get('host', 'localhost'),
+            port=db_config.get('port', 9000),
+            database=db_config.get('database', 'stock'),
+            user=db_config.get('user', 'default'),
+            password=db_config.get('password', ''),
             max_connections=20,
             min_connections=5
         )

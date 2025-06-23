@@ -455,10 +455,10 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         self.threshold = kwargs.get('threshold', 0.9)
 
 
-class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
+class ZXMTurnover(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-换手率指标
-    
+
     判断日线换手率是否大于0.7%
     """
     
@@ -811,10 +811,10 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         self.threshold = kwargs.get('threshold', 0.7)
 
 
-class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
+class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-缩量指标
-    
+
     判断成交量是否较2日平均成交量缩减10%以上
     """
     
@@ -1127,10 +1127,10 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         self.shrink_threshold = kwargs.get('shrink_threshold', 0.9)
 
 
-class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
+class ZXMMACallback(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-回踩均线指标
-    
+
     判断收盘价是否回踩至20日、30日、60日或120日均线的N%以内
     """
     
@@ -1530,10 +1530,10 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         self.callback_percent = kwargs.get('callback_percent', 4.0)
     
     
-class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
+class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-BS吸筹指标
-    
+
     判断60分钟级别是否存在低位吸筹特征
     """
     
@@ -2004,10 +2004,10 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         )
 
 
-class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
+class BuyPointDetector(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点检测指标
-    
+
     检测多种买点形态
     """
     

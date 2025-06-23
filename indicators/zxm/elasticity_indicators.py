@@ -237,10 +237,10 @@ class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
         """
         self.amplitude_threshold = kwargs.get('amplitude_threshold', 8.1)
         self.count_period = kwargs.get('count_period', 120)
-class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
+class ZXMRiseElasticity(BaseIndicator, PatternSignalMixin):
     """
     ZXM弹性-涨幅指标
-    
+
     判断近80日内是否有日涨幅超过7%的情况
     """
     
@@ -459,10 +459,10 @@ class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
         """
         self.rise_threshold = kwargs.get('rise_threshold', 1.07)
         self.count_period = kwargs.get('count_period', 80)
-class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
+class Elasticity(BaseIndicator, PatternSignalMixin):
     """
     ZXM弹性指标
-    
+
     检测股价弹性和反弹力度
     """
     
@@ -909,10 +909,10 @@ class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
         self.volume_threshold = kwargs.get('volume_threshold', 0.8)
 
 
-class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
+class BounceDetector(BaseIndicator, PatternSignalMixin):
     """
     ZXM反弹检测器
-    
+
     检测价格反弹和回调信号
     """
     

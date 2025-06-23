@@ -118,13 +118,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
             添加了DMI指标列的DataFrame
         """
         if df.empty:
-
             return pd.DataFrame()
-
-            
-            return pd.DataFrame()
-
-            
 
         # 确保数据包含必要的列
 
@@ -173,27 +167,15 @@ class DMI(BaseIndicator, PatternSignalMixin):
                      '-DM_' + str(self.period), 'DX'], axis=1, inplace=True)
         
         # 添加形态识别和信号生成
-
-        
         df_copy = self.add_pattern_detection(df_copy)
-
-        
         df_copy = self.add_signal_generation(df_copy)
 
-
-        
         # 存储结果
-
-        
         self._result = df_copy
 
-
-        
         return df_copy
 
-
-        
-        def     calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算DMI原始评分
         
@@ -348,11 +330,6 @@ class DMI(BaseIndicator, PatternSignalMixin):
             logger.warning(f"DMI形态识别出现索引错误: {e}")
             return []
         
-        
-        # 添加形态识别和信号生成
-        patterns = self.add_pattern_detection(patterns)
-        patterns = self.add_signal_generation(patterns)
-
         return patterns
     
     def _calculate_di_cross_score(self, pdi: pd.Series, mdi: pd.Series) -> pd.Series:

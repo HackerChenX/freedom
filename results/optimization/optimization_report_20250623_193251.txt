@@ -1,0 +1,39 @@
+============================================================
+策略优化报告
+============================================================
+
+原始策略:
+  名称: BuyPointCommonStrategy
+  条件数量: 725
+  逻辑类型: OR
+
+优化策略:
+  名称: BuyPointCommonStrategy_Optimized
+  条件数量: 100
+  逻辑类型: OR
+
+优化摘要:
+  原始条件数: 725
+  优化条件数: 100
+  减少比例: 86.2%
+  优化时间: 2025-06-23T19:32:51.621842
+
+高频指标 (前10名):
+   1. EMV: 27 次
+   2. ZXMBuyPointScore: 26 次
+   3. Elasticity: 25 次
+   4. ZXMElasticityScore: 24 次
+   5. EnhancedTRIX: 23 次
+   6. TrendDetector: 23 次
+   7. KC: 22 次
+   8. TRIX: 22 次
+   9. VOSC: 22 次
+  10. TrendDuration: 22 次
+
+周期分布:
+  weekly: 135 次
+  30min: 128 次
+  monthly: 127 次
+  daily: 112 次
+  60min: 112 次
+  15min: 111 次

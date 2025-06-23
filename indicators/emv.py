@@ -110,8 +110,8 @@ class EMV(BaseIndicator, PatternSignalMixin):
         
         
         # 添加形态识别和信号生成
-        self = self.add_pattern_detection(self)
-        self = self.add_signal_generation(self)
+        self._result = self.add_pattern_detection(self._result)
+        self._result = self.add_signal_generation(self._result)
 
         return self._result
     

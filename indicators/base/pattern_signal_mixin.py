@@ -26,9 +26,13 @@ class PatternSignalMixin:
             添加了形态识别列的DataFrame
         """
         # 初始化形态识别列
-        result['pattern_bullish'] = False
-        result['pattern_bearish'] = False
-        result['pattern_neutral'] = True
+        if result.empty:
+            return result
+
+        result = result.copy()  # 避免SettingWithCopyWarning
+        result.loc[:, 'pattern_bullish'] = False
+        result.loc[:, 'pattern_bearish'] = False
+        result.loc[:, 'pattern_neutral'] = True
         
         # 根据指标类型添加特定形态识别
         indicator_name = getattr(self, 'name', self.__class__.__name__)
@@ -69,9 +73,13 @@ class PatternSignalMixin:
             添加了信号列的DataFrame
         """
         # 初始化信号列
-        result['buy_signal'] = False
-        result['sell_signal'] = False
-        result['hold_signal'] = True
+        if result.empty:
+            return result
+
+        result = result.copy()  # 避免SettingWithCopyWarning
+        result.loc[:, 'buy_signal'] = False
+        result.loc[:, 'sell_signal'] = False
+        result.loc[:, 'hold_signal'] = True
         
         # 根据指标类型添加特定信号生成
         indicator_name = getattr(self, 'name', self.__class__.__name__)
@@ -283,9 +291,9 @@ class PatternSignalMixin:
             main_col = result.columns[0]  # 使用第一列作为主要指标
             if result[main_col].dtype in ['float64', 'int64']:
                 # 基于趋势的形态识别
-                result['pattern_bullish'] = result[main_col] > result[main_col].shift(1)  # 上升趋势
-                result['pattern_bearish'] = result[main_col] < result[main_col].shift(1)  # 下降趋势
-                result['pattern_neutral'] = result[main_col] == result[main_col].shift(1)  # 横盘
+                result.loc[:, 'pattern_bullish'] = result[main_col] > result[main_col].shift(1)  # 上升趋势
+                result.loc[:, 'pattern_bearish'] = result[main_col] < result[main_col].shift(1)  # 下降趋势
+                result.loc[:, 'pattern_neutral'] = result[main_col] == result[main_col].shift(1)  # 横盘
         
         return result
     
@@ -301,9 +309,9 @@ class PatternSignalMixin:
                 prev_trend_up = result[main_col].shift(1) > result[main_col].shift(2)
                 prev_trend_down = result[main_col].shift(1) < result[main_col].shift(2)
                 
-                result['buy_signal'] = trend_up & ~prev_trend_up  # 趋势转为上升
-                result['sell_signal'] = trend_down & ~prev_trend_down  # 趋势转为下降
-                result['hold_signal'] = ~(result['buy_signal'] | result['sell_signal'])
+                result.loc[:, 'buy_signal'] = trend_up & ~prev_trend_up  # 趋势转为上升
+                result.loc[:, 'sell_signal'] = trend_down & ~prev_trend_down  # 趋势转为下降
+                result.loc[:, 'hold_signal'] = ~(result['buy_signal'] | result['sell_signal'])
         
         return result
     

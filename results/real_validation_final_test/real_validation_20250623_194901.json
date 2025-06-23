@@ -1,0 +1,6 @@
+{
+  "validation_status": "failed",
+  "error": "策略执行失败: 执行策略失败: 未找到策略: STRATEGY_DC122B81",
+  "timestamp": "2025-06-23T19:49:01.616226",
+  "execution_mode": "real_data"
+}

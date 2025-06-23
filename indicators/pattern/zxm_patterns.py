@@ -68,12 +68,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         """
         # 验证输入数据
         if data is None or len(data) == 0:
-            
-        # 添加形态识别和信号生成
-        result_df = self.add_pattern_detection(result_df)
-        result_df = self.add_signal_generation(result_df)
-
-        return pd.DataFrame(index=data.index if data is not None else [])
+            return pd.DataFrame(index=data.index if data is not None else [])
 
         # 确保数据包含必需的列
         required_columns = ["open", "high", "low", "close", "volume"]
@@ -146,6 +141,10 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         result = pd.DataFrame(index=data.index)
         for key, value in result_dict.items():
             result[key] = value
+
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
 
         return result
         

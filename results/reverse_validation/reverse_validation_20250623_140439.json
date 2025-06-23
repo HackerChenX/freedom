@@ -1,0 +1,12 @@
+{
+  "validation_info": {
+    "buypoints_file": "data/buypoints.csv",
+    "strategy_file": "results/analysis_zxm_fixed/generated_strategy.json",
+    "validation_date": "2024-12-01",
+    "validation_time": "2025-06-23T14:04:39.056190"
+  },
+  "original_data": {
+    "total_buypoints": 1,
+    "unique_stocks": 1,
+    "stock_list": [
+      

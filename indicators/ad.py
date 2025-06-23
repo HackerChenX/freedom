@@ -7,6 +7,7 @@ import numpy as np
 from typing import Dict, List, Union, Optional, Any
 import logging
 from .base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.signal_utils import crossover, crossunder
 from enums.signal_strength import SignalStrength
 

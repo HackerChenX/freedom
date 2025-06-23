@@ -106,7 +106,7 @@ class EnhancedMFI(MFI):
                 result["mfi"] = result[mfi_columns[0]]
                 logger.debug(f"成功获取父类MFI计算结果，列名: {mfi_columns[0]}")
             else:
-                logger.warning("父类MFI计算结果中未找到MFI列，返回基础结果")
+                logger.debug("父类MFI计算结果中未找到MFI列，返回基础结果")
                 result["mfi"] = 50.0  # 默认中性值
 
         # 计算动态阈值

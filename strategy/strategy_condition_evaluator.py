@@ -15,7 +15,8 @@ from utils.logger import get_logger
 from db.data_manager import DataManager
 from utils.parameter_standardizer import ParameterStandardizer
 from utils.indicator_parameter_validator import IndicatorParameterValidator
-from indicators.indicator_manager import IndicatorManager
+from indicators.complete_indicator_registry import complete_registry
+from utils.indicator_name_mapper import indicator_name_mapper
 from utils.decorators import performance_monitor, cache_result
 
 logger = get_logger(__name__)
@@ -26,7 +27,7 @@ class StrategyConditionEvaluator:
     def __init__(self):
         """初始化条件评估器"""
         self.data_manager = DataManager()
-        self.indicator_manager = IndicatorManager()
+        self.indicator_registry = complete_registry
         self.condition_cache = {}
 
         # 初始化参数标准化器和验证器
@@ -624,23 +625,31 @@ class StrategyConditionEvaluator:
         if indicator_col in stock_data.columns:
             return self._get_value_on_date(stock_data, indicator_col, date)
             
-        # 调用指标管理器计算指标
+        # 调用指标注册表计算指标
         try:
-            indicator_data = self.indicator_manager.calculate_indicator(
-                stock_data, indicator_name)
-                
-            if indicator_data is not None and parameter in indicator_data.columns:
-                # 合并指标数据到股票数据
-                stock_data[indicator_col] = indicator_data[parameter]
-                
-                # 返回指定日期的值
-                return self._get_value_on_date(stock_data, indicator_col, date)
+            # 使用指标名称映射器转换指标名称
+            mapped_indicator_name = indicator_name_mapper.map_to_registry_name(indicator_name)
+
+            # 使用CompleteIndicatorRegistry创建指标实例
+            indicator_instance = self.indicator_registry.create_indicator(mapped_indicator_name)
+
+            if indicator_instance is not None:
+                # 使用指标实例计算
+                indicator_data = indicator_instance.calculate(stock_data)
+
+                if indicator_data is not None and parameter in indicator_data.columns:
+                    # 合并指标数据到股票数据
+                    stock_data[indicator_col] = indicator_data[parameter]
+                    return self._get_value_on_date(stock_data, indicator_col, date)
+                else:
+                    logger.debug(f"指标 {mapped_indicator_name} 计算结果中没有参数 {parameter}")
+                    return None
             else:
-                logger.debug(f"指标 {indicator_name} 的参数 {parameter} 不存在")
+                logger.debug(f"未找到指标: {indicator_name} (映射为: {mapped_indicator_name})")
                 return None
-                
+
         except Exception as e:
-            logger.error(f"计算指标 {indicator_name} 时出错: {e}")
+            logger.error(f"计算指标 {indicator_name} (映射为: {mapped_indicator_name}) 时出错: {e}")
             return None
     
     def _get_fundamental_value(self, stock_data: pd.DataFrame, 
@@ -917,9 +926,16 @@ class StrategyConditionEvaluator:
                 if indicator_col in stock_data.columns:
                     return self._get_value_on_date(stock_data, indicator_col, date)
 
-                # 调用指标管理器计算指标（带参数）
-                indicator_data = self.indicator_manager.calculate_indicator_with_params(
-                    stock_data, indicator_name, params)
+                # 调用指标注册表计算指标（带参数）
+                # 使用指标名称映射器转换指标名称
+                mapped_indicator_name = indicator_name_mapper.map_to_registry_name(indicator_name)
+
+                indicator_instance = self.indicator_registry.create_indicator(mapped_indicator_name, **params)
+                if indicator_instance is not None:
+                    indicator_data = indicator_instance.calculate(stock_data)
+                else:
+                    logger.debug(f"未找到指标: {indicator_name} (映射为: {mapped_indicator_name})")
+                    indicator_data = None
 
                 if indicator_data is not None and parameter in indicator_data.columns:
                     # 合并指标数据到股票数据

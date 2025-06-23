@@ -10,7 +10,7 @@ from typing import Dict, Any, Dict, List, Union, Optional, Any, Tuple
 import logging
 
 from indicators.base_indicator import BaseIndicator
-from indicators.base.pattern_signal_mixin import PatternSignalMixin, PatternResult
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

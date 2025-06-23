@@ -252,10 +252,10 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
                 - threshold: 弹性评分阈值，默认75
         """
         self.threshold = kwargs.get('threshold', 75)
-class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
+class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点评分指标
-    
+
     综合评估股票的买点表现，包括MACD买点、换手买点和回踩均线买点
     """
     
@@ -505,10 +505,10 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
                 - threshold: 买点评分阈值，默认75
         """
         self.threshold = kwargs.get('threshold', 75)
-class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
+class StockScoreCalculator(BaseIndicator, PatternSignalMixin):
     """
     ZXM股票综合评分指标
-    
+
     计算股票的综合评分
     """
     

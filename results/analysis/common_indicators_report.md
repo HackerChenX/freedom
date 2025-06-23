@@ -2,7 +2,7 @@
 
 ## 📊 报告概览
 
-**生成时间**: 2025-06-22 22:59:33  
+**生成时间**: 2025-06-23 13:20:03  
 **分析系统**: 股票分析系统 v2.1 (数据污染修复版)  
 **技术指标**: 基于86个专业技术指标  
 **分析算法**: ZXM体系买点检测算法  
@@ -27,7 +27,7 @@
 
 ### 数据统计
 - **总样本数量**: 1个买点样本
-- **共性指标数量**: 103个指标形态
+- **共性指标数量**: 111个指标形态
 - **分析周期**: 15minK线
 
 | 指标类型 | 指标名称 | 形态 | 形态描述 | 命中率 | 命中数量 | 平均得分 |
@@ -36,9 +36,6 @@
 | indicator | SAR | 上升趋势 | SAR指标显示上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | SAR | Sar Close To Price | SAR_CLOSE_TO_PRICE形态 | 100.0% | 1 | 50.0 |
 | indicator | SAR | Sar Low Acceleration | SAR_LOW_ACCELERATION形态 | 100.0% | 1 | 50.0 |
-| indicator | ADX | Adx Strong上升 | ADX指标Adx Strong上升 | 100.0% | 1 | 50.0 |
-| indicator | ADX | 上升趋势 | ADX指标显示上升趋势 | 100.0% | 1 | 50.0 |
-| indicator | ADX | 上升趋势 | ADX指标显示上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | KC | Kc上方Middle | KC指标显示Kc上方Middle形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcAtMiddle | KC指标显示KcAtMiddle形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcExpanding | KC指标显示KcExpanding形态 | 100.0% | 1 | 50.0 |
@@ -52,9 +49,14 @@
 | indicator | TRIX | Trix Above Signal | TRIX_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix上升 | TRIX指标Trix上升 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix Consecutive上升 | TRIX指标Trix Consecutive上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Extreme Optimism | VIX_EXTREME_OPTIMISM形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix上升 | VIX指标Vix上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Historical Low | VIX_HISTORICAL_LOW形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上升 | VOSC指标显示Vosc上升形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | VoscLow | VOSC指标显示VoscLow形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | VoscPrice背离 | VOSC指标显示VoscPrice背离形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrNormal | VR指标显示VrNormal形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr上方Ma | VR指标显示Vr上方Ma形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | WrExtreme超买 | WR指标显示WrExtreme超买形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | Wr上升 | WR指标显示Wr上升形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | Wr上升趋势 | WR指标显示Wr上升趋势形态 | 100.0% | 1 | 50.0 |
@@ -87,10 +89,16 @@
 | indicator | EnhancedKDJ | D线上升 | D线呈上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | EnhancedOBV | Obv上升 | EnhancedOBV指标Obv上升 | 100.0% | 1 | 50.0 |
 | indicator | CandlestickPatterns | Double Bottom | double_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | AdvancedCandlestickPatterns | Double Bottom | double_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMPattern | macd_double_diverge | ZXMPattern指标macd_double_diverge形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMPattern | ma_precise_support | ZXMPattern指标ma_precise_support形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMPattern | small_alternating | ZXMPattern指标small_alternating形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | pattern_neutral | ZXMPattern指标pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | hold_signal | ZXMPattern指标hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | TrendDetector | 下降趋势 | TrendDetector指标下降趋势形态 | 100.0% | 1 | 50.0 |
 | indicator | TrendDetector | 下降趋势初期 | TrendDetector指标下降趋势初期形态 | 100.0% | 1 | 50.0 |
 | indicator | TrendDetector | 虚弱下降趋势 | TrendDetector指标虚弱下降趋势形态 | 100.0% | 1 | 50.0 |
@@ -147,8 +155,8 @@
   *SAR_CLOSE_TO_PRICE形态*
 - **SAR** (Sar Low Acceleration): 100.0%命中率，平均得分50.0分
   *SAR_LOW_ACCELERATION形态*
-- **ADX** (Adx Strong上升): 100.0%命中率，平均得分50.0分
-  *ADX指标Adx Strong上升*
+- **KC** (Kc上方Middle): 100.0%命中率，平均得分50.0分
+  *KC指标显示Kc上方Middle形态*
 
 ---
 
@@ -156,7 +164,7 @@
 
 ### 数据统计
 - **总样本数量**: 1个买点样本
-- **共性指标数量**: 105个指标形态
+- **共性指标数量**: 112个指标形态
 - **分析周期**: dailyK线
 
 | 指标类型 | 指标名称 | 形态 | 形态描述 | 命中率 | 命中数量 | 平均得分 |
@@ -165,9 +173,6 @@
 | indicator | VOL | 均量线多头排列 | 成交量均线呈多头排列，表示成交量趋势强劲 | 100.0% | 1 | 70.0 |
 | indicator | SAR | Sar Close To Price | SAR_CLOSE_TO_PRICE形态 | 100.0% | 1 | 50.0 |
 | indicator | SAR | Sar Low Acceleration | SAR_LOW_ACCELERATION形态 | 100.0% | 1 | 50.0 |
-| indicator | ADX | Adx Strong上升 | ADX指标Adx Strong上升 | 100.0% | 1 | 50.0 |
-| indicator | ADX | 上升趋势 | ADX指标显示上升趋势 | 100.0% | 1 | 50.0 |
-| indicator | ADX | 上升趋势 | ADX指标显示上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | KC | Kc上方Middle | KC指标显示Kc上方Middle形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcAtMiddle | KC指标显示KcAtMiddle形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcContracting | KC指标显示KcContracting形态 | 100.0% | 1 | 50.0 |
@@ -180,9 +185,13 @@
 | indicator | TRIX | Trix Above Signal | TRIX_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix上升 | TRIX指标Trix上升 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix Consecutive上升 | TRIX指标Trix Consecutive上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Extreme Optimism | VIX_EXTREME_OPTIMISM形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Above Smooth | VIX_ABOVE_SMOOTH形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上方Zero | VOSC指标显示Vosc上方Zero形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上方信号 | VOSC指标显示Vosc上方信号形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | VoscPrice背离 | VOSC指标显示VoscPrice背离形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrNormal | VR指标显示VrNormal形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr死叉交叉 | VR指标显示Vr死叉交叉形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | WrNormal | WR指标显示WrNormal形态 | 100.0% | 1 | 50.0 |
 | indicator | BOLL | 布林带收缩 | 布林带收缩，表明波动率降低，可能酝酿突破 | 100.0% | 1 | 50.0 |
 | indicator | BOLL | 布林带趋势跟随 | 价格沿布林带边缘运行，表明趋势强劲 | 100.0% | 1 | 50.0 |
@@ -212,10 +221,16 @@
 | indicator | EnhancedKDJ | J线超卖 | J线低于0，表明极度超卖 | 100.0% | 1 | 50.0 |
 | indicator | CandlestickPatterns | Hammer | hammer形态 | 100.0% | 1 | 50.0 |
 | indicator | CandlestickPatterns | Single Needle Bottom | single_needle_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | AdvancedCandlestickPatterns | Hammer | hammer形态 | 100.0% | 1 | 50.0 |
 | indicator | AdvancedCandlestickPatterns | Single Needle Bottom | single_needle_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMPattern | class_two_buy | ZXMPattern指标class_two_buy形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMPattern | volume_decrease | ZXMPattern指标volume_decrease形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | pattern_neutral | ZXMPattern指标pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | hold_signal | ZXMPattern指标hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMDailyTrendUp | 均线上移 | ZXMDailyTrendUp指标均线上移形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMDailyTrendUp | 双均线上移 | ZXMDailyTrendUp指标双均线上移形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMDailyTrendUp | 价格站上双均线 | ZXMDailyTrendUp指标价格站上双均线形态 | 100.0% | 1 | 50.0 |
@@ -278,8 +293,8 @@
   *SAR_CLOSE_TO_PRICE形态*
 - **SAR** (Sar Low Acceleration): 100.0%命中率，平均得分50.0分
   *SAR_LOW_ACCELERATION形态*
-- **ADX** (Adx Strong上升): 100.0%命中率，平均得分50.0分
-  *ADX指标Adx Strong上升*
+- **KC** (Kc上方Middle): 100.0%命中率，平均得分50.0分
+  *KC指标显示Kc上方Middle形态*
 
 ---
 
@@ -287,7 +302,7 @@
 
 ### 数据统计
 - **总样本数量**: 1个买点样本
-- **共性指标数量**: 126个指标形态
+- **共性指标数量**: 135个指标形态
 - **分析周期**: weeklyK线
 
 | 指标类型 | 指标名称 | 形态 | 形态描述 | 命中率 | 命中数量 | 平均得分 |
@@ -300,9 +315,6 @@
 | indicator | SAR | 上升趋势 | SAR指标显示上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | SAR | Sar Close To Price | SAR_CLOSE_TO_PRICE形态 | 100.0% | 1 | 50.0 |
 | indicator | SAR | Sar Low Acceleration | SAR_LOW_ACCELERATION形态 | 100.0% | 1 | 50.0 |
-| indicator | ADX | Adx Strong上升 | ADX指标Adx Strong上升 | 100.0% | 1 | 50.0 |
-| indicator | ADX | 上升趋势 | ADX指标显示上升趋势 | 100.0% | 1 | 50.0 |
-| indicator | ADX | 上升趋势 | ADX指标显示上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | KC | Kc上方Middle | KC指标显示Kc上方Middle形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcWideChannel | KC指标显示KcWideChannel形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcExpanding | KC指标显示KcExpanding形态 | 100.0% | 1 | 50.0 |
@@ -315,11 +327,17 @@
 | indicator | TRIX | Trix Above Signal | TRIX_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix上升 | TRIX指标Trix上升 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix Consecutive上升 | TRIX指标Trix Consecutive上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Low Panic | VIX_LOW_PANIC形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix上升 | VIX指标Vix上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Above Smooth | VIX_ABOVE_SMOOTH形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上方Zero | VOSC指标显示Vosc上方Zero形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上方信号 | VOSC指标显示Vosc上方信号形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上升 | VOSC指标显示Vosc上升形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上升趋势 | VOSC指标显示Vosc上升趋势形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | VoscPrice背离 | VOSC指标显示VoscPrice背离形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrNormal | VR指标显示VrNormal形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr死叉交叉 | VR指标显示Vr死叉交叉形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrRapidFall | VR指标显示VrRapidFall形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | WrNormal | WR指标显示WrNormal形态 | 100.0% | 1 | 50.0 |
 | indicator | BOLL | 布林带扩张 | 布林带扩张，表明波动率增加，趋势可能延续 | 100.0% | 1 | 50.0 |
 | indicator | BOLL | 布林带趋势跟随 | 价格沿布林带边缘运行，表明趋势强劲 | 100.0% | 1 | 50.0 |
@@ -357,7 +375,13 @@
 | indicator | EnhancedOBV | Obv上升 | EnhancedOBV指标Obv上升 | 100.0% | 1 | 50.0 |
 | indicator | EnhancedOBV | Obv Cross Ma Up | OBV_CROSS_MA_UP形态 | 100.0% | 1 | 50.0 |
 | indicator | CandlestickPatterns | Double Bottom | double_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | AdvancedCandlestickPatterns | Double Bottom | double_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | pattern_neutral | ZXMPattern指标pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | hold_signal | ZXMPattern指标hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMWeeklyTrendUp | 周均线上移 | ZXMWeeklyTrendUp指标周均线上移形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMWeeklyTrendUp | 三均线同时上移 | ZXMWeeklyTrendUp指标三均线同时上移形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMWeeklyTrendUp | 价格站上三均线 | ZXMWeeklyTrendUp指标价格站上三均线形态 | 100.0% | 1 | 50.0 |
@@ -439,7 +463,7 @@
 
 ### 数据统计
 - **总样本数量**: 1个买点样本
-- **共性指标数量**: 113个指标形态
+- **共性指标数量**: 127个指标形态
 - **分析周期**: monthlyK线
 
 | 指标类型 | 指标名称 | 形态 | 形态描述 | 命中率 | 命中数量 | 平均得分 |
@@ -448,7 +472,6 @@
 | indicator | VOL | 放量上涨 | 成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号 | 100.0% | 1 | 70.0 |
 | indicator | SAR | Sar Close To Price | SAR_CLOSE_TO_PRICE形态 | 100.0% | 1 | 50.0 |
 | indicator | SAR | Sar Low Acceleration | SAR_LOW_ACCELERATION形态 | 100.0% | 1 | 50.0 |
-| indicator | ADX | 上升趋势 | ADX指标显示上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | KC | Kc上方Middle | KC指标显示Kc上方Middle形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcBreakMiddleUp | KC指标显示KcBreakMiddleUp形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcWideChannel | KC指标显示KcWideChannel形态 | 100.0% | 1 | 50.0 |
@@ -466,11 +489,20 @@
 | indicator | TRIX | Trix Above Signal | TRIX_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix上升 | TRIX指标Trix上升 | 100.0% | 1 | 50.0 |
 | indicator | TRIX | Trix Strong | TRIX_STRONG形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Moderate Panic | VIX_MODERATE_PANIC形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix上升 | VIX指标Vix上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Above Smooth | VIX_ABOVE_SMOOTH形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Far Above Smooth | VIX_FAR_ABOVE_SMOOTH形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上方Zero | VOSC指标显示Vosc上方Zero形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上方信号 | VOSC指标显示Vosc上方信号形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上升 | VOSC指标显示Vosc上升形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | Vosc上升趋势 | VOSC指标显示Vosc上升趋势形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | VoscPriceConfirmation | VOSC指标显示VoscPriceConfirmation形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr超买 | VR指标显示Vr超买形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr上方Ma | VR指标显示Vr上方Ma形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr上升 | VR指标显示Vr上升形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr上升趋势 | VR指标显示Vr上升趋势形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrRapidRise | VR指标显示VrRapidRise形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | Wr超买 | WR指标显示Wr超买形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | Wr交叉上方Mid | WR指标显示Wr交叉上方Mid形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | Wr上升 | WR指标显示Wr上升形态 | 100.0% | 1 | 50.0 |
@@ -509,8 +541,14 @@
 | indicator | EnhancedOBV | Obv Breakout | OBV_BREAKOUT形态 | 100.0% | 1 | 50.0 |
 | indicator | EnhancedOBV | 看涨Obv  Momentum | EnhancedOBV指标显示看涨Obv  Momentum形态 | 100.0% | 1 | 50.0 |
 | indicator | CandlestickPatterns | V Reversal | v_reversal形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | AdvancedCandlestickPatterns | V Reversal | v_reversal形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMPattern | ma_precise_support | ZXMPattern指标ma_precise_support形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | pattern_neutral | ZXMPattern指标pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | hold_signal | ZXMPattern指标hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMMonthlyKDJTrendUp | 月KDJ指标K值上移 | ZXMMonthlyKDJTrendUp指标月KDJ指标K值上移形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMMonthlyKDJTrendUp | 月线KDJ金叉后持续上行 | ZXMMonthlyKDJTrendUp指标月线KDJ金叉后持续上行形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMMonthlyMACD | 月线MACD多头排列 | ZXMMonthlyMACD指标月线MACD多头排列形态 | 100.0% | 1 | 50.0 |
@@ -569,8 +607,8 @@
   *SAR_CLOSE_TO_PRICE形态*
 - **SAR** (Sar Low Acceleration): 100.0%命中率，平均得分50.0分
   *SAR_LOW_ACCELERATION形态*
-- **ADX** (上升趋势): 100.0%命中率，平均得分50.0分
-  *ADX指标显示上升趋势*
+- **KC** (Kc上方Middle): 100.0%命中率，平均得分50.0分
+  *KC指标显示Kc上方Middle形态*
 
 ---
 
@@ -578,86 +616,122 @@
 
 ### 数据统计
 - **总样本数量**: 1个买点样本
-- **共性指标数量**: 88个指标形态
+- **共性指标数量**: 128个指标形态
 - **分析周期**: 30minK线
 
 | 指标类型 | 指标名称 | 形态 | 形态描述 | 命中率 | 命中数量 | 平均得分 |
 |---------|----------|------|----------|--------|----------|----------|
-| indicator | RSI | RSI超卖 | RSI指标低于30，进入超卖区域，存在反弹机会 | 100.0% | 1 | 70.0 |
+| indicator | BOLL | 布林带上轨突破 | 价格突破布林带上轨，表明强势上涨 | 100.0% | 1 | 70.0 |
+| indicator | VOL | 成交量金叉 | 短期成交量均线上穿长期均线，表示成交量趋势向好 | 100.0% | 1 | 70.0 |
+| indicator | StockScoreCalculator | 买入信号 | 指标产生买入信号，建议关注 | 100.0% | 1 | 70.0 |
+| indicator | WMA | Price Cross Above Wma14 | PRICE_CROSS_ABOVE_WMA14形态 | 100.0% | 1 | 50.0 |
+| indicator | SAR | 看涨Sar  Reversal | SAR指标显示看涨Sar  Reversal形态 | 100.0% | 1 | 50.0 |
+| indicator | SAR | 上升趋势 | SAR指标显示上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | SAR | Sar Close To Price | SAR_CLOSE_TO_PRICE形态 | 100.0% | 1 | 50.0 |
-| indicator | ADX | Adx Strong上升 | ADX指标Adx Strong上升 | 100.0% | 1 | 50.0 |
-| indicator | KC | KcWideChannel | KC指标显示KcWideChannel形态 | 100.0% | 1 | 50.0 |
+| indicator | SAR | Sar Low Acceleration | SAR_LOW_ACCELERATION形态 | 100.0% | 1 | 50.0 |
+| indicator | KC | Kc上方Upper | KC指标显示Kc上方Upper形态 | 100.0% | 1 | 50.0 |
+| indicator | KC | KcBreakUpper | KC指标显示KcBreakUpper形态 | 100.0% | 1 | 50.0 |
+| indicator | KC | KcBreakMiddleUp | KC指标显示KcBreakMiddleUp形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcExpanding | KC指标显示KcExpanding形态 | 100.0% | 1 | 50.0 |
+| indicator | KC | KcExtreme超买 | KC指标显示KcExtreme超买形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm金叉交叉 | MTM指标显示Mtm金叉交叉形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm交叉UpZero | MTM指标显示Mtm交叉UpZero形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm上方Zero | MTM指标显示Mtm上方Zero形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm上方Ma | MTM指标显示Mtm上方Ma形态 | 100.0% | 1 | 50.0 |
+| indicator | PSY | PSY_OVERSOLD | PSY指标PSY_OVERSOLD形态 | 100.0% | 1 | 50.0 |
+| indicator | PSY | PSY_GOLDEN_CROSS | PSY指标PSY_GOLDEN_CROSS形态 | 100.0% | 1 | 50.0 |
 | indicator | PSY | PSY_BELOW_50 | PSY指标PSY_BELOW_50形态 | 100.0% | 1 | 50.0 |
-| indicator | PSY | PSY_BELOW_MA | PSY指标PSY_BELOW_MA形态 | 100.0% | 1 | 50.0 |
-| indicator | VOSC | Vosc上方信号 | VOSC指标显示Vosc上方信号形态 | 100.0% | 1 | 50.0 |
-| indicator | VOSC | Vosc金叉交叉 | VOSC指标显示Vosc金叉交叉形态 | 100.0% | 1 | 50.0 |
-| indicator | VOSC | Vosc上升 | VOSC指标显示Vosc上升形态 | 100.0% | 1 | 50.0 |
-| indicator | VOSC | Vosc上升趋势 | VOSC指标显示Vosc上升趋势形态 | 100.0% | 1 | 50.0 |
-| indicator | VOSC | VoscLow | VOSC指标显示VoscLow形态 | 100.0% | 1 | 50.0 |
+| indicator | PSY | PSY_ABOVE_MA | PSY指标PSY_ABOVE_MA形态 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt Golden Cross | PVT_GOLDEN_CROSS形态 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt Above Signal | PVT_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt上升 | PVT指标Pvt上升 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt Strong Up | PVT_STRONG_UP形态 | 100.0% | 1 | 50.0 |
+| indicator | TRIX | Trix Above Zero | TRIX_ABOVE_ZERO形态 | 100.0% | 1 | 50.0 |
+| indicator | TRIX | Trix Above Signal | TRIX_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
+| indicator | TRIX | Trix上升 | TRIX指标Trix上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Extreme Optimism | VIX_EXTREME_OPTIMISM形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Relative Low | VIX_RELATIVE_LOW形态 | 100.0% | 1 | 50.0 |
+| indicator | VOSC | Vosc上方Zero | VOSC指标显示Vosc上方Zero形态 | 100.0% | 1 | 50.0 |
+| indicator | VOSC | VoscNeutral | VOSC指标显示VoscNeutral形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | VoscPriceConfirmation | VOSC指标显示VoscPriceConfirmation形态 | 100.0% | 1 | 50.0 |
-| indicator | WR | WrLowStagnation | WR指标显示WrLowStagnation形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrNormal | VR指标显示VrNormal形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrStable | VR指标显示VrStable形态 | 100.0% | 1 | 50.0 |
+| indicator | WR | WrExtreme超买 | WR指标显示WrExtreme超买形态 | 100.0% | 1 | 50.0 |
+| indicator | WR | Wr交叉上方Mid | WR指标显示Wr交叉上方Mid形态 | 100.0% | 1 | 50.0 |
+| indicator | WR | Wr上升 | WR指标显示Wr上升形态 | 100.0% | 1 | 50.0 |
+| indicator | AD | Strength | strength形态 | 100.0% | 1 | 50.0 |
+| indicator | BOLL | 布林带波动区间 | 基于布林带指标的波动区间分析: BOLL_OVERBOUGHT | 100.0% | 1 | 50.0 |
 | indicator | BOLL | 布林带扩张 | 布林带扩张，表明波动率增加，趋势可能延续 | 100.0% | 1 | 50.0 |
-| indicator | BOLL | 布林带趋势跟随 | 价格沿布林带边缘运行，表明趋势强劲 | 100.0% | 1 | 50.0 |
-| indicator | KDJ | KDJ超卖 | KDJ值低于20，表示超卖状态 | 100.0% | 1 | 50.0 |
-| indicator | BIAS | BIAS中度偏低 | BIAS值在-15%到-5%之间，表示轻度超卖 | 100.0% | 1 | 50.0 |
-| indicator | BIAS | Bias看涨背离 | BIAS指标显示Bias看涨背离形态 | 100.0% | 1 | 50.0 |
-| indicator | BIAS | BIAS背离 | 价格与BIAS指标出现背离 | 100.0% | 1 | 50.0 |
+| indicator | BIAS | BIAS中度偏高 | BIAS值在+5%到+15%之间，表示轻度超买 | 100.0% | 1 | 50.0 |
 | indicator | DMI | ADX强趋势 | ADX大于25，表示趋势强劲 | 100.0% | 1 | 50.0 |
 | indicator | DMI | ADX上升 | ADX上升，趋势强度增强 | 100.0% | 1 | 50.0 |
-| indicator | EMV | EMV零轴下方 | EMV位于零轴下方，卖盘力量占优 | 100.0% | 1 | 50.0 |
-| indicator | EMV | EMV均线下方 | EMV位于移动平均线下方 | 100.0% | 1 | 50.0 |
-| indicator | CMO | CMO超卖 | CMO指标低于-50.0，表示超卖状态 | 100.0% | 1 | 50.0 |
-| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_BELOW_ZERO | 100.0% | 1 | 50.0 |
-| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_FALLING | 100.0% | 1 | 50.0 |
-| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_BELOW_ZERO | 100.0% | 1 | 50.0 |
-| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_LARGE_DIVERGENCE_DOWN | 100.0% | 1 | 50.0 |
-| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_ACCELERATION_DOWN | 100.0% | 1 | 50.0 |
-| indicator | VOL | 成交量偏高 | 成交量高于平均水平，市场活跃度较高 | 100.0% | 1 | 50.0 |
-| indicator | VOL | 成交量能量分析 | 基于成交量能量变化的技术分析: VOL_RISING | 100.0% | 1 | 50.0 |
-| indicator | EnhancedMACD | MACD柱状体为负 | MACD柱状体小于零，表示下降动能 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV零轴上方 | EMV位于零轴上方，买盘力量占优 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV均线上方 | EMV位于移动平均线上方 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV上穿均线 | EMV上穿其移动平均线，趋势转强 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV上升 | EMV值上升 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV极高值 | EMV达到近期高点 | 100.0% | 1 | 50.0 |
+| indicator | CMO | CMO上穿零轴 | CMO从负值区域穿越零轴，动量转正 | 100.0% | 1 | 50.0 |
+| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_ABOVE_ZERO | 100.0% | 1 | 50.0 |
+| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_RISING | 100.0% | 1 | 50.0 |
+| indicator | DMA | DMA上升趋势 | DMA大于0且DMA大于AMA，表示强势上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_ABOVE_ZERO | 100.0% | 1 | 50.0 |
+| indicator | VOL | 成交量能量分析 | 基于成交量能量变化的技术分析: VOL_FALLING | 100.0% | 1 | 50.0 |
+| indicator | EnhancedCCI | Zero Cross Up | zero_cross_up形态 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedMACD | MACD金叉 | MACD线上穿信号线，表明上升趋势开始 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedMACD | MACD柱状体为正 | MACD柱状体大于零，表示上升动能 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedMACD | MACD上升 | MACD线呈上升趋势 | 100.0% | 1 | 50.0 |
 | indicator | EnhancedMACD | MACD柱状体增长 | MACD柱状体连续增长，表示动能增强 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX零轴下方 | TRIX位于零轴下方，长期趋势偏空 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX下降 | TRIX指标下降，长期动量减弱 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX趋势转折 | 基于TRIX指标的趋势转折分析: strong_bearish_consensus | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX加速上升 | TRIX指标加速上升，表明价格上涨动能不断增强 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedKDJ | KDJ超卖 | K线和D线均低于20，表明市场超卖 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedKDJ | J线超卖 | J线低于0，表明极度超卖 | 100.0% | 1 | 50.0 |
-| indicator | CandlestickPatterns | Doji | doji形态 | 100.0% | 1 | 50.0 |
-| indicator | CandlestickPatterns | Gravestone Doji | gravestone_doji形态 | 100.0% | 1 | 50.0 |
-| indicator | CandlestickPatterns | Shooting Star | shooting_star形态 | 100.0% | 1 | 50.0 |
-| indicator | AdvancedCandlestickPatterns | Doji | doji形态 | 100.0% | 1 | 50.0 |
-| indicator | AdvancedCandlestickPatterns | Gravestone Doji | gravestone_doji形态 | 100.0% | 1 | 50.0 |
-| indicator | AdvancedCandlestickPatterns | Shooting Star | shooting_star形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMPattern | class_three_buy | ZXMPattern指标class_three_buy形态 | 100.0% | 1 | 50.0 |
-| indicator | TrendDetector | 下降趋势 | TrendDetector指标下降趋势形态 | 100.0% | 1 | 50.0 |
-| indicator | TrendDetector | 下降趋势初期 | TrendDetector指标下降趋势初期形态 | 100.0% | 1 | 50.0 |
-| indicator | TrendDetector | 虚弱下降趋势 | TrendDetector指标虚弱下降趋势形态 | 100.0% | 1 | 50.0 |
-| indicator | TrendDetector | 中期趋势 | TrendDetector指标中期趋势形态 | 100.0% | 1 | 50.0 |
-| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 下降趋势 | 100.0% | 1 | 50.0 |
-| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 下降趋势衰退阶段 | 100.0% | 1 | 50.0 |
-| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 中期下降趋势 | 100.0% | 1 | 50.0 |
-| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 趋势接近尾声 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX零轴上方 | TRIX位于零轴上方，长期趋势偏多 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX上升 | TRIX指标上升，长期动量增强 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX强烈看涨共振 | TRIX多重信号共振，形成强烈看涨态势 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX减速 | TRIX指标减速变化，动能转变 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedKDJ | KDJ金叉 | K线上穿D线，表明上升趋势开始 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedKDJ | K线上升 | K线呈上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedKDJ | D线上升 | D线呈上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedKDJ | KDJ强势金叉 | K线以大角度上穿D线，表明强势上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Head Shoulders Bottom | head_shoulders_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Double Bottom | double_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | V Reversal | v_reversal形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Head Shoulders Bottom | head_shoulders_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Double Bottom | double_bottom形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | V Reversal | v_reversal形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | pattern_neutral | ZXMPattern指标pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | hold_signal | ZXMPattern指标hold_signal形态 | 100.0% | 1 | 50.0 |
+| indicator | TrendDetector | 上升趋势 | TrendDetector指标上升趋势形态 | 100.0% | 1 | 50.0 |
+| indicator | TrendDetector | 趋势转折：由空转多 | TrendDetector指标趋势转折：由空转多形态 | 100.0% | 1 | 50.0 |
+| indicator | TrendDetector | 上升趋势初期 | TrendDetector指标上升趋势初期形态 | 100.0% | 1 | 50.0 |
+| indicator | TrendDetector | 虚弱上升趋势 | TrendDetector指标虚弱上升趋势形态 | 100.0% | 1 | 50.0 |
+| indicator | TrendDetector | 短期趋势 | TrendDetector指标短期趋势形态 | 100.0% | 1 | 50.0 |
+| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 趋势刚转为上升 | 100.0% | 1 | 50.0 |
+| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 上升趋势初始阶段 | 100.0% | 1 | 50.0 |
+| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 短期上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 趋势初期 | 100.0% | 1 | 50.0 |
 | indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 高规律性周期 | 100.0% | 1 | 50.0 |
 | indicator | ZXMTurnover | ZXM_TURNOVER_BUY_POINT | ZXMTurnover指标ZXM_TURNOVER_BUY_POINT形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMTurnover | ZXM_TURNOVER_ACTIVE | ZXMTurnover指标ZXM_TURNOVER_ACTIVE形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMTurnover | ZXM_TURNOVER_RELATIVE_ACTIVE | ZXMTurnover指标ZXM_TURNOVER_RELATIVE_ACTIVE形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMTurnover | ZXM_TURNOVER_SUDDEN_INCREASE | ZXMTurnover指标ZXM_TURNOVER_SUDDEN_INCREASE形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMVolumeShrink | ZXM_VOLUME_NORMAL | ZXMVolumeShrink指标ZXM_VOLUME_NORMAL形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMBSAbsorb | ZXM_BS_ABSORB_STRONG | ZXMBSAbsorb指标ZXM_BS_ABSORB_STRONG形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMBSAbsorb | ZXM_BS_ABSORB_HEAVY_ZONE | ZXMBSAbsorb指标ZXM_BS_ABSORB_HEAVY_ZONE形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMTurnover | ZXM_TURNOVER_NORMAL_ACTIVE | ZXMTurnover指标ZXM_TURNOVER_NORMAL_ACTIVE形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMVolumeShrink | ZXM_VOLUME_SHRINK_BUY_POINT | ZXMVolumeShrink指标ZXM_VOLUME_SHRINK_BUY_POINT形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMVolumeShrink | ZXM_VOLUME_OBVIOUS_SHRINK | ZXMVolumeShrink指标ZXM_VOLUME_OBVIOUS_SHRINK形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMBSAbsorb | ZXM_BS_ABSORB_WATCH_ZONE | ZXMBSAbsorb指标ZXM_BS_ABSORB_WATCH_ZONE形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMBSAbsorb | ZXM_BS_STABLE_MOMENTUM | ZXMBSAbsorb指标ZXM_BS_STABLE_MOMENTUM形态 | 100.0% | 1 | 50.0 |
 | indicator | AmplitudeElasticity | 振幅弹性信号 | AmplitudeElasticity指标振幅弹性信号形态 | 100.0% | 1 | 50.0 |
-| indicator | AmplitudeElasticity | 大振幅日 | AmplitudeElasticity指标大振幅日形态 | 100.0% | 1 | 50.0 |
-| indicator | AmplitudeElasticity | 中等振幅 | AmplitudeElasticity指标中等振幅形态 | 100.0% | 1 | 50.0 |
-| indicator | AmplitudeElasticity | 偶尔大振幅 | AmplitudeElasticity指标偶尔大振幅形态 | 100.0% | 1 | 50.0 |
+| indicator | AmplitudeElasticity | 小振幅 | AmplitudeElasticity指标小振幅形态 | 100.0% | 1 | 50.0 |
+| indicator | AmplitudeElasticity | 频繁大振幅 | AmplitudeElasticity指标频繁大振幅形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMRiseElasticity | 涨幅弹性信号 | ZXMRiseElasticity指标涨幅弹性信号形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMRiseElasticity | 温和上涨 | ZXMRiseElasticity指标温和上涨形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMRiseElasticity | 大涨日 | ZXMRiseElasticity指标大涨日形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMRiseElasticity | 极大涨幅 | ZXMRiseElasticity指标极大涨幅形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMRiseElasticity | 少量大涨 | ZXMRiseElasticity指标少量大涨形态 | 100.0% | 1 | 50.0 |
-| indicator | Elasticity | 低弹性比率 | Elasticity指标低弹性比率形态 | 100.0% | 1 | 50.0 |
-| indicator | Elasticity | 接近低点 | Elasticity指标接近低点形态 | 100.0% | 1 | 50.0 |
-| indicator | Elasticity | 放量反弹 | Elasticity指标放量反弹形态 | 100.0% | 1 | 50.0 |
+| indicator | Elasticity | 高弹性比率 | Elasticity指标高弹性比率形态 | 100.0% | 1 | 50.0 |
+| indicator | Elasticity | 强反弹 | Elasticity指标强反弹形态 | 100.0% | 1 | 50.0 |
+| indicator | Elasticity | 量能正常 | Elasticity指标量能正常形态 | 100.0% | 1 | 50.0 |
 | indicator | Elasticity | 大幅波动区间 | Elasticity指标大幅波动区间形态 | 100.0% | 1 | 50.0 |
-| indicator | BounceDetector | 明显放量 | 明显放量形态 | 100.0% | 1 | 50.0 |
+| indicator | BounceDetector | 大幅反弹 | 大幅反弹形态 | 100.0% | 1 | 50.0 |
+| indicator | BounceDetector | 短期上升趋势 | 短期上升趋势形态 | 100.0% | 1 | 50.0 |
+| indicator | BounceDetector | 明显缩量 | 明显缩量形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMElasticityScore | 弹性评分信号 | ZXMElasticityScore指标弹性评分信号形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMElasticityScore | 振幅弹性满足 | ZXMElasticityScore指标振幅弹性满足形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMElasticityScore | 涨幅弹性满足 | ZXMElasticityScore指标涨幅弹性满足形态 | 100.0% | 1 | 50.0 |
@@ -667,24 +741,28 @@
 | indicator | ZXMBuyPointScore | 换手买点满足 | ZXMBuyPointScore指标换手买点满足形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMBuyPointScore | 中等买点评分 | ZXMBuyPointScore指标中等买点评分形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMBuyPointScore | 多数买点指标满足 | ZXMBuyPointScore指标多数买点指标满足形态 | 100.0% | 1 | 50.0 |
-| indicator | StockScoreCalculator | 低分股票 | 低分股票形态 | 100.0% | 1 | 50.0 |
+| indicator | StockScoreCalculator | 优质股票 | 优质股票形态 | 100.0% | 1 | 50.0 |
+| indicator | StockScoreCalculator | 趋势强劲 | 趋势强劲形态 | 100.0% | 1 | 50.0 |
+| indicator | StockScoreCalculator | 动量强劲 | 动量强劲形态 | 100.0% | 1 | 50.0 |
 | indicator | StockScoreCalculator | 高波动性 | 高波动性形态 | 100.0% | 1 | 50.0 |
-| indicator | BOLL | 布林带下轨突破 | 价格跌破布林带下轨，表明强势下跌 | 100.0% | 1 | 30.0 |
-| indicator | StockScoreCalculator | 卖出信号 | 指标产生卖出信号，建议谨慎 | 100.0% | 1 | 30.0 |
+| indicator | SelectionModel | 选股系统买入信号 | 选股系统买入信号形态 | 100.0% | 1 | 50.0 |
+| indicator | SelectionModel | 强趋势上涨股 | 强趋势上涨股形态 | 100.0% | 1 | 50.0 |
+| indicator | SelectionModel | 最高优先级选股 | 最高优先级选股形态 | 100.0% | 1 | 50.0 |
+| indicator | SelectionModel | 超强上升趋势 | 超强上升趋势形态 | 100.0% | 1 | 50.0 |
 
 ### 📊 30min周期分析总结
 
 #### 🎯 高命中率指标 (≥80%)
-- **RSI** (RSI超卖): 100.0%命中率，平均得分70.0分
-  *RSI指标低于30，进入超卖区域，存在反弹机会*
-- **SAR** (Sar Close To Price): 100.0%命中率，平均得分50.0分
-  *SAR_CLOSE_TO_PRICE形态*
-- **ADX** (Adx Strong上升): 100.0%命中率，平均得分50.0分
-  *ADX指标Adx Strong上升*
-- **KC** (KcWideChannel): 100.0%命中率，平均得分50.0分
-  *KC指标显示KcWideChannel形态*
-- **KC** (KcExpanding): 100.0%命中率，平均得分50.0分
-  *KC指标显示KcExpanding形态*
+- **BOLL** (布林带上轨突破): 100.0%命中率，平均得分70.0分
+  *价格突破布林带上轨，表明强势上涨*
+- **VOL** (成交量金叉): 100.0%命中率，平均得分70.0分
+  *短期成交量均线上穿长期均线，表示成交量趋势向好*
+- **StockScoreCalculator** (买入信号): 100.0%命中率，平均得分70.0分
+  *指标产生买入信号，建议关注*
+- **WMA** (Price Cross Above Wma14): 100.0%命中率，平均得分50.0分
+  *PRICE_CROSS_ABOVE_WMA14形态*
+- **SAR** (看涨Sar  Reversal): 100.0%命中率，平均得分50.0分
+  *SAR指标显示看涨Sar  Reversal形态*
 
 ---
 
@@ -692,66 +770,111 @@
 
 ### 数据统计
 - **总样本数量**: 1个买点样本
-- **共性指标数量**: 67个指标形态
+- **共性指标数量**: 112个指标形态
 - **分析周期**: 60minK线
 
 | 指标类型 | 指标名称 | 形态 | 形态描述 | 命中率 | 命中数量 | 平均得分 |
 |---------|----------|------|----------|--------|----------|----------|
-| indicator | RSI | RSI超卖 | RSI指标低于30，进入超卖区域，存在反弹机会 | 100.0% | 1 | 70.0 |
+| indicator | BOLL | 布林带上轨突破 | 价格突破布林带上轨，表明强势上涨 | 100.0% | 1 | 70.0 |
 | indicator | SAR | Sar Close To Price | SAR_CLOSE_TO_PRICE形态 | 100.0% | 1 | 50.0 |
+| indicator | SAR | Sar Low Acceleration | SAR_LOW_ACCELERATION形态 | 100.0% | 1 | 50.0 |
+| indicator | KC | Kc上方Middle | KC指标显示Kc上方Middle形态 | 100.0% | 1 | 50.0 |
 | indicator | KC | KcExpanding | KC指标显示KcExpanding形态 | 100.0% | 1 | 50.0 |
+| indicator | KC | KcOscillating | KC指标显示KcOscillating形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm金叉交叉 | MTM指标显示Mtm金叉交叉形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm交叉UpZero | MTM指标显示Mtm交叉UpZero形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm上方Zero | MTM指标显示Mtm上方Zero形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm上方Ma | MTM指标显示Mtm上方Ma形态 | 100.0% | 1 | 50.0 |
+| indicator | MTM | Mtm强势Up | MTM指标显示Mtm强势Up形态 | 100.0% | 1 | 50.0 |
 | indicator | PSY | PSY_BELOW_50 | PSY指标PSY_BELOW_50形态 | 100.0% | 1 | 50.0 |
 | indicator | PSY | PSY_BELOW_MA | PSY指标PSY_BELOW_MA形态 | 100.0% | 1 | 50.0 |
-| indicator | PSY | PSY_STRONG_DOWN | PSY指标PSY_STRONG_DOWN形态 | 100.0% | 1 | 50.0 |
-| indicator | VOSC | VoscLow | VOSC指标显示VoscLow形态 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt Golden Cross | PVT_GOLDEN_CROSS形态 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt Above Signal | PVT_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt上升 | PVT指标Pvt上升 | 100.0% | 1 | 50.0 |
+| indicator | PVT | Pvt Strong Up | PVT_STRONG_UP形态 | 100.0% | 1 | 50.0 |
+| indicator | TRIX | Trix Above Zero | TRIX_ABOVE_ZERO形态 | 100.0% | 1 | 50.0 |
+| indicator | TRIX | Trix Above Signal | TRIX_ABOVE_SIGNAL形态 | 100.0% | 1 | 50.0 |
+| indicator | TRIX | Trix上升 | TRIX指标Trix上升 | 100.0% | 1 | 50.0 |
+| indicator | TRIX | Trix Consecutive上升 | TRIX指标Trix Consecutive上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Extreme Optimism | VIX_EXTREME_OPTIMISM形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix上升 | VIX指标Vix上升 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Bottom Reversal | VIX_BOTTOM_REVERSAL形态 | 100.0% | 1 | 50.0 |
+| indicator | VIX | Vix Above Smooth | VIX_ABOVE_SMOOTH形态 | 100.0% | 1 | 50.0 |
+| indicator | VOSC | Vosc上方Zero | VOSC指标显示Vosc上方Zero形态 | 100.0% | 1 | 50.0 |
+| indicator | VOSC | Vosc上方信号 | VOSC指标显示Vosc上方信号形态 | 100.0% | 1 | 50.0 |
 | indicator | VOSC | VoscPriceConfirmation | VOSC指标显示VoscPriceConfirmation形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | VrNormal | VR指标显示VrNormal形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr上方Ma | VR指标显示Vr上方Ma形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr金叉交叉 | VR指标显示Vr金叉交叉形态 | 100.0% | 1 | 50.0 |
+| indicator | VR | Vr上升 | VR指标显示Vr上升形态 | 100.0% | 1 | 50.0 |
+| indicator | WR | WrExtreme超买 | WR指标显示WrExtreme超买形态 | 100.0% | 1 | 50.0 |
 | indicator | WR | Wr上升 | WR指标显示Wr上升形态 | 100.0% | 1 | 50.0 |
-| indicator | WR | WrLowStagnation | WR指标显示WrLowStagnation形态 | 100.0% | 1 | 50.0 |
-| indicator | MACD | MACD柱状图收缩 | MACD柱状图连续减小，表明趋势减弱 | 100.0% | 1 | 50.0 |
+| indicator | BOLL | 布林带波动区间 | 基于布林带指标的波动区间分析: BOLL_OVERBOUGHT | 100.0% | 1 | 50.0 |
+| indicator | BOLL | 布林带收缩 | 布林带收缩，表明波动率降低，可能酝酿突破 | 100.0% | 1 | 50.0 |
 | indicator | BOLL | 布林带扩张 | 布林带扩张，表明波动率增加，趋势可能延续 | 100.0% | 1 | 50.0 |
 | indicator | BOLL | 布林带趋势跟随 | 价格沿布林带边缘运行，表明趋势强劲 | 100.0% | 1 | 50.0 |
-| indicator | KDJ | KDJ超卖 | KDJ值低于20，表示超卖状态 | 100.0% | 1 | 50.0 |
-| indicator | DMI | ADX上升 | ADX上升，趋势强度增强 | 100.0% | 1 | 50.0 |
-| indicator | EMV | EMV零轴下方 | EMV位于零轴下方，卖盘力量占优 | 100.0% | 1 | 50.0 |
-| indicator | EMV | EMV均线下方 | EMV位于移动平均线下方 | 100.0% | 1 | 50.0 |
-| indicator | CMO | CMO超卖 | CMO指标低于-50.0，表示超卖状态 | 100.0% | 1 | 50.0 |
-| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_BELOW_ZERO | 100.0% | 1 | 50.0 |
-| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_FALLING | 100.0% | 1 | 50.0 |
-| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_STRONG_FALL | 100.0% | 1 | 50.0 |
-| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_BELOW_ZERO | 100.0% | 1 | 50.0 |
-| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_LARGE_DIVERGENCE_DOWN | 100.0% | 1 | 50.0 |
-| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_ACCELERATION_DOWN | 100.0% | 1 | 50.0 |
+| indicator | BIAS | BIAS中度偏高 | BIAS值在+5%到+15%之间，表示轻度超买 | 100.0% | 1 | 50.0 |
+| indicator | BIAS | BIAS背离 | 价格与BIAS指标出现背离 | 100.0% | 1 | 50.0 |
+| indicator | DMI | ADX强趋势 | ADX大于25，表示趋势强劲 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV零轴上方 | EMV位于零轴上方，买盘力量占优 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV均线上方 | EMV位于移动平均线上方 | 100.0% | 1 | 50.0 |
+| indicator | EMV | EMV上升 | EMV值上升 | 100.0% | 1 | 50.0 |
+| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_ABOVE_ZERO | 100.0% | 1 | 50.0 |
+| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_RISING | 100.0% | 1 | 50.0 |
+| indicator | CMO | CMO动量震荡 | 基于CMO动量震荡指标的技术分析: CMO_STRONG_RISE | 100.0% | 1 | 50.0 |
+| indicator | DMA | DMA上升趋势 | DMA大于0且DMA大于AMA，表示强势上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_ABOVE_ZERO | 100.0% | 1 | 50.0 |
+| indicator | DMA | DMA平均差值分析 | 基于DMA平均差值指标的技术分析: DMA_ACCELERATION_UP | 100.0% | 1 | 50.0 |
 | indicator | VOL | 成交量能量分析 | 基于成交量能量变化的技术分析: VOL_RISING | 100.0% | 1 | 50.0 |
-| indicator | EnhancedMACD | MACD柱状体为负 | MACD柱状体小于零，表示下降动能 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedMACD | MACD柱状体减少 | MACD柱状体连续减少，表示动能减弱 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX零轴下方 | TRIX位于零轴下方，长期趋势偏空 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX下降 | TRIX指标下降，长期动量减弱 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX趋势转折 | 基于TRIX指标的趋势转折分析: strong_bearish_consensus | 100.0% | 1 | 50.0 |
-| indicator | EnhancedTRIX | TRIX减速 | TRIX指标减速变化，动能转变 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedKDJ | KDJ超卖 | K线和D线均低于20，表明市场超卖 | 100.0% | 1 | 50.0 |
-| indicator | EnhancedKDJ | J线超卖 | J线低于0，表明极度超卖 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedCCI | Zero Cross Up | zero_cross_up形态 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedMACD | MACD柱状体为正 | MACD柱状体大于零，表示上升动能 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedMACD | MACD上升 | MACD线呈上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedMACD | MACD柱状体增长 | MACD柱状体连续增长，表示动能增强 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedMACD | MACD强上升趋势 | MACD柱状体为正且趋势强度高，表明强势上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX零轴上方 | TRIX位于零轴上方，长期趋势偏多 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX上升 | TRIX指标上升，长期动量增强 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX趋势转折 | 基于TRIX指标的趋势转折分析: golden_cross | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX强烈看涨共振 | TRIX多重信号共振，形成强烈看涨态势 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedTRIX | TRIX加速上升 | TRIX指标加速上升，表明价格上涨动能不断增强 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedKDJ | K线上升 | K线呈上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | EnhancedKDJ | D线上升 | D线呈上升趋势 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | V Reversal | v_reversal形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | CandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | V Reversal | v_reversal形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Pattern Neutral | pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | AdvancedCandlestickPatterns | Hold Signal | hold_signal形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | key_support_hold | ZXMPattern指标key_support_hold形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | ma_precise_support | ZXMPattern指标ma_precise_support形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | pattern_neutral | ZXMPattern指标pattern_neutral形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMPattern | hold_signal | ZXMPattern指标hold_signal形态 | 100.0% | 1 | 50.0 |
 | indicator | TrendDetector | 震荡/无趋势 | TrendDetector指标震荡/无趋势形态 | 100.0% | 1 | 50.0 |
-| indicator | TrendDetector | 短期趋势 | TrendDetector指标短期趋势形态 | 100.0% | 1 | 50.0 |
-| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 下降趋势 | 100.0% | 1 | 50.0 |
-| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 下降趋势发展阶段 | 100.0% | 1 | 50.0 |
-| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 短期下降趋势 | 100.0% | 1 | 50.0 |
+| indicator | TrendDetector | 中期趋势 | TrendDetector指标中期趋势形态 | 100.0% | 1 | 50.0 |
+| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 震荡/无趋势 | 100.0% | 1 | 50.0 |
+| indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 趋势初期 | 100.0% | 1 | 50.0 |
 | indicator | TrendDuration | 趋势生命周期分析 | 基于趋势生命周期的持续性分析: 高规律性周期 | 100.0% | 1 | 50.0 |
 | indicator | ZXMTurnover | ZXM_TURNOVER_BUY_POINT | ZXMTurnover指标ZXM_TURNOVER_BUY_POINT形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMTurnover | ZXM_TURNOVER_ACTIVE | ZXMTurnover指标ZXM_TURNOVER_ACTIVE形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMTurnover | ZXM_TURNOVER_SUDDEN_INCREASE | ZXMTurnover指标ZXM_TURNOVER_SUDDEN_INCREASE形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMTurnover | ZXM_TURNOVER_SUDDEN_DECREASE | ZXMTurnover指标ZXM_TURNOVER_SUDDEN_DECREASE形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMVolumeShrink | ZXM_VOLUME_NORMAL | ZXMVolumeShrink指标ZXM_VOLUME_NORMAL形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMBSAbsorb | ZXM_BS_ABSORB_SLIGHT | ZXMBSAbsorb指标ZXM_BS_ABSORB_SLIGHT形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMBSAbsorb | ZXM_BS_ABSORB_HEAVY_ZONE | ZXMBSAbsorb指标ZXM_BS_ABSORB_HEAVY_ZONE形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMBSAbsorb | ZXM_BS_ABSORB_WATCH_ZONE | ZXMBSAbsorb指标ZXM_BS_ABSORB_WATCH_ZONE形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMBSAbsorb | ZXM_BS_STABLE_MOMENTUM | ZXMBSAbsorb指标ZXM_BS_STABLE_MOMENTUM形态 | 100.0% | 1 | 50.0 |
 | indicator | AmplitudeElasticity | 大振幅日 | AmplitudeElasticity指标大振幅日形态 | 100.0% | 1 | 50.0 |
-| indicator | AmplitudeElasticity | 中等振幅 | AmplitudeElasticity指标中等振幅形态 | 100.0% | 1 | 50.0 |
+| indicator | AmplitudeElasticity | 极大振幅 | AmplitudeElasticity指标极大振幅形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMRiseElasticity | 涨幅弹性信号 | ZXMRiseElasticity指标涨幅弹性信号形态 | 100.0% | 1 | 50.0 |
-| indicator | ZXMRiseElasticity | 温和上涨 | ZXMRiseElasticity指标温和上涨形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMRiseElasticity | 大涨日 | ZXMRiseElasticity指标大涨日形态 | 100.0% | 1 | 50.0 |
+| indicator | ZXMRiseElasticity | 大涨幅 | ZXMRiseElasticity指标大涨幅形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMRiseElasticity | 偶尔大涨 | ZXMRiseElasticity指标偶尔大涨形态 | 100.0% | 1 | 50.0 |
-| indicator | Elasticity | 低弹性比率 | Elasticity指标低弹性比率形态 | 100.0% | 1 | 50.0 |
-| indicator | Elasticity | 接近低点 | Elasticity指标接近低点形态 | 100.0% | 1 | 50.0 |
+| indicator | Elasticity | 弹性买点 | Elasticity指标弹性买点形态 | 100.0% | 1 | 50.0 |
+| indicator | Elasticity | 轻微弹性比率 | Elasticity指标轻微弹性比率形态 | 100.0% | 1 | 50.0 |
+| indicator | Elasticity | 强反弹 | Elasticity指标强反弹形态 | 100.0% | 1 | 50.0 |
 | indicator | Elasticity | 量能正常 | Elasticity指标量能正常形态 | 100.0% | 1 | 50.0 |
 | indicator | Elasticity | 大幅波动区间 | Elasticity指标大幅波动区间形态 | 100.0% | 1 | 50.0 |
+| indicator | BounceDetector | 反弹确认信号 | 反弹确认信号形态 | 100.0% | 1 | 50.0 |
+| indicator | BounceDetector | 大幅反弹 | 大幅反弹形态 | 100.0% | 1 | 50.0 |
+| indicator | BounceDetector | 短期上升趋势 | 短期上升趋势形态 | 100.0% | 1 | 50.0 |
 | indicator | BounceDetector | 明显放量 | 明显放量形态 | 100.0% | 1 | 50.0 |
+| indicator | BounceDetector | 强势反弹 | 强势反弹形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMElasticityScore | 涨幅弹性满足 | ZXMElasticityScore指标涨幅弹性满足形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMElasticityScore | 中等弹性评分 | ZXMElasticityScore指标中等弹性评分形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMElasticityScore | 部分弹性指标满足 | ZXMElasticityScore指标部分弹性指标满足形态 | 100.0% | 1 | 50.0 |
@@ -759,25 +882,25 @@
 | indicator | ZXMBuyPointScore | 换手买点满足 | ZXMBuyPointScore指标换手买点满足形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMBuyPointScore | 中等买点评分 | ZXMBuyPointScore指标中等买点评分形态 | 100.0% | 1 | 50.0 |
 | indicator | ZXMBuyPointScore | 多数买点指标满足 | ZXMBuyPointScore指标多数买点指标满足形态 | 100.0% | 1 | 50.0 |
-| indicator | StockScoreCalculator | 低分股票 | 低分股票形态 | 100.0% | 1 | 50.0 |
+| indicator | StockScoreCalculator | 综合评分适中 | 综合评分适中形态 | 100.0% | 1 | 50.0 |
+| indicator | StockScoreCalculator | 趋势强劲 | 趋势强劲形态 | 100.0% | 1 | 50.0 |
 | indicator | StockScoreCalculator | 高波动性 | 高波动性形态 | 100.0% | 1 | 50.0 |
 | indicator | SelectionModel | 震荡趋势 | 震荡趋势形态 | 100.0% | 1 | 50.0 |
-| indicator | BOLL | 布林带下轨突破 | 价格跌破布林带下轨，表明强势下跌 | 100.0% | 1 | 30.0 |
-| indicator | StockScoreCalculator | 卖出信号 | 指标产生卖出信号，建议谨慎 | 100.0% | 1 | 30.0 |
+| indicator | RSI | RSI超买 | RSI指标超过70，进入超买区域，存在回调压力 | 100.0% | 1 | 30.0 |
 
 ### 📊 60min周期分析总结
 
 #### 🎯 高命中率指标 (≥80%)
-- **RSI** (RSI超卖): 100.0%命中率，平均得分70.0分
-  *RSI指标低于30，进入超卖区域，存在反弹机会*
+- **BOLL** (布林带上轨突破): 100.0%命中率，平均得分70.0分
+  *价格突破布林带上轨，表明强势上涨*
 - **SAR** (Sar Close To Price): 100.0%命中率，平均得分50.0分
   *SAR_CLOSE_TO_PRICE形态*
+- **SAR** (Sar Low Acceleration): 100.0%命中率，平均得分50.0分
+  *SAR_LOW_ACCELERATION形态*
+- **KC** (Kc上方Middle): 100.0%命中率，平均得分50.0分
+  *KC指标显示Kc上方Middle形态*
 - **KC** (KcExpanding): 100.0%命中率，平均得分50.0分
   *KC指标显示KcExpanding形态*
-- **PSY** (PSY_BELOW_50): 100.0%命中率，平均得分50.0分
-  *PSY指标PSY_BELOW_50形态*
-- **PSY** (PSY_BELOW_MA): 100.0%命中率，平均得分50.0分
-  *PSY指标PSY_BELOW_MA形态*
 
 ---
 
@@ -785,7 +908,7 @@
 
 ### 📊 整体统计
 - **分析周期数**: 6个时间周期
-- **共性指标总数**: 602个指标形态
+- **共性指标总数**: 725个指标形态
 - **技术指标覆盖**: 基于86个专业技术指标
 - **分析算法**: ZXM体系专业买点检测
 
@@ -813,6 +936,6 @@
 
 ---
 
-*报告生成时间: 2025-06-22 22:59:33*  
+*报告生成时间: 2025-06-23 13:20:03*  
 *分析系统: 股票分析系统 v2.0*  
 *技术支持: 基于86个技术指标和ZXM专业体系*

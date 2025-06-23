@@ -12,6 +12,7 @@ from enums.indicator_enum import IndicatorEnum
 from enums.indicator_types import TrendType, CrossType
 from indicators.common import crossover, crossunder
 from .base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
 logger = logging.getLogger(__name__)
 
@@ -97,12 +98,7 @@ class CMO(BaseIndicator, PatternSignalMixin):
             包含CMO列的DataFrame
         """
         if self._result is not None:
-            
-        # 添加形态识别和信号生成
-        result_df = self.add_pattern_detection(result_df)
-        result_df = self.add_signal_generation(result_df)
-
-        return self._result
+            return self._result
             
         result = df.copy()
         
@@ -128,7 +124,11 @@ class CMO(BaseIndicator, PatternSignalMixin):
         
         # 删除临时列
         result = result.drop(['price_change', 'up', 'down', 'up_sum', 'down_sum'], axis=1)
-        
+
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         self._result = result
         return result
     

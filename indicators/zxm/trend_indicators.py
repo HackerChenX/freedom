@@ -410,10 +410,10 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         pass
     
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class ZXMWeeklyTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-周线上移指标
-    
+
     判断周线10周、20周或30周均线是否向上移动
     """
     
@@ -883,10 +883,10 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         pass
 
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class ZXMMonthlyKDJTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-月KDJ·D及K上移指标
-    
+
     判断月线KDJ指标的D值和K值是否同时向上移动
     """
     
@@ -1352,10 +1352,10 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         self.d_period = kwargs.get('d_period', 3)
 
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class ZXMWeeklyKDJDOrDEATrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-周KDJ·D/DEA上移指标
-    
+
     判断周线KDJ指标的D值或MACD的DEA值是否有一个向上移动
     """
     
@@ -1837,10 +1837,10 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         self.macd_signal = kwargs.get('macd_signal', 9)
 
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class ZXMWeeklyKDJDTrendUp(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-周KDJ·D上移指标
-    
+
     判断周线KDJ指标的D值是否向上移动
     """
     
@@ -2264,10 +2264,10 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         self.d_period = kwargs.get('d_period', 3)
 
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class ZXMMonthlyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势-月MACD指标
-    
+
     判断月线MACD金叉
     """
     
@@ -2749,10 +2749,10 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         self.signal_period = kwargs.get('signal_period', 9)
 
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class TrendDetector(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势检测器
-    
+
     识别价格趋势的方向和强度
     """
     
@@ -3247,10 +3247,10 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         self.slope_period = kwargs.get('slope_period', 5)
 
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class TrendDuration(BaseIndicator, PatternSignalMixin):
     """
     ZXM趋势持续性指标
-    
+
     分析价格趋势的持续时间和生命周期特征
     """
     
@@ -3988,7 +3988,7 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         self.slope_period = kwargs.get('slope_period', 5)
 
 
-class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
+class ZXMWeeklyMACD(BaseIndicator, PatternSignalMixin):
     """
     ZXM系统周线MACD指标
     用于检测中期趋势的变化和买卖信号
@@ -4013,13 +4013,8 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
             DataFrame: 包含计算结果的DataFrame
         """
         if len(data) < 40:  # 确保数据量足够
-            
-        # 添加形态识别和信号生成
-        data = self.add_pattern_detection(data)
-        data = self.add_signal_generation(data)
+            return pd.DataFrame()
 
-        return data
-        
         result_data = data.copy()
         
         # 计算MACD指标 (12,26,9)
@@ -4052,7 +4047,11 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         
         # 计算背离
         self._calculate_divergence(result_data)
-        
+
+        # 添加形态识别和信号生成
+        result_data = self.add_pattern_detection(result_data)
+        result_data = self.add_signal_generation(result_data)
+
         return result_data
     
     def _calculate_divergence(self, data: pd.DataFrame) -> None:

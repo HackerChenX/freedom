@@ -1,9 +1,10 @@
 {
+    "_comment": "密码配置优先级：环境变量 > 此文件 > 默认值。建议使用环境变量 CLICKHOUSE_PASSWORD",
     "db": {
         "host": "localhost",
         "port": 9000,
         "user": "default",
-        "password": "",
+        "password": "123456",
         "database": "stock"
     },
     "paths": {
@@ -15,4 +16,4 @@
     "security": {
         "encrypt_sensitive": false
     }
-} 
+}

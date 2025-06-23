@@ -1,0 +1,6 @@
+{
+  "validation_status": "failed",
+  "error": "策略执行失败: 执行策略失败: 'stock_name'",
+  "timestamp": "2025-06-23T19:52:19.087093",
+  "execution_mode": "real_data"
+}

@@ -18,7 +18,7 @@ DEFAULT_CONFIG = {
         'host': 'localhost',
         'port': 8123, 
         'user': 'default',
-        'password': '',  # 密码已隐藏，将从环境变量或用户输入获取
+        'password': '123456',  # 密码已隐藏，将从环境变量或用户输入获取
         'database': 'stock'
     },
     'paths': {
@@ -97,24 +97,18 @@ def get_encryption_key() -> bytes:
             logging.warning(f"无法从文件加载加密密钥: {e}，将生成新密钥")
     
     # 生成新密钥
-    salt = os.urandom(16)
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=100000,
-    )
-    key = base64.urlsafe_b64encode(kdf.derive(os.urandom(32)))
-    
+    key = Fernet.generate_key()
+
     # 保存密钥到文件
     try:
         with open(KEY_FILE_PATH, 'wb') as f:
-            f.write(key)
+            f.write(base64.urlsafe_b64encode(key))
         os.chmod(KEY_FILE_PATH, 0o600)  # 设置文件权限为仅所有者可读写
+        logging.info(f"生成新的加密密钥并保存到: {KEY_FILE_PATH}")
     except Exception as e:
         logging.warning(f"无法保存加密密钥: {e}")
-    
-    return base64.urlsafe_b64decode(key)
+
+    return key
 
 def encrypt_value(value: str) -> str:
     """
@@ -455,12 +449,20 @@ process_sensitive_configs()
 # 暴露数据库配置便于直接使用
 def get_db_config() -> Dict[str, Union[str, int]]:
     """获取数据库配置"""
+    # 优先使用统一配置管理器
+    try:
+        from config.database_config_manager import get_clickhouse_connection_config
+        return get_clickhouse_connection_config()
+    except ImportError:
+        logging.warning("统一配置管理器不可用，使用传统配置方式")
+
+    # 备用方案：使用传统配置方式
     db_config = CONFIG['db'].copy()
-    
+
     # 如果密码是加密的，解密
     if isinstance(db_config.get('password'), str) and db_config['password'].startswith("ENC:"):
         db_config['password'] = decrypt_value(db_config['password'])
-    
+
     # 如果密码是占位符，从环境变量获取
     if db_config.get('password') == "******":
         env_password = get_env_value('db.password')
@@ -469,12 +471,12 @@ def get_db_config() -> Dict[str, Union[str, int]]:
         else:
             # 如果环境变量中也没有，则交互式请求
             request_db_password()
-            
+
             # 重新获取密码
             db_password = CONFIG.get('db', {}).get('password')
             if isinstance(db_password, str) and db_password.startswith("ENC:"):
                 db_config['password'] = decrypt_value(db_password)
             else:
                 db_config['password'] = db_password
-    
-    return db_config 
+
+    return db_config

@@ -53,13 +53,8 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
             DataFrame: 包含市场宽度指标的DataFrame
         """
         if data.empty:
-            
-        # 添加形态识别和信号生成
-        pd = self.add_pattern_detection(pd)
-        pd = self.add_signal_generation(pd)
+            return pd.DataFrame()
 
-        return pd.DataFrame()
-            
         # 获取参数
         lookback_period = kwargs.get('lookback_period', 60)
         ma_periods = kwargs.get('ma_periods', [20, 50, 200])
@@ -119,7 +114,11 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         
         # 9. 市场状态分类
         result.loc[:, 'market_state'] = self._classify_market_state(result)
-        
+
+        # 添加形态识别和信号生成
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
+
         return result
         
     def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:

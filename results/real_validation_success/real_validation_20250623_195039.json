@@ -1,0 +1,6 @@
+{
+  "validation_status": "failed",
+  "error": "策略执行失败: 执行策略失败: 策略执行计划缺少必要字段: strategy_id",
+  "timestamp": "2025-06-23T19:50:39.048129",
+  "execution_mode": "real_data"
+}

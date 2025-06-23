@@ -358,5 +358,6 @@ class CompleteIndicatorRegistry:
         self.print_summary()
         return total_success
 
-# 创建全局实例
+# 创建全局实例并自动注册所有指标
 complete_registry = CompleteIndicatorRegistry()
+complete_registry.register_all_indicators()

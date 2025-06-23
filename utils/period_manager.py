@@ -289,7 +289,7 @@ class PeriodManager:
                 grouped = data.groupby('group_id')
 
                 # 执行转换
-                result = grouped.apply(_agg_func).reset_index(drop=True)
+                result = grouped.apply(_agg_func, include_groups=False).reset_index(drop=True)
 
             # 周线转换
             elif to_period == Period.WEEKLY:
