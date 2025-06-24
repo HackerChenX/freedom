@@ -23,7 +23,8 @@ sys.path.append(root_dir)
 
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
-from indicators.indicator_registry import indicator_registry, IndicatorEnum, STANDARD_PARAMETER_MAPPING
+from indicators.complete_indicator_registry import complete_registry
+from enums.indicator_enum import IndicatorEnum
 
 logger = get_logger(__name__)
 

@@ -67,7 +67,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any
 
-from indicators.base_indicator import BaseIndicator
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

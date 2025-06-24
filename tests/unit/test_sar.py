@@ -4,7 +4,7 @@ SAR指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.sar import SAR
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = SAR(acceleration=0.02, maximum=0.2)
+        self.indicator = complete_registry.create_indicator('SAR', acceleration=0.02, maximum=0.2)
         self.expected_columns = ['sar', 'trend']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -236,8 +236,8 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_sar_acceleration_factor(self):
         """测试SAR加速因子"""
         # 使用不同的加速因子参数
-        high_accel_sar = SAR(acceleration=0.05, maximum=0.3)
-        low_accel_sar = SAR(acceleration=0.01, maximum=0.1)
+        high_accel_sar = complete_registry.create_indicator('SAR', acceleration=0.05, maximum=0.3)
+        low_accel_sar = complete_registry.create_indicator('SAR', acceleration=0.01, maximum=0.1)
         
         high_result = high_accel_sar.calculate(self.data)
         low_result = low_accel_sar.calculate(self.data)

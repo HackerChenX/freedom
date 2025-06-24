@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-from indicators.mfi import MFI
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from indicators.kdj import KDJ
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -13,7 +13,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         """准备数据和指标实例"""
         LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
-        self.indicator = KDJ(n=9, m1=3, m2=3)
+        self.indicator = complete_registry.create_indicator('KDJ', n=9, m1=3, m2=3)
         self.expected_columns = ['K', 'D', 'J']
         # 使用一个包含多种走势的数据进行通用测试
         self.data = TestDataGenerator.generate_price_sequence([

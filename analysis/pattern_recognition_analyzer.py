@@ -15,10 +15,10 @@ import json
 import talib
 from enum import Enum
 
-from indicators.factory import IndicatorFactory
-from indicators.base_indicator import BaseIndicator, MarketEnvironment
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import get_pattern_registry
-from indicators.pattern_manager import PatternManager
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from enums.kline_period import KlinePeriod
 from utils.decorators import validate_dataframe, log_calls, exception_handler, performance_monitor, cache_result
@@ -204,7 +204,7 @@ class PatternRecognitionAnalyzer:
             return
         
         # 创建指标实例
-        indicator = IndicatorFactory.create(indicator_type, **params)
+        indicator = complete_registry.create_indicator(indicator_type, **params)
         
         if indicator is None:
             logger.error(f"无法创建指标 {indicator_type}")
@@ -287,7 +287,7 @@ class PatternRecognitionAnalyzer:
         if indicator_type not in self.indicators:
             self.indicators.append(indicator_type)
             
-        indicator = IndicatorFactory.create(indicator_type)
+        indicator = complete_registry.create_indicator(indicator_type)
         
         if indicator is not None:
             self._indicator_instances[indicator_type] = indicator

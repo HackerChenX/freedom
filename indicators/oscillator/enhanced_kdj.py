@@ -10,14 +10,14 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.kdj import KDJ
+from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
 from utils.indicator_utils import crossover, crossunder
 
 logger = get_logger(__name__)
 
 
-class EnhancedKDJ(KDJ):
+class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
     """
     增强型随机指标(KDJ)
     
@@ -54,9 +54,11 @@ class EnhancedKDJ(KDJ):
             use_smoothed_kdj: 是否使用平滑后的KDJ，默认为True
             smoothing_period: 平滑周期，默认为3
         """
-        # 先设置indicator_type，因为父类初始化时会调用get_indicator_type
+        super().__init__()
+        self.n = n
+        self.m1 = m1
+        self.m2 = m2
         self.indicator_type = "ENHANCEDKDJ"
-        super().__init__(n=n, m1=m1, m2=m2)
         self.name = "EnhancedKDJ"
         self.description = "增强型随机指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
         self.sensitivity = sensitivity
@@ -69,6 +71,54 @@ class EnhancedKDJ(KDJ):
         self.use_smoothed_kdj = use_smoothed_kdj
         self.smoothing_period = smoothing_period
     
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        实现BaseIndicator的抽象方法
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        # 确保输入数据包含必需的列
+        required_columns = ["high", "low", "close"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
+
+        # 创建结果DataFrame，包含原始数据
+        result = data.copy()
+
+        # 确保基础KDJ列存在
+        self._calculate_kdj(result, self.n, self.m1, self.m2)
+
+        # 计算多周期KDJ
+        for n in self.multi_periods:
+            if n != self.n:  # 避免重复计算
+                self._calculate_multi_period_kdj(result, n, self.m1, self.m2)
+
+        # 计算J线加速度
+        if "J" in result.columns:
+            result["j_acceleration"] = self._calculate_j_acceleration(result["J"])
+
+        # 计算KD交叉角度
+        if "K" in result.columns and "D" in result.columns:
+            result["kd_cross_angle"] = self._calculate_kd_cross_angle(result["K"], result["D"])
+
+        # 计算KD距离
+        if "K" in result.columns and "D" in result.columns:
+            result["kd_distance"] = result["K"] - result["D"]
+
+        # 计算历史极值归一化J值
+        if "J" in result.columns:
+            result["j_normalized"] = self._normalize_j_values(result["J"])
+
+        # 保存结果
+        self._result = result
+
+        return result
+
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型KDJ指标
@@ -79,14 +129,19 @@ class EnhancedKDJ(KDJ):
         Returns:
             pd.DataFrame: 计算结果，包含KDJ及其多周期指标
         """
+        # 确保输入数据包含必需的列
+        required_columns = ["high", "low", "close"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"数据必须包含'{col}'列")
+
         # 调用父类的calculate方法，获取包含K, D, J基础计算的DataFrame
         result = super().calculate(data, *args, **kwargs)
 
-        # 确保数据包含必需的列
-        required_columns = ["high", "low", "close"]
+        # 确保result包含原始数据列
         for col in required_columns:
             if col not in result.columns:
-                raise ValueError(f"数据必须包含'{col}'列")
+                result[col] = data[col]
 
         # 确保基础KDJ列存在
         if 'K' not in result.columns or 'D' not in result.columns or 'J' not in result.columns:

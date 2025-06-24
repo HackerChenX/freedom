@@ -10,13 +10,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.mfi import MFI
+from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnhancedMFI(MFI):
+class EnhancedMFI(BaseIndicator, PatternSignalMixin):
     """
     增强型资金流向指标(Enhanced Money Flow Index)
     
@@ -41,7 +41,8 @@ class EnhancedMFI(MFI):
             enable_volume_filter: 是否启用成交量过滤，默认为True
             volume_filter_threshold: 成交量过滤阈值，默认为3.0倍标准差
         """
-        super().__init__(period=period)
+        super().__init__()
+        self.period = period
         self.name = "EnhancedMFI"
         self.description = "增强型资金流向指标，提供自适应阈值、异常成交量滤波和市场环境适应功能"
         self.volatility_lookback = volatility_lookback
@@ -69,6 +70,18 @@ class EnhancedMFI(MFI):
         
         self.market_environment = environment
     
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        实现BaseIndicator的抽象方法
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        return self.calculate(data)
+
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型MFI指标

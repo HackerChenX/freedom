@@ -10,14 +10,14 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.macd import MACD
+from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
 from utils.indicator_utils import crossover, crossunder
 
 logger = get_logger(__name__)
 
 
-class EnhancedMACD(MACD):
+class EnhancedMACD(BaseIndicator, PatternSignalMixin):
     """
     增强型MACD指标
     
@@ -44,7 +44,10 @@ class EnhancedMACD(MACD):
             volume_weighted: 是否使用成交量加权，默认为False
             adapt_to_volatility: 是否根据波动率自适应调整参数，默认为True
         """
-        super().__init__(fast_period=fast_period, slow_period=slow_period, signal_period=signal_period)
+        super().__init__()
+        self.fast_period = fast_period
+        self.slow_period = slow_period
+        self.signal_period = signal_period
         self.name = "EnhancedMACD"
         self.description = "增强型MACD指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
         self.indicator_type = "trend"  # 指标类型：趋势类
@@ -61,7 +64,19 @@ class EnhancedMACD(MACD):
             str: 指标类型
         """
         return self.indicator_type
-    
+
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        实现BaseIndicator的抽象方法
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        return self.calculate(data)
+
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型MACD指标

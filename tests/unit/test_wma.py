@@ -4,7 +4,7 @@ WMA指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.wma import WMA
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = WMA(period=14)
+        self.indicator = complete_registry.create_indicator('WMA', period=14)
         self.expected_columns = ['WMA14']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -57,7 +57,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = WMA(period=3)
+        test_indicator = complete_registry.create_indicator('WMA', period=3)
         result = test_indicator.calculate(simple_data)
         
         # 手动验证WMA计算
@@ -107,7 +107,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     
     def test_wma_multiple_periods(self):
         """测试WMA多周期计算"""
-        multi_indicator = WMA(period=14, periods=[5, 10, 20])
+        multi_indicator = complete_registry.create_indicator('WMA', period=14, periods=[5, 10, 20])
         result = multi_indicator.calculate(self.data)
         
         # 验证多个WMA列存在

@@ -18,15 +18,7 @@ from typing import Dict, List, Tuple
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.macd import MACD
-from indicators.kdj import KDJ
-from indicators.rsi import RSI
-from indicators.boll import BOLL
-from indicators.obv import OBV
-from indicators.wr import WR
-from indicators.cci import CCI
-from indicators.atr import ATR
-from indicators.dmi import DMI
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -39,17 +31,16 @@ class ComprehensiveIndicatorScoring:
     
     def __init__(self):
         """初始化评分系统"""
-        self.indicators = {
-            'MACD': MACD(),
-            'KDJ': KDJ(),
-            'RSI': RSI(),
-            'BOLL': BOLL(),
-            'OBV': OBV(),
-            'WR': WR(),
-            'CCI': CCI(),
-            'ATR': ATR(),
-            'DMI': DMI(),
-        }
+        # 使用统一注册系统创建指标实例
+        self.indicator_names = ['MACD', 'KDJ', 'RSI', 'BOLL', 'OBV', 'WR', 'CCI', 'ATR', 'DMI']
+        self.indicators = {}
+
+        for name in self.indicator_names:
+            indicator = complete_registry.create_indicator(name)
+            if indicator:
+                self.indicators[name] = indicator
+            else:
+                logger.warning(f"无法创建指标 {name}，跳过")
         
         # 指标权重配置
         self.weights = {

@@ -26,7 +26,7 @@ from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_parser import StrategyParser
 from strategy.strategy_manager import StrategyManager
 from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from indicators.indicator_manager import IndicatorManager
 from utils.logger import get_logger
 

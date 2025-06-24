@@ -12,7 +12,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 from db.clickhouse_db import get_clickhouse_db
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from strategy.backtester import Backtester, Signal
 
 class TestIndicatorsAndBacktest(unittest.TestCase):

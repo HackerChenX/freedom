@@ -18,10 +18,10 @@ from typing import List, Dict, Any
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 # 导入所需的具体指标
-from indicators.emv import EMV
-from indicators.intraday_volatility import IntradayVolatility
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.v_shaped_reversal import VShapedReversal
 from indicators.island_reversal import IslandReversal
 from indicators.time_cycle_analysis import TimeCycleAnalysis

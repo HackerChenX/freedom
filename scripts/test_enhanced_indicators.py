@@ -17,8 +17,8 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.unified_ma import UnifiedMA
-from indicators.enhanced_macd import EnhancedMACD
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.enhanced_rsi import EnhancedRSI
 from indicators.factory import IndicatorFactory
 from utils.logger import get_logger

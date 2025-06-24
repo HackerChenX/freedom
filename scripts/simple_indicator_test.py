@@ -26,7 +26,7 @@ def test_basic_imports():
         print("✅ BaseIndicator导入成功")
         
         print("4. 测试单个指标...")
-        from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
         print("✅ MACD导入成功")
         
         return True

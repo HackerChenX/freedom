@@ -17,72 +17,47 @@ logger = get_logger(__name__)
 
 
 class IndicatorFactory:
-    """指标工厂类"""
+    """
+    指标工厂类
+
+    完全基于CompleteIndicatorRegistry实现的统一指标工厂
+    """
 
     def __init__(self):
-        self.indicators = {}
-        self._register_default_indicators()
-
-    def _register_default_indicators(self):
-        """注册默认指标"""
-        # 动态导入和注册常用指标
-        try:
-            from indicators.ma import MA
-            self.indicators['MA'] = MA
-        except ImportError:
-            pass
-
-        try:
-            from indicators.ema import EMA
-            self.indicators['EMA'] = EMA
-        except ImportError:
-            pass
-
-        try:
-            from indicators.rsi import RSI
-            self.indicators['RSI'] = RSI
-        except ImportError:
-            pass
-
-        try:
-            from indicators.macd import MACD
-            self.indicators['MACD'] = MACD
-        except ImportError:
-            pass
-
-        try:
-            from indicators.vortex import VORTEX
-            self.indicators['VORTEX'] = VORTEX
-        except ImportError:
-            pass
+        from indicators.base_indicator import BaseIndicator
+        self._registry = complete_registry
 
     def register_indicator(self, name: str, indicator_class):
         """注册指标类"""
-        self.indicators[name] = indicator_class
+        return self._registry.register_indicator_safe(indicator_class, name)
 
     def create_indicator(self, name: str, **kwargs):
         """创建指标实例"""
-        if name in self.indicators:
-            try:
-                return self.indicators[name](**kwargs)
-            except Exception as e:
-                logger.debug(f"创建指标 {name} 失败: {e}")
-                return None
-        else:
-            logger.debug(f"未找到指标: {name}")
-            return None
+        return self._registry.create_indicator(name, **kwargs)
 
     def get_available_indicators(self) -> List[str]:
         """获取可用指标列表"""
-        return list(self.indicators.keys())
+        return self._registry.get_indicator_names()
 
     def is_indicator_available(self, name: str) -> bool:
         """检查指标是否可用"""
-        return name in self.indicators
+        return name in self._registry.get_indicator_names()
 
     def get_all_registered_indicators(self) -> List[str]:
         """获取所有已注册的指标名称"""
-        return list(self.indicators.keys())
+        return self._registry.get_indicator_names()
+
+    @classmethod
+    def get_supported_indicators(cls) -> List[str]:
+        """获取支持的指标列表"""
+        from indicators.base_indicator import BaseIndicator
+        return complete_registry.get_indicator_names()
+
+    @classmethod
+    def create_indicator(cls, name: str, **kwargs):
+        """类方法创建指标实例"""
+        from indicators.base_indicator import BaseIndicator
+        return complete_registry.create_indicator(name, **kwargs)
 
 
 class FACTORY(BaseIndicator, PatternSignalMixin):

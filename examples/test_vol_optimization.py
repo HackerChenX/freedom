@@ -16,7 +16,7 @@ import numpy as np
 root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_path)
 
-from indicators.volume.vol import VOL
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -105,7 +105,7 @@ def plot_vol_score_comparison(data, old_score, new_score, title="VOL评分对比
     pass
 
 
-class SimpleVOL(VOL):
+class SimpleVOL:
     """简化版VOL，用于对比优化前的效果"""
     
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -242,7 +242,7 @@ def test_vol_optimization(data):
     """
     # 创建未优化和优化后的VOL实例
     simple_vol = SimpleVOL()
-    enhanced_vol = VOL()
+    enhanced_vol = complete_registry.create_indicator('VOL')
     
     # 计算VOL指标
     simple_result = simple_vol.calculate(data)
@@ -333,7 +333,7 @@ def find_best_vol_params(data):
             if period_short >= period_long:
                 continue
 
-            vol = VOL(periods=[period_short, period_long])
+            vol = complete_registry.create_indicator('VOL', periods=[period_short, period_long])
             signals = vol.generate_signals(data)
             
             # 简单的评估逻辑：信号越多越好（仅为示例）
@@ -369,7 +369,7 @@ def main():
         logger.info(f"VOL指标优化后的最佳参数为: 短周期={best_params[0]}, 长周期={best_params[1]}")
 
         # 使用最佳参数重新计算并验证
-        vol = VOL(periods=[best_params[0], best_params[1]])
+        vol = complete_registry.create_indicator('VOL', periods=[best_params[0], best_params[1]])
         final_result = vol.calculate(data)
         final_signals = vol.generate_signals(final_result)
         

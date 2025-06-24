@@ -10,7 +10,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import json
 
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from enums.period import Period
 from db.data_manager import DataManager
 from utils.logger import get_logger

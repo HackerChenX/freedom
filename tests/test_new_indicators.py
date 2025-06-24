@@ -10,10 +10,10 @@ import pandas as pd
 import numpy as np
 
 from indicators.base_indicator import BaseIndicator, PatternResult
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
-from indicators.ma import MA
-from indicators.rsi import RSI
-from indicators.boll import BOLL
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.macd import MACD
 from indicators.kdj import KDJ
 from indicators.cci import CCI

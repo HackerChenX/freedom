@@ -18,7 +18,6 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
-# from indicators.atr import ATR  # 移除ATR依赖
 
 logger = logging.getLogger(__name__)
 

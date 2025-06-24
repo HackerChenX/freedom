@@ -12,15 +12,15 @@ import pandas as pd
 import numpy as np
 
 from analysis.multi_period_analysis import MultiPeriodAnalysis
-from indicators.ma import MA
-from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 # 单独导入Any类型
 from typing import Any
 
 from db.clickhouse_db import get_clickhouse_db
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from scripts.backtest.consolidated_backtest import ConsolidatedBacktest
 from enums.period import Period
 from utils.period_manager import PeriodManager

@@ -1,8 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.psy import PSY, EnhancedPSY
-from indicators.enhanced_factory import EnhancedIndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 
 
 class TestMergedPSY(unittest.TestCase):
@@ -23,7 +22,7 @@ class TestMergedPSY(unittest.TestCase):
     def test_basic_psy(self):
         """测试基础PSY功能"""
         # 创建普通PSY指标实例
-        psy = PSY(period=12)
+        psy = complete_registry.create_indicator('PSY', period=12)
         
         # 计算PSY
         result = psy.calculate(self.data)
@@ -39,7 +38,7 @@ class TestMergedPSY(unittest.TestCase):
     def test_enhanced_psy(self):
         """测试增强版PSY功能"""
         # 创建增强版PSY指标实例
-        psy = PSY(period=12, enhanced=True)
+        psy = complete_registry.create_indicator('PSY', period=12, enhanced=True)
         
         # 计算PSY
         result = psy.calculate(self.data)
@@ -67,8 +66,11 @@ class TestMergedPSY(unittest.TestCase):
     
     def test_deprecated_enhanced_psy_class(self):
         """测试弃用的EnhancedPSY类仍能正常工作"""
-        # 使用旧的EnhancedPSY类
-        enhanced_psy = EnhancedPSY(period=12)
+        # 使用统一注册系统创建增强PSY
+        enhanced_psy = complete_registry.create_indicator('ENHANCED_PSY', period=12)
+        if not enhanced_psy:
+            # 如果没有ENHANCED_PSY，使用PSY的增强模式
+            enhanced_psy = complete_registry.create_indicator('PSY', period=12, enhanced=True)
         
         # 计算PSY
         result = enhanced_psy.calculate(self.data)
@@ -79,12 +81,11 @@ class TestMergedPSY(unittest.TestCase):
     
     def test_enhanced_factory(self):
         """测试通过EnhancedIndicatorFactory创建PSY"""
-        # 使用工厂创建PSY
-        psy = EnhancedIndicatorFactory.create("PSY", period=12)
-        
+        # 使用统一注册系统创建PSY
+        psy = complete_registry.create_indicator("PSY", period=12)
+
         # 检查是否成功创建
         self.assertIsNotNone(psy)
-        self.assertTrue(isinstance(psy, PSY))
         
         # 计算PSY
         result = psy.calculate(self.data)

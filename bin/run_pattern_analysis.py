@@ -19,7 +19,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from db.clickhouse_db import get_clickhouse_db
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir

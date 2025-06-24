@@ -17,9 +17,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.ma import MA
-from indicators.rsi import RSI
-from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
 from db.clickhouse_db import get_clickhouse_db
 
 

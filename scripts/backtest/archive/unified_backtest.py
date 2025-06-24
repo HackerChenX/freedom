@@ -23,7 +23,7 @@ from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_stock_result_file, get_strategies_dir
 from db.db_manager import DBManager
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 
 # 获取日志记录器
 logger = get_logger(__name__)

@@ -8,7 +8,7 @@ import numpy as np
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from indicators.rsi import RSI
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 

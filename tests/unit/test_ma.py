@@ -2,8 +2,8 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from indicators.ma import MA
-from indicators.pattern_registry import PatternRegistry, PatternType
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 
 class TestMAIndicator(unittest.TestCase):
     def setUp(self):
@@ -21,7 +21,7 @@ class TestMAIndicator(unittest.TestCase):
         }
         self.df = pd.DataFrame(data)
         self.periods = [5, 10]
-        self.ma_indicator = MA(periods=self.periods)
+        self.ma_indicator = complete_registry.create_indicator('MA', periods=self.periods)
         self.indicator_df = self.ma_indicator.calculate(self.df)
 
     def test_initialization(self):
@@ -92,7 +92,7 @@ class TestMAIndicator(unittest.TestCase):
 
     def test_set_parameters(self):
         """Test setting new parameters on an existing indicator."""
-        ma_indicator = MA(periods=[5, 10])
+        ma_indicator = complete_registry.create_indicator('MA', periods=[5, 10])
         ma_indicator.set_parameters(periods=[20, 40])
         self.assertEqual(ma_indicator.periods, [20, 40])
 

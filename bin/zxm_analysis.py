@@ -20,8 +20,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from db.clickhouse_db import get_clickhouse_db
-from indicators.factory import IndicatorFactory
-from indicators.pattern.zxm_patterns import ZXMPatternIndicator
+from indicators.complete_indicator_registry import complete_registry
 from enums.indicator_types import IndicatorType, TimeFrame
 from utils.logger import setup_logging
 from utils import path_utils
@@ -157,7 +156,10 @@ def analyze_zxm_patterns(data: pd.DataFrame) -> Dict[str, np.ndarray]:
         包含各种形态识别结果的字典
     """
     # 创建ZXM模式识别器
-    zxm_indicator = ZXMPatternIndicator()
+    zxm_indicator = complete_registry.create_indicator('ZXM_PATTERNS')
+    if not zxm_indicator:
+        logger.error("无法创建ZXM_PATTERNS指标")
+        return {}
     
     # 计算结果
     result = zxm_indicator.calculate(

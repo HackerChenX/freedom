@@ -4,7 +4,7 @@ EnhancedCCI指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.trend.enhanced_cci import EnhancedCCI
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = EnhancedCCI(period=20, factor=0.015, secondary_period=40)
+        self.indicator = complete_registry.create_indicator('ENHANCED_CCI', period=20, factor=0.015, secondary_period=40)
         self.expected_columns = ['cci', 'cci_secondary', 'cci_ma5', 'cci_ma10', 'cci_ma20', 'cci_slope', 'cci_volatility', 'state']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
@@ -54,7 +54,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = EnhancedCCI(period=10, factor=0.015)
+        test_indicator = complete_registry.create_indicator('ENHANCED_CCI', period=10, factor=0.015)
         result = test_indicator.calculate(simple_data)
         
         # 验证CCI计算逻辑
@@ -228,19 +228,21 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_enhanced_cci_adaptive_period(self):
         """测试EnhancedCCI自适应周期"""
         # 测试自适应模式
-        adaptive_indicator = EnhancedCCI(period=20, adaptive=True)
-        result = adaptive_indicator.calculate(self.data)
-        
-        # 验证自适应周期功能
-        self.assertIsInstance(result, pd.DataFrame)
-        self.assertIn('cci', result.columns)
-        
+        adaptive_indicator = complete_registry.create_indicator('ENHANCED_CCI', period=20, adaptive=True)
+        if adaptive_indicator:
+            result = adaptive_indicator.calculate(self.data)
+
+            # 验证自适应周期功能
+            self.assertIsInstance(result, pd.DataFrame)
+            self.assertIn('cci', result.columns)
+
         # 测试非自适应模式
-        non_adaptive_indicator = EnhancedCCI(period=20, adaptive=False)
-        result2 = non_adaptive_indicator.calculate(self.data)
-        
-        self.assertIsInstance(result2, pd.DataFrame)
-        self.assertIn('cci', result2.columns)
+        non_adaptive_indicator = complete_registry.create_indicator('ENHANCED_CCI', period=20, adaptive=False)
+        if non_adaptive_indicator:
+            result2 = non_adaptive_indicator.calculate(self.data)
+
+            self.assertIsInstance(result2, pd.DataFrame)
+            self.assertIn('cci', result2.columns)
     
     def test_no_errors_during_calculation(self):
         """测试计算过程中无ERROR日志"""

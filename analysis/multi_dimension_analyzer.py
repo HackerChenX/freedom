@@ -17,7 +17,7 @@ from db.clickhouse_db import get_clickhouse_db, get_default_config
 from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
 from utils.path_utils import get_result_dir
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from analysis.market.market_dimension_analyzer import MarketDimensionAnalyzer
 from analysis.buypoints.buypoint_dimension_analyzer import BuyPointDimensionAnalyzer
 
@@ -39,8 +39,8 @@ class MultiDimensionAnalyzer:
         config = get_default_config()
         self.ch_db = get_clickhouse_db(config=config)
         
-        # 创建指标工厂
-        self.indicator_factory = IndicatorFactory()
+        # 使用统一指标注册系统
+        self.indicator_registry = complete_registry
         
         # 创建市场分析器和买点分析器
         self.market_analyzer = MarketDimensionAnalyzer()

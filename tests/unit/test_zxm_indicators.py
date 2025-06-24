@@ -2,7 +2,7 @@
 ZXM系列指标单元测试
 """
 import unittest
-from indicators.zxm.buy_point_indicators import ZXMBSAbsorb, ZXMDailyMACD
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 

@@ -18,7 +18,7 @@ import numpy as np
 import io  # 添加io模块导入
 from unittest.mock import patch, MagicMock
 
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin

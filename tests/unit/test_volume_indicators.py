@@ -8,12 +8,12 @@ import numpy as np
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from indicators.vol import VOL
-from indicators.ad import AD
-from indicators.obv import OBV
-from indicators.pvt import PVT
-from indicators.vosc import VOSC
-from indicators.mfi import MFI
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 
 class TestVOL(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):

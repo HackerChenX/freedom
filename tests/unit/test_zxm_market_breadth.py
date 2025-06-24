@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-from indicators.zxm.market_breadth import ZXMMarketBreadth
+from indicators.complete_indicator_registry import complete_registry
 
 
 class TestZXMMarketBreadth(unittest.TestCase):

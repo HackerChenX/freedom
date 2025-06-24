@@ -481,15 +481,18 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
         换手率>0.7;
         xg:换手;
         """
-        # 确保数据包含必需的列
-        if 'turnover_rate' not in data.columns:
-            raise ValueError("数据缺少必需的'turnover_rate'列")
-        
+        # 确保数据包含必需的列（支持turnover_rate或turnover列）
+        if 'turnover_rate' not in data.columns and 'turnover' not in data.columns:
+            raise ValueError("数据缺少必需的'turnover_rate'或'turnover'列")
+
         # 初始化结果数据框
         result = data.copy()
-        
-        # 直接使用数据库提供的换手率
-        turnover = data["turnover_rate"]
+
+        # 使用数据库提供的换手率（优先使用turnover_rate，否则使用turnover）
+        if 'turnover_rate' in data.columns:
+            turnover = data["turnover_rate"]
+        else:
+            turnover = data["turnover"]
         
         # 计算买点信号
         xg = turnover > 0.7

@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from indicators.boll import BOLL
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -13,7 +13,7 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         """准备数据和指标实例"""
         LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
-        self.indicator = BOLL(period=20, std_dev=2)
+        self.indicator = complete_registry.create_indicator('BOLL', period=20, std_dev=2)
         self.expected_columns = ['middle', 'upper', 'lower']  # 修正期望的列名
         # 使用一个包含多种走势的数据进行通用测试
         self.data = TestDataGenerator.generate_price_sequence([

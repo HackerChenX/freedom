@@ -4,11 +4,11 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.ma import MA
-from indicators.ema import EMA
-from indicators.wma import WMA
-from indicators.dmi import DMI
-from indicators.atr import ATR
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin

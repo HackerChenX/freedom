@@ -35,6 +35,19 @@ def test_db_module():
             print(f"总共 {len(stocks_df)} 支股票")
         except Exception as e:
             print(f"获取股票列表出错: {e}")
+
+        # 测试get_stock_info方法
+        print("\n测试get_stock_info方法...")
+        try:
+            stock_info = db.get_stock_info(stock_code='000001', limit=5)
+            print(f"股票信息类型: {type(stock_info)}")
+            if hasattr(stock_info, 'to_dataframe'):
+                df = stock_info.to_dataframe()
+                print(f"数据框形状: {df.shape}")
+                if not df.empty:
+                    print(f"前5行数据: \n{df.head()}")
+        except Exception as e:
+            print(f"获取股票信息出错: {e}")
         
         # 获取K线数据
         print("\n获取K线数据示例...")

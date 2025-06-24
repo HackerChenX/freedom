@@ -1,6 +1,0 @@
-{
-  "validation_status": "failed",
-  "error": "策略执行失败: StrategyExecutor.execute_strategy() got an unexpected keyword argument 'strategy_config'",
-  "timestamp": "2025-06-23T19:49:45.525012",
-  "execution_mode": "real_data"
-}

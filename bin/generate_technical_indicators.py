@@ -21,7 +21,7 @@ sys.path.append(root_dir)
 
 from utils.logger import get_logger
 from utils.path_utils import get_indicators_dir, get_doc_dir, ensure_dir_exists
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from db.clickhouse_db import get_clickhouse_db
 
 logger = get_logger(__name__)
@@ -54,7 +54,7 @@ import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple
 
-from indicators.base_indicator import BaseIndicator
+from indicators.complete_indicator_registry import complete_registry
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
 

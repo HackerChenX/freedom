@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 import logging
 
-from indicators.ema import EMA
-from indicators.pattern_registry import PatternRegistry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 
 class TestEMA(unittest.TestCase):
     def setUp(self):
@@ -13,7 +13,7 @@ class TestEMA(unittest.TestCase):
         
         # Create sample data for testing
         self.data = self._create_test_data()
-        self.ema_indicator = EMA(periods=[5, 10])
+        self.ema_indicator = complete_registry.create_indicator('EMA', periods=[5, 10])
         # Get a clean instance of the registry for testing
         self.registry = PatternRegistry()
         self.registry.clear_registry()
@@ -69,7 +69,7 @@ class TestEMA(unittest.TestCase):
         dates = pd.to_datetime(pd.date_range(start='2023-01-01', periods=len(close_prices)))
         cross_data = pd.DataFrame({'close': close_prices, 'high': close_prices, 'low': close_prices}, index=dates)
         
-        indicator = EMA(periods=[3, 6])
+        indicator = complete_registry.create_indicator('EMA', periods=[3, 6])
         df = indicator.calculate(cross_data)
         patterns = indicator.get_patterns(df)
 
@@ -89,7 +89,7 @@ class TestEMA(unittest.TestCase):
     def test_register_patterns(self):
         """Test if patterns are registered correctly."""
         # The indicator should register its patterns upon instantiation
-        indicator = EMA(periods=[5, 10])
+        indicator = complete_registry.create_indicator('EMA', periods=[5, 10])
         registered_patterns = self.registry.get_patterns_by_indicator('EMA')
         
         expected_patterns = [

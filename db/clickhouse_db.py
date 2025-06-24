@@ -654,31 +654,7 @@ class ClickHouseDB:
             empty_stock.level = level if isinstance(level, str) else (level.value if level else None)
             return empty_stock
 
-    def get_industry_stocks(self, industry: str) -> pd.DataFrame:
-        """
-        获取指定行业的股票
-        
-        Args:
-            industry: 行业名称
-            
-        Returns:
-            pd.DataFrame: 行业股票列表
-            
-        Raises:
-            Exception: 查询失败时抛出
-        """
-        query = """
-        SELECT 
-            code, name, industry, area, list_date
-        FROM 
-            stock_info
-        WHERE 
-            is_valid = 1 AND
-            industry = %(industry)s
-        """
 
-        params = {'industry': industry}
-        return self.query(query, params)
 
     def get_industry_info(self, symbol: str, start_date: Union[str, datetime.datetime],
                           end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
@@ -768,21 +744,41 @@ class ClickHouseDB:
 
     def get_industry_stock(self, industry: str) -> List[str]:
         """
-        获取行业股票代码列表
-        
+        获取行业股票代码列表（注意：当前数据库中行业信息可能不完整）
+
         Args:
             industry: 行业名称
-            
+
         Returns:
             List[str]: 股票代码列表
-            
-        Raises:
-            Exception: 查询失败时抛出
         """
-        df = self.get_industry_stocks(industry)
-        if df.empty:
+        logger.warning(f"get_industry_stock方法被调用，但当前数据库中行业信息可能不完整，行业: {industry}")
+
+        try:
+            # 直接查询stock_info表中的行业信息
+            query = """
+            SELECT DISTINCT code
+            FROM stock_info
+            WHERE level = '日线' AND industry = %(industry)s
+            ORDER BY code
+            """
+
+            params = {'industry': industry}
+            df = self.query(query, params)
+
+            if df.empty:
+                logger.warning(f"未找到行业 {industry} 的股票，返回空列表")
+                return []
+
+            # 标准化列名
+            if 'col_0' in df.columns:
+                df = df.rename(columns={'col_0': 'code'})
+
+            return df['code'].tolist()
+
+        except Exception as e:
+            logger.error(f"获取行业 {industry} 股票代码列表失败: {e}")
             return []
-        return df['code'].tolist()
 
     def get_stock_min_date(self, stock_code: str, level: Optional[Union[str, Period]] = None) -> Optional[str]:
         """
@@ -956,55 +952,40 @@ class ClickHouseDB:
     def save_selection_result(self, result: pd.DataFrame, strategy_id: str,
                               selection_date: Optional[str] = None) -> bool:
         """
-        保存选股结果
-        
+        保存选股结果（注意：当前数据库中没有stock_selection_result表）
+
         Args:
             result: 选股结果DataFrame
             strategy_id: 策略ID
             selection_date: 选股日期，默认为当前日期
-            
+
         Returns:
             bool: 保存成功返回True，否则返回False
         """
+        logger.warning("save_selection_result方法调用了不存在的表stock_selection_result，当前数据库只有stock_info表")
+
         if result is None or result.empty:
             logger.warning("选股结果为空，不保存")
             return True
 
-        # 处理日期参数
-        if selection_date is None:
-            selection_date = datetime.datetime.now().strftime("%Y-%m-%d")
-
-        # 添加策略ID和日期
-        result_copy = result.copy()
-        result_copy['strategy_id'] = strategy_id
-        result_copy['selection_date'] = selection_date
-
-        # 将复杂类型转为JSON字符串
-        for col in result_copy.columns:
-            if isinstance(result_copy[col].iloc[0], (dict, list)) or result_copy[col].dtype == 'object':
-                result_copy[col] = result_copy[col].apply(
-                    lambda x: json.dumps(x) if x is not None and not isinstance(x, str) else x
-                )
-
+        # 暂时将结果保存到文件系统而不是数据库
         try:
-            # 构建插入字段和值
-            fields = ", ".join(result_copy.columns)
-            values = ", ".join([f"%(f{i})s" for i in range(len(result_copy.columns))])
+            import os
+            result_dir = "results/selection"
+            os.makedirs(result_dir, exist_ok=True)
 
-            # 构建SQL语句
-            query = f"""
-            INSERT INTO stock_selection_result ({fields})
-            VALUES ({values})
-            """
+            # 处理日期参数
+            if selection_date is None:
+                selection_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-            # 逐行插入数据
-            for _, row in result_copy.iterrows():
-                params = {f"f{i}": val for i, val in enumerate(row)}
-                self.execute(query, params)
-
+            # 保存到CSV文件
+            filename = f"{result_dir}/selection_{strategy_id}_{selection_date}.csv"
+            result.to_csv(filename, index=False)
+            logger.info(f"选股结果已保存到文件: {filename}")
             return True
+
         except Exception as e:
-            logger.error(f"保存选股结果时出错: {e}")
+            logger.error(f"保存选股结果到文件时出错: {e}")
             return False
 
     def get_selection_history(self, strategy_id: Optional[str] = None,
@@ -1012,103 +993,104 @@ class ClickHouseDB:
                               end_date: Optional[str] = None,
                               limit: int = 100) -> pd.DataFrame:
         """
-        获取选股历史记录
-        
+        获取选股历史记录（注意：当前数据库中没有stock_selection_result表）
+
         Args:
             strategy_id: 策略ID，None表示所有策略
             start_date: 开始日期，None表示不限制
             end_date: 结束日期，None表示当前日期
             limit: 返回记录数限制
-            
+
         Returns:
             pd.DataFrame: 选股历史记录
         """
+        logger.warning("get_selection_history方法调用了不存在的表stock_selection_result，当前数据库只有stock_info表")
+
         try:
-            # 构建条件
-            conditions = []
-            params = {}
+            # 尝试从文件系统读取历史记录
+            import os
+            import glob
 
-            if strategy_id:
-                conditions.append("strategy_id = %(strategy_id)s")
-                params['strategy_id'] = strategy_id
+            result_dir = "results/selection"
+            if not os.path.exists(result_dir):
+                return pd.DataFrame(columns=['strategy_id', 'selection_date', 'stock_count'])
 
-            if start_date:
-                conditions.append("selection_date >= %(start_date)s")
-                params['start_date'] = start_date
+            # 查找匹配的CSV文件
+            pattern = f"{result_dir}/selection_*.csv"
+            files = glob.glob(pattern)
 
-            if end_date:
-                conditions.append("selection_date <= %(end_date)s")
-                params['end_date'] = end_date
-            elif not end_date:
-                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
-                conditions.append("selection_date <= %(end_date)s")
-                params['end_date'] = end_date
+            history_data = []
+            for file_path in files:
+                try:
+                    filename = os.path.basename(file_path)
+                    # 解析文件名: selection_{strategy_id}_{date}.csv
+                    parts = filename.replace('.csv', '').split('_')
+                    if len(parts) >= 3:
+                        file_strategy_id = parts[1]
+                        file_date = parts[2]
 
-            # 构建查询
-            query = """
-            SELECT strategy_id, selection_date, COUNT(*) as stock_count
-            FROM stock_selection_result
-            """
+                        # 应用过滤条件
+                        if strategy_id and file_strategy_id != strategy_id:
+                            continue
+                        if start_date and file_date < start_date:
+                            continue
+                        if end_date and file_date > end_date:
+                            continue
 
-            if conditions:
-                query += f" WHERE {' AND '.join(conditions)}"
+                        # 读取文件获取股票数量
+                        df = pd.read_csv(file_path)
+                        stock_count = len(df)
 
-            query += """
-            GROUP BY strategy_id, selection_date
-            ORDER BY selection_date DESC
-            """
+                        history_data.append({
+                            'strategy_id': file_strategy_id,
+                            'selection_date': file_date,
+                            'stock_count': stock_count
+                        })
+                except Exception as e:
+                    logger.warning(f"读取选股历史文件 {file_path} 失败: {e}")
+                    continue
 
-            if limit:
-                query += f" LIMIT {limit}"
-
-            # 执行查询
-            result = self.query(query, params)
+            # 转换为DataFrame并排序
+            result = pd.DataFrame(history_data)
+            if not result.empty:
+                result = result.sort_values('selection_date', ascending=False)
+                if limit:
+                    result = result.head(limit)
 
             return result
+
         except Exception as e:
             logger.error(f"获取选股历史记录时出错: {e}")
             return pd.DataFrame(columns=['strategy_id', 'selection_date', 'stock_count'])
 
     def get_selection_result(self, strategy_id: str, selection_date: str) -> pd.DataFrame:
         """
-        获取指定日期的选股结果
-        
+        获取指定日期的选股结果（注意：当前数据库中没有stock_selection_result表）
+
         Args:
             strategy_id: 策略ID
             selection_date: 选股日期
-            
+
         Returns:
             pd.DataFrame: 选股结果
         """
+        logger.warning("get_selection_result方法调用了不存在的表stock_selection_result，当前数据库只有stock_info表")
+
         try:
-            # 构建查询
-            query = """
-            SELECT *
-            FROM stock_selection_result
-            WHERE strategy_id = %(strategy_id)s
-              AND selection_date = %(selection_date)s
-            ORDER BY signal_strength DESC
-            """
+            # 尝试从文件系统读取选股结果
+            import os
 
-            params = {
-                'strategy_id': strategy_id,
-                'selection_date': selection_date
-            }
+            result_dir = "results/selection"
+            filename = f"{result_dir}/selection_{strategy_id}_{selection_date}.csv"
 
-            # 执行查询
-            result = self.query(query, params)
+            if os.path.exists(filename):
+                result = pd.read_csv(filename)
+                logger.info(f"从文件读取选股结果: {filename}")
+                return result
+            else:
+                logger.warning(f"选股结果文件不存在: {filename}")
+                return pd.DataFrame()
 
-            # 处理JSON字段
-            if not result.empty:
-                for col in result.columns:
-                    if result[col].dtype == 'object' and col not in ['stock_code', 'stock_name', 'strategy_id',
-                                                                     'selection_date']:
-                        try:
-                            result[col] = result[col].apply(lambda x: json.loads(x) if isinstance(x, str) else x)
-                        except:
-                            pass
-
-            return result
         except Exception as e:
             logger.error(f"获取选股结果时出错: {e}")
             return pd.DataFrame()
@@ -1140,35 +1122,34 @@ class ClickHouseDB:
     def get_avg_price(self, code: str, start_date: Union[str, datetime.datetime]) -> float:
         """
         获取股票平均价格
-        
+
         Args:
             code: 股票代码
             start_date: 开始日期
-            
+
         Returns:
             float: 平均价格
-            
+
         Raises:
             Exception: 查询失败时抛出
         """
-        # 转换日期格式
-        if isinstance(start_date, str):
-            start_date = datetime.datetime.strptime(start_date, '%Y%m%d')
+        # 使用统一的日期格式化方法
+        formatted_date = self._format_date_param(start_date)
 
         # 构建查询
         query = """
-        SELECT 
+        SELECT
             AVG(close) as avg_price
-        FROM 
+        FROM
             stock_info
-        WHERE 
+        WHERE
             code = %(code)s AND
             date >= %(start_date)s
         """
 
         params = {
             'code': code,
-            'start_date': start_date
+            'start_date': formatted_date
         }
 
         result = self.query(query, params)
@@ -1222,7 +1203,7 @@ class ClickHouseDB:
         # 构建插入字段和值
         fields = ", ".join(data.columns)
 
-        # 批量插入
+        # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
         with self.manager.get_connection(self.config) as conn:
             for _, row in data.iterrows():
                 values = ", ".join([f"%(f{i})s" for i in range(len(row))])
@@ -1230,13 +1211,6 @@ class ClickHouseDB:
                 query = f"""
                 INSERT INTO stock_info ({fields})
                 VALUES ({values})
-                ON DUPLICATE KEY UPDATE 
-                    open = VALUES(open),
-                    high = VALUES(high),
-                    low = VALUES(low),
-                    close = VALUES(close),
-                    volume = VALUES(volume),
-                    turnover_rate = VALUES(turnover_rate)
                 """
 
                 params = {f"f{i}": val for i, val in enumerate(row)}
@@ -1271,7 +1245,7 @@ class ClickHouseDB:
         # 构建插入字段和值
         fields = ", ".join(data.columns)
 
-        # 批量插入
+        # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
         with self.manager.get_connection(self.config) as conn:
             for _, row in data.iterrows():
                 values = ", ".join([f"%(f{i})s" for i in range(len(row))])
@@ -1279,12 +1253,6 @@ class ClickHouseDB:
                 query = f"""
                 INSERT INTO stock_info ({fields})
                 VALUES ({values})
-                ON DUPLICATE KEY UPDATE 
-                    open = VALUES(open),
-                    high = VALUES(high),
-                    low = VALUES(low),
-                    close = VALUES(close),
-                    volume = VALUES(volume)
                 """
 
                 params = {f"f{i}": val for i, val in enumerate(row)}
@@ -1300,45 +1268,215 @@ class ClickHouseDB:
                     result_data: pd.DataFrame,
                     strategy_id: Optional[str] = None) -> None:
         """
-        保存结果数据
-        
+        保存结果数据（注意：当前数据库中没有analysis_results表）
+
         Args:
             result_type: 结果类型
             result_data: 结果数据
             strategy_id: 策略ID
-            
+
         Raises:
             Exception: 保存失败时抛出
         """
+        logger.warning("save_result方法调用了不存在的表analysis_results，当前数据库只有stock_info表")
+
         if result_data.empty:
             logger.warning("结果数据为空，不保存")
             return
 
-        # 添加结果时间和策略ID
-        result_data['result_time'] = datetime.datetime.now()
-        if strategy_id:
-            result_data['strategy_id'] = strategy_id
+        try:
+            import os
 
-        # 确保有结果类型
-        result_data['result_type'] = result_type
+            # 创建结果目录
+            result_dir = f"results/{result_type}"
+            os.makedirs(result_dir, exist_ok=True)
 
-        # 构建插入字段和值
-        fields = ", ".join(result_data.columns)
+            # 添加结果时间和策略ID
+            result_copy = result_data.copy()
+            result_copy['result_time'] = datetime.datetime.now()
+            if strategy_id:
+                result_copy['strategy_id'] = strategy_id
+            result_copy['result_type'] = result_type
 
-        # 批量插入
-        with self.manager.get_connection(self.config) as conn:
-            for _, row in result_data.iterrows():
-                values = ", ".join([f"%(f{i})s" for i in range(len(row))])
+            # 生成文件名
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{result_dir}/{result_type}_{timestamp}"
+            if strategy_id:
+                filename += f"_{strategy_id}"
+            filename += ".csv"
 
-                query = f"""
-                INSERT INTO analysis_results ({fields})
-                VALUES ({values})
-                """
+            # 保存到CSV文件
+            result_copy.to_csv(filename, index=False)
+            logger.info(f"已保存{len(result_data)}条{result_type}结果数据到文件: {filename}")
 
-                params = {f"f{i}": val for i, val in enumerate(row)}
-                conn.execute(query, params)
+        except Exception as e:
+            logger.error(f"保存结果数据到文件时出错: {e}")
+            raise
 
-        logger.info(f"已保存{len(result_data)}条{result_type}结果数据")
+    def get_stock_list(self, market: Optional[str] = None,
+                      industry: Optional[str] = None,
+                      limit: Optional[int] = None) -> pd.DataFrame:
+        """
+        获取股票列表
+
+        Args:
+            market: 市场过滤条件（暂未使用，为兼容性保留）
+            industry: 行业过滤条件
+            limit: 限制返回的记录数量
+
+        Returns:
+            pd.DataFrame: 股票列表，包含code, name, industry等字段
+        """
+        try:
+            # 构建查询条件
+            conditions = ["level = '日线'"]  # 只查询日线数据获取股票基本信息
+            params = {}
+
+            if industry:
+                conditions.append("industry = %(industry)s")
+                params['industry'] = industry
+
+            # 构建查询
+            query = f"""
+            SELECT DISTINCT code, name, industry
+            FROM stock_info
+            WHERE {' AND '.join(conditions)}
+            ORDER BY code
+            """
+
+            if limit:
+                query += f" LIMIT {limit}"
+
+            # 执行查询
+            result = self.query(query, params)
+
+            # 标准化列名
+            if not result.empty and 'col_0' in result.columns:
+                result = result.rename(columns={
+                    'col_0': 'code',
+                    'col_1': 'name',
+                    'col_2': 'industry'
+                })
+
+            return result
+
+        except Exception as e:
+            logger.error(f"获取股票列表失败: {e}")
+            return pd.DataFrame(columns=['code', 'name', 'industry'])
+
+    def get_kline_data(self, stock_code: Union[str, List[str]],
+                      start_date: Optional[str] = None,
+                      end_date: Optional[str] = None,
+                      level: str = 'day',
+                      **kwargs) -> StockInfo:
+        """
+        获取K线数据（兼容性方法）
+
+        Args:
+            stock_code: 股票代码或股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            level: K线周期
+            **kwargs: 其他参数
+
+        Returns:
+            StockInfo: 股票数据对象
+        """
+        logger.warning("方法 get_kline_data 已被弃用，建议使用 get_stock_info 方法")
+
+        # 调用统一的get_stock_info方法
+        return self.get_stock_info(
+            stock_code=stock_code,
+            level=level,
+            start_date=start_date,
+            end_date=end_date,
+            **kwargs
+        )
+
+    def get_stocks_by_industry(self, industry: str) -> List[Dict[str, str]]:
+        """
+        根据行业获取股票列表（注意：当前数据库中行业信息可能不完整）
+
+        Args:
+            industry: 行业名称
+
+        Returns:
+            List[Dict]: 股票列表，每个元素包含stock_code和stock_name
+        """
+        logger.warning(f"get_stocks_by_industry方法被调用，但当前数据库中行业信息可能不完整，行业: {industry}")
+
+        try:
+            # 直接查询stock_info表中的行业信息
+            query = """
+            SELECT DISTINCT code, name, industry
+            FROM stock_info
+            WHERE level = '日线' AND industry = %(industry)s
+            ORDER BY code
+            """
+
+            params = {'industry': industry}
+            stocks_df = self.query(query, params)
+
+            if stocks_df.empty:
+                logger.warning(f"未找到行业 {industry} 的股票，返回示例股票")
+                # 返回一些示例股票
+                stocks_df = self.get_stock_list(limit=10)
+
+            # 标准化列名
+            if 'col_0' in stocks_df.columns:
+                stocks_df = stocks_df.rename(columns={
+                    'col_0': 'code',
+                    'col_1': 'name',
+                    'col_2': 'industry'
+                })
+
+            # 转换为字典列表
+            result = []
+            for _, row in stocks_df.iterrows():
+                result.append({
+                    'stock_code': row['code'],
+                    'stock_name': row['name']
+                })
+
+            return result
+
+        except Exception as e:
+            logger.error(f"根据行业 {industry} 获取股票列表失败: {e}")
+            return []
+
+    def get_index_stocks(self, index_code: str) -> List[Dict[str, str]]:
+        """
+        根据指数代码获取成分股列表（注意：当前数据库中没有指数成分股数据）
+
+        Args:
+            index_code: 指数代码
+
+        Returns:
+            List[Dict]: 股票列表，每个元素包含stock_code和stock_name
+        """
+        logger.warning(f"get_index_stocks方法被调用，但当前数据库中没有指数成分股数据，指数代码: {index_code}")
+
+        # 返回一些示例股票作为替代
+        try:
+            # 获取前50只股票作为示例
+            stocks_df = self.get_stock_list(limit=50)
+            if stocks_df.empty:
+                return []
+
+            # 转换为字典列表
+            result = []
+            for _, row in stocks_df.iterrows():
+                result.append({
+                    'stock_code': row['code'],
+                    'stock_name': row['name']
+                })
+
+            logger.info(f"返回 {len(result)} 只示例股票代替指数 {index_code} 的成分股")
+            return result
+
+        except Exception as e:
+            logger.error(f"获取指数 {index_code} 成分股失败: {e}")
+            return []
 
     def get_stock_name(self, stock_code: str) -> str:
         """

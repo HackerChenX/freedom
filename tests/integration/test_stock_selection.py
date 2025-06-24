@@ -17,7 +17,7 @@ from strategy.strategy_parser import StrategyParser
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
 from db.data_manager import DataManager
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from strategy.selector import StockSelector
 
 

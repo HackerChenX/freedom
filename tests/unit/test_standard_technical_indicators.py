@@ -8,20 +8,19 @@ import pandas.testing as pd_testing
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
-from indicators.factory import IndicatorFactory
-from indicators.aroon import Aroon
+from indicators.complete_indicator_registry import complete_registry
 
 def setUpModule():
     """在模块所有测试开始前运行，用于注册所有指标"""
-    IndicatorFactory.auto_register_all_indicators()
+    # 统一注册系统已自动注册所有指标
+    pass
 
 class TestAroon(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
     def setUp(self):
         """测试初始化，并为Mixin测试提供self.data"""
         super().setUp()
-        self.indicator_class = Aroon
         self.indicator_params = {'period': 5}
-        self.indicator = self.indicator_class(**self.indicator_params)
+        self.indicator = complete_registry.create_indicator('AROON', **self.indicator_params)
         self.data_generator = TestDataGenerator()
         # 为继承自Mixin的测试提供一个默认数据集
         self.data = self.data_generator.generate_price_sequence([
@@ -72,7 +71,7 @@ class TestAroon(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
 class TestChaikin(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('CHAIKIN', short_period=3, long_period=10)
+            self.indicator = complete_registry.create_indicator('CHAIKIN', short_period=3, long_period=10)
         except Exception as e:
             self.skipTest(f"无法创建CHAIKIN指标: {e}")
         self.expected_columns = ['chaikin_oscillator']
@@ -89,7 +88,7 @@ class TestChaikin(unittest.TestCase, IndicatorTestMixin):
 class TestCMO(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('CMO', period=14)
+            self.indicator = complete_registry.create_indicator('CMO', period=14)
         except Exception as e:
             self.skipTest(f"无法创建CMO指标: {e}")
         self.expected_columns = ['cmo']
@@ -106,7 +105,7 @@ class TestCMO(unittest.TestCase, IndicatorTestMixin):
 class TestIchimoku(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('ICHIMOKU', conversion_period=9, base_period=26, leading_span_b_period=52)
+            self.indicator = complete_registry.create_indicator('ICHIMOKU', conversion_period=9, base_period=26, leading_span_b_period=52)
         except Exception as e:
             self.skipTest(f"无法创建ICHIMOKU指标: {e}")
         self.expected_columns = ['tenkan_sen', 'kijun_sen', 'senkou_span_a', 'senkou_span_b', 'chikou_span']
@@ -125,7 +124,7 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin):
 class TestKC(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('KC', period=20, atr_period=10, multiplier=2)
+            self.indicator = complete_registry.create_indicator('KC', period=20, atr_period=10, multiplier=2)
         except Exception as e:
             self.skipTest(f"无法创建KC指标: {e}")
         self.expected_columns = ['kc_upper', 'kc_middle', 'kc_lower']
@@ -143,7 +142,7 @@ class TestKC(unittest.TestCase, IndicatorTestMixin):
 class TestSAR(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('SAR', initial_af=0.02, max_af=0.2, af_increment=0.02)
+            self.indicator = complete_registry.create_indicator('SAR', initial_af=0.02, max_af=0.2, af_increment=0.02)
         except Exception as e:
             self.skipTest(f"无法创建SAR指标: {e}")
         self.expected_columns = ['sar']
@@ -163,7 +162,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin):
 class TestStochRSI(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('STOCHRSI', rsi_period=14, stochastic_period=14, k_period=3, d_period=3)
+            self.indicator = complete_registry.create_indicator('STOCHRSI', rsi_period=14, stochastic_period=14, k_period=3, d_period=3)
         except Exception as e:
             self.skipTest(f"无法创建STOCHRSI指标: {e}")
         self.expected_columns = ['stochrsi_k', 'stochrsi_d']
@@ -181,7 +180,7 @@ class TestStochRSI(unittest.TestCase, IndicatorTestMixin):
 class TestTrix(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('TRIX', period=15, signal_period=9)
+            self.indicator = complete_registry.create_indicator('TRIX', period=15, signal_period=9)
         except Exception as e:
             self.skipTest(f"无法创建TRIX指标: {e}")
         self.expected_columns = ['trix', 'trix_signal']
@@ -198,7 +197,7 @@ class TestTrix(unittest.TestCase, IndicatorTestMixin):
 class TestVortex(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('VORTEX', period=14)
+            self.indicator = complete_registry.create_indicator('VORTEX', period=14)
         except Exception as e:
             self.skipTest(f"无法创建VORTEX指标: {e}")
         self.expected_columns = ['vi_plus', 'vi_minus']
@@ -215,7 +214,7 @@ class TestVortex(unittest.TestCase, IndicatorTestMixin):
 class TestDMA(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('DMA', short_period=10, long_period=50, ama_period=10)
+            self.indicator = complete_registry.create_indicator('DMA', short_period=10, long_period=50, ama_period=10)
         except Exception as e:
             self.skipTest(f"无法创建DMA指标: {e}")
         self.expected_columns = ['dma', 'ama']
@@ -235,7 +234,7 @@ class TestDMA(unittest.TestCase, IndicatorTestMixin):
 class TestEMV(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('EMV', period=14, ma_period=9)
+            self.indicator = complete_registry.create_indicator('EMV', period=14, ma_period=9)
         except Exception as e:
             self.skipTest(f"无法创建EMV指标: {e}")
         self.expected_columns = ['emv', 'emv_ma']
@@ -252,7 +251,7 @@ class TestEMV(unittest.TestCase, IndicatorTestMixin):
 class TestPSY(unittest.TestCase, IndicatorTestMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('PSY', period=12, ma_period=6)
+            self.indicator = complete_registry.create_indicator('PSY', period=12, ma_period=6)
         except Exception as e:
             self.skipTest(f"无法创建PSY指标: {e}")
         self.expected_columns = ['psy', 'psy_ma']

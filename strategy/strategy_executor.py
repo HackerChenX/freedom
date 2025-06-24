@@ -14,7 +14,7 @@ from datetime import datetime
 
 from db.data_manager_adapter import get_data_manager_adapter
 from strategy.strategy_manager import StrategyManager
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, safe_run, cache_result

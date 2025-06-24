@@ -19,8 +19,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from db.clickhouse_db import get_clickhouse_db
-from indicators.volume.enhanced_obv import EnhancedOBV
-from indicators.enhanced_factory import EnhancedIndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.market_env import MarketDetector
 from indicators.synergy import IndicatorSynergy
 from utils.logger import get_logger

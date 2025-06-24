@@ -10,7 +10,7 @@ import os
 import yaml
 from datetime import datetime
 
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from enums.period import Period
 from utils.exceptions import (
@@ -31,7 +31,7 @@ class StrategyParser:
     
     def __init__(self):
         """初始化策略解析器"""
-        self.indicator_factory = IndicatorFactory
+        self.indicator_registry = complete_registry
         
     def parse_from_file(self, file_path: str) -> Dict[str, Any]:
         """

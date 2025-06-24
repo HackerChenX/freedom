@@ -31,8 +31,7 @@ from utils.logger import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
-from indicators.indicator_registry import IndicatorRegistry
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 
 logger = get_logger(__name__)
 
@@ -237,9 +236,7 @@ class PerformanceAnalyzer:
                 start_time = time.time()
 
                 # 创建指标实例
-                indicator = indicator_analyzer.indicator_registry.create_indicator(indicator_name)
-                if indicator is None:
-                    indicator = indicator_analyzer.indicator_factory.create_indicator(indicator_name)
+                indicator = complete_registry.create_indicator(indicator_name)
 
                 if indicator is None:
                     continue

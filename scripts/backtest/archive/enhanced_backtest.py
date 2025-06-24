@@ -35,7 +35,7 @@ from utils.period_data_structure import (
     MultiPeriodAnalysisResult
 )
 from db.db_manager import DBManager
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import PatternRegistry
 
 # 获取日志记录器

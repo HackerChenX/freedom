@@ -4,7 +4,7 @@
 import pytest
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 
 class TestChipDistribution(IndicatorTestMixin):
     @pytest.fixture(autouse=True)

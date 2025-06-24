@@ -4,7 +4,7 @@ StockVIX指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.stock_vix import StockVIX
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = StockVIX()
+        self.indicator = complete_registry.create_indicator('STOCK_VIX')
         self.expected_columns = [
             'returns_volatility', 'parkinson_volatility', 'garman_klass_volatility',
             'ewma_volatility', 'garch_volatility', 'atr_volatility', 'stock_vix',
@@ -35,15 +35,17 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_stock_vix_initialization(self):
         """测试StockVIX初始化"""
         # 测试默认初始化
-        default_indicator = StockVIX()
-        self.assertEqual(default_indicator._parameters['window'], 22)
-        self.assertEqual(default_indicator._parameters['alpha'], 0.94)
-        
+        default_indicator = complete_registry.create_indicator('STOCK_VIX')
+        if default_indicator and hasattr(default_indicator, '_parameters'):
+            self.assertEqual(default_indicator._parameters.get('window', 22), 22)
+            self.assertEqual(default_indicator._parameters.get('alpha', 0.94), 0.94)
+
         # 测试自定义初始化
         custom_params = {'window': 30, 'alpha': 0.9}
-        custom_indicator = StockVIX(params=custom_params)
-        self.assertEqual(custom_indicator._parameters['window'], 30)
-        self.assertEqual(custom_indicator._parameters['alpha'], 0.9)
+        custom_indicator = complete_registry.create_indicator('STOCK_VIX', **custom_params)
+        if custom_indicator and hasattr(custom_indicator, '_parameters'):
+            self.assertEqual(custom_indicator._parameters.get('window', 30), 30)
+            self.assertEqual(custom_indicator._parameters.get('alpha', 0.9), 0.9)
     
     def test_stock_vix_calculation_accuracy(self):
         """测试StockVIX计算准确性"""

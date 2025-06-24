@@ -4,8 +4,8 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.composite_indicator import CompositeIndicator
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from tests.helper.data_generator import TestDataGenerator
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 

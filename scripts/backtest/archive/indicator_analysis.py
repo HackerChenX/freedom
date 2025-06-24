@@ -21,7 +21,7 @@ from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
 from utils.path_utils import get_stock_result_file, get_backtest_result_dir
 from db.db_manager import DBManager
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from indicators.common import ma, rsi
 
 # 获取日志记录器

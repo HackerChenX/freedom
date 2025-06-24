@@ -25,7 +25,7 @@ from utils.path_utils import ensure_dir_exists
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
 from strategy.strategy_generator import StrategyGenerator
-from indicators.pattern_registry import PatternRegistry
+from indicators.complete_indicator_registry import complete_registry
 
 logger = get_logger(__name__)
 
@@ -39,7 +39,7 @@ class PatternPolarityFilter:
     """模式极性过滤器 - 基于注册信息过滤负面模式"""
 
     def __init__(self):
-        from indicators.pattern_registry import PatternRegistry, PatternPolarity
+from indicators.complete_indicator_registry import complete_registry
         self.registry = PatternRegistry()
         self.polarity_enum = PatternPolarity
 

@@ -30,8 +30,7 @@ from utils.logger import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
-from indicators.indicator_registry import IndicatorRegistry
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 
 logger = get_logger(__name__)
 
@@ -48,11 +47,7 @@ class OptimizedIndicatorCalculator:
     def get_indicator_instance(self, indicator_name: str):
         """获取指标实例（带缓存）"""
         try:
-            registry = IndicatorRegistry()
-            indicator = registry.create_indicator(indicator_name)
-            if indicator is None:
-                factory = IndicatorFactory()
-                indicator = factory.create_indicator(indicator_name)
+            indicator = complete_registry.create_indicator(indicator_name)
             return indicator
         except Exception as e:
             logger.warning(f"创建指标 {indicator_name} 失败: {e}")

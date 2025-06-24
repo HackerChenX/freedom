@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-from indicators.rsi import RSI
+from indicators.complete_indicator_registry import complete_registry
 
 
 class TestDualPeriodRSI(unittest.TestCase):

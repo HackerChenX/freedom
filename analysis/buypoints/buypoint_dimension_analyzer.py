@@ -18,7 +18,7 @@ from db.clickhouse_db import get_clickhouse_db, get_default_config
 from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
 from utils.path_utils import get_result_dir
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -38,8 +38,8 @@ class BuyPointDimensionAnalyzer:
         config = get_default_config()
         self.ch_db = get_clickhouse_db(config=config)
         
-        # 创建指标工厂
-        self.indicator_factory = IndicatorFactory()
+        # 使用统一指标注册系统
+        self.indicator_registry = complete_registry
         
         # 存储分析结果
         self.analysis_results = {
@@ -1184,7 +1184,7 @@ class BuyPointDimensionAnalyzer:
                     
                     try:
                         # 创建指标实例
-                        indicator = self.indicator_factory.create(indicator_id, **parameters)
+                        indicator = self.indicator_registry.create_indicator(indicator_id, **parameters)
                         
                         # 计算指标值
                         indicator_result = indicator.calculate(kline_data)

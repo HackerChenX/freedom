@@ -81,7 +81,7 @@ class RealDataReverseValidator:
         # 默认配置
         if config is None:
             config = {
-                "validation_date": "2024-12-01",
+                "validation_date": None,  # 将从买点数据中自动提取
                 "enable_progress": True,
                 "cleanup_temp": True
             }
@@ -95,7 +95,11 @@ class RealDataReverseValidator:
             
             # 3. 提取原始买点股票列表
             original_stocks = self._extract_original_stocks(original_buypoints)
-            
+
+            # 3.5. 提取验证日期（如果配置中没有指定）
+            if config.get("validation_date") is None:
+                config["validation_date"] = self._extract_validation_date(original_buypoints)
+
             # 4. 使用真实数据执行策略选股
             selected_stocks = self._execute_real_strategy(strategy, config, buypoints_file)
             
@@ -209,7 +213,47 @@ class RealDataReverseValidator:
         print(f"📈 股票列表: {sorted(list(original_stocks))}")
 
         return original_stocks
-    
+
+    def _extract_validation_date(self, buypoints_data: pd.DataFrame) -> str:
+        """从买点数据中提取验证日期"""
+        # 尝试多种可能的日期列名
+        date_columns = ['date', 'buypoint_date', 'buy_date', 'trade_date', 'timestamp']
+
+        for date_col in date_columns:
+            if date_col in buypoints_data.columns:
+                # 使用买点数据中的最新日期作为验证日期
+                date_values = buypoints_data[date_col]
+
+                # 处理不同的日期格式
+                if date_values.dtype == 'object':
+                    # 字符串格式，可能是YYYYMMDD或YYYY-MM-DD
+                    first_date = str(date_values.iloc[0])
+                    if len(first_date) == 8 and first_date.isdigit():
+                        # YYYYMMDD格式
+                        dates = pd.to_datetime(date_values, format='%Y%m%d')
+                    else:
+                        # 其他格式，让pandas自动解析
+                        dates = pd.to_datetime(date_values)
+                else:
+                    # 数值格式，可能是YYYYMMDD
+                    first_date = str(date_values.iloc[0])
+                    if len(first_date) == 8 and first_date.isdigit():
+                        # YYYYMMDD格式的数值
+                        dates = pd.to_datetime(date_values.astype(str), format='%Y%m%d')
+                    else:
+                        # 其他数值格式，可能是Unix时间戳
+                        dates = pd.to_datetime(date_values, unit='s')
+
+                latest_date = dates.max()
+                validation_date = latest_date.strftime('%Y-%m-%d')
+                print(f"📅 从买点数据中提取验证日期 (列: {date_col}): {validation_date}")
+                return validation_date
+
+        # 如果没有找到任何日期列，使用默认日期
+        default_date = "2024-01-15"
+        print(f"⚠️ 买点数据中没有找到日期列 {date_columns}，使用默认日期: {default_date}")
+        return default_date
+
     def _execute_real_strategy(self, strategy: dict, config: dict, buypoints_file: str) -> set:
         """使用真实数据执行策略"""
         print("🔄 开始执行策略选股...")
@@ -463,7 +507,7 @@ def main():
     parser.add_argument("--buypoints", required=True, help="原始买点数据文件")
     parser.add_argument("--strategy", required=True, help="策略文件路径")
     parser.add_argument("--output", help="输出目录，默认为results/real_validation")
-    parser.add_argument("--validation-date", help="验证日期，默认为2024-12-01")
+    parser.add_argument("--validation-date", help="验证日期，默认从买点数据中自动提取")
     parser.add_argument("--no-progress", action="store_true", help="禁用进度显示")
     parser.add_argument("--keep-temp", action="store_true", help="保留临时策略文件")
     
@@ -475,7 +519,7 @@ def main():
     
     # 验证配置
     config = {
-        "validation_date": args.validation_date or "2024-12-01",
+        "validation_date": args.validation_date,  # None表示从买点数据中自动提取
         "enable_progress": not args.no_progress,
         "cleanup_temp": not args.keep_temp
     }

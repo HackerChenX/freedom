@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from indicators.zxm_absorb import ZXMAbsorb
+from indicators.complete_indicator_registry import complete_registry
 from indicators.zxm_washplate import ZXMWashPlate
 
 

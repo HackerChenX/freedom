@@ -16,7 +16,7 @@ import numpy as np
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
-from indicators.bias import BIAS
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

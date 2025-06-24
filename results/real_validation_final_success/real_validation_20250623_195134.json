@@ -1,6 +1,0 @@
-{
-  "validation_status": "failed",
-  "error": "策略执行失败: 执行策略失败: DataManagerAdapter.get_stock_list() got an unexpected keyword argument 'filters'",
-  "timestamp": "2025-06-23T19:51:34.966798",
-  "execution_mode": "real_data"
-}

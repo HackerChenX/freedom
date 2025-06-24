@@ -14,8 +14,8 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.enhanced_rsi import EnhancedRSI
-from indicators.rsi import RSI
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.oscillator.enhanced_kdj import EnhancedKDJ
 from indicators.kdj import KDJ
 from indicators.enhanced_factory import EnhancedIndicatorFactory

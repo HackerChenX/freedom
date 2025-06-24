@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from indicators.rsi import RSI
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -14,7 +14,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         """准备数据和指标实例"""
         LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
-        self.indicator = RSI(period=14, ma_periods=[5, 10], overbought=70.0, oversold=30.0)
+        self.indicator = complete_registry.create_indicator('RSI', period=14, ma_periods=[5, 10], overbought=70.0, oversold=30.0)
         self.expected_columns = [f'rsi_{self.indicator.period}']
         # 使用一个包含多种走势的数据进行通用测试
         self.data = TestDataGenerator.generate_price_sequence([

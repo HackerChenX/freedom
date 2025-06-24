@@ -4,7 +4,8 @@ CandlestickPatterns指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.pattern.candlestick_patterns import CandlestickPatterns, PatternType
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +19,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = CandlestickPatterns()
+        self.indicator = complete_registry.create_indicator('CANDLESTICK_PATTERNS')
         self.expected_columns = [
             'doji', 'hammer', 'hanging_man', 'long_legged_doji', 'gravestone_doji', 'shooting_star',
             'engulfing_bullish', 'engulfing_bearish', 'dark_cloud_cover', 'piercing_line',
@@ -37,7 +38,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
     def test_candlestick_patterns_initialization(self):
         """测试CandlestickPatterns初始化"""
         # 测试默认初始化
-        default_indicator = CandlestickPatterns()
+        default_indicator = complete_registry.create_indicator('CANDLESTICK_PATTERNS')
         self.assertEqual(default_indicator.name, "CandlestickPatterns")
         self.assertIn("K线形态识别指标", default_indicator.description)
     

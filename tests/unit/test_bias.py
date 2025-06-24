@@ -4,7 +4,7 @@ BIAS指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.bias import BIAS
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestBIAS(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
 
-        self.indicator = BIAS(periods=[6, 12, 24])
+        self.indicator = complete_registry.create_indicator('BIAS', periods=[6, 12, 24])
         self.expected_columns = ['BIAS6', 'BIAS12', 'BIAS24', 'BIAS', 'BIAS_MA']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}

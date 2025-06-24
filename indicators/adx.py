@@ -311,10 +311,14 @@ class ADX(BaseIndicator, PatternSignalMixin):
         
         # 计算ATR用于止损设置
         try:
-            from indicators.atr import ATR
-            atr_indicator = ATR()
-            atr_data = atr_indicator.calculate(data)
-            atr_values = atr_data['atr']
+            from indicators.base_indicator import BaseIndicator
+            atr_indicator = complete_registry.create_indicator('ATR')
+            if atr_indicator:
+                atr_data = atr_indicator.calculate(data)
+                atr_values = atr_data['atr']
+            else:
+                logger.warning("无法创建ATR指标")
+                atr_values = None
         except Exception as e:
             logger.warning(f"计算ATR失败: {e}")
             atr_values = pd.Series(0, index=data.index)

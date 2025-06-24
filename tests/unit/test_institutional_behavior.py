@@ -4,7 +4,7 @@ InstitutionalBehavior指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.institutional_behavior import InstitutionalBehavior
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = InstitutionalBehavior()
+        self.indicator = complete_registry.create_indicator('INSTITUTIONAL_BEHAVIOR')
         self.expected_columns = [
             'inst_concentration', 'inst_profit_ratio', 'inst_cost', 'inst_activity_score',
             'inst_phase', 'behavior_pattern', 'phase_change', 'behavior_intensity', 'behavior_description'
@@ -34,7 +34,7 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
     def test_institutional_behavior_initialization(self):
         """测试InstitutionalBehavior初始化"""
         # 测试默认初始化
-        default_indicator = InstitutionalBehavior()
+        default_indicator = complete_registry.create_indicator('INSTITUTIONAL_BEHAVIOR')
         self.assertEqual(default_indicator.volume_quantile, 0.85)
         
         # 测试参数设置

@@ -18,9 +18,9 @@ from unittest.mock import MagicMock
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.ichimoku import Ichimoku
-from indicators.aroon import Aroon
-from indicators.chaikin import Chaikin
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 
 
 def generate_test_data(periods=100):

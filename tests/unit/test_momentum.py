@@ -9,7 +9,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from indicators.momentum import Momentum
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

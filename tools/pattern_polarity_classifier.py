@@ -14,7 +14,7 @@ from typing import Dict, List, Tuple, Set
 from dataclasses import dataclass
 from enum import Enum
 
-from indicators.pattern_registry import PatternRegistry, PatternPolarity, PatternType
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

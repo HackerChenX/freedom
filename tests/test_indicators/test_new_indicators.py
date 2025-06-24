@@ -13,7 +13,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # 导入需要测试的指标
-from indicators.emv import EMV
+from indicators.complete_indicator_registry import complete_registry
 from indicators.intraday_volatility import IntradayVolatility
 from indicators.v_shaped_reversal import VShapedReversal
 from indicators.island_reversal import IslandReversal

@@ -4,7 +4,7 @@ CMO指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.cmo import CMO
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestCMO(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = CMO(period=14, oversold=-40, overbought=40)
+        self.indicator = complete_registry.create_indicator('CMO', period=14, oversold=-40, overbought=40)
         self.expected_columns = ['cmo']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}

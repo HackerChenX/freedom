@@ -23,7 +23,7 @@ from indicators.zxm.elasticity_indicators import (
 from indicators.zxm.score_indicators import (
     ZXMElasticityScore, ZXMBuyPointScore, StockScoreCalculator
 )
-from indicators.zxm.selection_model import SelectionModel
+from indicators.complete_indicator_registry import complete_registry
 from indicators.zxm.diagnostics import ZXMDiagnostics
 
 

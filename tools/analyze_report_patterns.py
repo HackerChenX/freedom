@@ -13,7 +13,7 @@ import re
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
 
-from indicators.pattern_registry import PatternPolarity
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

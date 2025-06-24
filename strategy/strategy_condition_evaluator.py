@@ -369,6 +369,10 @@ class StrategyConditionEvaluator:
             bool: 条件评估结果
         """
         try:
+            # 步骤0：检查是否是pattern类型的条件
+            if "pattern" in condition:
+                return self._evaluate_pattern_indicator_condition(condition, stock_data, date)
+
             # 步骤1：标准化条件格式
             standardized_condition = self._standardize_condition(condition)
 
@@ -422,8 +426,101 @@ class StrategyConditionEvaluator:
             logger.error(f"评估指标条件时出错: {e}")
             # 向后兼容：出错时尝试使用原始方法
             return self._evaluate_indicator_condition_legacy(condition, stock_data, date)
-    
-    def _evaluate_fundamental_condition(self, condition: Dict[str, Any], 
+
+    def _evaluate_pattern_indicator_condition(self, condition: Dict[str, Any],
+                                            stock_data: pd.DataFrame,
+                                            date: str) -> bool:
+        """
+        评估基于形态的指标条件
+
+        Args:
+            condition: 条件配置，包含pattern字段
+            stock_data: 股票数据
+            date: 评估日期
+
+        Returns:
+            bool: 条件评估结果
+        """
+        try:
+            # 提取条件信息
+            indicator_name = condition.get("indicator", "")
+            pattern_name = condition.get("pattern", "")
+            score_threshold = condition.get("score_threshold", 0.5)
+            period = condition.get("period", "1d")  # 默认日线
+
+            logger.debug(f"评估形态指标条件: {indicator_name}.{pattern_name}, 阈值: {score_threshold}, 周期: {period}")
+
+            # 根据period获取相应周期的数据
+            period_data = self._get_period_data(stock_data, period)
+            if period_data is None or period_data.empty:
+                logger.debug(f"无法获取{period}周期的数据")
+                return False
+
+            # 使用指标名称映射器转换指标名称
+            from utils.indicator_name_mapper import indicator_name_mapper
+            mapped_indicator_name = indicator_name_mapper.map_to_registry_name(indicator_name)
+
+            # 创建指标实例并计算
+            indicator_instance = self.indicator_registry.create_indicator(mapped_indicator_name)
+            if indicator_instance is None:
+                logger.debug(f"未找到指标: {indicator_name} (映射为: {mapped_indicator_name})")
+                return False
+
+            # 计算指标
+            indicator_data = indicator_instance.calculate(period_data)
+            if indicator_data is None or indicator_data.empty:
+                logger.debug(f"指标 {mapped_indicator_name} 计算失败")
+                return False
+
+            # 检查指标是否支持形态识别
+            if hasattr(indicator_instance, 'identify_patterns'):
+                # 使用指标的形态识别功能
+                patterns = indicator_instance.identify_patterns(indicator_data)
+                result = pattern_name in patterns
+                logger.debug(f"指标 {mapped_indicator_name} 识别到的形态: {patterns}, 目标形态: {pattern_name}, 匹配: {result}")
+                return result
+            else:
+                # 检查是否有对应的形态列
+                pattern_col = f"pattern_{pattern_name}"
+                if pattern_col in indicator_data.columns:
+                    pattern_value = self._get_value_on_date(indicator_data, pattern_col, date)
+                    result = bool(pattern_value) if pattern_value is not None else False
+                    logger.debug(f"指标 {mapped_indicator_name} 形态列 {pattern_col} 值: {pattern_value}, 结果: {result}")
+                    return result
+                else:
+                    logger.debug(f"指标 {mapped_indicator_name} 不支持形态识别，也没有形态列 {pattern_col}")
+                    return False
+
+        except Exception as e:
+            logger.error(f"评估形态指标条件时出错: {e}")
+            return False
+
+    def _get_period_data(self, stock_data: pd.DataFrame, period: str) -> pd.DataFrame:
+        """
+        根据周期获取相应的数据
+
+        Args:
+            stock_data: 原始股票数据（通常是日线）
+            period: 周期（如 "1d", "15min", "1h", "1w", "1M"）
+
+        Returns:
+            pd.DataFrame: 对应周期的数据
+        """
+        try:
+            # 如果是日线数据，直接返回
+            if period in ["1d", "daily", "day"]:
+                return stock_data
+
+            # 对于其他周期，目前先返回原始数据
+            # TODO: 实现真正的周期转换逻辑
+            logger.debug(f"周期 {period} 暂不支持转换，使用原始数据")
+            return stock_data
+
+        except Exception as e:
+            logger.error(f"获取{period}周期数据时出错: {e}")
+            return stock_data
+
+    def _evaluate_fundamental_condition(self, condition: Dict[str, Any],
                                      stock_data: pd.DataFrame,
                                      date: str) -> bool:
         """

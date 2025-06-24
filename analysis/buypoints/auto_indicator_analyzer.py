@@ -20,8 +20,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
-from indicators.scoring_framework import IndicatorScoreManager
-from indicators.base_indicator import BaseIndicator
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 
 # 尝试导入pattern_recognition_analyzer，如果talib不可用则跳过
 try:

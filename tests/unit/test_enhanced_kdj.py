@@ -4,7 +4,7 @@ EnhancedKDJ指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.oscillator.enhanced_kdj import EnhancedKDJ
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin

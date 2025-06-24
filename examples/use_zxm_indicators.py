@@ -14,13 +14,8 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-# 导入指标工厂和ZXM体系指标
-from indicators.factory import IndicatorFactory
-from indicators.zxm.trend_indicators import ZXMDailyTrendUp
-from indicators.zxm.elasticity_indicators import ZXMAmplitudeElasticity
-from indicators.zxm.buy_point_indicators import ZXMMACallback
-from indicators.zxm.selection_model import ZXMSelectionModel
-from indicators.zxm.zxm_turnover import ZXMTurnover
+# 导入统一指标注册系统
+from indicators.complete_indicator_registry import complete_registry
 
 
 def generate_sample_data(days=180):
@@ -125,15 +120,18 @@ def generate_monthly_data(daily_data):
 def demo_zxm_daily_trend_up(data):
     """
     演示ZXM趋势-日线上移指标
-    
+
     Args:
         data: 日线数据
     """
     print("\n=== ZXM趋势-日线上移指标示例 ===")
-    
+
     # 创建指标实例
-    zxm_daily_trend = ZXMDailyTrendUp()
-    
+    zxm_daily_trend = complete_registry.create_indicator('ZXM_DAILY_TREND_UP')
+    if not zxm_daily_trend:
+        print("无法创建ZXM_DAILY_TREND_UP指标")
+        return
+
     # 计算指标
     result = zxm_daily_trend.calculate(data)
     
@@ -150,15 +148,18 @@ def demo_zxm_daily_trend_up(data):
 def demo_zxm_amplitude_elasticity(data):
     """
     演示ZXM弹性-振幅指标
-    
+
     Args:
         data: 日线数据
     """
     print("\n=== ZXM弹性-振幅指标示例 ===")
-    
+
     # 创建指标实例
-    zxm_amplitude = ZXMAmplitudeElasticity()
-    
+    zxm_amplitude = complete_registry.create_indicator('ZXM_AMPLITUDE_ELASTICITY')
+    if not zxm_amplitude:
+        print("无法创建ZXM_AMPLITUDE_ELASTICITY指标")
+        return
+
     # 计算指标
     result = zxm_amplitude.calculate(data)
     
@@ -175,15 +176,18 @@ def demo_zxm_amplitude_elasticity(data):
 def demo_zxm_ma_callback(data):
     """
     演示ZXM买点-回踩均线指标
-    
+
     Args:
         data: 日线数据
     """
     print("\n=== ZXM买点-回踩均线指标示例 ===")
-    
+
     # 创建指标实例（默认回踩幅度为4%）
-    zxm_callback = ZXMMACallback(callback_percent=4.0)
-    
+    zxm_callback = complete_registry.create_indicator('ZXM_MA_CALLBACK', callback_percent=4.0)
+    if not zxm_callback:
+        print("无法创建ZXM_MA_CALLBACK指标")
+        return
+
     # 计算指标
     result = zxm_callback.calculate(data)
     
@@ -200,17 +204,20 @@ def demo_zxm_ma_callback(data):
 def demo_zxm_selection_model(daily_data, weekly_data, monthly_data):
     """
     演示ZXM体系通用选股模型
-    
+
     Args:
         daily_data: 日线数据
         weekly_data: 周线数据
         monthly_data: 月线数据
     """
     print("\n=== ZXM体系通用选股模型示例 ===")
-    
+
     # 创建选股模型实例
-    zxm_model = ZXMSelectionModel(callback_percent=4.0)
-    
+    zxm_model = complete_registry.create_indicator('ZXM_SELECTION_MODEL', callback_percent=4.0)
+    if not zxm_model:
+        print("无法创建ZXM_SELECTION_MODEL指标")
+        return
+
     # 计算选股模型
     result = zxm_model.calculate(daily_data, weekly_data, monthly_data)
     
@@ -221,29 +228,32 @@ def demo_zxm_selection_model(daily_data, weekly_data, monthly_data):
 
 def demo_zxm_indicator_factory():
     """
-    演示通过指标工厂创建ZXM指标
+    演示通过统一注册系统创建ZXM指标
     """
-    print("\n=== 通过指标工厂创建ZXM指标示例 ===")
-    
+    print("\n=== 通过统一注册系统创建ZXM指标示例 ===")
+
     # 获取所有支持的指标类型
-    supported_indicators = IndicatorFactory.get_supported_indicators()
-    
+    supported_indicators = complete_registry.get_indicator_names()
+
     # 筛选ZXM相关指标
     zxm_indicators = [indicator for indicator in supported_indicators if indicator.startswith('ZXM')]
-    
+
     print(f"系统支持的ZXM指标：")
     for i, indicator in enumerate(zxm_indicators, 1):
         print(f"{i}. {indicator}")
-    
-    # 演示使用工厂创建ZXM指标
-    daily_trend = IndicatorFactory.create_indicator("ZXM_DAILY_TREND_UP")
-    amplitude = IndicatorFactory.create_indicator("ZXM_AMPLITUDE_ELASTICITY")
-    selection_model = IndicatorFactory.create_indicator("ZXM_SELECTION_MODEL")
-    
-    print("\n通过工厂成功创建以下指标：")
-    print(f"- {daily_trend.name}: {daily_trend.description}")
-    print(f"- {amplitude.name}: {amplitude.description}")
-    print(f"- {selection_model.name}: {selection_model.description}")
+
+    # 演示使用统一注册系统创建ZXM指标
+    daily_trend = complete_registry.create_indicator("ZXM_DAILY_TREND_UP")
+    amplitude = complete_registry.create_indicator("ZXM_AMPLITUDE_ELASTICITY")
+    selection_model = complete_registry.create_indicator("ZXM_SELECTION_MODEL")
+
+    print("\n通过统一注册系统成功创建以下指标：")
+    if daily_trend:
+        print(f"- {daily_trend.name}: {getattr(daily_trend, 'description', '无描述')}")
+    if amplitude:
+        print(f"- {amplitude.name}: {getattr(amplitude, 'description', '无描述')}")
+    if selection_model:
+        print(f"- {selection_model.name}: {getattr(selection_model, 'description', '无描述')}")
 
 
 def main():

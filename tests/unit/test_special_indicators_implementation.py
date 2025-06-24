@@ -7,7 +7,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from tests.helper.data_generator import TestDataGenerator
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.indicator_adapter import DataFrameToZXMAdapter
@@ -38,7 +38,7 @@ class TestSpecialIndicatorsImplementation(IndicatorTestMixin):
             self.indicator = IndicatorFactory.create_indicator("MACD")
         except:
             # 如果无法创建MACD，使用假指标
-            from indicators.base_indicator import BaseIndicator
+from indicators.complete_indicator_registry import complete_registry
             self.indicator = BaseIndicator("Test", "Test")
             
             # 为假指标添加计算方法

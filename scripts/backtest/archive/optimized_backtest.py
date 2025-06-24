@@ -37,7 +37,7 @@ from utils.period_data_structure import (
 )
 from utils.decorators import performance_monitor, time_it
 from db.db_manager import DBManager
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import PatternRegistry
 from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 

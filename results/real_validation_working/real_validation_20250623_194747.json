@@ -1,6 +1,0 @@
-{
-  "validation_status": "failed",
-  "error": "策略执行失败: 无效的策略配置: 缺少'strategy'节点",
-  "timestamp": "2025-06-23T19:47:47.054170",
-  "execution_mode": "real_data"
-}

@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.trend.enhanced_cci import EnhancedCCI
+from indicators.complete_indicator_registry import complete_registry
 
 
 class TestEnhancedCCI(unittest.TestCase):

@@ -1,6 +1,0 @@
-{
-  "validation_status": "failed",
-  "error": "策略执行失败: 'StrategyManager' object has no attribute 'save_strategy'",
-  "timestamp": "2025-06-23T19:46:57.287455",
-  "execution_mode": "real_data"
-}

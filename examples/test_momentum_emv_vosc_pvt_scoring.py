@@ -16,9 +16,9 @@ import pandas as pd
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.momentum import Momentum
-from indicators.emv import EMV
-from indicators.vosc import VOSC
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.pvt import PVT
 
 

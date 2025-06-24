@@ -138,7 +138,7 @@ def test_basic_imports():
         from indicators.base_indicator import BaseIndicator
         print("✅ BaseIndicator导入成功")
         
-        from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
         print("✅ MACD导入成功")
         
         return True
@@ -182,7 +182,7 @@ def test_system_stability():
         # 测试多次导入
         for i in range(3):
             from indicators.base_indicator import BaseIndicator
-            from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
         
         print("✅ 多次导入测试通过")
         

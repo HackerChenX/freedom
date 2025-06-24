@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from scipy.signal import find_peaks
 
-from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -28,7 +28,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
         测试初始化
         """
         super().setUp()
-        self.indicator = MACD()
+        self.indicator = complete_registry.create_indicator('MACD')
         self.expected_columns = ['macd_line', 'macd_signal', 'macd_histogram']
         # 使用 generate_price_sequence 创建一个复杂的测试数据集
         self.data = TestDataGenerator.generate_price_sequence([

@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional
 
 from formula import formula
 from utils.logger import get_logger
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from scripts.backtest.unified_backtest import UnifiedBacktest
 
 # 获取日志记录器

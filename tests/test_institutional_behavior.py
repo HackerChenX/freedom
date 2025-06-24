@@ -15,7 +15,7 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.institutional_behavior import InstitutionalBehavior
+from indicators.complete_indicator_registry import complete_registry
 from strategy.institutional_strategy import InstitutionalStrategy
 
 

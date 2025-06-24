@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
 from db.clickhouse_db import get_clickhouse_db
 from utils.logger import get_logger
 from indicators.base_indicator import MarketEnvironment

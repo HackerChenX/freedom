@@ -16,19 +16,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.factory import IndicatorFactory
-from indicators.volume_ratio import VolumeRatio
-from indicators.platform_breakout import PlatformBreakout
-from indicators.obv import OBV
-from indicators.vosc import VOSC
-from indicators.mfi import MFI
-from indicators.vr import VR
-from indicators.pvt import PVT
-from indicators.emv import EMV
-from indicators.intraday_volatility import IntradayVolatility
-from indicators.v_shaped_reversal import VShapedReversal
-from indicators.island_reversal import IslandReversal
-from indicators.time_cycle_analysis import TimeCycleAnalysis
+from indicators.complete_indicator_registry import complete_registry
 from db.clickhouse_db import get_clickhouse_db
 from utils.logger import get_logger
 
@@ -117,137 +105,177 @@ def main():
         # 执行指标测试，增加错误处理
         try:
             print("\n1. 测试量比指标 (VolumeRatio)")
-            volume_ratio = VolumeRatio(reference_period=5)
-            vr_result = volume_ratio.calculate(data)
-            print(f"量比计算结果示例: \n{vr_result[['volume_ratio']].tail(3)}")
+            volume_ratio = complete_registry.create_indicator('VOLUME_RATIO', reference_period=5)
+            if volume_ratio:
+                vr_result = volume_ratio.calculate(data)
+                print(f"量比计算结果示例: \n{vr_result[['volume_ratio']].tail(3)}")
+            else:
+                print("无法创建VOLUME_RATIO指标")
         except Exception as e:
             print(f"量比指标计算失败: {e}")
-        
+
         try:
             print("\n2. 测试平台突破指标 (PlatformBreakout)")
-            platform_breakout = PlatformBreakout(platform_period=20, threshold=0.03)
-            pb_result = platform_breakout.calculate(data)
-            print(f"平台突破识别结果: {pb_result['platform_breakout'].sum()} 次突破")
-            if pb_result['platform_breakout'].sum() > 0:
-                breakout_dates = pb_result.index[pb_result['platform_breakout']].tolist()
-                print(f"突破日期: {breakout_dates[:3]}{'...' if len(breakout_dates) > 3 else ''}")
+            platform_breakout = complete_registry.create_indicator('PLATFORM_BREAKOUT', platform_period=20, threshold=0.03)
+            if platform_breakout:
+                pb_result = platform_breakout.calculate(data)
+                print(f"平台突破识别结果: {pb_result['platform_breakout'].sum()} 次突破")
+                if pb_result['platform_breakout'].sum() > 0:
+                    breakout_dates = pb_result.index[pb_result['platform_breakout']].tolist()
+                    print(f"突破日期: {breakout_dates[:3]}{'...' if len(breakout_dates) > 3 else ''}")
+            else:
+                print("无法创建PLATFORM_BREAKOUT指标")
         except Exception as e:
             print(f"平台突破指标计算失败: {e}")
-            
+
         try:
             print("\n3. 测试能量潮指标 (OBV)")
-            obv = OBV()
-            obv_result = obv.calculate(data)
-            print(f"OBV计算结果示例: \n{obv_result[['obv']].tail(3)}")
+            obv = complete_registry.create_indicator('OBV')
+            if obv:
+                obv_result = obv.calculate(data)
+                print(f"OBV计算结果示例: \n{obv_result[['obv']].tail(3)}")
+            else:
+                print("无法创建OBV指标")
         except Exception as e:
             print(f"OBV指标计算失败: {e}")
-        
+
         try:
             print("\n4. 测试成交量变异率 (VOSC)")
-            vosc = VOSC(short_period=12, long_period=26)
-            vosc_result = vosc.calculate(data)
-            print(f"VOSC计算结果示例: \n{vosc_result[['vosc']].tail(3)}")
+            vosc = complete_registry.create_indicator('VOSC', short_period=12, long_period=26)
+            if vosc:
+                vosc_result = vosc.calculate(data)
+                print(f"VOSC计算结果示例: \n{vosc_result[['vosc']].tail(3)}")
+            else:
+                print("无法创建VOSC指标")
         except Exception as e:
             print(f"VOSC指标计算失败: {e}")
-        
+
         try:
             print("\n5. 测试资金流向指标 (MFI)")
-            mfi = MFI(period=14)
-            mfi_result = mfi.calculate(data)
-            print(f"MFI计算结果示例: \n{mfi_result[['mfi']].tail(3)}")
+            mfi = complete_registry.create_indicator('MFI', period=14)
+            if mfi:
+                mfi_result = mfi.calculate(data)
+                print(f"MFI计算结果示例: \n{mfi_result[['mfi']].tail(3)}")
+            else:
+                print("无法创建MFI指标")
         except Exception as e:
             print(f"MFI指标计算失败: {e}")
-        
+
         try:
             print("\n6. 测试成交量指标 (VR)")
-            vr_indicator = VR(period=26)
-            vr_indicator_result = vr_indicator.calculate(data)
-            print(f"VR计算结果示例: \n{vr_indicator_result[['vr']].tail(3)}")
+            vr_indicator = complete_registry.create_indicator('VR', period=26)
+            if vr_indicator:
+                vr_indicator_result = vr_indicator.calculate(data)
+                print(f"VR计算结果示例: \n{vr_indicator_result[['vr']].tail(3)}")
+            else:
+                print("无法创建VR指标")
         except Exception as e:
             print(f"VR指标计算失败: {e}")
-        
+
         try:
             print("\n7. 测试价量趋势指标 (PVT)")
-            pvt = PVT()
-            pvt_result = pvt.calculate(data)
-            print(f"PVT计算结果示例: \n{pvt_result[['pvt']].tail(3)}")
+            pvt = complete_registry.create_indicator('PVT')
+            if pvt:
+                pvt_result = pvt.calculate(data)
+                print(f"PVT计算结果示例: \n{pvt_result[['pvt']].tail(3)}")
+            else:
+                print("无法创建PVT指标")
         except Exception as e:
             print(f"PVT指标计算失败: {e}")
         
         try:
             print("\n8. 测试指数平均数指标 (EMV)")
-            emv = EMV(period=14, ma_period=9)
-            emv_result = emv.calculate(data)
-            print(f"EMV计算结果示例: \n{emv_result[['emv', 'emv_ma']].tail(3)}")
-            
-            # 获取EMV信号
-            emv_signals = emv.get_signals(data)
-            emv_buy_signals = emv_signals.index[emv_signals['emv_combined_signal'] == 1].tolist()
-            emv_sell_signals = emv_signals.index[emv_signals['emv_combined_signal'] == -1].tolist()
-            
-            print(f"EMV综合信号：{len(emv_buy_signals)} 个买入信号，{len(emv_sell_signals)} 个卖出信号")
-            if emv_buy_signals:
-                print(f"最近的EMV买入信号日期: {emv_buy_signals[-3:] if len(emv_buy_signals) > 3 else emv_buy_signals}")
-            
-            # 获取市场效率评估
-            market_efficiency = emv.get_market_efficiency(data)
-            latest_efficiency = market_efficiency['market_efficiency'].iloc[-1] if not market_efficiency.empty else None
-            print(f"最新市场效率: {latest_efficiency:.2f if latest_efficiency is not None else 'N/A'}")
+            emv = complete_registry.create_indicator('EMV', period=14, ma_period=9)
+            if emv:
+                emv_result = emv.calculate(data)
+                print(f"EMV计算结果示例: \n{emv_result[['emv', 'emv_ma']].tail(3)}")
+
+                # 获取EMV信号
+                if hasattr(emv, 'get_signals'):
+                    emv_signals = emv.get_signals(data)
+                    emv_buy_signals = emv_signals.index[emv_signals['emv_combined_signal'] == 1].tolist()
+                    emv_sell_signals = emv_signals.index[emv_signals['emv_combined_signal'] == -1].tolist()
+
+                    print(f"EMV综合信号：{len(emv_buy_signals)} 个买入信号，{len(emv_sell_signals)} 个卖出信号")
+                    if emv_buy_signals:
+                        print(f"最近的EMV买入信号日期: {emv_buy_signals[-3:] if len(emv_buy_signals) > 3 else emv_buy_signals}")
+
+                    # 获取市场效率评估
+                    if hasattr(emv, 'get_market_efficiency'):
+                        market_efficiency = emv.get_market_efficiency(data)
+                        latest_efficiency = market_efficiency['market_efficiency'].iloc[-1] if not market_efficiency.empty else None
+                        print(f"最新市场效率: {latest_efficiency:.2f if latest_efficiency is not None else 'N/A'}")
+            else:
+                print("无法创建EMV指标")
         except Exception as e:
             print(f"EMV指标计算失败: {e}")
-        
+
         try:
             print("\n9. 测试日内波动率指标 (IntradayVolatility)")
-            intraday_vol = IntradayVolatility(smooth_period=5)
-            iv_result = intraday_vol.calculate(data)
-            print(f"日内波动率计算结果示例: \n{iv_result[['volatility', 'volatility_ma']].tail(3)}")
+            intraday_vol = complete_registry.create_indicator('INTRADAY_VOLATILITY', smooth_period=5)
+            if intraday_vol:
+                iv_result = intraday_vol.calculate(data)
+                print(f"日内波动率计算结果示例: \n{iv_result[['volatility', 'volatility_ma']].tail(3)}")
+            else:
+                print("无法创建INTRADAY_VOLATILITY指标")
         except Exception as e:
             print(f"日内波动率指标计算失败: {e}")
-        
+
         try:
             print("\n10. 测试V形反转指标 (VShapedReversal)")
-            v_reversal = VShapedReversal(decline_period=5, rebound_period=5)
-            v_result = v_reversal.calculate(data)
-            reversal_count = v_result['v_reversal'].sum()
-            print(f"V形反转识别结果: {reversal_count} 次反转")
-            if reversal_count > 0:
-                reversal_dates = v_result.index[v_result['v_reversal']].tolist()
-                print(f"反转日期: {reversal_dates[:3]}{'...' if len(reversal_dates) > 3 else ''}")
+            v_reversal = complete_registry.create_indicator('V_SHAPED_REVERSAL', decline_period=5, rebound_period=5)
+            if v_reversal:
+                v_result = v_reversal.calculate(data)
+                reversal_count = v_result['v_reversal'].sum()
+                print(f"V形反转识别结果: {reversal_count} 次反转")
+                if reversal_count > 0:
+                    reversal_dates = v_result.index[v_result['v_reversal']].tolist()
+                    print(f"反转日期: {reversal_dates[:3]}{'...' if len(reversal_dates) > 3 else ''}")
+            else:
+                print("无法创建V_SHAPED_REVERSAL指标")
         except Exception as e:
             print(f"V形反转指标计算失败: {e}")
-        
+
         try:
             print("\n11. 测试岛型反转指标 (IslandReversal)")
-            island_reversal = IslandReversal(gap_threshold=0.01, island_max_days=5)
-            ir_result = island_reversal.calculate(data)
-            top_islands = ir_result['top_island_reversal'].sum()
-            bottom_islands = ir_result['bottom_island_reversal'].sum()
-            print(f"岛型反转识别结果: {top_islands} 次顶部岛型反转, {bottom_islands} 次底部岛型反转")
+            island_reversal = complete_registry.create_indicator('ISLAND_REVERSAL', gap_threshold=0.01, island_max_days=5)
+            if island_reversal:
+                ir_result = island_reversal.calculate(data)
+                top_islands = ir_result['top_island_reversal'].sum()
+                bottom_islands = ir_result['bottom_island_reversal'].sum()
+                print(f"岛型反转识别结果: {top_islands} 次顶部岛型反转, {bottom_islands} 次底部岛型反转")
+            else:
+                print("无法创建ISLAND_REVERSAL指标")
         except Exception as e:
             print(f"岛型反转指标计算失败: {e}")
-        
+
         try:
             print("\n12. 测试时间周期分析指标 (TimeCycleAnalysis)")
-            cycle_analysis = TimeCycleAnalysis(min_cycle_days=10, max_cycle_days=120)
-            ca_result = cycle_analysis.calculate(data)
-            print("时间周期分析完成")
-            if hasattr(ca_result, 'future_turning_points') and ca_result.future_turning_points:
-                print(f"未来潜在转折点: {len(ca_result.future_turning_points)} 个")
-                for i, point in enumerate(ca_result.future_turning_points[:3]):
-                    print(f"  {i+1}. {point['date'].strftime('%Y-%m-%d')} - {point['type']} (周期 {point['cycle']})")
+            cycle_analysis = complete_registry.create_indicator('TIME_CYCLE_ANALYSIS', min_cycle_days=10, max_cycle_days=120)
+            if cycle_analysis:
+                ca_result = cycle_analysis.calculate(data)
+                print("时间周期分析完成")
+                if hasattr(ca_result, 'future_turning_points') and ca_result.future_turning_points:
+                    print(f"未来潜在转折点: {len(ca_result.future_turning_points)} 个")
+                    for i, point in enumerate(ca_result.future_turning_points[:3]):
+                        print(f"  {i+1}. {point['date'].strftime('%Y-%m-%d')} - {point['type']} (周期 {point['cycle']})")
+            else:
+                print("无法创建TIME_CYCLE_ANALYSIS指标")
         except Exception as e:
             print(f"时间周期分析失败: {e}")
         
-        # 使用工厂方法创建指标
-        print("\n使用指标工厂创建指标示例:")
-        
+        # 使用统一注册系统创建指标
+        print("\n使用统一注册系统创建指标示例:")
+
         try:
-            factory_vr = IndicatorFactory.create("VOLUME_RATIO", reference_period=5)
+            factory_vr = complete_registry.create_indicator("VOLUME_RATIO", reference_period=5)
             if factory_vr:
                 factory_result = factory_vr.calculate(data)
-                print(f"通过工厂创建的量比指标结果: \n{factory_result[['volume_ratio']].tail(3)}")
+                print(f"通过统一注册系统创建的量比指标结果: \n{factory_result[['volume_ratio']].tail(3)}")
+            else:
+                print("无法通过统一注册系统创建VOLUME_RATIO指标")
         except Exception as e:
-            print(f"量比指标工厂创建失败: {e}")
+            print(f"量比指标统一注册系统创建失败: {e}")
         
         # 综合选股策略示例
         print("\n综合选股策略示例:")
@@ -257,35 +285,57 @@ def main():
             combined_signals = pd.DataFrame(index=data.index)
             combined_signals['price'] = data['close']
             
+            # 重新创建指标实例用于综合策略
+            volume_ratio = complete_registry.create_indicator('VOLUME_RATIO', reference_period=5)
+            obv = complete_registry.create_indicator('OBV')
+            mfi = complete_registry.create_indicator('MFI', period=14)
+            platform_breakout = complete_registry.create_indicator('PLATFORM_BREAKOUT', platform_period=20, threshold=0.03)
+            v_reversal = complete_registry.create_indicator('V_SHAPED_REVERSAL', decline_period=5, rebound_period=5)
+
             # 1. 量比大于1.5
-            vr_data = volume_ratio.calculate(data)
-            combined_signals['high_volume'] = vr_data['volume_ratio'] > 1.5
-            
+            if volume_ratio:
+                vr_data = volume_ratio.calculate(data)
+                combined_signals['high_volume'] = vr_data['volume_ratio'] > 1.5
+            else:
+                combined_signals['high_volume'] = False
+
             # 2. OBV上升趋势
-            obv_data = obv.calculate(data)
-            obv_trend = pd.Series(0, index=obv_data.index)
-            for i in range(5, len(obv_data)):
-                if obv_data['obv'].iloc[i] > obv_data['obv'].iloc[i-5]:
-                    obv_trend.iloc[i] = 1
-                else:
-                    obv_trend.iloc[i] = -1
-            combined_signals['obv_uptrend'] = obv_trend > 0
-            
+            if obv:
+                obv_data = obv.calculate(data)
+                obv_trend = pd.Series(0, index=obv_data.index)
+                for i in range(5, len(obv_data)):
+                    if obv_data['obv'].iloc[i] > obv_data['obv'].iloc[i-5]:
+                        obv_trend.iloc[i] = 1
+                    else:
+                        obv_trend.iloc[i] = -1
+                combined_signals['obv_uptrend'] = obv_trend > 0
+            else:
+                combined_signals['obv_uptrend'] = False
+
             # 3. 资金流向指标超卖反转
-            mfi_data = mfi.calculate(data)
-            mfi_signal = pd.Series(False, index=mfi_data.index)
-            for i in range(1, len(mfi_data)):
-                if mfi_data['mfi'].iloc[i-1] < 20 and mfi_data['mfi'].iloc[i] >= 20:
-                    mfi_signal.iloc[i] = True
-            combined_signals['mfi_oversold_reversal'] = mfi_signal
-            
+            if mfi:
+                mfi_data = mfi.calculate(data)
+                mfi_signal = pd.Series(False, index=mfi_data.index)
+                for i in range(1, len(mfi_data)):
+                    if mfi_data['mfi'].iloc[i-1] < 20 and mfi_data['mfi'].iloc[i] >= 20:
+                        mfi_signal.iloc[i] = True
+                combined_signals['mfi_oversold_reversal'] = mfi_signal
+            else:
+                combined_signals['mfi_oversold_reversal'] = False
+
             # 4. 平台突破信号
-            pb_data = platform_breakout.calculate(data)
-            combined_signals['platform_breakout'] = pb_data['platform_breakout']
-            
+            if platform_breakout:
+                pb_data = platform_breakout.calculate(data)
+                combined_signals['platform_breakout'] = pb_data['platform_breakout']
+            else:
+                combined_signals['platform_breakout'] = False
+
             # 5. V形反转信号
-            v_data = v_reversal.calculate(data)
-            combined_signals['v_reversal'] = v_data['v_reversal']
+            if v_reversal:
+                v_data = v_reversal.calculate(data)
+                combined_signals['v_reversal'] = v_data['v_reversal']
+            else:
+                combined_signals['v_reversal'] = False
             
             # 组合选股条件
             combined_signals['buy_signal'] = (

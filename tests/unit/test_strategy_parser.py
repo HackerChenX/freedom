@@ -11,7 +11,7 @@ import tempfile
 from unittest.mock import patch, MagicMock
 
 from strategy.strategy_parser import StrategyParser
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from enums.period import Period
 from utils.exceptions import (
     StrategyParseError, 
@@ -86,7 +86,7 @@ class TestStrategyParser(unittest.TestCase):
     def test_parse_strategy_valid(self):
         """测试解析有效的策略配置"""
         # 模拟指标创建
-        with patch.object(IndicatorFactory, 'create') as mock_create:
+        with patch.object(complete_registry, 'create_indicator') as mock_create:
             mock_create.side_effect = [self.mock_indicator1, self.mock_indicator2]
             
             # 解析策略
@@ -108,7 +108,7 @@ class TestStrategyParser(unittest.TestCase):
             self.assertEqual(result["sort"][0]["field"], "signal_strength")
             self.assertEqual(result["sort"][0]["direction"], "DESC")
             
-            # 验证指标工厂调用
+            # 验证指标注册系统调用
             mock_create.assert_any_call("MA_CROSS", fast_period=5, slow_period=20)
             mock_create.assert_any_call("RSI_OVERSOLD", period=14, threshold=30)
     
@@ -222,7 +222,7 @@ class TestStrategyParser(unittest.TestCase):
         }
         
         # 模拟指标创建，使其不抛出异常，以便测试周期验证
-        with patch.object(IndicatorFactory, 'create', return_value=MagicMock()):
+        with patch.object(complete_registry, 'create_indicator', return_value=MagicMock()):
             with self.assertRaises(StrategyValidationError) as context:
                 self.parser.parse_strategy(invalid_strategy)
         
@@ -230,7 +230,7 @@ class TestStrategyParser(unittest.TestCase):
     
     def test_parse_conditions_indicator_not_found(self):
         """测试解析不存在的指标"""
-        with patch.object(IndicatorFactory, 'create', side_effect=KeyError("指标不存在")):
+        with patch.object(complete_registry, 'create_indicator', side_effect=KeyError("指标不存在")):
             with self.assertRaises(IndicatorNotFoundError) as context:
                 self.parser.parse_strategy(self.valid_strategy)
             
@@ -244,7 +244,7 @@ class TestStrategyParser(unittest.TestCase):
             json.dump(self.valid_strategy, f)
         
         # 模拟指标创建
-        with patch.object(IndicatorFactory, 'create') as mock_create:
+        with patch.object(complete_registry, 'create_indicator') as mock_create:
             mock_create.side_effect = [self.mock_indicator1, self.mock_indicator2]
             
             # 从文件解析策略
@@ -279,7 +279,7 @@ class TestStrategyParser(unittest.TestCase):
         json_str = json.dumps(self.valid_strategy)
         
         # 模拟指标创建
-        with patch.object(IndicatorFactory, 'create') as mock_create:
+        with patch.object(complete_registry, 'create_indicator') as mock_create:
             mock_create.side_effect = [self.mock_indicator1, self.mock_indicator2]
             
             # 从字符串解析策略
@@ -299,7 +299,7 @@ class TestStrategyParser(unittest.TestCase):
     def test_validate_strategy(self):
         """测试验证策略配置"""
         # 模拟指标创建
-        with patch.object(IndicatorFactory, 'create') as mock_create:
+        with patch.object(complete_registry, 'create_indicator') as mock_create:
             mock_create.side_effect = [self.mock_indicator1, self.mock_indicator2]
             
             # 验证有效策略

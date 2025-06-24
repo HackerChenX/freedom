@@ -2,10 +2,10 @@
 动量指标单元测试
 """
 import unittest
-from indicators.momentum import Momentum
-from indicators.mtm import MTM
-from indicators.roc import ROC
-from indicators.rsima import RSIMA
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 

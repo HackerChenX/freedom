@@ -4,10 +4,7 @@ CompositeIndicator指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.composite_indicator import CompositeIndicator
-from indicators.ma import MA
-from indicators.rsi import RSI
-from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -22,12 +19,13 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         LogCaptureMixin.setUp(self)
         
         # 创建子指标
-        self.ma_indicator = MA(periods=[20])
-        self.rsi_indicator = RSI(period=14)
-        self.macd_indicator = MACD()
-        
+        self.ma_indicator = complete_registry.create_indicator('MA', periods=[20])
+        self.rsi_indicator = complete_registry.create_indicator('RSI', period=14)
+        self.macd_indicator = complete_registry.create_indicator('MACD')
+
         # 创建组合指标
-        self.indicator = CompositeIndicator(
+        self.indicator = complete_registry.create_indicator(
+            'COMPOSITE',
             name="TestComposite",
             description="测试组合指标",
             indicators=[self.ma_indicator, self.rsi_indicator, self.macd_indicator],
@@ -82,7 +80,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
     def test_composite_indicator_add_remove_indicators(self):
         """测试添加和移除指标"""
         # 创建新的组合指标
-        composite = CompositeIndicator()
+        composite = complete_registry.create_indicator('COMPOSITE')
         
         # 添加指标
         composite.add_indicator(self.ma_indicator, 0.5)
@@ -121,7 +119,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
     
     def test_composite_indicator_parameter_update(self):
         """测试CompositeIndicator参数更新"""
-        new_ma = MA(periods=[10])
+        new_ma = complete_registry.create_indicator('MA', periods=[10])
         new_weights = {"MA": 0.6, "RSI": 0.4}
         
         self.indicator.set_parameters(indicators=[new_ma, self.rsi_indicator], weights=new_weights)
@@ -190,7 +188,8 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
     def test_composite_indicator_weight_normalization(self):
         """测试CompositeIndicator权重标准化"""
         # 创建权重不为1的组合指标
-        composite = CompositeIndicator(
+        composite = complete_registry.create_indicator(
+            'COMPOSITE',
             indicators=[self.ma_indicator, self.rsi_indicator],
             weights={"MA": 2.0, "RSI": 3.0}
         )
@@ -203,7 +202,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
     
     def test_composite_indicator_empty_indicators(self):
         """测试CompositeIndicator空指标列表"""
-        empty_composite = CompositeIndicator()
+        empty_composite = complete_registry.create_indicator('COMPOSITE')
         
         # 计算应该返回原始数据
         result = empty_composite.calculate(self.data)

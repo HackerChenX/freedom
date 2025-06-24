@@ -124,7 +124,7 @@ def check_system_stability():
         from indicators.base_indicator import BaseIndicator
         print("✅ BaseIndicator导入成功")
         
-        from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
         print("✅ MACD导入成功")
         
         print("✅ 系统基础模块稳定")

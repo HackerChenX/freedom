@@ -11,9 +11,9 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from indicators.pattern_recognition import PatternRecognition
-from indicators.ma import MA
-from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 
 class TestPatternRecognition(unittest.TestCase):
     """测试形态识别功能"""

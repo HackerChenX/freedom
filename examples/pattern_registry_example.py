@@ -12,7 +12,7 @@ import os
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternInfo
+from indicators.complete_indicator_registry import complete_registry
 
 def pattern_registry_example():
     """PatternRegistry使用示例"""

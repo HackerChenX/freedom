@@ -2,9 +2,9 @@
 特殊指标单元测试
 """
 import unittest
-from indicators.vix import VIX
-from indicators.sar import SAR
-from indicators.trix import TRIX
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 

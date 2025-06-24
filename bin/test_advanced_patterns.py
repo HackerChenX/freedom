@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.pattern.advanced_candlestick_patterns import AdvancedCandlestickPatterns, AdvancedPatternType
+from indicators.complete_indicator_registry import complete_registry
 from db.data_manager import DataManager
 from enums.period import Period  # 使用新的统一周期枚举
 from utils.logger import get_logger

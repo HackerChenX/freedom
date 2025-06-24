@@ -17,25 +17,37 @@ logger = get_logger(__name__)
 
 
 class IndicatorManager:
-    """指标管理器类"""
+    """
+    指标管理器类
+
+    完全基于CompleteIndicatorRegistry实现的统一指标管理器
+    """
 
     def __init__(self):
-        self.indicators = {}
+        from indicators.base_indicator import BaseIndicator
+        self._registry = complete_registry
         self.cache = {}
 
     def register_indicator(self, name: str, indicator_class):
         """注册指标类"""
-        self.indicators[name] = indicator_class
+        return self._registry.register_indicator_safe(indicator_class, name)
 
     def create_indicator(self, name: str, **kwargs):
         """创建指标实例"""
-        if name in self.indicators:
-            return self.indicators[name](**kwargs)
-        return None
+        # 先检查缓存
+        cache_key = f"{name}_{hash(str(sorted(kwargs.items())))}"
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+
+        # 创建新实例
+        indicator = self._registry.create_indicator(name, **kwargs)
+        if indicator:
+            self.cache[cache_key] = indicator
+        return indicator
 
     def get_available_indicators(self) -> List[str]:
         """获取可用指标列表"""
-        return list(self.indicators.keys())
+        return self._registry.get_indicator_names()
 
 
 class INDICATOR_MANAGER(BaseIndicator, PatternSignalMixin):

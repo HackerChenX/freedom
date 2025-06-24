@@ -15,9 +15,8 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.boll import BOLL
-from indicators.kdj import KDJ
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 
 # 导入日志模块
 import logging
@@ -66,10 +65,13 @@ def test_patterns():
     PatternRegistry.clear_registry()
     
     # 创建各指标实例
-    indicators = {
-        'BOLL': BOLL(),
-        'KDJ': KDJ()
-    }
+    indicators = {}
+    for name in ['BOLL', 'KDJ']:
+        indicator = complete_registry.create_indicator(name)
+        if indicator:
+            indicators[name] = indicator
+        else:
+            logger.warning(f"无法创建指标 {name}")
     
     # 计算指标并注册形态
     for name, indicator in indicators.items():

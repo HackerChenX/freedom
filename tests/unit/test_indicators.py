@@ -9,22 +9,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
-from indicators.macd import MACD
-from indicators.rsi import RSI
-from indicators.boll import BOLL
-from indicators.kdj import KDJ
-from indicators.ma import MA
-from indicators.bias import BIAS
-from indicators.atr import ATR
-from indicators.cci import CCI
-from indicators.dmi import DMI
-from indicators.obv import OBV
-from indicators.roc import ROC
-from indicators.trix import TRIX
-from indicators.vr import VR
-from indicators.wr import WR
-from indicators.factory import IndicatorFactory
-from indicators.ema import EMA  # 导入EMA类
+from indicators.complete_indicator_registry import complete_registry
 
 
 class TestIndicators(unittest.TestCase):
@@ -55,7 +40,7 @@ class TestIndicators(unittest.TestCase):
     def test_ma_calculation(self):
         """测试MA计算"""
         # 使用MA指标类计算
-        ma_indicator = MA(periods=[5, 10])
+        ma_indicator = complete_registry.create_indicator('MA', periods=[5, 10])
         result = ma_indicator.calculate(self.test_data)
         ma_5 = result['MA5']
         
@@ -74,7 +59,7 @@ class TestIndicators(unittest.TestCase):
     def test_ema_calculation(self):
         """测试EMA计算"""
         # 使用EMA指标类计算
-        ema_indicator = EMA(periods=[12])
+        ema_indicator = complete_registry.create_indicator('EMA', periods=[12])
         result = ema_indicator.calculate(self.test_data)
         ema_12 = result['EMA12']
         

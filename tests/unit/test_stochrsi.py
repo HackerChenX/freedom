@@ -4,7 +4,7 @@ StochRSI指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.stochrsi import STOCHRSI
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestSTOCHRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = STOCHRSI(rsi_period=14, k_period=3, d_period=3, overbought=80, oversold=20)
+        self.indicator = complete_registry.create_indicator('STOCHRSI', rsi_period=14, k_period=3, d_period=3, overbought=80, oversold=20)
         self.expected_columns = ['stochrsi_k', 'stochrsi_d']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -72,7 +72,7 @@ class TestSTOCHRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_stochrsi_parameter_update(self):
         """测试StochRSI参数更新"""
         # 创建新的指标实例测试参数
-        new_indicator = STOCHRSI(rsi_period=21, k_period=5, d_period=5, overbought=75, oversold=25)
+        new_indicator = complete_registry.create_indicator('STOCHRSI', rsi_period=21, k_period=5, d_period=5, overbought=75, oversold=25)
         
         # 验证参数设置
         self.assertEqual(new_indicator.rsi_period, 21)
@@ -261,11 +261,11 @@ class TestSTOCHRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_stochrsi_different_periods(self):
         """测试不同周期参数的StochRSI"""
         # 测试短周期
-        short_period_indicator = STOCHRSI(rsi_period=7, k_period=2, d_period=2)
+        short_period_indicator = complete_registry.create_indicator('STOCHRSI', rsi_period=7, k_period=2, d_period=2)
         short_result = short_period_indicator.calculate(self.data)
-        
+
         # 测试长周期
-        long_period_indicator = STOCHRSI(rsi_period=21, k_period=5, d_period=5)
+        long_period_indicator = complete_registry.create_indicator('STOCHRSI', rsi_period=21, k_period=5, d_period=5)
         long_result = long_period_indicator.calculate(self.data)
         
         # 验证两种参数都能正常计算

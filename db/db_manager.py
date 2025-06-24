@@ -155,26 +155,16 @@ class DBManager:
     def get_stock_name(self, stock_code):
         """
         获取股票名称
-        
+
         Args:
             stock_code: 股票代码
-            
+
         Returns:
             str: 股票名称，如果未找到则返回股票代码
         """
         try:
-            # 获取股票列表
-            stocks_df = self.db.get_stock_list()
-            # 标准化列名
-            if 'stock_code' in stocks_df.columns and 'stock_name' in stocks_df.columns:
-                stocks_df = stocks_df.rename(columns={'stock_code': 'code', 'stock_name': 'name'})
-            # 过滤出匹配的股票
-            matched_stocks = stocks_df[stocks_df['code'] == stock_code]
-            # 如果找到匹配的股票，返回名称
-            if not matched_stocks.empty:
-                return matched_stocks.iloc[0]['name']
-            # 未找到匹配的股票，返回股票代码
-            return stock_code
+            # 直接使用ClickHouseDB的get_stock_name方法
+            return self.db.get_stock_name(stock_code)
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -184,23 +174,31 @@ class DBManager:
     def get_trading_dates(self, stock_code, start_date, end_date):
         """
         获取交易日期列表
-        
+
         Args:
             stock_code: 股票代码
             start_date: 开始日期
             end_date: 结束日期
-            
+
         Returns:
             list: 交易日期列表
         """
         try:
-            # 获取日线数据
-            df = self.db.get_stock_info(stock_code, 'day', start_date, end_date)
-            
+            # 获取日线数据，使用正确的参数名
+            stock_info = self.db.get_stock_info(
+                stock_code=stock_code,
+                level='day',
+                start_date=start_date,
+                end_date=end_date
+            )
+
+            # 转换为DataFrame
+            df = stock_info.to_dataframe() if hasattr(stock_info, 'to_dataframe') else stock_info
+
             # 如果数据为空，返回空列表
             if df.empty:
                 return []
-                
+
             # 返回日期列表
             return df['date'].tolist()
         except Exception as e:
@@ -212,8 +210,8 @@ class DBManager:
     def get_stock_list(self):
         """
         获取股票列表
-        
+
         Returns:
             DataFrame: 股票列表
         """
-        return self.db.get_stock_list() 
+        return self.db.get_stock_list()

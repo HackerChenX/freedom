@@ -12,9 +12,7 @@ from strategy.base_strategy import BaseStrategy
 from formula import formula
 from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
-from indicators.factory import IndicatorFactory
-from indicators.ma import MA
-from indicators.kdj import KDJ
+from indicators.complete_indicator_registry import complete_registry
 
 logger = get_logger(__name__)
 
@@ -77,8 +75,8 @@ class ReboundStrategy(BaseStrategy):
         min_distance = self._parameters['min_distance']
         
         # 创建技术指标实例
-        ma_indicator = IndicatorFactory.create_indicator("MA", periods=[ma_period])
-        rsi_indicator = IndicatorFactory.create_indicator("RSI", periods=[6])
+        ma_indicator = complete_registry.create_indicator("MA", periods=[ma_period])
+        rsi_indicator = complete_registry.create_indicator("RSI", periods=[6])
         
         for code in universe:
             try:
@@ -109,12 +107,12 @@ class ReboundStrategy(BaseStrategy):
                 })
                 
                 # 计算均线
-                ma_result = ma_indicator.compute(data)
+                ma_result = ma_indicator.calculate(data)
                 ma_values = ma_result[f'MA{ma_period}'].values
-                
+
                 # 计算RSI
                 if rsi_bottom > 0:
-                    rsi_result = rsi_indicator.compute(data)
+                    rsi_result = rsi_indicator.calculate(data)
                     rsi_values = rsi_result['RSI6'].values
                 
                 # 检查是否符合回踩反弹形态
@@ -150,8 +148,8 @@ class ReboundStrategy(BaseStrategy):
                 kdj_ok = True
                 if kdj_up:
                     # 使用KDJ指标类
-                    kdj_indicator = IndicatorFactory.create_indicator("KDJ")
-                    kdj_result = kdj_indicator.compute(data)
+                    kdj_indicator = complete_registry.create_indicator("KDJ")
+                    kdj_result = kdj_indicator.calculate(data)
                     
                     k = kdj_result['K'].values
                     d = kdj_result['D'].values

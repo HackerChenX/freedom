@@ -5,11 +5,10 @@ import unittest
 import pandas as pd
 import numpy as np
 import pandas.testing as pd_testing
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from tests.helper.data_generator import TestDataGenerator
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.log_capture import LogCaptureMixin
-from indicators.adx import ADX
 
 
 class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
@@ -18,7 +17,7 @@ class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
     def setUp(self):
         """准备测试数据和指标实例"""
         LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
-        self.adx_indicator = ADX(params={"period": 14, "strong_trend": 25})
+        self.adx_indicator = complete_registry.create_indicator('ADX', params={"period": 14, "strong_trend": 25})
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 50},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 50},
@@ -163,7 +162,7 @@ class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         # 因为 get_signals 依赖 ADXR，而 _calculate 中没有计算，我们需要手动调用
         # 这是一个实现上的小缺陷，我们在测试中绕过
         # 在真实场景中，我们应该改进 get_signals，使其不依赖一个未计算的列
-        indicator = ADX(params={"period": 14, "strong_trend": 20}) # 降低阈值确保触发
+        indicator = complete_registry.create_indicator('ADX', params={"period": 14, "strong_trend": 20}) # 降低阈值确保触发
         result_co = indicator._calculate(crossover_data)
 
         # 手动添加 ADXR 以满足 get_signals 的要求。在真实实现中，ADXR是ADX的移动平均。

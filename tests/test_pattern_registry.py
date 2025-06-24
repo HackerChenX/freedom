@@ -4,11 +4,11 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.pattern_registry import PatternRegistry
-from indicators.boll import BOLL
-from indicators.kdj import KDJ
-from indicators.dmi import DMI
-from indicators.trix import TRIX
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.wma import WMA
 from indicators.vol import VOL
 from indicators.bias import BIAS

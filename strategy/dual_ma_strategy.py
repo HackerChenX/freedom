@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from strategy.base_strategy import BaseStrategy
 from formula.stock_formula import StockFormula
 from utils.logger import get_logger
-from indicators.ma import MA
+from indicators.complete_indicator_registry import complete_registry
 from db.data_manager import DataManager
 from models.stock_info import StockInfo  # 导入StockInfo类
 

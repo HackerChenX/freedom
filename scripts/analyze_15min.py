@@ -17,7 +17,7 @@ from typing import Dict, List, Any, Optional
 from formula import formula
 from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 
 logger = get_logger(__name__)
 

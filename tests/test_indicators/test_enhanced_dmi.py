@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.trend.enhanced_dmi import EnhancedDMI
+from indicators.complete_indicator_registry import complete_registry
 
 
 class TestEnhancedDMI(unittest.TestCase):

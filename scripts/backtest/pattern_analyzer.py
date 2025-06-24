@@ -26,8 +26,8 @@ from utils.technical_utils import (
     calculate_kdj, calculate_rsi, calculate_bollinger_bands,
     find_peaks_and_troughs, linear_regression
 )
-from indicators.kdj import KDJ
-from indicators.boll import BOLL
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.atr import ATR
 from indicators.macd import MACD
 from indicators.ma import MA

@@ -428,17 +428,21 @@ class VR(BaseIndicator, PatternSignalMixin):
         # 创建VR序列
         vr = pd.Series(index=data.index, dtype=float)
 
+        # 确保所有Series都有相同的索引
+        numerator.index = data.index
+        denominator.index = data.index
+
         # 当分母不为0时正常计算
         valid_mask = (denominator > 0) & (denominator.notna())
-        vr[valid_mask] = (numerator[valid_mask] / denominator[valid_mask]) * 100
+        vr.loc[valid_mask] = (numerator.loc[valid_mask] / denominator.loc[valid_mask]) * 100
 
         # 当分母为0但分子不为0时，设为较大值
         zero_denom_mask = (denominator == 0) & (numerator > 0)
-        vr[zero_denom_mask] = 300.0  # 设为一个较大的VR值
+        vr.loc[zero_denom_mask] = 300.0  # 设为一个较大的VR值
 
         # 当分子分母都为0时，设为100（中性值）
         both_zero_mask = (denominator == 0) & (numerator == 0)
-        vr[both_zero_mask] = 100.0
+        vr.loc[both_zero_mask] = 100.0
         
         # 添加到结果
         result["vr"] = vr
@@ -663,11 +667,11 @@ class VR(BaseIndicator, PatternSignalMixin):
         overbought_oversold_score -= overbought_condition * 20
         
         # VR上穿70+15分
-        vr_cross_up_70 = crossover(vr_values, 70)
+        vr_cross_up_70 = pd.Series(crossover(vr_values, 70), index=vr_values.index)
         overbought_oversold_score += vr_cross_up_70 * 15
-        
+
         # VR下穿160-15分
-        vr_cross_down_160 = crossunder(vr_values, 160)
+        vr_cross_down_160 = pd.Series(crossunder(vr_values, 160), index=vr_values.index)
         overbought_oversold_score -= vr_cross_down_160 * 15
         
         # VR极度超卖（VR < 50）额外+15分
@@ -701,11 +705,11 @@ class VR(BaseIndicator, PatternSignalMixin):
         ma_relation_score -= vr_below_ma * 8
         
         # VR上穿均线+20分
-        vr_cross_up_ma = crossover(vr_values, vr_ma_values)
+        vr_cross_up_ma = pd.Series(crossover(vr_values, vr_ma_values), index=vr_values.index)
         ma_relation_score += vr_cross_up_ma * 20
-        
+
         # VR下穿均线-20分
-        vr_cross_down_ma = crossunder(vr_values, vr_ma_values)
+        vr_cross_down_ma = pd.Series(crossunder(vr_values, vr_ma_values), index=vr_values.index)
         ma_relation_score -= vr_cross_down_ma * 20
         
         return ma_relation_score

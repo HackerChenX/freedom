@@ -19,7 +19,7 @@ from formula import formula
 from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
 from utils.path_utils import get_stock_result_file, get_backtest_result_dir
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from scripts.backtest.indicator_analysis import IndicatorAnalyzer
 from db.db_manager import DBManager
 

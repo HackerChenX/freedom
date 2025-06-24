@@ -59,7 +59,71 @@ class DataManager:
         
         logger.info(f"数据管理器初始化完成，缓存{'启用' if cache_enabled else '禁用'}，"
                    f"最大缓存条目数: {max_cache_size}，默认缓存有效期: {default_ttl}秒")
-    
+
+    def test_connection(self) -> bool:
+        """
+        测试数据库连接
+
+        Returns:
+            bool: 连接成功返回True，否则返回False
+        """
+        try:
+            # 测试数据库连接
+            if hasattr(self.db, 'test_connection'):
+                return self.db.test_connection()
+            else:
+                # 如果没有test_connection方法，尝试执行简单查询
+                result = self.db.execute_query("SELECT 1")
+                return result is not None
+        except Exception as e:
+            logger.error(f"数据库连接测试失败: {e}")
+            return False
+
+    def get_stock_list(self, limit: int = None) -> pd.DataFrame:
+        """
+        获取股票列表
+
+        Args:
+            limit: 限制返回的记录数量
+
+        Returns:
+            pd.DataFrame: 股票列表
+        """
+        try:
+            # 使用ClickHouseDB获取股票列表
+            if hasattr(self.db, 'get_stock_list'):
+                return self.db.get_stock_list(limit=limit)
+            else:
+                # 如果没有get_stock_list方法，使用get_stock_info
+                stock_info = self.db.get_stock_info(limit=limit, group_by="code")
+                return stock_info.to_dataframe()[['code', 'name']].drop_duplicates()
+        except Exception as e:
+            logger.error(f"获取股票列表失败: {e}")
+            return pd.DataFrame()
+
+    def get_stock_data(self, stock_code: str, start_date: str = None, end_date: str = None) -> pd.DataFrame:
+        """
+        获取股票数据
+
+        Args:
+            stock_code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+
+        Returns:
+            pd.DataFrame: 股票数据
+        """
+        try:
+            stock_info = self.db.get_stock_info(
+                stock_code=stock_code,
+                start_date=start_date,
+                end_date=end_date
+            )
+            return stock_info.to_dataframe()
+        except Exception as e:
+            logger.error(f"获取股票数据失败: {e}")
+            return pd.DataFrame()
+
     @performance_monitor(threshold=0.5)
     def get_stock_info(self, stock_code: Union[str, List[str]] = None, level: Union[str, Period] = None,
                        start_date: Optional[str] = None, end_date: Optional[str] = None,
@@ -423,12 +487,24 @@ class DataManager:
                 return cached_data
             
             # 使用ClickHouseDB的get_stock_info方法获取数据
-            result = self.db.get_stock_info(
+            stock_info = self.db.get_stock_info(
                 stock_code=stock_codes,
                 level='日线',
-                fields=["code as stock_code", "name as stock_name", "industry"],
-                order_by="date DESC"
+                order_by="date DESC",
+                group_by="code"  # 按股票代码分组，获取每只股票的最新信息
             )
+
+            # 转换为DataFrame并选择需要的列
+            result = stock_info.to_dataframe()
+            if not result.empty:
+                # 重命名列以符合预期
+                column_mapping = {
+                    'code': 'stock_code',
+                    'name': 'stock_name'
+                }
+                result = result.rename(columns=column_mapping)
+                # 只保留需要的列
+                result = result[['stock_code', 'stock_name', 'industry']].drop_duplicates()
             
             # 缓存结果
             self._set_cache(cache_key, result, ttl)

@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.pattern.candlestick_patterns import CandlestickPatterns
+from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern.advanced_candlestick_patterns import AdvancedCandlestickPatterns
 from indicators.fibonacci_tools import FibonacciTools
 from indicators.elliott_wave import ElliottWave

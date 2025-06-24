@@ -14,9 +14,9 @@ import numpy as np
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.macd import MACD
-from indicators.kdj import KDJ
-from indicators.rsi import RSI
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from db.clickhouse_db import get_clickhouse_db
 from utils.logger import get_logger
 

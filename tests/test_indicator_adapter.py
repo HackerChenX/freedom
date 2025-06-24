@@ -12,10 +12,10 @@ import os
 
 from indicators.adapter import (IndicatorAdapter, register_indicator,
                             get_indicator, calculate_indicator, list_all_indicators)
-from indicators.composite import TechnicalComposite, technical_composite
-from indicators.macd import MACD
-from indicators.rsi import RSI
-from indicators.ma import MA
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -151,7 +151,7 @@ class TestCompositeIndicator(unittest.TestCase):
     
     def register_indicators(self):
         """注册测试所需的指标"""
-        from indicators.macd import MACD
+from indicators.complete_indicator_registry import complete_registry
         from indicators.rsi import RSI
         from indicators.atr import ATR
         from indicators.boll import BOLL

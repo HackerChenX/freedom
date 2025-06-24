@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.stochrsi import STOCHRSI
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -92,7 +92,7 @@ def test_stochrsi_scoring():
         print(f"✓ 生成测试数据完成，数据长度: {len(data)}")
         
         # 创建StochRSI指标
-        stochrsi = STOCHRSI(period=14, k_period=3, d_period=3)
+        stochrsi = complete_registry.create_indicator('STOCHRSI', period=14, k_period=3, d_period=3)
         
         # 计算指标
         result = stochrsi.calculate(data)
@@ -178,7 +178,7 @@ def test_stochrsi_patterns():
         print(f"✓ 生成测试数据完成，数据长度: {len(data)}")
         
         # 测试StochRSI形态识别
-        stochrsi = STOCHRSI(period=14, k_period=3, d_period=3)
+        stochrsi = complete_registry.create_indicator('STOCHRSI', period=14, k_period=3, d_period=3)
         stochrsi.calculate(data)
         stochrsi_patterns = stochrsi.identify_patterns(data)
         print(f"✓ StochRSI形态识别: {stochrsi_patterns}")
@@ -201,7 +201,7 @@ def test_stochrsi_detailed():
         data = generate_test_data(100)
         
         # 创建StochRSI指标
-        stochrsi = STOCHRSI(period=14, k_period=3, d_period=3)
+        stochrsi = complete_registry.create_indicator('STOCHRSI', period=14, k_period=3, d_period=3)
         
         # 计算指标
         result = stochrsi.calculate(data)

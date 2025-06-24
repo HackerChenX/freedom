@@ -12,7 +12,7 @@ from strategy.base_strategy import BaseStrategy
 from formula import formula
 from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from indicators.ma import MA
 from indicators.boll import BOLL
 

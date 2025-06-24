@@ -4,7 +4,7 @@ ROC指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.roc import ROC
+from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -18,7 +18,7 @@ class TestROC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 显式调用LogCaptureMixin的setUp
         LogCaptureMixin.setUp(self)
         
-        self.indicator = ROC(period=12, ma_period=6)
+        self.indicator = complete_registry.create_indicator('ROC', period=12, ma_period=6)
         self.expected_columns = ['roc', 'rocma']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -123,7 +123,7 @@ class TestROC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_roc_auto_threshold(self):
         """测试ROC自动阈值计算"""
         # 创建一个使用自动阈值的指标
-        auto_indicator = ROC(period=12, ma_period=6, overbought=0, oversold=0)
+        auto_indicator = complete_registry.create_indicator('ROC', period=12, ma_period=6, overbought=0, oversold=0)
         result = auto_indicator.calculate(self.data)
         
         # 验证阈值已被自动设置

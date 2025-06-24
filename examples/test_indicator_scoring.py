@@ -13,7 +13,7 @@ import numpy as np
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.scoring_framework import IndicatorScoreManager
+from indicators.complete_indicator_registry import complete_registry
 from indicators.macd_score import MACDScore
 from indicators.kdj_score import KDJScore
 from indicators.rsi_score import RSIScore

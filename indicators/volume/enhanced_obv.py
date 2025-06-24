@@ -10,7 +10,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.obv import OBV
+from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs
 from utils.indicator_utils import crossover, crossunder
@@ -18,7 +18,7 @@ from utils.indicator_utils import crossover, crossunder
 logger = get_logger(__name__)
 
 
-class EnhancedOBV(OBV):
+class EnhancedOBV(BaseIndicator, PatternSignalMixin):
     """
     增强型能量潮(On Balance Volume)指标
     
@@ -75,6 +75,18 @@ class EnhancedOBV(OBV):
         """
         return self.indicator_type
     
+    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        实现BaseIndicator的抽象方法
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        return self.calculate(data)
+
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型OBV指标

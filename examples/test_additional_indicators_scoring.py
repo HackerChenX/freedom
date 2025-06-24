@@ -17,9 +17,9 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.boll import BOLL
-from indicators.obv import OBV
-from indicators.wr import WR
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
+from indicators.complete_indicator_registry import complete_registry
 from indicators.cci import CCI
 from indicators.atr import ATR
 from indicators.dmi import DMI

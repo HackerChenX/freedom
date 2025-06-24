@@ -1,6 +1,0 @@
-{
-  "validation_status": "failed",
-  "error": "策略执行失败: name 'buypoints_file' is not defined",
-  "timestamp": "2025-06-23T20:14:24.799493",
-  "execution_mode": "real_data"
-}

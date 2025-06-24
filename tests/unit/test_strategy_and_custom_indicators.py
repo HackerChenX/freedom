@@ -7,21 +7,22 @@ import numpy as np
 import pandas.testing as pd_testing
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
-from indicators.factory import IndicatorFactory
+from indicators.complete_indicator_registry import complete_registry
 from unittest.mock import patch
 from formula.formula import Formula
 from tests.helper.log_capture import LogCaptureMixin
 from unittest.mock import MagicMock
-from indicators.base_indicator import BaseIndicator
+from indicators.complete_indicator_registry import complete_registry
 
 def setUpModule():
     """在模块所有测试开始前运行，用于注册所有指标"""
-    IndicatorFactory.auto_register_all_indicators()
+    # 统一注册系统已自动注册所有指标
+    pass
 
 class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator(
+            self.indicator = complete_registry.create_indicator(
                 'ENHANCEDMACD', fast_period=12, slow_period=26, signal_period=9
             )
         except Exception as e:
@@ -99,7 +100,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 class TestEnhancedRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('ENHANCEDRSI', periods=[14])
+            self.indicator = complete_registry.create_indicator('ENHANCEDRSI', periods=[14])
         except Exception as e:
             self.skipTest(f"无法创建ENHANCEDRSI: {e}")
         self.expected_columns = ['RSI14', 'RSI14_smooth', 'RSI14_overbought', 'RSI14_oversold']
@@ -156,10 +157,10 @@ class TestEnhancedRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 class TestCompositeIndicator(unittest.TestCase):
     def setUp(self):
         """准备一个包含MACD和RSI的复合指标实例"""
-        self.macd_indicator = IndicatorFactory.create_indicator('MACD')
-        self.rsi_indicator = IndicatorFactory.create_indicator('RSI')
+        self.macd_indicator = complete_registry.create_indicator('MACD')
+        self.rsi_indicator = complete_registry.create_indicator('RSI')
         try:
-            self.composite_indicator = IndicatorFactory.create_indicator(
+            self.composite_indicator = complete_registry.create_indicator(
                 'CompositeIndicator',
                 indicators=[self.macd_indicator, self.rsi_indicator]
             )
@@ -224,9 +225,9 @@ class TestPlatformBreakout(unittest.TestCase):
     def setUp(self):
         """准备一个默认参数的PlatformBreakout实例"""
         try:
-            self.indicator = IndicatorFactory.create_indicator('PlatformBreakout', platform_period=20, max_volatility=0.05)
+            self.indicator = complete_registry.create_indicator('PLATFORM_BREAKOUT', platform_period=20, max_volatility=0.05)
         except Exception as e:
-            self.skipTest(f"无法创建PlatformBreakout: {e}")
+            self.skipTest(f"无法创建PLATFORM_BREAKOUT: {e}")
 
     def test_platform_detection(self):
         """测试平台识别逻辑"""
@@ -290,9 +291,9 @@ class TestPlatformBreakout(unittest.TestCase):
 class TestVShapedReversal(unittest.TestCase):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('VShapedReversal')
+            self.indicator = complete_registry.create_indicator('V_SHAPED_REVERSAL')
         except Exception as e:
-            self.skipTest(f"无法创建VShapedReversal: {e}")
+            self.skipTest(f"无法创建V_SHAPED_REVERSAL: {e}")
 
     def test_reversal_completion_detection(self):
         """测试基于变化率的'v_reversal'完成信号"""
@@ -335,9 +336,9 @@ class TestVShapedReversal(unittest.TestCase):
 class TestIslandReversal(unittest.TestCase):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator('IslandReversal')
+            self.indicator = complete_registry.create_indicator('ISLAND_REVERSAL')
         except Exception as e:
-            self.skipTest(f"无法创建IslandReversal: {e}")
+            self.skipTest(f"无法创建ISLAND_REVERSAL: {e}")
 
     def test_bottom_island_reversal_detection(self):
         """测试底部岛形反转的识别逻辑"""
@@ -370,11 +371,11 @@ class TestIslandReversal(unittest.TestCase):
 class TestZXMAbsorb(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator(
-                'ZXMAbsorb', short_ma=5, long_ma=10, volume_ma=10, absorb_threshold=1.5
+            self.indicator = complete_registry.create_indicator(
+                'ZXM_ABSORB', short_ma=5, long_ma=10, volume_ma=10, absorb_threshold=1.5
             )
         except Exception as e:
-            self.skipTest(f"无法创建ZXMAbsorb: {e}")
+            self.skipTest(f"无法创建ZXM_ABSORB: {e}")
             
         self.expected_columns = ['is_absorb']
         self.data = TestDataGenerator.generate_price_sequence([
@@ -384,11 +385,11 @@ class TestZXMAbsorb(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 class TestZXMWashplate(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         try:
-            self.indicator = IndicatorFactory.create_indicator(
-                'ZXMWashplate', short_ma=5, long_ma=60, shrink_threshold=0.8
+            self.indicator = complete_registry.create_indicator(
+                'ZXM_WASHPLATE', short_ma=5, long_ma=60, shrink_threshold=0.8
             )
         except Exception as e:
-            self.skipTest(f"无法创建ZXMWashplate: {e}")
+            self.skipTest(f"无法创建ZXM_WASHPLATE: {e}")
 
         self.expected_columns = ['is_washplate']
         self.data = TestDataGenerator.generate_price_sequence([

@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.enhanced_wr import EnhancedWR
+from indicators.complete_indicator_registry import complete_registry
 
 
 class TestEnhancedWR(unittest.TestCase):
