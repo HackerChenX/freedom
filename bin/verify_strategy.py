@@ -21,7 +21,7 @@ from strategy.strategy_parser import StrategyParser
 from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from enums.period import Period
 
 logger = get_logger(__name__)
@@ -71,7 +71,7 @@ def verify_strategy():
         logger.info(f"成功解析策略: {strategy['name']}")
         
         # 初始化数据管理器
-        data_manager = DataManager()
+        data_manager = get_unified_data_manager()
         
         # 初始化条件评估器
         evaluator = StrategyConditionEvaluator()

@@ -20,7 +20,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
-from db.enhanced_data_manager import get_enhanced_data_manager
+from db.unified_data_manager import get_unified_data_manager
 from monitoring.performance_monitor import get_performance_monitor, start_monitoring, stop_monitoring
 from utils.stability_enhancer import get_stability_manager, retry, CircuitBreaker
 from utils.logger import get_logger
@@ -42,7 +42,7 @@ class ComprehensiveOptimizationTest:
             min_connections=5
         )
         
-        self.data_manager = get_enhanced_data_manager()
+        self.data_manager = get_unified_data_manager()
         self.performance_monitor = get_performance_monitor()
         self.stability_manager = get_stability_manager()
         

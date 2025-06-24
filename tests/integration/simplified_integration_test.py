@@ -20,7 +20,7 @@ from typing import Dict, List, Any
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from db.data_manager_adapter import get_data_manager_adapter
+from db.unified_data_manager import get_unified_data_manager
 from monitoring.performance_monitor import get_performance_monitor
 from utils.stability_enhancer import get_stability_manager
 from utils.logger import get_logger
@@ -34,7 +34,7 @@ class SimplifiedIntegrationTest:
     def __init__(self):
         """初始化测试器"""
         # 获取优化后的核心组件
-        self.data_manager = get_data_manager_adapter()
+        self.data_manager = get_unified_data_manager()
         self.performance_monitor = get_performance_monitor()
         self.stability_manager = get_stability_manager()
         

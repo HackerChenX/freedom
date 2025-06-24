@@ -12,7 +12,7 @@ import re
 import ast
 
 from utils.logger import get_logger
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from utils.parameter_standardizer import ParameterStandardizer
 from utils.indicator_parameter_validator import IndicatorParameterValidator
 from indicators.complete_indicator_registry import complete_registry
@@ -26,7 +26,7 @@ class StrategyConditionEvaluator:
     
     def __init__(self):
         """初始化条件评估器"""
-        self.data_manager = DataManager()
+        self.data_manager = get_unified_data_manager()
         self.indicator_registry = complete_registry
         self.condition_cache = {}
 

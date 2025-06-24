@@ -14,7 +14,14 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable
 from collections import deque, defaultdict
-import psutil
+
+# 可选导入 psutil
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
+    psutil = None
 
 from utils.logger import get_logger
 
@@ -295,26 +302,30 @@ class PerformanceMonitor:
     
     def _collect_system_metrics(self):
         """收集系统指标"""
+        if not HAS_PSUTIL:
+            logger.debug("psutil 不可用，跳过系统指标收集")
+            return
+
         try:
             # CPU使用率
             cpu_percent = psutil.cpu_percent(interval=1)
             self.add_metric('cpu_usage_percent', cpu_percent)
-            
+
             # 内存使用率
             memory = psutil.virtual_memory()
             self.add_metric('memory_usage_percent', memory.percent)
             self.add_metric('memory_available_gb', memory.available / (1024**3))
-            
+
             # 磁盘使用率
             disk = psutil.disk_usage('/')
             self.add_metric('disk_usage_percent', (disk.used / disk.total) * 100)
-            
+
             # 网络I/O
             network = psutil.net_io_counters()
             if network:
                 self.add_metric('network_bytes_sent', network.bytes_sent)
                 self.add_metric('network_bytes_recv', network.bytes_recv)
-            
+
         except Exception as e:
             logger.error(f"收集系统指标失败: {e}")
     
@@ -323,8 +334,8 @@ class PerformanceMonitor:
         try:
             # 尝试获取数据管理器统计
             try:
-                from db.enhanced_data_manager import get_enhanced_data_manager
-                data_manager = get_enhanced_data_manager()
+                from db.unified_data_manager import get_unified_data_manager
+                data_manager = get_unified_data_manager()
                 stats = data_manager.get_stats()
                 
                 self.add_metric('avg_query_time', stats.get('avg_query_time', 0))

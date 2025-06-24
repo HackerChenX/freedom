@@ -30,7 +30,7 @@
     <!-- 用户配置 -->
     <users>
         <default>
-            <password></password>
+            <password>123456</password>
             <networks>
                 <ip>::/0</ip>
             </networks>

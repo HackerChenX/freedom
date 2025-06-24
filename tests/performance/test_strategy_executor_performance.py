@@ -24,7 +24,7 @@ sys.path.append(root_dir)
 
 from strategy.strategy_parser import StrategyParser
 from strategy.strategy_executor import StrategyExecutor
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger, setup_logger
 from strategy.base_strategy import BaseStrategy
@@ -149,7 +149,7 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
     def setUp(self):
         """测试前准备"""
         # 清除缓存
-        data_manager = DataManager()
+        data_manager = get_unified_data_manager()
         data_manager.clear_cache()
         
         # 创建测试执行器
@@ -273,7 +273,7 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
             
             # 清除缓存，确保公平比较
             executor.clear_cache()
-            data_manager = DataManager()
+            data_manager = get_unified_data_manager()
             data_manager.clear_cache()
         
         # 验证线程数增加时性能提升

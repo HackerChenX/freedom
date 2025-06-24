@@ -32,6 +32,7 @@ class StrategyParser:
     def __init__(self):
         """初始化策略解析器"""
         self.indicator_registry = complete_registry
+        self.indicator_factory = complete_registry  # 添加indicator_factory别名
         
     def parse_from_file(self, file_path: str) -> Dict[str, Any]:
         """
@@ -301,7 +302,7 @@ class StrategyParser:
                 
                 # 验证指标是否存在
                 try:
-                    indicator = self.indicator_factory.create(indicator_id, **parameters)
+                    indicator = self.indicator_factory.create_indicator(indicator_id, **parameters)
                     if indicator is None:
                         raise StrategyValidationError(
                             f"指标不存在或创建失败: {indicator_id}", 

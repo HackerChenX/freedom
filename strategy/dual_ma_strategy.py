@@ -11,7 +11,7 @@ from strategy.base_strategy import BaseStrategy
 from formula.stock_formula import StockFormula
 from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from models.stock_info import StockInfo  # 导入StockInfo类
 
 logger = get_logger(__name__)
@@ -40,7 +40,7 @@ class DualMAStrategy(BaseStrategy):
         }
         
         # 初始化数据管理器
-        self.data_manager = DataManager()
+        self.data_manager = get_unified_data_manager()
     
     def select(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """

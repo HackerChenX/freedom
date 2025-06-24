@@ -21,7 +21,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
-from db.enhanced_data_manager import get_enhanced_data_manager
+from db.unified_data_manager import get_unified_data_manager
 from db.query_cache import get_query_cache
 from utils.logger import get_logger
 
@@ -43,7 +43,7 @@ class ConcurrentOptimizationTest:
         )
         
         # 初始化增强数据管理器
-        self.data_manager = get_enhanced_data_manager()
+        self.data_manager = get_unified_data_manager()
         
         # 初始化查询缓存
         self.query_cache = get_query_cache()

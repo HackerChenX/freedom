@@ -17,7 +17,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.data_manager_adapter import get_data_manager_adapter
+from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 from utils.period_manager import PeriodManager
 from enums.kline_period import KlinePeriod
@@ -29,7 +29,7 @@ class PeriodDataProcessor:
     
     def __init__(self):
         """初始化数据处理器"""
-        self.db = get_data_manager_adapter()
+        self.db = get_unified_data_manager()
         self.period_manager = PeriodManager()
         self.data_cache = {}
     

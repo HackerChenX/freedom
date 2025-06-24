@@ -10,9 +10,9 @@ import numpy as np
 from datetime import datetime, timedelta
 import json
 
-from indicators.complete_indicator_registry import complete_registry
+from indicators.factory import IndicatorFactory
 from enums.period import Period
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager, UnifiedDataManager
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
@@ -26,7 +26,7 @@ class SignalWatcher:
     识别接近触发条件但尚未满足的股票，提供趋势预测和信号强度梯度评估
     """
     
-    def __init__(self, data_manager: Optional[DataManager] = None,
+    def __init__(self, data_manager: Optional[UnifiedDataManager] = None,
                  indicator_factory: Optional[IndicatorFactory] = None):
         """
         初始化观察信号处理器
@@ -35,7 +35,7 @@ class SignalWatcher:
             data_manager: 数据管理器实例
             indicator_factory: 指标工厂实例
         """
-        self.data_manager = data_manager or DataManager()
+        self.data_manager = data_manager or get_unified_data_manager()
         self.indicator_factory = indicator_factory or IndicatorFactory()
         
     @performance_monitor(threshold=5.0)

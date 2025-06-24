@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime, timedelta
 
 from utils.logger import get_logger
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from utils.decorators import performance_monitor
 
 logger = get_logger(__name__)
@@ -20,7 +20,7 @@ class StrategyEvaluator:
     
     def __init__(self):
         """初始化策略评估器"""
-        self.data_manager = DataManager()
+        self.data_manager = get_unified_data_manager()
         self.evaluation_cache = {}
     
     @performance_monitor()

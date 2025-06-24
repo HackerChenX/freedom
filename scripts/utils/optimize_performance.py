@@ -20,7 +20,7 @@ import logging
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import StrategyExecutor
 from utils.logger import get_logger, setup_logger
 from utils.path_utils import get_log_dir, get_cache_dir
@@ -63,7 +63,7 @@ def clear_cache(days=30):
         print("开始清理缓存...")
         
         # 1. 清理数据管理器缓存
-        data_manager = DataManager()
+        data_manager = get_unified_data_manager()
         data_manager.clear_cache()
         
         # 2. 清理策略执行器缓存
@@ -112,7 +112,7 @@ def optimize_database():
         print("开始优化数据库...")
         
         # 获取数据库连接
-        data_manager = DataManager()
+        data_manager = get_unified_data_manager()
         db = data_manager.db
         
         # 执行优化操作

@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
@@ -39,7 +39,7 @@ class StrategyCombiner:
         """
         self.strategy_manager = strategy_manager or StrategyManager()
         self.strategy_executor = strategy_executor or StrategyExecutor()
-        self.data_manager = data_manager or DataManager()
+        self.data_manager = data_manager or get_unified_data_manager()
         
     @performance_monitor(threshold=10.0)
     @log_calls(level="info")

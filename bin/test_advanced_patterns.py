@@ -18,7 +18,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from enums.period import Period  # 使用新的统一周期枚举
 from utils.logger import get_logger
 
@@ -51,7 +51,7 @@ def get_historical_data(stock_code, period, days):
     Returns:
         K线数据DataFrame
     """
-    data_manager = DataManager()
+    data_manager = get_unified_data_manager()
     
     # 计算日期范围
     end_date = datetime.now().strftime("%Y-%m-%d")

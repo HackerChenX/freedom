@@ -26,16 +26,22 @@ from strategy.strategy_parser import StrategyParser
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
 from strategy.signal_watcher import SignalWatcher
+from indicators.complete_indicator_registry import complete_registry  # 确保全局可用
 from strategy.result_filter import ResultFilter
-from db.data_manager_adapter import get_data_manager_adapter
+
+# 设置全局变量，确保在所有模块中都可用
+import builtins
+builtins.complete_registry = complete_registry
+from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
-from utils.visualization import (
-    plot_selection_result_distribution,
-    plot_technical_indicators,
-    plot_condition_heatmap,
-    create_html_report
-)
+# 可视化功能暂时禁用
+# from utils.visualization import (
+#     plot_selection_result_distribution,
+#     plot_technical_indicators,
+#     plot_condition_heatmap,
+#     create_html_report
+# )
 from utils.exceptions import (
     StrategyExecutionError, 
     StrategyValidationError, 
@@ -133,11 +139,47 @@ def is_strategy_file(strategy_path: str) -> bool:
 def execute_strategy(args):
     """执行选股策略"""
     try:
-        # 初始化组件
-        strategy_manager = StrategyManager()
-        strategy_executor = StrategyExecutor(max_workers=args.threads)
-        signal_watcher = SignalWatcher()
-        result_filter = ResultFilter()
+        # 检查日志中是否有ERROR级别的错误
+        import logging
+
+        # 创建一个自定义的日志处理器来捕获ERROR
+        class ErrorHandler(logging.Handler):
+            def __init__(self):
+                super().__init__()
+                self.has_error = False
+                self.error_messages = []
+
+            def emit(self, record):
+                if record.levelno >= logging.ERROR:
+                    self.has_error = True
+                    self.error_messages.append(record.getMessage())
+
+        error_handler = ErrorHandler()
+        error_handler.setLevel(logging.ERROR)
+
+        # 添加到根日志记录器
+        root_logger = logging.getLogger()
+        root_logger.addHandler(error_handler)
+
+        try:
+            # 初始化组件
+            strategy_manager = StrategyManager()
+            strategy_executor = StrategyExecutor(max_workers=args.threads)
+            signal_watcher = SignalWatcher()
+            result_filter = ResultFilter()
+
+            # 检查初始化过程中是否有ERROR
+            if error_handler.has_error:
+                print(f"\n❌ 初始化过程中发现ERROR，停止执行:")
+                for msg in error_handler.error_messages:
+                    print(f"   - {msg}")
+                sys.exit(1)
+        except Exception as init_error:
+            print(f"\n❌ 初始化失败: {init_error}")
+            sys.exit(1)
+        finally:
+            # 移除错误处理器
+            root_logger.removeHandler(error_handler)
         
         # 确定策略来源
         if is_strategy_file(args.strategy):
@@ -225,9 +267,10 @@ def execute_strategy(args):
         # 输出结果
         output_result(result_df, args)
         
-        # 生成可视化报告
+        # 生成可视化报告（暂时禁用）
         if args.visualize:
-            generate_visualization(result_df, args)
+            print("可视化功能暂时不可用")
+            # generate_visualization(result_df, args)
         
     except Exception as e:
         logger.error(f"执行策略出错: {e}")
@@ -299,57 +342,60 @@ def output_result(result_df: pd.DataFrame, args):
 
 
 def generate_visualization(result_df: pd.DataFrame, args):
-    """生成可视化报告"""
-    try:
-        print("\n生成可视化报告...")
-        
-        # 创建输出目录
-        if args.output:
-            output_dir = os.path.dirname(args.output)
-        else:
-            output_dir = get_result_dir()
-            
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # 生成报告日期
-        date_str = datetime.now().strftime("%Y%m%d%H%M%S")
-        report_name = f"选股报告_{args.strategy}_{date_str}"
-        
-        # 生成结果分布图
-        print("生成结果分布图...")
-        distribution_img = plot_selection_result_distribution(
-            result_df=result_df,
-            title=f"选股结果分布 ({args.strategy})"
-        )
-        
-        # 生成条件热力图
-        print("生成条件热力图...")
-        heatmap_img = plot_condition_heatmap(
-            result_df=result_df,
-            title=f"条件满足热力图 ({args.strategy})"
-        )
-        
-        # 创建HTML报告
-        print("创建HTML报告...")
-        charts = [distribution_img, heatmap_img]
-        descriptions = [
-            f"选股日期: {args.date}, 共找到 {len(result_df)} 只符合条件的股票",
-            "条件满足热力图展示了每只股票满足的具体条件"
-        ]
-        
-        report_path = os.path.join(output_dir, f"{report_name}.html")
-        create_html_report(
-            title=f"选股策略 {args.strategy} 执行报告",
-            charts=charts,
-            descriptions=descriptions,
-            output_file=report_path
-        )
-        
-        print(f"可视化报告已生成: {report_path}")
-        
-    except Exception as e:
-        logger.error(f"生成可视化报告失败: {e}")
-        print(f"生成可视化报告失败: {e}")
+    """生成可视化报告（暂时禁用）"""
+    print("可视化功能暂时不可用")
+    return
+
+    # try:
+    #     print("\n生成可视化报告...")
+    #
+    #     # 创建输出目录
+    #     if args.output:
+    #         output_dir = os.path.dirname(args.output)
+    #     else:
+    #         output_dir = get_result_dir()
+    #
+    #     os.makedirs(output_dir, exist_ok=True)
+    #
+    #     # 生成报告日期
+    #     date_str = datetime.now().strftime("%Y%m%d%H%M%S")
+    #     report_name = f"选股报告_{args.strategy}_{date_str}"
+    #
+    #     # 生成结果分布图
+    #     print("生成结果分布图...")
+    #     distribution_img = plot_selection_result_distribution(
+    #         result_df=result_df,
+    #         title=f"选股结果分布 ({args.strategy})"
+    #     )
+    #
+    #     # 生成条件热力图
+    #     print("生成条件热力图...")
+    #     heatmap_img = plot_condition_heatmap(
+    #         result_df=result_df,
+    #         title=f"条件满足热力图 ({args.strategy})"
+    #     )
+    #
+    #     # 创建HTML报告
+    #     print("创建HTML报告...")
+    #     charts = [distribution_img, heatmap_img]
+    #     descriptions = [
+    #         f"选股日期: {args.date}, 共找到 {len(result_df)} 只符合条件的股票",
+    #         "条件满足热力图展示了每只股票满足的具体条件"
+    #     ]
+    #
+    #     report_path = os.path.join(output_dir, f"{report_name}.html")
+    #     create_html_report(
+    #         title=f"选股策略 {args.strategy} 执行报告",
+    #         charts=charts,
+    #         descriptions=descriptions,
+    #         output_file=report_path
+    #     )
+    #
+    #     print(f"可视化报告已生成: {report_path}")
+    #
+    # except Exception as e:
+    #     logger.error(f"生成可视化报告失败: {e}")
+    #     print(f"生成可视化报告失败: {e}")
 
 
 def main():

@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional, Set, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 from utils.decorators import performance_monitor
 

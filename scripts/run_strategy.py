@@ -21,7 +21,7 @@ sys.path.insert(0, str(project_root))
 
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
-from db.data_manager_adapter import get_data_manager_adapter
+from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +32,7 @@ class StrategyRunner:
     
     def __init__(self):
         """初始化执行器"""
-        self.data_manager = get_data_manager_adapter()
+        self.data_manager = get_unified_data_manager()
         self.strategy_executor = StrategyExecutor()
         self.strategy_manager = StrategyManager()
         

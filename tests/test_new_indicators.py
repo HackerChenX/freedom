@@ -26,7 +26,7 @@ from indicators.intraday_volatility import IntradayVolatility
 from indicators.fibonacci import Fibonacci
 from indicators.sentiment_analysis import SentimentAnalysis
 from strategy.base_strategy import BaseStrategy
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from utils.date_utils import get_today
 from utils.stock_utils import get_stock_list
 from utils.logger import get_logger

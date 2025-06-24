@@ -13,7 +13,7 @@ from datetime import datetime
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import StrategyExecutor
 from utils.logger import get_logger
 
@@ -25,7 +25,7 @@ def test_data_layer():
     print("=== 测试1: 数据层集成 ===")
     
     try:
-        dm = DataManager()
+        dm = get_unified_data_manager()
         
         # 测试股票列表获取
         stock_list = dm.get_stock_list()

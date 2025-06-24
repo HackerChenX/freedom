@@ -28,7 +28,7 @@ from utils.path_utils import get_result_dir
 from utils.decorators import performance_monitor
 from strategy.strategy_executor import StrategyExecutor
 from db.clickhouse_db import get_clickhouse_db, get_default_config
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_manager import StrategyManager
 
 # 获取日志记录器
@@ -60,7 +60,7 @@ class StrategyOptimizer:
         self.result_dir = get_result_dir()
         os.makedirs(self.result_dir, exist_ok=True)
         
-        self.data_manager = DataManager()
+        self.data_manager = get_unified_data_manager()
         self.strategy_manager = StrategyManager()
         self.optimization_cache = {}
         

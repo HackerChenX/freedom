@@ -22,7 +22,7 @@ sys.path.append(project_root)
 from analysis.buypoints.buypoint_strategy_adapter import get_buypoint_strategy_adapter
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from strategy.strategy_executor import StrategyExecutor
-from db.data_manager_adapter import get_data_manager_adapter
+from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,7 +36,7 @@ class BuyPointStrategyIntegrationTest:
         self.adapter = get_buypoint_strategy_adapter()
         self.data_processor = PeriodDataProcessor()
         self.strategy_executor = StrategyExecutor()
-        self.data_manager = get_data_manager_adapter()
+        self.data_manager = get_unified_data_manager()
         
         # 测试结果
         self.test_results = {

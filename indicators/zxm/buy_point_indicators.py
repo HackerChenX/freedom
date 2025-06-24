@@ -205,7 +205,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         signals = pd.DataFrame(index=data.index)
 
         # 设置买卖信号
-        signals.loc[:, 'buy_signal'] = result["XG"]
+        signals.loc[:, 'buy_signal'] = result["XG"] > 0
         signals.loc[:, 'sell_signal'] = ~result["XG"]
         signals.loc[:, 'neutral_signal'] = False
 
@@ -864,6 +864,11 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
+
+        # 重写buy_signal逻辑，基于XG值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["XG"] == True
+        result.loc[:, 'sell_signal'] = result["XG"] == False
+        result.loc[:, 'hold_signal'] = result["XG"] == False
 
         return result
 
@@ -1626,6 +1631,11 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
+
+        # 重写buy_signal逻辑，基于XG值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["XG"] > 0
+        result.loc[:, 'sell_signal'] = result["XG"] == 0
+        result.loc[:, 'hold_signal'] = result["XG"] == 0
 
         return result
     

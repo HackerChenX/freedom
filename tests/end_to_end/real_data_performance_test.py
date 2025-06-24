@@ -27,7 +27,7 @@ sys.path.append(project_root)
 
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -135,7 +135,7 @@ class RealDataPerformanceTest:
     
     def __init__(self):
         """初始化测试框架"""
-        self.data_manager = DataManager()
+        self.data_manager = get_unified_data_manager()
         self.strategy_executor = StrategyExecutor(max_workers=8, cache_enabled=True)
         self.strategy_manager = StrategyManager()
         self.performance_monitor = PerformanceMonitor()

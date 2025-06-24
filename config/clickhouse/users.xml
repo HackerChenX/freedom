@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <users>
+        <!-- 默认用户配置 -->
+        <default>
+            <!-- 设置密码为123456 -->
+            <password>123456</password>
+            
+            <!-- 允许的网络访问 -->
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            
+            <!-- 用户配置文件 -->
+            <profile>default</profile>
+            
+            <!-- 配额 -->
+            <quota>default</quota>
+            
+            <!-- 数据库访问权限 -->
+            <databases>
+                <database>*</database>
+            </databases>
+            
+            <!-- 允许的查询类型 -->
+            <access_management>1</access_management>
+        </default>
+    </users>
+    
+    <!-- 配置文件定义 -->
+    <profiles>
+        <default>
+            <max_memory_usage>10000000000</max_memory_usage>
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+            <load_balancing>random</load_balancing>
+            <max_query_size>268435456</max_query_size>
+            <max_ast_depth>1000</max_ast_depth>
+            <max_ast_elements>50000</max_ast_elements>
+            <max_expanded_ast_elements>500000</max_expanded_ast_elements>
+            <readonly>0</readonly>
+        </default>
+    </profiles>
+    
+    <!-- 配额定义 -->
+    <quotas>
+        <default>
+            <interval>
+                <duration>3600</duration>
+                <queries>0</queries>
+                <errors>0</errors>
+                <result_rows>0</result_rows>
+                <read_rows>0</read_rows>
+                <execution_time>0</execution_time>
+            </interval>
+        </default>
+    </quotas>
+</clickhouse>

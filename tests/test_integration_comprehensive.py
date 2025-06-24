@@ -21,7 +21,7 @@ import numpy as np
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_parser import StrategyParser
 from strategy.strategy_manager import StrategyManager
@@ -39,7 +39,7 @@ class IntegrationTestSuite(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """测试类初始化"""
-        cls.data_manager = DataManager()
+        cls.data_manager = get_unified_data_manager()
         cls.strategy_executor = StrategyExecutor()
         cls.strategy_parser = StrategyParser()
         cls.strategy_manager = StrategyManager()

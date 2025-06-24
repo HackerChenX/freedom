@@ -101,25 +101,58 @@ class DataManager:
             logger.error(f"获取股票列表失败: {e}")
             return pd.DataFrame()
 
-    def get_stock_data(self, stock_code: str, start_date: str = None, end_date: str = None) -> pd.DataFrame:
+    def get_stock_data(self, stock_code: str, start_date: str = None, end_date: str = None,
+                      period: str = 'daily', lookback_days: Optional[int] = None) -> pd.DataFrame:
         """
-        获取股票数据
+        获取股票数据（增强版，支持30分钟数据计算和历史数据优化）
 
         Args:
             stock_code: 股票代码
             start_date: 开始日期
             end_date: 结束日期
+            period: 周期 ('daily', '30min', '15min', '60min', 'weekly', 'monthly')
+            lookback_days: 向前获取的天数，用于技术指标计算
 
         Returns:
             pd.DataFrame: 股票数据
         """
         try:
+            # 转换周期参数
+            level = self._convert_period_to_level(period)
+
+            # 如果是30分钟数据且数据库中不存在，尝试从15分钟数据计算
+            if period in ['30min', 'min30'] and not self._has_30min_data(stock_code, start_date, end_date):
+                logger.info(f"数据库中没有{stock_code}的30分钟数据，尝试从15分钟数据计算")
+                return self._generate_30min_from_15min(stock_code, start_date, end_date, lookback_days)
+
+            # 优化历史数据查询：根据周期和指标需求调整查询范围
+            optimized_start_date, optimized_limit = self._optimize_data_query(
+                period, start_date, end_date, None, lookback_days
+            )
+
             stock_info = self.db.get_stock_info(
                 stock_code=stock_code,
-                start_date=start_date,
+                level=level,
+                start_date=optimized_start_date,
                 end_date=end_date
             )
-            return stock_info.to_dataframe()
+
+            df = stock_info.to_dataframe()
+
+            # 如果获取的数据不足，尝试扩大查询范围
+            if not df.empty and len(df) < self._get_min_data_requirement(period):
+                logger.warning(f"数据不足({len(df)}条)，尝试扩大查询范围")
+                extended_start_date = self._extend_start_date(optimized_start_date, period)
+                stock_info = self.db.get_stock_info(
+                    stock_code=stock_code,
+                    level=level,
+                    start_date=extended_start_date,
+                    end_date=end_date
+                )
+                df = stock_info.to_dataframe()
+
+            return df
+
         except Exception as e:
             logger.error(f"获取股票数据失败: {e}")
             return pd.DataFrame()
@@ -518,7 +551,7 @@ class DataManager:
     def get_industry_list(self) -> pd.DataFrame:
         """
         获取行业列表
-        
+
         Returns:
             pd.DataFrame: 行业列表
         """
@@ -527,4 +560,286 @@ class DataManager:
             return self.db.get_industry_list()
         except Exception as e:
             logger.error(f"获取行业列表出错: {e}")
-            raise DataAccessError(f"获取行业列表失败: {e}") 
+            raise DataAccessError(f"获取行业列表失败: {e}")
+
+    def _convert_period_to_level(self, period: str) -> str:
+        """
+        转换周期参数到level参数
+
+        Args:
+            period: 原有的周期参数
+
+        Returns:
+            str: 转换后的level参数
+        """
+        period_mapping = {
+            'daily': '日线',
+            'day': '日线',
+            'weekly': '周线',
+            'week': '周线',
+            'monthly': '月线',
+            'month': '月线',
+            '15min': '15分钟',
+            '30min': '30分钟',
+            '60min': '60分钟',
+            'min15': '15分钟',
+            'min30': '30分钟',
+            'min60': '60分钟'
+        }
+
+        return period_mapping.get(period.lower(), '日线')
+
+    def _has_30min_data(self, stock_code: str, start_date: Optional[str] = None,
+                       end_date: Optional[str] = None) -> bool:
+        """
+        检查数据库中是否存在30分钟数据
+
+        Args:
+            stock_code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+
+        Returns:
+            bool: 存在返回True，否则返回False
+        """
+        try:
+            stock_info = self.db.get_stock_info(
+                stock_code=stock_code,
+                level='30分钟',
+                start_date=start_date,
+                end_date=end_date,
+                limit=1
+            )
+            df = stock_info.to_dataframe()
+            return not df.empty
+        except Exception as e:
+            logger.debug(f"检查30分钟数据存在性失败: {e}")
+            return False
+
+    def _generate_30min_from_15min(self, stock_code: str, start_date: Optional[str] = None,
+                                  end_date: Optional[str] = None, lookback_days: Optional[int] = None) -> pd.DataFrame:
+        """
+        从15分钟数据生成30分钟数据
+
+        Args:
+            stock_code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            lookback_days: 向前获取的天数
+
+        Returns:
+            pd.DataFrame: 30分钟K线数据
+        """
+        try:
+            # 扩大查询范围以获取足够的15分钟数据
+            if lookback_days:
+                from datetime import datetime, timedelta
+                if start_date:
+                    start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                    extended_start = start_dt - timedelta(days=lookback_days)
+                    extended_start_date = extended_start.strftime('%Y-%m-%d')
+                else:
+                    extended_start_date = start_date
+            else:
+                extended_start_date = start_date
+
+            # 获取15分钟数据
+            stock_info = self.db.get_stock_info(
+                stock_code=stock_code,
+                level='15分钟',
+                start_date=extended_start_date,
+                end_date=end_date
+            )
+
+            df_15min = stock_info.to_dataframe()
+
+            if df_15min.empty:
+                logger.warning(f"没有找到{stock_code}的15分钟数据")
+                return pd.DataFrame()
+
+            # 确保有datetime列
+            if 'datetime' not in df_15min.columns:
+                if 'date' in df_15min.columns and 'time' in df_15min.columns:
+                    df_15min['datetime'] = pd.to_datetime(df_15min['date'].astype(str) + ' ' + df_15min['time'].astype(str))
+                elif 'date' in df_15min.columns:
+                    df_15min['datetime'] = pd.to_datetime(df_15min['date'])
+                else:
+                    logger.error("无法构建datetime列")
+                    return pd.DataFrame()
+
+            # 设置datetime为索引
+            df_15min = df_15min.set_index('datetime')
+            df_15min.index = pd.to_datetime(df_15min.index)
+
+            # 按30分钟重采样
+            agg_dict = {
+                'open': 'first',
+                'high': 'max',
+                'low': 'min',
+                'close': 'last',
+                'volume': 'sum'
+            }
+
+            # 添加其他可能的字段
+            for col in ['amount', 'turnover_rate', 'pe_ratio', 'pb_ratio']:
+                if col in df_15min.columns:
+                    if col == 'amount':
+                        agg_dict[col] = 'sum'
+                    else:
+                        agg_dict[col] = 'last'
+
+            # 重采样为30分钟
+            df_30min = df_15min.resample('30T').agg(agg_dict)
+
+            # 删除空值行
+            df_30min = df_30min.dropna()
+
+            # 重置索引，添加date和datetime列
+            df_30min = df_30min.reset_index()
+            df_30min['date'] = df_30min['datetime'].dt.date.astype(str)
+            df_30min['time'] = df_30min['datetime'].dt.time.astype(str)
+
+            # 添加股票代码
+            df_30min['code'] = stock_code
+
+            # 重新排列列顺序
+            columns_order = ['code', 'date', 'datetime', 'time', 'open', 'high', 'low', 'close', 'volume']
+            for col in df_30min.columns:
+                if col not in columns_order:
+                    columns_order.append(col)
+
+            df_30min = df_30min[columns_order]
+
+            logger.info(f"成功从15分钟数据生成30分钟数据: {stock_code}, 记录数: {len(df_30min)}")
+            return df_30min
+
+        except Exception as e:
+            logger.error(f"从15分钟数据生成30分钟数据失败: {e}")
+            return pd.DataFrame()
+
+    def _optimize_data_query(self, period: str, start_date: Optional[str], end_date: Optional[str],
+                           limit: Optional[int], lookback_days: Optional[int]) -> tuple:
+        """
+        优化数据查询参数
+
+        Args:
+            period: 周期
+            start_date: 开始日期
+            end_date: 结束日期
+            limit: 限制记录数
+            lookback_days: 向前获取的天数
+
+        Returns:
+            tuple: (优化后的开始日期, 优化后的限制数)
+        """
+        try:
+            from datetime import datetime, timedelta
+
+            # 如果指定了lookback_days，优先使用
+            if lookback_days:
+                if end_date:
+                    end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                    optimized_start_dt = end_dt - timedelta(days=lookback_days)
+                    optimized_start_date = optimized_start_dt.strftime('%Y-%m-%d')
+                else:
+                    # 如果没有end_date，从当前日期往前推
+                    current_dt = datetime.now()
+                    optimized_start_dt = current_dt - timedelta(days=lookback_days)
+                    optimized_start_date = optimized_start_dt.strftime('%Y-%m-%d')
+
+                return optimized_start_date, None  # 移除limit限制以获取足够数据
+
+            # 根据周期设置默认的历史数据窗口
+            default_lookback = self._get_default_lookback_days(period)
+
+            if start_date:
+                # 如果有start_date，检查是否需要扩展
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                if end_date:
+                    end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                    days_diff = (end_dt - start_dt).days
+                    if days_diff < default_lookback:
+                        # 扩展开始日期
+                        extended_start_dt = end_dt - timedelta(days=default_lookback)
+                        optimized_start_date = extended_start_dt.strftime('%Y-%m-%d')
+                    else:
+                        optimized_start_date = start_date
+                else:
+                    optimized_start_date = start_date
+            else:
+                # 如果没有start_date，设置默认的查询范围
+                if end_date:
+                    end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                else:
+                    end_dt = datetime.now()
+
+                start_dt = end_dt - timedelta(days=default_lookback)
+                optimized_start_date = start_dt.strftime('%Y-%m-%d')
+
+            # 根据周期调整limit
+            optimized_limit = self._get_optimized_limit(period, limit)
+
+            return optimized_start_date, optimized_limit
+
+        except Exception as e:
+            logger.error(f"优化数据查询参数失败: {e}")
+            return start_date, limit
+
+    def _get_default_lookback_days(self, period: str) -> int:
+        """
+        根据周期获取默认的历史数据窗口期
+
+        Args:
+            period: 周期
+
+        Returns:
+            int: 默认向前查询天数
+        """
+        lookback_mapping = {
+            'daily': 250,      # 日线：约1年数据
+            'day': 250,
+            'weekly': 520,     # 周线：约2年数据
+            'week': 520,
+            'monthly': 1560,   # 月线：约5年数据
+            'month': 1560,
+            '15min': 60,       # 15分钟：约2个月数据
+            '30min': 90,       # 30分钟：约3个月数据
+            '60min': 120,      # 60分钟：约4个月数据
+            'min15': 60,
+            'min30': 90,
+            'min60': 120
+        }
+
+        return lookback_mapping.get(period.lower(), 120)  # 默认4个月
+
+    def _get_optimized_limit(self, period: str, original_limit: Optional[int]) -> Optional[int]:
+        """
+        根据周期获取优化的查询限制
+
+        Args:
+            period: 周期
+            original_limit: 原始限制
+
+        Returns:
+            Optional[int]: 优化后的限制
+        """
+        if original_limit:
+            return original_limit
+
+        # 根据周期设置合理的默认限制
+        limit_mapping = {
+            'daily': 500,      # 日线：约2年数据
+            'day': 500,
+            'weekly': 200,     # 周线：约4年数据
+            'week': 200,
+            'monthly': 60,     # 月线：约5年数据
+            'month': 60,
+            '15min': 2000,     # 15分钟：约2个月数据
+            '30min': 1000,     # 30分钟：约3个月数据
+            '60min': 500,      # 60分钟：约4个月数据
+            'min15': 2000,
+            'min30': 1000,
+            'min60': 500
+        }
+
+        return limit_mapping.get(period.lower(), 500)

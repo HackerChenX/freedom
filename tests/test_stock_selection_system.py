@@ -18,7 +18,7 @@ import numpy as np
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_parser import StrategyParser
 from strategy.strategy_manager import StrategyManager
@@ -32,7 +32,7 @@ def test_data_manager_stock_list():
     print("\n=== 测试DataManager.get_stock_list方法 ===")
     
     try:
-        dm = DataManager()
+        dm = get_unified_data_manager()
         
         # 测试无过滤条件
         print("1. 测试无过滤条件获取股票列表...")

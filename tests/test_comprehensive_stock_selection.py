@@ -18,7 +18,7 @@ import numpy as np
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_parser import StrategyParser
 from strategy.strategy_manager import StrategyManager
@@ -171,7 +171,7 @@ def test_data_consistency():
     print("\n=== 测试数据一致性 ===")
     
     try:
-        dm = DataManager()
+        dm = get_unified_data_manager()
         
         print("1. 测试股票列表数据一致性...")
         

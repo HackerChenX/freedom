@@ -12,9 +12,8 @@ import os
 from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime
 
-from db.data_manager_adapter import get_data_manager_adapter
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_manager import StrategyManager
-from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, safe_run, cache_result
@@ -41,7 +40,7 @@ class StrategyExecutor:
             max_workers: 最大线程数，None表示使用默认值（CPU核心数 * 5）
             cache_enabled: 是否启用结果缓存
         """
-        self.data_manager = get_data_manager_adapter()
+        self.data_manager = get_unified_data_manager()
         self.max_workers = max_workers or min(32, os.cpu_count() * 5)
         self.cache_enabled = cache_enabled
         self.cache = {}
@@ -702,30 +701,26 @@ class StrategyExecutor:
             float: 指标评分
         """
         try:
-            if not hasattr(self, 'indicator_registry') or self.indicator_registry is None:
-                # 回退到静态评分
-                static_scores = {
-                    "MACD": 75.0, "KDJ": 70.0, "RSI": 65.0, "BOLL": 70.0, "MA": 60.0,
-                    "VOL": 65.0, "DMI": 70.0, "CCI": 65.0, "WR": 60.0, "OBV": 65.0,
-                    "PSY": 55.0, "BIAS": 60.0, "ROC": 65.0, "EMV": 55.0, "SAR": 70.0,
-                    "DMA": 60.0, "MTM": 65.0, "TRIX": 65.0, "STOCHRSI": 70.0
-                }
-                return static_scores.get(indicator_type, 60.0)
-
-            # 尝试使用CompleteIndicatorRegistry动态计算
-            indicator = self.indicator_registry.create_indicator(indicator_type)
-            if indicator:
-                score = indicator.calculate_raw_score(data)
-                if score is not None and len(score) > 0:
-                    return float(score.iloc[-1])
-
-            # 如果动态计算失败，回退到静态评分
+            # 静态评分作为默认值
             static_scores = {
                 "MACD": 75.0, "KDJ": 70.0, "RSI": 65.0, "BOLL": 70.0, "MA": 60.0,
                 "VOL": 65.0, "DMI": 70.0, "CCI": 65.0, "WR": 60.0, "OBV": 65.0,
                 "PSY": 55.0, "BIAS": 60.0, "ROC": 65.0, "EMV": 55.0, "SAR": 70.0,
                 "DMA": 60.0, "MTM": 65.0, "TRIX": 65.0, "STOCHRSI": 70.0
             }
+
+            # 尝试使用CompleteIndicatorRegistry动态计算
+            if hasattr(self, 'indicator_registry') and self.indicator_registry is not None:
+                try:
+                    indicator = self.indicator_registry.create_indicator(indicator_type)
+                    if indicator and hasattr(indicator, 'calculate_raw_score'):
+                        score = indicator.calculate_raw_score(data)
+                        if score is not None and len(score) > 0:
+                            return float(score.iloc[-1])
+                except Exception as e:
+                    logger.debug(f"动态计算指标 {indicator_type} 评分失败: {e}")
+
+            # 回退到静态评分
             return static_scores.get(indicator_type, 60.0)
 
         except Exception as e:

@@ -16,7 +16,7 @@ import numpy as np
 from strategy.strategy_parser import StrategyParser
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from strategy.selector import StockSelector
 
@@ -153,7 +153,7 @@ class TestStockSelectionWorkflow(unittest.TestCase):
         }
         
         self.mock_db_conn = MagicMock()
-        self.data_manager = DataManager()
+        self.data_manager = get_unified_data_manager()
         self.data_manager.db_conn = self.mock_db_conn
         self.strategy_manager = MagicMock()
         self.stock_selector = StockSelector(self.data_manager, self.strategy_manager)

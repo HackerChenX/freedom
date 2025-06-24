@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import numpy as np
 
-from db.data_manager import DataManager
+from db.unified_data_manager import get_unified_data_manager
 from enums.period import Period
 from utils.logger import get_logger, setup_logger
 from tests.helper.data_generator import TestDataGenerator
@@ -97,7 +97,7 @@ class TestDataManagerPerformance(unittest.TestCase):
     def setUp(self):
         """测试前准备"""
         # 创建数据管理器
-        self.data_manager = DataManager()
+        self.data_manager = get_unified_data_manager()
         # 清除缓存
         self.data_manager.clear_cache()
     

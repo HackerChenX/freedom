@@ -19,7 +19,7 @@ from typing import Dict, List, Any
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from db.data_manager_adapter import get_data_manager_adapter
+from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import StrategyExecutor
 from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
 from monitoring.performance_monitor import get_performance_monitor
@@ -33,7 +33,7 @@ class BusinessWorkflowTest:
     
     def __init__(self):
         """初始化测试器"""
-        self.data_manager = get_data_manager_adapter()
+        self.data_manager = get_unified_data_manager()
         self.performance_monitor = get_performance_monitor()
         
         # 测试结果

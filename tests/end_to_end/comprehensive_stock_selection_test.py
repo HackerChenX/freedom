@@ -39,8 +39,8 @@ class ComprehensiveStockSelectionTest:
         try:
             self.strategy_executor = StrategyExecutor(max_workers=8, cache_enabled=True)
             self.strategy_manager = StrategyManager()
-            from db.data_manager_adapter import get_data_manager_adapter
-            self.data_manager = get_data_manager_adapter()
+            from db.unified_data_manager import get_unified_data_manager
+            self.data_manager = get_unified_data_manager()
             self.use_mock_data = False
         except Exception as e:
             logger.warning(f"无法初始化真实组件，使用模拟模式: {e}")

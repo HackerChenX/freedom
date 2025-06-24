@@ -33,7 +33,7 @@ class DatabaseConfigManager:
         'port': 9000,
         'database': 'stock',
         'user': 'default',
-        'password': '',
+        'password': '123456',
         'timeout': 30,
         'compression': True,
         'pool': {
