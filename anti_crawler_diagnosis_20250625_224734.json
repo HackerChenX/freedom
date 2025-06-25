@@ -1,0 +1,175 @@
+{
+  "xueqiu": {
+    "site_name": "雪球网",
+    "site_key": "xueqiu",
+    "base_url": "https://xueqiu.com",
+    "analysis_time": "2025-06-25 22:47:31.669596",
+    "accessibility": {
+      "https://xueqiu.com": {
+        "url": "https://xueqiu.com",
+        "status_code": 200,
+        "content_length": 107600,
+        "anti_crawler_indicators": {
+          "cloudflare_protection": false,
+          "captcha_required": false,
+          "login_required": false,
+          "javascript_required": false,
+          "access_denied": false,
+          "empty_response": false,
+          "bot_detection": false
+        },
+        "has_meaningful_content": false,
+        "response_headers": {
+          "Server": "Tengine",
+          "Date": "Wed, 25 Jun 2025 14:47:32 GMT",
+          "Content-Type": "text/html",
+          "Content-Length": "107600",
+          "Connection": "keep-alive",
+          "Set-Cookie": "acw_tc=ac11000117508628520116276e00562ccfa3953bbfda2a9ad9a976362d81e3;path=/;HttpOnly;Max-Age=1800",
+          "Cache-Control": "no-cache, no-store",
+          "Pragma": "no-cache"
+        }
+      },
+      "https://xueqiu.com/today": {
+        "url": "https://xueqiu.com/today",
+        "status_code": 200,
+        "content_length": 107600,
+        "anti_crawler_indicators": {
+          "cloudflare_protection": false,
+          "captcha_required": false,
+          "login_required": false,
+          "javascript_required": false,
+          "access_denied": false,
+          "empty_response": false,
+          "bot_detection": false
+        },
+        "has_meaningful_content": false,
+        "response_headers": {
+          "Server": "Tengine",
+          "Date": "Wed, 25 Jun 2025 14:47:32 GMT",
+          "Content-Type": "text/html",
+          "Content-Length": "107600",
+          "Connection": "keep-alive",
+          "Cache-Control": "no-cache, no-store",
+          "Pragma": "no-cache"
+        }
+      },
+      "https://xueqiu.com/hq": {
+        "url": "https://xueqiu.com/hq",
+        "status_code": 200,
+        "content_length": 24928,
+        "anti_crawler_indicators": {
+          "cloudflare_protection": false,
+          "captcha_required": false,
+          "login_required": true,
+          "javascript_required": false,
+          "access_denied": false,
+          "empty_response": false,
+          "bot_detection": false
+        },
+        "has_meaningful_content": true,
+        "response_headers": {
+          "Date": "Wed, 25 Jun 2025 14:47:32 GMT",
+          "Content-Type": "text/html",
+          "Transfer-Encoding": "chunked",
+          "Connection": "keep-alive",
+          "Server": "openresty",
+          "Vary": "Accept-Encoding",
+          "Set-Cookie": "xq_a_token=b7259d09435458cc3f1a963479abb270a1a016ce; path=/; domain=.xueqiu.com; httponly, xqat=b7259d09435458cc3f1a963479abb270a1a016ce; path=/; domain=.xueqiu.com; httponly, xq_r_token=28108bfa1d92ac8a46bbb57722633746218621a3; path=/; domain=.xueqiu.com; httponly, xq_id_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1aWQiOi0xLCJpc3MiOiJ1YyIsImV4cCI6MTc1MjU0MTk4OCwiY3RtIjoxNzUwODYyNzk2MzIxLCJjaWQiOiJkOWQwbjRBWnVwIn0.GXsBN2wb_3otfV52Hqz9pSLY_rpJw7bKaOIpHfhLtIpKaXa9J3XFcjROmhrWuIBETtHYhF1oDtK8C6FFZGqQRy17TCO-oInjv60hNO7BgKPRJiknj4-GE7fxDw9-BpgYLfS9CYxx_QtlA0TjMSUEHfZyotlCtjU9nLnPkHF-XFq3LaaYXivyzjfH9VYRASkzojM8Ncl6mvINKg-bP2N0Om_GxedZ1f1P8iOjQ-m1RdVqEnMkrakHx1RST2CR332Uhx1KtkR38jGJE75bkWqNlv2tDkNtAiFSb6Z3qMTLXzU0nQnN2TnDATDtUJTO7NMdTT15YYv1WtKjKCEXQ1meGw; path=/; domain=.xueqiu.com; httponly, xq_is_login=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=.xueqiu.com; httponly, remember=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=.xueqiu.com; httponly, cookiesu=501750862852979; path=/; expires=Fri, 26 Jun 2026 14:47:32 GMT; domain=.xueqiu.com, u=501750862852979; path=/; domain=.xueqiu.com",
+          "P3P": "\"CP=\"IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT\"\"",
+          "Content-Encoding": "gzip",
+          "Strict-Transport-Security": "max-age=31536000"
+        }
+      }
+    },
+    "anti_crawler_features": [
+      "login_required"
+    ],
+    "recommendations": [
+      "需要登录验证"
+    ]
+  },
+  "taoguba": {
+    "site_name": "淘股吧",
+    "site_key": "taoguba",
+    "base_url": "https://www.taoguba.com.cn",
+    "analysis_time": "2025-06-25 22:47:32.997692",
+    "accessibility": {
+      "https://www.taoguba.com.cn": {
+        "url": "https://www.taoguba.com.cn",
+        "status_code": 200,
+        "content_length": 95705,
+        "anti_crawler_indicators": {
+          "cloudflare_protection": false,
+          "captcha_required": false,
+          "login_required": true,
+          "javascript_required": true,
+          "access_denied": false,
+          "empty_response": false,
+          "bot_detection": true
+        },
+        "has_meaningful_content": true,
+        "response_headers": {
+          "Date": "Wed, 25 Jun 2025 14:47:33 GMT",
+          "Content-Type": "text/html;charset=UTF-8",
+          "Transfer-Encoding": "chunked",
+          "Connection": "keep-alive",
+          "Set-Cookie": "JSESSIONID=MTk0MzEyOGItNjVkYy00ZjY3LWEzNzgtMWRmMzZjOTBhNDAz; Max-Age=1800; Expires=Wed, 25 Jun 2025 15:17:33 GMT; Domain=tgb.cn; Path=/; Secure; HttpOnly; SameSite=Lax",
+          "vary": "accept-encoding",
+          "Content-Encoding": "gzip",
+          "Content-Language": "zh-CN",
+          "Access-Control-Allow-Origin": "https://shuo.tgb.cn"
+        }
+      },
+      "https://www.taoguba.com.cn/hotTopics": {
+        "url": "https://www.taoguba.com.cn/hotTopics",
+        "status_code": 200,
+        "content_length": 95713,
+        "anti_crawler_indicators": {
+          "cloudflare_protection": false,
+          "captcha_required": false,
+          "login_required": true,
+          "javascript_required": true,
+          "access_denied": false,
+          "empty_response": false,
+          "bot_detection": true
+        },
+        "has_meaningful_content": true,
+        "response_headers": {
+          "Date": "Wed, 25 Jun 2025 14:47:34 GMT",
+          "Content-Type": "text/html;charset=UTF-8",
+          "Transfer-Encoding": "chunked",
+          "Connection": "keep-alive",
+          "vary": "accept-encoding",
+          "Content-Encoding": "gzip",
+          "Content-Language": "zh-CN",
+          "Access-Control-Allow-Origin": "https://shuo.tgb.cn"
+        }
+      }
+    },
+    "anti_crawler_features": [
+      "login_required",
+      "javascript_required",
+      "bot_detection"
+    ],
+    "recommendations": [
+      "需要登录验证",
+      "需要JavaScript渲染",
+      "存在机器人检测"
+    ]
+  },
+  "jiyanshe": {
+    "site_name": "韭研公社",
+    "site_key": "jiyanshe",
+    "base_url": "https://www.jiyanshe.com",
+    "analysis_time": "2025-06-25 22:47:34.146078",
+    "accessibility": {
+      "https://www.jiyanshe.com": {
+        "error": "HTTPSConnectionPool(host='www.jiyanshe.com', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x1072ff1c0>: Failed to resolve 'www.jiyanshe.com' ([Errno 8] nodename nor servname provided, or not known)\"))",
+        "accessible": false
+      }
+    },
+    "anti_crawler_features": [],
+    "recommendations": []
+  }
+}

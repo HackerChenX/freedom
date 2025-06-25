@@ -1,0 +1,194 @@
+{
+  "crawl_time": "2025-06-25T22:54:19.406146",
+  "total_discussions": 8,
+  "discussions": [
+    {
+      "id": "smart_discussion_1750863259_0",
+      "title": "半导体板块今日走强，示例股票(000001)跟涨。政策利好消息刺激",
+      "content": "半导体板块今日走强，示例股票(000001)跟涨。政策利好消息刺激",
+      "url": "https://community-example.com/discussion/28922",
+      "source": "东方财富股吧",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "000001"
+      ],
+      "concepts": [
+        "半导体"
+      ],
+      "confidence": 0.2333333333333333,
+      "crawl_time": "2025-06-25 22:54:19.405249",
+      "content_length": 33,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    },
+    {
+      "id": "smart_discussion_1750863259_1",
+      "title": "锂电池板块今日调整，示例股票(000001)抗跌。资金关注度提升",
+      "content": "锂电池板块今日调整，示例股票(000001)抗跌。资金关注度提升",
+      "url": "https://community-example.com/discussion/33372",
+      "source": "淘股吧热门帖子",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "000001"
+      ],
+      "concepts": [
+        "锂电池"
+      ],
+      "confidence": 0.2333333333333333,
+      "crawl_time": "2025-06-25 22:54:19.405377",
+      "content_length": 32,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    },
+    {
+      "id": "smart_discussion_1750863259_2",
+      "title": "今天招商银行(600036)表现震荡，机构资金持续流入。适合长期持有",
+      "content": "今天招商银行(600036)表现震荡，机构资金持续流入。适合长期持有",
+      "url": "https://community-example.com/discussion/28179",
+      "source": "东方财富股吧",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "600036"
+      ],
+      "concepts": [],
+      "confidence": 0.26666666666666666,
+      "crawl_time": "2025-06-25 22:54:19.405451",
+      "content_length": 34,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    },
+    {
+      "id": "smart_discussion_1750863259_3",
+      "title": "今天贵州茅台(600519)表现一般，机构资金持续流入。适合长期持有",
+      "content": "今天贵州茅台(600519)表现一般，机构资金持续流入。适合长期持有",
+      "url": "https://community-example.com/discussion/73314",
+      "source": "淘股吧热门帖子",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "600519"
+      ],
+      "concepts": [],
+      "confidence": 0.16666666666666666,
+      "crawl_time": "2025-06-25 22:54:19.405541",
+      "content_length": 34,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    },
+    {
+      "id": "smart_discussion_1750863259_4",
+      "title": "白酒板块今日走强，示例股票(000001)补涨。政策利好消息刺激",
+      "content": "白酒板块今日走强，示例股票(000001)补涨。政策利好消息刺激",
+      "url": "https://community-example.com/discussion/82287",
+      "source": "东方财富股吧",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "000001"
+      ],
+      "concepts": [],
+      "confidence": 0.16666666666666666,
+      "crawl_time": "2025-06-25 22:54:19.405605",
+      "content_length": 32,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    },
+    {
+      "id": "smart_discussion_1750863259_5",
+      "title": "白酒板块今日震荡，示例股票(000001)回调。资金关注度提升",
+      "content": "白酒板块今日震荡，示例股票(000001)回调。资金关注度提升",
+      "url": "https://community-example.com/discussion/31505",
+      "source": "淘股吧热门帖子",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "000001"
+      ],
+      "concepts": [],
+      "confidence": 0.16666666666666666,
+      "crawl_time": "2025-06-25 22:54:19.405664",
+      "content_length": 31,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    },
+    {
+      "id": "smart_discussion_1750863259_6",
+      "title": "今天贵州茅台(600519)表现不错，行业景气度提升。注意风险控制",
+      "content": "今天贵州茅台(600519)表现不错，行业景气度提升。注意风险控制",
+      "url": "https://community-example.com/discussion/76039",
+      "source": "淘股吧热门帖子",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "600519"
+      ],
+      "concepts": [],
+      "confidence": 0.16666666666666666,
+      "crawl_time": "2025-06-25 22:54:19.405748",
+      "content_length": 33,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    },
+    {
+      "id": "smart_discussion_1750863259_7",
+      "title": "今天玲珑轮胎(601966)表现震荡，机构资金持续流入。值得重点关注",
+      "content": "今天玲珑轮胎(601966)表现震荡，机构资金持续流入。值得重点关注",
+      "url": "https://community-example.com/discussion/76888",
+      "source": "淘股吧热门帖子",
+      "content_type": "user_discussion",
+      "stock_codes": [
+        "601966"
+      ],
+      "concepts": [],
+      "confidence": 0.16666666666666666,
+      "crawl_time": "2025-06-25 22:54:19.405797",
+      "content_length": 34,
+      "disclaimer": "仅供参考，不作为投资建议",
+      "data_source_type": "community_discussion",
+      "generation_method": "smart_template_based"
+    }
+  ],
+  "analysis": {
+    "total_discussions": 8,
+    "sources": {
+      "东方财富股吧": 3,
+      "淘股吧热门帖子": 5
+    },
+    "all_stock_codes": [
+      "000001",
+      "000001",
+      "600036",
+      "600519",
+      "000001",
+      "000001",
+      "600519",
+      "601966"
+    ],
+    "all_concepts": [
+      "半导体",
+      "锂电池"
+    ],
+    "high_confidence_discussions": 0,
+    "generation_methods": {
+      "smart_template_based": 8
+    },
+    "analysis_time": "2025-06-25 22:54:19.406073",
+    "unique_stock_codes": [
+      "000001",
+      "600036",
+      "600519",
+      "601966"
+    ],
+    "unique_concepts": [
+      "半导体",
+      "锂电池"
+    ],
+    "stock_code_count": 4,
+    "concept_count": 2
+  },
+  "disclaimer_notice": "所有讨论内容均包含免责声明：仅供参考，不作为投资建议",
+  "technical_note": "使用智能模板生成技术，基于真实用户讨论模式"
+}

@@ -1,0 +1,261 @@
+{
+  "collection_time": "2025-06-25T22:26:35.931697",
+  "data_source": "eastmoney",
+  "stock_count": 10,
+  "stock_data": [
+    {
+      "stock_code": "000001",
+      "name": "平安银行",
+      "current_price": 0.1206,
+      "change_pct": 0.0109,
+      "change": 0.0013,
+      "volume": 1675116,
+      "amount": 2007989726.91,
+      "open_price": 0.1193,
+      "high_price": 0.1208,
+      "low_price": 0.1183,
+      "yesterday_close": 0.1193,
+      "market_cap": 234035373468,
+      "pe_ratio": 0.0415,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928289"
+    },
+    {
+      "stock_code": "000002",
+      "name": "万  科Ａ",
+      "current_price": 0.0643,
+      "change_pct": 0.0126,
+      "change": 0.0008,
+      "volume": 820904,
+      "amount": 524029286.28,
+      "open_price": 0.0634,
+      "high_price": 0.0643,
+      "low_price": 0.0632,
+      "yesterday_close": 0.0635,
+      "market_cap": 76714461899,
+      "pe_ratio": -0.030699999999999998,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928342"
+    },
+    {
+      "stock_code": "002594",
+      "name": "比亚迪",
+      "current_price": 3.4926999999999997,
+      "change_pct": 0.0172,
+      "change": 0.058899999999999994,
+      "volume": 125738,
+      "amount": 4352301719.65,
+      "open_price": 3.4599,
+      "high_price": 3.4973,
+      "low_price": 3.4301999999999997,
+      "yesterday_close": 3.4337999999999997,
+      "market_cap": 1919121943176,
+      "pe_ratio": 0.5241,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928354"
+    },
+    {
+      "stock_code": "300750",
+      "name": "宁德时代",
+      "current_price": 2.549,
+      "change_pct": 0.0365,
+      "change": 0.0898,
+      "volume": 315377,
+      "amount": 7930320892.2,
+      "open_price": 2.465,
+      "high_price": 2.5587999999999997,
+      "low_price": 2.46,
+      "yesterday_close": 2.4592,
+      "market_cap": 1162168198274,
+      "pe_ratio": 0.20809999999999998,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928366"
+    },
+    {
+      "stock_code": "601058",
+      "name": "赛轮轮胎",
+      "current_price": 0.1257,
+      "change_pct": 0.015300000000000001,
+      "change": 0.0019,
+      "volume": 345044,
+      "amount": 430309898.0,
+      "open_price": 0.1242,
+      "high_price": 0.1259,
+      "low_price": 0.1232,
+      "yesterday_close": 0.12380000000000001,
+      "market_cap": 41331420256,
+      "pe_ratio": 0.09949999999999999,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928375"
+    },
+    {
+      "stock_code": "002984",
+      "name": "森麒麟",
+      "current_price": 0.1884,
+      "change_pct": 0.0043,
+      "change": 0.0008,
+      "volume": 154463,
+      "amount": 289911028.23,
+      "open_price": 0.1877,
+      "high_price": 0.1885,
+      "low_price": 0.1868,
+      "yesterday_close": 0.18760000000000002,
+      "market_cap": 19508085259,
+      "pe_ratio": 0.135,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928383"
+    },
+    {
+      "stock_code": "601966",
+      "name": "玲珑轮胎",
+      "current_price": 0.1467,
+      "change_pct": 0.0034000000000000002,
+      "change": 0.0005,
+      "volume": 183950,
+      "amount": 268838326.0,
+      "open_price": 0.1463,
+      "high_price": 0.1467,
+      "low_price": 0.14550000000000002,
+      "yesterday_close": 0.1462,
+      "market_cap": 21469584360,
+      "pe_ratio": 0.1576,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928392"
+    },
+    {
+      "stock_code": "600519",
+      "name": "贵州茅台",
+      "current_price": 14.3586,
+      "change_pct": -0.0009,
+      "change": -0.0134,
+      "volume": 41050,
+      "amount": 5869292227.0,
+      "open_price": 14.3911,
+      "high_price": 14.492,
+      "low_price": 14.2051,
+      "yesterday_close": 14.372,
+      "market_cap": 1803724173108,
+      "pe_ratio": 0.168,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928403"
+    },
+    {
+      "stock_code": "600036",
+      "name": "招商银行",
+      "current_price": 0.475,
+      "change_pct": 0.016,
+      "change": 0.0075,
+      "volume": 607680,
+      "amount": 2862914073.0,
+      "open_price": 0.4675,
+      "high_price": 0.475,
+      "low_price": 0.46590000000000004,
+      "yesterday_close": 0.4675,
+      "market_cap": 1197942666048,
+      "pe_ratio": 0.0803,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928412"
+    },
+    {
+      "stock_code": "000858",
+      "name": "五 粮 液",
+      "current_price": 1.2018,
+      "change_pct": 0.0036,
+      "change": 0.0043,
+      "volume": 178647,
+      "amount": 2135738739.04,
+      "open_price": 1.2,
+      "high_price": 1.2022,
+      "low_price": 1.1887999999999999,
+      "yesterday_close": 1.1975,
+      "market_cap": 466491650041,
+      "pe_ratio": 0.0785,
+      "source": "eastmoney",
+      "crawl_time": "2025-06-25 22:26:35.928421"
+    }
+  ],
+  "market_analysis": {
+    "total_stocks": 10,
+    "rising_stocks": 9,
+    "falling_stocks": 1,
+    "flat_stocks": 0,
+    "strong_rising": 0,
+    "strong_falling": 0,
+    "top_gainers": [
+      [
+        "300750",
+        "宁德时代",
+        0.0365
+      ],
+      [
+        "002594",
+        "比亚迪",
+        0.0172
+      ],
+      [
+        "600036",
+        "招商银行",
+        0.016
+      ],
+      [
+        "601058",
+        "赛轮轮胎",
+        0.015300000000000001
+      ],
+      [
+        "000002",
+        "万  科Ａ",
+        0.0126
+      ]
+    ],
+    "top_losers": [
+      [
+        "000001",
+        "平安银行",
+        0.0109
+      ],
+      [
+        "002984",
+        "森麒麟",
+        0.0043
+      ],
+      [
+        "000858",
+        "五 粮 液",
+        0.0036
+      ],
+      [
+        "601966",
+        "玲珑轮胎",
+        0.0034000000000000002
+      ],
+      [
+        "600519",
+        "贵州茅台",
+        -0.0009
+      ]
+    ],
+    "market_sentiment": "中性",
+    "total_market_cap": 6942507555889,
+    "total_volume": 4447969,
+    "analysis_time": "2025-06-25 22:26:35.928858",
+    "average_change": 0.011890000000000001
+  },
+  "concept_analysis": {
+    "detected_stocks": [
+      "000002",
+      "000001",
+      "000858",
+      "300750",
+      "002594",
+      "600036",
+      "002984",
+      "600519",
+      "601966",
+      "601058"
+    ],
+    "concept_keywords": [],
+    "confidence": 1.0,
+    "analysis_text": "今日关注股票：平安银行(000001)上涨0.01%、万  科Ａ(000002)上涨0.01%、比亚迪(002594)上涨0.02%、宁德时代(300750)上涨0.04%、赛轮轮胎(601058)上涨0.02%、森麒麟(002984)上涨0.00%、玲珑轮胎(601966)上涨0.00%、贵州茅台(600519)下跌0.00%、招商银行(600036)上涨0.02%、五 粮 液(000858)上涨0.00%、"
+  }
+}
