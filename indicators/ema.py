@@ -105,6 +105,59 @@ class EMA(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（EMA指标特定逻辑）
+        df = self._apply_ema_signal_logic(df)
+
+        return df
+
+    def _apply_ema_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用EMA指标特定的信号生成逻辑
+        基于价格与指数移动平均线的关系生成信号
+        """
+        try:
+            # 获取收盘价
+            close_price = df['close']
+
+            # 获取最短周期的EMA线
+            shortest_period = min(self.periods)
+            ema_col = f'{self.ma_type}{shortest_period}'
+
+            if ema_col not in df.columns:
+                # 如果没有EMA线，使用默认信号
+                return df
+
+            ema_line = df[ema_col]
+
+            # EMA信号生成逻辑：
+            # BUY: 价格在EMA线之上且EMA向上
+            # SELL: 价格在EMA线之下且EMA向下
+            # HOLD: 其他情况
+
+            price_above_ema = close_price > ema_line
+            price_below_ema = close_price < ema_line
+
+            # 计算EMA趋势（当前值与前一值比较）
+            ema_rising = ema_line > ema_line.shift(1)
+            ema_falling = ema_line < ema_line.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = price_above_ema & ema_rising
+            df.loc[:, 'sell_signal'] = price_below_ema & ema_falling
+            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"EMA信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
         return df
 
     def calculate_raw_score(self, df: pd.DataFrame) -> pd.Series:

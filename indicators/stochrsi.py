@@ -114,8 +114,62 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（STOCHRSI指标特定逻辑）
+        df = self._apply_stochrsi_signal_logic(df)
+
         return df
-        
+
+    def _apply_stochrsi_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用STOCHRSI指标特定的信号生成逻辑
+        基于STOCHRSI值的超买超卖区间生成信号
+        """
+        try:
+            # 获取STOCHRSI值
+            if 'STOCHRSI_K' not in df.columns or 'STOCHRSI_D' not in df.columns:
+                # 如果没有STOCHRSI值，使用默认信号
+                return df
+
+            stochrsi_k = df['STOCHRSI_K']
+            stochrsi_d = df['STOCHRSI_D']
+
+            # STOCHRSI信号生成逻辑：
+            # BUY: STOCHRSI从超卖区间(< 20)向上突破且K线在D线之上
+            # SELL: STOCHRSI从超买区间(> 80)向下突破且K线在D线之下
+            # HOLD: STOCHRSI在正常区间(20-80)
+
+            # 定义超买超卖区间
+            oversold = (stochrsi_k < 20) & (stochrsi_d < 20)
+            overbought = (stochrsi_k > 80) & (stochrsi_d > 80)
+            normal = ~(oversold | overbought)
+
+            # 检测K线与D线的关系
+            k_above_d = stochrsi_k > stochrsi_d
+            k_below_d = stochrsi_k < stochrsi_d
+
+            # 检测突破
+            k_rising = stochrsi_k > stochrsi_k.shift(1)
+            k_falling = stochrsi_k < stochrsi_k.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = oversold & k_above_d & k_rising
+            df.loc[:, 'sell_signal'] = overbought & k_below_d & k_falling
+            df.loc[:, 'hold_signal'] = normal | (~(df['buy_signal'] | df['sell_signal']))
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"STOCHRSI信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
+        return df
+
         # 计算RSI
         delta = df['close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=self.rsi_period).mean()

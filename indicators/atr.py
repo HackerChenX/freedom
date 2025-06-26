@@ -111,6 +111,52 @@ class ATR(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（ATR指标特定逻辑）
+        df = self._apply_atr_signal_logic(df)
+
+        return df
+
+    def _apply_atr_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用ATR指标特定的信号生成逻辑
+        基于ATR值的变化生成信号
+        """
+        try:
+            # 获取ATR值
+            atr_col = f'ATR{self.period}'
+            if atr_col not in df.columns:
+                # 如果没有ATR值，使用默认信号
+                return df
+
+            atr_value = df[atr_col]
+
+            # ATR信号生成逻辑：
+            # BUY: ATR值上升（波动性增加，可能有突破）
+            # SELL: ATR值下降（波动性减少，可能趋势结束）
+            # HOLD: ATR值稳定
+
+            # 计算ATR变化率
+            atr_change = atr_value.pct_change()
+            atr_rising = atr_change > 0.05  # ATR上升超过5%
+            atr_falling = atr_change < -0.05  # ATR下降超过5%
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = atr_rising
+            df.loc[:, 'sell_signal'] = atr_falling
+            df.loc[:, 'hold_signal'] = ~(atr_rising | atr_falling)
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"ATR信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
         return df
 
         # 计算真实波幅(TR)

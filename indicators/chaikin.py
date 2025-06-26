@@ -108,8 +108,56 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（CHAIKIN指标特定逻辑）
+        df = self._apply_chaikin_signal_logic(df)
+
         return df
-    
+
+    def _apply_chaikin_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用CHAIKIN指标特定的信号生成逻辑
+        基于CHAIKIN值的变化生成信号
+        """
+        try:
+            # 获取CHAIKIN值
+            if 'CHAIKIN_VALUE' not in df.columns:
+                # 如果没有CHAIKIN值，使用默认信号
+                return df
+
+            chaikin_value = df['CHAIKIN_VALUE']
+            close_price = df['close']
+
+            # CHAIKIN信号生成逻辑：
+            # BUY: CHAIKIN值上升且价格在CHAIKIN值之上
+            # SELL: CHAIKIN值下降且价格在CHAIKIN值之下
+            # HOLD: 其他情况
+
+            price_above_chaikin = close_price > chaikin_value
+            price_below_chaikin = close_price < chaikin_value
+
+            # 计算CHAIKIN趋势
+            chaikin_rising = chaikin_value > chaikin_value.shift(1)
+            chaikin_falling = chaikin_value < chaikin_value.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = price_above_chaikin & chaikin_rising
+            df.loc[:, 'sell_signal'] = price_below_chaikin & chaikin_falling
+            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"CHAIKIN信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
+        return df
+
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():

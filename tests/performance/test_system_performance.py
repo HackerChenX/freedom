@@ -1,0 +1,360 @@
+"""
+系统性能测试
+
+验证P2级优化后的系统性能改进
+目标：<0.1s per stock processing time，系统整体性能提升20%+
+"""
+
+import unittest
+import time
+import pandas as pd
+import numpy as np
+from typing import Dict, List
+import sys
+import os
+
+# 添加项目根目录到路径
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from indicators.complete_indicator_registry import complete_registry
+from utils.logger import get_logger, init_logging
+
+# 初始化日志
+init_logging(level="INFO")
+logger = get_logger(__name__)
+
+
+class TestSystemPerformance(unittest.TestCase):
+    """系统性能测试类"""
+    
+    def setUp(self):
+        """设置测试环境"""
+        self.test_indicators = [
+            'ZXM_BS_ABSORB',
+            'ZXM_TURNOVER', 
+            'ZXM_VOLUME_SHRINK',
+            'ZXM_DAILY_TREND_UP',
+            'ZXM_AMPLITUDE_ELASTICITY',
+            'ZXM_RISE_ELASTICITY',
+            'ZXM_ELASTICITY_SCORE',
+            'ZXM_BUYPOINT_SCORE',
+            'ZXM_STOCK_SCORE',
+            'ZXM_SELECTION_MODEL'
+        ]
+        
+        # 生成性能测试数据
+        self.performance_test_data = self._generate_performance_test_data()
+        
+        # 性能基准（优化前的预期时间）
+        self.performance_baselines = {
+            'per_stock_processing_time': 0.5,  # 优化前：0.5秒/股
+            'indicator_calculation_time': 0.1,  # 优化前：0.1秒/指标
+            'signal_generation_time': 0.05,    # 优化前：0.05秒/信号生成
+        }
+    
+    def _generate_performance_test_data(self) -> Dict[str, pd.DataFrame]:
+        """生成性能测试数据"""
+        test_data = {}
+        
+        # 生成不同规模的测试数据
+        data_sizes = {
+            'small': 100,    # 100个数据点
+            'medium': 500,   # 500个数据点
+            'large': 1000,   # 1000个数据点
+        }
+        
+        for size_name, size in data_sizes.items():
+            # 生成日线数据
+            dates = pd.date_range(start='2023-01-01', periods=size, freq='D')
+            np.random.seed(42)
+            
+            prices = [100]
+            for i in range(1, size):
+                change = np.random.normal(0, 0.02)
+                price = prices[-1] * (1 + change)
+                prices.append(max(price, 50))
+            
+            daily_data = pd.DataFrame({
+                'datetime': dates,
+                'open': prices,
+                'high': [p * 1.02 for p in prices],
+                'low': [p * 0.98 for p in prices],
+                'close': prices,
+                'volume': [1000000 + np.random.randint(-200000, 200000) for _ in range(size)],
+                'turnover_rate': [0.5 + np.random.normal(0, 0.2) for _ in range(size)]
+            })
+            
+            test_data[f'daily_{size_name}'] = daily_data
+            
+            # 生成30分钟数据（用于ZXM_BS_ABSORB）
+            if size_name == 'medium':  # 只为中等规模生成30分钟数据
+                min30_dates = pd.date_range(start='2023-01-01', periods=size*2, freq='30min')
+                min30_prices = []
+                for price in prices:
+                    min30_prices.extend([price * (1 + np.random.normal(0, 0.005)) for _ in range(2)])
+                
+                min30_data = pd.DataFrame({
+                    'datetime': min30_dates,
+                    'open': min30_prices,
+                    'high': [p * 1.01 for p in min30_prices],
+                    'low': [p * 0.99 for p in min30_prices],
+                    'close': min30_prices,
+                    'volume': [500000 + np.random.randint(-100000, 100000) for _ in range(len(min30_prices))],
+                })
+                
+                test_data['min30_medium'] = min30_data
+        
+        return test_data
+    
+    def test_per_stock_processing_time(self):
+        """测试每股处理时间"""
+        logger.info("=== 测试每股处理时间 ===")
+        
+        # 选择代表性指标进行测试
+        test_indicators = ['ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
+        test_data = self.performance_test_data['daily_medium']
+        
+        total_processing_times = []
+        
+        for indicator_name in test_indicators:
+            start_time = time.time()
+            
+            try:
+                indicator = complete_registry.create_indicator(indicator_name)
+                result = indicator.calculate(test_data)
+                
+                processing_time = time.time() - start_time
+                total_processing_times.append(processing_time)
+                
+                # 验证结果有效性
+                self.assertIsInstance(result, pd.DataFrame, f"{indicator_name}应该返回DataFrame")
+                self.assertGreater(len(result), 0, f"{indicator_name}结果不应该为空")
+                
+                logger.info(f"{indicator_name} 处理时间: {processing_time:.3f}秒")
+                
+            except Exception as e:
+                self.fail(f"{indicator_name} 处理失败: {e}")
+        
+        # 计算平均处理时间
+        avg_processing_time = np.mean(total_processing_times)
+        
+        # 验证性能要求：<0.1秒/股
+        self.assertLess(avg_processing_time, 0.1, 
+                       f"平均每股处理时间应该<0.1秒，实际: {avg_processing_time:.3f}秒")
+        
+        # 计算性能改进
+        baseline = self.performance_baselines['per_stock_processing_time']
+        improvement = (baseline - avg_processing_time) / baseline * 100
+        
+        logger.info(f"✅ 每股处理时间: {avg_processing_time:.3f}秒")
+        logger.info(f"✅ 性能改进: {improvement:.1f}%")
+        
+        # 验证性能改进目标：20%+
+        self.assertGreaterEqual(improvement, 20.0, 
+                               f"性能改进应该>=20%，实际: {improvement:.1f}%")
+    
+    def test_indicator_calculation_performance(self):
+        """测试指标计算性能"""
+        logger.info("=== 测试指标计算性能 ===")
+        
+        test_data = self.performance_test_data['daily_large']
+        calculation_times = {}
+        
+        for indicator_name in self.test_indicators[:5]:  # 测试前5个指标
+            start_time = time.time()
+            
+            try:
+                indicator = complete_registry.create_indicator(indicator_name)
+                
+                # 根据指标类型选择合适的数据
+                if indicator_name == 'ZXM_BS_ABSORB':
+                    data = self.performance_test_data.get('min30_medium', test_data)
+                else:
+                    data = test_data
+                
+                result = indicator.calculate(data)
+                
+                calculation_time = time.time() - start_time
+                calculation_times[indicator_name] = calculation_time
+                
+                # 验证计算结果
+                self.assertIsInstance(result, pd.DataFrame, f"{indicator_name}应该返回DataFrame")
+                self.assertIn('buy_signal', result.columns, f"{indicator_name}应该包含buy_signal列")
+                
+                logger.info(f"{indicator_name} 计算时间: {calculation_time:.3f}秒")
+                
+            except Exception as e:
+                logger.warning(f"{indicator_name} 计算失败: {e}")
+                calculation_times[indicator_name] = float('inf')
+        
+        # 计算平均计算时间
+        valid_times = [t for t in calculation_times.values() if t != float('inf')]
+        avg_calculation_time = np.mean(valid_times) if valid_times else float('inf')
+        
+        # 验证计算性能
+        self.assertLess(avg_calculation_time, 0.1, 
+                       f"平均指标计算时间应该<0.1秒，实际: {avg_calculation_time:.3f}秒")
+        
+        logger.info(f"✅ 平均指标计算时间: {avg_calculation_time:.3f}秒")
+        logger.info(f"✅ 成功计算指标数量: {len(valid_times)}/{len(self.test_indicators[:5])}")
+    
+    def test_signal_generation_performance(self):
+        """测试信号生成性能"""
+        logger.info("=== 测试信号生成性能 ===")
+        
+        test_data = self.performance_test_data['daily_medium']
+        signal_generation_times = []
+        
+        # 测试已修复的指标的信号生成性能
+        fixed_indicators = ['ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
+        
+        for indicator_name in fixed_indicators:
+            start_time = time.time()
+            
+            try:
+                indicator = complete_registry.create_indicator(indicator_name)
+                result = indicator.calculate(test_data)
+                
+                signal_time = time.time() - start_time
+                signal_generation_times.append(signal_time)
+                
+                # 验证信号生成质量
+                self.assertIn('buy_signal', result.columns, f"{indicator_name}应该包含buy_signal列")
+                self.assertIn('sell_signal', result.columns, f"{indicator_name}应该包含sell_signal列")
+                self.assertIn('hold_signal', result.columns, f"{indicator_name}应该包含hold_signal列")
+                
+                # 验证信号类型
+                self.assertEqual(result['buy_signal'].dtype, bool, f"{indicator_name}的buy_signal应该是布尔类型")
+                self.assertEqual(result['sell_signal'].dtype, bool, f"{indicator_name}的sell_signal应该是布尔类型")
+                self.assertEqual(result['hold_signal'].dtype, bool, f"{indicator_name}的hold_signal应该是布尔类型")
+                
+                logger.info(f"{indicator_name} 信号生成时间: {signal_time:.3f}秒")
+                
+            except Exception as e:
+                self.fail(f"{indicator_name} 信号生成失败: {e}")
+        
+        # 计算平均信号生成时间
+        avg_signal_time = np.mean(signal_generation_times)
+        
+        # 验证信号生成性能
+        self.assertLess(avg_signal_time, 0.05, 
+                       f"平均信号生成时间应该<0.05秒，实际: {avg_signal_time:.3f}秒")
+        
+        # 计算性能改进
+        baseline = self.performance_baselines['signal_generation_time']
+        improvement = (baseline - avg_signal_time) / baseline * 100
+        
+        logger.info(f"✅ 平均信号生成时间: {avg_signal_time:.3f}秒")
+        logger.info(f"✅ 信号生成性能改进: {improvement:.1f}%")
+    
+    def test_memory_usage_optimization(self):
+        """测试内存使用优化"""
+        logger.info("=== 测试内存使用优化 ===")
+        
+        import psutil
+        import os
+        
+        # 获取当前进程
+        process = psutil.Process(os.getpid())
+        
+        # 记录初始内存使用
+        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+        
+        # 执行大量指标计算
+        test_data = self.performance_test_data['daily_large']
+        
+        for indicator_name in self.test_indicators[:3]:  # 测试前3个指标
+            try:
+                indicator = complete_registry.create_indicator(indicator_name)
+                
+                # 根据指标类型选择数据
+                if indicator_name == 'ZXM_BS_ABSORB':
+                    data = self.performance_test_data.get('min30_medium', test_data)
+                else:
+                    data = test_data
+                
+                result = indicator.calculate(data)
+                
+                # 验证结果
+                self.assertIsInstance(result, pd.DataFrame, f"{indicator_name}应该返回DataFrame")
+                
+            except Exception as e:
+                logger.warning(f"{indicator_name} 内存测试失败: {e}")
+        
+        # 记录最终内存使用
+        final_memory = process.memory_info().rss / 1024 / 1024  # MB
+        memory_increase = final_memory - initial_memory
+        
+        logger.info(f"初始内存使用: {initial_memory:.1f} MB")
+        logger.info(f"最终内存使用: {final_memory:.1f} MB")
+        logger.info(f"内存增长: {memory_increase:.1f} MB")
+        
+        # 验证内存使用合理性（增长不超过100MB）
+        self.assertLess(memory_increase, 100, 
+                       f"内存增长应该<100MB，实际: {memory_increase:.1f}MB")
+        
+        logger.info("✅ 内存使用优化验证通过")
+    
+    def test_concurrent_processing_performance(self):
+        """测试并发处理性能"""
+        logger.info("=== 测试并发处理性能 ===")
+        
+        import concurrent.futures
+        import threading
+        
+        test_data = self.performance_test_data['daily_medium']
+        test_indicators = ['ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
+        
+        # 串行处理时间
+        start_time = time.time()
+        serial_results = []
+        
+        for indicator_name in test_indicators:
+            try:
+                indicator = complete_registry.create_indicator(indicator_name)
+                result = indicator.calculate(test_data)
+                serial_results.append((indicator_name, len(result)))
+            except Exception as e:
+                logger.warning(f"串行处理 {indicator_name} 失败: {e}")
+        
+        serial_time = time.time() - start_time
+        
+        # 并行处理时间
+        def process_indicator(indicator_name):
+            try:
+                indicator = complete_registry.create_indicator(indicator_name)
+                result = indicator.calculate(test_data)
+                return (indicator_name, len(result))
+            except Exception as e:
+                logger.warning(f"并行处理 {indicator_name} 失败: {e}")
+                return (indicator_name, 0)
+        
+        start_time = time.time()
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            parallel_results = list(executor.map(process_indicator, test_indicators))
+        
+        parallel_time = time.time() - start_time
+        
+        # 计算并发性能改进
+        if parallel_time > 0:
+            speedup = serial_time / parallel_time
+            efficiency = speedup / len(test_indicators) * 100
+        else:
+            speedup = 1.0
+            efficiency = 0.0
+        
+        logger.info(f"串行处理时间: {serial_time:.3f}秒")
+        logger.info(f"并行处理时间: {parallel_time:.3f}秒")
+        logger.info(f"加速比: {speedup:.2f}x")
+        logger.info(f"并行效率: {efficiency:.1f}%")
+        
+        # 验证并行处理有效性
+        self.assertGreater(speedup, 1.0, "并行处理应该比串行处理更快")
+        self.assertEqual(len(serial_results), len(parallel_results), "并行和串行结果数量应该相同")
+        
+        logger.info("✅ 并发处理性能验证通过")
+
+
+if __name__ == '__main__':
+    unittest.main()

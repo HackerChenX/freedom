@@ -263,6 +263,11 @@ class SelectionModel(BaseIndicator, PatternSignalMixin):
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
 
+        # 重写buy_signal逻辑，基于FinalSelect值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["FinalSelect"] == True
+        result.loc[:, 'sell_signal'] = result["FinalSelect"] == False
+        result.loc[:, 'hold_signal'] = result["FinalSelect"] == False
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:

@@ -108,8 +108,56 @@ class AROON(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（AROON指标特定逻辑）
+        df = self._apply_aroon_signal_logic(df)
+
         return df
-    
+
+    def _apply_aroon_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用AROON指标特定的信号生成逻辑
+        基于AROON值生成信号
+        """
+        try:
+            # 获取AROON值
+            if 'AROON_VALUE' not in df.columns:
+                # 如果没有AROON值，使用默认信号
+                return df
+
+            aroon_value = df['AROON_VALUE']
+            close_price = df['close']
+
+            # AROON信号生成逻辑：
+            # BUY: AROON值上升且价格在AROON值之上
+            # SELL: AROON值下降且价格在AROON值之下
+            # HOLD: 其他情况
+
+            price_above_aroon = close_price > aroon_value
+            price_below_aroon = close_price < aroon_value
+
+            # 计算AROON趋势（当前值与前一值比较）
+            aroon_rising = aroon_value > aroon_value.shift(1)
+            aroon_falling = aroon_value < aroon_value.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = price_above_aroon & aroon_rising
+            df.loc[:, 'sell_signal'] = price_below_aroon & aroon_falling
+            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"AROON信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
+        return df
+
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():

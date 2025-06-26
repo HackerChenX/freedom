@@ -506,6 +506,11 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
 
+        # 重写buy_signal逻辑，基于XG值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["XG"] == True
+        result.loc[:, 'sell_signal'] = result["XG"] == False
+        result.loc[:, 'hold_signal'] = result["XG"] == False
+
         return result
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -1207,6 +1212,11 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
+
+        # 重写信号生成逻辑（状态型指标）
+        result.loc[:, 'buy_signal'] = result["XG"] == True
+        result.loc[:, 'sell_signal'] = result["XG"] == False
+        result.loc[:, 'hold_signal'] = result["XG"] == False
 
         return result
     
@@ -2710,7 +2720,8 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
                 if idx >= 10:
                     low_price = data.iloc[idx-10:idx+1]['low'].min()
                     signals.loc[i, 'stop_loss'] = low_price * 0.97  # 最低点下方3%
-            except:
+            except (IndexError, KeyError, ValueError) as e:
+                logger.warning(f"计算止损价格时出错: {e}")
                 continue
         
         # 市场环境和成交量确认

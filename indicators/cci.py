@@ -110,6 +110,56 @@ class CCI(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（CCI指标特定逻辑）
+        df = self._apply_cci_signal_logic(df)
+
+        return df
+
+    def _apply_cci_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用CCI指标特定的信号生成逻辑
+        基于CCI值的超买超卖区间生成信号
+        """
+        try:
+            # 获取CCI值
+            cci_col = f'CCI{self.period}'
+            if cci_col not in df.columns:
+                # 如果没有CCI值，使用默认信号
+                return df
+
+            cci_value = df[cci_col]
+
+            # CCI信号生成逻辑：
+            # BUY: CCI从超卖区间(-100以下)向上突破
+            # SELL: CCI从超买区间(100以上)向下突破
+            # HOLD: CCI在正常区间(-100到100)
+
+            # 定义超买超卖区间
+            oversold = cci_value < -100
+            overbought = cci_value > 100
+            normal = (cci_value >= -100) & (cci_value <= 100)
+
+            # 检测突破
+            cci_rising = cci_value > cci_value.shift(1)
+            cci_falling = cci_value < cci_value.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = oversold & cci_rising
+            df.loc[:, 'sell_signal'] = overbought & cci_falling
+            df.loc[:, 'hold_signal'] = normal | (~(df['buy_signal'] | df['sell_signal']))
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"CCI信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
         return df
 
         # 计算典型价格

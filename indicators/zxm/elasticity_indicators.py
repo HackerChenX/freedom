@@ -72,6 +72,11 @@ class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
 
+        # 重写buy_signal逻辑，基于XG值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["XG"] == True
+        result.loc[:, 'sell_signal'] = result["XG"] == False
+        result.loc[:, 'hold_signal'] = result["XG"] == False
+
         return result
 
 
@@ -291,6 +296,11 @@ class ZXMRiseElasticity(BaseIndicator, PatternSignalMixin):
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
+
+        # 重写buy_signal逻辑，基于XG值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["XG"] == True
+        result.loc[:, 'sell_signal'] = result["XG"] == False
+        result.loc[:, 'hold_signal'] = result["XG"] == False
 
         return result
 
@@ -794,7 +804,8 @@ class Elasticity(BaseIndicator, PatternSignalMixin):
                 if idx >= period:
                     low_price = data.iloc[idx-period:idx+1]['low'].min()
                     signals.loc[i, 'stop_loss'] = low_price * 0.97  # 最低点下方3%
-            except:
+            except (IndexError, KeyError, ValueError) as e:
+                logger.warning(f"计算止损价格时出错: {e}")
                 continue
         
         # 市场环境和成交量确认
@@ -1354,7 +1365,8 @@ class BounceDetector(BaseIndicator, PatternSignalMixin):
                     # 使用最近低点作为止损位
                     low_price = result.loc[i, "LongLow"]
                     signals.loc[i, 'stop_loss'] = low_price * 0.97  # 最低点下方3%
-            except:
+            except (IndexError, KeyError, ValueError) as e:
+                logger.warning(f"计算止损价格时出错: {e}")
                 continue
         
         # 市场环境
@@ -1374,7 +1386,8 @@ class BounceDetector(BaseIndicator, PatternSignalMixin):
                         signals.loc[i, 'market_env'] = 'bear_market'
                     else:
                         signals.loc[i, 'market_env'] = 'sideways_market'
-            except:
+            except (IndexError, KeyError, ValueError) as e:
+                logger.warning(f"计算市场环境时出错: {e}")
                 continue
         
         # 成交量确认

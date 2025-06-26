@@ -84,7 +84,53 @@ class BIAS(BaseIndicator, PatternSignalMixin):
         result_df = self.add_pattern_detection(result_df)
         result_df = self.add_signal_generation(result_df)
 
+        # 重写信号生成逻辑（BIAS指标特定逻辑）
+        result_df = self._apply_bias_signal_logic(result_df)
+
         return result_df
+
+    def _apply_bias_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用BIAS指标特定的信号生成逻辑
+        基于乖离率的正负值生成信号
+        """
+        try:
+            # 获取BIAS值
+            if 'BIAS' not in df.columns:
+                # 如果没有BIAS值，使用默认信号
+                return df
+
+            bias_value = df['BIAS']
+
+            # BIAS信号生成逻辑：
+            # BUY: BIAS值为正且上升（价格高于均线且乖离增大）
+            # SELL: BIAS值为负且下降（价格低于均线且乖离增大）
+            # HOLD: BIAS值接近零或趋势不明确
+
+            # 计算BIAS的变化
+            bias_positive = bias_value > 0
+            bias_negative = bias_value < 0
+            bias_rising = bias_value > bias_value.shift(1)
+            bias_falling = bias_value < bias_value.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = bias_positive & bias_rising
+            df.loc[:, 'sell_signal'] = bias_negative & bias_falling
+            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"BIAS信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
+        return df
 
     def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
         """

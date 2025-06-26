@@ -99,6 +99,52 @@ class ROC(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（ROC指标特定逻辑）
+        df = self._apply_roc_signal_logic(df)
+
+        return df
+
+    def _apply_roc_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用ROC指标特定的信号生成逻辑
+        基于变化率的正负值生成信号
+        """
+        try:
+            # 获取ROC值
+            if 'ROC_VALUE' not in df.columns:
+                # 如果没有ROC值，使用默认信号
+                return df
+
+            roc_value = df['ROC_VALUE']
+
+            # ROC信号生成逻辑：
+            # BUY: ROC值为正且上升（动量增强）
+            # SELL: ROC值为负且下降（动量减弱）
+            # HOLD: ROC值接近零或趋势不明确
+
+            # 计算ROC的变化
+            roc_positive = roc_value > 0
+            roc_negative = roc_value < 0
+            roc_rising = roc_value > roc_value.shift(1)
+            roc_falling = roc_value < roc_value.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = roc_positive & roc_rising
+            df.loc[:, 'sell_signal'] = roc_negative & roc_falling
+            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"ROC信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
         return df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:

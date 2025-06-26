@@ -551,7 +551,7 @@ class UnifiedDataManager:
                         agg_dict[col] = 'last'
 
             # 重采样为30分钟
-            df_30min = df_15min.resample('30T').agg(agg_dict)
+            df_30min = df_15min.resample('30min').agg(agg_dict)
 
             # 删除空值行
             df_30min = df_30min.dropna()

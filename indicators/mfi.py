@@ -111,6 +111,56 @@ class MFI(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（MFI指标特定逻辑）
+        df = self._apply_mfi_signal_logic(df)
+
+        return df
+
+    def _apply_mfi_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用MFI指标特定的信号生成逻辑
+        基于MFI值的超买超卖区间生成信号
+        """
+        try:
+            # 获取MFI值
+            mfi_col = f'MFI{self.period}'
+            if mfi_col not in df.columns:
+                # 如果没有MFI值，使用默认信号
+                return df
+
+            mfi_value = df[mfi_col]
+
+            # MFI信号生成逻辑：
+            # BUY: MFI从超卖区间(< 20)向上突破
+            # SELL: MFI从超买区间(> 80)向下突破
+            # HOLD: MFI在正常区间(20-80)
+
+            # 定义超买超卖区间
+            oversold = mfi_value < 20
+            overbought = mfi_value > 80
+            normal = (mfi_value >= 20) & (mfi_value <= 80)
+
+            # 检测突破
+            mfi_rising = mfi_value > mfi_value.shift(1)
+            mfi_falling = mfi_value < mfi_value.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = oversold & mfi_rising
+            df.loc[:, 'sell_signal'] = overbought & mfi_falling
+            df.loc[:, 'hold_signal'] = normal | (~(df['buy_signal'] | df['sell_signal']))
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"MFI信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
         return df
 
         # 计算典型价格

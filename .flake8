@@ -1,0 +1,19 @@
+[flake8]
+# 最大行长度
+max-line-length = 120
+
+# 忽略的错误代码
+ignore = E203,W503,E501,F401,E402,W293,E226,E128,F811,F821,F841,W291,E712,C901
+
+# 排除的目录
+exclude = .git,__pycache__,.pytest_cache,.venv,venv,build,dist,*.egg-info,.tox,migrations
+
+# 每个文件的最大复杂度
+max-complexity = 15
+
+# 导入顺序检查
+import-order-style = google
+
+# 统计信息
+statistics = True
+count = True

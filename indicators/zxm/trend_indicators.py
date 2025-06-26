@@ -74,6 +74,11 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
 
+        # 重写buy_signal逻辑，基于XG值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["XG"] == True
+        result.loc[:, 'sell_signal'] = result["XG"] == False
+        result.loc[:, 'hold_signal'] = result["XG"] == False
+
         return result
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -471,6 +476,11 @@ class ZXMWeeklyTrendUp(BaseIndicator, PatternSignalMixin):
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
+
+        # 重写buy_signal逻辑，基于XG值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["XG"] == True
+        result.loc[:, 'sell_signal'] = result["XG"] == False
+        result.loc[:, 'hold_signal'] = result["XG"] == False
 
         return result
     

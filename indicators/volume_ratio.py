@@ -122,8 +122,52 @@ class VOLUME_RATIO(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（VOLUME_RATIO指标特定逻辑）
+        df = self._apply_volume_ratio_signal_logic(df)
+
         return df
-        
+
+    def _apply_volume_ratio_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用VOLUME_RATIO指标特定的信号生成逻辑
+        基于量比值的大小生成信号
+        """
+        try:
+            # 获取量比值
+            if 'VOLUME_RATIO_VALUE' not in df.columns:
+                # 如果没有量比值，使用默认信号
+                return df
+
+            volume_ratio = df['VOLUME_RATIO_VALUE']
+
+            # VOLUME_RATIO信号生成逻辑：
+            # BUY: 量比大于1.5（成交量放大）
+            # SELL: 量比小于0.5（成交量萎缩）
+            # HOLD: 量比在0.5-1.5之间（正常成交量）
+
+            high_volume = volume_ratio > 1.5
+            low_volume = volume_ratio < 0.5
+            normal_volume = (volume_ratio >= 0.5) & (volume_ratio <= 1.5)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = high_volume
+            df.loc[:, 'sell_signal'] = low_volume
+            df.loc[:, 'hold_signal'] = normal_volume
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"VOLUME_RATIO信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
+        return df
+
         # 计算量比
         volume_ratio = volume / volume.rolling(window=self.period).mean()
         df['VOLUME_RATIO_VALUE'] = volume_ratio.fillna(1.0)

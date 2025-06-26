@@ -94,6 +94,11 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
 
+        # 重写buy_signal逻辑，基于Signal值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["Signal"] == True
+        result.loc[:, 'sell_signal'] = result["Signal"] == False
+        result.loc[:, 'hold_signal'] = result["Signal"] == False
+
         return result
 
 
@@ -338,6 +343,11 @@ class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
+
+        # 重写buy_signal逻辑，基于Signal值而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["Signal"] == True
+        result.loc[:, 'sell_signal'] = result["Signal"] == False
+        result.loc[:, 'hold_signal'] = result["Signal"] == False
 
         return result
 
@@ -598,6 +608,11 @@ class StockScoreCalculator(BaseIndicator, PatternSignalMixin):
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
+
+        # 重写信号逻辑，基于BuySignal和SellSignal而不是通用逻辑
+        result.loc[:, 'buy_signal'] = result["BuySignal"] == True
+        result.loc[:, 'sell_signal'] = result["SellSignal"] == True
+        result.loc[:, 'hold_signal'] = ~(result['buy_signal'] | result['sell_signal'])
 
         return result
     

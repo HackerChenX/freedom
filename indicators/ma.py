@@ -120,6 +120,54 @@ class MA(BaseIndicator, PatternSignalMixin):
         result_df = self.add_pattern_detection(result_df)
         result_df = self.add_signal_generation(result_df)
 
+        # 重写信号生成逻辑（MA指标特定逻辑）
+        result_df = self._apply_ma_signal_logic(result_df)
+
+        return result_df
+
+    def _apply_ma_signal_logic(self, result_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用MA指标特定的信号生成逻辑
+        基于价格与移动平均线的关系生成信号
+        """
+        try:
+            # 获取收盘价
+            close_price = result_df['close']
+
+            # 获取主要MA线（使用设定的周期）
+            ma_col = f'{self.ma_type}{self.period}'
+            if ma_col not in result_df.columns:
+                # 如果没有主要MA线，使用默认信号
+                return result_df
+
+            ma_line = result_df[ma_col]
+
+            # MA信号生成逻辑：
+            # BUY: 价格在MA线之上
+            # SELL: 价格在MA线之下
+            # HOLD: 价格接近MA线（±1%范围内）
+
+            price_above_ma = close_price > ma_line
+            price_below_ma = close_price < ma_line
+            price_near_ma = (abs(close_price - ma_line) / ma_line) <= 0.01  # 1%范围内
+
+            # 生成信号
+            result_df.loc[:, 'buy_signal'] = price_above_ma & ~price_near_ma
+            result_df.loc[:, 'sell_signal'] = price_below_ma & ~price_near_ma
+            result_df.loc[:, 'hold_signal'] = price_near_ma
+
+            # 确保信号类型为布尔值
+            result_df['buy_signal'] = result_df['buy_signal'].astype(bool)
+            result_df['sell_signal'] = result_df['sell_signal'].astype(bool)
+            result_df['hold_signal'] = result_df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"MA信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            result_df.loc[:, 'buy_signal'] = False
+            result_df.loc[:, 'sell_signal'] = False
+            result_df.loc[:, 'hold_signal'] = True
+
         return result_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:

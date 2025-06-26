@@ -108,6 +108,54 @@ class VORTEX(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写信号生成逻辑（VORTEX指标特定逻辑）
+        df = self._apply_vortex_signal_logic(df)
+
+        return df
+
+    def _apply_vortex_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        应用VORTEX指标特定的信号生成逻辑
+        基于VORTEX值的变化生成信号
+        """
+        try:
+            # 获取VORTEX值
+            if 'VORTEX_VALUE' not in df.columns:
+                # 如果没有VORTEX值，使用默认信号
+                return df
+
+            vortex_value = df['VORTEX_VALUE']
+            close_price = df['close']
+
+            # VORTEX信号生成逻辑：
+            # BUY: 价格在VORTEX值之上且VORTEX上升
+            # SELL: 价格在VORTEX值之下且VORTEX下降
+            # HOLD: 其他情况
+
+            price_above_vortex = close_price > vortex_value
+            price_below_vortex = close_price < vortex_value
+
+            # 计算VORTEX趋势
+            vortex_rising = vortex_value > vortex_value.shift(1)
+            vortex_falling = vortex_value < vortex_value.shift(1)
+
+            # 生成信号
+            df.loc[:, 'buy_signal'] = price_above_vortex & vortex_rising
+            df.loc[:, 'sell_signal'] = price_below_vortex & vortex_falling
+            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+
+            # 确保信号类型为布尔值
+            df['buy_signal'] = df['buy_signal'].astype(bool)
+            df['sell_signal'] = df['sell_signal'].astype(bool)
+            df['hold_signal'] = df['hold_signal'].astype(bool)
+
+        except Exception as e:
+            logger.warning(f"VORTEX信号生成失败: {e}")
+            # 如果出错，使用默认信号
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
+
         return df
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
