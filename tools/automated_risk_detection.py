@@ -489,3 +489,35 @@ class AutomatedRiskDetector:
             if result.recommendations:
                 summary[name] = result.recommendations
         return summary
+
+
+if __name__ == "__main__":
+    """主程序入口"""
+    # 初始化日志
+    from utils.logger import init_logging
+    init_logging(level="INFO")
+    
+    # 创建检测器并运行扫描
+    detector = AutomatedRiskDetector()
+    results = detector.scan_all_indicators()
+    
+    # 生成风险报告
+    risk_report = detector.generate_risk_report()
+    
+    # 输出报告到控制台
+    print(risk_report)
+    
+    # 保存报告到文件
+    with open("risk_detection_report.md", "w", encoding="utf-8") as f:
+        f.write(risk_report)
+    
+    print(f"\n风险报告已保存到: risk_detection_report.md")
+    
+    # 输出高风险指标列表
+    high_risk_indicators = detector.get_high_risk_indicators()
+    if high_risk_indicators:
+        print(f"\n高风险指标列表 ({len(high_risk_indicators)}个):")
+        for i, indicator in enumerate(high_risk_indicators, 1):
+            print(f"  {i}. {indicator}")
+    else:
+        print("\n🎉 恭喜！所有指标风险已修复完成！")

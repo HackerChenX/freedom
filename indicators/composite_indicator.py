@@ -108,6 +108,13 @@ class COMPOSITE_INDICATOR(BaseIndicator, PatternSignalMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
+        # 重写专用信号逻辑：基于评分值的阈值判断
+        # 对于state_type指标，使用评分阈值模式
+        score_threshold = 50.0  # 默认阈值
+        df.loc[:, 'buy_signal'] = df[f'COMPOSITE_INDICATOR_VALUE'] >= score_threshold
+        df.loc[:, 'sell_signal'] = df[f'COMPOSITE_INDICATOR_VALUE'] < score_threshold
+        df.loc[:, 'hold_signal'] = df[f'COMPOSITE_INDICATOR_VALUE'] < score_threshold
+
         return df
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:

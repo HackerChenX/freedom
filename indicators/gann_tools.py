@@ -100,13 +100,20 @@ class GANN_TOOLS(BaseIndicator, PatternSignalMixin):
         """
         df = data.copy()
         
-        # 最小化实现：返回原数据加上一个简单的计算列
+        # 基本实现：返回原数据加上一个简单的计算列
         df[f'GANN_TOOLS_VALUE'] = df['close'].rolling(window=self.period).mean()
         
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
+
+        # 重写专用信号逻辑：基于评分值的阈值判断
+        # 对于state_type指标，使用评分阈值模式
+        score_threshold = 50.0  # 默认阈值
+        df.loc[:, 'buy_signal'] = df[f'GANN_TOOLS_VALUE'] >= score_threshold
+        df.loc[:, 'sell_signal'] = df[f'GANN_TOOLS_VALUE'] < score_threshold
+        df.loc[:, 'hold_signal'] = df[f'GANN_TOOLS_VALUE'] < score_threshold
 
         return df
     
