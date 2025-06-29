@@ -41,7 +41,7 @@ class StrategyExecutor:
             cache_enabled: 是否启用结果缓存
         """
         self.data_manager = get_unified_data_manager()
-        self.max_workers = max_workers or min(32, os.cpu_count() * 5)
+        self.max_workers = max_workers or min(50, os.cpu_count() * 8)  # 优化：增加并发数
         self.cache_enabled = cache_enabled
         self.cache = {}
 
@@ -133,7 +133,8 @@ class StrategyExecutor:
         strategy_plan: Dict[str, Any],
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        progress_callback: Optional[Callable[[float, str], None]] = None
+        progress_callback: Optional[Callable[[float, str], None]] = None,
+        enable_early_stop: bool = False  # 新增参数：是否启用早停
     ) -> pd.DataFrame:
         """
         执行选股策略
@@ -178,13 +179,17 @@ class StrategyExecutor:
             # 性能优化：使用动态分批处理机制
             total_stocks = len(stock_list)
             
-            # 动态调整批次大小，基于总股票数量
-            if total_stocks > 1000:
-                batch_size = 100  # 大量股票，使用更大的批次
+            # 动态调整批次大小，基于总股票数量（优化版本）
+            if total_stocks > 5000:
+                batch_size = 200  # 超大规模股票，使用更大的批次
+            elif total_stocks > 2000:
+                batch_size = 150  # 大规模股票
+            elif total_stocks > 1000:
+                batch_size = 100  # 中等规模股票
             elif total_stocks > 500:
-                batch_size = 75
+                batch_size = 75   # 小规模股票
             else:
-                batch_size = 50  # 默认批次大小
+                batch_size = 50   # 默认批次大小
                 
             processed_stocks = 0
             results = []
@@ -222,6 +227,7 @@ class StrategyExecutor:
                         future_to_stock[future] = stock_code
                     
                     # 并行处理任务
+                    early_stop = False
                     for future in concurrent.futures.as_completed(future_to_stock):
                         stock_code = future_to_stock[future]
                         
@@ -229,14 +235,45 @@ class StrategyExecutor:
                             result = future.result()
                             if result:
                                 results.append(result)
+                                # 早停功能：只有在启用早停时才触发
+                                if enable_early_stop:
+                                    logger.info(f"✅ 找到匹配股票: {stock_code}，触发早停")
+                                    early_stop = True
+                                    
+                                    # 取消剩余的任务
+                                    for remaining_future in future_to_stock:
+                                        if remaining_future != future and not remaining_future.done():
+                                            remaining_future.cancel()
+                                    break
+                                else:
+                                    # 不启用早停时，继续处理但记录找到的股票
+                                    logger.info(f"✅ 找到匹配股票: {stock_code} (继续处理)")
                         except Exception as e:
                             logger.error(f"处理股票 {stock_code} 时出错: {e}")
+                            # 只有在启用早停时才因错误停止
+                            if enable_early_stop:
+                                logger.warning(f"⚠️ 遇到错误，触发早停: {e}")
+                                early_stop = True
+                                
+                                # 取消剩余的任务
+                                for remaining_future in future_to_stock:
+                                    if remaining_future != future and not remaining_future.done():
+                                        remaining_future.cancel()
+                                break
+                            else:
+                                # 不启用早停时，记录错误但继续处理
+                                logger.warning(f"⚠️ 处理股票 {stock_code} 时出错，继续处理其他股票: {e}")
                         
                         # 更新进度
                         processed_stocks += 1
                         if progress_callback and processed_stocks % 10 == 0:  # 每10只股票更新一次进度，避免频繁更新
                             progress_callback(0.25 + 0.7 * processed_stocks / total_stocks, 
                                             f"已处理 {processed_stocks}/{total_stocks} 只股票")
+                    
+                    # 如果触发了早停，跳出批次循环
+                    if early_stop:
+                        logger.info("早停触发，结束处理")
+                        break
                     
                     # 批次处理完毕后清理不需要的缓存，减少内存占用
                     self._clean_batch_cache()
@@ -373,11 +410,12 @@ class StrategyExecutor:
                     # 计算开始日期（往前120个交易日）
                     start_date = self.data_manager.get_previous_trade_date(end_date, 120)
                     
-                    # 获取K线数据
+                    # 获取K线数据 - 明确指定日线数据
                     data = self.data_manager.get_stock_data(
                         stock_code=stock_code,
                         start_date=start_date,
-                        end_date=end_date
+                        end_date=end_date,
+                        period='daily'  # 明确指定获取日线数据
                     )
                     
                     # 缓存数据
@@ -1133,6 +1171,14 @@ class StrategyExecutor:
         Returns:
             股票列表DataFrame
         """
+        # 如果指定了股票代码列表，直接使用
+        if 'stock_codes' in filters and filters['stock_codes']:
+            stock_codes = filters['stock_codes']
+            if isinstance(stock_codes, list):
+                return pd.DataFrame({'stock_code': stock_codes})
+            else:
+                return pd.DataFrame({'stock_code': [stock_codes]})
+        
         # 转换filters参数为DataManagerAdapter支持的参数
         market = filters.get('market')
         industry = filters.get('industry')
@@ -1200,12 +1246,21 @@ class StrategyExecutor:
                     raise StrategyValidationError(f"条件缺少必要字段: indicator_id")
                 if 'period' not in condition:
                     raise StrategyValidationError(f"条件缺少必要字段: period")
+            elif 'type' in condition and condition['type'] == 'basic':
+                # 基础条件（价格、成交量等），不需要indicator_id和period
+                if 'field' not in condition:
+                    raise StrategyValidationError(f"基础条件缺少必要字段: field")
+                if 'operator' not in condition:
+                    raise StrategyValidationError(f"基础条件缺少必要字段: operator")
+                if 'value' not in condition:
+                    raise StrategyValidationError(f"基础条件缺少必要字段: value")
+            elif 'indicator_id' in condition:
+                # 旧格式的指标条件，需要验证indicator_id和period
+                if 'period' not in condition:
+                    raise StrategyValidationError(f"条件缺少必要字段: period")
             else:
-                # 旧格式的指标条件
-                required_condition_fields = ['indicator_id', 'period']
-                for field in required_condition_fields:
-                    if field not in condition:
-                        raise StrategyValidationError(f"条件缺少必要字段: {field}")
+                # 其他类型的条件，暂时跳过验证
+                pass
         
         return True
     

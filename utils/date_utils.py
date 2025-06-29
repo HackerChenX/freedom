@@ -164,4 +164,57 @@ def date_range(start_date: str, end_date: str,
         date_list.append(current.strftime(format_str))
         current += datetime.timedelta(days=1)
     
-    return date_list 
+    return date_list
+
+def get_latest_trading_date(format_str: str = "%Y-%m-%d") -> str:
+    """
+    获取最近的交易日期
+    
+    Args:
+        format_str: 日期格式化字符串
+        
+    Returns:
+        str: 最近交易日期字符串
+    """
+    now = datetime.datetime.now()
+    
+    # 如果是周末，回退到上周五
+    if now.weekday() == 5:  # 周六
+        trading_day = now - datetime.timedelta(days=1)
+    elif now.weekday() == 6:  # 周日
+        trading_day = now - datetime.timedelta(days=2)
+    else:  # 工作日
+        # 如果当前时间在15点之前，使用前一个交易日
+        if now.hour < 15:
+            if now.weekday() == 0:  # 周一
+                trading_day = now - datetime.timedelta(days=3)  # 上周五
+            else:
+                trading_day = now - datetime.timedelta(days=1)  # 前一天
+        else:
+            trading_day = now  # 当天
+    
+    return trading_day.strftime(format_str)
+
+def get_previous_trading_date(date_str: str, days: int = 1, format_str: str = "%Y-%m-%d") -> str:
+    """
+    获取指定日期之前的第N个交易日
+    
+    Args:
+        date_str: 起始日期字符串
+        days: 前推的交易日天数
+        format_str: 日期格式化字符串
+        
+    Returns:
+        str: 前N个交易日的日期字符串
+    """
+    current_date = datetime.datetime.strptime(date_str, format_str)
+    
+    trading_days_found = 0
+    while trading_days_found < days:
+        current_date -= datetime.timedelta(days=1)
+        
+        # 跳过周末
+        if current_date.weekday() < 5:  # 周一到周五
+            trading_days_found += 1
+    
+    return current_date.strftime(format_str) 

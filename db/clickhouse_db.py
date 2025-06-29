@@ -73,8 +73,8 @@ class ClickHouseDBManager:
     _instance = None
     _connections: Dict[str, Dict[str, Any]] = {}  # 连接池
     _lock = threading.RLock()  # 添加可重入锁，保护连接池
-    _max_idle_time = 300  # 连接最大空闲时间（秒）
-    _cleanup_interval = 60  # 清理间隔（秒）
+    _max_idle_time = 600  # 连接最大空闲时间（秒），延长到10分钟
+    _cleanup_interval = 120  # 清理间隔（秒），延长到2分钟
     _cleanup_thread = None  # 清理线程
     _shutting_down = False  # 关闭标志
 
@@ -125,8 +125,17 @@ class ClickHouseDBManager:
                 if conn_info['in_use']:
                     continue
 
+                # 检查连接是否超过空闲时间
                 if current_time - conn_info['last_used'] > cls._max_idle_time:
                     try:
+                        # 尝试健康检查
+                        try:
+                            conn_info['client'].execute('SELECT 1')
+                            logger.debug(f"连接健康检查通过: {key}")
+                            continue  # 连接正常，不清理
+                        except Exception:
+                            logger.debug(f"连接健康检查失败，准备清理: {key}")
+                        
                         conn_info['client'].disconnect()
                         logger.debug(f"关闭空闲连接: {key}")
                     except Exception as e:
@@ -136,6 +145,9 @@ class ClickHouseDBManager:
 
             for key in keys_to_remove:
                 del cls._connections[key]
+                
+            if keys_to_remove:
+                logger.info(f"清理了 {len(keys_to_remove)} 个空闲连接")
 
     @classmethod
     def _cleanup_all_connections(cls) -> None:
@@ -288,29 +300,85 @@ class ClickHouseDBConnection:
             Exception: 执行失败时抛出
         """
         try:
-            # 直接执行查询获取结果
-            result = self.client.execute(query, params or {})
-            if not result:
-                return pd.DataFrame()
-
-            # 优化列名获取 - 避免额外查询
-            column_names = None
-            try:
-                # 尝试从client.description获取列名（如果可用）
-                if hasattr(self.client, 'description') and self.client.description:
-                    column_names = [col[0] for col in self.client.description]
-            except Exception:
-                pass
-
-            # 如果无法获取列名，使用序号作为列名
-            if not column_names and result:
-                column_names = [f"col_{i}" for i in range(len(result[0]))]
-
-            # 创建DataFrame
-            return pd.DataFrame(result, columns=column_names or [])
+            # 使用 query_dataframe 方法，它能正确返回列名
+            result_with_columns = self.client.query_dataframe(query, params or {})
+            return result_with_columns
         except Exception as e:
             logger.error(f"执行查询失败: {query}, 错误: {e}")
-            raise
+            # 如果 query_dataframe 失败，尝试使用 execute 方法
+            try:
+                result = self.client.execute(query, params or {})
+                if not result:
+                    return pd.DataFrame()
+
+                # 尝试从查询语句中提取列名
+                column_names = self._extract_column_names_from_query(query)
+                
+                # 如果无法从查询中提取列名，使用默认列名
+                if not column_names and result:
+                    column_names = [f"col_{i}" for i in range(len(result[0]))]
+
+                # 创建DataFrame
+                return pd.DataFrame(result, columns=column_names or [])
+            except Exception as e2:
+                logger.error(f"备用查询方法也失败: {e2}")
+                raise e
+
+    def _extract_column_names_from_query(self, query: str) -> List[str]:
+        """
+        从查询语句中提取列名
+        
+        Args:
+            query: SQL查询语句
+            
+        Returns:
+            List[str]: 列名列表
+        """
+        try:
+            import re
+            # 移除注释和多余空格
+            clean_query = re.sub(r'/\*.*?\*/', '', query, flags=re.DOTALL)
+            clean_query = re.sub(r'--.*', '', clean_query)
+            clean_query = ' '.join(clean_query.split())
+            
+            # 查找SELECT和FROM之间的内容
+            select_match = re.search(r'SELECT\s+(.*?)\s+FROM', clean_query, re.IGNORECASE | re.DOTALL)
+            if not select_match:
+                return []
+            
+            select_part = select_match.group(1).strip()
+            
+            # 如果是SELECT *，返回空列表（无法确定列名）
+            if select_part.strip() == '*':
+                return []
+            
+            # 分割字段
+            fields = [field.strip() for field in select_part.split(',')]
+            column_names = []
+            
+            for field in fields:
+                # 处理别名（AS关键字）
+                if ' AS ' in field.upper():
+                    alias = field.upper().split(' AS ')[-1].strip()
+                    column_names.append(alias.strip('"').strip("'"))
+                # 处理没有AS的别名（空格分隔）
+                elif ' ' in field and not any(func in field.upper() for func in ['(', ')', 'CASE', 'WHEN']):
+                    parts = field.split()
+                    if len(parts) >= 2:
+                        column_names.append(parts[-1].strip('"').strip("'"))
+                    else:
+                        # 提取字段名（去掉表前缀）
+                        clean_field = field.split('.')[-1].strip()
+                        column_names.append(clean_field)
+                else:
+                    # 提取字段名（去掉表前缀）
+                    clean_field = field.split('.')[-1].strip()
+                    column_names.append(clean_field)
+            
+            return column_names
+        except Exception as e:
+            logger.warning(f"从查询中提取列名失败: {e}")
+            return []
 
     def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """

@@ -177,6 +177,23 @@ class UnifiedDataManager:
             logger.error(f"数据库连接测试失败: {e}")
             return False
     
+    def query(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        执行SQL查询并返回DataFrame
+        
+        Args:
+            sql: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        try:
+            return self._execute_query_with_retry(sql, params or {})
+        except Exception as e:
+            logger.error(f"查询执行失败: {e}, SQL: {sql}")
+            raise DataAccessError(f"查询执行失败: {e}")
+    
     # ==================== 核心数据获取API ====================
     
     @performance_monitor(threshold=1.0)
@@ -381,6 +398,24 @@ class UnifiedDataManager:
         except Exception as e:
             logger.error(f"获取股票列表失败: {e}")
             return []
+
+    def get_all_stock_codes(self, 
+                           market: Optional[str] = None,
+                           industry: Optional[str] = None,
+                           limit: Optional[int] = None) -> List[str]:
+        """
+        获取所有股票代码（向后兼容API）
+        
+        Args:
+            market: 市场筛选
+            industry: 行业筛选
+            limit: 限制数量
+            
+        Returns:
+            List[str]: 股票代码列表
+        """
+        # 直接调用get_stock_list方法
+        return self.get_stock_list(market=market, industry=industry, limit=limit)
 
     def get_stock_industry(self, stock_code: str) -> Optional[str]:
         """

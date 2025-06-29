@@ -1,0 +1,344 @@
+{
+  "test_configuration": {
+    "test_stock_count": 500,
+    "enable_early_stop": true,
+    "max_concurrent_tests": 5,
+    "test_timeout_seconds": 600,
+    "sample_stocks_per_indicator": 3,
+    "max_results_per_test": 100,
+    "debug_mode": true
+  },
+  
+  "database_settings": {
+    "connection_timeout": 30,
+    "query_timeout": 120,
+    "max_retries": 3,
+    "retry_delay_seconds": 5,
+    "table_name": "stock_info",
+    "date_column": "date",
+    "code_column": "code",
+    "level_column": "level",
+    "supported_levels": ["日线", "周线", "月线", "15分钟"]
+  },
+  
+  "early_stop_rules": {
+    "stop_on_calculation_error": true,
+    "stop_on_data_error": true,
+    "stop_on_logic_error": false,
+    "max_consecutive_failures": 8,
+    "failure_rate_threshold": 0.4
+  },
+  
+  "indicator_groups": {
+    "priority_indicators": [
+      "MA", "EMA", "MACD", "RSI", "KDJ", "BOLL", "CCI", "DMI", "STOCH", "WILLIAMS"
+    ],
+    "core_indicators": [
+      "SMA", "WMA", "TEMA", "KAMA", "VWMA", "HMA", "ZLEMA", "T3", "MESA", "FRAMA"
+    ],
+    "enhanced_indicators": [
+      "ENHANCED_CCI", "ENHANCED_DMI", "ENHANCED_STOCH", "ENHANCED_WILLIAMS", 
+      "ENHANCED_AROON", "ENHANCED_STOCHF", "ENHANCED_ULTOSC", "ENHANCED_MFI",
+      "ENHANCED_ADOSC", "ENHANCED_OBV", "ENHANCED_CMF"
+    ],
+    "zxm_indicators": [
+      "ZXM_DAILY_TREND_UP", "ZXM_WEEKLY_TREND_UP", "ZXM_MONTHLY_TREND_UP",
+      "ZXM_DAILY_MACD", "ZXM_WEEKLY_MACD", "ZXM_MONTHLY_MACD",
+      "ZXM_DAILY_KDJ", "ZXM_WEEKLY_KDJ", "ZXM_MONTHLY_KDJ",
+      "ZXM_DAILY_RSI", "ZXM_WEEKLY_RSI", "ZXM_MONTHLY_RSI",
+      "ZXM_DAILY_CCI", "ZXM_WEEKLY_CCI", "ZXM_MONTHLY_CCI",
+      "ZXM_DAILY_BOLL", "ZXM_WEEKLY_BOLL", "ZXM_MONTHLY_BOLL",
+      "ZXM_DAILY_VOLUME", "ZXM_WEEKLY_VOLUME", "ZXM_MONTHLY_VOLUME",
+      "ZXM_DAILY_PATTERN", "ZXM_WEEKLY_PATTERN", "ZXM_MONTHLY_PATTERN",
+      "ZXM_TREND_CONSISTENCY", "ZXM_MULTI_TIMEFRAME_SIGNAL"
+    ],
+    "composite_indicators": [
+      "COMPOSITE", "UNIFIED_MA", "CHIP_DISTRIBUTION", "MULTI_TIMEFRAME_TREND", "PATTERN_RECOGNITION"
+    ],
+    "pattern_indicators": [
+      "CANDLESTICK_PATTERNS", "CHART_PATTERNS", "VOLUME_PATTERNS", 
+      "ADVANCED_CANDLESTICK_PATTERNS", "PATTERN_COMBINATION", "PATTERN_STRENGTH"
+    ],
+    "tool_indicators": [
+      "FIBONACCI_TOOLS", "GANN_TOOLS", "ELLIOTT_WAVE"
+    ]
+  },
+  
+  "test_strategies": {
+    "basic_conditions": {
+      "MA": [
+        {
+          "name": "MA金叉",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "MA", "period": 5, "operator": ">", "reference_indicator": "MA", "reference_period": 20},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": ">", "value": 5.0}
+          ]
+        },
+        {
+          "name": "MA支撑",
+          "conditions": [
+            {"type": "price", "field": "close", "operator": ">", "reference_indicator": "MA", "reference_period": 20},
+            {"logic": "AND"},
+            {"type": "volume", "field": "volume", "operator": ">", "value": 100000}
+          ]
+        }
+      ],
+      "RSI": [
+        {
+          "name": "RSI超卖",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "RSI", "period": 14, "operator": "<", "value": 30},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": ">", "value": 3.0}
+          ]
+        },
+        {
+          "name": "RSI背离",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "RSI", "period": 14, "operator": ">", "value": 30},
+            {"logic": "AND"},
+            {"type": "indicator", "indicator_id": "RSI", "period": 14, "operator": "<", "value": 70}
+          ]
+        }
+      ],
+      "MACD": [
+        {
+          "name": "MACD金叉",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "MACD", "field": "DIF", "operator": ">", "reference_field": "DEA"},
+            {"logic": "AND"},
+            {"type": "indicator", "indicator_id": "MACD", "field": "MACD", "operator": ">", "value": 0}
+          ]
+        },
+        {
+          "name": "MACD零轴上方",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "MACD", "field": "DIF", "operator": ">", "value": 0},
+            {"logic": "AND"},
+            {"type": "indicator", "indicator_id": "MACD", "field": "DEA", "operator": ">", "value": 0}
+          ]
+        }
+      ],
+      "KDJ": [
+        {
+          "name": "KDJ金叉",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "KDJ", "field": "K", "operator": ">", "reference_field": "D"},
+            {"logic": "AND"},
+            {"type": "indicator", "indicator_id": "KDJ", "field": "K", "operator": "<", "value": 80}
+          ]
+        },
+        {
+          "name": "KDJ超卖区",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "KDJ", "field": "K", "operator": "<", "value": 20},
+            {"logic": "AND"},
+            {"type": "indicator", "indicator_id": "KDJ", "field": "D", "operator": "<", "value": 20}
+          ]
+        }
+      ],
+      "BOLL": [
+        {
+          "name": "布林带下轨支撑",
+          "conditions": [
+            {"type": "price", "field": "close", "operator": ">", "reference_indicator": "BOLL", "reference_field": "LOWER"},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": "<", "reference_indicator": "BOLL", "reference_field": "MIDDLE"}
+          ]
+        },
+        {
+          "name": "布林带收窄",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "BOLL", "field": "BANDWIDTH", "operator": "<", "value": 0.1},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": ">", "value": 5.0}
+          ]
+        }
+      ]
+    },
+    
+    "zxm_conditions": {
+      "ZXM_DAILY_TREND_UP": [
+        {
+          "name": "日线趋势向上",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "ZXM_DAILY_TREND_UP", "operator": "==", "value": true},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": ">", "value": 5.0}
+          ]
+        }
+      ],
+      "ZXM_WEEKLY_TREND_UP": [
+        {
+          "name": "周线趋势向上",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "ZXM_WEEKLY_TREND_UP", "operator": "==", "value": true},
+            {"logic": "AND"},
+            {"type": "volume", "field": "volume", "operator": ">", "value": 100000}
+          ]
+        }
+      ],
+      "ZXM_MULTI_TIMEFRAME_SIGNAL": [
+        {
+          "name": "多周期共振",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "ZXM_MULTI_TIMEFRAME_SIGNAL", "operator": ">", "value": 0.7},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": ">", "value": 3.0}
+          ]
+        }
+      ]
+    },
+    
+    "enhanced_conditions": {
+      "ENHANCED_CCI": [
+        {
+          "name": "增强CCI超卖",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "ENHANCED_CCI", "operator": "<", "value": -100},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": ">", "value": 3.0}
+          ]
+        }
+      ],
+      "ENHANCED_DMI": [
+        {
+          "name": "增强DMI趋势",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "ENHANCED_DMI", "field": "DI_PLUS", "operator": ">", "reference_field": "DI_MINUS"},
+            {"logic": "AND"},
+            {"type": "indicator", "indicator_id": "ENHANCED_DMI", "field": "ADX", "operator": ">", "value": 25}
+          ]
+        }
+      ]
+    },
+    
+    "pattern_conditions": {
+      "CANDLESTICK_PATTERNS": [
+        {
+          "name": "看涨吞没",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "CANDLESTICK_PATTERNS", "pattern": "BULLISH_ENGULFING", "operator": "==", "value": true},
+            {"logic": "AND"},
+            {"type": "volume", "field": "volume", "operator": ">", "value": 100000}
+          ]
+        }
+      ],
+      "VOLUME_PATTERNS": [
+        {
+          "name": "放量突破",
+          "conditions": [
+            {"type": "indicator", "indicator_id": "VOLUME_PATTERNS", "pattern": "VOLUME_BREAKOUT", "operator": "==", "value": true},
+            {"logic": "AND"},
+            {"type": "price", "field": "close", "operator": ">", "value": 5.0}
+          ]
+        }
+      ]
+    }
+  },
+  
+  "test_samples": {
+    "sample_stocks": [
+      "000001", "000002", "000006", "000007", "000008", "000009", "000010",
+      "000011", "000012", "000014", "000016", "000017", "000018", "000019",
+      "000020", "000021", "000022", "000023", "000025", "000026"
+    ],
+    "test_date_range": {
+      "start_date": "2024-01-01",
+      "end_date": "2025-05-23"
+    }
+  },
+  
+  "performance_settings": {
+    "memory_limit_mb": 4096,
+    "cpu_core_limit": 8,
+    "concurrent_indicator_limit": 10,
+    "batch_size": 50
+  },
+  
+  "validation_rules": {
+    "calculation_checks": {
+      "non_empty_result": true,
+      "no_all_nan": true,
+      "reasonable_length": true,
+      "date_alignment": true
+    },
+    
+    "logic_checks": {
+      "MA": {
+        "ma_reasonable_range": true,
+        "ma_smoothness": true
+      },
+      "RSI": {
+        "rsi_range": true,
+        "rsi_distribution": true
+      },
+      "MACD": {
+        "macd_columns": true,
+        "macd_formula": true
+      },
+      "KDJ": {
+        "kdj_columns": true,
+        "kd_range": true,
+        "j_reasonable": true
+      },
+      "BOLL": {
+        "boll_columns": true,
+        "boll_order": true,
+        "middle_line_accuracy": true
+      }
+    },
+    
+    "condition_checks": {
+      "condition_evaluation_success": true,
+      "reasonable_selection_rate": true,
+      "no_syntax_errors": true
+    }
+  },
+  
+  "stock_filters": {
+    "basic_filters": {
+      "min_price": 2.0,
+      "max_price": 200.0,
+      "min_volume": 10000,
+      "min_turnover_rate": 0.1,
+      "exclude_st": true,
+      "exclude_bj": true
+    },
+    
+    "quality_filters": {
+      "min_market_cap": 1000000000,
+      "max_pe_ratio": 100,
+      "min_liquidity": 0.5,
+      "exclude_suspended": true
+    }
+  },
+  
+  "performance_thresholds": {
+    "max_calculation_time": 30.0,
+    "max_condition_evaluation_time": 10.0,
+    "max_memory_usage_mb": 1000,
+    "warning_calculation_time": 10.0,
+    "warning_memory_usage_mb": 500
+  },
+  
+  "reporting": {
+    "save_detailed_results": true,
+    "save_debug_info": true,
+    "generate_charts": false,
+    "export_to_excel": false,
+    "send_email_report": false,
+    "report_formats": ["json", "txt"],
+    "max_sample_results": 10
+  },
+  
+  "logging": {
+    "log_level": "INFO",
+    "log_to_file": true,
+    "log_file_path": "logs/unified_engine_test.log",
+    "max_log_size_mb": 100,
+    "backup_count": 5,
+    "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  }
+} 

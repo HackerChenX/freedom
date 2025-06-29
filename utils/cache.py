@@ -392,6 +392,9 @@ class LRUCache:
         self._cache = {}
         self._usage_order = []
         self._lock = threading.Lock()
+        # 添加统计信息
+        self._hits = 0
+        self._misses = 0
     
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -406,7 +409,11 @@ class LRUCache:
         """
         with self._lock:
             if key not in self._cache:
+                self._misses += 1
                 return default
+            
+            # 命中统计
+            self._hits += 1
             
             # 更新使用顺序
             self._usage_order.remove(key)
@@ -479,8 +486,14 @@ class LRUCache:
             Dict: 包含缓存统计信息的字典
         """
         with self._lock:
+            total_requests = self._hits + self._misses
+            hit_rate = self._hits / total_requests if total_requests > 0 else 0.0
+            
             return {
                 'capacity': self._capacity,
                 'size': len(self._cache),
-                'usage': len(self._cache) / self._capacity if self._capacity > 0 else 0
+                'usage': len(self._cache) / self._capacity if self._capacity > 0 else 0,
+                'hits': self._hits,
+                'misses': self._misses,
+                'hit_rate': hit_rate
             } 

@@ -100,7 +100,7 @@ class BatchOptimizer:
             codes_str = "', '".join(stock_codes)
             query = f"""
             SELECT code, trade_date, open, high, low, close, volume, amount, pct_chg
-            FROM stock_data 
+            FROM stock_info 
             WHERE code IN ('{codes_str}')
             AND level = '日线'
             AND trade_date >= '{start_date}'

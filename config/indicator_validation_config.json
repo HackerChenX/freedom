@@ -1,0 +1,43 @@
+{
+  "validation_date": "2024-06-24",
+  "stock_pool_size": 30,
+  "min_selection_count": 1,
+  "max_selection_ratio": 0.6,
+  "timeout_seconds": 180,
+  "enable_cache": true,
+  "parallel_workers": 3,
+  "priority_indicators": [
+    "MA",
+    "EMA", 
+    "MACD",
+    "RSI",
+    "BOLL",
+    "KDJ",
+    "ENHANCED_RSI",
+    "ENHANCED_MACD",
+    "ZXM_BUY_POINT",
+    "ZXM_SELECTION_MODEL"
+  ],
+  "test_categories": {
+    "basic": ["MA", "EMA", "MACD", "RSI", "BOLL", "KDJ"],
+    "enhanced": ["ENHANCED_RSI", "ENHANCED_MACD", "ENHANCED_KDJ_OSC"],
+    "volume": ["OBV", "MFI", "ENHANCED_OBV", "ENHANCED_MFI"],
+    "zxm": ["ZXM_BUY_POINT", "ZXM_SELECTION_MODEL", "ZXM_VOLUME_SHRINK"]
+  },
+  "output_settings": {
+    "generate_csv": true,
+    "generate_text_report": true,
+    "generate_html_report": false,
+    "save_detailed_results": true
+  },
+  "performance_settings": {
+    "batch_size": 10,
+    "memory_limit_mb": 2048,
+    "max_retry_attempts": 2
+  },
+  "paths": {
+    "results_dir": "results",
+    "reports_dir": "results/validation_reports",
+    "logs_dir": "logs"
+  }
+} 

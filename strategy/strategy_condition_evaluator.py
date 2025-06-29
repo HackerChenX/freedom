@@ -205,7 +205,9 @@ class StrategyConditionEvaluator:
         try:
             condition_type = condition.get("type", "")
             
-            if condition_type == "price":
+            if condition_type == "basic":
+                return self._evaluate_basic_condition(condition, stock_data, date)
+            elif condition_type == "price":
                 return self._evaluate_price_condition(condition, stock_data, date)
             elif condition_type == "volume":
                 return self._evaluate_volume_condition(condition, stock_data, date)
@@ -277,6 +279,44 @@ class StrategyConditionEvaluator:
         else:
             logger.debug(f"未知的逻辑操作符: {current_logic}，默认使用AND")
             return all(results)
+    
+    def _evaluate_basic_condition(self, condition: Dict[str, Any], 
+                               stock_data: pd.DataFrame,
+                               date: str) -> bool:
+        """
+        评估基础条件（价格、成交量等基本字段）
+        
+        Args:
+            condition: 条件配置
+            stock_data: 股票数据
+            date: 评估日期
+            
+        Returns:
+            bool: 条件评估结果
+        """
+        # 获取字段名、操作符和比较值
+        field = condition.get("field", "close")
+        operator_str = condition.get("operator", ">")
+        value = condition.get("value", 0)
+        
+        # 获取当前日期的字段值
+        current_value = self._get_value_on_date(stock_data, field, date)
+        
+        if current_value is None:
+            logger.debug(f"无法获取字段 {field} 在日期 {date} 的值")
+            return False
+            
+        # 获取操作符函数
+        op_func = self.operators.get(operator_str)
+        
+        if op_func is None:
+            logger.debug(f"未知的操作符: {operator_str}")
+            return False
+            
+        # 执行比较
+        result = op_func(current_value, value)
+        logger.debug(f"基础条件评估: {field}={current_value} {operator_str} {value} = {result}")
+        return result
     
     def _evaluate_price_condition(self, condition: Dict[str, Any], 
                                stock_data: pd.DataFrame,
@@ -640,7 +680,7 @@ class StrategyConditionEvaluator:
         Args:
             data: 数据框
             field: 字段名
-            date: 日期
+            date: 日期（字符串格式，如'2025-05-23'）
             
         Returns:
             Optional[float]: 字段值，如果不存在则返回None
@@ -649,17 +689,40 @@ class StrategyConditionEvaluator:
             logger.debug(f"字段 {field} 不存在于数据中")
             return None
             
-        # 找到日期索引
-        if date in data.index:
-            return data.loc[date, field]
-        else:
-            # 尝试找到最接近的日期
-            try:
-                nearest_date = data.index[data.index <= date][-1]
-                return data.loc[nearest_date, field]
-            except (IndexError, KeyError):
-                logger.debug(f"未找到日期 {date} 或之前的数据")
-                return None
+        if 'date' not in data.columns:
+            logger.debug("数据中没有date列")
+            return None
+            
+        try:
+            # 确保日期格式一致（都转换为字符串）
+            data_copy = data.copy()
+            data_copy['date'] = data_copy['date'].astype(str)
+            date_str = str(date)
+            
+            # 先尝试精确匹配
+            matching_rows = data_copy[data_copy['date'] == date_str]
+            if not matching_rows.empty:
+                return float(matching_rows[field].iloc[0])
+            
+            # 如果没有精确匹配，找最接近的较早日期
+            data_sorted = data_copy.sort_values('date', ascending=False)  # 按日期降序排列
+            earlier_dates = data_sorted[data_sorted['date'] <= date_str]
+            
+            if not earlier_dates.empty:
+                latest_value = earlier_dates[field].iloc[0]  # 取最新的（最接近的）值
+                logger.debug(f"使用最接近日期的值: {earlier_dates['date'].iloc[0]}, {field}={latest_value}")
+                return float(latest_value)
+            else:
+                # 如果没有更早的日期，取最早的数据
+                if not data_sorted.empty:
+                    earliest_value = data_sorted[field].iloc[-1]
+                    logger.debug(f"使用最早日期的值: {data_sorted['date'].iloc[-1]}, {field}={earliest_value}")
+                    return float(earliest_value)
+                    
+        except Exception as e:
+            logger.debug(f"获取日期 {date} 的字段 {field} 值时出错: {e}")
+            
+        return None
     
     def _get_average_value(self, data: pd.DataFrame, field: str, 
                         date: str, periods: int) -> Optional[float]:
@@ -669,7 +732,7 @@ class StrategyConditionEvaluator:
         Args:
             data: 数据框
             field: 字段名
-            date: 日期
+            date: 日期（字符串格式）
             periods: 周期数
             
         Returns:
@@ -679,26 +742,36 @@ class StrategyConditionEvaluator:
             logger.debug(f"字段 {field} 不存在于数据中")
             return None
             
-        # 找到日期位置
+        if 'date' not in data.columns:
+            logger.debug("数据中没有date列")
+            return None
+            
         try:
-            if date in data.index:
-                date_loc = data.index.get_loc(date)
-            else:
-                # 找到最接近的日期
-                nearest_date = data.index[data.index <= date][-1]
-                date_loc = data.index.get_loc(nearest_date)
+            # 确保日期格式一致
+            data_copy = data.copy()
+            data_copy['date'] = data_copy['date'].astype(str)
+            date_str = str(date)
+            
+            # 按日期排序（降序，最新的在前）
+            data_sorted = data_copy.sort_values('date', ascending=False)
+            
+            # 找到指定日期或之前的数据
+            earlier_dates = data_sorted[data_sorted['date'] <= date_str]
+            
+            if len(earlier_dates) == 0:
+                logger.debug(f"未找到日期 {date} 或之前的数据")
+                return None
                 
-            # 获取前N个周期的数据
-            start_loc = max(0, date_loc - periods + 1)
-            values = data.iloc[start_loc:date_loc+1][field]
+            # 取前N个周期的数据
+            values = earlier_dates.head(periods)[field]
             
             if len(values) > 0:
-                return values.mean()
+                return float(values.mean())
             else:
                 return None
                 
-        except (IndexError, KeyError):
-            logger.debug(f"未找到日期 {date} 或之前的数据")
+        except Exception as e:
+            logger.debug(f"计算平均值时出错: {e}")
             return None
     
     def _get_indicator_value(self, stock_data: pd.DataFrame, 

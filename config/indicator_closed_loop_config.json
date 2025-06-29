@@ -1,0 +1,47 @@
+{
+  "validation": {
+    "date": "2024-12-28",
+    "lookback_days": 30,
+    "stock_pool_size": 4378,
+    "max_selection_ratio": 0.1,
+    "min_selection_count": 1,
+    "buypoint_analysis_days": 5,
+    "stop_on_success": true,
+    "stop_on_error": true,
+    "parallel_workers": 1,
+    "timeout_seconds": 300,
+    "debug_mode": true
+  },
+  "indicators": {
+    "priority_list": [
+      "MA", "EMA", "MACD", "RSI", "BOLL", "KDJ", 
+      "CCI", "DMI", "BIAS", "ROC", "WR", "TRIX",
+      "ADX", "AROON", "ATR", "MFI", "OBV", "PSY"
+    ],
+    "categories": {
+      "basic": ["MA", "EMA", "WMA", "VOL"],
+      "momentum": ["RSI", "CCI", "WR", "ROC", "MOMENTUM"],
+      "trend": ["MACD", "DMI", "TRIX", "ADX", "AROON"],
+      "volatility": ["BOLL", "ATR", "KC"],
+      "volume": ["OBV", "MFI", "PVT", "VR"],
+      "oscillator": ["KDJ", "STOCHRSI", "PSY"],
+      "enhanced": ["ENHANCED_RSI", "ENHANCED_MACD", "ENHANCED_KDJ"],
+      "zxm": ["ZXM_TREND", "ZXM_VOLUME", "ZXM_MOMENTUM"]
+    }
+  },
+  "strategy_generation": {
+    "default_periods": [5, 10, 20, 30],
+    "rsi_oversold": 30,
+    "rsi_neutral": 50,
+    "kdj_oversold": 20,
+    "kdj_neutral": 50,
+    "cci_oversold": -100,
+    "cci_neutral": 0
+  },
+  "output": {
+    "results_file": "data/result/indicator_closed_loop_results.json",
+    "report_file": "data/result/indicator_closed_loop_report.json",
+    "detailed_file": "data/result/indicator_closed_loop_detailed.json",
+    "csv_file": "data/result/indicator_closed_loop_results.csv"
+  }
+} 

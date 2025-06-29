@@ -150,10 +150,10 @@ class StockInfo:
     
     @staticmethod
     def get_fields() -> List[str]:
-        """获取所有字段"""
+        """获取所有字段（仅返回数据库中实际存在的字段）"""
         return [
-            "code", "name", "date", "level", "open", "high", "low", "close",
-            "volume", "turnover_rate", "price_change", "price_range", "industry", "datetime", "seq"
+            "code", "date", "level", "open", "high", "low", "close",
+            "volume", "turnover_rate"
         ]
 
     @property
