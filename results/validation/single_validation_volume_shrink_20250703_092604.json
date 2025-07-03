@@ -1,0 +1,6 @@
+{
+  "indicator_name": "volume_shrink",
+  "test_date": "2025-07-02",
+  "status": "failed",
+  "error": "无法获取股票池"
+}

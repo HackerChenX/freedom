@@ -1,0 +1,26 @@
+{
+  "indicator_name": "volume_shrink",
+  "test_date": "2025-07-02",
+  "status": "success",
+  "validation_time": "2025-07-03T09:30:10.076959",
+  "processing_time_seconds": 0.09,
+  "statistics": {
+    "total_tested": 3,
+    "success_processed": 3,
+    "failed_processed": 0,
+    "selected_count": 0,
+    "selection_rate": 0.0,
+    "success_rate": 1.0
+  },
+  "selected_stocks": [],
+  "failed_stocks": [],
+  "indicator_analysis": {
+    "signal_distribution": {
+      "total_stocks": 3,
+      "signal_stocks": 0,
+      "no_signal_stocks": 3,
+      "signal_ratio": 0.0
+    },
+    "top_signals": []
+  }
+}

@@ -304,7 +304,7 @@ class ClickHouseDBConnection:
             result_with_columns = self.client.query_dataframe(query, params or {})
             return result_with_columns
         except Exception as e:
-            logger.error(f"执行查询失败: {query}, 错误: {e}")
+            logger.error("执行查询失败: %s, 错误: %s", query, e)
             # 如果 query_dataframe 失败，尝试使用 execute 方法
             try:
                 result = self.client.execute(query, params or {})

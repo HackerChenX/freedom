@@ -126,32 +126,34 @@ class ProductionIndicatorValidator:
             logger.info(f"🔍 获取 {test_date} 的股票池...")
             
             # 获取指定日期的股票数据，过滤掉ST股票和价格异常的股票
-            query = """
+            query = f"""
             SELECT DISTINCT code, name, close, volume
             FROM stock_info
-            WHERE date = %(test_date)s
+            WHERE date = '{test_date}'
               AND level = '日线'
               AND close > 2.0
               AND close < 200.0
               AND volume > 1000
-              AND name NOT LIKE '%ST%'
-              AND name NOT LIKE '%*%'
+              AND name NOT LIKE '%%ST%%'
+              AND name NOT LIKE '%%*%%'
             ORDER BY volume DESC
-            LIMIT %(max_stocks)s
+            LIMIT {max_stocks}
             """
             
-            params = {
-                'test_date': test_date,
-                'max_stocks': max_stocks
-            }
-            
-            result = self.db.query(query, params)
+            result = self.db.query(query)
             
             if result.empty:
                 logger.warning(f"⚠️ 未找到 {test_date} 的股票数据")
                 return []
             
-            stock_codes = result['code'].tolist()
+            if 'code' in result.columns:
+                stock_codes = result['code'].tolist()
+            elif 'col_0' in result.columns:
+                stock_codes = result['col_0'].tolist()
+            else:
+                logger.warning(f"⚠️ 无法找到股票代码列，可用列: {result.columns.tolist()}")
+                return []
+                
             logger.info(f"✅ 获取到 {len(stock_codes)} 只股票")
             
             return stock_codes
@@ -176,30 +178,41 @@ class ProductionIndicatorValidator:
             # 计算开始日期（考虑到交易日）
             start_date = (datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=days*2)).strftime('%Y-%m-%d')
             
-            query = """
+            query = f"""
             SELECT date, open, high, low, close, volume, turnover
             FROM stock_info
-            WHERE code = %(stock_code)s
+            WHERE code = '{stock_code}'
               AND level = '日线'
-              AND date >= %(start_date)s
-              AND date <= %(end_date)s
+              AND date >= '{start_date}'
+              AND date <= '{end_date}'
             ORDER BY date ASC
             """
             
-            params = {
-                'stock_code': stock_code,
-                'start_date': start_date,
-                'end_date': end_date
-            }
-            
-            result = self.db.query(query, params)
+            result = self.db.query(query)
             
             if result.empty:
                 return pd.DataFrame()
             
-            # 确保数据类型正确
-            result['date'] = pd.to_datetime(result['date'])
-            result = result.set_index('date')
+            # 确保数据类型正确和列名映射
+            if 'col_0' in result.columns:
+                # 映射通用列名到实际列名
+                column_mapping = {
+                    'col_0': 'date',
+                    'col_1': 'open', 
+                    'col_2': 'high',
+                    'col_3': 'low',
+                    'col_4': 'close',
+                    'col_5': 'volume',
+                    'col_6': 'turnover'
+                }
+                result = result.rename(columns=column_mapping)
+            
+            if 'date' in result.columns:
+                result['date'] = pd.to_datetime(result['date'])
+                result = result.set_index('date')
+            else:
+                logger.warning(f"⚠️ 无法找到date列，可用列: {result.columns.tolist()}")
+                return pd.DataFrame()
             
             # 只保留最近的指定天数
             if len(result) > days:
@@ -299,10 +312,10 @@ class ProductionIndicatorValidator:
                 if has_buy_signal:
                     selected_stocks.append(stock_code)
                 
-                # 保存指标值用于分析
+                # 保存指标值用于分析 - 确保所有值都可以JSON序列化
                 indicator_values[stock_code] = {
-                    'has_signal': has_buy_signal,
-                    'value': indicator_value,
+                    'has_signal': bool(has_buy_signal),
+                    'value': float(indicator_value) if indicator_value is not None and not isinstance(indicator_value, bool) else (1.0 if indicator_value else 0.0),
                     'last_close': float(last_row.get('close', 0))
                 }
                 

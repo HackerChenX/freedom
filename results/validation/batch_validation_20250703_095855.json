@@ -1,0 +1,117 @@
+{
+  "validation_type": "batch",
+  "test_date": "2025-07-03",
+  "total_indicators": 2,
+  "validation_time": "2025-07-03T09:58:55.357538",
+  "total_processing_time_seconds": 0.57,
+  "individual_results": {
+    "volume_shrink": {
+      "indicator_name": "volume_shrink",
+      "test_date": "2025-07-03",
+      "status": "success",
+      "validation_time": "2025-07-03T09:58:54.981227",
+      "processing_time_seconds": 0.19,
+      "statistics": {
+        "total_tested": 5,
+        "success_processed": 5,
+        "failed_processed": 0,
+        "selected_count": 2,
+        "selection_rate": 0.4,
+        "success_rate": 1.0
+      },
+      "selected_stocks": [
+        "000002",
+        "000858"
+      ],
+      "failed_stocks": [],
+      "indicator_analysis": {
+        "signal_distribution": {
+          "total_stocks": 5,
+          "signal_stocks": 2,
+          "no_signal_stocks": 3,
+          "signal_ratio": 0.4
+        },
+        "top_signals": [
+          {
+            "stock_code": "000858",
+            "signal_value": 1.0,
+            "last_close": 22.38
+          },
+          {
+            "stock_code": "000002",
+            "signal_value": 1.0,
+            "last_close": 15.04
+          }
+        ]
+      }
+    },
+    "bs_absorb": {
+      "indicator_name": "bs_absorb",
+      "test_date": "2025-07-03",
+      "status": "success",
+      "validation_time": "2025-07-03T09:58:55.356886",
+      "processing_time_seconds": 0.37,
+      "statistics": {
+        "total_tested": 5,
+        "success_processed": 5,
+        "failed_processed": 0,
+        "selected_count": 2,
+        "selection_rate": 0.4,
+        "success_rate": 1.0
+      },
+      "selected_stocks": [
+        "000001",
+        "000858"
+      ],
+      "failed_stocks": [],
+      "indicator_analysis": {
+        "signal_distribution": {
+          "total_stocks": 5,
+          "signal_stocks": 2,
+          "no_signal_stocks": 3,
+          "signal_ratio": 0.4
+        },
+        "top_signals": [
+          {
+            "stock_code": "000858",
+            "signal_value": 1.0,
+            "last_close": 22.38
+          },
+          {
+            "stock_code": "000001",
+            "signal_value": 6.0,
+            "last_close": 3.61
+          }
+        ]
+      }
+    }
+  },
+  "overlap_analysis": {
+    "overlap_matrix": {
+      "volume_shrink": {
+        "volume_shrink": 1.0,
+        "bs_absorb": 0.3333
+      },
+      "bs_absorb": {
+        "volume_shrink": 0.3333,
+        "bs_absorb": 1.0
+      }
+    },
+    "total_unique_stocks": 3,
+    "common_stocks": [
+      "000858"
+    ],
+    "common_stocks_count": 1
+  },
+  "summary": {
+    "success_count": 2,
+    "failed_count": 0,
+    "avg_selection_rate": 0.4,
+    "max_selection_rate": 0.4,
+    "min_selection_rate": 0.4,
+    "avg_processing_time": 0.28,
+    "total_processing_time": 0.56,
+    "best_indicator": "volume_shrink",
+    "fastest_indicator": "volume_shrink"
+  }
+}
