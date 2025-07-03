@@ -121,7 +121,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
 
         return result
         
-    def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.Series:
         """
         计算市场宽度原始评分 (0-100分)
         
@@ -131,12 +131,11 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
                 
         Returns:
-            DataFrame: 包含原始评分的DataFrame
+            Series: 包含原始评分的Series
         """
-        # 初始化评分DataFrame
+        # 初始化评分Series
         dates = data.index.get_level_values(0).unique()
-        scores = pd.DataFrame(index=dates)
-        scores['raw_score'] = 50.0  # 默认评分50分（中性）
+        scores = pd.Series(50.0, index=dates, name='raw_score')  # 默认评分50分（中性）
         
         # 计算市场宽度指标
         breadth_result = self.calculate(data, *args, **kwargs)
@@ -146,7 +145,8 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         
         # 如果有市场宽度指标，直接使用
         if 'market_breadth_indicator' in breadth_result.columns:
-            scores['raw_score'] = breadth_result['market_breadth_indicator']
+            scores = breadth_result['market_breadth_indicator']
+            scores.name = 'raw_score'
             return scores
         
         # 否则通过涨跌比例和站上均线比例合成
@@ -170,7 +170,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
                 
                 # 综合评分
                 final_score = ad_score * 0.4 + ma_score * 0.4 + hl_score * 0.2
-                scores.loc[scores.index[i], 'raw_score'] = final_score
+                scores.iloc[i] = final_score
         
         return scores
         

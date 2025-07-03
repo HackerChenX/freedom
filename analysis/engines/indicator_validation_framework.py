@@ -130,9 +130,58 @@ class IndicatorValidationFramework:
             
             logger.info(f"共需验证 {len(indicators)} 个指标")
             
-            # 准备股票池
-            stock_pool = self._prepare_stock_pool()
-            logger.info(f"准备股票池: {len(stock_pool)} 只股票")
+            # 准备股票池（可能触发数据库连接错误）
+            try:
+                stock_pool = self._prepare_stock_pool()
+                logger.info(f"准备股票池: {len(stock_pool)} 只股票")
+            except ConnectionError as conn_error:
+                # 数据库连接失败，如果配置了错误后早停，立即返回错误结果
+                logger.error(f"❌ 数据库连接失败，无法继续验证: {conn_error}")
+                
+                if self.config.stop_on_error:
+                    logger.warning("🛑 配置了错误后早停，由于数据库连接失败立即停止验证")
+                    
+                    # 创建错误结果
+                    error_result = {
+                        'indicator_name': 'DATABASE_CONNECTION',
+                        'status': ValidationResult.ERROR.value,
+                        'error_message': str(conn_error),
+                        'timestamp': datetime.now().isoformat(),
+                        'validation_date': self.config.validation_date,
+                        'stock_pool_size': 0,
+                        'selected_count': 0,
+                        'selection_ratio': 0.0,
+                        'selected_stocks': [],
+                        'strategy_config': {},
+                        'execution_time': 0
+                    }
+                    
+                    # 更新统计信息
+                    self.validation_stats['validated_indicators'] = 1
+                    self.validation_stats['failed_validations'] = 1
+                    self.validation_stats['successful_validations'] = 0
+                    
+                    # 生成总结报告
+                    summary = self._generate_summary([error_result])
+                    
+                    self.validation_stats['end_time'] = datetime.now()
+                    self.validation_stats['duration'] = (
+                        self.validation_stats['end_time'] - self.validation_stats['start_time']
+                    ).total_seconds()
+                    
+                    logger.info(f"验证因数据库连接错误提前结束，耗时: {self.validation_stats['duration']:.2f}秒")
+                    
+                    return {
+                        'summary': summary,
+                        'results': [error_result],
+                        'stats': self.validation_stats,
+                        'config': self.config.__dict__,
+                        'early_stop_reason': 'database_connection_error'
+                    }
+                else:
+                    # 如果没有配置错误后早停，使用默认股票池继续
+                    logger.warning("⚠️ 数据库连接失败，但未配置错误后早停，使用默认股票池继续验证")
+                    stock_pool = ['000001', '000002', '600000', '600036', '000858']
             
             # 执行验证
             if self.config.parallel_workers > 1:
@@ -286,7 +335,22 @@ class IndicatorValidationFramework:
             LIMIT {self.config.stock_pool_size}
             """
             
-            result = self.data_manager.execute_query(query)
+            # 检测数据库连接问题
+            try:
+                result = self.data_manager.query(query)
+            except Exception as db_error:
+                db_error_str = str(db_error)
+                # 检测常见的数据库连接错误
+                if any(error_keyword in db_error_str.lower() for error_keyword in 
+                       ['connection refused', 'connection failed', 'connection timeout', 'no connection',
+                        'failed to connect', 'connection error', 'database connection', 'connect error']):
+                    logger.error(f"❌ 数据库连接失败: {db_error}")
+                    # 抛出异常以便上层捕获并设置为ERROR状态
+                    raise ConnectionError(f"数据库连接失败: {db_error}")
+                else:
+                    # 其他数据库错误，继续处理
+                    raise db_error
+            
             if result.empty:
                 logger.warning(f"未找到 {self.config.validation_date} 的股票数据，使用默认股票池")
                 # 使用最近可用日期的数据
@@ -298,7 +362,17 @@ class IndicatorValidationFramework:
                 ORDER BY date DESC, volume DESC
                 LIMIT 1000
                 """
-                result = self.data_manager.execute_query(query)
+                try:
+                    result = self.data_manager.query(query)
+                except Exception as db_error:
+                    db_error_str = str(db_error)
+                    if any(error_keyword in db_error_str.lower() for error_keyword in 
+                           ['connection refused', 'connection failed', 'connection timeout', 'no connection',
+                            'failed to connect', 'connection error', 'database connection', 'connect error']):
+                        logger.error(f"❌ 数据库连接失败: {db_error}")
+                        raise ConnectionError(f"数据库连接失败: {db_error}")
+                    else:
+                        raise db_error
             
             stock_pool = result['code'].tolist()
             
@@ -309,9 +383,19 @@ class IndicatorValidationFramework:
             logger.info(f"✅ 准备股票池完成: {len(stock_pool)} 只股票")
             return stock_pool
             
+        except ConnectionError:
+            # 重新抛出连接错误，让上层处理
+            raise
         except Exception as e:
             logger.error(f"准备股票池失败: {e}")
-            # 返回默认股票池
+            # 对于其他错误，检查是否包含数据库连接相关的错误信息
+            error_str = str(e)
+            if any(error_keyword in error_str.lower() for error_keyword in 
+                   ['connection refused', 'connection failed', 'connection timeout', 'no connection',
+                    'failed to connect', 'connection error', 'database connection', 'connect error']):
+                logger.error(f"❌ 检测到数据库连接问题: {e}")
+                raise ConnectionError(f"数据库连接失败: {e}")
+            # 对于其他错误，返回默认股票池
             return ['000001', '000002', '600000', '600036', '000858']
     
     def _validate_parallel(self, indicators: List[str], stock_pool: List[str]) -> List[Dict[str, Any]]:

@@ -28,29 +28,37 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def create_debug_config():
+def create_debug_config(mode='quick', stop_on_success=True, stop_on_error=True):
     """创建调试配置"""
+    # 映射验证模式
+    mode_mapping = {
+        'quick': ValidationMode.QUICK,
+        'priority': ValidationMode.PRIORITY,
+        'category': ValidationMode.CATEGORY,
+        'full': ValidationMode.FULL
+    }
+    
     return IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,        # 快速模式，只验证核心指标
+        mode=mode_mapping.get(mode, ValidationMode.QUICK),  # 支持动态模式
         stock_pool_size=100,              # 较小的股票池，加快验证速度
         max_selection_ratio=0.2,          # 较宽松的选股比例限制
         min_selection_count=1,            # 最少选出1只股票就算成功
         parallel_workers=1,               # 单线程，确保顺序执行
-        stop_on_success=True,             # 🔑 成功后立即停止
-        stop_on_error=True,               # 🔑 错误后立即停止
+        stop_on_success=stop_on_success,  # 🔑 成功后立即停止（可配置）
+        stop_on_error=stop_on_error,      # 🔑 错误后立即停止（可配置）
         debug_mode=True,                  # 🔑 开启调试模式
         save_details=True,                # 保存详细结果
         output_format="json"              # JSON格式输出
     )
 
 
-def run_debug_validation():
+def run_debug_validation(mode='quick', stop_on_success=True, stop_on_error=True):
     """运行调试验证"""
     logger.info("🚀 开始指标调试验证")
     logger.info("=" * 60)
     
     # 创建调试配置
-    config = create_debug_config()
+    config = create_debug_config(mode, stop_on_success, stop_on_error)
     
     logger.info("📋 调试配置:")
     logger.info(f"  • 验证模式: {config.mode.value}")
@@ -76,11 +84,26 @@ def run_debug_validation():
         
         summary = result['summary']
         logger.info(f"  • 总指标数: {summary['total_indicators']}")
-        logger.info(f"  • 已验证数: {summary['validated_indicators']}")
-        logger.info(f"  • 成功数: {summary['successful_validations']}")
-        logger.info(f"  • 失败数: {summary['failed_validations']}")
-        logger.info(f"  • 成功率: {summary['success_rate']:.2%}")
-        logger.info(f"  • 验证耗时: {summary['total_duration']:.2f}秒")
+        logger.info(f"  • 已验证数: {summary.get('validated_indicators', 0)}")
+        logger.info(f"  • 成功数: {summary.get('successful_validations', 0)}")
+        logger.info(f"  • 失败数: {summary.get('failed_validations', 0)}")
+        logger.info(f"  • 成功率: {summary.get('success_rate', 0):.2%}")
+        logger.info(f"  • 验证耗时: {summary.get('total_duration', 0):.2f}秒")
+        
+        # 检查是否触发了早停
+        if config.stop_on_success or config.stop_on_error:
+            actual_validated = len(result['results'])
+            total_indicators = summary['total_indicators']
+            if actual_validated < total_indicators:
+                logger.warning(f"🛑 早停功能已生效！只验证了 {actual_validated}/{total_indicators} 个指标")
+                
+                # 分析早停原因
+                last_result = result['results'][-1] if result['results'] else None
+                if last_result:
+                    if last_result['status'] == 'success' and config.stop_on_success:
+                        logger.info(f"✅ 成功后早停：指标 {last_result['indicator_name']} 选出了 {last_result['selected_count']} 只股票")
+                    elif last_result['status'] == 'error' and config.stop_on_error:
+                        logger.info(f"❌ 错误后早停：指标 {last_result['indicator_name']} 出现错误")
         
         # 显示成功的指标
         successful_indicators = [
@@ -111,15 +134,27 @@ def run_debug_validation():
                 error_msg = indicator_result.get('error_message', '无错误信息')
                 logger.info(f"  • {name}: {status} - {error_msg}")
         
-        # 保存详细结果
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = f"results/validation/debug_validation_{timestamp}.json"
-        
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-        
-        logger.info(f"📄 详细结果已保存到: {output_file}")
+        # 保存详细结果（修复JSON序列化问题）
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_file = f"results/validation/debug_validation_{timestamp}.json"
+            
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            
+            # 转换不可序列化的对象
+            result_copy = result.copy()
+            if 'config' in result_copy:
+                config_dict = result_copy['config'].copy()
+                if 'mode' in config_dict:
+                    config_dict['mode'] = config_dict['mode'].value  # 转换枚举为字符串
+                result_copy['config'] = config_dict
+            
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(result_copy, f, ensure_ascii=False, indent=2, default=str)
+            
+            logger.info(f"📄 详细结果已保存到: {output_file}")
+        except Exception as save_error:
+            logger.warning(f"⚠️ 保存结果文件失败: {save_error}")
         
         return result
         
@@ -196,10 +231,18 @@ def main():
             # 单个指标验证
             run_single_indicator_debug(args.indicator)
         else:
-            # 批量验证
-            if args.no_stop_success or args.no_stop_error:
-                logger.info("⚠️ 注意：已禁用早停功能")
-            run_debug_validation()
+            # 批量验证，根据命令行参数配置早停
+            stop_on_success = not args.no_stop_success
+            stop_on_error = not args.no_stop_error
+            
+            if not stop_on_success and not stop_on_error:
+                logger.info("⚠️ 注意：已禁用所有早停功能")
+            elif not stop_on_success:
+                logger.info("⚠️ 注意：已禁用成功后早停功能")
+            elif not stop_on_error:
+                logger.info("⚠️ 注意：已禁用错误后早停功能")
+            
+            run_debug_validation(args.mode, stop_on_success, stop_on_error)
             
     except KeyboardInterrupt:
         logger.info("🛑 用户中断验证")

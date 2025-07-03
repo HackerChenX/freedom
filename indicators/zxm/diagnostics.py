@@ -191,7 +191,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.Series:
         """
         计算股票诊断原始评分 (0-100分)
         
@@ -202,14 +202,13 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
                 score_type: 评分类型，可选 'health'(健康度), 'opportunity'(机会度), 'overall'(综合)
                 
         Returns:
-            DataFrame: 包含原始评分的DataFrame
+            Series: 包含原始评分的Series
         """
         # 获取评分类型参数
         score_type = kwargs.get('score_type', 'overall')
         
-        # 初始化评分DataFrame
-        scores = pd.DataFrame(index=data.index)
-        scores['raw_score'] = 50.0  # 默认评分50分（中性）
+        # 初始化评分Series
+        scores = pd.Series(50.0, index=data.index, name='raw_score')  # 默认评分50分（中性）
         
         # 计算诊断指标
         diagnosis_result = self.calculate(data, *args, **kwargs)
@@ -220,16 +219,17 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         # 根据评分类型选择相应的评分
         if score_type == 'health':
             if 'health_score' in diagnosis_result.columns:
-                scores['raw_score'] = diagnosis_result['health_score']
+                scores = diagnosis_result['health_score']
         elif score_type == 'opportunity':
             if 'opportunity_score' in diagnosis_result.columns:
-                scores['raw_score'] = diagnosis_result['opportunity_score']
+                scores = diagnosis_result['opportunity_score']
         else:  # 'overall' 或其他任何值
             if 'diagnosis_score' in diagnosis_result.columns:
-                scores['raw_score'] = diagnosis_result['diagnosis_score']
+                scores = diagnosis_result['diagnosis_score']
         
         # 确保评分在0-100范围内
-        scores['raw_score'] = scores['raw_score'].clip(0, 100)
+        scores = scores.clip(0, 100)
+        scores.name = 'raw_score'
         
         return scores
         

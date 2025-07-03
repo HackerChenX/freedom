@@ -579,10 +579,10 @@ class ADX(BaseIndicator, PatternSignalMixin):
         period = self.params["period"]
         strong_trend = self.params["strong_trend"]
         
-        # 获取ADX和DI数据
-        adx = self._result[f'ADX{period}'] if f'ADX{period}' in self._result.columns else self._result.get('ADX', pd.Series(np.nan, index=data.index))
-        pdi = self._result[f'PDI{period}'] if f'PDI{period}' in self._result.columns else self._result.get('PDI', pd.Series(np.nan, index=data.index))
-        mdi = self._result[f'MDI{period}'] if f'MDI{period}' in self._result.columns else self._result.get('MDI', pd.Series(np.nan, index=data.index))
+        # 获取ADX和DI数据，优先使用标准字段名
+        adx = self._result.get('ADX', self._result.get(f'ADX{period}', pd.Series(np.nan, index=data.index)))
+        pdi = self._result.get('PDI', self._result.get(f'PDI{period}', pd.Series(np.nan, index=data.index)))
+        mdi = self._result.get('MDI', self._result.get(f'MDI{period}', pd.Series(np.nan, index=data.index)))
         
         # 初始化评分
         score = pd.Series(50.0, index=data.index)
@@ -682,9 +682,9 @@ class ADX(BaseIndicator, PatternSignalMixin):
         period = self.params["period"]
         strong_trend = self.params["strong_trend"]
 
-        adx = self._result[f'ADX{period}']
-        pdi = self._result[f'PDI{period}']
-        mdi = self._result[f'MDI{period}']
+        adx = self._result.get('ADX', self._result.get(f'ADX{period}', pd.Series(np.nan, index=self._result.index)))
+        pdi = self._result.get('PDI', self._result.get(f'PDI{period}', pd.Series(np.nan, index=self._result.index)))
+        mdi = self._result.get('MDI', self._result.get(f'MDI{period}', pd.Series(np.nan, index=self._result.index)))
 
         last_adx = adx.iloc[-1] if not adx.empty else 0
         last_pdi = pdi.iloc[-1] if not pdi.empty else 0
@@ -758,9 +758,9 @@ class ADX(BaseIndicator, PatternSignalMixin):
         strong_trend = self.params["strong_trend"]
 
         # 获取ADX和DI数据
-        adx = self._result[f'ADX{period}']
-        pdi = self._result[f'PDI{period}']
-        mdi = self._result[f'MDI{period}']
+        adx = self._result.get('ADX', self._result.get(f'ADX{period}', pd.Series(np.nan, index=self._result.index)))
+        pdi = self._result.get('PDI', self._result.get(f'PDI{period}', pd.Series(np.nan, index=self._result.index)))
+        mdi = self._result.get('MDI', self._result.get(f'MDI{period}', pd.Series(np.nan, index=self._result.index)))
 
         # 创建形态DataFrame
         patterns_df = pd.DataFrame(index=self._result.index)

@@ -328,7 +328,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         return result
     
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM体系买点和吸筹形态指标的原始评分
         
@@ -337,13 +337,13 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
             
         Returns:
-            pd.DataFrame: 包含评分结果的DataFrame，0-100分
+            pd.Series: 包含评分结果的Series，0-100分
         """
         # 确保数据包含必需的列
         required_columns = ["open", "high", "low", "close", "volume"]
         for col in required_columns:
             if col not in data.columns:
-                return pd.DataFrame({'score': pd.Series(50.0, index=data.index)})  # 返回默认中性评分
+                return pd.Series(50.0, index=data.index, name='raw_score')  # 返回默认中性评分
 
         # 计算指标
         result = self.calculate(data)
@@ -406,7 +406,8 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
             
             score[idx] = min(100, max(0, current_score))  # 确保评分在0-100范围内
 
-        return pd.DataFrame({'score': score}, index=data.index)
+        score.name = 'raw_score'
+        return score
     
     def _identify_absorption_patterns(self, 
                                      open_prices: np.ndarray, 

@@ -1137,7 +1137,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return compound_signal
     
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
         """
         计算高级K线形态识别指标的原始评分
         
@@ -1403,8 +1403,9 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
+        score.name = 'raw_score'
         
-        return pd.DataFrame({'score': score}, index=data.index)
+        return score
     
     def identify_patterns(self, data: pd.DataFrame) -> List[str]:
         """
