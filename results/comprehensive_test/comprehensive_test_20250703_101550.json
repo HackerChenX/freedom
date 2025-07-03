@@ -1,0 +1,203 @@
+{
+  "test_summary": {
+    "total_indicators": 88,
+    "tested_indicators": 13,
+    "successful_indicators": 13,
+    "failed_indicators": 0,
+    "success_rate": 100.0,
+    "total_time": 2.295335054397583,
+    "average_time_per_indicator": 0.17656423495366022
+  },
+  "batch_results": [
+    {
+      "batch_name": "第5批-ZXM专业指标",
+      "total_indicators": 13,
+      "successful_indicators": 13,
+      "failed_indicators": 0,
+      "success_rate": 100.0,
+      "total_time": 2.2937941551208496
+    }
+  ],
+  "detailed_results": [
+    {
+      "indicator_name": "daily_macd",
+      "success": true,
+      "execution_time": 0.18319296836853027,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000",
+        "600036",
+        "000001",
+        "000002",
+        "000858"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.18319296836853027
+      }
+    },
+    {
+      "indicator_name": "bs_absorb",
+      "success": true,
+      "execution_time": 0.20091509819030762,
+      "stock_count": 0,
+      "selected_stocks": [
+        "000001",
+        "000858"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.20091509819030762
+      }
+    },
+    {
+      "indicator_name": "ma_callback",
+      "success": true,
+      "execution_time": 0.09981107711791992,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.09981107711791992
+      }
+    },
+    {
+      "indicator_name": "elasticity",
+      "success": true,
+      "execution_time": 0.12154006958007812,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.12154006958007812
+      }
+    },
+    {
+      "indicator_name": "bounce_detector",
+      "success": true,
+      "execution_time": 0.12171483039855957,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.12171483039855957
+      }
+    },
+    {
+      "indicator_name": "amplitude_elasticity",
+      "success": true,
+      "execution_time": 0.08514189720153809,
+      "stock_count": 0,
+      "selected_stocks": [],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.08514189720153809
+      }
+    },
+    {
+      "indicator_name": "rise_elasticity",
+      "success": true,
+      "execution_time": 0.09149813652038574,
+      "stock_count": 0,
+      "selected_stocks": [],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.09149813652038574
+      }
+    },
+    {
+      "indicator_name": "elasticity_score",
+      "success": true,
+      "execution_time": 0.16048383712768555,
+      "stock_count": 0,
+      "selected_stocks": [],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.16048383712768555
+      }
+    },
+    {
+      "indicator_name": "buypoint_score",
+      "success": true,
+      "execution_time": 0.1776878833770752,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.1776878833770752
+      }
+    },
+    {
+      "indicator_name": "stock_score",
+      "success": true,
+      "execution_time": 0.2618570327758789,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600036"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.2618570327758789
+      }
+    },
+    {
+      "indicator_name": "market_breadth",
+      "success": true,
+      "execution_time": 0.10873198509216309,
+      "stock_count": 0,
+      "selected_stocks": [],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.10873198509216309
+      }
+    },
+    {
+      "indicator_name": "selection_model",
+      "success": true,
+      "execution_time": 0.45357513427734375,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600036"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.45357513427734375
+      }
+    },
+    {
+      "indicator_name": "diagnostics",
+      "success": true,
+      "execution_time": 0.22638297080993652,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.22638297080993652
+      }
+    }
+  ],
+  "timestamp": "2025-07-03T10:15:50.551669"
+}

@@ -174,12 +174,20 @@ class MA(BaseIndicator, PatternSignalMixin):
         """
         计算MA原始评分。
         """
-        if not self.ma_cols or not all(c in data.columns for c in self.ma_cols):
-            return pd.Series(50, index=data.index)
+        # 确保已计算MA指标
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        # 检查MA列是否存在
+        if not self.ma_cols or not all(c in self._result.columns for c in self.ma_cols):
+            return pd.Series(50.0, index=data.index)
 
         score = pd.Series(50.0, index=data.index)
         
-        sorted_mas = [data[f'{self.ma_type}{p}'] for p in sorted(self.periods)]
+        sorted_mas = [self._result[f'{self.ma_type}{p}'] for p in sorted(self.periods)]
         
         if len(sorted_mas) > 1:
             is_bullish_arrangement = (sorted_mas[0] > sorted_mas[-1])

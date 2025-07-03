@@ -1,0 +1,210 @@
+{
+  "test_summary": {
+    "total_indicators": 88,
+    "tested_indicators": 13,
+    "successful_indicators": 13,
+    "failed_indicators": 0,
+    "success_rate": 100.0,
+    "total_time": 1.7068030834197998,
+    "average_time_per_indicator": 0.13129254487844613
+  },
+  "batch_results": [
+    {
+      "batch_name": "第1批-基础指标",
+      "total_indicators": 13,
+      "successful_indicators": 13,
+      "failed_indicators": 0,
+      "success_rate": 100.0,
+      "total_time": 1.7060799598693848
+    }
+  ],
+  "detailed_results": [
+    {
+      "indicator_name": "ma",
+      "success": true,
+      "execution_time": 0.2591552734375,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600036",
+        "000002"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.2591552734375
+      }
+    },
+    {
+      "indicator_name": "ema",
+      "success": true,
+      "execution_time": 0.13659310340881348,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000",
+        "600036",
+        "000002"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.13659310340881348
+      }
+    },
+    {
+      "indicator_name": "wma",
+      "success": true,
+      "execution_time": 0.13022589683532715,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600036"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.13022589683532715
+      }
+    },
+    {
+      "indicator_name": "rsi",
+      "success": true,
+      "execution_time": 0.12589597702026367,
+      "stock_count": 0,
+      "selected_stocks": [
+        "000858"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.12589597702026367
+      }
+    },
+    {
+      "indicator_name": "macd",
+      "success": true,
+      "execution_time": 0.18088507652282715,
+      "stock_count": 0,
+      "selected_stocks": [],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.18088507652282715
+      }
+    },
+    {
+      "indicator_name": "boll",
+      "success": true,
+      "execution_time": 0.11778903007507324,
+      "stock_count": 0,
+      "selected_stocks": [],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.11778903007507324
+      }
+    },
+    {
+      "indicator_name": "kdj",
+      "success": true,
+      "execution_time": 0.12494587898254395,
+      "stock_count": 0,
+      "selected_stocks": [],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.12494587898254395
+      }
+    },
+    {
+      "indicator_name": "vol",
+      "success": true,
+      "execution_time": 0.12958097457885742,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.12958097457885742
+      }
+    },
+    {
+      "indicator_name": "momentum",
+      "success": true,
+      "execution_time": 0.12321686744689941,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600036",
+        "000002"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.12321686744689941
+      }
+    },
+    {
+      "indicator_name": "mtm",
+      "success": true,
+      "execution_time": 0.08677482604980469,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.08677482604980469
+      }
+    },
+    {
+      "indicator_name": "roc",
+      "success": true,
+      "execution_time": 0.0992441177368164,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000",
+        "600036",
+        "000002"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.0992441177368164
+      }
+    },
+    {
+      "indicator_name": "bias",
+      "success": true,
+      "execution_time": 0.10852694511413574,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.10852694511413574
+      }
+    },
+    {
+      "indicator_name": "dma",
+      "success": true,
+      "execution_time": 0.0823359489440918,
+      "stock_count": 0,
+      "selected_stocks": [
+        "600000",
+        "600036",
+        "000001",
+        "000002",
+        "000858"
+      ],
+      "error_message": null,
+      "performance_metrics": {
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.0823359489440918
+      }
+    }
+  ],
+  "timestamp": "2025-07-03T10:13:15.485527"
+}

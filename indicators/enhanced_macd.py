@@ -112,7 +112,57 @@ class ENHANCED_MACD(BaseIndicator, PatternSignalMixin):
         """计算原始评分"""
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        # 基于MACD指标计算评分
+        df = data.copy()
+        
+        # 计算MACD指标
+        exp1 = df['close'].ewm(span=12).mean()
+        exp2 = df['close'].ewm(span=26).mean()
+        macd = exp1 - exp2
+        signal = macd.ewm(span=9).mean()
+        histogram = macd - signal
+        
+        # 计算评分
+        scores = pd.Series(50.0, index=data.index)  # 基准分
+        
+        # MACD金叉死叉信号
+        macd_cross = (macd > signal) & (macd.shift(1) <= signal.shift(1))
+        macd_death = (macd < signal) & (macd.shift(1) >= signal.shift(1))
+        
+        # 零轴上下信号
+        above_zero = macd > 0
+        below_zero = macd < 0
+        
+        # 背离信号
+        price_high = df['close'].rolling(window=5).max() == df['close']
+        price_low = df['close'].rolling(window=5).min() == df['close']
+        macd_high = macd.rolling(window=5).max() == macd
+        macd_low = macd.rolling(window=5).min() == macd
+        
+        # 顶背离（价格新高，MACD不新高）
+        top_divergence = price_high & ~macd_high & (macd > 0)
+        # 底背离（价格新低，MACD不新低）
+        bottom_divergence = price_low & ~macd_low & (macd < 0)
+        
+        # 评分计算
+        scores += np.where(macd_cross, 20, 0)  # 金叉加分
+        scores += np.where(macd_death, -20, 0)  # 死叉减分
+        scores += np.where(above_zero & (macd > signal), 10, 0)  # 零轴上方且MACD>信号线
+        scores += np.where(below_zero & (macd < signal), -10, 0)  # 零轴下方且MACD<信号线
+        scores += np.where(histogram > 0, 5, -5)  # 柱状图正负
+        scores += np.where(bottom_divergence, 15, 0)  # 底背离加分
+        scores += np.where(top_divergence, -15, 0)  # 顶背离减分
+        
+        # 趋势强度
+        macd_trend = macd.rolling(window=3).mean()
+        trend_up = macd_trend > macd_trend.shift(1)
+        scores += np.where(trend_up, 5, -5)
+        
+        # 限制评分范围
+        scores = np.clip(scores, 0, 100)
+        
+        return scores
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""

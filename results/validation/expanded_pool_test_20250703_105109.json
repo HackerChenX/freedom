@@ -1,0 +1,306 @@
+{
+  "test_info": {
+    "original_pool_size": 5,
+    "expanded_pool_size": 55,
+    "test_indicators": 37,
+    "timestamp": "2025-07-03T10:50:28.621528"
+  },
+  "results": [
+    {
+      "indicator_name": "macd",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 2.7876498699188232,
+      "error_message": null
+    },
+    {
+      "indicator_name": "boll",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.0492758750915527,
+      "error_message": null
+    },
+    {
+      "indicator_name": "kdj",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.2558588981628418,
+      "error_message": null
+    },
+    {
+      "indicator_name": "sar",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.2437989711761475,
+      "error_message": null
+    },
+    {
+      "indicator_name": "emv",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.8041398525238037,
+      "error_message": null
+    },
+    {
+      "indicator_name": "stock_vix",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.650489091873169,
+      "error_message": null
+    },
+    {
+      "indicator_name": "amplitude_elasticity",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.7698960304260254,
+      "error_message": null
+    },
+    {
+      "indicator_name": "rise_elasticity",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.5516018867492676,
+      "error_message": null
+    },
+    {
+      "indicator_name": "elasticity_score",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6638350486755371,
+      "error_message": null
+    },
+    {
+      "indicator_name": "market_breadth",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.594944953918457,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_rsi",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.8547160625457764,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_dmi",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.8657269477844238,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_macd_trend",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.8127167224884033,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_trix",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 8.759175062179565,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_kdj_osc",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.004607915878296,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_obv",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6150650978088379,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_stochrsi",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.5044941902160645,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_wr",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.5600912570953369,
+      "error_message": null
+    },
+    {
+      "indicator_name": "enhanced_macd_root",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.5284881591796875,
+      "error_message": null
+    },
+    {
+      "indicator_name": "composite",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6571657657623291,
+      "error_message": null
+    },
+    {
+      "indicator_name": "unified_ma",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.7276852130889893,
+      "error_message": null
+    },
+    {
+      "indicator_name": "chip_distribution",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6851470470428467,
+      "error_message": null
+    },
+    {
+      "indicator_name": "institutional_behavior",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.5321338176727295,
+      "error_message": null
+    },
+    {
+      "indicator_name": "candlestick_patterns",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6548442840576172,
+      "error_message": null
+    },
+    {
+      "indicator_name": "advanced_candlestick",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6671597957611084,
+      "error_message": null
+    },
+    {
+      "indicator_name": "patterns",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.8930013179779053,
+      "error_message": null
+    },
+    {
+      "indicator_name": "fibonacci_tools",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.535919189453125,
+      "error_message": null
+    },
+    {
+      "indicator_name": "gann_tools",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6715710163116455,
+      "error_message": null
+    },
+    {
+      "indicator_name": "elliott_wave",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6672282218933105,
+      "error_message": null
+    },
+    {
+      "indicator_name": "kdj_condition",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.5170049667358398,
+      "error_message": null
+    },
+    {
+      "indicator_name": "macd_condition",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.6613969802856445,
+      "error_message": null
+    },
+    {
+      "indicator_name": "monthly_kdj_trend_up",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.803725004196167,
+      "error_message": null
+    },
+    {
+      "indicator_name": "monthly_macd",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.9645230770111084,
+      "error_message": null
+    },
+    {
+      "indicator_name": "weekly_kdj_d_or_dea_trend_up",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 0.9202539920806885,
+      "error_message": null
+    },
+    {
+      "indicator_name": "weekly_kdj_d_trend_up",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.1619021892547607,
+      "error_message": null
+    },
+    {
+      "indicator_name": "weekly_macd",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.3495779037475586,
+      "error_message": null
+    },
+    {
+      "indicator_name": "stochrsi",
+      "success": false,
+      "selected_count": 0,
+      "selected_stocks": [],
+      "execution_time": 1.0613200664520264,
+      "error_message": null
+    }
+  ]
+}

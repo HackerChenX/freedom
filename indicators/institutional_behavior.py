@@ -121,7 +121,92 @@ class INSTITUTIONAL_BEHAVIOR(BaseIndicator, PatternSignalMixin):
         """计算原始评分"""
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        # 机构行为评分：基于大单交易和资金流向分析
+        df = data.copy()
+        
+        # 计算机构行为相关指标
+        # 1. 大单分析（基于成交量和价格变化）
+        volume_ma = df['volume'].rolling(window=20).mean()
+        large_volume = df['volume'] > volume_ma * 2  # 大成交量
+        
+        # 2. 价格稳定性（机构通常不会造成剧烈波动）
+        price_change = df['close'].pct_change()
+        price_volatility = price_change.rolling(window=10).std()
+        stable_price = price_volatility < price_volatility.rolling(window=30).mean()
+        
+        # 3. 连续性分析（机构操作通常有连续性）
+        volume_trend = df['volume'].rolling(window=5).mean() / df['volume'].rolling(window=20).mean()
+        continuous_volume = volume_trend > 1.2
+        
+        # 4. 逆向操作检测（机构逆向思维）
+        price_down = df['close'] < df['close'].shift(1)
+        volume_up = df['volume'] > df['volume'].shift(1)
+        contrarian_signal = price_down & volume_up  # 价跌量增
+        
+        # 5. 资金流向估算
+        typical_price = (df['high'] + df['low'] + df['close']) / 3
+        money_flow = typical_price * df['volume']
+        money_flow_ma = money_flow.rolling(window=20).mean()
+        strong_inflow = money_flow > money_flow_ma * 1.5
+        
+        # 复合评分计算
+        scores = pd.Series(50.0, index=data.index)  # 基准分
+        
+        # 大单买入信号 (30%)
+        large_buy = large_volume & (df['close'] > df['open'])
+        large_sell = large_volume & (df['close'] < df['open'])
+        scores += np.where(large_buy, 20, 0)
+        scores += np.where(large_sell, -15, 0)
+        
+        # 价格稳定性 (20%)
+        stable_accumulation = stable_price & (df['volume'] > volume_ma)
+        scores += np.where(stable_accumulation, 15, 0)  # 稳定吸筹
+        
+        # 连续操作 (20%)
+        continuous_buy = continuous_volume & (df['close'] > df['close'].shift(3))
+        scores += np.where(continuous_buy, 12, 0)
+        
+        # 逆向操作 (15%)
+        contrarian_buy = contrarian_signal & (df['close'] > df['close'].rolling(window=5).mean())
+        scores += np.where(contrarian_buy, 18, 0)  # 逆向买入强信号
+        
+        # 资金流向 (15%)
+        strong_buy_flow = strong_inflow & (df['close'] > df['open'])
+        weak_sell_flow = (money_flow < money_flow_ma * 0.8) & (df['close'] < df['open'])
+        scores += np.where(strong_buy_flow, 15, 0)
+        scores += np.where(weak_sell_flow, -10, 0)
+        
+        # 机构建仓模式识别
+        # 温和建仓：价格缓慢上涨，成交量适中
+        gentle_accumulation = (
+            (df['close'] > df['close'].shift(5)) &  # 5日上涨
+            (price_volatility < price_volatility.rolling(window=20).mean()) &  # 波动率低
+            (df['volume'] > volume_ma * 1.1) &  # 成交量略大
+            (df['volume'] < volume_ma * 2.0)    # 但不过大
+        )
+        scores += np.where(gentle_accumulation, 20, 0)
+        
+        # 机构拉升模式：突然放量上涨
+        institutional_pump = (
+            (df['close'] > df['close'].shift(1) * 1.03) &  # 单日涨幅>3%
+            (df['volume'] > volume_ma * 2.5) &  # 大幅放量
+            (df['close'] == df['high'])  # 收盘价接近最高价
+        )
+        scores += np.where(institutional_pump, 25, 0)
+        
+        # 机构护盘：下跌时成交量萎缩
+        institutional_support = (
+            (df['close'] < df['close'].shift(1)) &  # 价格下跌
+            (df['volume'] < volume_ma * 0.8) &  # 成交量萎缩
+            (df['low'] > df['low'].rolling(window=10).min() * 1.02)  # 有支撑
+        )
+        scores += np.where(institutional_support, 10, 0)
+        
+        # 限制评分范围
+        scores = np.clip(scores, 0, 100)
+        
+        return scores
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""

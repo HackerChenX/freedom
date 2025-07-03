@@ -150,11 +150,6 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
                 'tr': np.nan
             }, index=data.index)
             self._result = result
-
-            # 添加形态识别和信号生成
-            result = self.add_pattern_detection(result)
-            result = self.add_signal_generation(result)
-
             return result
         
         # 计算True Range (TR)

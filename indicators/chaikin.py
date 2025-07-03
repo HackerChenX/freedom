@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-CHAIKIN 指标
+CHAIKIN 指标 (Chaikin A/D Oscillator)
 
-自动生成的最小化指标实现
+佳庆指标是基于累积分布线(A/D Line)的振荡器，用于衡量资金流入流出的动量。
 """
 
 import pandas as pd
@@ -18,9 +18,23 @@ logger = get_logger(__name__)
 
 class CHAIKIN(BaseIndicator, PatternSignalMixin):
     """
-    CHAIKIN 指标
+    CHAIKIN 指标 (Chaikin A/D Oscillator)
     
-    自动生成的最小化实现，支持参数标准化
+    特点:
+    1. 基于累积分布线(A/D Line)计算
+    2. 使用快速和慢速EMA的差值作为振荡器
+    3. 用于识别资金流入流出的动量变化
+    4. 正值表示买盘压力，负值表示卖盘压力
+    
+    计算方法:
+    1. 计算Money Flow Multiplier = ((Close - Low) - (High - Close)) / (High - Low)
+    2. 计算Money Flow Volume = Money Flow Multiplier * Volume
+    3. 计算A/D Line = 累积的Money Flow Volume
+    4. Chaikin Oscillator = EMA(A/D Line, fast_period) - EMA(A/D Line, slow_period)
+    
+    参数:
+    - fast_period: 快速EMA周期，默认为3
+    - slow_period: 慢速EMA周期，默认为10
     """
     
     def __init__(self, **kwargs):
@@ -41,7 +55,7 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
     
     def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"fast_period": 3, "slow_period": 10}
     
     def set_parameters(self, **kwargs):
         """
@@ -64,15 +78,14 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
-                # 使用默认参数
-                params = self._default_parameters.copy()
-            
-            # 设置参数
-            self.period = params.get('period', 14)
-                    
+                
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            pass
+        
+        # 设置参数
+        self.fast_period = kwargs.get('fast_period', 3)
+        self.slow_period = kwargs.get('slow_period', 10)
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -100,9 +113,48 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         """
         df = data.copy()
         
-        # 最小化实现：返回原数据加上一个简单的计算列
-        df[f'CHAIKIN_VALUE'] = df['close'].rolling(window=self.period).mean()
+        # 获取必要的数据
+        high = df['high']
+        low = df['low']
+        close = df['close']
         
+        # 获取成交量数据
+        if 'volume' in df.columns:
+            volume = df['volume']
+        elif 'Volume' in df.columns:
+            volume = df['Volume']
+        else:
+            # 如果没有成交量数据，使用默认值
+            volume = pd.Series(1.0, index=df.index)
+        
+        # 1. 计算Money Flow Multiplier
+        # 避免除零错误
+        price_range = high - low
+        price_range = price_range.replace(0, np.nan)
+        
+        money_flow_multiplier = ((close - low) - (high - close)) / price_range
+        money_flow_multiplier = money_flow_multiplier.fillna(0)
+        
+        # 2. 计算Money Flow Volume
+        money_flow_volume = money_flow_multiplier * volume
+        
+        # 3. 计算A/D Line (累积分布线)
+        ad_line = money_flow_volume.cumsum()
+        
+        # 4. 计算Chaikin Oscillator
+        # 使用EMA计算快速和慢速移动平均
+        fast_ema = ad_line.ewm(span=self.fast_period).mean()
+        slow_ema = ad_line.ewm(span=self.slow_period).mean()
+        
+        chaikin_oscillator = fast_ema - slow_ema
+        
+        # 保存计算结果
+        df['CHAIKIN_MF_MULTIPLIER'] = money_flow_multiplier
+        df['CHAIKIN_MF_VOLUME'] = money_flow_volume
+        df['CHAIKIN_AD_LINE'] = ad_line
+        df['CHAIKIN_FAST_EMA'] = fast_ema
+        df['CHAIKIN_SLOW_EMA'] = slow_ema
+        df['CHAIKIN_VALUE'] = chaikin_oscillator
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -116,7 +168,7 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
     def _apply_chaikin_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         应用CHAIKIN指标特定的信号生成逻辑
-        基于CHAIKIN值的变化生成信号
+        基于Chaikin振荡器的零轴交叉和背离生成信号
         """
         try:
             # 获取CHAIKIN值
@@ -125,23 +177,23 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
                 return df
 
             chaikin_value = df['CHAIKIN_VALUE']
-            close_price = df['close']
 
             # CHAIKIN信号生成逻辑：
-            # BUY: CHAIKIN值上升且价格在CHAIKIN值之上
-            # SELL: CHAIKIN值下降且价格在CHAIKIN值之下
+            # BUY: Chaikin振荡器从负转正（零轴向上突破）
+            # SELL: Chaikin振荡器从正转负（零轴向下突破）
             # HOLD: 其他情况
 
-            price_above_chaikin = close_price > chaikin_value
-            price_below_chaikin = close_price < chaikin_value
-
-            # 计算CHAIKIN趋势
-            chaikin_rising = chaikin_value > chaikin_value.shift(1)
-            chaikin_falling = chaikin_value < chaikin_value.shift(1)
+            # 计算零轴交叉
+            chaikin_positive = chaikin_value > 0
+            chaikin_negative = chaikin_value < 0
+            
+            # 计算交叉信号
+            zero_cross_up = (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
+            zero_cross_down = (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
 
             # 生成信号
-            df.loc[:, 'buy_signal'] = price_above_chaikin & chaikin_rising
-            df.loc[:, 'sell_signal'] = price_below_chaikin & chaikin_falling
+            df.loc[:, 'buy_signal'] = zero_cross_up
+            df.loc[:, 'sell_signal'] = zero_cross_down
             df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
 
             # 确保信号类型为布尔值
@@ -159,15 +211,162 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         return df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
+        """
+        计算Chaikin指标的原始评分
+        
+        基于Chaikin振荡器的位置、趋势、强度和稳定性进行评分：
+        1. 振荡器位置：正值区间和负值区间的评分
+        2. 振荡器趋势：上升趋势和下降趋势的评分
+        3. 振荡器强度：振荡器绝对值的大小
+        4. 零轴交叉：零轴突破的信号强度
+        """
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        if 'CHAIKIN_VALUE' not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
+        
+        chaikin_value = self._result['CHAIKIN_VALUE'].fillna(0)
+        scores = pd.Series(index=data.index, dtype=float)
+        
+        # 计算振荡器的动态范围
+        chaikin_std = chaikin_value.rolling(window=20).std().fillna(chaikin_value.std())
+        chaikin_mean = chaikin_value.rolling(window=20).mean().fillna(0)
+        
+        for i in range(len(chaikin_value)):
+            if i < max(self.fast_period, self.slow_period):
+                scores.iloc[i] = 50.0
+                continue
+            
+            # 获取当前数据
+            current_chaikin = chaikin_value.iloc[i]
+            current_std = chaikin_std.iloc[i] if not pd.isna(chaikin_std.iloc[i]) else 1.0
+            current_mean = chaikin_mean.iloc[i]
+            
+            # 获取历史窗口数据
+            window_size = min(20, i + 1)
+            window_chaikin = chaikin_value.iloc[max(0, i-window_size+1):i+1]
+            
+            score = 50.0  # 基础分数
+            
+            # 1. 振荡器位置评分 (25分)
+            # 标准化位置评分
+            if current_std > 0:
+                normalized_position = (current_chaikin - current_mean) / current_std
+                if normalized_position > 2:
+                    position_score = 25.0  # 极强正值
+                elif normalized_position > 1:
+                    position_score = 20.0 + (normalized_position - 1) * 5.0  # 强正值
+                elif normalized_position > 0:
+                    position_score = 15.0 + normalized_position * 5.0  # 正值
+                elif normalized_position > -1:
+                    position_score = 10.0 + (normalized_position + 1) * 5.0  # 负值
+                elif normalized_position > -2:
+                    position_score = 5.0 + (normalized_position + 2) * 5.0  # 强负值
+                else:
+                    position_score = 0.0  # 极强负值
+            else:
+                position_score = 12.5
+            
+            score += position_score - 12.5  # 调整基准
+            
+            # 2. 振荡器趋势评分 (25分)
+            if len(window_chaikin) >= 3:
+                recent_values = window_chaikin.tail(3)
+                if recent_values.iloc[-1] > recent_values.iloc[-2] > recent_values.iloc[-3]:
+                    trend_score = 25.0  # 强烈上升
+                elif recent_values.iloc[-1] > recent_values.iloc[-2]:
+                    trend_score = 20.0  # 上升
+                elif recent_values.iloc[-1] < recent_values.iloc[-2] < recent_values.iloc[-3]:
+                    trend_score = 5.0   # 强烈下降
+                elif recent_values.iloc[-1] < recent_values.iloc[-2]:
+                    trend_score = 10.0  # 下降
+                else:
+                    trend_score = 15.0  # 横盘
+            else:
+                trend_score = 15.0
+            
+            score += trend_score - 15.0  # 调整基准
+            
+            # 3. 振荡器强度评分 (25分)
+            abs_chaikin = abs(current_chaikin)
+            if current_std > 0:
+                strength_ratio = abs_chaikin / current_std
+                if strength_ratio > 2:
+                    strength_score = 25.0  # 极强
+                elif strength_ratio > 1:
+                    strength_score = 15.0 + (strength_ratio - 1) * 10.0  # 强
+                elif strength_ratio > 0.5:
+                    strength_score = 10.0 + (strength_ratio - 0.5) * 10.0  # 中等
+                else:
+                    strength_score = strength_ratio * 20.0  # 弱
+            else:
+                strength_score = 12.5
+            
+            score += strength_score - 12.5  # 调整基准
+            
+            # 4. 零轴交叉评分 (25分)
+            if i > 0:
+                prev_chaikin = chaikin_value.iloc[i-1]
+                if (current_chaikin > 0 and prev_chaikin <= 0):
+                    cross_score = 25.0  # 向上突破零轴
+                elif (current_chaikin < 0 and prev_chaikin >= 0):
+                    cross_score = 5.0   # 向下跌破零轴
+                elif current_chaikin > 0:
+                    cross_score = 20.0  # 在零轴上方
+                else:
+                    cross_score = 10.0  # 在零轴下方
+            else:
+                cross_score = 15.0
+            
+            score += cross_score - 15.0  # 调整基准
+            
+            # 确保分数在合理范围内
+            score = max(0, min(100, score))
+            scores.iloc[i] = score
+        
+        return scores
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        if not self.has_result():
+            return 0.5
+        
+        # 基于Chaikin振荡器的稳定性计算置信度
+        chaikin_value = self._result['CHAIKIN_VALUE'].fillna(0)
+        
+        # 计算振荡器的变化率
+        chaikin_change = chaikin_value.pct_change().fillna(0)
+        stability = 1.0 / (1.0 + chaikin_change.std())
+        
+        # 计算信号的一致性
+        signal_consistency = 0.5
+        if 'buy_signal' in self._result.columns and 'sell_signal' in self._result.columns:
+            buy_signals = self._result['buy_signal'].sum()
+            sell_signals = self._result['sell_signal'].sum()
+            total_signals = buy_signals + sell_signals
+            if total_signals > 0:
+                signal_consistency = 1.0 - abs(buy_signals - sell_signals) / total_signals
+        
+        # 综合置信度
+        confidence = (stability * 0.6 + signal_consistency * 0.4)
+        return min(0.9, max(0.1, confidence))
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
-        return pd.DataFrame(index=data.index)
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        patterns = pd.DataFrame(index=data.index)
+        
+        if 'CHAIKIN_VALUE' in self._result.columns:
+            chaikin_value = self._result['CHAIKIN_VALUE']
+            
+            # 识别关键形态
+            patterns['zero_cross_up'] = (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
+            patterns['zero_cross_down'] = (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
+            patterns['strong_positive'] = chaikin_value > chaikin_value.quantile(0.8)
+            patterns['strong_negative'] = chaikin_value < chaikin_value.quantile(0.2)
+            patterns['divergence_potential'] = abs(chaikin_value.pct_change()) > 0.1
+        
+        return patterns

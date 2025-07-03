@@ -549,7 +549,28 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         Returns:
             pd.DataFrame: 包含K, D, J列的DataFrame
         """
-        return self._calculate(data)
+        try:
+            # 调用核心计算逻辑
+            result_df = self._calculate(data)
+            
+            # 检查结果是否为DataFrame
+            if not isinstance(result_df, pd.DataFrame):
+                raise TypeError(f"指标 {self.name} 的_calculate方法必须返回pandas.DataFrame")
+
+            # 保留原始基础数据列
+            self._result = self._preserve_base_columns(data, result_df)
+            self._error = None
+            self.is_available = True
+            
+            return self._result
+
+        except Exception as e:
+            logger.error(f"计算指标 '{self.name}' 时出错: {e}", exc_info=True)
+            self._error = e
+            self._result = None
+            self.is_available = False
+            # 在出错时返回一个空的DataFrame，结构与输入数据保持一致
+            return pd.DataFrame(index=data.index)
 
     def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """

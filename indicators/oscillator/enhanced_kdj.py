@@ -197,15 +197,13 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
             rsv = 50 + (rsv - 50) * self.sensitivity
             rsv = rsv.clip(0, 100)  # 确保RSV在0-100范围内
         
-        # 计算K值，初始值为50
-        k = pd.Series(50.0, index=data.index)
-        for i in range(1, len(data)):
-            k.iloc[i] = (m1 - 1) / m1 * k.iloc[i-1] + 1 / m1 * rsv.iloc[i]
+        # 计算K值，使用EMA方法
+        k = rsv.ewm(alpha=1/m1, adjust=False).mean()
+        k.fillna(50.0, inplace=True)  # 填充初始NaN值
         
-        # 计算D值，初始值为50
-        d = pd.Series(50.0, index=data.index)
-        for i in range(1, len(data)):
-            d.iloc[i] = (m2 - 1) / m2 * d.iloc[i-1] + 1 / m2 * k.iloc[i]
+        # 计算D值，使用EMA方法
+        d = k.ewm(alpha=1/m2, adjust=False).mean()
+        d.fillna(50.0, inplace=True)  # 填充初始NaN值
         
         # 计算J值
         j = 3 * k - 2 * d
@@ -238,15 +236,13 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
             rsv = 50 + (rsv - 50) * self.sensitivity
             rsv = rsv.clip(0, 100)
         
-        # 计算K值，初始值为50
-        k = pd.Series(50.0, index=data.index)
-        for i in range(1, len(data)):
-            k.iloc[i] = (m1 - 1) / m1 * k.iloc[i-1] + 1 / m1 * rsv.iloc[i]
+        # 计算K值，使用EMA方法
+        k = rsv.ewm(alpha=1/m1, adjust=False).mean()
+        k.fillna(50.0, inplace=True)  # 填充初始NaN值
         
-        # 计算D值，初始值为50
-        d = pd.Series(50.0, index=data.index)
-        for i in range(1, len(data)):
-            d.iloc[i] = (m2 - 1) / m2 * d.iloc[i-1] + 1 / m2 * k.iloc[i]
+        # 计算D值，使用EMA方法
+        d = k.ewm(alpha=1/m2, adjust=False).mean()
+        d.fillna(50.0, inplace=True)  # 填充初始NaN值
         
         # 计算J值
         j = 3 * k - 2 * d
@@ -587,7 +583,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         # 3. KD交叉信号评分
         # 金叉质量评分
         golden_cross = crossover(k, d)
-        cross_quality = kd_angle.abs().clip(0, 5)
+        cross_quality = kd_angle.fillna(0).abs().clip(0, 5)
         score += golden_cross * (15 + cross_quality)  # 基础15分 + 最多5分质量加成
 
         # 死叉质量评分
@@ -596,10 +592,10 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         
         # 4. J线加速度评分
         # J线加速度为正，看涨
-        score += (j_accel > 0.5) * 10
+        score += (j_accel.fillna(0) > 0.5) * 10
         
         # J线加速度为负，看跌
-        score -= (j_accel < -0.5) * 10
+        score -= (j_accel.fillna(0) < -0.5) * 10
         
         # 5. KD位置评分
         # KD均值位置（估算当前位置相对于历史范围）

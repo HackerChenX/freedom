@@ -109,7 +109,24 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
             logger.warning(f"数据长度({len(df)})小于所需的回溯周期({min_length})，返回原始数据")
             df['STOCHRSI_K'] = np.nan
             df['STOCHRSI_D'] = np.nan
+            return df
             
+        # 计算RSI
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=self.rsi_period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=self.rsi_period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        
+        # 计算StochRSI
+        rsi_min = rsi.rolling(window=self.stoch_period).min()
+        rsi_max = rsi.rolling(window=self.stoch_period).max()
+        stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min) * 100
+        
+        # 计算%K和%D
+        df['STOCHRSI_K'] = stoch_rsi.rolling(window=self.k_period).mean()
+        df['STOCHRSI_D'] = df['STOCHRSI_K'].rolling(window=self.d_period).mean()
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -170,29 +187,72 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
 
         return df
 
-        # 计算RSI
-        delta = df['close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=self.rsi_period).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=self.rsi_period).mean()
-        rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        
-        # 计算StochRSI
-        rsi_min = rsi.rolling(window=self.stoch_period).min()
-        rsi_max = rsi.rolling(window=self.stoch_period).max()
-        stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min) * 100
-        
-        # 计算%K和%D
-        df['STOCHRSI_K'] = stoch_rsi.rolling(window=self.k_period).mean()
-        df['STOCHRSI_D'] = df['STOCHRSI_K'].rolling(window=self.d_period).mean()
-        
-        return df
-    
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
+        """
+        计算STOCHRSI指标的原始评分（0-100分制）
+        
+        STOCHRSI评分逻辑：
+        - STOCHRSI在20-80之间为正常区间，得分50分
+        - STOCHRSI < 20为超卖区间，越低得分越高（最高80分）
+        - STOCHRSI > 80为超买区间，越高得分越低（最低20分）
+        - 结合K线与D线的金叉死叉进行调整
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列，取值范围0-100
+        """
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        # 获取STOCHRSI指标值
+        if self._result is None or 'STOCHRSI_K' not in self._result.columns or 'STOCHRSI_D' not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
+
+        k = self._result['STOCHRSI_K']
+        d = self._result['STOCHRSI_D']
+        
+        # 基础评分计算
+        # 1. 位置分：基于K值的位置，贡献60分权重
+        position_score = pd.Series(50.0, index=data.index)
+        
+        # 超卖区间（K < 20）：看涨信号，得分增加
+        oversold = k < 20
+        position_score[oversold] = 50 + np.minimum(30, (20 - k[oversold]) * 1.5)  # 最高80分
+        
+        # 超买区间（K > 80）：看跌信号，得分减少
+        overbought = k > 80
+        position_score[overbought] = 50 - np.minimum(30, (k[overbought] - 80) * 1.5)  # 最低20分
+        
+        # 正常区间（20 <= K <= 80）：中性，基于距离中线的远近微调
+        normal = (k >= 20) & (k <= 80)
+        position_score[normal] = 50 + (k[normal] - 50) * 0.2  # 20时为44分，80时为56分
+        
+        # 2. 金叉死叉分：基于K线与D线的交叉，贡献25分权重
+        cross_score = pd.Series(50.0, index=data.index)
+        
+        # 检测金叉（K上穿D）
+        golden_cross = (k > d) & (k.shift(1) <= d.shift(1))
+        cross_score[golden_cross] += 20  # 金叉加分
+        
+        # 检测死叉（K下穿D）
+        death_cross = (k < d) & (k.shift(1) >= d.shift(1))
+        cross_score[death_cross] -= 20  # 死叉减分
+        
+        # 3. 趋势分：基于K值变化趋势，贡献15分权重
+        k_change = k - k.shift(3)  # 3周期变化
+        trend_score = pd.Series(50.0, index=data.index)
+        
+        # K值上升趋势加分，下降趋势减分
+        trend_score += np.clip(k_change * 0.3, -10, 10)
+        
+        # 4. 综合评分（位置分60% + 金叉死叉分25% + 趋势分15%）
+        final_score = position_score * 0.6 + cross_score * 0.25 + trend_score * 0.15
+        
+        # 限制评分在0-100之间
+        return final_score.clip(0, 100)
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""

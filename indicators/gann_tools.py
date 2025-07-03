@@ -2,7 +2,7 @@
 """
 GANN_TOOLS 指标
 
-自动生成的最小化指标实现
+江恩工具指标 - 基于江恩理论的角度线和时间周期分析
 """
 
 import pandas as pd
@@ -20,7 +20,8 @@ class GANN_TOOLS(BaseIndicator, PatternSignalMixin):
     """
     GANN_TOOLS 指标
     
-    自动生成的最小化实现，支持参数标准化
+    江恩工具指标，基于江恩理论的角度线和时间周期分析
+    主要分析价格与时间的几何关系和周期性规律
     """
     
     def __init__(self, **kwargs):
@@ -41,7 +42,11 @@ class GANN_TOOLS(BaseIndicator, PatternSignalMixin):
     
     def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {
+            "period": 20,  # 计算周期
+            "gann_angles": [1/8, 1/4, 1/3, 1/2, 1/1, 2/1, 3/1, 4/1, 8/1],  # 江恩角度
+            "time_cycles": [7, 14, 21, 30, 45, 60, 90, 120, 180]  # 江恩时间周期
+        }
     
     def set_parameters(self, **kwargs):
         """
@@ -68,11 +73,15 @@ class GANN_TOOLS(BaseIndicator, PatternSignalMixin):
                 params = self._default_parameters.copy()
             
             # 设置参数
-            self.period = params.get('period', 14)
+            self.period = params.get('period', 20)
+            self.gann_angles = params.get('gann_angles', [1/8, 1/4, 1/3, 1/2, 1/1, 2/1, 3/1, 4/1, 8/1])
+            self.time_cycles = params.get('time_cycles', [7, 14, 21, 30, 45, 60, 90, 120, 180])
                     
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            self.period = 20
+            self.gann_angles = [1/8, 1/4, 1/3, 1/2, 1/1, 2/1, 3/1, 4/1, 8/1]
+            self.time_cycles = [7, 14, 21, 30, 45, 60, 90, 120, 180]
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -100,36 +109,315 @@ class GANN_TOOLS(BaseIndicator, PatternSignalMixin):
         """
         df = data.copy()
         
-        # 基本实现：返回原数据加上一个简单的计算列
-        df[f'GANN_TOOLS_VALUE'] = df['close'].rolling(window=self.period).mean()
+        # 计算江恩角度线
+        df = self._calculate_gann_angles(df)
         
+        # 计算时间周期
+        df['time_cycle_signal'] = self._calculate_time_cycles(df)
+        
+        # 计算价格与角度线的关系
+        df['angle_support'] = self._calculate_angle_support(df)
+        df['angle_resistance'] = self._calculate_angle_resistance(df)
+        
+        # 计算江恩扇形分析
+        df['gann_fan_signal'] = self._calculate_gann_fan(df)
+        
+        # 计算时间价格平方根关系
+        df['square_of_nine'] = self._calculate_square_of_nine(df)
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写专用信号逻辑：基于评分值的阈值判断
-        # 对于state_type指标，使用评分阈值模式
-        score_threshold = 50.0  # 默认阈值
-        df.loc[:, 'buy_signal'] = df[f'GANN_TOOLS_VALUE'] >= score_threshold
-        df.loc[:, 'sell_signal'] = df[f'GANN_TOOLS_VALUE'] < score_threshold
-        df.loc[:, 'hold_signal'] = df[f'GANN_TOOLS_VALUE'] < score_threshold
-
         return df
     
+    def _calculate_gann_angles(self, df: pd.DataFrame) -> pd.DataFrame:
+        """计算江恩角度线"""
+        close = df['close']
+        
+        # 找到重要的高低点作为起始点
+        swing_high = df['high'].rolling(window=self.period).max()
+        swing_low = df['low'].rolling(window=self.period).min()
+        
+        # 计算各个角度线
+        for i, angle in enumerate(self.gann_angles):
+            # 使用数字索引而不是时间索引
+            time_index = pd.Series(range(len(df)), index=df.index)
+            
+            # 从低点向上的角度线
+            angle_up = swing_low + time_index * angle * 0.1  # 缩放因子
+            df[f'gann_up_{angle:.3f}'] = angle_up
+            
+            # 从高点向下的角度线
+            angle_down = swing_high - time_index * angle * 0.1  # 缩放因子
+            df[f'gann_down_{angle:.3f}'] = angle_down
+        
+        return df
+    
+    def _calculate_time_cycles(self, df: pd.DataFrame) -> pd.Series:
+        """计算时间周期信号"""
+        signal = pd.Series(0.0, index=df.index)
+        
+        close = df['close']
+        
+        for cycle in self.time_cycles:
+            if len(df) >= cycle:
+                # 计算周期性高低点
+                cycle_high = close.rolling(window=cycle).max()
+                cycle_low = close.rolling(window=cycle).min()
+                
+                # 检查当前是否接近周期性转折点
+                current_pos = len(df) % cycle
+                
+                # 在周期的关键位置（1/4, 1/2, 3/4, 1）给予信号
+                if current_pos in [cycle//4, cycle//2, 3*cycle//4, 0]:
+                    # 价格接近周期高点，可能反转
+                    if close.iloc[-1] >= cycle_high.iloc[-1] * 0.95:
+                        signal.iloc[-1] += 5
+                    
+                    # 价格接近周期低点，可能反转
+                    if close.iloc[-1] <= cycle_low.iloc[-1] * 1.05:
+                        signal.iloc[-1] += 5
+        
+        return signal
+    
+    def _calculate_angle_support(self, df: pd.DataFrame) -> pd.Series:
+        """计算角度线支撑强度"""
+        support = pd.Series(0.0, index=df.index)
+        
+        close = df['close']
+        low = df['low']
+        
+        for angle in self.gann_angles:
+            angle_line = df.get(f'gann_up_{angle:.3f}', pd.Series(0.0, index=df.index))
+            
+            # 价格在角度线附近获得支撑
+            near_angle = (close >= angle_line * 0.98) & (close <= angle_line * 1.02)
+            touch_support = (low <= angle_line * 1.01) & (close > angle_line)
+            
+            # 1x1角度线（45度）权重最高
+            weight = 10 if angle == 1.0 else 5
+            
+            support[near_angle] += weight
+            support[touch_support] += weight * 1.5
+        
+        return support
+    
+    def _calculate_angle_resistance(self, df: pd.DataFrame) -> pd.Series:
+        """计算角度线阻力强度"""
+        resistance = pd.Series(0.0, index=df.index)
+        
+        close = df['close']
+        high = df['high']
+        
+        for angle in self.gann_angles:
+            angle_line = df.get(f'gann_down_{angle:.3f}', pd.Series(0.0, index=df.index))
+            
+            # 价格在角度线附近遇到阻力
+            near_angle = (close >= angle_line * 0.98) & (close <= angle_line * 1.02)
+            touch_resistance = (high >= angle_line * 0.99) & (close < angle_line)
+            
+            # 1x1角度线（45度）权重最高
+            weight = 10 if angle == 1.0 else 5
+            
+            resistance[near_angle] += weight
+            resistance[touch_resistance] += weight * 1.5
+        
+        return resistance
+    
+    def _calculate_gann_fan(self, df: pd.DataFrame) -> pd.Series:
+        """计算江恩扇形分析信号"""
+        fan_signal = pd.Series(0.0, index=df.index)
+        
+        close = df['close']
+        
+        # 计算价格在江恩扇形中的位置
+        above_angles = 0
+        below_angles = 0
+        
+        for angle in self.gann_angles:
+            angle_up = df.get(f'gann_up_{angle:.3f}', pd.Series(0.0, index=df.index))
+            angle_down = df.get(f'gann_down_{angle:.3f}', pd.Series(0.0, index=df.index))
+            
+            # 统计价格在多少条角度线之上/之下
+            above_up = close > angle_up
+            below_down = close < angle_down
+            
+            above_angles += above_up.astype(int)
+            below_angles += below_down.astype(int)
+        
+        # 价格在大部分角度线之上，强势信号
+        strong_up = above_angles >= len(self.gann_angles) * 0.7
+        fan_signal[strong_up] += 15
+        
+        # 价格在大部分角度线之下，弱势信号
+        strong_down = below_angles >= len(self.gann_angles) * 0.7
+        fan_signal[strong_down] -= 15
+        
+        return fan_signal
+    
+    def _calculate_square_of_nine(self, df: pd.DataFrame) -> pd.Series:
+        """计算时间价格平方根关系（九宫格）"""
+        square_signal = pd.Series(0.0, index=df.index)
+        
+        close = df['close']
+        
+        # 计算价格的平方根
+        price_sqrt = np.sqrt(close)
+        
+        # 检查价格平方根是否接近整数（江恩重要价位）
+        sqrt_fractional = price_sqrt - np.floor(price_sqrt)
+        
+        # 接近整数平方根的价位是重要的江恩价位
+        near_square = (sqrt_fractional < 0.1) | (sqrt_fractional > 0.9)
+        square_signal[near_square] += 10
+        
+        # 检查价格是否在江恩的重要分数位（1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8）
+        important_fractions = [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]
+        
+        for frac in important_fractions:
+            near_fraction = np.abs(sqrt_fractional - frac) < 0.05
+            square_signal[near_fraction] += 8
+        
+        return square_signal
+    
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
+        """
+        计算原始评分
+        
+        基于江恩分析的综合评分：
+        - 角度线支撑阻力（35%权重）
+        - 时间周期信号（25%权重）
+        - 江恩扇形分析（25%权重）
+        - 九宫格分析（15%权重）
+        """
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        result = self._result
+        score = pd.Series(50.0, index=data.index)
+        
+        # 1. 角度线支撑阻力评分（35%权重）
+        angle_support = result.get('angle_support', pd.Series(0.0, index=data.index))
+        angle_resistance = result.get('angle_resistance', pd.Series(0.0, index=data.index))
+        
+        # 支撑强度加分，阻力强度减分
+        support_score = np.clip(angle_support / 3, 0, 25)
+        resistance_score = np.clip(angle_resistance / 3, 0, 25)
+        
+        score += support_score * 0.35
+        score -= resistance_score * 0.35
+        
+        # 2. 时间周期信号评分（25%权重）
+        time_cycle_signal = result.get('time_cycle_signal', pd.Series(0.0, index=data.index))
+        cycle_score = np.clip(time_cycle_signal / 2, 0, 20)
+        score += cycle_score * 0.25
+        
+        # 3. 江恩扇形分析评分（25%权重）
+        gann_fan_signal = result.get('gann_fan_signal', pd.Series(0.0, index=data.index))
+        fan_score = np.clip(gann_fan_signal / 1.5, -20, 20)
+        score += fan_score * 0.25
+        
+        # 4. 九宫格分析评分（15%权重）
+        square_signal = result.get('square_of_nine', pd.Series(0.0, index=data.index))
+        square_score = np.clip(square_signal / 2, 0, 15)
+        score += square_score * 0.15
+        
+        # 特殊加成：1x1角度线（45度线）的重要性
+        close = data['close']
+        if len(result) > 0 and 'gann_up_1.000' in result.columns:
+            gann_1x1_up = result['gann_up_1.000']
+            
+            # 价格在1x1线附近，额外加分
+            near_1x1 = np.abs(close - gann_1x1_up) / close < 0.02
+            score[near_1x1] += 5
+        
+        # 确保评分在0-100范围内
+        score = np.clip(score, 0, 100)
+        
+        return score
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        if len(score) == 0:
+            return 0.5
+        
+        # 基于评分分布和江恩理论的几何一致性计算置信度
+        avg_score = score.mean()
+        score_std = score.std()
+        
+        # 评分越高，置信度越高
+        score_confidence = min(avg_score / 100, 1.0)
+        
+        # 评分稳定性越高，置信度越高
+        stability_confidence = max(0.3, 1.0 - score_std / 50)
+        
+        # 江恩理论强调几何一致性，稳定性权重更高
+        confidence = (score_confidence * 0.6 + stability_confidence * 0.4)
+        
+        return max(0.3, min(0.95, confidence))
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
-        return pd.DataFrame(index=data.index)
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        result = self._result
+        patterns = []
+        
+        if len(result) > 0:
+            last_row = result.iloc[-1]
+            
+            # 角度线形态
+            angle_support = last_row.get('angle_support', 0)
+            angle_resistance = last_row.get('angle_resistance', 0)
+            
+            if angle_support > 15:
+                patterns.append("江恩角度线强支撑")
+            elif angle_support > 8:
+                patterns.append("江恩角度线支撑")
+            
+            if angle_resistance > 15:
+                patterns.append("江恩角度线强阻力")
+            elif angle_resistance > 8:
+                patterns.append("江恩角度线阻力")
+            
+            # 时间周期形态
+            time_cycle_signal = last_row.get('time_cycle_signal', 0)
+            if time_cycle_signal > 10:
+                patterns.append("江恩时间周期转折点")
+            elif time_cycle_signal > 5:
+                patterns.append("江恩时间周期信号")
+            
+            # 江恩扇形形态
+            gann_fan_signal = last_row.get('gann_fan_signal', 0)
+            if gann_fan_signal > 10:
+                patterns.append("江恩扇形强势突破")
+            elif gann_fan_signal > 5:
+                patterns.append("江恩扇形上升趋势")
+            elif gann_fan_signal < -10:
+                patterns.append("江恩扇形弱势破位")
+            elif gann_fan_signal < -5:
+                patterns.append("江恩扇形下降趋势")
+            
+            # 九宫格形态
+            square_signal = last_row.get('square_of_nine', 0)
+            if square_signal > 15:
+                patterns.append("江恩九宫格重要价位")
+            elif square_signal > 8:
+                patterns.append("江恩九宫格关键位")
+            
+            # 1x1角度线特殊形态
+            if 'gann_up_1.000' in result.columns:
+                close = data['close'].iloc[-1]
+                gann_1x1 = last_row.get('gann_up_1.000', close)
+                
+                if abs(close - gann_1x1) / close < 0.01:
+                    patterns.append("江恩1x1角度线精确支撑")
+                elif abs(close - gann_1x1) / close < 0.02:
+                    patterns.append("江恩1x1角度线附近")
+        
+        return pd.DataFrame({'patterns': [patterns]}, index=[data.index[-1]] if len(data) > 0 else [])
 
 
 # 为了向后兼容，创建别名

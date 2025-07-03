@@ -105,7 +105,25 @@ class CCI(BaseIndicator, PatternSignalMixin):
         if len(df) < self.period:
             logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period})，返回原始数据")
             df[f'CCI{self.period}'] = np.nan
+            return df
             
+        # 计算典型价格
+        df['TP'] = (df['high'] + df['low'] + df['close']) / 3
+
+        # 计算移动平均
+        df['MA'] = df['TP'].rolling(window=self.period).mean()
+
+        # 计算平均偏差
+        df['MD'] = df['TP'].rolling(window=self.period).apply(
+            lambda x: np.mean(np.abs(x - x.mean()))
+        )
+
+        # 计算CCI
+        df[f'CCI{self.period}'] = (df['TP'] - df['MA']) / (self.constant * df['MD'])
+
+        # 清理中间计算列
+        df.drop(['TP', 'MA', 'MD'], axis=1, inplace=True)
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -162,30 +180,61 @@ class CCI(BaseIndicator, PatternSignalMixin):
 
         return df
 
-        # 计算典型价格
-        df['TP'] = (df['high'] + df['low'] + df['close']) / 3
-
-        # 计算移动平均
-        df['MA'] = df['TP'].rolling(window=self.period).mean()
-
-        # 计算平均偏差
-        df['MD'] = df['TP'].rolling(window=self.period).apply(
-            lambda x: np.mean(np.abs(x - x.mean()))
-        )
-
-        # 计算CCI
-        df[f'CCI{self.period}'] = (df['TP'] - df['MA']) / (self.constant * df['MD'])
-
-        # 清理中间计算列
-        df.drop(['TP', 'MA', 'MD'], axis=1, inplace=True)
-
-        return df
-
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
+        """
+        计算CCI指标的原始评分（0-100分制）
+        
+        CCI评分逻辑：
+        - CCI在-100到100之间为正常区间，得分50分
+        - CCI < -100为超卖区间，越低得分越高（最高80分）
+        - CCI > 100为超买区间，越高得分越低（最低20分）
+        - 结合CCI变化趋势进行调整
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列，取值范围0-100
+        """
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        # 获取CCI指标值
+        cci_col = f'CCI{self.period}'
+        if self._result is None or cci_col not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
+
+        cci = self._result[cci_col]
+        
+        # 基础评分计算
+        # 1. 位置分：基于CCI值的位置，贡献70分权重
+        position_score = pd.Series(50.0, index=data.index)
+        
+        # 超卖区间（CCI < -100）：看涨信号，得分增加
+        oversold = cci < -100
+        position_score[oversold] = 50 + np.minimum(30, (-cci[oversold] - 100) * 0.15)  # 最高80分
+        
+        # 超买区间（CCI > 100）：看跌信号，得分减少
+        overbought = cci > 100
+        position_score[overbought] = 50 - np.minimum(30, (cci[overbought] - 100) * 0.15)  # 最低20分
+        
+        # 正常区间（-100 <= CCI <= 100）：中性，基于距离零轴的远近微调
+        normal = (cci >= -100) & (cci <= 100)
+        position_score[normal] = 50 + cci[normal] * 0.1  # -100时为40分，100时为60分
+        
+        # 2. 趋势分：基于CCI变化趋势，贡献30分权重
+        cci_change = cci - cci.shift(3)  # 3周期变化
+        trend_score = pd.Series(50.0, index=data.index)
+        
+        # CCI上升趋势加分，下降趋势减分
+        trend_score += np.clip(cci_change * 0.2, -15, 15)
+        
+        # 3. 综合评分（位置分70% + 趋势分30%）
+        final_score = position_score * 0.7 + trend_score * 0.3
+        
+        # 限制评分在0-100之间
+        return final_score.clip(0, 100)
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""

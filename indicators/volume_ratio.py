@@ -117,7 +117,13 @@ class VOLUME_RATIO(BaseIndicator, PatternSignalMixin):
         else:
             # 如果没有成交量数据，返回默认值
             df['VOLUME_RATIO_VALUE'] = 1.0
-            
+            return df
+        
+        # 计算量比
+        volume_avg = volume.rolling(window=self.period).mean()
+        volume_ratio = volume / volume_avg
+        df['VOLUME_RATIO_VALUE'] = volume_ratio.fillna(1.0)
+        
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -167,18 +173,105 @@ class VOLUME_RATIO(BaseIndicator, PatternSignalMixin):
             df.loc[:, 'hold_signal'] = True
 
         return df
-
-        # 计算量比
-        volume_ratio = volume / volume.rolling(window=self.period).mean()
-        df['VOLUME_RATIO_VALUE'] = volume_ratio.fillna(1.0)
-        
-        return df
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
+        """
+        计算量比指标的原始评分
+        
+        基于量比的活跃度和稳定性进行评分：
+        1. 量比活跃度：量比偏离1的程度
+        2. 量比稳定性：量比的波动程度
+        3. 量比趋势：量比的变化趋势
+        4. 量比分布：量比的分布特征
+        """
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        if 'VOLUME_RATIO_VALUE' not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
+        
+        volume_ratio = self._result['VOLUME_RATIO_VALUE'].fillna(1.0)
+        scores = pd.Series(index=data.index, dtype=float)
+        
+        for i in range(len(volume_ratio)):
+            if i < self.period:
+                scores.iloc[i] = 50.0
+                continue
+            
+            # 获取当前窗口数据
+            current_ratio = volume_ratio.iloc[i]
+            window_ratios = volume_ratio.iloc[max(0, i-self.period+1):i+1]
+            
+            score = 50.0  # 基础分数
+            
+            # 1. 量比活跃度评分 (30分)
+            # 量比越偏离1，市场越活跃
+            activity_deviation = abs(current_ratio - 1.0)
+            if activity_deviation >= 2.0:
+                activity_score = 30.0  # 极度活跃
+            elif activity_deviation >= 1.0:
+                activity_score = 20.0 + (activity_deviation - 1.0) * 10.0  # 活跃
+            elif activity_deviation >= 0.5:
+                activity_score = 10.0 + (activity_deviation - 0.5) * 20.0  # 较活跃
+            else:
+                activity_score = activity_deviation * 20.0  # 平淡
+            
+            score += activity_score - 15.0  # 调整基准
+            
+            # 2. 量比稳定性评分 (20分)
+            # 量比波动越小，市场越稳定
+            if len(window_ratios) > 1:
+                ratio_std = window_ratios.std()
+                if ratio_std <= 0.2:
+                    stability_score = 20.0  # 非常稳定
+                elif ratio_std <= 0.5:
+                    stability_score = 15.0 + (0.5 - ratio_std) / 0.3 * 5.0  # 稳定
+                elif ratio_std <= 1.0:
+                    stability_score = 10.0 + (1.0 - ratio_std) / 0.5 * 5.0  # 较稳定
+                else:
+                    stability_score = max(0, 10.0 - (ratio_std - 1.0) * 5.0)  # 不稳定
+            else:
+                stability_score = 10.0
+            
+            score += stability_score - 10.0  # 调整基准
+            
+            # 3. 量比趋势评分 (20分)
+            # 量比上升趋势给予更高评分
+            if len(window_ratios) >= 3:
+                recent_ratios = window_ratios.tail(3)
+                if recent_ratios.iloc[-1] > recent_ratios.iloc[-2] > recent_ratios.iloc[-3]:
+                    trend_score = 20.0  # 持续上升
+                elif recent_ratios.iloc[-1] > recent_ratios.iloc[-2]:
+                    trend_score = 15.0  # 上升
+                elif recent_ratios.iloc[-1] < recent_ratios.iloc[-2] < recent_ratios.iloc[-3]:
+                    trend_score = 5.0   # 持续下降
+                elif recent_ratios.iloc[-1] < recent_ratios.iloc[-2]:
+                    trend_score = 10.0  # 下降
+                else:
+                    trend_score = 12.5  # 横盘
+            else:
+                trend_score = 12.5
+            
+            score += trend_score - 12.5  # 调整基准
+            
+            # 4. 量比分布评分 (10分)
+            # 量比在合理区间内给予更高评分
+            if 0.8 <= current_ratio <= 1.2:
+                distribution_score = 10.0  # 正常区间
+            elif 0.5 <= current_ratio <= 2.0:
+                distribution_score = 8.0   # 较正常区间
+            elif 0.3 <= current_ratio <= 3.0:
+                distribution_score = 5.0   # 偏离区间
+            else:
+                distribution_score = 2.0   # 极端区间
+            
+            score += distribution_score - 5.0  # 调整基准
+            
+            # 确保分数在合理范围内
+            score = max(0, min(100, score))
+            scores.iloc[i] = score
+        
+        return scores
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""

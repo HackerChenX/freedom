@@ -106,7 +106,20 @@ class ATR(BaseIndicator, PatternSignalMixin):
         if len(df) < self.period + 1:
             logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period + 1})，返回原始数据")
             df[f'ATR{self.period}'] = np.nan
+            return df
             
+        # 计算真实波幅(TR)
+        df['tr1'] = df['high'] - df['low']
+        df['tr2'] = abs(df['high'] - df['close'].shift(1))
+        df['tr3'] = abs(df['low'] - df['close'].shift(1))
+        df['TR'] = df[['tr1', 'tr2', 'tr3']].max(axis=1)
+
+        # 计算ATR - TR的period周期平均值
+        df[f'ATR{self.period}'] = df['TR'].rolling(window=self.period).mean()
+
+        # 清理中间计算列
+        df.drop(['tr1', 'tr2', 'tr3', 'TR'], axis=1, inplace=True)
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -159,25 +172,87 @@ class ATR(BaseIndicator, PatternSignalMixin):
 
         return df
 
-        # 计算真实波幅(TR)
-        df['tr1'] = df['high'] - df['low']
-        df['tr2'] = abs(df['high'] - df['close'].shift(1))
-        df['tr3'] = abs(df['low'] - df['close'].shift(1))
-        df['TR'] = df[['tr1', 'tr2', 'tr3']].max(axis=1)
-
-        # 计算ATR - TR的period周期平均值
-        df[f'ATR{self.period}'] = df['TR'].rolling(window=self.period).mean()
-
-        # 清理中间计算列
-        df.drop(['tr1', 'tr2', 'tr3', 'TR'], axis=1, inplace=True)
-
-        return df
-
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
+        """
+        计算ATR指标的原始评分（0-100分制）
+        
+        ATR评分逻辑：
+        - ATR是波动性指标，高ATR表示高波动性（风险高但机会大）
+        - 基于ATR相对于历史水平的位置进行评分
+        - ATR上升趋势表示波动性增加，可能有突破机会
+        - ATR下降趋势表示波动性减少，可能趋势稳定
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列，取值范围0-100
+        """
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        # 获取ATR指标值
+        atr_col = f'ATR{self.period}'
+        if self._result is None or atr_col not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
+
+        atr = self._result[atr_col]
+        
+        # 计算ATR的相对位置（基于历史百分位数）
+        atr_rolling_window = min(50, len(atr))  # 使用50周期或数据长度
+        
+        # 基础评分计算
+        # 1. 相对水平分：基于ATR相对历史水平的位置，贡献50分权重
+        position_score = pd.Series(50.0, index=data.index)
+        
+        if atr_rolling_window >= 20:  # 确保有足够数据计算百分位数
+            # 计算ATR的历史百分位数
+            atr_percentile = atr.rolling(window=atr_rolling_window).apply(
+                lambda x: (x.iloc[-1] - x.min()) / (x.max() - x.min()) * 100 if x.max() > x.min() else 50
+            )
+            
+            # 基于百分位数调整评分
+            # 低波动性（0-30百分位）：稳定但机会少，得分45-55
+            # 中等波动性（30-70百分位）：平衡，得分50
+            # 高波动性（70-100百分位）：机会多但风险高，得分55-65
+            position_score = 50 + (atr_percentile - 50) * 0.3
+        
+        # 2. 趋势分：基于ATR变化趋势，贡献30分权重
+        atr_change = atr - atr.shift(5)  # 5周期变化
+        atr_change_pct = atr_change / atr.shift(5) * 100  # 变化百分比
+        
+        trend_score = pd.Series(50.0, index=data.index)
+        
+        # ATR上升趋势：波动性增加，可能有突破机会，适度加分
+        # ATR下降趋势：波动性减少，趋势可能稳定，适度减分
+        trend_score += np.clip(atr_change_pct * 0.5, -15, 15)
+        
+        # 3. 价格突破潜力分：基于ATR与价格变化的关系，贡献20分权重
+        breakthrough_score = pd.Series(50.0, index=data.index)
+        
+        if 'close' in self._result.columns:
+            close = self._result['close']
+            price_change = close - close.shift(3)  # 3周期价格变化
+            price_change_pct = price_change / close.shift(3) * 100
+            
+            # 当价格变化幅度接近ATR时，表示可能有突破
+            # ATR相对于价格的比例
+            atr_price_ratio = atr / close * 100
+            
+            # 高ATR比例且价格变化较大时加分
+            high_volatility_move = (atr_price_ratio > 2) & (abs(price_change_pct) > 1)
+            breakthrough_score[high_volatility_move] += 10
+            
+            # 低ATR比例且价格变化较小时减分（盘整状态）
+            low_volatility_move = (atr_price_ratio < 1) & (abs(price_change_pct) < 0.5)
+            breakthrough_score[low_volatility_move] -= 10
+        
+        # 4. 综合评分（相对水平分50% + 趋势分30% + 突破潜力分20%）
+        final_score = position_score * 0.5 + trend_score * 0.3 + breakthrough_score * 0.2
+        
+        # 限制评分在0-100之间
+        return final_score.clip(0, 100)
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""

@@ -96,60 +96,175 @@ class ZXMDailyTrendUp(BaseIndicator, PatternSignalMixin):
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        scores = pd.Series(50.0, index=data.index, dtype=float)
         
-        # 主要信号评分规则
-        # 1. 均线上移信号(XG)：趋势向好，+25分
-        score[result["XG"]] += 25
+        close = data["close"]
+        ma60 = result["MA60"]
+        ma120 = result["MA120"]
         
-        # 2. 均线趋势强度评分
-        # 如果价格位于均线上方，额外加分
-        price_above_ma60 = data["close"] > result["MA60"]
-        price_above_ma120 = data["close"] > result["MA120"]
+        # 数据长度检查
+        data_length = len(data)
         
-        # 价格位于60日均线上方加分
-        score[price_above_ma60] += 5
+        for i in range(len(data)):
+            score = 50.0  # 基础分数
+            
+            # 跳过数据不足的开始部分
+            if i < 5:
+                scores.iloc[i] = score
+                continue
+            
+            current_close = close.iloc[i]
+            
+            # 1. 基于价格趋势的评分（当MA数据不足时使用）
+            if i >= 5:
+                # 短期价格趋势
+                price_trend_5 = (current_close - close.iloc[i-5]) / close.iloc[i-5] if close.iloc[i-5] > 0 else 0
+                if price_trend_5 > 0.05:  # 5日涨幅>5%
+                    score += 15
+                elif price_trend_5 > 0.02:  # 5日涨幅>2%
+                    score += 10
+                elif price_trend_5 > 0:     # 5日涨幅>0%
+                    score += 5
+                elif price_trend_5 < -0.05: # 5日跌幅>5%
+                    score -= 15
+                elif price_trend_5 < -0.02: # 5日跌幅>2%
+                    score -= 10
+                elif price_trend_5 < 0:     # 5日跌幅>0%
+                    score -= 5
+            
+            # 2. 基于10日趋势的评分
+            if i >= 10:
+                price_trend_10 = (current_close - close.iloc[i-10]) / close.iloc[i-10] if close.iloc[i-10] > 0 else 0
+                if price_trend_10 > 0.10:   # 10日涨幅>10%
+                    score += 20
+                elif price_trend_10 > 0.05: # 10日涨幅>5%
+                    score += 15
+                elif price_trend_10 > 0:    # 10日涨幅>0%
+                    score += 8
+                elif price_trend_10 < -0.10: # 10日跌幅>10%
+                    score -= 20
+                elif price_trend_10 < -0.05: # 10日跌幅>5%
+                    score -= 15
+                elif price_trend_10 < 0:     # 10日跌幅>0%
+                    score -= 8
+            
+            # 3. 基于20日趋势的评分
+            if i >= 20:
+                price_trend_20 = (current_close - close.iloc[i-20]) / close.iloc[i-20] if close.iloc[i-20] > 0 else 0
+                if price_trend_20 > 0.20:   # 20日涨幅>20%
+                    score += 25
+                elif price_trend_20 > 0.10: # 20日涨幅>10%
+                    score += 20
+                elif price_trend_20 > 0:    # 20日涨幅>0%
+                    score += 10
+                elif price_trend_20 < -0.20: # 20日跌幅>20%
+                    score -= 25
+                elif price_trend_20 < -0.10: # 20日跌幅>10%
+                    score -= 20
+                elif price_trend_20 < 0:     # 20日跌幅>0%
+                    score -= 10
+            
+            # 4. 如果有MA60数据，使用MA60评分
+            if i >= 60 and not pd.isna(ma60.iloc[i]):
+                current_ma60 = ma60.iloc[i]
+                
+                # 价格相对MA60位置
+                if current_close > current_ma60 * 1.05:  # 价格在MA60上方5%以上
+                    score += 15
+                elif current_close > current_ma60:       # 价格在MA60上方
+                    score += 10
+                elif current_close > current_ma60 * 0.98: # 价格接近MA60（2%以内）
+                    score += 5
+                elif current_close < current_ma60 * 0.95: # 价格在MA60下方5%以上
+                    score -= 10
+                elif current_close < current_ma60:        # 价格在MA60下方
+                    score -= 5
+                
+                # MA60趋势
+                if i >= 65:
+                    ma60_trend = (current_ma60 - ma60.iloc[i-5]) / ma60.iloc[i-5] if ma60.iloc[i-5] > 0 else 0
+                    if ma60_trend > 0.02:    # MA60周涨幅>2%
+                        score += 10
+                    elif ma60_trend > 0:     # MA60上升
+                        score += 5
+                    elif ma60_trend < -0.02: # MA60周跌幅>2%
+                        score -= 10
+                    elif ma60_trend < 0:     # MA60下降
+                        score -= 5
+            
+            # 5. 如果有MA120数据，使用MA120评分
+            if i >= 120 and not pd.isna(ma120.iloc[i]):
+                current_ma120 = ma120.iloc[i]
+                
+                # 价格相对MA120位置
+                if current_close > current_ma120 * 1.10:  # 价格在MA120上方10%以上
+                    score += 20
+                elif current_close > current_ma120:       # 价格在MA120上方
+                    score += 15
+                elif current_close > current_ma120 * 0.95: # 价格接近MA120（5%以内）
+                    score += 8
+                elif current_close < current_ma120 * 0.90: # 价格在MA120下方10%以上
+                    score -= 15
+                elif current_close < current_ma120:        # 价格在MA120下方
+                    score -= 10
+                
+                # MA120趋势
+                if i >= 125:
+                    ma120_trend = (current_ma120 - ma120.iloc[i-5]) / ma120.iloc[i-5] if ma120.iloc[i-5] > 0 else 0
+                    if ma120_trend > 0.01:    # MA120周涨幅>1%
+                        score += 15
+                    elif ma120_trend > 0:     # MA120上升
+                        score += 8
+                    elif ma120_trend < -0.01: # MA120周跌幅>1%
+                        score -= 15
+                    elif ma120_trend < 0:     # MA120下降
+                        score -= 8
+            
+            # 6. 波动率评分
+            if i >= 10:
+                # 计算10日波动率
+                returns = close.pct_change()
+                volatility = returns.iloc[i-10:i+1].std()
+                
+                # 低波动率加分，高波动率减分
+                if volatility < 0.02:      # 日波动率<2%
+                    score += 5
+                elif volatility < 0.03:    # 日波动率<3%
+                    score += 3
+                elif volatility > 0.08:    # 日波动率>8%
+                    score -= 8
+                elif volatility > 0.05:    # 日波动率>5%
+                    score -= 5
+            
+            # 7. 连续性评分
+            if i >= 5:
+                # 连续上涨天数
+                consecutive_up = 0
+                for j in range(min(5, i)):
+                    if close.iloc[i-j] > close.iloc[i-j-1]:
+                        consecutive_up += 1
+                    else:
+                        break
+                
+                if consecutive_up >= 3:
+                    score += consecutive_up * 2  # 连续上涨加分
+                
+                # 连续下跌天数
+                consecutive_down = 0
+                for j in range(min(5, i)):
+                    if close.iloc[i-j] < close.iloc[i-j-1]:
+                        consecutive_down += 1
+                    else:
+                        break
+                
+                if consecutive_down >= 3:
+                    score -= consecutive_down * 2  # 连续下跌减分
+            
+            # 确保分数在0-100范围内
+            score = max(0, min(100, score))
+            scores.iloc[i] = score
         
-        # 价格位于120日均线上方加分
-        score[price_above_ma120] += 10
-        
-        # 3. 连续性评分
-        # 连续多日均线上移，表示趋势较强
-        continuous_up_days = pd.Series(0, index=data.index)
-        for i in range(5, len(data)):
-            if all(result["XG"].iloc[i-5:i+1]):
-                continuous_up_days.iloc[i] = 5
-            elif all(result["XG"].iloc[i-3:i+1]):
-                continuous_up_days.iloc[i] = 3
-            elif all(result["XG"].iloc[i-1:i+1]):
-                continuous_up_days.iloc[i] = 1
-        
-        # 根据连续上移天数加分
-        score[continuous_up_days == 1] += 5
-        score[continuous_up_days == 3] += 10
-        score[continuous_up_days == 5] += 15
-        
-        # 4. 双均线共振评分
-        # 60日均线和120日均线同时上移，信号更强
-        both_up = result["J1"] & result["J2"]
-        score[both_up] += 10
-        
-        # 5. 均线角度评分
-        # 计算均线斜率
-        ma60_slope = result["MA60"].diff(5) / result["MA60"].shift(5)
-        ma120_slope = result["MA120"].diff(5) / result["MA120"].shift(5)
-        
-        # 根据斜率大小加分，斜率越大上升越快
-        score[ma60_slope > 0.02] += 5  # 周涨幅>2%
-        score[ma60_slope > 0.05] += 5  # 周涨幅>5%
-        
-        score[ma120_slope > 0.01] += 5  # 周涨幅>1%
-        score[ma120_slope > 0.03] += 5  # 周涨幅>3%
-        
-        # 确保评分在0-100范围内
-        score = score.clip(0, 100)
-        
-        return score
+        return scores
     
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """

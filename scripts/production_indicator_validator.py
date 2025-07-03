@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-生产环境指标验证工具
-
-基于ClickHouse真实数据验证指标选股的可靠性
-支持逐个指标验证和批量验证
+生产环境指标验证器 - 支持88个完整指标
+基于ClickHouse真实数据验证指标选股效果
 """
 
 import sys
@@ -18,74 +16,165 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Set, Any, Optional, Tuple
 import time
+import logging
 
 # 添加项目根目录到路径
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
 
 from db.clickhouse_db import get_clickhouse_db
-from indicators.zxm.buy_point_indicators import (
-    ZXMVolumeShrink, ZXMBSAbsorb, ZXMTurnover, 
-    ZXMDailyMACD, ZXMMACallback
-)
-from indicators.enhanced_macd import EnhancedMACD
-from indicators.enhanced_rsi import EnhancedRSI
-from indicators.unified_ma import UnifiedMA
 from utils.logger import get_logger
+
+# 导入完整指标注册表
+try:
+    from indicators.complete_indicator_registry import complete_registry
+    REGISTRY_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ 无法导入完整指标注册表: {e}")
+    REGISTRY_AVAILABLE = False
+
+# 导入现有的ZXM和增强指标作为后备
+try:
+    from indicators.zxm.buy_point_indicators import ZXMVolumeShrink, ZXMBSAbsorb, ZXMTurnover, ZXMDailyMACD, ZXMMACallback
+    from indicators.enhanced_macd import EnhancedMACD
+    from indicators.enhanced_rsi import EnhancedRSI
+    from indicators.unified_ma import UnifiedMA
+    ZXM_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ 无法导入ZXM指标: {e}")
+    ZXM_AVAILABLE = False
 
 logger = get_logger(__name__)
 
 
 class ProductionIndicatorValidator:
-    """生产环境指标验证器"""
+    """生产环境指标验证器 - 支持88个完整指标"""
     
     def __init__(self):
         """初始化验证器"""
         try:
+            # 初始化数据库连接
             self.db = get_clickhouse_db()
             logger.info("✅ 成功连接到ClickHouse数据库")
             
-            # 初始化可用指标 - 只包含确实存在的指标
+            # 初始化指标注册表
             self.available_indicators = {}
-            
-            # 尝试导入ZXM指标
-            try:
-                self.available_indicators['volume_shrink'] = ZXMVolumeShrink()
-                self.available_indicators['bs_absorb'] = ZXMBSAbsorb()
-                self.available_indicators['turnover'] = ZXMTurnover()
-                self.available_indicators['daily_macd'] = ZXMDailyMACD()
-                self.available_indicators['ma_callback'] = ZXMMACallback()
-                logger.info("✅ ZXM指标加载成功")
-            except Exception as e:
-                logger.warning(f"⚠️ ZXM指标加载失败: {e}")
-            
-            # 尝试导入增强指标
-            try:
-                self.available_indicators['enhanced_macd'] = EnhancedMACD()
-                logger.info("✅ EnhancedMACD指标加载成功")
-            except Exception as e:
-                logger.warning(f"⚠️ EnhancedMACD指标加载失败: {e}")
-            
-            try:
-                self.available_indicators['enhanced_rsi'] = EnhancedRSI()
-                logger.info("✅ EnhancedRSI指标加载成功")
-            except Exception as e:
-                logger.warning(f"⚠️ EnhancedRSI指标加载失败: {e}")
-            
-            try:
-                self.available_indicators['unified_ma'] = UnifiedMA()
-                logger.info("✅ UnifiedMA指标加载成功")
-            except Exception as e:
-                logger.warning(f"⚠️ UnifiedMA指标加载失败: {e}")
+            self._initialize_indicators()
             
             if not self.available_indicators:
                 raise Exception("没有可用的指标")
             
-            logger.info(f"✅ 初始化完成，可用指标: {list(self.available_indicators.keys())}")
+            logger.info(f"✅ 初始化完成，可用指标数量: {len(self.available_indicators)}")
             
         except Exception as e:
             logger.error(f"❌ 初始化失败: {e}")
             raise
+    
+    def _initialize_indicators(self):
+        """初始化所有可用指标"""
+        success_count = 0
+        failed_count = 0
+        
+        # 优先使用完整指标注册表
+        if REGISTRY_AVAILABLE:
+            logger.info("🔄 使用完整指标注册表初始化88个指标...")
+            success_count += self._load_from_complete_registry()
+        
+        # 如果注册表不可用或指标数量不足，使用后备方案
+        if len(self.available_indicators) < 5 and ZXM_AVAILABLE:
+            logger.info("🔄 使用后备方案加载ZXM和增强指标...")
+            success_count += self._load_fallback_indicators()
+        
+        logger.info(f"📊 指标加载完成: 成功 {success_count} 个，失败 {failed_count} 个")
+        
+        if len(self.available_indicators) == 0:
+            raise Exception("未能加载任何指标")
+    
+    def _load_from_complete_registry(self) -> int:
+        """从完整指标注册表加载指标"""
+        success_count = 0
+        
+        try:
+            # 获取所有已注册的指标名称
+            indicator_names = complete_registry.get_indicator_names()
+            logger.info(f"📋 注册表中发现 {len(indicator_names)} 个指标")
+            
+            # 尝试创建每个指标的实例
+            for indicator_name in indicator_names:
+                try:
+                    indicator_instance = complete_registry.create_indicator(indicator_name)
+                    if indicator_instance is not None:
+                        # 将指标名称转换为适合验证的格式（小写，下划线）
+                        validator_name = self._normalize_indicator_name(indicator_name)
+                        self.available_indicators[validator_name] = indicator_instance
+                        success_count += 1
+                        
+                        if success_count <= 10:  # 只显示前10个加载成功的指标
+                            logger.info(f"✅ {indicator_name} -> {validator_name}")
+                    else:
+                        logger.warning(f"⚠️ 无法创建指标实例: {indicator_name}")
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ 加载指标失败 {indicator_name}: {e}")
+            
+            if success_count > 10:
+                logger.info(f"✅ ...以及其他 {success_count - 10} 个指标")
+                
+        except Exception as e:
+            logger.error(f"❌ 从完整注册表加载指标失败: {e}")
+        
+        return success_count
+    
+    def _load_fallback_indicators(self) -> int:
+        """加载后备指标（ZXM和增强指标）"""
+        success_count = 0
+        
+        fallback_indicators = [
+            ('volume_shrink', ZXMVolumeShrink, 'ZXM缩量指标'),
+            ('bs_absorb', ZXMBSAbsorb, 'ZXM吸筹指标'),
+            ('turnover', ZXMTurnover, 'ZXM换手率指标'),
+            ('daily_macd', ZXMDailyMACD, 'ZXM日线MACD'),
+            ('ma_callback', ZXMMACallback, 'ZXM均线回踩'),
+            ('enhanced_macd', EnhancedMACD, '增强MACD'),
+            ('enhanced_rsi', EnhancedRSI, '增强RSI'),
+            ('unified_ma', UnifiedMA, '统一移动平均'),
+        ]
+        
+        for name, indicator_class, description in fallback_indicators:
+            try:
+                self.available_indicators[name] = indicator_class()
+                success_count += 1
+                logger.info(f"✅ 后备指标: {name} - {description}")
+            except Exception as e:
+                logger.warning(f"⚠️ 后备指标加载失败 {name}: {e}")
+        
+        return success_count
+    
+    def _normalize_indicator_name(self, indicator_name: str) -> str:
+        """将指标名称标准化为验证器格式"""
+        # 移除常见前缀
+        name = indicator_name.replace('ZXM_', '').replace('ENHANCED_', 'enhanced_')
+        
+        # 转换为小写并使用下划线
+        name = name.lower()
+        
+        # 处理特殊映射
+        name_mappings = {
+            'volume_shrink': 'volume_shrink',
+            'bs_absorb': 'bs_absorb', 
+            'daily_macd': 'daily_macd',
+            'ma_callback': 'ma_callback',
+            'turnover': 'turnover',
+            'macd': 'macd',
+            'rsi': 'rsi',
+            'kdj': 'kdj',
+            'boll': 'boll',
+            'ma': 'ma',
+            'ema': 'ema',
+            'unified_ma': 'unified_ma',
+        }
+        
+        return name_mappings.get(name, name)
     
     def get_latest_trade_date(self) -> str:
         """获取ClickHouse中最新的交易日期"""
@@ -687,77 +776,92 @@ class ProductionIndicatorValidator:
             return None
     
     def list_available_indicators(self) -> List[str]:
-        """列出所有可用的指标"""
-        return list(self.available_indicators.keys())
+        """返回所有可用指标的列表"""
+        return sorted(list(self.available_indicators.keys()))
+    
+    def get_indicator_statistics(self) -> Dict[str, Any]:
+        """获取指标统计信息"""
+        total_indicators = len(self.available_indicators)
+        
+        # 按类型分类指标
+        zxm_indicators = [name for name in self.available_indicators.keys() if 'zxm' in name.lower() or name in ['volume_shrink', 'bs_absorb', 'turnover', 'daily_macd', 'ma_callback']]
+        enhanced_indicators = [name for name in self.available_indicators.keys() if 'enhanced' in name.lower()]
+        traditional_indicators = [name for name in self.available_indicators.keys() if name not in zxm_indicators and name not in enhanced_indicators]
+        
+        return {
+            'total_indicators': total_indicators,
+            'zxm_indicators': len(zxm_indicators),
+            'enhanced_indicators': len(enhanced_indicators),
+            'traditional_indicators': len(traditional_indicators),
+            'indicator_names': sorted(list(self.available_indicators.keys()))
+        }
 
 
 def main():
     """主函数"""
-    parser = argparse.ArgumentParser(description='生产环境指标验证工具')
-    parser.add_argument('--date', type=str, help='测试日期 (YYYY-MM-DD)，默认使用最新日期')
-    parser.add_argument('--indicators', type=str, nargs='+', 
-                       help='要验证的指标名称，多个指标用空格分隔')
-    parser.add_argument('--max-stocks', type=int, default=500,
-                       help='最大测试股票数量，默认500')
-    parser.add_argument('--output', type=str, default='results/validation',
-                       help='输出目录，默认results/validation')
-    parser.add_argument('--list-indicators', action='store_true',
-                       help='列出所有可用指标')
+    parser = argparse.ArgumentParser(description='生产环境指标验证器 - 支持88个完整指标')
+    parser.add_argument('--indicators', nargs='+', help='要验证的指标名称列表')
+    parser.add_argument('--list-indicators', action='store_true', help='列出所有可用指标')
+    parser.add_argument('--max-stocks', type=int, default=500, help='最大测试股票数量')
+    parser.add_argument('--test-date', help='测试日期，格式：YYYY-MM-DD')
+    parser.add_argument('--output-dir', default='results/validation', help='输出目录')
+    parser.add_argument('--stats', action='store_true', help='显示指标统计信息')
     
     args = parser.parse_args()
     
     try:
-        # 初始化验证器
         validator = ProductionIndicatorValidator()
         
-        # 列出可用指标
         if args.list_indicators:
-            indicators = validator.list_available_indicators()
             print("可用指标:")
+            indicators = validator.list_available_indicators()
             for i, indicator in enumerate(indicators, 1):
-                print(f"  {i:2d}. {indicator}")
-            return
+                print(f"   {i:2d}. {indicator}")
+            print(f"\n总计: {len(indicators)} 个指标")
+            return 0
         
-        # 验证指标参数
+        if args.stats:
+            stats = validator.get_indicator_statistics()
+            print("📊 指标统计信息:")
+            print(f"   总指标数: {stats['total_indicators']}")
+            print(f"   ZXM指标: {stats['zxm_indicators']}")
+            print(f"   增强指标: {stats['enhanced_indicators']}")
+            print(f"   传统指标: {stats['traditional_indicators']}")
+            return 0
+        
         if not args.indicators:
-            print("请指定要验证的指标，使用 --list-indicators 查看可用指标")
-            return
+            print("❌ 请指定要验证的指标，使用 --list-indicators 查看可用指标")
+            return 1
         
-        available_indicators = validator.list_available_indicators()
-        invalid_indicators = [ind for ind in args.indicators if ind not in available_indicators]
-        if invalid_indicators:
-            print(f"无效指标: {invalid_indicators}")
-            print(f"可用指标: {available_indicators}")
-            return
-        
-        # 执行验证
+        # 验证指定指标
         if len(args.indicators) == 1:
             # 单指标验证
             results = validator.validate_single_indicator(
-                indicator_name=args.indicators[0],
-                test_date=args.date,
-                max_stocks=args.max_stocks
+                args.indicators[0], 
+                args.test_date, 
+                args.max_stocks
             )
         else:
-            # 批量验证
+            # 批量指标验证
             results = validator.validate_multiple_indicators(
-                indicator_names=args.indicators,
-                test_date=args.date,
-                max_stocks=args.max_stocks
+                args.indicators, 
+                args.test_date, 
+                args.max_stocks
             )
         
         # 保存结果
-        output_path = validator.save_results(results, args.output)
+        output_file = validator.save_results(results, args.output_dir)
+        print(f"📄 验证结果已保存到: {output_file}")
         
-        if output_path:
-            print(f"\n✅ 验证完成，结果已保存到: {output_path}")
-        else:
-            print("\n❌ 验证失败")
-            
+        return 0
+        
     except Exception as e:
-        logger.error(f"❌ 程序执行失败: {e}")
-        print(f"❌ 程序执行失败: {e}")
+        logger.error(f"❌ 验证过程中发生错误: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
 
 
 if __name__ == '__main__':
-    main() 
+    exit_code = main()
+    sys.exit(exit_code) 

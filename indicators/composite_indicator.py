@@ -121,7 +121,67 @@ class COMPOSITE_INDICATOR(BaseIndicator, PatternSignalMixin):
         """计算原始评分"""
         if not self.has_result():
             self.calculate(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        
+        # 复合指标评分：多指标综合分析
+        df = data.copy()
+        
+        # 1. 价格动量指标
+        momentum_5 = df['close'] / df['close'].shift(5) - 1
+        momentum_10 = df['close'] / df['close'].shift(10) - 1
+        
+        # 2. 波动率指标
+        returns = df['close'].pct_change()
+        volatility = returns.rolling(window=20).std()
+        
+        # 3. 支撑阻力分析
+        high_20 = df['high'].rolling(window=20).max()
+        low_20 = df['low'].rolling(window=20).min()
+        position_in_range = (df['close'] - low_20) / (high_20 - low_20)
+        
+        # 4. 成交量价格关系
+        price_change = df['close'].pct_change()
+        volume_change = df['volume'].pct_change()
+        price_volume_correlation = price_change * volume_change
+        
+        # 复合评分计算
+        scores = pd.Series(50.0, index=data.index)  # 基准分
+        
+        # 动量信号 (30%)
+        strong_momentum = momentum_5 > 0.03  # 5日涨幅>3%
+        weak_momentum = momentum_5 < -0.03  # 5日跌幅>3%
+        scores += np.where(strong_momentum, 20, 0)
+        scores += np.where(weak_momentum, -15, 0)
+        
+        # 中期动量确认 (20%)
+        medium_momentum = momentum_10 > 0.05  # 10日涨幅>5%
+        scores += np.where(medium_momentum, 15, 0)
+        
+        # 位置分析 (25%)
+        near_high = position_in_range > 0.8  # 接近20日高点
+        near_low = position_in_range < 0.2   # 接近20日低点
+        middle_range = (position_in_range >= 0.4) & (position_in_range <= 0.6)
+        scores += np.where(near_low, 15, 0)  # 低位买入机会
+        scores += np.where(near_high, -10, 0)  # 高位减分
+        scores += np.where(middle_range, 5, 0)  # 中位加分
+        
+        # 量价关系 (15%)
+        positive_correlation = price_volume_correlation > 0  # 量价同向
+        scores += np.where(positive_correlation, 8, -3)
+        
+        # 波动率调整 (10%)
+        low_volatility = volatility < volatility.rolling(window=60).mean()
+        scores += np.where(low_volatility, 5, -2)  # 低波动率有利
+        
+        # 突破信号检测
+        breakout_high = df['close'] > high_20.shift(1)  # 突破20日高点
+        breakdown_low = df['close'] < low_20.shift(1)   # 跌破20日低点
+        scores += np.where(breakout_high, 15, 0)
+        scores += np.where(breakdown_low, -20, 0)
+        
+        # 限制评分范围
+        scores = np.clip(scores, 0, 100)
+        
+        return scores
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""

@@ -10,13 +10,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.base_indicator import BaseIndicator
+from indicators.mfi import MFI
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnhancedMFI(BaseIndicator, PatternSignalMixin):
+class EnhancedMFI(MFI):
     """
     增强型资金流向指标(Enhanced Money Flow Index)
     
@@ -80,9 +80,10 @@ class EnhancedMFI(BaseIndicator, PatternSignalMixin):
         Returns:
             pd.DataFrame: 计算结果
         """
-        return self.calculate(data)
+        # 直接调用增强计算逻辑，避免递归
+        return self._enhanced_calculate(data)
 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _enhanced_calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型MFI指标
         
@@ -103,8 +104,8 @@ class EnhancedMFI(BaseIndicator, PatternSignalMixin):
         if self.enable_volume_filter:
             processed_data["volume"] = self._smooth_abnormal_volume(data["volume"])
         
-        # 使用父类方法计算MFI
-        result = super().calculate(processed_data, *args, **kwargs)
+        # 使用父类MFI的_calculate方法计算基础MFI
+        result = super()._calculate(processed_data, **kwargs)
 
         # 检查父类计算结果并标准化列名
         if result is None:

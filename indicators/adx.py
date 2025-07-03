@@ -163,12 +163,16 @@ class ADX(BaseIndicator, PatternSignalMixin):
             df[f'PDI{period}'] = np.nan
             df[f'MDI{period}'] = np.nan
             df[f'strong_trend_{period}'] = False
+            df[f'trend_direction_{period}'] = 'neutral'
             
-        # 添加形态识别和信号生成
-        df = self.add_pattern_detection(df)
-        df = self.add_signal_generation(df)
-
-        return df
+            # 创建标准字段名映射
+            df['ADX'] = df[f'ADX{period}']
+            df['PDI'] = df[f'PDI{period}']
+            df['MDI'] = df[f'MDI{period}']
+            df['ADXR'] = np.nan
+            
+            self._result = df
+            return df
         
         # 计算价格变化
         df['high_change'] = df['high'] - df['high'].shift(1)
@@ -197,15 +201,23 @@ class ADX(BaseIndicator, PatternSignalMixin):
         df['smooth_minus_dm'] = df['minus_dm'].rolling(window=period).sum()
         df['smooth_tr'] = df['tr'].rolling(window=period).sum()
         
+        # 避免除零错误
+        df['smooth_tr'] = df['smooth_tr'].replace(0, np.nan)
+        
         # 计算+DI和-DI
         df[f'PDI{period}'] = 100 * df['smooth_plus_dm'] / df['smooth_tr']
         df[f'MDI{period}'] = 100 * df['smooth_minus_dm'] / df['smooth_tr']
         
         # 计算方向指数(DX)
-        df['dx'] = 100 * abs(df[f'PDI{period}'] - df[f'MDI{period}']) / (df[f'PDI{period}'] + df[f'MDI{period}'])
+        pdi_plus_mdi = df[f'PDI{period}'] + df[f'MDI{period}']
+        pdi_plus_mdi = pdi_plus_mdi.replace(0, np.nan)
+        df['dx'] = 100 * abs(df[f'PDI{period}'] - df[f'MDI{period}']) / pdi_plus_mdi
         
         # 计算ADX - DX的period周期平均值
         df[f'ADX{period}'] = df['dx'].rolling(window=period).mean()
+        
+        # 计算ADXR (ADX的period周期前的平均)
+        df[f'ADXR{period}'] = (df[f'ADX{period}'] + df[f'ADX{period}'].shift(period)) / 2
         
         # 标记强趋势
         df[f'strong_trend_{period}'] = df[f'ADX{period}'] > strong_trend
@@ -213,11 +225,24 @@ class ADX(BaseIndicator, PatternSignalMixin):
         # 添加趋势方向
         df[f'trend_direction_{period}'] = np.where(df[f'PDI{period}'] > df[f'MDI{period}'], 'up', 'down')
         
+        # 创建标准字段名映射（为了兼容性）
+        df['ADX'] = df[f'ADX{period}']
+        df['PDI'] = df[f'PDI{period}']
+        df['MDI'] = df[f'MDI{period}']
+        df['ADXR'] = df[f'ADXR{period}']
+        
         # 清理中间计算列
         df.drop(['high_change', 'low_change', 'plus_dm', 'minus_dm', 
                 'tr1', 'tr2', 'tr3', 'tr', 'smooth_plus_dm', 'smooth_minus_dm', 
                 'smooth_tr', 'dx'], axis=1, inplace=True)
         
+        # 存储结果
+        self._result = df
+        
+        # 添加形态识别和信号生成
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
+
         return df
 
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
@@ -535,7 +560,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算ADX原始评分
+        计算ADX指标的原始评分
         
         Args:
             data: 输入数据
@@ -551,38 +576,85 @@ class ADX(BaseIndicator, PatternSignalMixin):
         if self._result is None:
             return pd.Series(50.0, index=data.index)
         
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
-        
-        # 提取参数
         period = self.params["period"]
         strong_trend = self.params["strong_trend"]
         
         # 获取ADX和DI数据
-        adx = self._result[f'ADX{period}']
-        pdi = self._result[f'PDI{period}']
-        mdi = self._result[f'MDI{period}']
+        adx = self._result[f'ADX{period}'] if f'ADX{period}' in self._result.columns else self._result.get('ADX', pd.Series(np.nan, index=data.index))
+        pdi = self._result[f'PDI{period}'] if f'PDI{period}' in self._result.columns else self._result.get('PDI', pd.Series(np.nan, index=data.index))
+        mdi = self._result[f'MDI{period}'] if f'MDI{period}' in self._result.columns else self._result.get('MDI', pd.Series(np.nan, index=data.index))
         
-        # 1. ADX强度评分
-        adx_strength_score = (adx / strong_trend) * 25  # 如果ADX=strong_trend，则得25分
-        adx_strength_score = adx_strength_score.clip(0, 25)  # 最高25分
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)
+        
+        # 1. ADX强度评分（-20到+40分）
+        adx_strength_score = pd.Series(0.0, index=data.index)
+        
+        # ADX > strong_trend（强趋势）+30分
+        strong_trend_mask = adx > strong_trend
+        adx_strength_score += strong_trend_mask * 30
+        
+        # ADX > strong_trend * 1.5（极强趋势）+40分
+        very_strong_trend_mask = adx > strong_trend * 1.5
+        adx_strength_score += very_strong_trend_mask * 10  # 额外10分
+        
+        # ADX < strong_trend * 0.6（弱趋势）-20分
+        weak_trend_mask = adx < strong_trend * 0.6
+        adx_strength_score -= weak_trend_mask * 20
+        
         score += adx_strength_score
         
-        # 2. 趋势方向评分
-        trend_direction_score = (pdi - mdi) / ((pdi + mdi) / 2) * 30  # 方向分，+DI与-DI差距越大，分值越高
-        score += trend_direction_score
+        # 2. DI线位置评分（-15到+15分）
+        di_position_score = pd.Series(0.0, index=data.index)
         
-        # 3. ADX动量评分
-        adx_momentum = adx - adx.shift(5)  # 与5日前相比
-        adx_momentum_score = adx_momentum / 5  # 每天上升1点，得1分
-        adx_momentum_score = adx_momentum_score.clip(-15, 15)  # 限制在±15分
+        # +DI > -DI（多头优势）+15分
+        bullish_di_mask = pdi > mdi
+        di_position_score += bullish_di_mask * 15
+        
+        # -DI > +DI（空头优势）-15分
+        bearish_di_mask = mdi > pdi
+        di_position_score -= bearish_di_mask * 15
+        
+        score += di_position_score
+        
+        # 3. ADX趋势评分（-10到+15分）
+        adx_trend_score = pd.Series(0.0, index=data.index)
+        
+        if len(adx) >= 3:
+            # ADX上升趋势+15分
+            adx_rising = adx > adx.shift(2)
+            adx_trend_score += adx_rising * 15
+            
+            # ADX下降趋势-10分
+            adx_falling = adx < adx.shift(2)
+            adx_trend_score -= adx_falling * 10
+        
+        score += adx_trend_score
+        
+        # 4. ADX动量评分（-15到+15分）
+        adx_momentum_score = pd.Series(0.0, index=data.index)
+        
+        if len(adx) >= 6:
+            # ADX与5日前相比的变化
+            adx_momentum = adx - adx.shift(5)
+            adx_momentum_score = adx_momentum / 5  # 每天上升1点，得1分
+            adx_momentum_score = adx_momentum_score.clip(-15, 15)  # 限制在±15分
+        
         score += adx_momentum_score
         
-        # 4. 趋势交叉评分
-        pdi_cross_above_mdi = self.crossover(pdi, mdi)
-        mdi_cross_above_pdi = self.crossover(mdi, pdi)
+        # 5. 趋势交叉评分（-15到+15分）
+        cross_score = pd.Series(0.0, index=data.index)
         
-        score = score.mask(pdi_cross_above_mdi, score + 15)  # +DI上穿-DI，加15分
-        score = score.mask(mdi_cross_above_pdi, score - 15)  # -DI上穿+DI，减15分
+        if len(pdi) >= 2 and len(mdi) >= 2:
+            # +DI上穿-DI，加15分
+            pdi_cross_above_mdi = (pdi > mdi) & (pdi.shift(1) <= mdi.shift(1))
+            cross_score += pdi_cross_above_mdi * 15
+            
+            # -DI上穿+DI，减15分
+            mdi_cross_above_pdi = (mdi > pdi) & (mdi.shift(1) <= pdi.shift(1))
+            cross_score -= mdi_cross_above_pdi * 15
+        
+        score += cross_score
         
         # 确保评分在0-100范围内
         return score.clip(0, 100)

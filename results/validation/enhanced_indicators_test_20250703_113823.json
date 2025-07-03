@@ -1,0 +1,13 @@
+[
+  {
+    "indicator": "ENHANCED_RSI",
+    "success": true,
+    "buy_signals": 36,
+    "total_days": 73,
+    "signal_rate": 0.4931506849315068,
+    "score_min": 53.82319263639191,
+    "score_max": 91.77131146019367,
+    "score_mean": 72.93912396238595,
+    "score_std": 10.817316198970682,
+    "confidence": 0.40608691809842246,
+    "has_valid_scores": 

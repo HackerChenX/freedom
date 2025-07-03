@@ -96,21 +96,123 @@ class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        scores = pd.Series(50.0, index=data.index, dtype=float)
         
-        # 有振幅弹性信号时加分
-        score[result["XG"]] += 40
+        # 获取振幅数据
+        amplitude = result["Amplitude"]
         
-        # 根据振幅大小给予额外加分
-        if "Amplitude" in result.columns:
-            # 振幅越大，加分越多（最多额外加10分）
-            amplitude_bonus = result["Amplitude"].apply(lambda x: min(10, max(0, (x - 8.1) / 2)))
-            score += amplitude_bonus
+        for i in range(len(data)):
+            score = 50.0  # 基础分数
+            current_amplitude = amplitude.iloc[i]
+            
+            # 1. 基于当前振幅的评分
+            if current_amplitude >= 8.1:
+                # 达到阈值，基础加分
+                score += 40
+                # 超过阈值的额外加分
+                extra_bonus = min(10, (current_amplitude - 8.1) / 2)
+                score += extra_bonus
+            elif current_amplitude >= 6.0:
+                # 接近阈值，适度加分
+                score += 20 + (current_amplitude - 6.0) / 2.1 * 15  # 6%-8.1%之间线性加分
+            elif current_amplitude >= 4.0:
+                # 中等振幅，小幅加分
+                score += 5 + (current_amplitude - 4.0) / 2.0 * 10   # 4%-6%之间线性加分
+            elif current_amplitude >= 2.0:
+                # 小振幅，维持中性
+                score += (current_amplitude - 2.0) / 2.0 * 5       # 2%-4%之间小幅加分
+            else:
+                # 极小振幅，减分
+                score -= (2.0 - current_amplitude) * 5
+            
+            # 2. 基于历史振幅的评分
+            if i >= 10:
+                # 计算10日内的平均振幅
+                avg_amplitude_10 = amplitude.iloc[max(0, i-10):i+1].mean()
+                if avg_amplitude_10 > 5.0:
+                    score += 10
+                elif avg_amplitude_10 > 4.0:
+                    score += 5
+                elif avg_amplitude_10 < 2.0:
+                    score -= 5
+                elif avg_amplitude_10 < 1.5:
+                    score -= 10
+            
+            # 3. 基于振幅趋势的评分
+            if i >= 5:
+                # 计算振幅趋势
+                recent_amplitude = amplitude.iloc[i-5:i+1].mean()
+                earlier_amplitude = amplitude.iloc[max(0, i-10):max(1, i-5)].mean()
+                
+                if recent_amplitude > earlier_amplitude * 1.2:
+                    score += 8  # 振幅放大
+                elif recent_amplitude > earlier_amplitude * 1.1:
+                    score += 5  # 振幅略有放大
+                elif recent_amplitude < earlier_amplitude * 0.8:
+                    score -= 8  # 振幅缩小
+                elif recent_amplitude < earlier_amplitude * 0.9:
+                    score -= 5  # 振幅略有缩小
+            
+            # 4. 基于振幅波动性的评分
+            if i >= 10:
+                # 计算振幅的标准差
+                amplitude_std = amplitude.iloc[max(0, i-10):i+1].std()
+                amplitude_mean = amplitude.iloc[max(0, i-10):i+1].mean()
+                
+                if amplitude_mean > 0:
+                    cv = amplitude_std / amplitude_mean  # 变异系数
+                    if cv > 0.5:
+                        score += 8  # 高波动性
+                    elif cv > 0.3:
+                        score += 5  # 中等波动性
+                    elif cv < 0.1:
+                        score -= 5  # 低波动性
+            
+            # 5. 基于最高振幅的评分
+            if i >= 20:
+                # 计算20日内的最高振幅
+                max_amplitude_20 = amplitude.iloc[max(0, i-20):i+1].max()
+                if max_amplitude_20 >= 8.1:
+                    score += 15  # 近期有大振幅
+                elif max_amplitude_20 >= 6.0:
+                    score += 10  # 近期有中等振幅
+                elif max_amplitude_20 >= 4.0:
+                    score += 5   # 近期有小振幅
+            
+            # 6. 基于振幅分布的评分
+            if i >= 30:
+                # 计算30日内振幅分布
+                amplitude_30 = amplitude.iloc[max(0, i-30):i+1]
+                high_amplitude_count = (amplitude_30 >= 5.0).sum()
+                medium_amplitude_count = (amplitude_30 >= 3.0).sum()
+                
+                if high_amplitude_count >= 5:
+                    score += 12  # 频繁高振幅
+                elif high_amplitude_count >= 3:
+                    score += 8   # 偶尔高振幅
+                elif medium_amplitude_count >= 10:
+                    score += 5   # 频繁中等振幅
+                elif medium_amplitude_count <= 5:
+                    score -= 5   # 缺乏振幅
+            
+            # 7. 基于振幅相对性的评分
+            if i >= 60:
+                # 与60日平均振幅比较
+                avg_amplitude_60 = amplitude.iloc[max(0, i-60):i+1].mean()
+                if current_amplitude > avg_amplitude_60 * 1.5:
+                    score += 10  # 当前振幅显著高于平均
+                elif current_amplitude > avg_amplitude_60 * 1.2:
+                    score += 5   # 当前振幅高于平均
+                elif current_amplitude < avg_amplitude_60 * 0.5:
+                    score -= 10  # 当前振幅显著低于平均
+                elif current_amplitude < avg_amplitude_60 * 0.8:
+                    score -= 5   # 当前振幅低于平均
+            
+            # 确保分数在0-100范围内
+            score = max(0, min(100, score))
+            scores.iloc[i] = score
         
-        # 确保评分在0-100范围内
-        score = score.clip(0, 100)
-        
-        return score
+        return scores
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
