@@ -134,54 +134,49 @@ class IndicatorValidationFramework:
             try:
                 stock_pool = self._prepare_stock_pool()
                 logger.info(f"准备股票池: {len(stock_pool)} 只股票")
-            except ConnectionError as conn_error:
-                # 数据库连接失败，如果配置了错误后早停，立即返回错误结果
-                logger.error(f"❌ 数据库连接失败，无法继续验证: {conn_error}")
+            except Exception as conn_error:
+                # 数据库连接失败，严格模式下直接停止系统
+                logger.error(f"❌ 数据库连接失败，系统无法继续运行: {conn_error}")
+                logger.error("🛑 严格数据库依赖模式：禁止使用模拟数据，数据库不可用时直接停止")
                 
-                if self.config.stop_on_error:
-                    logger.warning("🛑 配置了错误后早停，由于数据库连接失败立即停止验证")
-                    
-                    # 创建错误结果
-                    error_result = {
-                        'indicator_name': 'DATABASE_CONNECTION',
-                        'status': ValidationResult.ERROR.value,
-                        'error_message': str(conn_error),
-                        'timestamp': datetime.now().isoformat(),
-                        'validation_date': self.config.validation_date,
-                        'stock_pool_size': 0,
-                        'selected_count': 0,
-                        'selection_ratio': 0.0,
-                        'selected_stocks': [],
-                        'strategy_config': {},
-                        'execution_time': 0
-                    }
-                    
-                    # 更新统计信息
-                    self.validation_stats['validated_indicators'] = 1
-                    self.validation_stats['failed_validations'] = 1
-                    self.validation_stats['successful_validations'] = 0
-                    
-                    # 生成总结报告
-                    summary = self._generate_summary([error_result])
-                    
-                    self.validation_stats['end_time'] = datetime.now()
-                    self.validation_stats['duration'] = (
-                        self.validation_stats['end_time'] - self.validation_stats['start_time']
-                    ).total_seconds()
-                    
-                    logger.info(f"验证因数据库连接错误提前结束，耗时: {self.validation_stats['duration']:.2f}秒")
-                    
-                    return {
-                        'summary': summary,
-                        'results': [error_result],
-                        'stats': self.validation_stats,
-                        'config': self.config.__dict__,
-                        'early_stop_reason': 'database_connection_error'
-                    }
-                else:
-                    # 如果没有配置错误后早停，使用默认股票池继续
-                    logger.warning("⚠️ 数据库连接失败，但未配置错误后早停，使用默认股票池继续验证")
-                    stock_pool = ['000001', '000002', '600000', '600036', '000858']
+                # 创建错误结果
+                error_result = {
+                    'indicator_name': 'DATABASE_CONNECTION_CRITICAL',
+                    'status': ValidationResult.ERROR.value,
+                    'error_message': f"数据库连接失败，严格模式下停止运行: {str(conn_error)}",
+                    'timestamp': datetime.now().isoformat(),
+                    'validation_date': self.config.validation_date,
+                    'stock_pool_size': 0,
+                    'selected_count': 0,
+                    'selection_ratio': 0.0,
+                    'selected_stocks': [],
+                    'strategy_config': {},
+                    'execution_time': 0
+                }
+                
+                # 更新统计信息
+                self.validation_stats['validated_indicators'] = 1
+                self.validation_stats['failed_validations'] = 1
+                self.validation_stats['successful_validations'] = 0
+                
+                # 生成总结报告
+                summary = self._generate_summary([error_result])
+                
+                self.validation_stats['end_time'] = datetime.now()
+                self.validation_stats['duration'] = (
+                    self.validation_stats['end_time'] - self.validation_stats['start_time']
+                ).total_seconds()
+                
+                logger.error(f"❌ 系统因数据库连接失败强制停止，耗时: {self.validation_stats['duration']:.2f}秒")
+                
+                return {
+                    'summary': summary,
+                    'results': [error_result],
+                    'stats': self.validation_stats,
+                    'config': self.config.__dict__,
+                    'critical_error': 'database_connection_failure',
+                    'system_stopped': True
+                }
             
             # 执行验证
             if self.config.parallel_workers > 1:

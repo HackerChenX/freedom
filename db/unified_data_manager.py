@@ -149,33 +149,29 @@ class UnifiedDataManager:
             recovery_timeout=60
         )
         
-        # 注册降级服务
-        def fallback_get_stock_data(stock_code: str, **kwargs):
-            """数据获取降级服务"""
-            logger.warning(f"使用降级服务获取股票数据: {stock_code}")
-            return pd.DataFrame()
-        
-        self.stability_manager.register_degradation(
-            'get_stock_data',
-            fallback_get_stock_data,
-            lambda: False,  # 暂时不启用降级
-            "数据获取服务降级"
-        )
+        # 严格数据库依赖模式：禁用降级服务
+        logger.info("严格数据库依赖模式：已禁用所有降级服务和模拟数据支持")
     
     def test_connection(self) -> bool:
         """
         测试数据库连接
         
         Returns:
-            bool: 连接成功返回True，否则返回False
+            bool: 连接成功返回True，否则抛出异常
+            
+        Raises:
+            DataAccessError: 数据库连接失败时抛出
         """
         try:
             with self.connection_pool.get_connection() as conn:
                 result = conn.query_dataframe("SELECT 1 as test")
-                return not result.empty
+                if result.empty:
+                    raise DataAccessError("数据库连接测试返回空结果")
+                return True
         except Exception as e:
-            logger.error(f"数据库连接测试失败: {e}")
-            return False
+            logger.error(f"❌ 数据库连接测试失败: {e}")
+            logger.error("🛑 严格数据库依赖模式：数据库不可用，系统无法继续运行")
+            raise DataAccessError(f"数据库连接失败: {e}")
     
     def query(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """

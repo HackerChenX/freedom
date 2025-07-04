@@ -139,6 +139,20 @@ def is_strategy_file(strategy_path: str) -> bool:
 def execute_strategy(args):
     """执行选股策略"""
     try:
+        # 严格数据库依赖检查：首先验证数据库连接
+        logger.info("🔍 严格数据库依赖模式：检查数据库连接...")
+        try:
+            data_manager = get_unified_data_manager()
+            data_manager.test_connection()
+            logger.info("✅ 数据库连接检查通过")
+        except Exception as db_error:
+            logger.error(f"❌ 数据库连接失败: {db_error}")
+            logger.error("🛑 严格数据库依赖模式：禁止使用模拟数据，数据库不可用时直接停止")
+            print(f"\n❌ 数据库连接失败，系统无法继续运行:")
+            print(f"   错误信息: {db_error}")
+            print("   请检查ClickHouse数据库服务是否正常运行")
+            sys.exit(1)
+        
         # 检查日志中是否有ERROR级别的错误
         import logging
 

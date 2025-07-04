@@ -59,6 +59,19 @@ class ComprehensiveIndicatorTester:
         """
         self.max_stocks = max_stocks
         self.max_workers = max_workers
+        
+        # 严格数据库依赖检查：首先验证数据库连接
+        logger.info("🔍 严格数据库依赖模式：检查数据库连接...")
+        try:
+            from db.unified_data_manager import get_unified_data_manager
+            data_manager = get_unified_data_manager()
+            data_manager.test_connection()
+            logger.info("✅ 数据库连接检查通过")
+        except Exception as db_error:
+            logger.error(f"❌ 数据库连接失败: {db_error}")
+            logger.error("🛑 严格数据库依赖模式：禁止使用模拟数据，数据库不可用时直接停止")
+            raise RuntimeError(f"数据库连接失败，系统无法继续运行: {db_error}")
+        
         self.validator = ProductionIndicatorValidator()
         self.test_results: List[TestResult] = []
         self.batch_results: List[BatchResult] = []
