@@ -152,8 +152,8 @@ class StockInfo:
     def get_fields() -> List[str]:
         """获取所有字段（仅返回数据库中实际存在的字段）"""
         return [
-            "code", "date", "level", "open", "high", "low", "close",
-            "volume", "turnover_rate"
+            "date", "code", "name", "open", "high", "low", "close",
+            "volume", "turnover", "level"
         ]
 
     @property

@@ -25,9 +25,10 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.path_utils import get_result_dir
-from utils.decorators import performance_monitor
+from utils.decorators import performance_monitor, exception_handler
 from strategy.strategy_executor import StrategyExecutor
-from db.clickhouse_db import get_clickhouse_db, get_default_config
+from db.container import get_container
+from db.interfaces.data_access_interface import IDataAccess
 from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_manager import StrategyManager
 
@@ -42,13 +43,18 @@ class StrategyOptimizer:
     用于优化选股策略的参数和组合，提高策略的有效性
     """
     
-    def __init__(self):
-        """初始化策略优化器"""
+    def __init__(self, data_access: Optional[IDataAccess] = None):
+        """
+        初始化策略优化器
+        
+        Args:
+            data_access: 数据访问接口实例，如果为None则从容器获取
+        """
         logger.info("初始化策略优化器")
         
-        # 获取数据库连接
-        config = get_default_config()
-        self.ch_db = get_clickhouse_db(config=config)
+        # 使用依赖注入获取数据访问接口
+        container = get_container()
+        self.data_access = data_access or container.resolve(IDataAccess)
         
         # 创建策略执行器
         self.strategy_executor = StrategyExecutor()
@@ -66,6 +72,7 @@ class StrategyOptimizer:
         
         logger.info("策略优化器初始化完成")
     
+    @exception_handler(reraise=True)
     @performance_monitor()
     def optimize_strategy(self, strategy_id: str, 
                         param_ranges: Dict[str, List[Any]],

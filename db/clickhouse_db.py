@@ -765,7 +765,7 @@ class ClickHouseDB:
             # 构建查询 - 查询两种情况：行业代码匹配或者industry字段匹配
             query = """
             SELECT 
-                date, code, name, open, high, low, close, volume, turnover_rate
+                date, code, name, open, high, low, close, volume, turnover
             FROM 
                 stock_info
             WHERE 
@@ -799,7 +799,7 @@ class ClickHouseDB:
                 'col_5': 'low',
                 'col_6': 'close',
                 'col_7': 'volume',
-                'col_8': 'turnover_rate'
+                'col_8': 'turnover'
             }
 
             result.rename(columns=column_map, inplace=True)

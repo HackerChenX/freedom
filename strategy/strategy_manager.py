@@ -13,8 +13,10 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any, Union, Tuple
 
 from utils.logger import get_logger
-from db.clickhouse_db import get_clickhouse_db
+from db.container import get_container
+from db.interfaces.data_access_interface import IDataAccess
 from utils.path_utils import get_strategy_dir
+from utils.decorators import exception_handler, performance_monitor
 
 logger = get_logger(__name__)
 
@@ -27,19 +29,22 @@ class StrategyManager:
     支持将策略保存到数据库和文件系统，便于持久化和共享。
     """
     
-    def __init__(self, db_manager=None):
+    def __init__(self, data_access: Optional[IDataAccess] = None):
         """
         初始化策略管理器
         
         Args:
-            db_manager: 数据库管理器实例，如果为None则使用默认的ClickHouse连接
+            data_access: 数据访问接口实例，如果为None则从容器获取
         """
-        self.db_manager = db_manager or get_clickhouse_db()
+        container = get_container()
+        self.data_access = data_access or container.resolve(IDataAccess)
         self.strategy_dir = get_strategy_dir()
         
         # 确保策略目录存在
         os.makedirs(self.strategy_dir, exist_ok=True)
         
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=1.0)
     def create_strategy(self, strategy_config: Dict[str, Any], save_to_file: bool = True) -> str:
         """
         创建新策略
@@ -79,6 +84,8 @@ class StrategyManager:
         logger.info(f"创建策略成功: {strategy_id}")
         return strategy_id
         
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=1.0)
     def update_strategy(self, strategy_id: str, strategy_config: Dict[str, Any], 
                         save_to_file: bool = True) -> str:
         """
@@ -117,6 +124,8 @@ class StrategyManager:
         logger.info(f"更新策略成功: {strategy_id}")
         return strategy_id
         
+    @exception_handler(reraise=False, default_return=None)
+    @performance_monitor(threshold_seconds=0.5)
     def get_strategy(self, strategy_id: str) -> Optional[Dict[str, Any]]:
         """
         获取策略定义
@@ -136,6 +145,8 @@ class StrategyManager:
             
         return strategy
         
+    @exception_handler(reraise=False, default_return=[])
+    @performance_monitor(threshold_seconds=2.0)
     def list_strategies(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         列出所有策略
@@ -155,6 +166,8 @@ class StrategyManager:
             
         return strategies
         
+    @exception_handler(reraise=False, default_return=False)
+    @performance_monitor(threshold_seconds=1.0)
     def delete_strategy(self, strategy_id: str) -> bool:
         """
         删除策略
@@ -198,29 +211,19 @@ class StrategyManager:
                 raise ValueError(f"策略配置缺少必要字段: {field}")
                 
         # 验证条件配置
-        for condition in strategy["conditions"]:
-            if "logic" in condition:
-                if condition["logic"].upper() not in ["AND", "OR", "NOT"]:
-                    raise ValueError(f"不支持的逻辑运算符: {condition['logic']}")
-            elif "group" in condition or "end_group" in condition:
-                # 分组条件，不需要额外验证
-                pass
-            else:
-                if "indicator_id" not in condition:
-                    raise ValueError("条件缺少 indicator_id 字段")
-                if "period" not in condition:
-                    raise ValueError("条件缺少 period 字段")
-                    
+        if not isinstance(strategy["conditions"], list) or len(strategy["conditions"]) == 0:
+            raise ValueError("策略条件不能为空")
+            
         return True
         
     def _generate_strategy_id(self) -> str:
         """
-        生成唯一策略ID
+        生成策略ID
         
         Returns:
-            str: 格式为"STRATEGY_{8位随机字符}"的唯一ID
+            str: 策略ID
         """
-        return f"STRATEGY_{uuid.uuid4().hex[:8].upper()}"
+        return str(uuid.uuid4())
         
     def _merge_strategy_configs(self, original: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -228,20 +231,28 @@ class StrategyManager:
         
         Args:
             original: 原始策略配置
-            updates: 更新的策略配置
+            updates: 更新的配置
             
         Returns:
-            Dict[str, Any]: 合并后的策略配置
+            Dict[str, Any]: 合并后的配置
         """
         merged = copy.deepcopy(original)
-        for key, value in updates["strategy"].items():
-            if key != "id" and key != "create_time":
-                merged["strategy"][key] = value
+        
+        # 递归合并字典
+        def merge_dict(target, source):
+            for key, value in source.items():
+                if key in target and isinstance(target[key], dict) and isinstance(value, dict):
+                    merge_dict(target[key], value)
+                else:
+                    target[key] = value
+                    
+        merge_dict(merged, updates)
         return merged
-            
+        
+    @exception_handler(reraise=False, default_return=False)
     def _save_strategy_to_db(self, strategy_config: Dict[str, Any]) -> bool:
         """
-        将策略保存到数据库
+        保存策略到数据库
         
         Args:
             strategy_config: 策略配置
@@ -250,41 +261,54 @@ class StrategyManager:
             bool: 是否保存成功
         """
         try:
-            strategy_id = strategy_config["strategy"]["id"]
-            strategy_name = strategy_config["strategy"]["name"]
-            
-            # 转换为JSON字符串
-            config_json = json.dumps(strategy_config, ensure_ascii=False)
+            strategy = strategy_config["strategy"]
             
             # 构建SQL语句
-            # 首先尝试删除可能存在的同ID策略
-            delete_sql = f"ALTER TABLE strategy_definitions DELETE WHERE strategy_id = '{strategy_id}'"
-            self.db_manager.execute(delete_sql)
-            
-            # 然后插入新策略
-            insert_sql = f"""
-            INSERT INTO strategy_definitions 
-            (strategy_id, name, config, create_time, update_time)
-            VALUES 
-            (
-                '{strategy_id}', 
-                '{strategy_name}', 
-                '{config_json}', 
-                '{strategy_config["strategy"]["create_time"]}', 
-                '{strategy_config["strategy"]["update_time"]}'
-            )
+            sql = """
+            INSERT INTO strategy_config 
+            (id, name, description, author, version, conditions, risk_control, 
+             create_time, update_time, is_active, config_json)
+            VALUES (%(id)s, %(name)s, %(description)s, %(author)s, %(version)s, 
+                    %(conditions)s, %(risk_control)s, %(create_time)s, %(update_time)s, 
+                    %(is_active)s, %(config_json)s)
+            ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            description = VALUES(description),
+            author = VALUES(author),
+            version = VALUES(version),
+            conditions = VALUES(conditions),
+            risk_control = VALUES(risk_control),
+            update_time = VALUES(update_time),
+            is_active = VALUES(is_active),
+            config_json = VALUES(config_json)
             """
-            self.db_manager.execute(insert_sql)
             
-            logger.info(f"策略已保存到数据库: {strategy_id}")
-            return True
+            params = {
+                'id': strategy.get('id'),
+                'name': strategy.get('name', ''),
+                'description': strategy.get('description', ''),
+                'author': strategy.get('author', ''),
+                'version': strategy.get('version', '1.0'),
+                'conditions': json.dumps(strategy.get('conditions', []), ensure_ascii=False),
+                'risk_control': json.dumps(strategy.get('risk_control', {}), ensure_ascii=False),
+                'create_time': strategy.get('create_time'),
+                'update_time': strategy.get('update_time'),
+                'is_active': strategy.get('is_active', True),
+                'config_json': json.dumps(strategy_config, ensure_ascii=False)
+            }
+            
+            # 使用数据访问接口执行SQL
+            result = self.data_access.execute_sql(sql, params)
+            return result is not None
+            
         except Exception as e:
             logger.error(f"保存策略到数据库失败: {e}")
             return False
             
+    @exception_handler(reraise=False, default_return=False)
     def _save_strategy_to_file(self, strategy_config: Dict[str, Any]) -> bool:
         """
-        将策略保存到文件
+        保存策略到文件
         
         Args:
             strategy_config: 策略配置
@@ -299,12 +323,13 @@ class StrategyManager:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(strategy_config, f, ensure_ascii=False, indent=2)
                 
-            logger.info(f"策略已保存到文件: {file_path}")
             return True
+            
         except Exception as e:
             logger.error(f"保存策略到文件失败: {e}")
             return False
             
+    @exception_handler(reraise=False, default_return=None)
     def _get_strategy_from_db(self, strategy_id: str) -> Optional[Dict[str, Any]]:
         """
         从数据库获取策略
@@ -313,22 +338,23 @@ class StrategyManager:
             strategy_id: 策略ID
             
         Returns:
-            Optional[Dict[str, Any]]: 策略配置，如果不存在则返回None
+            Optional[Dict[str, Any]]: 策略配置
         """
         try:
-            sql = f"SELECT config FROM strategy_definitions WHERE strategy_id = '{strategy_id}' LIMIT 1"
-            result = self.db_manager.query(sql)
+            sql = "SELECT config_json FROM strategy_config WHERE id = %s AND is_active = 1"
+            result = self.data_access.query(sql, (strategy_id,))
             
-            if result.empty:
-                return None
+            if result and len(result) > 0:
+                config_json = result[0][0]
+                return json.loads(config_json)
                 
-            # 解析JSON
-            config_json = result.iloc[0]['config']
-            return json.loads(config_json)
+            return None
+            
         except Exception as e:
             logger.error(f"从数据库获取策略失败: {e}")
             return None
             
+    @exception_handler(reraise=False, default_return=None)
     def _get_strategy_from_file(self, strategy_id: str) -> Optional[Dict[str, Any]]:
         """
         从文件获取策略
@@ -337,23 +363,25 @@ class StrategyManager:
             strategy_id: 策略ID
             
         Returns:
-            Optional[Dict[str, Any]]: 策略配置，如果不存在则返回None
+            Optional[Dict[str, Any]]: 策略配置
         """
         try:
             file_path = os.path.join(self.strategy_dir, f"{strategy_id}.json")
             
-            if not os.path.exists(file_path):
-                return None
-                
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+                    
+            return None
+            
         except Exception as e:
             logger.error(f"从文件获取策略失败: {e}")
             return None
             
+    @exception_handler(reraise=False, default_return=[])
     def _list_strategies_from_db(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
-        从数据库获取策略列表
+        从数据库列出策略
         
         Args:
             filters: 过滤条件
@@ -362,46 +390,57 @@ class StrategyManager:
             List[Dict[str, Any]]: 策略列表
         """
         try:
-            # 构建查询条件
-            where_clause = "WHERE 1=1"
+            sql = """
+            SELECT id, name, description, author, version, create_time, update_time, config_json
+            FROM strategy_config 
+            WHERE is_active = 1
+            """
+            params = []
+            
+            # 应用过滤条件
             if filters:
                 if 'author' in filters:
-                    where_clause += f" AND config LIKE '%\"author\":\"{filters['author']}\"%'"
+                    sql += " AND author = %s"
+                    params.append(filters['author'])
                 if 'name' in filters:
-                    where_clause += f" AND name LIKE '%{filters['name']}%'"
-                if 'version' in filters:
-                    where_clause += f" AND config LIKE '%\"version\":\"{filters['version']}\"%'"
+                    sql += " AND name LIKE %s"
+                    params.append(f"%{filters['name']}%")
+                    
+            sql += " ORDER BY update_time DESC"
             
-            # 构建SQL查询
-            sql = f"""
-            SELECT config
-            FROM strategy_definitions
-            {where_clause}
-            ORDER BY update_time DESC
-            """
+            result = self.data_access.query(sql, params)
             
-            result = self.db_manager.query(sql)
-            
-            # 解析结果
             strategies = []
-            for _, row in result.iterrows():
-                try:
-                    strategy_config = json.loads(row['config'])
-                    strategies.append(strategy_config)
-                except Exception as e:
-                    logger.warning(f"解析策略配置失败: {e}")
-            
+            for row in result:
+                strategy_info = {
+                    'id': row[0],
+                    'name': row[1],
+                    'description': row[2],
+                    'author': row[3],
+                    'version': row[4],
+                    'create_time': row[5],
+                    'update_time': row[6]
+                }
+                
+                # 如果需要完整配置，解析config_json
+                if filters and filters.get('include_config', False):
+                    strategy_info['config'] = json.loads(row[7])
+                    
+                strategies.append(strategy_info)
+                
             return strategies
+            
         except Exception as e:
-            logger.error(f"从数据库获取策略列表失败: {e}")
+            logger.error(f"从数据库列出策略失败: {e}")
             return []
             
+    @exception_handler(reraise=False, default_return=[])
     def _list_strategies_from_files(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
-        从文件获取策略列表
+        从文件列出策略
         
         Args:
-            filters: 过滤条件，支持按作者、名称、版本等筛选
+            filters: 过滤条件
             
         Returns:
             List[Dict[str, Any]]: 策略列表
@@ -409,39 +448,52 @@ class StrategyManager:
         try:
             strategies = []
             
-            # 获取所有JSON文件
-            for file_name in os.listdir(self.strategy_dir):
-                if not file_name.endswith('.json'):
-                    continue
+            for filename in os.listdir(self.strategy_dir):
+                if filename.endswith('.json'):
+                    file_path = os.path.join(self.strategy_dir, filename)
                     
-                file_path = os.path.join(self.strategy_dir, file_name)
-                
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        strategy_config = json.load(f)
-                        
-                    # 应用过滤条件
-                    if filters:
-                        strategy = strategy_config["strategy"]
-                        if 'author' in filters and strategy.get('author') != filters['author']:
-                            continue
-                        if 'name' in filters and filters['name'] not in strategy.get('name', ''):
-                            continue
-                        if 'version' in filters and strategy.get('version') != filters['version']:
-                            continue
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            strategy_config = json.load(f)
                             
-                    strategies.append(strategy_config)
-                except Exception as e:
-                    logger.warning(f"解析策略文件失败: {file_name}, 错误: {e}")
-                    
-            # 按更新时间排序
-            strategies.sort(key=lambda s: s["strategy"].get("update_time", ""), reverse=True)
-            
+                        strategy = strategy_config.get('strategy', {})
+                        
+                        # 应用过滤条件
+                        if filters:
+                            if 'author' in filters and strategy.get('author') != filters['author']:
+                                continue
+                            if 'name' in filters and filters['name'] not in strategy.get('name', ''):
+                                continue
+                                
+                        strategy_info = {
+                            'id': strategy.get('id'),
+                            'name': strategy.get('name'),
+                            'description': strategy.get('description'),
+                            'author': strategy.get('author'),
+                            'version': strategy.get('version'),
+                            'create_time': strategy.get('create_time'),
+                            'update_time': strategy.get('update_time')
+                        }
+                        
+                        # 如果需要完整配置
+                        if filters and filters.get('include_config', False):
+                            strategy_info['config'] = strategy_config
+                            
+                        strategies.append(strategy_info)
+                        
+                    except Exception as e:
+                        logger.warning(f"读取策略文件 {filename} 失败: {e}")
+                        continue
+                        
+            # 按更新时间倒序排列
+            strategies.sort(key=lambda x: x.get('update_time', ''), reverse=True)
             return strategies
+            
         except Exception as e:
-            logger.error(f"从文件获取策略列表失败: {e}")
+            logger.error(f"从文件列出策略失败: {e}")
             return []
             
+    @exception_handler(reraise=False, default_return=False)
     def _delete_strategy_from_db(self, strategy_id: str) -> bool:
         """
         从数据库删除策略
@@ -453,14 +505,16 @@ class StrategyManager:
             bool: 是否删除成功
         """
         try:
-            sql = f"ALTER TABLE strategy_definitions DELETE WHERE strategy_id = '{strategy_id}'"
-            self.db_manager.execute(sql)
-            logger.info(f"已从数据库删除策略: {strategy_id}")
-            return True
+            # 软删除，设置is_active为0
+            sql = "UPDATE strategy_config SET is_active = 0 WHERE id = %s"
+            result = self.data_access.execute_sql(sql, (strategy_id,))
+            return result is not None
+            
         except Exception as e:
             logger.error(f"从数据库删除策略失败: {e}")
             return False
             
+    @exception_handler(reraise=False, default_return=False)
     def _delete_strategy_from_file(self, strategy_id: str) -> bool:
         """
         从文件删除策略
@@ -474,19 +528,21 @@ class StrategyManager:
         try:
             file_path = os.path.join(self.strategy_dir, f"{strategy_id}.json")
             
-            if not os.path.exists(file_path):
-                return False
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                return True
                 
-            os.remove(file_path)
-            logger.info(f"已从文件删除策略: {strategy_id}")
-            return True
+            return False
+            
         except Exception as e:
             logger.error(f"从文件删除策略失败: {e}")
             return False
             
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=2.0)
     def import_strategy(self, file_path: str) -> str:
         """
-        导入策略
+        从文件导入策略
         
         Args:
             file_path: 策略文件路径
@@ -495,118 +551,120 @@ class StrategyManager:
             str: 策略ID
             
         Raises:
-            FileNotFoundError: 文件不存在
-            ValueError: 文件格式不支持或解析失败
+            ValueError: 文件不存在或格式无效时抛出
+            FileNotFoundError: 文件不存在时抛出
         """
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"策略文件不存在: {file_path}")
             
-        # 根据文件扩展名确定解析方式
-        file_ext = os.path.splitext(file_path)[1].lower()
-        
         try:
-            if file_ext == '.json':
+            # 根据文件扩展名选择解析方式
+            if file_path.endswith('.json'):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     strategy_config = json.load(f)
-            elif file_ext in ['.yml', '.yaml']:
+            elif file_path.endswith('.yaml') or file_path.endswith('.yml'):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     strategy_config = yaml.safe_load(f)
             else:
-                raise ValueError(f"不支持的策略文件格式: {file_ext}")
+                raise ValueError("不支持的文件格式，仅支持JSON和YAML格式")
                 
-            # 验证策略配置
-            self._validate_strategy_config(strategy_config)
-            
-            # 生成新的策略ID
-            strategy_config["strategy"]["id"] = self._generate_strategy_id()
-            
-            # 设置创建和更新时间
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            strategy_config["strategy"]["create_time"] = now
-            strategy_config["strategy"]["update_time"] = now
-            
-            # 保存策略
+            # 生成新的策略ID避免冲突
+            if "strategy" in strategy_config:
+                strategy_config["strategy"]["id"] = self._generate_strategy_id()
+                
+            # 创建策略
             return self.create_strategy(strategy_config)
+            
         except Exception as e:
             logger.error(f"导入策略失败: {e}")
             raise ValueError(f"导入策略失败: {e}")
             
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=1.0)
     def export_strategy(self, strategy_id: str, file_path: str, format: str = 'json') -> bool:
         """
         导出策略到文件
         
         Args:
             strategy_id: 策略ID
-            file_path: 导出的文件路径
-            format: 导出格式，支持'json'和'yaml'，默认为'json'
+            file_path: 导出文件路径
+            format: 导出格式，支持'json'和'yaml'
             
         Returns:
             bool: 是否导出成功
             
         Raises:
-            ValueError: 策略不存在或导出格式不支持
+            ValueError: 策略不存在或格式不支持时抛出
         """
-        # 获取策略
-        strategy = self.get_strategy(strategy_id)
-        if not strategy:
+        strategy_config = self.get_strategy(strategy_id)
+        if not strategy_config:
             raise ValueError(f"策略 {strategy_id} 不存在")
             
         try:
-            # 根据格式导出
+            # 确保目录存在
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
             if format.lower() == 'json':
                 with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(strategy, f, ensure_ascii=False, indent=2)
+                    json.dump(strategy_config, f, ensure_ascii=False, indent=2)
             elif format.lower() in ['yaml', 'yml']:
                 with open(file_path, 'w', encoding='utf-8') as f:
-                    yaml.dump(strategy, f, allow_unicode=True, default_flow_style=False)
+                    yaml.dump(strategy_config, f, default_flow_style=False, allow_unicode=True)
             else:
                 raise ValueError(f"不支持的导出格式: {format}")
                 
-            logger.info(f"策略已导出到文件: {file_path}")
+            logger.info(f"策略 {strategy_id} 导出成功: {file_path}")
             return True
+            
         except Exception as e:
             logger.error(f"导出策略失败: {e}")
-            return False
+            raise ValueError(f"导出策略失败: {e}")
             
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=1.0)
     def clone_strategy(self, strategy_id: str, new_name: Optional[str] = None) -> str:
         """
         克隆策略
         
         Args:
-            strategy_id: 源策略ID
-            new_name: 新策略名称，如果为None则自动生成
+            strategy_id: 原策略ID
+            new_name: 新策略名称，如果为None则在原名称后加上"_copy"
             
         Returns:
             str: 新策略ID
             
         Raises:
-            ValueError: 源策略不存在
+            ValueError: 原策略不存在时抛出
         """
-        # 获取源策略
-        source_strategy = self.get_strategy(strategy_id)
-        if not source_strategy:
+        original_strategy = self.get_strategy(strategy_id)
+        if not original_strategy:
             raise ValueError(f"策略 {strategy_id} 不存在")
             
-        # 创建新策略配置
-        new_strategy = copy.deepcopy(source_strategy)
+        # 创建副本
+        cloned_strategy = copy.deepcopy(original_strategy)
         
-        # 生成新的ID
-        new_strategy["strategy"]["id"] = self._generate_strategy_id()
+        # 生成新ID和名称
+        cloned_strategy["strategy"]["id"] = self._generate_strategy_id()
         
-        # 设置新名称
         if new_name:
-            new_strategy["strategy"]["name"] = new_name
+            cloned_strategy["strategy"]["name"] = new_name
         else:
-            new_strategy["strategy"]["name"] = f"{source_strategy['strategy']['name']} (复制)"
+            original_name = cloned_strategy["strategy"].get("name", "未命名策略")
+            cloned_strategy["strategy"]["name"] = f"{original_name}_copy"
             
-        # 设置创建和更新时间
+        # 更新时间
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        new_strategy["strategy"]["create_time"] = now
-        new_strategy["strategy"]["update_time"] = now
+        cloned_strategy["strategy"]["create_time"] = now
+        cloned_strategy["strategy"]["update_time"] = now
         
-        # 保存新策略
-        return self.create_strategy(new_strategy)
-            
+        # 创建新策略
+        new_strategy_id = self.create_strategy(cloned_strategy)
+        
+        logger.info(f"策略克隆成功: {strategy_id} -> {new_strategy_id}")
+        return new_strategy_id
+        
+    @exception_handler(reraise=False, default_return=[])
+    @performance_monitor(threshold_seconds=2.0)
     def get_strategy_history(self, strategy_id: str) -> List[Dict[str, Any]]:
         """
         获取策略历史版本
@@ -615,36 +673,31 @@ class StrategyManager:
             strategy_id: 策略ID
             
         Returns:
-            List[Dict[str, Any]]: 策略历史版本列表
+            List[Dict[str, Any]]: 历史版本列表
         """
         try:
-            # 查询策略历史记录
-            sql = f"""
-            SELECT version, config, update_time
-            FROM strategy_history
-            WHERE strategy_id = '{strategy_id}'
-            ORDER BY version DESC
+            sql = """
+            SELECT version, update_time, author, description, config_json
+            FROM strategy_config_history 
+            WHERE strategy_id = %s 
+            ORDER BY update_time DESC
             """
             
-            result = self.db_manager.query(sql)
+            result = self.data_access.query(sql, (strategy_id,))
             
-            # 解析结果
             history = []
-            for _, row in result.iterrows():
-                try:
-                    version = row['version']
-                    config = json.loads(row['config'])
-                    update_time = row['update_time']
-                    
-                    history.append({
-                        'version': version,
-                        'config': config,
-                        'update_time': update_time
-                    })
-                except Exception as e:
-                    logger.warning(f"解析策略历史记录失败: {e}")
-            
+            for row in result:
+                version_info = {
+                    'version': row[0],
+                    'update_time': row[1],
+                    'author': row[2],
+                    'description': row[3],
+                    'config': json.loads(row[4])
+                }
+                history.append(version_info)
+                
             return history
+            
         except Exception as e:
-            logger.error(f"获取策略历史版本失败: {e}")
+            logger.error(f"获取策略历史失败: {e}")
             return [] 

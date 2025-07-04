@@ -13,7 +13,9 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db, get_default_config
+# 使用新的依赖注入架构
+from db.interfaces.data_access_interface import IDataAccess
+from db.container import get_container
 from enums.kline_period import KlinePeriod
 from utils.logger import get_logger
 from utils.path_utils import get_result_dir
@@ -31,13 +33,18 @@ class MultiDimensionAnalyzer:
     支持对个股和市场进行多周期、多指标的综合分析，能够提取共性特征并生成分析报告
     """
     
-    def __init__(self):
-        """初始化多维度分析器"""
+    def __init__(self, data_access: Optional[IDataAccess] = None):
+        """
+        初始化多维度分析器
+        
+        Args:
+            data_access: 数据访问接口，如果为None则从容器获取
+        """
         logger.info("初始化多维度分析器")
         
-        # 获取数据库连接
-        config = get_default_config()
-        self.ch_db = get_clickhouse_db(config=config)
+        # 使用依赖注入获取数据访问服务
+        container = get_container()
+        self.data_access = data_access or container.resolve(IDataAccess)
         
         # 使用统一指标注册系统
         self.indicator_registry = complete_registry
@@ -155,12 +162,13 @@ class MultiDimensionAnalyzer:
         """获取股票基本信息"""
         try:
             sql = f"""
-            SELECT stock_code, stock_name, industry, market, market_cap
+            SELECT code as stock_code, name as stock_name, industry
             FROM stock_info
-            WHERE stock_code = '{stock_code}'
+            WHERE code = '{stock_code}'
+            ORDER BY date DESC
             LIMIT 1
             """
-            result = self.ch_db.query_df(sql)
+            result = self.data_access.query(sql)
             
             if result.empty:
                 return {}
@@ -177,15 +185,15 @@ class MultiDimensionAnalyzer:
             exclude_condition = ""
             if exclude and len(exclude) > 0:
                 exclude_str = "', '".join(exclude)
-                exclude_condition = f" AND stock_code NOT IN ('{exclude_str}')"
+                exclude_condition = f" AND code NOT IN ('{exclude_str}')"
                 
             sql = f"""
-            SELECT stock_code
+            SELECT DISTINCT code as stock_code
             FROM stock_info
             WHERE industry = '{industry}'{exclude_condition}
             LIMIT 50
             """
-            result = self.ch_db.query_df(sql)
+            result = self.data_access.query(sql)
             
             if result.empty:
                 return []
@@ -355,7 +363,7 @@ class MultiDimensionAnalyzer:
                 WHERE code = '{code}' AND date >= '{start_date}' AND date <= '{end_date}'
                 ORDER BY date
                 """
-                df = self.ch_db.query_df(sql)
+                df = self.data_access.query(sql)
                 
                 if not df.empty:
                     # 计算日收益率
@@ -371,7 +379,7 @@ class MultiDimensionAnalyzer:
                 WHERE stock_code = '{stock_code}' AND date >= '{start_date}' AND date <= '{end_date}'
                 ORDER BY date
                 """
-                df = self.ch_db.query_df(sql)
+                df = self.data_access.query(sql)
                 
                 if not df.empty:
                     # 计算日收益率
@@ -461,7 +469,7 @@ class MultiDimensionAnalyzer:
             GROUP BY industry
             ORDER BY count DESC
             """
-            result = self.ch_db.query_df(sql)
+            result = self.data_access.query(sql)
             
             if result.empty:
                 return {}

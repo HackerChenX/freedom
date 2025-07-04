@@ -15,8 +15,10 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from utils.logger import get_logger
-from db.clickhouse_db import get_clickhouse_db
+from db.container import get_container
+from db.interfaces.data_access_interface import IDataAccess
 from enums.kline_period import KlinePeriod
+from utils.decorators import exception_handler, performance_monitor
 
 logger = get_logger(__name__)
 
@@ -71,7 +73,8 @@ class EnhancedBaseStrategy(abc.ABC):
     支持多周期数据和智能时间管理
     """
     
-    def __init__(self, name: str, description: str = "", default_period: str = "1d"):
+    def __init__(self, name: str, description: str = "", default_period: str = "1d", 
+                 data_access: Optional[IDataAccess] = None):
         """
         初始化增强选股策略
         
@@ -79,6 +82,7 @@ class EnhancedBaseStrategy(abc.ABC):
             name: 策略名称
             description: 策略描述
             default_period: 默认周期
+            data_access: 数据访问接口实例，如果为None则从容器获取
         """
         self.name = name
         self.description = description
@@ -87,7 +91,10 @@ class EnhancedBaseStrategy(abc.ABC):
         self._error = None
         self._parameters = {}
         self._conditions = []  # 指标条件列表
-        self.db = get_clickhouse_db()
+        
+        # 使用依赖注入获取数据访问接口
+        container = get_container()
+        self.data_access = data_access or container.resolve(IDataAccess)
         
         # 初始化默认参数
         self._init_default_parameters()
@@ -108,6 +115,8 @@ class EnhancedBaseStrategy(abc.ABC):
             'max_results': 100    # 最大结果数量
         })
     
+    @exception_handler(reraise=False, default_return="2025-05-23")
+    @performance_monitor(threshold_seconds=1.0)
     def get_latest_data_date(self) -> str:
         """
         获取数据库中的最新数据日期
@@ -117,17 +126,21 @@ class EnhancedBaseStrategy(abc.ABC):
         """
         try:
             # 从stock_info表查询最新日期
-            result = self.db.query('SELECT MAX(date) as max_date FROM stock_info LIMIT 1')
-            if not result.empty:
-                max_date = result.iloc[0]['max_date']
+            sql = 'SELECT MAX(date) as max_date FROM stock_info LIMIT 1'
+            result = self.data_access.query(sql)
+            
+            if result and len(result) > 0:
+                max_date = result[0][0]  # 获取第一行第一列
                 return str(max_date)
             
             # 如果查询失败，返回默认日期
             return "2025-05-23"
+            
         except Exception as e:
             logger.error(f"获取最新数据日期失败: {e}")
             return "2025-05-23"
     
+    @exception_handler(reraise=True)
     def get_effective_date_range(self) -> Tuple[str, str]:
         """
         获取有效的日期范围
@@ -183,6 +196,8 @@ class EnhancedBaseStrategy(abc.ABC):
         """
         return [c for c in self._conditions if c.period == period]
     
+    @exception_handler(reraise=False, default_return=None)
+    @performance_monitor(threshold_seconds=2.0)
     def get_stock_data(self, stock_code: str, period: str, 
                        start_date: str, end_date: str) -> Optional[pd.DataFrame]:
         """
@@ -198,44 +213,51 @@ class EnhancedBaseStrategy(abc.ABC):
             Optional[pd.DataFrame]: 股票数据
         """
         try:
+            # 获取周期配置
             period_config = PeriodConfig.get_period_by_name(period)
             if not period_config:
                 logger.error(f"不支持的周期: {period}")
                 return None
             
-            # 构建查询SQL
-            sql = f"""
-            SELECT *
-            FROM {period_config.table_name}
-            WHERE code = %(stock_code)s
-              AND date >= %(start_date)s
-              AND date <= %(end_date)s
-            ORDER BY date ASC
-            """
+            # 使用数据访问接口获取股票数据
+            stock_data = self.data_access.get_stock_info(
+                code=stock_code,
+                level=period_config.period_name,
+                start_date=start_date.replace('-', ''),  # 转换为YYYYMMDD格式
+                end_date=end_date.replace('-', '')
+            )
             
-            params = {
-                'stock_code': stock_code,
-                'start_date': start_date,
-                'end_date': end_date
-            }
-            
-            data = self.db.query(sql, params)
-            
-            if data.empty:
-                logger.warning(f"股票 {stock_code} 在周期 {period} 的数据为空")
+            if not stock_data:
+                logger.warning(f"未找到股票 {stock_code} 在周期 {period} 的数据")
                 return None
             
-            # 确保日期列为datetime类型
-            if 'date' in data.columns:
-                data['date'] = pd.to_datetime(data['date'])
-                data.set_index('date', inplace=True)
+            # 转换为DataFrame
+            df = pd.DataFrame(stock_data, columns=[
+                'code', 'name', 'date', 'level', 'open', 'close', 'high', 'low',
+                'volume', 'turnover_rate', 'price_change', 'price_range', 'industry'
+            ])
             
-            return data
+            # 转换数据类型
+            numeric_columns = ['open', 'close', 'high', 'low', 'volume', 'turnover_rate', 'price_change']
+            for col in numeric_columns:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            # 转换日期格式
+            df['date'] = pd.to_datetime(df['date'])
+            
+            # 按日期排序
+            df = df.sort_values('date')
+            
+            logger.debug(f"获取股票 {stock_code} 数据成功，共 {len(df)} 条记录")
+            return df
             
         except Exception as e:
-            logger.error(f"获取股票数据失败 {stock_code} ({period}): {e}")
+            logger.error(f"获取股票数据失败: {e}")
             return None
     
+    @exception_handler(reraise=False, default_return=[])
+    @performance_monitor(threshold_seconds=5.0)
     def get_stock_universe(self, filters: Optional[Dict[str, Any]] = None) -> List[str]:
         """
         获取股票池
@@ -249,43 +271,59 @@ class EnhancedBaseStrategy(abc.ABC):
         try:
             # 构建基础查询
             sql = """
-            SELECT DISTINCT code
-            FROM stock_info
+            SELECT DISTINCT code 
+            FROM stock_info 
             WHERE 1=1
             """
-            
-            params = {}
+            params = []
             
             # 应用过滤条件
-            if self._parameters.get('exclude_st', True):
-                sql += " AND name NOT LIKE '%ST%'"
+            if filters:
+                if filters.get('exclude_st', True):
+                    sql += " AND name NOT LIKE '%ST%'"
+                
+                if 'min_volume' in filters:
+                    sql += " AND volume >= %s"
+                    params.append(filters['min_volume'])
+                
+                if 'industry' in filters:
+                    industries = filters['industry']
+                    if isinstance(industries, str):
+                        industries = [industries]
+                    placeholders = ','.join(['%s'] * len(industries))
+                    sql += f" AND industry IN ({placeholders})"
+                    params.extend(industries)
+                
+                if 'market' in filters:
+                    markets = filters['market']
+                    if isinstance(markets, str):
+                        markets = [markets]
+                    # 根据股票代码前缀判断市场
+                    market_conditions = []
+                    for market in markets:
+                        if market.upper() == 'SH':
+                            market_conditions.append("code LIKE '60%'")
+                        elif market.upper() == 'SZ':
+                            market_conditions.append("(code LIKE '00%' OR code LIKE '30%')")
+                    
+                    if market_conditions:
+                        sql += f" AND ({' OR '.join(market_conditions)})"
             
-            if self._parameters.get('min_volume', 0) > 0:
-                sql += " AND volume >= %(min_volume)s"
-                params['min_volume'] = self._parameters['min_volume']
-            
-            # 排除新股
-            if self._parameters.get('exclude_new', True):
-                latest_date = self.get_latest_data_date()
-                cutoff_date = (datetime.strptime(latest_date, '%Y-%m-%d') - timedelta(days=30)).strftime('%Y-%m-%d')
-                sql += " AND code IN (SELECT DISTINCT code FROM stock_info WHERE date <= %(cutoff_date)s)"
-                params['cutoff_date'] = cutoff_date
-            
-            # 限制结果数量
-            max_results = self._parameters.get('max_results', 100)
+            # 添加限制
+            max_results = filters.get('max_results', 1000) if filters else 1000
             sql += f" LIMIT {max_results}"
             
-            result = self.db.query(sql, params)
+            # 执行查询
+            result = self.data_access.query(sql, params)
             
-            if result.empty:
-                logger.warning("未获取到任何股票代码")
+            if result:
+                stock_codes = [row[0] for row in result]
+                logger.info(f"获取股票池成功，共 {len(stock_codes)} 只股票")
+                return stock_codes
+            else:
+                logger.warning("未找到符合条件的股票")
                 return []
-            
-            stock_codes = result['code'].tolist()
-            logger.info(f"获取到 {len(stock_codes)} 只股票")
-            
-            return stock_codes
-            
+                
         except Exception as e:
             logger.error(f"获取股票池失败: {e}")
             return []
@@ -319,6 +357,7 @@ class EnhancedBaseStrategy(abc.ABC):
             value: 参数值
         """
         self._parameters[key] = value
+        logger.debug(f"设置参数 {key} = {value}")
     
     def set_parameters(self, params: Dict[str, Any]) -> None:
         """
@@ -328,71 +367,79 @@ class EnhancedBaseStrategy(abc.ABC):
             params: 参数字典
         """
         self._parameters.update(params)
+        logger.debug(f"批量设置参数: {list(params.keys())}")
     
     @abc.abstractmethod
     def select(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
         """
-        执行选股策略
+        执行选股逻辑（抽象方法）
         
         Args:
-            universe: 股票代码列表，None表示使用默认股票池
-            args: 位置参数
-            kwargs: 关键字参数
+            universe: 股票池，如果为None则使用默认股票池
+            *args: 其他位置参数
+            **kwargs: 其他关键字参数
             
         Returns:
-            pd.DataFrame: 选股结果，包含股票代码、名称等信息
+            pd.DataFrame: 选股结果
         """
         pass
     
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=10.0)
     def run(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
         """
-        运行选股策略并处理异常
+        运行策略
         
         Args:
-            universe: 股票代码列表
-            args: 位置参数
-            kwargs: 关键字参数
+            universe: 股票池
+            *args: 其他位置参数
+            **kwargs: 其他关键字参数
             
         Returns:
             pd.DataFrame: 选股结果
         """
         try:
-            # 如果没有指定股票池，使用默认股票池
-            if universe is None:
-                universe = self.get_stock_universe()
+            logger.info(f"开始运行策略: {self.name}")
             
-            self._result = self.select(universe, *args, **kwargs)
-            self._error = None
-            return self._result
-        except Exception as e:
-            logger.error(f"执行选股策略 {self.name} 时出错: {e}")
-            self._error = e
+            # 清除之前的结果和错误
             self._result = None
+            self._error = None
+            
+            # 执行选股逻辑
+            result = self.select(universe, *args, **kwargs)
+            
+            # 保存结果
+            self._result = result
+            
+            logger.info(f"策略 {self.name} 运行完成，选出 {len(result)} 只股票")
+            return result
+            
+        except Exception as e:
+            self._error = e
+            logger.error(f"策略 {self.name} 运行失败: {e}")
             raise
     
     def to_dict(self) -> Dict[str, Any]:
         """
-        将策略转换为字典表示
+        将策略转换为字典格式
         
         Returns:
-            Dict[str, Any]: 策略的字典表示
+            Dict[str, Any]: 策略字典
         """
         return {
             'name': self.name,
             'description': self.description,
             'default_period': self.default_period,
-            'parameters': self._parameters,
-            'conditions_count': len(self._conditions),
+            'parameters': self.parameters,
             'conditions': [
                 {
-                    'indicator': c.indicator_name,
+                    'indicator_name': c.indicator_name,
                     'period': c.period,
+                    'parameters': c.parameters,
+                    'condition': c.condition,
                     'signal_type': c.signal_type,
-                    'unique_key': c.get_unique_key()
+                    'weight': c.weight
                 }
-                for c in self._conditions
-            ],
-            'has_result': self._result is not None,
-            'has_error': self._error is not None,
-            'error': str(self._error) if self._error else None
+                for c in self.conditions
+            ]
         } 

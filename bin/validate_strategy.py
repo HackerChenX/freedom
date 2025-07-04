@@ -15,9 +15,11 @@ sys.path.append(root_dir)
 
 from strategy.strategy_factory import StrategyFactory
 from utils.strategy_validator import StrategyValidator
-from db.clickhouse_db import get_clickhouse_db
+from db.container import get_container
+from db.interfaces.data_access_interface import IDataAccess
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_strategies_dir
+from utils.decorators import exception_handler, performance_monitor
 
 # 获取日志记录器
 logger = get_logger(__name__)

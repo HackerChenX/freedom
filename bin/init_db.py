@@ -8,32 +8,87 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from db.clickhouse_db import get_clickhouse_db, get_default_config
+from config.config import get_config
+from db.container import get_container
+from db.interfaces.data_access_interface import IDataAccess
+from db.interfaces.connection_interface import IConnectionManager
+from utils.logger import get_logger
+from utils.decorators import exception_handler, performance_monitor
 
+logger = get_logger(__name__)
+
+@exception_handler(reraise=True)
+@performance_monitor(threshold_seconds=5.0)
 def init_database():
     """
     初始化ClickHouse数据库和表
+    
+    Returns:
+        bool: 初始化是否成功
     """
-    # 获取数据库配置
-    db_config = get_default_config()
-    
-    # 连接数据库
-    print(f"连接到ClickHouse数据库: {db_config['host']}:{db_config['port']}")
-    db = get_clickhouse_db(config=db_config)
-    
-    # 初始化数据库和表
-    print(f"初始化数据库: {db_config['database']}")
-    if db.init_database(db_config['database']):
-        print(f"数据库 {db_config['database']} 初始化成功")
-    else:
-        print(f"数据库 {db_config['database']} 初始化失败")
+    try:
+        logger.info("开始初始化数据库")
+        
+        # 获取配置
+        config = get_config()
+        db_config = config.get('database', {})
+        
+        # 使用依赖注入获取连接管理器
+        container = get_container()
+        connection_manager = container.resolve(IConnectionManager)
+        
+        # 检查连接健康状态
+        if not connection_manager.is_healthy():
+            logger.error("数据库连接不健康，无法初始化")
+            return False
+        
+        logger.info(f"连接到ClickHouse数据库: {db_config.get('host')}:{db_config.get('port')}")
+        
+        # 获取数据访问接口
+        data_access = container.resolve(IDataAccess)
+        
+        # 初始化数据库
+        database_name = db_config.get('database', 'stock_data')
+        logger.info(f"初始化数据库: {database_name}")
+        
+        # 创建数据库（如果不存在）
+        create_db_sql = f"CREATE DATABASE IF NOT EXISTS {database_name}"
+        data_access.query(create_db_sql)
+        
+        # 创建股票信息表（如果不存在）
+        create_table_sql = f"""
+        CREATE TABLE IF NOT EXISTS {database_name}.stock_info (
+            code String,
+            name String,
+            date Date,
+            level String,
+            open Float64,
+            close Float64,
+            high Float64,
+            low Float64,
+            volume UInt64,
+            turnover_rate Float64,
+            price_change Float64,
+            price_range Float64,
+            industry String,
+            datetime DateTime,
+            seq UInt64
+        ) ENGINE = MergeTree()
+        ORDER BY (code, date, level)
+        """
+        data_access.query(create_table_sql)
+        
+        logger.info("数据库初始化完成")
+        return True
+        
+    except Exception as e:
+        logger.error(f"数据库初始化失败: {e}")
         return False
-    
-    print("数据库初始化完成")
-    return True
 
 if __name__ == "__main__":
     if init_database():
+        logger.info("数据库和表初始化成功，现在可以开始同步股票数据了")
         print("数据库和表初始化成功，现在可以开始同步股票数据了")
     else:
+        logger.error("数据库初始化失败，请检查ClickHouse服务是否正常运行")
         print("数据库初始化失败，请检查ClickHouse服务是否正常运行") 
