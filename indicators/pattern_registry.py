@@ -769,6 +769,29 @@ class PatternRegistry:
 # 注意：所有具体指标的形态注册函数已移除
 # 各指标类现在负责在自己的类中注册相关形态
 
+def get_pattern_registry() -> PatternRegistry:
+    """
+    获取形态注册表单例实例
+    
+    Returns:
+        PatternRegistry: 形态注册表实例
+    """
+    return PatternRegistry()
+
+
+# 全局实例
+_pattern_registry = PatternRegistry()
+
+
+def get_global_pattern_registry() -> PatternRegistry:
+    """
+    获取全局形态注册表实例
+    
+    Returns:
+        PatternRegistry: 全局形态注册表实例
+    """
+    return _pattern_registry
+
 if __name__ == "__main__":
     print("Pattern Registry Utility")
     print("使用方法: 在代码中导入并使用 PatternRegistry 类来管理技术形态")

@@ -22,6 +22,8 @@ sys.path.insert(0, root_dir)
 from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
+from indicators.base_indicator import BaseIndicator
+from indicators.score_manager import IndicatorScoreManager
 
 # 尝试导入pattern_recognition_analyzer，如果talib不可用则跳过
 try:

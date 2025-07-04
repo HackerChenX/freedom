@@ -549,4 +549,72 @@ def universal_method(func):
             # 抛出异常以便上层处理
             raise
     
-    return wrapper 
+    return wrapper
+
+def timing_decorator(func):
+    """
+    计时装饰器，记录函数执行时间
+    
+    Args:
+        func: 被装饰的函数
+        
+    Returns:
+        装饰后的函数
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        try:
+            result = func(*args, **kwargs)
+            return result
+        finally:
+            end_time = time.time()
+            execution_time = end_time - start_time
+            logger.info(f"{func.__name__} 执行时间: {execution_time:.4f}秒")
+    return wrapper
+
+def validate_dataframe(check_empty=True, required_columns=None):
+    """
+    数据框验证装饰器
+    
+    Args:
+        check_empty: 是否检查数据框是否为空
+        required_columns: 必需的列名列表
+        
+    Returns:
+        装饰器函数
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # 查找DataFrame参数
+            for i, arg in enumerate(args):
+                if hasattr(arg, 'empty') and hasattr(arg, 'columns'):  # DataFrame-like object
+                    if check_empty and arg.empty:
+                        logger.warning(f"{func.__name__}: 数据框为空")
+                        return None
+                    
+                    if required_columns:
+                        missing_columns = set(required_columns) - set(arg.columns)
+                        if missing_columns:
+                            logger.error(f"{func.__name__}: 缺少必需的列: {missing_columns}")
+                            return None
+                    break
+            
+            # 检查关键字参数中的DataFrame
+            for key, value in kwargs.items():
+                if hasattr(value, 'empty') and hasattr(value, 'columns'):  # DataFrame-like object
+                    if check_empty and value.empty:
+                        logger.warning(f"{func.__name__}: 参数 {key} 数据框为空")
+                        return None
+                    
+                    if required_columns:
+                        missing_columns = set(required_columns) - set(value.columns)
+                        if missing_columns:
+                            logger.error(f"{func.__name__}: 参数 {key} 缺少必需的列: {missing_columns}")
+                            return None
+                    break
+            
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator 
