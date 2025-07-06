@@ -14,23 +14,23 @@ from enum import Enum
 import logging
 
 from utils.logger import get_logger
-from risk.warning_system import RiskWarningSystem, RiskLevel
+from risk.warning_system import Risk_warning_system, Risk_level
 
 logger = get_logger(__name__)
 
 
-class PortfolioRiskType(Enum):
+class Portfolio_risk_type(Enum):
     """组合风险类型枚举"""
-    CONCENTRATION = 0      # 集中度风险
-    CORRELATION = 1        # 相关性风险
-    DRAWDOWN = 2           # 回撤风险
-    LIQUIDITY = 3          # 流动性风险
-    SECTOR = 4             # 行业风险
-    VOLATILITY = 5         # 波动率风险
-    TECHNICAL = 6          # 技术指标风险
+    concentration = 0      # 集中度风险
+    correlation = 1        # 相关性风险
+    drawdown = 2           # 回撤风险
+    liquidity = 3          # 流动性风险
+    sector = 4             # 行业风险
+    volatility = 5         # 波动率风险
+    technical = 6          # 技术指标风险
 
 
-class PortfolioRisk:
+class Portfolio_risk:
     """
     组合风险评估系统
     
@@ -52,7 +52,7 @@ class PortfolioRisk:
         """
         self._params = params or {}
         self._initialize_params()
-        self.warning_system = RiskWarningSystem()
+        self.warning_system = Risk_warning_system()
         
     def _initialize_params(self):
         """初始化参数，设置默认值"""
@@ -82,7 +82,7 @@ class PortfolioRisk:
         
         Args:
             holdings: 持仓字典，键为股票代码，值为持仓权重（占比）
-            stock_data: 股票数据字典，键为股票代码，值为包含OHLCV数据的DataFrame
+            stock_data: 股票数据字典，键为股票代码，值为包含OHLCV数据的Data_frame
             sector_info: 行业信息字典，键为股票代码，值为行业名称
             
         Returns:
@@ -162,17 +162,17 @@ class PortfolioRisk:
     def _get_risk_level(self, risk_score: float) -> str:
         """根据风险分数获取风险级别"""
         if risk_score < 20:
-            return RiskLevel.SAFE.name
+            return Risk_level.SAFE.name
         elif risk_score < 40:
-            return RiskLevel.ATTENTION.name
+            return Risk_level.ATTENTION.name
         elif risk_score < 60:
-            return RiskLevel.CAUTION.name
+            return Risk_level.CAUTION.name
         elif risk_score < 75:
-            return RiskLevel.WARNING.name
+            return Risk_level.WARNING.name
         elif risk_score < 90:
-            return RiskLevel.DANGER.name
+            return Risk_level.DANGER.name
         else:
-            return RiskLevel.EXTREME.name
+            return Risk_level.EXTREME.name
     
     def _identify_risk_sources(self, risk_scores: Dict[str, float]) -> List[str]:
         """识别主要风险来源"""

@@ -20,10 +20,10 @@ from indicators.island_reversal import IslandReversal
 from indicators.time_cycle_analysis import TimeCycleAnalysis
 
 
-class TestNewIndicators(unittest.TestCase):
+class TestNewIndicators_Indicators(unittest.TestCase):
     """测试新增指标"""
 
-    def setUp(self):
+    def setUp_IndicatorsTestnewindicators(self):
         """
         创建测试数据
         """
@@ -54,7 +54,7 @@ class TestNewIndicators(unittest.TestCase):
         # 确保价格始终为正值
         self.data[self.data <= 0] = 0.01
         
-    def test_emv(self):
+    def test_emv_Indicators(self):
         """测试指数平均数指标"""
         emv = EMV(period=14, ma_period=9)
         result = emv.calculate(self.data)

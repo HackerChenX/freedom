@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-PatternRegistry使用示例
+Pattern_registry使用示例
 """
 
 import sys
@@ -19,7 +19,7 @@ def pattern_registry_example():
     print("=== PatternRegistry使用示例 ===")
     
     # 获取单例实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     # 注册多个形态
     patterns = [
@@ -50,18 +50,18 @@ def pattern_registry_example():
             pattern_id="BOLL_SQUEEZE",
             display_name="布林带挤压-更新",
             indicator_id="BOLL",
-            pattern_type=PatternType.NEUTRAL
+            pattern_type=Pattern_type.NEUTRAL
         )
     except Exception as e:
         print(f"尝试覆盖失败: {e}")
     
     # 设置全局允许覆盖
-    PatternRegistry.set_allow_override(True)
+    Pattern_registry.set_allow_override(True)
     registry.register(
         pattern_id="BOLL_SQUEEZE",
         display_name="布林带挤压-已更新",
         indicator_id="BOLL",
-        pattern_type=PatternType.NEUTRAL
+        pattern_type=Pattern_type.NEUTRAL
     )
     
     # 验证更新后的形态

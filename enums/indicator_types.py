@@ -7,29 +7,29 @@
 from enum import Enum, auto
 
 
-class IndicatorType(Enum):
+class Indicatortype_indicator_types(Enum):
     """技术指标类型枚举"""
     
     # 趋势指标
-    MA = auto()         # 移动平均线
-    EMA = auto()        # 指数移动平均线
-    MACD = auto()       # 移动平均线收敛散度
-    BOLL = auto()       # 布林带
+    ma = auto()         # 移动平均线
+    ema = auto()        # 指数移动平均线
+    macd = auto()       # 移动平均线收敛散度
+    boll = auto()       # 布林带
     
     # 动量指标
-    RSI = auto()        # 相对强弱指数
-    KDJ = auto()        # 随机指标
-    STOCH = auto()      # 随机指标(另一种)
+    rsi = auto()        # 相对强弱指数
+    kdj = auto()        # 随机指标
+    stoch = auto()      # 随机指标(另一种)
     
     # 波动性指标
-    ATR = auto()        # 平均真实波幅
+    atr = auto()        # 平均真实波幅
     
     # 成交量指标
-    OBV = auto()        # 能量潮
-    VOL = auto()        # 成交量
+    obv = auto()        # 能量潮
+    vol = auto()        # 成交量
     
     # 自定义指标
-    CUSTOM = auto()     # 自定义指标
+    custom = auto()     # 自定义指标
     
     # 之前添加的指标
     WMA = "WMA"  # 加权移动平均线(WMA)
@@ -104,7 +104,7 @@ class IndicatorType(Enum):
     ZXM_SELECTION_MODEL = "ZXM_SELECTION_MODEL"  # ZXM体系通用选股模型
 
 
-class TimeFrame(Enum):
+class Time_frame(Enum):
     """时间周期枚举"""
     
     MINUTE_1 = "1min"       # 1分钟
@@ -121,16 +121,16 @@ class TimeFrame(Enum):
     YEARLY = "yearly"       # 年线
 
 
-class CrossType(Enum):
+class Crosstype_indicator_types(Enum):
     """交叉类型枚举"""
     
     GOLDEN_CROSS = auto()   # 金叉，第一条线从下方穿过第二条线
     DEATH_CROSS = auto()    # 死叉，第一条线从上方穿过第二条线
 
 
-class TrendType(Enum):
+class Trendtype_indicator_types(Enum):
     """趋势类型枚举"""
     
-    UP = auto()      # 上升趋势
-    DOWN = auto()    # 下降趋势
-    FLAT = auto()    # 震荡趋势 
+    up = auto()      # 上升趋势
+    down = auto()    # 下降趋势
+    flat = auto()    # 震荡趋势 

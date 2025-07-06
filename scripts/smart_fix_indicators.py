@@ -63,7 +63,7 @@ def fix_indicator_file(file_path):
         
         for i, line in enumerate(lines):
             # 检测_calculate方法开始
-            if 'def _calculate(' in line or 'def calculate(' in line:
+            if 'def _calculate(' in line or 'def calculate_Smart_Fix_Indicators(' in line:
                 in_calculate_method = True
                 method_indent = len(line) - len(line.lstrip())
                 modified_lines.append(line)
@@ -100,7 +100,7 @@ def fix_indicator_file(file_path):
         print(f"     ❌ 修复失败: {e}")
         return False
 
-def main():
+def main_smartfixindicators():
     """主函数"""
     print("=== 智能修复核心技术指标脚本 ===")
     print()
@@ -121,4 +121,4 @@ def main():
     print(f"成功率: {success_count/len(CORE_INDICATORS):.1%}")
 
 if __name__ == "__main__":
-    main()
+    mainSmartfixindicators()

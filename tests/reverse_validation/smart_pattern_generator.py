@@ -22,15 +22,15 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from technical_indicators import TechnicalIndicators
+from technical_indicators import Technical_indicators
 
 
-class SmartPatternGenerator:
+class Smart_pattern_generator:
     """智能形态数据生成器"""
 
     def __init__(self):
         """初始化生成器"""
-        self.indicators = TechnicalIndicators()
+        self.indicators = Technical_indicators()
 
     def generate_rsi_golden_cross_data_v2(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """

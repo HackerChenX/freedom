@@ -12,7 +12,7 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import Magic_mock
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +23,7 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
 
-def generate_test_data(periods=100):
+def generate_test_data_Scoring_Test_Ichimoku_Aroon_Chaikin_Scoring(periods=100):
     """
     生成测试用的OHLCV数据
     
@@ -31,7 +31,7 @@ def generate_test_data(periods=100):
         periods: 数据周期数
         
     Returns:
-        pd.DataFrame: 包含OHLCV数据的DataFrame
+        pd.DataFrame: 包含OHLCV数据的Data_frame
     """
     np.random.seed(42)  # 固定随机种子以便复现
     
@@ -79,7 +79,7 @@ def test_ichimoku_scoring():
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ichimoku_Aroon_Chaikin_Scoring(100)
     
     # 创建Ichimoku指标实例
     ichimoku = Ichimoku()
@@ -121,14 +121,14 @@ def test_ichimoku_scoring():
     return scores, patterns
 
 
-def test_aroon_scoring():
+def test_aroon_scoring_Scoring():
     """测试Aroon指标评分功能"""
     print("\n" + "=" * 60)
     print("测试Aroon（阿隆指标）指标评分功能")
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ichimoku_Aroon_Chaikin_Scoring(100)
     
     # 创建Aroon指标实例
     aroon = Aroon()
@@ -177,7 +177,7 @@ def test_chaikin_scoring():
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ichimoku_Aroon_Chaikin_Scoring(100)
     
     # 创建Chaikin指标实例
     chaikin = Chaikin()
@@ -226,7 +226,7 @@ def test_comprehensive_scoring():
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ichimoku_Aroon_Chaikin_Scoring(100)
     
     # 创建指标实例
     indicators = {
@@ -298,7 +298,7 @@ def test_comprehensive_scoring():
     return None, []
 
 
-def main():
+def main_testichimokuaroonchaikinscoring():
     """主函数"""
     print("开始测试Ichimoku、Aroon、Chaikin指标评分功能")
     print("测试时间:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -306,7 +306,7 @@ def main():
     try:
         # 测试各个指标
         ichimoku_scores, ichimoku_patterns = test_ichimoku_scoring()
-        aroon_scores, aroon_patterns = test_aroon_scoring()
+        aroon_scores, aroon_patterns = test_aroon_scoring_Scoring()
         chaikin_scores, chaikin_patterns = test_chaikin_scoring()
         
         # 综合测试
@@ -332,4 +332,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testichimokuaroonchaikinscoring() 

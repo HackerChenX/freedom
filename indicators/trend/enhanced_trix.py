@@ -11,14 +11,14 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.trix import TRIX
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.technical_utils import find_peaks_and_troughs
 from utils.indicator_utils import crossover, crossunder
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
+class EnhancedTrix(BaseIndicator, PatternSignalMixin):
     """
     增强型TRIX三重指数平滑移动平均线指标
     
@@ -71,7 +71,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         self._price_data = None
         self._adaptive_n = n  # 自适应后的周期
     
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Trix(self) -> str:
         """
         获取指标类型
         
@@ -80,7 +80,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         """
         return self.indicator_type
     
-    def set_market_environment(self, environment: str) -> None:
+    def set_market_environment_Trix(self, environment: str) -> None:
         """
         设置市场环境
         
@@ -93,7 +93,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         self.market_environment = environment
 
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_enhancedtrix(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         实现BaseIndicator的抽象方法
 
@@ -158,7 +158,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
 
         # 计算TRIX动态特性
         result['trix_momentum'] = result['TRIX'] - result['TRIX'].shift(3)
-        result['trix_slope'] = self._calculate_slope(result['TRIX'], 5)
+        result['trix_slope'] = self._calculate_slope_Enhanced_Trix(result['TRIX'], 5)
         result['trix_accel'] = result['trix_slope'] - result['trix_slope'].shift(1)
 
         # 计算TRIX波动率
@@ -177,7 +177,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
             data: 输入数据
 
         Returns:
-            pd.DataFrame: 包含TRIX计算结果的DataFrame
+            pd.DataFrame: 包含TRIX计算结果的Data_frame
         """
         result = data.copy()
         close = data['close']
@@ -208,7 +208,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         根据市场波动率动态调整TRIX周期参数
         
         Args:
-            data: 包含价格数据的DataFrame
+            data: 包含价格数据的Data_frame
         """
         # 计算价格波动率
         close = data['close']
@@ -260,7 +260,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         logger.debug(f"调整TRIX周期: 原始={self.n}, 调整后={self._adaptive_n}, "
                     f"相对波动率={relative_volatility:.2f}, 市场环境={self.market_environment}")
     
-    def _calculate_slope(self, series: pd.Series, period: int = 5) -> pd.Series:
+    def _calculate_slope_Enhanced_Trix(self, series: pd.Series, period: int = 5) -> pd.Series:
         """
         计算序列的斜率
         
@@ -283,12 +283,12 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         return slope 
 
-    def detect_divergence(self) -> pd.DataFrame:
+    def detect_divergence_Trix(self) -> pd.DataFrame:
         """
         检测TRIX与价格之间的背离关系
         
         Returns:
-            pd.DataFrame: 包含背离分析结果的DataFrame
+            pd.DataFrame: 包含背离分析结果的Data_frame
         """
         if self._result is None or self._price_data is None:
             return pd.DataFrame()
@@ -488,12 +488,12 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         return divergence
     
-    def analyze_multi_period_synergy(self) -> pd.DataFrame:
+    def analyze_multi_period_synergy_Trix(self) -> pd.DataFrame:
         """
         多周期TRIX协同分析
         
         Returns:
-            pd.DataFrame: 包含多周期协同分析结果的DataFrame
+            pd.DataFrame: 包含多周期协同分析结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -593,7 +593,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         评估TRIX零轴交叉质量
         
         Returns:
-            pd.DataFrame: 包含零轴交叉质量评估结果的DataFrame
+            pd.DataFrame: 包含零轴交叉质量评估结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -670,12 +670,12 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         return quality
     
-    def identify_patterns(self) -> pd.DataFrame:
+    def identify_patterns_Trix_Enhanced_Trix(self) -> pd.DataFrame:
         """
         识别TRIX形态
         
         Returns:
-            pd.DataFrame: 包含形态识别结果的DataFrame
+            pd.DataFrame: 包含形态识别结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -709,7 +709,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
                                                       (zero_cross_quality['cross_quality_score'] > high_quality_threshold))
         
         # 获取背离分析结果
-        divergence = self.detect_divergence()
+        divergence = self.detect_divergence_Trix()
         if not divergence.empty:
             patterns['bullish_divergence'] = divergence['bullish_divergence']
             patterns['bearish_divergence'] = divergence['bearish_divergence']
@@ -717,7 +717,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
             patterns['hidden_bearish_divergence'] = divergence['hidden_bearish_divergence']
         
         # 多周期协同分析
-        synergy = self.analyze_multi_period_synergy()
+        synergy = self.analyze_multi_period_synergy_Trix()
         if not synergy.empty:
             patterns['multi_period_bullish_signal'] = synergy['multi_period_bullish_signal']
             patterns['multi_period_bearish_signal'] = synergy['multi_period_bearish_signal']
@@ -730,11 +730,11 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
             patterns['deceleration'] = self._result['trix_accel'] < 0
         
         # 钝化形态（TRIX在零轴附近徘徊）
-        patterns['stagnation_near_zero'] = self._detect_stagnation(trix, threshold=0.1, periods=5)
+        patterns['stagnation_near_zero'] = self._detect_stagnation_Enhanced_Trix(trix, threshold=0.1, periods=5)
         
         return patterns
     
-    def _detect_stagnation(self, trix: pd.Series, threshold: float, periods: int) -> pd.Series:
+    def _detect_stagnation_Enhanced_Trix(self, trix: pd.Series, threshold: float, periods: int) -> pd.Series:
         """
         检测TRIX在零轴附近的钝化形态
         
@@ -766,7 +766,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         return stagnation
     
-    def calculate_score(self, data: pd.DataFrame = None) -> pd.Series:
+    def calculate_score_Trix_Enhanced_Trix(self, data: pd.data_frame = None) -> pd.Series:
         """
         计算TRIX综合评分 (0-100)
         
@@ -789,16 +789,16 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         trix_slope = self._result['trix_slope']
         
         # 获取背离分析
-        divergence = self.detect_divergence()
+        divergence = self.detect_divergence_Trix()
         
         # 获取零轴交叉质量评估
         zero_cross = self.evaluate_zero_cross_quality()
         
         # 获取形态识别
-        patterns = self.identify_patterns()
+        patterns = self.identify_patterns_Trix_Enhanced_Trix()
         
         # 获取多周期协同分析
-        synergy = self.analyze_multi_period_synergy()
+        synergy = self.analyze_multi_period_synergy_Trix()
         
         # 基础分数为50（中性）
         score = pd.Series(50, index=self._result.index)
@@ -903,7 +903,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Trix_Enhanced_Trix(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算增强型TRIX指标原始评分 (0-100分)
         
@@ -918,9 +918,9 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         if not self.has_result():
             self.calculate(data)
         
-        return self.calculate_score()
+        return self.calculate_score_Trix_Enhanced_Trix()
     
-    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+    def generate_signals_Trix_Enhanced_Trix(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         生成交易信号
         
@@ -928,7 +928,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
             data: 输入数据
             
         Returns:
-            pd.DataFrame: 包含交易信号的DataFrame
+            pd.DataFrame: 包含交易信号的Data_frame
         """
         # 确保已计算TRIX
         if self._result is None:
@@ -941,10 +941,10 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         trix = self._result['TRIX']
         
         # 计算TRIX综合评分
-        score = self.calculate_score()
+        score = self.calculate_score_Trix_Enhanced_Trix()
         
         # 识别形态
-        patterns = self.identify_patterns()
+        patterns = self.identify_patterns_Trix_Enhanced_Trix()
         
         # 创建信号DataFrame
         signals = pd.DataFrame(index=self._result.index)
@@ -1047,8 +1047,8 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         计算信号置信度
         
         Args:
-            signals: 信号DataFrame
-            patterns: 形态DataFrame
+            signals: 信号Data_frame
+            patterns: 形态Data_frame
             
         Returns:
             pd.Series: 信号置信度 (0-100)
@@ -1093,7 +1093,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         Args:
             data: 价格数据
-            signals: 信号DataFrame
+            signals: 信号Data_frame
             
         Returns:
             pd.Series: 建议止损价
@@ -1112,7 +1112,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         atr = None
         if 'high' in data.columns and 'low' in data.columns:
             high = data['high']
-            atr = self.atr(high, low, close, 14)
+            atr = self.atr_Trix(high, low, close, 14)
         
         # 买入信号的止损
         for i in range(len(signals)):
@@ -1167,7 +1167,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         
         return stop_loss
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Trix_Enhanced_Trix(self, **kwargs):
         """
         设置指标参数
 
@@ -1185,13 +1185,13 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         if 'volatility_lookback' in kwargs:
             self.volatility_lookback = kwargs['volatility_lookback']
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Trix_Enhanced_Trix(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算EnhancedTRIX指标的置信度
+        计算Enhanced_tRIX指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -1241,16 +1241,16 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Trix_Enhanced_Trix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EnhancedTRIX相关形态
+        获取Enhanced_tRIX相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
@@ -1260,11 +1260,11 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
             return pd.DataFrame(index=data.index)
 
         # 使用现有的identify_patterns方法
-        return self.identify_patterns()
+        return self.identify_patterns_Trix_Enhanced_Trix()
 
-    def register_patterns(self):
+    def register_patterns_Trix_Enhanced_Trix(self):
         """
-        注册EnhancedTRIX指标的形态到全局形态注册表
+        注册Enhanced_tRIX指标的形态到全局形态注册表
         """
         # 注册TRIX交叉形态
         self.register_pattern_to_registry(
@@ -1431,9 +1431,9 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Trix(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成EnhancedTRIX交易信号
+        生成Enhanced_tRIX交易信号
 
         Args:
             data: 输入数据
@@ -1496,7 +1496,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def atr(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+    def atr_Trix(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
         """
         计算平均真实范围(ATR)
 
@@ -1521,7 +1521,7 @@ class EnhancedTRIX(BaseIndicator, PatternSignalMixin):
 
         return atr
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Trix_Enhanced_Trix(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 

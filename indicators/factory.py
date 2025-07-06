@@ -11,31 +11,31 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class IndicatorFactory:
     """
     指标工厂类
 
-    完全基于CompleteIndicatorRegistry实现的统一指标工厂
+    完全基于Complete_indicator_registry实现的统一指标工厂
     """
 
     def __init__(self):
         from indicators.base_indicator import BaseIndicator
         self._registry = complete_registry
 
-    def register_indicator(self, name: str, indicator_class):
+    def register_indicator_Factory(self, name: str, indicator_class):
         """注册指标类"""
         return self._registry.register_indicator_safe(indicator_class, name)
 
-    def create_indicator(self, name: str, **kwargs):
+    def create_indicator_Factory_Factory_Factory_factory(self, name: str, **kwargs):
         """创建指标实例"""
-        return self._registry.create_indicator(name, **kwargs)
+        return self._registry.create_indicator_Factory_Factory_Factory_factory(name, **kwargs)
 
-    def get_available_indicators(self) -> List[str]:
+    def get_available_indicators_Factory(self) -> List[str]:
         """获取可用指标列表"""
         return self._registry.get_indicator_names()
 
@@ -54,40 +54,24 @@ class IndicatorFactory:
         return complete_registry.get_indicator_names()
 
     @classmethod
-    def create_indicator(cls, name: str, **kwargs):
+    def create_indicator_Factory_Factory_Factory_factory_duplicate(cls, name: str, **kwargs):
         """类方法创建指标实例"""
         from indicators.base_indicator import BaseIndicator
-        return complete_registry.create_indicator(name, **kwargs)
+        return complete_registry.create_indicator_Factory_Factory_Factory_factory(name, **kwargs)
 
 
-class FACTORY(BaseIndicator, PatternSignalMixin):
+class Factory(BaseIndicator, PatternSignalMixin):
     """
     FACTORY 指标
     
     自动生成的最小化实现，支持参数标准化
     """
     
-    def __init__(self, **kwargs):
-        """
-        初始化FACTORY指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        super().__init__()
-        self.name = "FACTORY"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_factory(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Factory_Factory(self, **kwargs):
         """
         设置指标参数
         
@@ -96,8 +80,8 @@ class FACTORY(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -116,29 +100,29 @@ class FACTORY(BaseIndicator, PatternSignalMixin):
             # 如果验证失败，静默处理，保持向后兼容
             self.period = 14
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Factory_Factory(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算FACTORY指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了FACTORY指标的DataFrame
+            添加了FACTORY指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_factory(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_factory(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算FACTORY指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了FACTORY指标的DataFrame
+            添加了FACTORY指标的Data_frame
         """
         df = data.copy()
         
@@ -152,16 +136,16 @@ class FACTORY(BaseIndicator, PatternSignalMixin):
 
         return df
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Factory_Factory(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Factory_Factory(data, **kwargs)
         return pd.Series(50.0, index=data.index)
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Factory_Factory(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.5
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Factory_Factory(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)

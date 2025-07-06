@@ -75,7 +75,7 @@ def run_single_indicator_test(indicator: str) -> dict:
         }
 
 
-def generate_comprehensive_report(all_results: dict) -> str:
+def generate_comprehensive_report_Batch_Demo_Test(all_results: dict) -> str:
     """生成综合报告"""
     report_lines = []
 
@@ -127,7 +127,7 @@ def generate_comprehensive_report(all_results: dict) -> str:
     return "\n".join(report_lines)
 
 
-def main():
+def main_batchdemotest():
     """主函数"""
     print("=" * 60)
     print("批量反向验证测试")
@@ -163,7 +163,7 @@ def main():
     print("生成综合报告...")
 
     # 生成报告
-    report_content = generate_comprehensive_report(all_results)
+    report_content = generate_comprehensive_report_Batch_Demo_Test(all_results)
 
     # 保存报告
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -194,5 +194,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_batchdemotest()
     sys.exit(exit_code)

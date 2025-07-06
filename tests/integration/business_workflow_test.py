@@ -20,15 +20,15 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from strategy.strategy_executor import Strategy_executor
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from monitoring.performance_monitor import get_performance_monitor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class BusinessWorkflowTest:
+class Business_workflow_test:
     """业务流程集成测试器"""
     
     def __init__(self):
@@ -156,8 +156,8 @@ class BusinessWorkflowTest:
             # 2. 测试单个买点分析 - 简化版本
             try:
                 # 直接测试数据处理器，避免复杂的指标分析
-                from analysis.buypoints.period_data_processor import PeriodDataProcessor
-                processor = PeriodDataProcessor()
+                from analysis.buypoints.period_data_processor import Period_data_processor
+                processor = Period_data_processor()
 
                 start_time = time.time()
 
@@ -236,8 +236,8 @@ class BusinessWorkflowTest:
             # 步骤3: 模拟买点分析 - 简化版本
             buypoint_results = []
             if selected_stocks:
-                from analysis.buypoints.period_data_processor import PeriodDataProcessor
-                processor = PeriodDataProcessor()
+                from analysis.buypoints.period_data_processor import Period_data_processor
+                processor = Period_data_processor()
 
                 for stock_code in selected_stocks:
                     try:
@@ -330,7 +330,7 @@ class BusinessWorkflowTest:
             test_results['integrated_workflow_test'] = self.test_integrated_workflow()
             
             # 4. 性能总结
-            test_results['performance_summary'] = self._generate_performance_summary(test_results)
+            test_results['performance_summary'] = self._generate_performance_summary_Business_Workflow_Test(test_results)
             
             # 5. 整体评估
             test_results['overall_assessment'] = self._generate_business_assessment(test_results)
@@ -346,7 +346,7 @@ class BusinessWorkflowTest:
         
         return test_results
     
-    def _generate_performance_summary(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_performance_summary_Business_Workflow_Test(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
         """生成性能总结"""
         summary = {
             'stock_selection_performance': {},
@@ -413,7 +413,7 @@ class BusinessWorkflowTest:
         return assessment
 
 
-def main():
+def main_businessworkflowtest():
     """主函数"""
     print("=" * 80)
     print("业务流程集成测试")
@@ -424,7 +424,7 @@ def main():
     
     try:
         # 创建测试实例
-        test_framework = BusinessWorkflowTest()
+        test_framework = Business_workflow_test()
         
         # 运行综合测试
         results = test_framework.run_comprehensive_business_test()
@@ -486,5 +486,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_businessworkflowtest()
     sys.exit(exit_code)

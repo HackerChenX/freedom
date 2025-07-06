@@ -245,7 +245,7 @@ def analyze_root_cause():
     print("4. 建立验证机制: 确保两个引擎的结果一致性")
 
 
-def main():
+def main_compareanalysisengines():
     """主函数"""
     print("🚀 启动分析引擎对比测试")
     
@@ -261,4 +261,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
+    mainCompareanalysisengines() 

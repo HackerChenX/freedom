@@ -13,21 +13,21 @@ import numpy as np
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from strategy.enhanced_base_strategy import EnhancedBaseStrategy, IndicatorCondition
-from utils.logger import get_logger
+from strategy.enhanced_base_strategy import Enhanced_base_strategy, Indicator_condition
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class MultiPeriodStrategy(EnhancedBaseStrategy):
+class MultiPeriodStrategy(Enhanced_base_strategy):
     """
     多周期选股策略
     
     结合日线、周线、小时线数据进行选股
     """
     
-    def __init__(self):
-        super().__init__(
+    def __init___76(self):
+        super().__init___76(
             name="多周期技术指标选股策略",
             description="基于多周期技术指标的综合选股策略",
             default_period="1d"
@@ -56,7 +56,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
         
         # 日线指标条件
         daily_conditions = [
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='MA',
                 period='1d',
                 parameters={'period': 20},
@@ -64,7 +64,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 signal_type='BUY',
                 weight=1.0
             ),
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='RSI',
                 period='1d',
                 parameters={'period': 14},
@@ -72,7 +72,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 signal_type='NORMAL',
                 weight=0.8
             ),
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='MACD',
                 period='1d',
                 parameters={'fast': 12, 'slow': 26, 'signal': 9},
@@ -80,7 +80,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 signal_type='BUY',
                 weight=1.2
             ),
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='BOLL',
                 period='1d',
                 parameters={'period': 20, 'std_dev': 2.0},
@@ -88,7 +88,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 signal_type='NORMAL',
                 weight=0.6
             ),
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='VOL',
                 period='1d',
                 parameters={'ma_period': 20},
@@ -100,7 +100,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
         
         # 周线指标条件
         weekly_conditions = [
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='MA',
                 period='1w',
                 parameters={'period': 10},
@@ -108,7 +108,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 signal_type='BUY',
                 weight=1.5
             ),
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='RSI',
                 period='1w',
                 parameters={'period': 14},
@@ -116,7 +116,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 signal_type='BULLISH',
                 weight=1.0
             ),
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='KDJ',
                 period='1w',
                 parameters={'period': 9, 'k_period': 3, 'd_period': 3},
@@ -128,7 +128,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
         
         # 小时线指标条件（短期动量）
         hourly_conditions = [
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='RSI',
                 period='1h',
                 parameters={'period': 14},
@@ -136,7 +136,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 signal_type='BULLISH',
                 weight=0.5
             ),
-            IndicatorCondition(
+            Indicator_condition(
                 indicator_name='BOLL',
                 period='1h',
                 parameters={'period': 20, 'std_dev': 2.0},
@@ -150,7 +150,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
         for condition in daily_conditions + weekly_conditions + hourly_conditions:
             self.add_indicator_condition(condition)
     
-    def select(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
+    def select_Strategy_Multi_Period_Strategy(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
         """
         执行多周期选股
         
@@ -184,7 +184,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
                 logger.info(f"分析股票 {i+1}/{len(universe)}: {stock_code}")
                 
                 # 分析单只股票
-                stock_result = self._analyze_stock(stock_code, start_date, end_date)
+                stock_result = self._analyze_stock_Multi_Period_Strategy(stock_code, start_date, end_date)
                 
                 if stock_result:
                     results.append(stock_result)
@@ -213,7 +213,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
         
         return df_results
     
-    def _analyze_stock(self, stock_code: str, start_date: str, end_date: str) -> Optional[Dict[str, Any]]:
+    def _analyze_stock_Multi_Period_Strategy(self, stock_code: str, start_date: str, end_date: str) -> Optional[Dict[str, Any]]:
         """
         分析单只股票
         
@@ -254,7 +254,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             latest_data = daily_data.iloc[-1]
             
             # 计算总评分
-            total_score = self._calculate_total_score(period_scores)
+            total_score = self._calculate_total_score_Multi_Period_Strategy(period_scores)
             
             # 如果评分太低，直接过滤
             if total_score < 30:  # 预筛选阈值
@@ -324,7 +324,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"计算{period}周期评分时出错: {e}")
             return 0.0
     
-    def _evaluate_condition(self, condition: IndicatorCondition, data: pd.DataFrame) -> float:
+    def _evaluate_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
         """
         评估单个条件
         
@@ -360,7 +360,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"评估条件 {condition.indicator_name} 时出错: {e}")
             return 0.0
     
-    def _evaluate_ma_condition(self, condition: IndicatorCondition, data: pd.DataFrame) -> float:
+    def _evaluate_ma_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
         """评估MA条件"""
         try:
             period = condition.parameters.get('period', 20)
@@ -386,7 +386,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"评估MA条件时出错: {e}")
             return 0.0
     
-    def _evaluate_rsi_condition(self, condition: IndicatorCondition, data: pd.DataFrame) -> float:
+    def _evaluate_rsi_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
         """评估RSI条件"""
         try:
             period = condition.parameters.get('period', 14)
@@ -417,7 +417,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"评估RSI条件时出错: {e}")
             return 0.0
     
-    def _evaluate_macd_condition(self, condition: IndicatorCondition, data: pd.DataFrame) -> float:
+    def _evaluate_macd_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
         """评估MACD条件"""
         try:
             fast = condition.parameters.get('fast', 12)
@@ -449,7 +449,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"评估MACD条件时出错: {e}")
             return 0.0
     
-    def _evaluate_boll_condition(self, condition: IndicatorCondition, data: pd.DataFrame) -> float:
+    def _evaluate_boll_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
         """评估布林带条件"""
         try:
             period = condition.parameters.get('period', 20)
@@ -487,7 +487,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"评估BOLL条件时出错: {e}")
             return 0.0
     
-    def _evaluate_volume_condition(self, condition: IndicatorCondition, data: pd.DataFrame) -> float:
+    def _evaluate_volume_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
         """评估成交量条件"""
         try:
             ma_period = condition.parameters.get('ma_period', 20)
@@ -517,7 +517,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"评估VOL条件时出错: {e}")
             return 0.0
     
-    def _evaluate_kdj_condition(self, condition: IndicatorCondition, data: pd.DataFrame) -> float:
+    def _evaluate_kdj_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
         """评估KDJ条件"""
         try:
             period = condition.parameters.get('period', 9)
@@ -555,7 +555,7 @@ class MultiPeriodStrategy(EnhancedBaseStrategy):
             logger.error(f"评估KDJ条件时出错: {e}")
             return 0.0
     
-    def _calculate_total_score(self, period_scores: Dict[str, float]) -> float:
+    def _calculate_total_score_Multi_Period_Strategy(self, period_scores: Dict[str, float]) -> float:
         """
         计算总评分
         

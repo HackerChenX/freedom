@@ -11,7 +11,7 @@ import os
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from tests.framework.layered_testing_framework import LayeredTestingFramework
+from tests.framework.layered_testing_framework import Layered_testing_framework
 from utils.logger import get_logger, init_logging
 
 # 初始化日志
@@ -19,12 +19,12 @@ init_logging(level="INFO")
 logger = get_logger(__name__)
 
 
-class TestLayeredFramework(unittest.TestCase):
+class Test_layered_framework(unittest.Test_case):
     """分层测试框架验证测试类"""
     
-    def setUp(self):
+    def set_up_Framework_Test_Layered_Framework(self):
         """设置测试环境"""
-        self.framework = LayeredTestingFramework()
+        self.framework = Layered_testing_framework()
         
         # 选择一些代表性的ZXM指标进行测试
         self.test_indicators = [
@@ -100,11 +100,11 @@ class TestLayeredFramework(unittest.TestCase):
         for layer_name, expected in expected_coverage.items():
             if layer_name in layer_summaries:
                 actual_coverage = layer_summaries[layer_name]['coverage']
-                self.assertGreaterEqual(actual_coverage, expected * 0.9,  # 允许10%的容差
+                self.assert_greater_equal(actual_coverage, expected * 0.9,  # 允许10%的容差
                                       f"{layer_name}覆盖率应该>={expected*0.9:.1f}%，实际: {actual_coverage:.1f}%")
                 logger.info(f"✅ {layer_name}覆盖率: {actual_coverage:.1f}%")
     
-    def test_performance_requirements(self):
+    def test_performance_requirements_Framework(self):
         """测试性能要求"""
         logger.info("=== 测试性能要求 ===")
         
@@ -122,7 +122,7 @@ class TestLayeredFramework(unittest.TestCase):
         for layer_name, max_time in max_execution_times.items():
             if layer_name in layer_summaries:
                 actual_time = layer_summaries[layer_name]['execution_time']
-                self.assertLessEqual(actual_time, max_time * 1.5,  # 允许50%的容差
+                self.assert_less_equal(actual_time, max_time * 1.5,  # 允许50%的容差
                                    f"{layer_name}执行时间应该<={max_time*1.5:.1f}秒，实际: {actual_time:.1f}秒")
                 logger.info(f"✅ {layer_name}执行时间: {actual_time:.1f}秒")
     
@@ -146,7 +146,7 @@ class TestLayeredFramework(unittest.TestCase):
         logger.info("✅ 详细报告生成成功")
         logger.info(f"报告长度: {len(detailed_report)} 字符")
     
-    def test_error_handling(self):
+    def test_error_handling_Framework(self):
         """测试错误处理"""
         logger.info("=== 测试错误处理 ===")
         
@@ -198,7 +198,7 @@ class TestLayeredFramework(unittest.TestCase):
         total_tests = summary['total_tests']
         expected_min_tests = len(extended_indicators) * 2 * 2  # 指标数 * 层数 * 每层最少测试数
         
-        self.assertGreaterEqual(total_tests, expected_min_tests,
+        self.assert_greater_equal(total_tests, expected_min_tests,
                                f"总测试数应该>={expected_min_tests}，实际: {total_tests}")
         
         logger.info(f"✅ 框架可扩展性验证通过，处理了{len(extended_indicators)}个指标，{total_tests}个测试")

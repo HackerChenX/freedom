@@ -74,7 +74,7 @@ def fix_any_import(file_path):
         logger.info(f"文件 {file_path} 已修复，添加了typing.Any导入")
         return True
 
-def main():
+def main_fixtests():
     """主函数"""
     # 测试目录
     review_dir = os.path.join(root_dir, "tests", "review")
@@ -100,4 +100,4 @@ def main():
     logger.info(f"修复完成，共修复了 {fixed_count} 个文件")
 
 if __name__ == "__main__":
-    main() 
+    main_fixtests() 

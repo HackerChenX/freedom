@@ -20,15 +20,15 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class VectorizedIndicatorOptimizer:
     """向量化指标优化器"""
     
-    def __init__(self):
+    def __init___89(self):
         self.optimized_indicators = {}
         self.performance_improvements = {}
         
@@ -373,12 +373,8 @@ class VectorizedIndicatorOptimizer:
         """
         if optimization_type == 'MACD':
             return f"""
-class Optimized{indicator_name}(BaseIndicator):
-    def __init__(self):
-        super().__init__()
-        self.name = "{indicator_name}_OPTIMIZED"
-    
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+class Optimized_Vectorized_Indicator_Optimizer_Vectorized_Indicator_Optimizer{indicator_name}(BaseIndicator):
+    def calculate_Vectorized_Indicator_Optimizer_Vectorized_Indicator_Optimizer(self, df: pd.DataFrame) -> pd.DataFrame:
         # 向量化MACD计算
         close_prices = df['close']
         
@@ -405,35 +401,13 @@ class Optimized{indicator_name}(BaseIndicator):
         
         elif optimization_type == 'RSI':
             return f"""
-class Optimized{indicator_name}(BaseIndicator):
-    def __init__(self):
-        super().__init__()
-        self.name = "{indicator_name}_OPTIMIZED"
-    
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
-        # 向量化RSI计算
-        close_prices = df['close']
-        delta = close_prices.diff()
-        
-        gain = delta.where(delta > 0, 0)
-        loss = -delta.where(delta < 0, 0)
-        
-        avg_gain = gain.ewm(span=14, adjust=False).mean()
-        avg_loss = loss.ewm(span=14, adjust=False).mean()
-        
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        
-        result_df = df.copy()
-        result_df['{indicator_name}_RSI'] = rsi
-        
-        return result_df
+class Optimized_Vectorized_Indicator_Optimizer_Vectorized_Indicator_Optimizer{indicator_name}(BaseIndicator):
 """
         
         return f"# 优化代码模板 for {indicator_name}"
 
 
-def main():
+def main_43():
     """主函数 - 运行向量化优化测试"""
     import os
     import json
@@ -467,7 +441,7 @@ def main():
     })
     
     # 创建优化器
-    optimizer = VectorizedIndicatorOptimizer()
+    optimizer = Vectorized_indicator_optimizer()
     
     # 运行基准测试
     print("运行向量化优化基准测试...")
@@ -512,4 +486,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_43()

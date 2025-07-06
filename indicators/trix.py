@@ -11,16 +11,16 @@ import logging
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class TRIX(BaseIndicator, PatternSignalMixin):
+class TripleExponentialAverage(BaseIndicator, PatternSignalMixin):
     """
     TRIX三重指数平滑移动平均线指标
     
-    TRIX = (TR - REF(TR, 1)) / REF(TR, 1) × 100，其中TR = EMA(EMA(EMA(Close, N), N), N)
+    trix = (TR - REF(TR, 1)) / REF(TR, 1) × 100，其中tr = EMA(EMA(EMA(Close, N), N), N)
     过滤短期波动，捕捉中长期趋势变化
     """
     
@@ -35,10 +35,10 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         self.name = "TRIX"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_trix()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Trix(**kwargs)
         
         # 确保TRIX特有属性存在
         if not hasattr(self, 'n'):
@@ -50,11 +50,11 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         if not hasattr(self, 'm'):
             self.m = 9
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_trix(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'n': 14, 'm': 9}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Trix(self, **kwargs):
         """
         设置指标参数
         
@@ -64,15 +64,15 @@ class TRIX(BaseIndicator, PatternSignalMixin):
                 - signal_period: 信号线周期
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
         
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('TRIX', params)
@@ -87,29 +87,29 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         # 设置参数
         self.period = params.get('period', 14)
         self.signal_period = params.get('signal_period', 9)
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Trix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算TRIX指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含TRIX指标的DataFrame
+            包含TRIX指标的Data_frame
         """
         # 从kwargs中获取参数，如果没有则使用默认值
         n = kwargs.get('n', self.n)
         m = kwargs.get('m', self.m)
-        return self._calculate(data, n, m)
+        return self._calculate_trix(data, n, m)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Trix(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算TRIX指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -159,7 +159,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Trix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取TRIX相关形态
 
@@ -168,12 +168,12 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         try:
             # 确保已计算指标
             if self._result is None:
-                self.calculate(data)
+                self.calculate_Trix(data)
 
             if self._result is None or 'TRIX' not in self._result.columns:
                 return pd.DataFrame(index=data.index)
@@ -265,7 +265,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             logger.error(f"获取TRIX形态时出错: {e}")
             return pd.DataFrame(index=data.index)
 
-    def register_patterns(self):
+    def register_patterns_Trix(self):
         """
         注册TRIX指标的形态到全局形态注册表
         """
@@ -438,23 +438,23 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
     
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Trix(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算TRIX指标
 
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
 
         Returns:
-            包含TRIX指标的DataFrame
+            包含TRIX指标的Data_frame
         """
-        result = self.calculate(df)
+        result = self.calculate_Trix(df)
         # 重命名列以符合标准
         result['trix'] = result['TRIX']
         result['signal'] = result['MATRIX']
         return result
     
-    def sma(self, series: np.ndarray, n: int) -> np.ndarray:
+    def sma_Trix(self, series: np.ndarray, n: int) -> np.ndarray:
         """
         计算简单移动平均
         
@@ -475,7 +475,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         
         return result
     
-    def _calculate(self, data: pd.DataFrame, n: int = 12, m: int = 9, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_trix(self, data: pd.DataFrame, n: int = 12, m: int = 9, *args, **kwargs) -> pd.DataFrame:
         """
         计算TRIX指标
         
@@ -503,9 +503,9 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         result = data.copy()
         
         # 计算TR = EMA(EMA(EMA(Close, N), N), N)
-        ema1 = self._ema(close, n)
-        ema2 = self._ema(ema1, n)
-        tr = self._ema(ema2, n)
+        ema1 = self._ema_Trix(close, n)
+        ema2 = self._ema_Trix(ema1, n)
+        tr = self._ema_Trix(ema2, n)
         
         # 计算TRIX = (TR - REF(TR, 1)) / REF(TR, 1) × 100
         trix = np.zeros_like(close)
@@ -514,7 +514,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
                 trix[i] = (tr[i] - tr[i-1]) / tr[i-1] * 100
         
         # 计算MATRIX = MA(TRIX, M)
-        matrix = self.sma(trix, m)
+        matrix = self.sma_Trix(trix, m)
         
         # 添加计算结果到数据框
         result["TR"] = tr
@@ -531,7 +531,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
 
         return result
     
-    def _ema(self, series: np.ndarray, n: int) -> np.ndarray:
+    def _ema_Trix(self, series: np.ndarray, n: int) -> np.ndarray:
         """
         计算指数移动平均
         
@@ -551,7 +551,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         
         return result
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Trix(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算TRIX原始评分
         
@@ -564,7 +564,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算TRIX
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Trix(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -593,7 +593,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Trix(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -606,7 +606,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Trix(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -623,10 +623,10 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Trix(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Trix(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -636,7 +636,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Trix(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别TRIX技术形态
         
@@ -651,7 +651,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算TRIX
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Trix(data, **kwargs)
         
         if self._result is None:
             return patterns
@@ -1070,7 +1070,7 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Trix(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成TRIX指标标准化交易信号
         
@@ -1080,11 +1080,11 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 确保已计算TRIX指标
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Trix(data)
         
         # 初始化信号DataFrame
         signals = pd.DataFrame(index=data.index)
@@ -1103,11 +1103,11 @@ class TRIX(BaseIndicator, PatternSignalMixin):
         signals['volume_confirmation'] = False
         
         # 计算评分
-        score = self.calculate_raw_score(data, **kwargs)
+        score = self.calculate_raw_score_Trix(data, **kwargs)
         signals['score'] = score
         
         # 检测形态
-        patterns = self.identify_patterns(data, **kwargs)
+        patterns = self.identify_patterns_Trix(data, **kwargs)
         
         # 获取TRIX数据
         trix = self._result['TRIX']
@@ -1304,10 +1304,10 @@ class TRIX(BaseIndicator, PatternSignalMixin):
 
     def _register_trix_patterns(self):
         """注册TRIX特有的形态检测方法"""
-        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+        from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
         
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 注册TRIX零轴穿越形态
         registry.register(
@@ -1315,8 +1315,8 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             display_name="TRIX零轴穿越",
             description="TRIX线穿越零轴，指示可能的趋势转变",
             indicator_id="TRIX",
-            pattern_type=PatternType.REVERSAL,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.REVERSAL,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=15.0,
             detection_function=self._detect_trix_zero_cross_patterns
         )
@@ -1327,25 +1327,25 @@ class TRIX(BaseIndicator, PatternSignalMixin):
             display_name="TRIX背离",
             description="TRIX指标与价格走势形成背离，可能指示趋势反转",
             indicator_id="TRIX",
-            pattern_type=PatternType.REVERSAL,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.REVERSAL,
+            default_strength=Pattern_strength.STRONG,
             score_impact=20.0,
             detection_function=lambda data: self._detect_trix_divergence_patterns(data['close'])
         )
 
 
 
-    def _detect_golden_cross(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
+    def _detect_golden_cross_Trix(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
         """检测金叉"""
         from indicators.common import crossover
         return pd.Series(crossover(series1.values, series2.values), index=series1.index)
 
-    def _detect_death_cross(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
+    def _detect_death_cross_Trix(self, series1: pd.Series, series2: pd.Series) -> pd.Series:
         """检测死叉"""
         from indicators.common import crossunder
         return pd.Series(crossunder(series1.values, series2.values), index=series1.index) 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Trix(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

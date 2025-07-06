@@ -106,7 +106,7 @@ def comprehensive_indicator_test():
                         print(f"❌ {indicator_name} (非BaseIndicator)")
                 else:
                     print(f"❌ {indicator_name} (类不存在)")
-            except ImportError:
+            except Import_error:
                 print(f"❌ {indicator_name} (导入失败)")
             except Exception:
                 print(f"❌ {indicator_name} (其他错误)")
@@ -175,7 +175,7 @@ def estimate_final_system_status():
     
     return overall_success, final_registration_rate, estimated_final_registered
 
-def generate_final_report():
+def generate_final_report_Status():
     """生成最终报告"""
     print("\n" + "="*70)
     print("🎉 技术指标系统批量注册工作最终报告")
@@ -228,11 +228,11 @@ def generate_final_report():
     
     return overall_success
 
-def main():
+def main_finalregistrationstatus():
     """主函数"""
     print("🔍 开始最终注册状态检查...")
     
-    success = generate_final_report()
+    success = generate_final_report_Status()
     
     print(f"\n" + "="*70)
     print(f"📋 最终检查结论")
@@ -250,5 +250,5 @@ def main():
     return success
 
 if __name__ == "__main__":
-    success = main()
+    success = main_finalregistrationstatus()
     sys.exit(0 if success else 1)

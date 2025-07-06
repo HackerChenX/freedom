@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 检查stock_info表的列名和数据结构
 """
@@ -12,25 +14,26 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 
-def main():
+def main_checkstockinfocolumns():
     print("开始检查stock_info表结构和数据...")
     
     try:
-        db = get_clickhouse_db()
+        container = get_container()
+        data_access = container.get_data_access()
         
         # 检查表结构
         print("\n=== 检查表结构 ===")
         structure_query = "DESCRIBE TABLE stock_info"
-        structure_result = db.query(structure_query)
+        structure_result = data_access.query_dataframe(structure_query)
         print("表结构:")
         print(structure_result)
         
         # 获取列名
         print("\n=== 获取列名 ===")
-        columns_query = "SELECT * FROM stock_info LIMIT 1"
-        sample_result = db.query(columns_query)
+        columns_query = "SELECT code, name, date, level, open, close, high, low, volume FROM stock_info WHERE date >= '2020-01-01' LIMIT 1"
+        sample_result = data_access.query_dataframe(columns_query)
         print("列名:")
         if hasattr(sample_result, 'columns'):
             print(list(sample_result.columns))
@@ -39,15 +42,15 @@ def main():
         
         # 查看样本数据
         print("\n=== 样本数据 ===")
-        sample_query = "SELECT * FROM stock_info WHERE code = '000001' ORDER BY date DESC LIMIT 3"
-        sample_data = db.query(sample_query)
+        sample_query = "SELECT code, name, date, level, open, close, high, low, volume FROM stock_info WHERE code = '000001' ORDER BY date DESC LIMIT 3"
+        sample_data = data_access.query_dataframe(sample_query)
         print("样本数据:")
         print(sample_data)
         
         # 检查特定股票的数据量
         print("\n=== 数据量检查 ===")
         count_query = "SELECT code, COUNT(*) as count FROM stock_info WHERE code IN ('000001', '000002') GROUP BY code"
-        count_result = db.query(count_query)
+        count_result = data_access.query_dataframe(count_query)
         print("数据量:")
         print(count_result)
         
@@ -59,11 +62,11 @@ def main():
             MIN(date) as min_date,
             MAX(date) as max_date,
             COUNT(*) as total_records
-        FROM stock_info 
+        FROM stock_info WHERE 1=1
         WHERE code = '000001'
         GROUP BY code
         """
-        date_result = db.query(date_query)
+        date_result = data_access.query_dataframe(date_query)
         print("日期范围:")
         print(date_result)
         
@@ -73,4 +76,4 @@ def main():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    main() 
+    main_checkstockinfocolumns() 

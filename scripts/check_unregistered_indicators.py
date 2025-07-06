@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import importlib
 from typing import List, Dict, Set, Tuple
 
-def get_currently_registered_indicators() -> Set[str]:
+def get_currently_registered_indicators_Indicators_Check_Unregistered_Indicators() -> Set[str]:
     """获取当前已注册的指标（已迁移到CompleteIndicatorRegistry）"""
     try:
         from indicators.complete_indicator_registry import complete_registry
@@ -145,7 +145,7 @@ def get_all_available_indicators() -> Dict[str, List[Tuple[str, str]]]:
     
     return indicators
 
-def test_indicator_availability(module_path: str, class_name: str) -> bool:
+def test_indicator_availability_Indicators_Check_Unregistered_Indicators(module_path: str, class_name: str) -> bool:
     """测试指标是否可用"""
     try:
         module = importlib.import_module(module_path)
@@ -164,7 +164,7 @@ def analyze_unregistered_indicators():
     print("=== 检查未注册指标 ===\n")
     
     # 获取已注册指标
-    registered = get_currently_registered_indicators()
+    registered = get_currently_registered_indicators_Indicators_Check_Unregistered_Indicators()
     print(f"当前已注册指标数量: {len(registered)}")
     print(f"已注册指标: {sorted(registered)}\n")
     
@@ -194,7 +194,7 @@ def analyze_unregistered_indicators():
             # 检查是否已注册
             is_registered = any(name in registered for name in possible_names)
             
-            if test_indicator_availability(module_path, class_name):
+            if test_indicator_availability_Indicators_Check_Unregistered_Indicators(module_path, class_name):
                 available_indicators.append((module_path, class_name))
                 if not is_registered:
                     unregistered_indicators.append((module_path, class_name))

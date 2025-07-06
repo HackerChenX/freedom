@@ -53,7 +53,7 @@ class StrategyOptimizer:
         
         try:
             # 1. 加载原始策略
-            original_strategy = self._load_strategy(strategy_file)
+            original_strategy = self._load_strategy_Optimize_Strategy(strategy_file)
             
             # 2. 分析条件频率
             frequency_analysis = self._analyze_condition_frequency(original_strategy)
@@ -101,7 +101,7 @@ class StrategyOptimizer:
                 "timestamp": datetime.now().isoformat()
             }
     
-    def _load_strategy(self, strategy_file: str) -> dict:
+    def _load_strategy_Optimize_Strategy(self, strategy_file: str) -> dict:
         """加载策略文件"""
         try:
             with open(strategy_file, 'r', encoding='utf-8') as f:
@@ -229,7 +229,7 @@ class StrategyOptimizer:
         print(f"优化策略已保存到: {strategy_file}")
         return str(strategy_file)
     
-    def generate_optimization_report(self, optimization_results: dict, output_dir: Path) -> str:
+    def generate_optimization_report_Strategy(self, optimization_results: dict, output_dir: Path) -> str:
         """生成优化报告"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_file = output_dir / f"optimization_report_{timestamp}.txt"
@@ -281,7 +281,7 @@ class StrategyOptimizer:
         return str(report_file)
 
 
-def main():
+def main_optimizestrategy():
     """主函数"""
     parser = argparse.ArgumentParser(description="策略优化工具")
     parser.add_argument("--strategy", required=True, help="策略文件路径")
@@ -321,7 +321,7 @@ def main():
         strategy_file = optimizer.save_optimized_strategy(results, output_dir)
         
         # 生成优化报告
-        report_file = optimizer.generate_optimization_report(results, output_dir)
+        report_file = optimizer.generate_optimization_report_Strategy(results, output_dir)
         
         # 保存详细结果
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -353,4 +353,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    mainOptimizestrategy()

@@ -9,9 +9,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db.data_manager_adapter import DataManagerAdapter
+from db.data_manager_adapter import Data_manager_adapter
 from indicators.complete_indicator_registry import complete_registry
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
 import pandas as pd
 import numpy as np
 
@@ -22,7 +22,7 @@ def debug_vol_indicator():
     print("=" * 60)
     
     # 1. 获取603359的数据
-    dm = DataManagerAdapter()
+    dm = Data_manager_adapter()
     stock_code = '603359'
     
     try:
@@ -89,7 +89,7 @@ def debug_vol_indicator():
         
         # 4. 使用策略条件评估器测试
         print("🧪 使用策略条件评估器测试...")
-        evaluator = StrategyConditionEvaluator()
+        evaluator = Strategy_condition_evaluator()
         
         # 构造测试条件
         test_condition = {

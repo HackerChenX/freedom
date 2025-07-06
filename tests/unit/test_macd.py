@@ -9,29 +9,29 @@ import pytest
 from scipy.signal import find_peaks
 
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 from utils.technical_utils import calculate_macd
 
 
-class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
+class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.Test_case):
     """
     MACD 指标单元测试
     
-    该测试类利用 IndicatorTestMixin 提供的通用测试方法，
+    该测试类利用 Indicator_test_mixin 提供的通用测试方法，
     并结合为 MACD 指标量身定制的特定形态生成逻辑。
     """
 
-    def setUp(self):
+    def set_up_Macd_Test_Macd(self):
         """
         测试初始化
         """
-        super().setUp()
+        super().set_up_Macd_Test_Macd()
         self.indicator = complete_registry.create_indicator('MACD')
         self.expected_columns = ['macd_line', 'macd_signal', 'macd_histogram']
         # 使用 generate_price_sequence 创建一个复杂的测试数据集
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 50},
             {'type': 'v_shape', 'start_price': 105, 'bottom_price': 95, 'periods': 50},
             {'type': 'trend', 'start_price': 105, 'end_price': 105, 'periods': 20},
@@ -62,7 +62,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
     def test_golden_cross_pattern(self):
         """测试金叉形态的精确定位"""
         # 为金叉场景生成特定数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 50}, # 更长的稳定期
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 30},  # 剧烈下跌
             {'type': 'trend', 'start_price': 70, 'end_price': 120, 'periods': 40}  # 强劲反弹
@@ -90,7 +90,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
     def test_death_cross_pattern(self):
         """测试死叉形态的精确定位"""
         # 为死叉场景生成特定数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 50}, # 更长的稳定期
             {'type': 'trend', 'start_price': 100, 'end_price': 130, 'periods': 30}, # 剧烈上涨
             {'type': 'trend', 'start_price': 130, 'end_price': 80, 'periods': 40}   # 强劲下跌
@@ -118,7 +118,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
     def test_bearish_divergence_pattern(self):
         """测试顶背离形态的检测"""
         # 为顶背离场景生成特定数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 70},  # 稳定EMA
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 10},  # 第一个高点
             {'type': 'trend', 'start_price': 105, 'end_price': 102, 'periods': 5},    # 小幅回调
@@ -142,13 +142,13 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
         
         # 在典型的顶背离中，后期的MACD上升斜率应该小于初期
         # 注意：我们使用宽松的条件，只要不是显著增强就可以
-        self.assertLessEqual(late_slope, early_slope + 0.001, 
+        self.assert_less_equal(late_slope, early_slope + 0.001, 
                           "后期MACD上升斜率不应显著大于初期，表明潜在的顶背离趋势")
 
     def test_bullish_divergence_pattern(self):
         """测试底背离形态的检测"""
         # 为底背离场景生成特定数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 70}, # 稳定EMA
             {'type': 'trend', 'start_price': 100, 'end_price': 95, 'periods': 10},  # 第一个低点
             {'type': 'trend', 'start_price': 95, 'end_price': 98, 'periods': 5},    # 小幅反弹
@@ -172,13 +172,13 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
         
         # 在典型的底背离中，后期的MACD下降斜率应该小于初期（即下降速度变缓）
         # 注意：我们使用宽松的条件，只要不是显著恶化就可以
-        self.assertGreaterEqual(late_slope, early_slope - 0.001, 
+        self.assert_greater_equal(late_slope, early_slope - 0.001, 
                             "后期MACD下降斜率不应显著小于初期，表明潜在的底背离趋势")
 
     def test_zero_cross_patterns(self):
         """测试零轴穿越形态"""
         # 生成先下跌后上涨的数据，确保MACD线能穿越零轴
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 40},
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 30},
             {'type': 'trend', 'start_price': 80, 'end_price': 120, 'periods': 50}
@@ -200,7 +200,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
         self.assertTrue(up_phase['macd_line'].mean() > 0, "上涨阶段MACD线平均值应大于零")
         
         # 生成先上涨后下跌的数据
-        data_down = TestDataGenerator.generate_price_sequence([
+        data_down = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 40},
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30},
             {'type': 'trend', 'start_price': 120, 'end_price': 80, 'periods': 50}
@@ -223,7 +223,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
     def test_histogram_patterns(self):
         """测试柱状图变化趋势"""
         # 测试上涨和下跌趋势中柱状图的总体表现
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 40},  # 稳定期
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 30},  # 上涨期
             {'type': 'trend', 'start_price': 150, 'end_price': 120, 'periods': 30}   # 下跌期
@@ -253,13 +253,13 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
         # 验证上涨期和下跌期的柱状图差异明显
         histogram_change = (downtrend_phase['macd_histogram'].mean() - 
                            uptrend_phase['macd_histogram'].mean())
-        self.assertLess(histogram_change, 0, 
+        self.assert_less(histogram_change, 0, 
                        "从上涨到下跌，柱状图均值应有明显下降")
 
     def test_double_patterns(self):
         """测试双顶和双底形态"""
         # M头数据，应形成双顶特征
-        data_top = TestDataGenerator.generate_price_sequence([
+        data_top = Test_data_generator.generate_price_sequence([
             {'type': 'm_shape', 'start_price': 100, 'top_price': 120, 'periods': 80}
         ])
         result_top = self.indicator.calculate(data_top)
@@ -282,7 +282,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
             self.assertLess(valley_between, avg_peak_height * 0.8, "双顶之间应有明显的谷")
 
         # W底数据，应形成双底特征
-        data_bottom = TestDataGenerator.generate_price_sequence([
+        data_bottom = Test_data_generator.generate_price_sequence([
             {'type': 'w_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 80}
         ])
         result_bottom = self.indicator.calculate(data_bottom)
@@ -304,25 +304,25 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
             # 验证峰的高度相对于谷值的深度
             self.assertGreater(peak_between, avg_trough_depth * 1.2, "双底之间应有明显的峰")
 
-    def test_calculate_raw_score(self):
+    def test_calculate_raw_score_Macd(self):
         """测试得分计算"""
         result = self.indicator.calculate_raw_score(self.data)
-        self.assertIsInstance(result, pd.Series)
-        self.assertFalse(result.empty)
+        self.assert_is_instance(result, pd.Series)
+        self.assert_false(result.empty)
         # 确保得分有正有负
-        self.assertTrue(any(result > 0))
-        self.assertTrue(any(result < 0))
+        self.assert_true(any(result > 0))
+        self.assert_true(any(result < 0))
 
     def test_get_signals(self):
         """测试信号生成"""
         signals = self.indicator.get_signals(self.data)
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         self.assertIn('buy_signal', signals)
         self.assertIn('sell_signal', signals)
         self.assertIsInstance(signals['buy_signal'], pd.Series)
         self.assertEqual(signals['buy_signal'].dtype, 'bool')
 
-    def test_edge_cases(self):
+    def test_edge_cases_Macd(self):
         """测试边缘场景"""
         # 数据过短
         data_short = pd.DataFrame({'close': [100, 101]})
@@ -332,7 +332,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
         # 对于非常短的数据，MACD可能会返回数值而不是NaN，因为EMA的计算可以从很少的点开始
         # 我们只需确保结果存在且有效
         self.assertIn('macd_line', result_short.columns)
-        self.assertEqual(len(result_short), 2)
+        self.assert_equal(len(result_short), 2)
         
         # 数据包含NaN
         data_nan = pd.DataFrame({'close': [100, 101, np.nan, 103]})
@@ -341,7 +341,7 @@ class TestMACD(LogCaptureMixin, IndicatorTestMixin, unittest.TestCase):
         result_nan = self.indicator.calculate(data_nan)
         # NaN值对应的位置可能会被处理为插值，我们只需确保结果是合理的
         self.assertIn('macd_line', result_nan.columns)
-        self.assertEqual(len(result_nan), 4)
+        self.assert_equal(len(result_nan), 4)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python3
 """
 生产环境数据库连接测试工具
@@ -13,7 +15,7 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from config.database_config_manager import get_database_config_manager
-from db.unified_data_manager import UnifiedDataManager
+from db.unified_data_manager import Unified_data_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -39,7 +41,7 @@ def test_database_connection():
         
         # 创建数据管理器
         print("\n🔍 创建数据管理器...")
-        data_manager = UnifiedDataManager()
+        data_manager = Unified_data_manager()
         
         # 测试连接
         print("🔗 测试数据库连接...")
@@ -75,7 +77,7 @@ def test_database_connection():
         return False
 
 
-def main():
+def main_testproductiondb():
     """主函数"""
     try:
         success = test_database_connection()
@@ -91,7 +93,7 @@ def main():
         
         sys.exit(0 if success else 1)
         
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print("\n\n⚠️  测试被用户中断")
         sys.exit(130)
     except Exception as e:
@@ -100,4 +102,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_testproductiondb()

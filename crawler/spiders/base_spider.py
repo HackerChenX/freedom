@@ -9,13 +9,13 @@ import requests
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from bs4 import BeautifulSoup
+from bs4 import Beautiful_soup
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class BaseSpider(ABC):
+class Base_spider(ABC):
     """基础爬虫类"""
 
     def __init__(self, name: str, base_url: str, anti_crawler_module=None):
@@ -39,7 +39,7 @@ class BaseSpider(ABC):
             self.session = requests.Session()
             self.session.headers.update(self.headers)
 
-    def get_page(self, url: str, params: Dict = None, retries: int = 3) -> Optional[requests.Response]:
+    def get_page(self, url: str, params: dict = None, retries: int = 3) -> Optional[requests.Response]:
         """获取页面内容"""
         if not self.session:
             self.init_session()
@@ -76,21 +76,21 @@ class BaseSpider(ABC):
 
         return None
 
-    def parse_html(self, html: str) -> BeautifulSoup:
+    def parse_html(self, html: str) -> Beautiful_soup:
         """解析HTML"""
         return BeautifulSoup(html, 'html.parser')
 
     @abstractmethod
-    def parse_article_list(self, response: requests.Response) -> List[Dict[str, Any]]:
+    def parse_article_list_Spider_Base_Spider(self, response: requests.Response) -> List[Dict[str, Any]]:
         """解析文章列表"""
         pass
 
     @abstractmethod
-    def parse_article_detail(self, response: requests.Response) -> Dict[str, Any]:
+    def parse_article_detail_Spider_Base_Spider(self, response: requests.Response) -> Dict[str, Any]:
         """解析文章详情"""
         pass
 
     @abstractmethod
-    def get_article_urls(self, page: int = 1) -> List[str]:
+    def get_article_urls_Spider_Base_Spider(self, page: int = 1) -> List[str]:
         """获取文章URL列表"""
         pass

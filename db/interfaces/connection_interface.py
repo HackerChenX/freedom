@@ -5,12 +5,12 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Union, ContextManager
+from typing import Dict, List, Optional, Any, Union, Context_manager
 from datetime import datetime
 import pandas as pd
 
 
-class IConnectionManager(ABC):
+class IconnectionManager(ABC):
     """
     连接管理器接口
     
@@ -18,7 +18,7 @@ class IConnectionManager(ABC):
     """
     
     @abstractmethod
-    def get_connection(self, config: Optional[Dict[str, Any]] = None) -> ContextManager:
+    def get_connection_Interface_Connection_Interface_Connection_Interface_1_connectioninterface(self, config: Optional[Dict[str, Any]] = None) -> Context_manager:
         """
         获取数据库连接
         
@@ -26,12 +26,12 @@ class IConnectionManager(ABC):
             config: 连接配置
             
         Returns:
-            ContextManager: 连接上下文管理器
+            Context_manager: 连接上下文管理器
         """
         pass
     
     @abstractmethod
-    def release_connection(self, connection_id: str) -> None:
+    def release_connection_Interface(self, connection_id: str) -> None:
         """
         释放数据库连接
         
@@ -41,7 +41,7 @@ class IConnectionManager(ABC):
         pass
     
     @abstractmethod
-    def test_connection(self, config: Optional[Dict[str, Any]] = None) -> bool:
+    def test_connection_Interface(self, config: Optional[Dict[str, Any]] = None) -> bool:
         """
         测试数据库连接
         
@@ -54,7 +54,7 @@ class IConnectionManager(ABC):
         pass
     
     @abstractmethod
-    def get_connection_stats(self) -> Dict[str, Any]:
+    def get_connection_stats_Interface(self) -> Dict[str, Any]:
         """
         获取连接统计信息
         
@@ -64,27 +64,17 @@ class IConnectionManager(ABC):
         pass
     
     @abstractmethod
-    def close_all_connections(self) -> None:
+    def close_all_connections_Interface(self) -> None:
         """
         关闭所有连接
         """
         pass
 
 
-class IConnectionPool(ABC):
+class IconnectionPool(ABC):
     """
     连接池接口
     """
-    
-    @abstractmethod
-    def get_connection(self) -> ContextManager:
-        """
-        从连接池获取连接
-        
-        Returns:
-            ContextManager: 连接上下文管理器
-        """
-        pass
     
     @abstractmethod
     def return_connection(self, connection: Any) -> None:
@@ -143,7 +133,7 @@ class IConnection(ABC):
     """
     
     @abstractmethod
-    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> None:
+    def execute_3(self, query: str, params: Optional[Dict[str, Any]] = None) -> None:
         """
         执行SQL语句
         
@@ -154,7 +144,7 @@ class IConnection(ABC):
         pass
     
     @abstractmethod
-    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_Interface(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         执行查询并返回结果
         
@@ -168,9 +158,9 @@ class IConnection(ABC):
         pass
     
     @abstractmethod
-    def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_dataframe_Interface(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
-        执行查询并返回DataFrame
+        执行查询并返回Data_frame
         
         Args:
             query: SQL查询语句
@@ -182,7 +172,7 @@ class IConnection(ABC):
         pass
     
     @abstractmethod
-    def is_alive(self) -> bool:
+    def is_alive_Interface(self) -> bool:
         """
         检查连接是否有效
         
@@ -192,44 +182,44 @@ class IConnection(ABC):
         pass
     
     @abstractmethod
-    def close(self) -> None:
+    def close_Interface(self) -> None:
         """
         关闭连接
         """
         pass
 
 
-class ITransactionManager(ABC):
+class ItransactionManager(ABC):
     """
     事务管理器接口
     """
     
     @abstractmethod
-    def begin_transaction(self) -> ContextManager:
+    def begin_transaction_Interface(self) -> Context_manager:
         """
         开始事务
         
         Returns:
-            ContextManager: 事务上下文管理器
+            Context_manager: 事务上下文管理器
         """
         pass
     
     @abstractmethod
-    def commit(self) -> None:
+    def commit_Interface(self) -> None:
         """
         提交事务
         """
         pass
     
     @abstractmethod
-    def rollback(self) -> None:
+    def rollback_Interface(self) -> None:
         """
         回滚事务
         """
         pass
     
     @abstractmethod
-    def in_transaction(self) -> bool:
+    def in_transaction_Interface(self) -> bool:
         """
         检查是否在事务中
         
@@ -239,13 +229,13 @@ class ITransactionManager(ABC):
         pass
 
 
-class IHealthChecker(ABC):
+class IhealthChecker(ABC):
     """
     健康检查接口
     """
     
     @abstractmethod
-    def check_health(self) -> Dict[str, Any]:
+    def check_health_Interface(self) -> Dict[str, Any]:
         """
         检查数据库健康状态
         
@@ -255,7 +245,7 @@ class IHealthChecker(ABC):
         pass
     
     @abstractmethod
-    def is_healthy(self) -> bool:
+    def is_healthy_Interface(self) -> bool:
         """
         检查是否健康
         
@@ -265,7 +255,7 @@ class IHealthChecker(ABC):
         pass
     
     @abstractmethod
-    def get_last_check_time(self) -> datetime:
+    def get_last_check_time_Interface(self) -> datetime:
         """
         获取最后检查时间
         

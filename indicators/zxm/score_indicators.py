@@ -10,14 +10,14 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZXMRiseElasticity
+from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZxmriseElasticity
 from indicators.zxm.buy_point_indicators import ZXMDailyMACD, ZXMTurnover, ZXMMACallback
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
+class ZxmelasticityScore(BaseIndicator, PatternSignalMixin):
     """
     ZXM弹性评分指标
     
@@ -37,9 +37,9 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
         
         # 初始化弹性子指标
         self.amplitude_elasticity = AmplitudeElasticity()
-        self.rise_elasticity = ZXMRiseElasticity()
+        self.rise_elasticity = ZxmriseElasticity()
     
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_scoreindicators(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM弹性评分
         
@@ -103,7 +103,7 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
 
 
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicators_scoreindicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM弹性评分指标的原始评分
         
@@ -120,7 +120,7 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
         # 直接使用计算的弹性评分作为原始评分
         return result["ElasticityScore"]
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Indicators_scoreindicators(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM弹性评分指标相关的技术形态
 
@@ -173,7 +173,7 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicators_scoreindicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -210,7 +210,7 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicators_scoreindicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -219,7 +219,7 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信号的DataFrame
+            pd.DataFrame: 包含形态信号的Data_frame
         """
         # 计算指标
         result = self.calculate(data)
@@ -248,7 +248,7 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Indicators_scoreindicators(self, **kwargs):
         """
         设置指标参数
 
@@ -257,103 +257,14 @@ class ZXMElasticityScore(BaseIndicator, PatternSignalMixin):
                 - threshold: 弹性评分阈值，默认75
         """
         self.threshold = kwargs.get('threshold', 75)
-class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
+class ZxmbuyPointScore(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点评分指标
 
     综合评估股票的买点表现，包括MACD买点、换手买点和回踩均线买点
     """
     
-    def __init__(self, threshold: float = 75):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        """
-        初始化ZXM买点评分指标
-        
-        Args:
-            threshold: 买点评分阈值，默认为75分
-        """
-        super().__init__(name="ZXMBuyPointScore", description="ZXM买点评分指标，综合评估股票的买点表现")
-        self.threshold = threshold
-        
-        # 初始化买点子指标
-        self.daily_macd = ZXMDailyMACD()
-        self.turnover = ZXMTurnover()
-        self.ma_callback = ZXMMACallback()
-    
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
-        """
-        计算ZXM买点评分
-        
-        Args:
-            data: 输入数据，包含OHLCV数据
-            
-        Returns:
-            pd.DataFrame: 计算结果，包含买点评分和信号
-        """
-        # 初始化结果数据框
-        result = data.copy()
-        
-        # 计算MACD买点
-        try:
-            macd_result = self.daily_macd.calculate(data)
-            macd_signal = macd_result["XG"]
-        except Exception as e:
-            logger.error(f"计算MACD买点出错: {e}")
-            macd_signal = pd.Series(False, index=data.index)
-        
-        # 计算换手买点
-        try:
-            turnover_result = self.turnover.calculate(data)
-            turnover_signal = turnover_result["XG"]
-        except Exception as e:
-            logger.error(f"计算换手买点出错: {e}")
-            turnover_signal = pd.Series(False, index=data.index)
-        
-        # 计算回踩均线买点
-        try:
-            ma_callback_result = self.ma_callback.calculate(data)
-            ma_callback_signal = ma_callback_result["XG"]
-        except Exception as e:
-            logger.error(f"计算回踩均线买点出错: {e}")
-            ma_callback_signal = pd.Series(False, index=data.index)
-        
-        # 统计买点指标
-        buy_point_indicators = [macd_signal, turnover_signal, ma_callback_signal]
-        
-        # 计算买点指标满足数量
-        buy_point_count = pd.Series(0, index=data.index)
-        for indicator in buy_point_indicators:
-            buy_point_count += indicator.astype(int)
-        
-        # 计算买点评分（0-100分）
-        buy_point_score = (buy_point_count / len(buy_point_indicators)) * 100
-        
-        # 生成满足买点条件的信号
-        signal = buy_point_score >= self.threshold
-        
-        # 添加计算结果到数据框
-        result.loc[:, "MACDBuyPoint"] = macd_signal
-        result.loc[:, "TurnoverBuyPoint"] = turnover_signal
-        result.loc[:, "MACallbackBuyPoint"] = ma_callback_signal
-        result.loc[:, "BuyPointCount"] = buy_point_count
-        result.loc[:, "BuyPointScore"] = buy_point_score
-        result.loc[:, "Signal"] = signal
-        
-        
-        # 添加形态识别和信号生成
-        result = self.add_pattern_detection(result)
-        result = self.add_signal_generation(result)
-
-        # 重写buy_signal逻辑，基于Signal值而不是通用逻辑
-        result.loc[:, 'buy_signal'] = result["Signal"] == True
-        result.loc[:, 'sell_signal'] = result["Signal"] == False
-        result.loc[:, 'hold_signal'] = result["Signal"] == False
-
-        return result
-
-
-
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicators_scoreindicators_duplicate(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM买点评分指标的原始评分
         
@@ -370,7 +281,7 @@ class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
         # 直接使用计算的买点评分作为原始评分
         return result["BuyPointScore"]
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Indicators_scoreindicators_duplicate(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM买点评分指标相关的技术形态
 
@@ -427,7 +338,7 @@ class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicators_scoreindicators_duplicate(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -466,7 +377,7 @@ class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicators_scoreindicators_duplicate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -475,7 +386,7 @@ class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信号的DataFrame
+            pd.DataFrame: 包含形态信号的Data_frame
         """
         # 计算指标
         result = self.calculate(data)
@@ -506,7 +417,7 @@ class ZXMBuyPointScore(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Indicators_scoreindicators_duplicate(self, **kwargs):
         """
         设置指标参数
 
@@ -521,100 +432,6 @@ class StockScoreCalculator(BaseIndicator, PatternSignalMixin):
 
     计算股票的综合评分
     """
-    
-    def __init__(self):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        """初始化ZXM股票综合评分指标"""
-        super().__init__(name="StockScoreCalculator", description="ZXM股票综合评分指标，计算股票的综合评分")
-    
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
-        """
-        计算ZXM股票综合评分
-        
-        Args:
-            data: 输入数据，包含OHLCV数据
-            
-        Returns:
-            pd.DataFrame: 计算结果
-        """
-        # 确保数据包含必需的列
-        required_cols = ["open", "high", "low", "close", "volume"]
-        missing_cols = [col for col in required_cols if col not in data.columns]
-        if missing_cols:
-            raise ValueError(f"数据缺少必需的列: {missing_cols}")
-        
-        # 初始化结果数据框
-        result = data.copy()
-        
-        # 计算各类评分
-        
-        # 1. 趋势评分
-        result = self._calculate_trend_score(data, result)
-        
-        # 2. 动量评分
-        result = self._calculate_momentum_score(data, result)
-        
-        # 3. 波动率评分
-        result = self._calculate_volatility_score(data, result)
-        
-        # 4. 成交量评分
-        result = self._calculate_volume_score(data, result)
-        
-        # 5. 价值评分（如果有基本面数据）
-        if "pe_ratio" in data.columns and "pb_ratio" in data.columns:
-            result = self._calculate_value_score(data, result)
-        
-        # 6. 综合评分 - 加权平均
-        weights = {
-            "TrendScore": 0.35,
-            "MomentumScore": 0.25,
-            "VolatilityScore": 0.15,
-            "VolumeScore": 0.25
-        }
-        
-        # 如果有价值评分，则调整权重
-        if "ValueScore" in result.columns:
-            weights = {
-                "TrendScore": 0.30,
-                "MomentumScore": 0.20,
-                "VolatilityScore": 0.10,
-                "VolumeScore": 0.20,
-                "ValueScore": 0.20
-            }
-        
-        # 计算综合评分
-        total_score = pd.Series(0.0, index=data.index)
-        for score_name, weight in weights.items():
-            if score_name in result.columns:
-                total_score += result[score_name] * weight
-        
-        result.loc[:, "TotalScore"] = total_score
-        result.loc[:, "FinalScore"] = total_score  # 添加FinalScore列，与TotalScore相同
-
-        # 7. 评分等级
-        result.loc[:, "ScoreGrade"] = pd.cut(
-            result["TotalScore"],
-            bins=[0, 20, 40, 60, 80, 100],
-            labels=["很差", "较差", "一般", "较好", "很好"]
-        )
-
-        # 8. 买入信号 - 当总分超过70分时
-        result.loc[:, "BuySignal"] = result["TotalScore"] > 70
-
-        # 9. 卖出信号 - 当总分低于30分时
-        result.loc[:, "SellSignal"] = result["TotalScore"] < 30
-        
-        
-        # 添加形态识别和信号生成
-        result = self.add_pattern_detection(result)
-        result = self.add_signal_generation(result)
-
-        # 重写信号逻辑，基于BuySignal和SellSignal而不是通用逻辑
-        result.loc[:, 'buy_signal'] = result["BuySignal"] == True
-        result.loc[:, 'sell_signal'] = result["SellSignal"] == True
-        result.loc[:, 'hold_signal'] = ~(result['buy_signal'] | result['sell_signal'])
-
-        return result
     
     def _calculate_trend_score(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.DataFrame:
         """
@@ -893,93 +710,7 @@ class StockScoreCalculator(BaseIndicator, PatternSignalMixin):
         
         return result
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算ZXM股票综合评分指标的原始评分
-
-        Args:
-            data: 输入数据，包含OHLCV数据
-            **kwargs: 其他参数
-
-        Returns:
-            pd.Series: 评分结果，0-100分
-        """
-        # 计算指标
-        result = self.calculate(data)
-
-        # 使用FinalScore作为原始评分（与TotalScore相同）
-        score = result["FinalScore"]
-
-        return score
-    
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
-        """
-        识别ZXM股票综合评分指标相关的技术形态
-        
-        Args:
-            data: 输入数据
-            **kwargs: 其他参数
-            
-        Returns:
-            List[str]: 识别的形态列表
-        """
-        # 计算指标
-        result = self.calculate(data)
-        
-        # 只关注最后一个交易日的形态
-        patterns = []
-        if len(result) > 0:
-            last_row = result.iloc[-1]
-            
-            # 评分等级形态
-            if "ScoreGrade" in result.columns:
-                patterns.append(f"综合评分等级：{last_row['ScoreGrade']}")
-            
-            # 总分形态
-            final_score = last_row["FinalScore"]
-            if final_score >= 80:
-                patterns.append("高分股票(80+)")
-            elif final_score >= 70:
-                patterns.append("优质股票(70-80)")
-            elif final_score <= 30:
-                patterns.append("低分股票(<30)")
-            
-            # 各分项评分形态
-            if last_row["TrendScore"] >= 70:
-                patterns.append("趋势强劲")
-            elif last_row["TrendScore"] <= 30:
-                patterns.append("趋势疲软")
-            
-            if last_row["MomentumScore"] >= 70:
-                patterns.append("动量强劲")
-            elif last_row["MomentumScore"] <= 30:
-                patterns.append("动量疲软")
-            
-            if last_row["VolatilityScore"] >= 70:
-                patterns.append("低波动性")
-            elif last_row["VolatilityScore"] <= 30:
-                patterns.append("高波动性")
-            
-            if last_row["VolumeScore"] >= 70:
-                patterns.append("成交量理想")
-            elif last_row["VolumeScore"] <= 30:
-                patterns.append("成交量不佳")
-            
-            if "ValueScore" in result.columns:
-                if last_row["ValueScore"] >= 70:
-                    patterns.append("高价值股")
-                elif last_row["ValueScore"] <= 30:
-                    patterns.append("低价值股")
-            
-            # 买卖信号形态
-            if last_row["BuySignal"]:
-                patterns.append("买入信号")
-            elif last_row["SellSignal"]:
-                patterns.append("卖出信号")
-        
-        return patterns
-    
-    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def generate_signals_Indicators_scoreindicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成标准化的信号输出
         
@@ -988,7 +719,7 @@ class StockScoreCalculator(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
             
         Returns:
-            pd.DataFrame: 包含标准化信号的DataFrame
+            pd.DataFrame: 包含标准化信号的Data_frame
         """
         # 计算指标和评分
         result = self.calculate(data)
@@ -1146,110 +877,7 @@ class StockScoreCalculator(BaseIndicator, PatternSignalMixin):
         
         return signals
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
-        """
-        计算置信度
-
-        Args:
-            score: 评分序列
-            patterns: 形态列表
-            signals: 信号字典
-
-        Returns:
-            float: 置信度值，0-1之间
-        """
-        if score.empty:
-            return 0.5
-
-        latest_score = score.iloc[-1]
-
-        # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
-
-        # 根据形态调整置信度
-        pattern_boost = 0.0
-        if "高分股票(80+)" in patterns:
-            pattern_boost += 0.2
-        elif "优质股票(70-80)" in patterns:
-            pattern_boost += 0.15
-        elif "低分股票(<30)" in patterns:
-            pattern_boost -= 0.2
-
-        # 根据各分项一致性调整
-        consistency_patterns = ["趋势强劲", "动量强劲", "低波动性", "成交量理想", "高价值股"]
-        consistency_count = sum(1 for p in consistency_patterns if p in patterns)
-        if consistency_count >= 3:
-            pattern_boost += 0.15
-        elif consistency_count >= 2:
-            pattern_boost += 0.1
-
-        # 买卖信号调整
-        if "买入信号" in patterns:
-            pattern_boost += 0.1
-        elif "卖出信号" in patterns:
-            pattern_boost += 0.1
-
-        # 最终置信度
-        final_confidence = min(1.0, max(0.0, base_confidence + pattern_boost))
-        return final_confidence
-
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """
-        获取技术形态
-
-        Args:
-            data: 输入数据
-            **kwargs: 其他参数
-
-        Returns:
-            pd.DataFrame: 包含形态信号的DataFrame
-        """
-        # 计算指标
-        result = self.calculate(data)
-
-        # 初始化形态DataFrame
-        patterns_df = pd.DataFrame(index=data.index)
-
-        # 基础信号形态
-        patterns_df.loc[:, "买入信号"] = result["BuySignal"]
-        patterns_df.loc[:, "卖出信号"] = result["SellSignal"]
-
-        # 总分等级形态
-        final_score = result["FinalScore"]
-        patterns_df.loc[:, "高分股票"] = final_score >= 80
-        patterns_df.loc[:, "优质股票"] = (final_score >= 70) & (final_score < 80)
-        patterns_df.loc[:, "综合评分适中"] = (final_score >= 40) & (final_score < 70)
-        patterns_df.loc[:, "低分股票"] = final_score < 30
-
-        # 各分项强弱形态
-        patterns_df.loc[:, "趋势强劲"] = result["TrendScore"] >= 70
-        patterns_df.loc[:, "趋势疲软"] = result["TrendScore"] <= 30
-        patterns_df.loc[:, "动量强劲"] = result["MomentumScore"] >= 70
-        patterns_df.loc[:, "动量疲软"] = result["MomentumScore"] <= 30
-        patterns_df.loc[:, "低波动性"] = result["VolatilityScore"] >= 70
-        patterns_df.loc[:, "高波动性"] = result["VolatilityScore"] <= 30
-        patterns_df.loc[:, "成交量理想"] = result["VolumeScore"] >= 70
-        patterns_df.loc[:, "成交量不佳"] = result["VolumeScore"] <= 30
-
-        # 价值评分形态（如果存在）
-        if "ValueScore" in result.columns:
-            patterns_df.loc[:, "高价值股"] = result["ValueScore"] >= 70
-            patterns_df.loc[:, "低价值股"] = result["ValueScore"] <= 30
-
-        return patterns_df
-
-    def set_parameters(self, **kwargs):
-        """
-        设置指标参数
-
-        Args:
-            **kwargs: 参数字典，可包含：
-                - buy_threshold: 买入阈值，默认70
-                - sell_threshold: 卖出阈值，默认30
-        """
-        self.buy_threshold = kwargs.get('buy_threshold', 70)
-        self.sell_threshold = kwargs.get('sell_threshold', 30)
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Indicators_Score_Indicators(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         

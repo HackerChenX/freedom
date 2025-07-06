@@ -12,12 +12,12 @@ __version__ = "1.0.0"
 __author__ = "Stock Analysis Team"
 
 try:
-    from .scheduler import CrawlerScheduler
+    from crawler.scheduler import CrawlerScheduler
 except ImportError:
     CrawlerScheduler = None
 
 try:
-    from .anti_crawler import AntiCrawlerModule
+    from crawler.anti_crawler import AntiCrawlerModule
 except ImportError:
     AntiCrawlerModule = None
 

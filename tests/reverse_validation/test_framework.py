@@ -18,13 +18,13 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from pattern_data_generator import PatternDataGenerator
+from pattern_data_generator import Pattern_data_generator
 try:
-    from reverse_validation_framework import ReverseValidationFramework
-except ImportError:
+    from reverse_validation_framework import Reverse_validation_framework
+except Import_error:
     # 如果导入失败，创建一个简化的框架类用于测试
-    class ReverseValidationFramework:
-        def run_single_pattern_validation(self, indicator, pattern_name, pattern_data):
+    class Reversevalidationframework_framework:
+        def run_single_pattern_validation_Framework(self, indicator, pattern_name, pattern_data):
             return {
                 'indicator': indicator,
                 'pattern_name': pattern_name,
@@ -38,7 +38,7 @@ def test_pattern_generator():
     """测试形态数据生成器"""
     print("测试形态数据生成器...")
 
-    generator = PatternDataGenerator()
+    generator = Pattern_data_generator()
 
     # 测试生成RSI形态
     print("  生成RSI形态数据...")
@@ -73,10 +73,10 @@ def test_single_validation():
 
     try:
         # 创建框架
-        framework = ReverseValidationFramework()
+        framework = Reverse_validation_framework_Framework()
 
         # 生成一个测试形态
-        generator = PatternDataGenerator()
+        generator = Pattern_data_generator()
         rsi_patterns = generator.generate_rsi_patterns()
 
         if 'RSI_OVERBOUGHT' in rsi_patterns:
@@ -86,7 +86,7 @@ def test_single_validation():
             print(f"  数据点数: {len(pattern_data)}")
 
             # 运行验证（这里可能会因为缺少某些依赖而失败，但我们可以捕获异常）
-            result = framework.run_single_pattern_validation('RSI', 'RSI_OVERBOUGHT', pattern_data)
+            result = framework.run_single_pattern_validation_Framework('RSI', 'RSI_OVERBOUGHT', pattern_data)
 
             print(f"  验证结果:")
             print(f"    指标: {result.get('indicator', 'N/A')}")
@@ -114,11 +114,11 @@ def test_data_format():
     # 导入pandas
     try:
         import pandas as pd
-    except ImportError:
+    except Import_error:
         print("⚠️ pandas未安装，跳过数据类型检查")
         return True
 
-    generator = PatternDataGenerator()
+    generator = Pattern_data_generator()
 
     # 生成一个形态数据
     rsi_patterns = generator.generate_rsi_patterns()
@@ -167,7 +167,7 @@ def test_data_format():
     return True
 
 
-def main():
+def main_testframework():
     """主测试函数"""
     print("=" * 60)
     print("反向验证测试框架功能测试")
@@ -203,5 +203,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_testframework()
     sys.exit(exit_code)

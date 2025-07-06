@@ -28,7 +28,7 @@ class SimpleStrategyValidator:
         """初始化验证器"""
         pass
         
-    def validate_strategy(self, strategy_file: str) -> dict:
+    def validate_strategy_Validator(self, strategy_file: str) -> dict:
         """
         验证买点策略的基本结构和逻辑
         
@@ -42,7 +42,7 @@ class SimpleStrategyValidator:
         
         try:
             # 1. 加载策略
-            strategy = self._load_strategy(strategy_file)
+            strategy = self._load_strategy_Simple_Strategy_Validator(strategy_file)
             
             # 2. 验证策略结构
             structure_validation = self._validate_structure(strategy)
@@ -70,7 +70,7 @@ class SimpleStrategyValidator:
             }
             
             # 6. 生成建议
-            recommendations = self._generate_recommendations(validation_results)
+            recommendations = self._generate_recommendations_Simple_Strategy_Validator(validation_results)
             validation_results["recommendations"] = recommendations
             
             print(f"策略验证完成，包含 {len(strategy.get('conditions', []))} 个条件")
@@ -84,7 +84,7 @@ class SimpleStrategyValidator:
                 "timestamp": datetime.now().isoformat()
             }
     
-    def _load_strategy(self, strategy_file: str) -> dict:
+    def _load_strategy_Simple_Strategy_Validator(self, strategy_file: str) -> dict:
         """加载策略文件"""
         try:
             with open(strategy_file, 'r', encoding='utf-8') as f:
@@ -224,7 +224,7 @@ class SimpleStrategyValidator:
         
         return assessment
     
-    def _generate_recommendations(self, validation_results: dict) -> list:
+    def _generate_recommendations_Simple_Strategy_Validator(self, validation_results: dict) -> list:
         """生成优化建议"""
         recommendations = []
         
@@ -271,7 +271,7 @@ class SimpleStrategyValidator:
         return recommendations
 
 
-def main():
+def main_simplestrategyvalidator():
     """主函数"""
     parser = argparse.ArgumentParser(description="简化版买点策略验证工具")
     parser.add_argument("--strategy", required=True, help="策略文件路径")
@@ -289,7 +289,7 @@ def main():
     print(f"开始验证策略: {args.strategy}")
     print("-" * 50)
     
-    results = validator.validate_strategy(args.strategy)
+    results = validator.validate_strategy_Validator(args.strategy)
     
     # 保存结果
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -382,4 +382,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    mainSimplestrategyvalidator()

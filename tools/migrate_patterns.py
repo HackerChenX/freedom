@@ -19,7 +19,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class PatternMigrator:
+class Pattern_migrator:
     """形态识别迁移器"""
     
     def __init__(self):
@@ -329,7 +329,7 @@ class PatternMigrator:
         return method_name
 
 
-def main():
+def main_migratepatterns():
     """主函数"""
     import argparse
     
@@ -349,7 +349,7 @@ def main():
     # 创建输出目录
     os.makedirs(args.output_dir, exist_ok=True)
     
-    migrator = PatternMigrator()
+    migrator = Pattern_migrator()
     
     # 扫描回测文件
     patterns_found = migrator.scan_backtest_patterns(args.backtest_file)
@@ -381,4 +381,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_migratepatterns() 

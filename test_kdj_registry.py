@@ -10,7 +10,7 @@ sys.path.insert(0, root_dir)
 import pandas as pd
 import numpy as np
 from indicators.kdj import KDJ
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 
 def test_kdj_pattern_registration():
     """测试KDJ形态注册"""
@@ -20,7 +20,7 @@ def test_kdj_pattern_registration():
     kdj = KDJ(k_period=9, d_period=3, j_period=3)
     
     # 获取PatternRegistry实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     # 检查KDJ形态是否已注册
     print(f"KDJ指标类型: {kdj.get_indicator_type()}")

@@ -9,7 +9,7 @@ import logging
 from typing import Dict, List, Tuple, Optional, Any
 
 # 设置日志
-logger = logging.getLogger(__name__)
+logger = logging.get_Logger(__name__)
 
 class CompleteIndicatorRegistry:
     """完整的指标注册管理器"""
@@ -200,7 +200,7 @@ class CompleteIndicatorRegistry:
         """获取注册统计信息"""
         return self._registration_stats.copy()
     
-    def create_indicator(self, name: str, **kwargs):
+    def create_indicator_Registry(self, name: str, **kwargs):
         """创建指标实例"""
         if name not in self._indicators:
             logger.error(f"指标 {name} 未注册")
@@ -359,5 +359,5 @@ class CompleteIndicatorRegistry:
         return total_success
 
 # 创建全局实例并自动注册所有指标
-complete_registry = CompleteIndicatorRegistry()
+complete_registry = Complete_indicator_registry()
 complete_registry.register_all_indicators()

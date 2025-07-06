@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-修复Pandas DataFrame赋值警告的脚本
-处理ZXM指标中的SettingWithCopyWarning问题
+修复Pandas Data_frame赋值警告的脚本
+处理ZXM指标中的Setting_with_copy_warning问题
 """
 
 import os
@@ -10,7 +10,7 @@ import sys
 
 def fix_dataframe_assignments(file_path):
     """
-    修复文件中的DataFrame赋值警告
+    修复文件中的Data_frame赋值警告
     
     Args:
         file_path: 要修复的文件路径
@@ -104,7 +104,7 @@ def fix_specific_patterns(file_path):
         return True
     return False
 
-def main():
+def main_fixpandaswarnings():
     """主函数"""
     print("🔧 开始修复Pandas DataFrame赋值警告...")
     
@@ -140,4 +140,4 @@ def main():
     print(f"\n✅ Pandas DataFrame赋值警告修复完成！")
 
 if __name__ == "__main__":
-    main()
+    main_fixpandaswarnings()

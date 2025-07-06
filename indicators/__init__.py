@@ -5,8 +5,8 @@
 """
 
 # 导入核心类
-from .base_indicator import BaseIndicator
-from .factory import IndicatorFactory
+from indicators.base_indicator import BaseIndicator
+from indicators.factory import IndicatorFactory
 
 __all__ = [
     # 基础类

@@ -296,7 +296,7 @@ def test_upgraded_strategy(strategy_path: str):
         return False
 
 
-def main():
+def mainUpgradestrategyconfigs():
     """主函数"""
     print("🔧 策略配置文件升级工具")
     print("=" * 60)
@@ -349,4 +349,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    mainUpgradestrategyconfigs()

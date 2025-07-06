@@ -24,21 +24,21 @@ import json
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-from analysis.buypoints.period_data_processor import PeriodDataProcessor
-from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
+from utils.logger import getLogger
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
+from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class SimplePerformanceAnalyzer:
     """简化的性能分析器"""
     
-    def __init__(self):
+    def __init___91(self):
         self.results = {}
         
-    def analyze_batch_processing_performance(self, 
+    def analyze_batch_processing_performance_Analyzer(self, 
                                            buypoints_csv: str,
                                            sample_size: int = 5) -> Dict[str, Any]:
         """
@@ -54,7 +54,7 @@ class SimplePerformanceAnalyzer:
         logger.info(f"开始分析批量处理性能，采样大小: {sample_size}")
         
         # 加载买点数据
-        analyzer = BuyPointBatchAnalyzer()
+        analyzer = Buy_point_batch_analyzer()
         buypoints_df = analyzer.load_buypoints_from_csv(buypoints_csv)
         
         if buypoints_df.empty:
@@ -88,7 +88,7 @@ class SimplePerformanceAnalyzer:
         
         return analysis_result
     
-    def analyze_indicator_calculation_performance(self, 
+    def analyze_indicator_calculation_performance_Analyzer(self, 
                                                 stock_data: Dict[str, pd.DataFrame],
                                                 target_rows: Dict[str, int]) -> Dict[str, Any]:
         """
@@ -104,7 +104,7 @@ class SimplePerformanceAnalyzer:
         logger.info("开始分析指标计算性能")
         
         # 创建指标分析器
-        indicator_analyzer = AutoIndicatorAnalyzer()
+        indicator_analyzer = Auto_indicator_analyzer()
         
         # 获取所有指标
         all_indicators = indicator_analyzer.all_indicators
@@ -184,14 +184,14 @@ class SimplePerformanceAnalyzer:
             'avg_time_per_indicator': avg_time_per_indicator,
             'indicator_performance': dict(sorted_indicators),
             'top_10_slowest': dict(sorted_indicators[:10]),
-            'performance_summary': self._generate_performance_summary(dict(sorted_indicators))
+            'performance_summary': self._generate_performance_summary_Simple_Performance_Analyzer(dict(sorted_indicators))
         }
         
         logger.info(f"指标计算性能分析完成: 总时间 {total_time:.2f}s, 平均每指标 {avg_time_per_indicator:.3f}s")
         
         return result
     
-    def analyze_data_loading_performance(self, 
+    def analyze_data_loading_performance_Analyzer(self, 
                                        stock_codes: List[str],
                                        end_dates: List[str]) -> Dict[str, Any]:
         """
@@ -207,7 +207,7 @@ class SimplePerformanceAnalyzer:
         logger.info(f"开始分析数据加载性能，股票数量: {len(stock_codes)}")
         
         # 创建数据处理器
-        data_processor = PeriodDataProcessor()
+        data_processor = Period_data_processor()
         
         loading_times = []
         cache_hits = 0
@@ -283,7 +283,7 @@ class SimplePerformanceAnalyzer:
         
         return result
     
-    def _generate_performance_summary(self, indicator_performance: Dict[str, Dict]) -> Dict[str, Any]:
+    def _generate_performance_summary_Simple_Performance_Analyzer(self, indicator_performance: Dict[str, Dict]) -> Dict[str, Any]:
         """
         生成性能摘要
         
@@ -308,7 +308,7 @@ class SimplePerformanceAnalyzer:
             'fast_indicators_count': len([t for t in times if t < np.median(times) * 0.5])
         }
     
-    def generate_optimization_recommendations(self, 
+    def generate_optimization_recommendations_Analyzer(self, 
                                             performance_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         生成优化建议

@@ -13,9 +13,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from analysis.engines.indicator_validation_framework import (
-    IndicatorValidationFramework,
-    IndicatorValidationConfig,
-    ValidationMode
+    Indicator_validation_framework,
+    Indicator_validation_config,
+    Validation_mode
 )
 from utils.logger import get_logger
 
@@ -29,8 +29,8 @@ def demo_quick_validation():
     print("="*60)
     
     # 配置快速验证
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=200,
         max_selection_ratio=0.08,
         parallel_workers=1,
@@ -39,7 +39,7 @@ def demo_quick_validation():
     )
     
     # 创建验证框架
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     try:
         # 执行验证
@@ -84,14 +84,14 @@ def demo_single_indicator_validation():
     print("="*60)
     
     # 配置验证
-    config = IndicatorValidationConfig(
+    config = Indicator_validation_config(
         stock_pool_size=500,
         max_selection_ratio=0.05,
         save_details=False
     )
     
     # 创建验证框架
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     # 测试几个核心指标
     test_indicators = ['MA', 'MACD', 'RSI', 'KDJ', 'BOLL']
@@ -126,8 +126,8 @@ def demo_category_validation():
     print("="*60)
     
     # 配置分类验证
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.CATEGORY,
+    config = Indicator_validation_config(
+        mode=Validation_mode.CATEGORY,
         stock_pool_size=300,
         max_selection_ratio=0.06,
         parallel_workers=2,
@@ -136,7 +136,7 @@ def demo_category_validation():
     )
     
     # 创建验证框架
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     try:
         # 执行验证
@@ -189,8 +189,8 @@ def demo_priority_validation():
     print("="*60)
     
     # 配置优先级验证
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.PRIORITY,
+    config = Indicator_validation_config(
+        mode=Validation_mode.PRIORITY,
         stock_pool_size=400,
         max_selection_ratio=0.07,
         parallel_workers=1,
@@ -198,7 +198,7 @@ def demo_priority_validation():
     )
     
     # 创建验证框架
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     try:
         # 只验证前10个优先级最高的指标
@@ -235,7 +235,7 @@ def demo_priority_validation():
         return None
 
 
-def main():
+def main_indicatorvalidationdemo():
     """主函数"""
     print("指标验证框架演示")
     print("="*60)
@@ -272,4 +272,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_indicatorvalidationdemo() 

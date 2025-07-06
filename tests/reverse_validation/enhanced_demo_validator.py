@@ -22,17 +22,17 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from pattern_data_generator import PatternDataGenerator
-from technical_indicators import PatternRecognizer
+from pattern_data_generator import Pattern_data_generator
+from technical_indicators import Pattern_recognizer
 
 
-class EnhancedIndicatorValidator:
+class Enhanced_indicator_validator:
     """增强版指标验证器 - 使用真实技术指标计算"""
 
     def __init__(self):
         """初始化验证器"""
-        self.pattern_generator = PatternDataGenerator()
-        self.pattern_recognizer = PatternRecognizer()
+        self.pattern_generator = Pattern_data_generator()
+        self.pattern_recognizer = Pattern_recognizer()
 
         # 更精确的预期形态映射
         self.expected_patterns = {
@@ -178,7 +178,7 @@ class EnhancedIndicatorValidator:
 
         return match_score
 
-    def validate_single_indicator(self, indicator: str) -> dict:
+    def validate_single_indicator_Validator(self, indicator: str) -> dict:
         """
         验证单个指标的所有形态
 
@@ -264,12 +264,12 @@ class EnhancedIndicatorValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Enhanced_Demo_Validator(results['success_rate'])
         }
 
         return results
 
-    def _get_recommendation(self, success_rate: float) -> str:
+    def _get_recommendation_Enhanced_Demo_Validator(self, success_rate: float) -> str:
         """根据成功率生成建议"""
         if success_rate >= 0.9:
             return "指标形态识别表现优秀，已达到生产环境标准"
@@ -282,7 +282,7 @@ class EnhancedIndicatorValidator:
         else:
             return "指标形态识别表现很差，需要全面重新设计"
 
-    def save_results(self, results: dict, output_file: str = None):
+    def save_results_Validator(self, results: dict, output_file: str = None):
         """保存结果到文件"""
         if output_file is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -295,7 +295,7 @@ class EnhancedIndicatorValidator:
         return output_file
 
 
-def main():
+def main_enhanceddemovalidator():
     """主函数"""
     parser = argparse.ArgumentParser(description='增强版单个指标反向验证演示')
     parser.add_argument('indicator', choices=['RSI', 'MACD', 'KDJ', 'BOLL', 'MA', 'EMA'],
@@ -315,10 +315,10 @@ def main():
     print()
 
     # 创建增强验证器并运行测试
-    validator = EnhancedIndicatorValidator()
+    validator = Enhanced_indicator_validator()
 
     try:
-        results = validator.validate_single_indicator(args.indicator)
+        results = validator.validate_single_indicator_Validator(args.indicator)
 
         # 显示总结
         print("=" * 60)
@@ -334,7 +334,7 @@ def main():
 
         # 保存结果
         if args.save_results:
-            output_file = validator.save_results(results, args.output)
+            output_file = validator.save_results_Validator(results, args.output)
             print(f"\n详细结果已保存到: {output_file}")
 
         # 返回退出码
@@ -356,5 +356,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_enhanceddemovalidator()
     sys.exit(exit_code)

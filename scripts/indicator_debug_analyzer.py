@@ -15,13 +15,13 @@ from typing import Dict, Any, List
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from scripts.production_indicator_validator import ProductionIndicatorValidator
+from scripts.production_indicator_validator import Production_indicator_validator
 from utils.logger import get_logger
 
 class IndicatorDebugAnalyzer:
     def __init__(self):
         self.logger = get_logger(__name__)
-        self.validator = ProductionIndicatorValidator()
+        self.validator = Production_indicator_validator()
         
         # 选择几个典型的无选股指标进行深度分析
         self.debug_indicators = [
@@ -259,5 +259,5 @@ class IndicatorDebugAnalyzer:
             print(f"   - 考虑市场环境调整参数")
 
 if __name__ == "__main__":
-    analyzer = IndicatorDebugAnalyzer()
+    analyzer = Indicator_debug_analyzer()
     analyzer.analyze_all_debug_indicators() 

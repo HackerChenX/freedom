@@ -16,13 +16,13 @@ import logging
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from utils.logger import getLogger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class WMA(BaseIndicator, PatternSignalMixin):
+class Wma(BaseIndicator, PatternSignalMixin):
     """
     加权移动平均线(WMA) (WMA)
     
@@ -45,20 +45,20 @@ class WMA(BaseIndicator, PatternSignalMixin):
         self.period = period
         self.periods = periods if periods is not None else [period]
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Wma(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算WMA指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含WMA指标的DataFrame
+            包含WMA指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_wma(data)
         
-    def set_parameters(self, period: int = None, periods: List[int] = None):
+    def set_parameters_Wma_Wma_Wma_wma(self, period: int = None, periods: List[int] = None):
         """
         设置指标参数
         """
@@ -71,12 +71,12 @@ class WMA(BaseIndicator, PatternSignalMixin):
             if period is not None:
                 self.periods = [period]
         
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_wma(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
-            df: 要验证的DataFrame
+            df: 要验证的Data_frame
             required_columns: 所需的列名列表
             
         Raises:
@@ -86,26 +86,26 @@ class WMA(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"DataFrame缺少必要的列: {', '.join(missing_columns)}")
     
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_wma(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算加权移动平均线(WMA)指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 必须包含以下列：
                 - close: 收盘价
                 - high: 最高价
                 - low: 最低价
                 
         Returns:
-            添加了WMA指标列的DataFrame
+            添加了WMA指标列的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
 
         # 确保数据包含必要的列
         required_columns = ['close', 'high', 'low']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_wma(df, required_columns)
         
         df_copy = df.copy()
         
@@ -184,18 +184,18 @@ class WMA(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Wma(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成加权移动平均线(WMA)指标交易信号
         
         Args:
-            df: 包含价格数据和WMA指标的DataFrame
+            df: 包含价格数据和WMA指标的Data_frame
             **kwargs: 额外参数
                 overbought: 超买阈值
                 oversold: 超卖阈值
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - wma_signal: 1=买入信号, -1=卖出信号, 0=无信号
         """
         if df.empty:
@@ -213,7 +213,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
             
             # 检查必要的指标列是否存在
             required_columns = [f'WMA{short_period}', f'WMA{long_period}']
-            self._validate_dataframe(df_copy, required_columns)
+            self._validate_dataframe_wma(df_copy, required_columns)
             
             # 金叉信号（短期WMA上穿长期WMA）
             df_copy.loc[crossover(df_copy[f'WMA{short_period}'], df_copy[f'WMA{long_period}']), f'wma_signal'] = 1
@@ -223,12 +223,12 @@ class WMA(BaseIndicator, PatternSignalMixin):
         
         return df_copy
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
+    def plot_Wma(self, df: pd.DataFrame, ax=None, **kwargs):
         """
         绘制加权移动平均线(WMA)指标图表
         
         Args:
-            df: 包含WMA指标的DataFrame
+            df: 包含WMA指标的Data_frame
             ax: matplotlib轴对象，如果为None则创建新的
             **kwargs: 额外绘图参数
             
@@ -246,10 +246,10 @@ class WMA(BaseIndicator, PatternSignalMixin):
         for i, p in enumerate(self.periods):
             # 检查必要的指标列是否存在
             required_columns = [f'WMA{p}']
-            self._validate_dataframe(df, required_columns)
+            self._validate_dataframe_wma(df, required_columns)
             
             color = colors[i % len(colors)]
-            ax.plot(df.index, df[f'WMA{p}'], label=f'WMA({p})', color=color)
+            ax.plot_Wma(df.index, df[f'WMA{p}'], label=f'WMA({p})', color=color)
         
         ax.set_ylabel(f'加权移动平均线(WMA)')
         ax.legend(loc='best')
@@ -257,19 +257,19 @@ class WMA(BaseIndicator, PatternSignalMixin):
         
         return ax
         
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Wma(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标并返回结果
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            包含计算结果的DataFrame
+            包含计算结果的Data_frame
         """
-        return self.calculate(df)
+        return self.calculate_Wma(df)
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Wma(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算WMA原始评分
         
@@ -282,7 +282,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算WMA
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wma(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -314,7 +314,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Wma(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别WMA技术形态
         
@@ -329,7 +329,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算WMA
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wma(data, **kwargs)
         
         if self._result is None:
             return patterns
@@ -758,7 +758,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Wma(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成WMA指标标准化交易信号
         
@@ -768,12 +768,12 @@ class WMA(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 实现生成信号的逻辑
         pass
         
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Wma(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
@@ -786,7 +786,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算WMA指标
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Wma(data)
             
         signals = {}
         
@@ -838,7 +838,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
     def _register_wma_patterns(self):
         """注册WMA特有的形态检测方法"""
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 注册WMA收敛形态
         registry.register(
@@ -846,8 +846,8 @@ class WMA(BaseIndicator, PatternSignalMixin):
             display_name="WMA收敛",
             description="不同周期的WMA线相互靠近，指示潜在趋势变化",
             indicator_id="WMA",
-            pattern_type=PatternType.CONSOLIDATION,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.CONSOLIDATION,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=5.0,
             detection_function=self._detect_wma_convergence
         )
@@ -858,8 +858,8 @@ class WMA(BaseIndicator, PatternSignalMixin):
             display_name="WMA发散",
             description="不同周期的WMA线相互远离，指示趋势加强",
             indicator_id="WMA",
-            pattern_type=PatternType.TREND,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.TREND,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=10.0,
             detection_function=self._detect_wma_divergence
         )
@@ -985,19 +985,19 @@ class WMA(BaseIndicator, PatternSignalMixin):
             
         return False
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Wma(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        识别所有已定义的WMA形态，并以DataFrame形式返回
+        识别所有已定义的WMA形态，并以Data_frame形式返回
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含所有形态信号的DataFrame
+            pd.DataFrame: 包含所有形态信号的Data_frame
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wma(data, **kwargs)
 
         result = self._result
         if result is None:
@@ -1031,13 +1031,13 @@ class WMA(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Wma(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算WMA指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -1087,7 +1087,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Wma(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -1100,7 +1100,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Wma(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -1117,10 +1117,10 @@ class WMA(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Wma(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Wma(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -1130,7 +1130,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def register_patterns(self):
+    def register_patterns_Wma(self):
         """
         注册WMA指标的形态到全局形态注册表
         """
@@ -1197,7 +1197,7 @@ class WMA(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Wma(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -1232,37 +1232,11 @@ class WMA(BaseIndicator, PatternSignalMixin):
 
 
 
-    def __init__(self, **kwargs):
-        """
-        初始化WMA指标
-
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__(name="WMA", description="加权移动平均线，对不同时期价格赋予不同权重")
-            except:
-                pass
-
-        self.name = "WMA"
-
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-
-        # 确保periods属性存在
-        if not hasattr(self, 'periods'):
-            self.periods = [self.period] if hasattr(self, 'period') else [14]
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_wma(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14, "periods": None}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Wma_Wma_Wma_wma_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -1271,8 +1245,8 @@ class WMA(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -1281,8 +1255,8 @@ class WMA(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('WMA', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"WMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

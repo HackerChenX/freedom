@@ -18,9 +18,9 @@ import pandas as pd
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from strategy.strategy_combiner import StrategyCombiner
-from strategy.signal_watcher import SignalWatcher
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_combiner import Strategy_combiner
+from strategy.signal_watcher import Signal_watcher
+from strategy.strategy_manager import Strategy_manager
 from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 
@@ -91,7 +91,7 @@ def execute_combine(args):
         stock_pool = [s.strip() for s in args.pool.split(",")]
     
     # 创建策略组合器
-    combiner = StrategyCombiner()
+    combiner = Strategy_combiner()
     
     # 执行策略组合
     result = combiner.execute_strategies(
@@ -153,7 +153,7 @@ def execute_combine(args):
 def execute_watch(args):
     """执行观察信号命令"""
     # 获取策略配置
-    strategy_manager = StrategyManager()
+    strategy_manager = Strategy_manager()
     strategy_plan = strategy_manager.get_strategy(args.strategy)
     
     if not strategy_plan:
@@ -177,7 +177,7 @@ def execute_watch(args):
         stock_pool = stock_list_df['stock_code'].tolist()
     
     # 创建观察信号处理器
-    watcher = SignalWatcher()
+    watcher = Signal_watcher()
     
     # 寻找观察信号
     result = watcher.find_watch_signals(
@@ -210,7 +210,7 @@ def execute_watch(args):
 def execute_detail(args):
     """执行观察信号详情命令"""
     # 获取策略配置
-    strategy_manager = StrategyManager()
+    strategy_manager = Strategy_manager()
     strategy_plan = strategy_manager.get_strategy(args.strategy)
     
     if not strategy_plan:
@@ -218,7 +218,7 @@ def execute_detail(args):
         return
     
     # 创建观察信号处理器
-    watcher = SignalWatcher()
+    watcher = Signal_watcher()
     
     # 获取观察信号详情
     result = watcher.get_watch_signal_details(
@@ -276,7 +276,7 @@ def execute_detail(args):
 
 def execute_list(args):
     """执行列出策略命令"""
-    strategy_manager = StrategyManager()
+    strategy_manager = Strategy_manager()
     strategies = strategy_manager.list_strategies()
     
     if not strategies:
@@ -312,7 +312,7 @@ def execute_list(args):
                     print(f"     {key}: {value}")
 
 
-def main():
+def main_11():
     """主函数"""
     args = parse_args()
     
@@ -329,4 +329,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_11() 

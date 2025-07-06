@@ -4,10 +4,10 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 
 
-class TestEnhancedCCI(unittest.TestCase):
+class TestEnhancedCCI_Cci(unittest.TestCase):
     """测试增强型CCI指标"""
 
-    def setUp(self):
+    def setUp_Cci_Test_Enhanced_Cci(self):
         """准备测试数据"""
         # 创建模拟价格数据
         np.random.seed(42)  # 确保结果可重现
@@ -34,7 +34,7 @@ class TestEnhancedCCI(unittest.TestCase):
         # 创建CCI实例
         self.cci = EnhancedCCI(period=20, factor=0.015, adaptive=True)
 
-    def test_calculation(self):
+    def test_calculation_Cci(self):
         """测试CCI基础计算功能"""
         result = self.cci.calculate(self.test_data)
         
@@ -106,7 +106,7 @@ class TestEnhancedCCI(unittest.TestCase):
         self.assertTrue((crossovers['crossover_strength'] >= 0).all())
         self.assertTrue((crossovers['crossover_strength'] <= 100).all())
 
-    def test_multi_period_synergy(self):
+    def test_multi_period_synergy_Cci(self):
         """测试多周期协同分析功能"""
         self.cci.calculate(self.test_data)
         synergy = self.cci.analyze_multi_period_synergy()
@@ -131,7 +131,7 @@ class TestEnhancedCCI(unittest.TestCase):
         # 验证动量一致性的互斥性
         self.assertFalse((synergy['rising_momentum'] & synergy['falling_momentum']).any())
 
-    def test_pattern_identification(self):
+    def test_pattern_identification_Cci(self):
         """测试形态识别功能"""
         self.cci.calculate(self.test_data)
         patterns = self.cci.identify_patterns()
@@ -155,7 +155,7 @@ class TestEnhancedCCI(unittest.TestCase):
         # 正背离和负背离不应同时出现
         self.assertFalse((patterns['bullish_divergence'] & patterns['bearish_divergence']).any())
 
-    def test_score_calculation(self):
+    def test_score_calculation_Cci(self):
         """测试评分计算功能"""
         self.cci.calculate(self.test_data)
         score = self.cci.calculate_score()
@@ -184,7 +184,7 @@ class TestEnhancedCCI(unittest.TestCase):
         # 确保市场环境确实影响了评分
         self.assertTrue(not (bull_score.equals(bear_score) and bear_score.equals(volatile_score)))
 
-    def test_signal_generation(self):
+    def test_signal_generation_Cci(self):
         """测试信号生成功能"""
         signals = self.cci.generate_signals(self.test_data)
         

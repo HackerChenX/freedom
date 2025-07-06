@@ -18,7 +18,7 @@ from indicators.complete_indicator_registry import complete_registry
 class TestDualPeriodRSI(unittest.TestCase):
     """测试双周期RSI功能"""
 
-    def setUp(self):
+    def setUp_Rsi_Test_Dual_Rsi(self):
         """
         创建测试数据
         """

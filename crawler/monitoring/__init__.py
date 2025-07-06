@@ -5,22 +5,22 @@
 """
 
 try:
-    from .performance_monitor import PerformanceMonitor
+    from crawler.monitoring.performance_monitor import PerformanceMonitor
 except ImportError:
     PerformanceMonitor = None
 
 try:
-    from .alert_manager import AlertManager
+    from crawler.monitoring.alert_manager import AlertManager
 except ImportError:
     AlertManager = None
 
 try:
-    from .data_quality_checker import DataQualityChecker
+    from crawler.monitoring.data_quality_checker import DataQualityChecker
 except ImportError:
     DataQualityChecker = None
 
 try:
-    from .scheduler_manager import SchedulerManager
+    from crawler.monitoring.scheduler_manager import SchedulerManager
 except ImportError:
     SchedulerManager = None
 

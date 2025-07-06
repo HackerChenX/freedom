@@ -7,9 +7,9 @@ from typing import Dict, List, Tuple, Union, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
     """
@@ -45,19 +45,19 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
             'divergence_signals': 0.15    # 背离信号
         } 
 
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_diagnostics(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算股票诊断指标
 
         Args:
-            data: DataFrame，包含OHLCV数据
+            data: Data_frame，包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
                 lookback_period: 回溯分析周期，默认60个交易日
                 require_volume: 是否要求成交量数据，默认True
 
         Returns:
-            DataFrame: 包含诊断结果的DataFrame
+            Data_frame: 包含诊断结果的Data_frame
         """
         # 数据类型检查和转换
         if isinstance(data, dict):
@@ -106,7 +106,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
 
             # 尝试使用列名映射
             try:
-                from utils.column_mapper import ColumnMapper
+                from utils.column_mapper import Column_mapper
                 data = ColumnMapper.standardize_columns(data, ['open', 'high', 'low', 'close', 'volume'])
 
                 # 重新检查
@@ -183,7 +183,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         
         # 13. 主要问题和建议
         result.loc[:, 'main_issues'] = self._identify_main_issues(result)
-        result.loc[:, 'recommendations'] = self._generate_recommendations(result)
+        result.loc[:, 'recommendations'] = self._generate_recommendations_Diagnostics(result)
 
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
@@ -191,12 +191,12 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.Series:
+    def calculate_raw_score_Diagnostics(self, data: pd.DataFrame, *args, **kwargs) -> pd.Series:
         """
         计算股票诊断原始评分 (0-100分)
         
         Args:
-            data: DataFrame，包含OHLCV数据
+            data: Data_frame，包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
                 score_type: 评分类型，可选 'health'(健康度), 'opportunity'(机会度), 'overall'(综合)
@@ -233,18 +233,18 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         
         return scores
         
-    def identify_patterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def identify_patterns_Diagnostics(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         识别股票技术形态和问题模式
         
         Args:
-            data: DataFrame，包含OHLCV数据
+            data: Data_frame，包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
                 min_pattern_strength: 最小形态强度阈值，默认0.6
                 
         Returns:
-            DataFrame: 包含识别出的形态的DataFrame
+            Data_frame: 包含识别出的形态的Data_frame
         """
         # 获取参数
         min_pattern_strength = kwargs.get('min_pattern_strength', 0.6)
@@ -286,18 +286,18 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         
         return patterns 
 
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Diagnostics(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成股票诊断信号
         
         Args:
-            data: DataFrame，包含OHLCV数据
+            data: Data_frame，包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
                 signal_threshold: 信号阈值，默认70
                 
         Returns:
-            DataFrame: 包含标准化信号的DataFrame
+            Data_frame: 包含标准化信号的Data_frame
         """
         # 获取参数
         signal_threshold = kwargs.get('signal_threshold', 70)
@@ -325,7 +325,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
             return signals
             
         # 识别形态
-        patterns = self.identify_patterns(data, *args, **kwargs)
+        patterns = self.identify_patterns_Diagnostics(data, *args, **kwargs)
         
         # 生成买入信号
         buy_conditions = (
@@ -424,18 +424,18 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         
         return signals
         
-    def generate_trading_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_trading_signals_Diagnostics(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成交易信号（满足BaseIndicator抽象类的要求）
         
         Args:
-            data: DataFrame，包含OHLCV数据
+            data: Data_frame，包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
                 signal_threshold: 信号阈值，默认70
                 
         Returns:
-            DataFrame: 包含交易信号的DataFrame
+            Data_frame: 包含交易信号的Data_frame
         """
         # 获取参数
         signal_threshold = kwargs.get('signal_threshold', 70)
@@ -1179,7 +1179,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
             "advice": advice
         }
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Diagnostics(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -1224,7 +1224,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, max(0.0, base_confidence + pattern_boost))
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Diagnostics(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -1233,11 +1233,11 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信号的DataFrame
+            pd.DataFrame: 包含形态信号的Data_frame
         """
-        return self.identify_patterns(data, **kwargs)
+        return self.identify_patterns_Diagnostics(data, **kwargs)
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Diagnostics(self, **kwargs):
         """
         设置指标参数
 
@@ -1256,7 +1256,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
             self.health_weights.update(kwargs['health_weights'])
         if 'opportunity_weights' in kwargs:
             self.opportunity_weights.update(kwargs['opportunity_weights'])
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Diagnostics(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -1405,7 +1405,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
 
         return issues
 
-    def _generate_recommendations(self, result: pd.DataFrame) -> pd.Series:
+    def _generate_recommendations_Diagnostics(self, result: pd.DataFrame) -> pd.Series:
         """生成建议"""
         recommendations = pd.Series("持续观察", index=result.index)
 

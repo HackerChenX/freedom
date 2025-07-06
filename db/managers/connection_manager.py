@@ -1,24 +1,24 @@
 """
 连接管理器实现
 
-实现IConnectionManager接口，提供数据库连接管理功能
+实现IConnection_manager接口，提供数据库连接管理功能
 """
 
 import time
 import threading
-from typing import Dict, List, Optional, Any, ContextManager
+from typing import Dict, List, Optional, Any, Context_manager
 from datetime import datetime
 from contextlib import contextmanager
 import pandas as pd
 
-from db.interfaces.connection_interface import IConnectionManager, IConnectionPool, IConnection, ITransactionManager, IHealthChecker
+from db.interfaces.connection_interface import IConnection_manager, IConnection_pool, IConnection, ITransaction_manager, IHealth_checker
 from db.enhanced_connection_pool import get_connection_pool, initialize_connection_pool
 from config.config import get_config
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor
-from utils.exceptions import DataAccessError
+from utils.exceptions import Data_access_error
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class ConnectionWrapper(IConnection):
@@ -28,7 +28,7 @@ class ConnectionWrapper(IConnection):
     封装原始连接对象，提供统一接口
     """
     
-    def __init__(self, raw_connection, pool_ref=None):
+    def __init___37_connectionmanager(self, raw_connection, pool_ref=None):
         """
         初始化连接包装器
         
@@ -41,7 +41,7 @@ class ConnectionWrapper(IConnection):
         self.is_closed = False
         self.last_activity = time.time()
     
-    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> None:
+    def execute_2(self, query: str, params: Optional[Dict[str, Any]] = None) -> None:
         """
         执行SQL语句
         
@@ -51,12 +51,12 @@ class ConnectionWrapper(IConnection):
         """
         try:
             self.last_activity = time.time()
-            self.raw_connection.execute(query, params or {})
+            self.raw_connection.execute_2(query, params or {})
         except Exception as e:
             logger.error(f"执行SQL失败: {query}, 错误: {e}")
             raise DataAccessError(f"执行SQL失败: {e}")
     
-    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_Manager_Connection_Manager(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         执行查询并返回结果
         
@@ -69,14 +69,14 @@ class ConnectionWrapper(IConnection):
         """
         try:
             self.last_activity = time.time()
-            return self.raw_connection.query_dataframe(query, params or {})
+            return self.raw_connection.query_dataframe_Manager(query, params or {})
         except Exception as e:
             logger.error(f"查询执行失败: {query}, 错误: {e}")
             raise DataAccessError(f"查询执行失败: {e}")
     
-    def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_dataframe_Manager(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
-        执行查询并返回DataFrame
+        执行查询并返回Data_frame
         
         Args:
             query: SQL查询语句
@@ -85,7 +85,7 @@ class ConnectionWrapper(IConnection):
         Returns:
             pd.DataFrame: 查询结果
         """
-        return self.query(query, params)
+        return self.query_Manager_Connection_Manager(query, params)
     
     def is_alive(self) -> bool:
         """
@@ -99,48 +99,27 @@ class ConnectionWrapper(IConnection):
         
         try:
             # 执行简单查询测试连接
-            self.query("SELECT 1")
+            self.query_Manager_Connection_Manager("SELECT 1")
             return True
         except Exception:
             return False
     
-    def close(self) -> None:
+    def close_Manager_Connection_Manager(self) -> None:
         """关闭连接"""
         if not self.is_closed:
             self.is_closed = True
             if hasattr(self.raw_connection, 'close'):
-                self.raw_connection.close()
+                self.raw_connection.close_Manager_Connection_Manager()
 
 
-class ConnectionManager(IConnectionManager):
+class ConnectionManager(IConnection_manager):
     """
     连接管理器实现
     
     管理数据库连接的生命周期和连接池
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """
-        初始化连接管理器
-        
-        Args:
-            config: 连接配置
-        """
-        self.config = config or self._get_default_config()
-        self.connection_pool = None
-        self.connections: Dict[str, ConnectionWrapper] = {}
-        self.connection_counter = 0
-        self.lock = threading.RLock()
-        
-        # 初始化连接池
-        self._initialize_pool()
-        
-        # 健康检查器
-        self.health_checker = HealthChecker(self)
-        
-        logger.info("连接管理器初始化完成")
-    
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config_Connection_Manager(self) -> Dict[str, Any]:
         """获取默认配置"""
         try:
             config = get_config()
@@ -165,7 +144,7 @@ class ConnectionManager(IConnectionManager):
                 'min_connections': 5
             }
     
-    def _initialize_pool(self) -> None:
+    def _initialize_pool_Connection_Manager(self) -> None:
         """初始化连接池"""
         try:
             self.connection_pool = initialize_connection_pool(
@@ -183,7 +162,7 @@ class ConnectionManager(IConnectionManager):
             raise DataAccessError(f"连接池初始化失败: {e}")
     
     @contextmanager
-    def get_connection(self, config: Optional[Dict[str, Any]] = None) -> ContextManager[IConnection]:
+    def get_connection_Manager(self, config: Optional[Dict[str, Any]] = None) -> Context_manager[IConnection]:
         """
         获取数据库连接
         
@@ -191,7 +170,7 @@ class ConnectionManager(IConnectionManager):
             config: 连接配置
             
         Returns:
-            ContextManager: 连接上下文管理器
+            Context_manager: 连接上下文管理器
         """
         connection = None
         connection_id = None
@@ -202,10 +181,10 @@ class ConnectionManager(IConnectionManager):
                 connection_id = f"conn_{self.connection_counter}_{int(time.time())}"
             
             # 从连接池获取连接
-            raw_connection = self.connection_pool.get_connection()
+            raw_connection = self.connection_pool.get_connection_Manager()
             
             # 包装连接
-            connection = ConnectionWrapper(raw_connection.__enter__(), self.connection_pool)
+            connection = Connection_wrapper(raw_connection.__enter__(), self.connection_pool)
             
             # 记录连接
             with self.lock:
@@ -221,11 +200,11 @@ class ConnectionManager(IConnectionManager):
         finally:
             # 清理连接
             if connection_id and connection:
-                self.release_connection(connection_id)
+                self.release_connection_Manager(connection_id)
                 if hasattr(raw_connection, '__exit__'):
                     raw_connection.__exit__(None, None, None)
     
-    def release_connection(self, connection_id: str) -> None:
+    def release_connection_Manager(self, connection_id: str) -> None:
         """
         释放数据库连接
         
@@ -235,10 +214,10 @@ class ConnectionManager(IConnectionManager):
         with self.lock:
             if connection_id in self.connections:
                 connection = self.connections.pop(connection_id)
-                connection.close()
+                connection.close_Manager_Connection_Manager()
                 logger.debug(f"释放连接: {connection_id}")
     
-    def test_connection(self, config: Optional[Dict[str, Any]] = None) -> bool:
+    def test_connection_Manager_Connection_Manager(self, config: Optional[Dict[str, Any]] = None) -> bool:
         """
         测试数据库连接
         
@@ -249,8 +228,8 @@ class ConnectionManager(IConnectionManager):
             bool: 连接成功返回True
         """
         try:
-            with self.get_connection(config) as conn:
-                result = conn.query("SELECT 1 as test")
+            with self.get_connection_Manager(config) as conn:
+                result = conn.query_Manager_Connection_Manager("SELECT 1 as test")
                 return not result.empty
         except Exception as e:
             logger.error(f"连接测试失败: {e}")
@@ -286,30 +265,15 @@ class ConnectionManager(IConnectionManager):
         with self.lock:
             connection_ids = list(self.connections.keys())
             for connection_id in connection_ids:
-                self.release_connection(connection_id)
+                self.release_connection_Manager(connection_id)
             
             logger.info(f"关闭所有连接: {len(connection_ids)}个")
 
 
-class HealthChecker(IHealthChecker):
+class HealthChecker(IHealth_checker):
     """
     健康检查器实现
     """
-    
-    def __init__(self, connection_manager: ConnectionManager):
-        """
-        初始化健康检查器
-        
-        Args:
-            connection_manager: 连接管理器
-        """
-        self.connection_manager = connection_manager
-        self.last_check_time = datetime.now()
-        self.is_healthy_status = True
-        self.lock = threading.Lock()
-        
-        # 启动定期健康检查
-        self._start_health_check_thread()
     
     def check_health(self) -> Dict[str, Any]:
         """
@@ -330,7 +294,7 @@ class HealthChecker(IHealthChecker):
             start_time = time.time()
             
             # 测试连接
-            connection_test = self.connection_manager.test_connection()
+            connection_test = self.connection_manager.test_connection_Manager_Connection_Manager()
             
             end_time = time.time()
             response_time = end_time - start_time
@@ -374,7 +338,7 @@ class HealthChecker(IHealthChecker):
         with self.lock:
             return self.last_check_time
     
-    def _start_health_check_thread(self) -> None:
+    def _start_health_check_thread_Connection_Manager(self) -> None:
         """启动健康检查线程"""
         def health_check_worker():
             while True:
@@ -389,36 +353,24 @@ class HealthChecker(IHealthChecker):
         logger.info("健康检查线程已启动")
 
 
-class TransactionManager(ITransactionManager):
+class TransactionManager(ITransaction_manager):
     """
     事务管理器实现
     """
     
-    def __init__(self, connection: IConnection):
-        """
-        初始化事务管理器
-        
-        Args:
-            connection: 数据库连接
-        """
-        self.connection = connection
-        self.in_transaction_flag = False
-        self.lock = threading.Lock()
-    
-    @contextmanager
-    def begin_transaction(self) -> ContextManager:
+    def begin_transaction(self) -> Context_manager:
         """
         开始事务
         
         Returns:
-            ContextManager: 事务上下文管理器
+            Context_manager: 事务上下文管理器
         """
         with self.lock:
             if self.in_transaction_flag:
                 raise DataAccessError("事务已经开始")
             
             try:
-                self.connection.execute("BEGIN")
+                self.connection.execute_2("BEGIN")
                 self.in_transaction_flag = True
                 logger.debug("事务开始")
                 
@@ -439,7 +391,7 @@ class TransactionManager(ITransactionManager):
         """提交事务"""
         if self.in_transaction_flag:
             try:
-                self.connection.execute("COMMIT")
+                self.connection.execute_2("COMMIT")
                 logger.debug("事务提交")
             except Exception as e:
                 logger.error(f"事务提交失败: {e}")
@@ -449,7 +401,7 @@ class TransactionManager(ITransactionManager):
         """回滚事务"""
         if self.in_transaction_flag:
             try:
-                self.connection.execute("ROLLBACK")
+                self.connection.execute_2("ROLLBACK")
                 logger.debug("事务回滚")
             except Exception as e:
                 logger.error(f"事务回滚失败: {e}")

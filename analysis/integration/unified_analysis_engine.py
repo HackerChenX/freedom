@@ -12,26 +12,28 @@ from typing import Dict, List, Any, Optional, Union
 from datetime import datetime
 import pandas as pd
 import asyncio
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Thread_pool_executor, as_completed
+import threading
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from analysis.integration.unified_data_adapter import get_unified_data_adapter
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-from strategy.strategy_factory import StrategyFactory
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
+from strategy.strategy_factory import Strategy_factory
 from utils.decorators import safe_run, timing_decorator
 from utils.path_utils import ensure_dir_exists
+from utils.dependency_injection import get_service
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class UnifiedAnalysisEngine:
     """统一分析引擎"""
     
-    def __init__(self, max_workers: int = 4):
+    def __init___109(self, max_workers: int = 4):
         """
         初始化统一分析引擎
         
@@ -39,8 +41,8 @@ class UnifiedAnalysisEngine:
             max_workers: 最大并发工作线程数
         """
         self.data_adapter = get_unified_data_adapter()
-        self.buypoint_analyzer = BuyPointBatchAnalyzer()
-        self.strategy_factory = StrategyFactory()
+        self.buypoint_analyzer = Buy_point_batch_analyzer()
+        self.strategy_factory = Strategy_factory()
         self.max_workers = max_workers
         
         # 分析配置
@@ -345,7 +347,7 @@ class UnifiedAnalysisEngine:
         try:
             futures = []
             
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            with Thread_pool_executor(max_workers=self.max_workers) as executor:
                 # 提交买点分析任务
                 if self.analysis_config['enable_buypoint_analysis']:
                     future_buypoint = executor.submit(
@@ -515,12 +517,40 @@ class UnifiedAnalysisEngine:
         logger.info(f"配置已更新: {config}")
 
 
-# 全局实例
-_unified_engine_instance = None
+# ===== 依赖注入和兼容性接口 =====
+
+def create_unified_analysis_engine(max_workers: int = 4) -> UnifiedAnalysisEngine:
+    """创建统一分析引擎实例（兼容性方法）"""
+    return UnifiedAnalysisEngine(max_workers)
+
 
 def get_unified_analysis_engine() -> UnifiedAnalysisEngine:
-    """获取统一分析引擎实例（单例模式）"""
-    global _unified_engine_instance
-    if _unified_engine_instance is None:
-        _unified_engine_instance = UnifiedAnalysisEngine()
-    return _unified_engine_instance 
+    """
+    获取统一分析引擎实例（依赖注入方式）
+    
+    Returns:
+        UnifiedAnalysisEngine: 统一分析引擎实例
+    """
+    try:
+        from utils.dependency_injection import get_container
+        container = get_container()
+        return container.resolve(UnifiedAnalysisEngine)
+    except Exception as e:
+        logger.warning(f"从依赖注入容器获取UnifiedAnalysisEngine失败，创建新实例: {e}")
+        return UnifiedAnalysisEngine()
+
+
+def get_legacy_unified_analysis_engine() -> UnifiedAnalysisEngine:
+    """获取统一分析引擎实例（向后兼容）"""
+    return get_unified_analysis_engine()
+
+
+# 注册到依赖注入容器
+try:
+    from utils.dependency_injection import get_container
+    container = get_container()
+    if not container.is_registered(UnifiedAnalysisEngine):
+        container.register_singleton(UnifiedAnalysisEngine, UnifiedAnalysisEngine)
+        logger.info("UnifiedAnalysisEngine已注册到依赖注入容器")
+except Exception as e:
+    logger.warning(f"注册UnifiedAnalysisEngine到依赖注入容器失败: {e}")

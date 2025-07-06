@@ -5,17 +5,17 @@
 """
 
 try:
-    from .system_integrator import SystemIntegrator
+    from crawler.integration.system_integrator import SystemIntegrator
 except ImportError:
     SystemIntegrator = None
 
 try:
-    from .deployment_manager import DeploymentManager
+    from crawler.integration.deployment_manager import DeploymentManager
 except ImportError:
     DeploymentManager = None
 
 try:
-    from .integration_tester import IntegrationTester
+    from crawler.integration.integration_tester import IntegrationTester
 except ImportError:
     IntegrationTester = None
 

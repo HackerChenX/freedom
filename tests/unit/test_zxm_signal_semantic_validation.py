@@ -11,17 +11,17 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # 导入需要测试的ZXM指标
-from indicators.zxm.buy_point_indicators import ZXMTurnover, ZXMVolumeShrink, ZXMBSAbsorb
-from indicators.zxm.trend_indicators import ZXMDailyTrendUp, ZXMWeeklyTrendUp
-from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZXMRiseElasticity
-from indicators.zxm.score_indicators import ZXMElasticityScore, ZXMBuyPointScore, StockScoreCalculator
-from indicators.zxm.selection_model import SelectionModel
+from indicators.zxm.buy_point_indicators import ZXMTurnover, ZXMVolume_shrink, ZXMBSAbsorb
+from indicators.zxm.trend_indicators import ZXMDaily_trend_up, ZXMWeekly_trend_up
+from indicators.zxm.elasticity_indicators import Amplitude_elasticity, ZXMRise_elasticity
+from indicators.zxm.score_indicators import ZXMElasticity_score, ZXMBuy_point_score, Stock_score_calculator
+from indicators.zxm.selection_model import Selection_model
 
 
-class TestZXMSignalSemanticValidation(unittest.TestCase):
+class Test_zXMSignal_semantic_validation(unittest.Test_case):
     """ZXM指标信号语义验证测试类"""
     
-    def setUp(self):
+    def set_up_Validation(self):
         """设置测试数据"""
         # 生成特定语义的测试数据，而不是随机数据
         self.test_scenarios = self._generate_semantic_test_scenarios()
@@ -249,7 +249,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
     
     def test_zxm_volume_shrink_semantic_consistency(self):
         """测试ZXM缩量指标的语义一致性"""
-        indicator = ZXMVolumeShrink()
+        indicator = ZXMVolume_shrink()
         
         # 测试缩量场景
         shrink_data = self.test_scenarios['volume_shrink']
@@ -265,7 +265,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
 
     def test_zxm_daily_trend_up_semantic_consistency(self):
         """测试ZXM日线上移趋势指标的语义一致性"""
-        indicator = ZXMDailyTrendUp()
+        indicator = ZXMDaily_trend_up()
 
         # 测试上升趋势场景
         trend_up_data = self.test_scenarios['trend_up']
@@ -289,7 +289,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
 
     def test_zxm_amplitude_elasticity_semantic_consistency(self):
         """测试ZXM振幅弹性指标的语义一致性"""
-        indicator = AmplitudeElasticity()
+        indicator = Amplitude_elasticity()
 
         # 测试高弹性场景
         high_elasticity_data = self.test_scenarios['high_elasticity']
@@ -313,7 +313,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
 
     def test_zxm_rise_elasticity_semantic_consistency(self):
         """测试ZXM涨幅弹性指标的语义一致性"""
-        indicator = ZXMRiseElasticity()
+        indicator = ZXMRise_elasticity()
 
         # 测试高弹性场景
         high_elasticity_data = self.test_scenarios['high_elasticity']
@@ -328,7 +328,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
 
     def test_zxm_elasticity_score_semantic_consistency(self):
         """测试ZXM弹性评分指标的语义一致性"""
-        indicator = ZXMElasticityScore(threshold=75)
+        indicator = ZXMElasticity_score(threshold=75)
 
         # 测试高弹性场景
         high_elasticity_data = self.test_scenarios['high_elasticity']
@@ -354,7 +354,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
 
     def test_zxm_buypoint_score_semantic_consistency(self):
         """测试ZXM买点评分指标的语义一致性"""
-        indicator = ZXMBuyPointScore(threshold=75)
+        indicator = ZXMBuy_point_score(threshold=75)
 
         # 测试高评分场景（使用上升趋势数据，更可能触发买点）
         trend_up_data = self.test_scenarios['trend_up']
@@ -376,7 +376,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
 
     def test_stock_score_calculator_semantic_consistency(self):
         """测试股票综合评分指标的语义一致性"""
-        indicator = StockScoreCalculator()
+        indicator = Stock_score_calculator()
 
         # 测试高评分场景
         trend_up_data = self.test_scenarios['trend_up']
@@ -398,7 +398,7 @@ class TestZXMSignalSemanticValidation(unittest.TestCase):
 
     def test_selection_model_semantic_consistency(self):
         """测试ZXM选股模型的语义一致性"""
-        indicator = SelectionModel()
+        indicator = Selection_model()
 
         # 测试选股场景
         trend_up_data = self.test_scenarios['trend_up']

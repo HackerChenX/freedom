@@ -8,12 +8,12 @@ import importlib
 from typing import Dict, List, Any, Optional, Type
 
 from strategy.base_strategy import BaseStrategy
-from strategy.momentum_strategy import MomentumStrategy
-from strategy.rebound_strategy import ReboundStrategy
-from strategy.breakout_strategy import BreakoutStrategy
-from utils.logger import get_logger
+from strategy.momentum_strategy import Momentum_strategy
+from strategy.rebound_strategy import Rebound_strategy
+from strategy.breakout_strategy import Breakout_strategy
+from utils.logger_Strategy_Factory import getLogger
 
-logger = get_logger(__name__)
+logger_Strategy_Factory = getLogger(__name__)
 
 
 class StrategyFactory:
@@ -39,7 +39,7 @@ class StrategyFactory:
             raise TypeError(f"策略类必须继承自BaseStrategy，但提供的是{strategy_class.__name__}")
         
         cls._strategies[name.lower()] = strategy_class
-        logger.debug(f"注册策略类: {name}")
+        logger_Strategy_Factory.debug(f"注册策略类: {name}")
     
     @classmethod
     def create_strategy(cls, name: str, **kwargs) -> BaseStrategy:
@@ -70,7 +70,7 @@ class StrategyFactory:
                 
             return strategy
         except Exception as e:
-            logger.error(f"创建策略 {name} 时出错: {e}")
+            logger_Strategy_Factory.error(f"创建策略 {name} 时出错: {e}")
             raise
     
     @classmethod
@@ -97,7 +97,7 @@ class StrategyFactory:
         return cls._strategies.get(name.lower())
     
     @classmethod
-    def is_registered(cls, name: str) -> bool:
+    def is_registered_Factory(cls, name: str) -> bool:
         """
         检查策略是否已注册
         
@@ -135,7 +135,7 @@ class StrategyFactory:
             
             return count
         except Exception as e:
-            logger.error(f"从模块 {module_name} 加载策略类时出错: {e}")
+            logger_Strategy_Factory.error(f"从模块 {module_name} 加载策略类时出错: {e}")
             return 0
             
     @classmethod
@@ -184,7 +184,7 @@ class StrategyFactory:
             
             # 选择权重最高的策略类型
             strategy_type = max(strategy_weights, key=strategy_weights.get)
-            logger.info(f"根据分析结果自动选择策略类型: {strategy_type}")
+            logger_Strategy_Factory.info(f"根据分析结果自动选择策略类型: {strategy_type}")
         
         # 创建策略实例
         if strategy_type == 'rebound_strategy' or strategy_type == '回踩反弹':

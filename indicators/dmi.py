@@ -16,14 +16,11 @@ from functools import lru_cache
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
-from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
-from utils.decorators import singleton
+from utils.logger import getLogger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
+logger = getLogger(__name__)
 
-logger = get_logger(__name__)
-
-@singleton
-class DMI(BaseIndicator, PatternSignalMixin):
+class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):
     """
     趋向指标(DMI) (DMI)
     
@@ -42,16 +39,16 @@ class DMI(BaseIndicator, PatternSignalMixin):
         super().__init__(name="DMI", description="趋向指标，判断趋势强度与方向")
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_dmi()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Dmi(**kwargs)
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_dmi(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14, "adx_threshold": 25.0}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Dmi(self, **kwargs):
         """
         设置指标参数
 
@@ -61,15 +58,15 @@ class DMI(BaseIndicator, PatternSignalMixin):
                 - adx_threshold: ADX趋势强度阈值
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
 
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DMI', params)
@@ -88,12 +85,12 @@ class DMI(BaseIndicator, PatternSignalMixin):
         # 保持向后兼容性
         self.adx_period = self.period  # 为了兼容现有代码
     
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_dmi(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
-            df: 要验证的DataFrame
+            df: 要验证的Data_frame
             required_columns: 所需的列名列表
             
         Raises:
@@ -103,19 +100,19 @@ class DMI(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"DataFrame缺少必要的列: {', '.join(missing_columns)}")
     
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_dmi(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算趋向指标(DMI)指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 必须包含以下列：
                 - close: 收盘价
                 - high: 最高价
                 - low: 最低价
                 
         Returns:
-            添加了DMI指标列的DataFrame
+            添加了DMI指标列的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
@@ -123,7 +120,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
         # 确保数据包含必要的列
 
         required_columns = ['close', 'high', 'low']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_dmi(df, required_columns)
         
         df_copy = df.copy()
         
@@ -175,7 +172,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
 
         return df_copy
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Dmi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算DMI原始评分
         
@@ -226,7 +223,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Dmi(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别DMI技术形态
         
@@ -644,16 +641,16 @@ class DMI(BaseIndicator, PatternSignalMixin):
         # 高位钝化：ADX在高位且变化很小
         return (recent_adx > threshold).all() and (recent_adx.max() - recent_adx.min()) < 5
         
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Dmi(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成趋向指标(DMI)指标交易信号
         
         Args:
-            df: 包含价格数据和DMI指标的DataFrame
+            df: 包含价格数据和DMI指标的Data_frame
             **kwargs: 额外参数
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - dmi_signal: 1=买入信号, -1=卖出信号, 0=无信号
         """
         if df.empty:
@@ -665,7 +662,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
             
         # 检查必要的指标列是否存在
         required_columns = ['PDI', 'MDI', 'ADX']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_dmi(df, required_columns)
         
         df_copy = df.copy()
         
@@ -684,7 +681,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
         
         return df_copy
 
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Dmi(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成DMI指标标准化交易信号
         
@@ -694,7 +691,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 确保已计算DMI指标
         if not self.has_result():
@@ -717,11 +714,11 @@ class DMI(BaseIndicator, PatternSignalMixin):
         signals['volume_confirmation'] = False
         
         # 计算评分
-        score = self.calculate_raw_score(data, **kwargs)
+        score = self.calculate_raw_score_Dmi(data, **kwargs)
         signals['score'] = score
         
         # 检测形态
-        patterns = self.identify_patterns(data, **kwargs)
+        patterns = self.identify_patterns_Dmi(data, **kwargs)
         
         # 获取DMI数据
         pdi = self._result['PDI']
@@ -951,16 +948,16 @@ class DMI(BaseIndicator, PatternSignalMixin):
         
         return signals
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Dmi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        识别所有已定义的DMI形态，并以DataFrame形式返回
+        识别所有已定义的DMI形态，并以Data_frame形式返回
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含所有形态信号的DataFrame
+            pd.DataFrame: 包含所有形态信号的Data_frame
         """
         if not self.has_result():
             self.calculate(data, **kwargs)
@@ -989,13 +986,13 @@ class DMI(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Dmi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算DMI指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -1056,7 +1053,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def register_patterns(self):
+    def register_patterns_Dmi(self):
         """
         注册DMI指标的技术形态
         """
@@ -1123,7 +1120,7 @@ class DMI(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Dmi(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -1202,3 +1199,20 @@ class DMI(BaseIndicator, PatternSignalMixin):
             'strength': 'medium',
             'type': 'neutral'
         })
+
+
+def get_directionalmovementindex():
+    """获取DirectionalMovementIndex实例（通过依赖注入）"""
+    try:
+        container = get_service_container()
+        if not container.is_registered(DirectionalMovementIndex):
+            container.register_singleton(DirectionalMovementIndex)
+        return container.get_service(DirectionalMovementIndex)
+    except Exception:
+        # 降级处理：如果依赖注入失败，直接创建实例
+        return DirectionalMovementIndex()
+
+
+def get_dmi_indicator(**kwargs):
+    """获取DMI指标实例"""
+    return DirectionalMovementIndex(**kwargs)

@@ -18,16 +18,16 @@ from urllib.parse import urljoin, urlparse
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 # 尝试导入BeautifulSoup，如果没有则使用简单的HTML解析
 try:
-    from bs4 import BeautifulSoup
+    from bs4 import Beautiful_soup
     HAS_BS4 = True
-except ImportError:
+except Import_error:
     HAS_BS4 = False
     print("⚠️  未安装BeautifulSoup4，将使用简单HTML解析")
 
@@ -35,8 +35,8 @@ except ImportError:
 class RealWebCrawler:
     """真实网页爬虫"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___4(self):
+        self.concept_extractor = Concept_stock_extractor()
 
         # 设置请求会话
         self.session = requests.Session()
@@ -86,7 +86,7 @@ class RealWebCrawler:
             html_content = response.text
 
             # 简单HTML解析
-            parsed_data = self.parse_html_simple(html_content)
+            parsed_data = self.parse_html_simple_Crawler(html_content)
 
             parsed_data['url'] = url
             parsed_data['status_code'] = response.status_code
@@ -106,7 +106,7 @@ class RealWebCrawler:
                 'crawl_time': datetime.now()
             }
 
-    def parse_html_simple(self, html_content: str) -> Dict[str, Any]:
+    def parse_html_simple_Crawler(self, html_content: str) -> Dict[str, Any]:
         """简单HTML解析（不依赖外部库）"""
         result = {
             'title': '',
@@ -145,7 +145,7 @@ class RealWebCrawler:
 
         return result
 
-    def crawl_finance_news(self, max_pages: int = 2) -> List[Dict[str, Any]]:
+    def crawl_finance_news_Crawler(self, max_pages: int = 2) -> List[Dict[str, Any]]:
         """爬取财经新闻"""
         all_articles = []
 
@@ -269,7 +269,7 @@ class RealWebCrawler:
         return analysis
 
 
-def main():
+def main_6():
     """主函数"""
     print("=== 真实股市信息爬虫系统 ===")
     print(f"启动时间: {datetime.now()}")
@@ -277,11 +277,11 @@ def main():
     print("=" * 50)
 
     # 创建爬虫实例
-    crawler = RealWebCrawler()
+    crawler = Real_web_crawler()
 
     try:
         # 开始爬取
-        articles = crawler.crawl_finance_news()
+        articles = crawler.crawl_finance_news_Crawler()
 
         if articles:
             print(f"\n🎉 成功爬取 {len(articles)} 篇文章")
@@ -350,4 +350,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_6()

@@ -5,6 +5,8 @@ import sys
 import os
 
 # 添加项目根目录到Python路径
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
@@ -32,13 +34,13 @@ class StockAnalysisReport:
     用于生成股票分析的Markdown报告
     """
     
-    def __init__(self):
+    def __init___13(self):
         """初始化报告生成器"""
         self.db_manager = DBManager.get_instance()
         self.indicator_analyzer = IndicatorAnalyzer()
         self.result_dir = get_backtest_result_dir()
         
-    def analyze_stock(self, code: str, buy_date: str, output_file: str = None) -> str:
+    def analyze_stock_Analysis_Stock_Analysis_Stock_Analysis_1Stockanalysis(self, code: str, buy_date: str, output_file: str = None) -> str:
         """
         分析股票并生成Markdown报告
         
@@ -52,7 +54,7 @@ class StockAnalysisReport:
         """
         try:
             # 1. 进行股票分析
-            analysis_result = self.indicator_analyzer.analyze_stock(
+            analysis_result = self.indicator_analyzer.analyze_stock_Analysis_Stock_Analysis_Stock_Analysis_1Stockanalysis(
                 code, buy_date, days_before=20, days_after=10
             )
             
@@ -64,7 +66,7 @@ class StockAnalysisReport:
             industry_analysis = self._analyze_industry(code, buy_date)
             
             # 3. 生成Markdown报告
-            report_content = self._generate_markdown_report(
+            report_content = self._generate_markdown_report_Stock_Analysis(
                 analysis_result, industry_analysis
             )
             
@@ -162,7 +164,7 @@ class StockAnalysisReport:
                 'top_stocks': []
             }
     
-    def _generate_markdown_report(self, analysis_result: Dict[str, Any], 
+    def _generate_markdown_report_Stock_Analysis(self, analysis_result: Dict[str, Any], 
                                industry_analysis: Dict[str, Any]) -> str:
         """
         生成Markdown格式的分析报告
@@ -344,7 +346,6 @@ class StockAnalysisReport:
         return report
 
 
-def analyze_stock(args):
     """
     分析股票并生成报告
     
@@ -353,7 +354,7 @@ def analyze_stock(args):
     """
     try:
         report_generator = StockAnalysisReport()
-        output_file = report_generator.analyze_stock(args.code, args.date, args.output)
+        output_file = report_generator.analyze_stock_Analysis_Stock_Analysis_Stock_Analysis_1Stockanalysis(args.code, args.date, args.output)
         
         if output_file:
             logger.info(f"分析完成，报告已保存到: {output_file}")
@@ -375,4 +376,4 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    analyze_stock(args) 
+    analyze_stock_Analysis_Stock_Analysis_Stock_Analysis_1Stockanalysis(args) 

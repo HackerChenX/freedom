@@ -3,417 +3,453 @@
 
 """
 架构合规性检查脚本
-自动检测代码是否违反架构规则标准
+检查项目代码是否符合架构规范
 """
 
 import os
 import sys
 import re
 import ast
+from typing import List, Dict, Set, Tuple, Optional
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Set, Tuple
-from collections import defaultdict
+import logging
 
-# 添加项目根目录到路径
+# 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
+
+from utils.logger import get_logger
+from utils.path_utils import get_project_root, get_reports_dir
+
+@dataclass
+class ViolationInfo:
+    """违规信息"""
+    file_path: str
+    line_number: Optional[int] = None
+    content: Optional[str] = None
+    violation_type: str = ""
+    description: str = ""
 
 class ArchitectureComplianceChecker:
     """架构合规性检查器"""
     
-    def __init__(self, project_root: str):
-        self.project_root = Path(project_root)
-        self.violations = defaultdict(list)
+    def __init__(self):
+        self.logger = get_logger(__name__)
+        self.project_root = get_project_root()
+        self.reports_dir = get_reports_dir()
+        
+        # 确保报告目录存在
+        os.makedirs(self.reports_dir, exist_ok=True)
+        
+        # 违规模式定义 - 用于检查其他文件的直接数据库依赖
+        self.direct_db_patterns = [
+            r'from\s+db\.clickhouse_db\s+import',
+            r'import\s+db\.clickhouse_db',
+            r'get_clickhouse_db'
+        ]
+        
+        # 分层架构定义
         self.layer_mapping = {
-            'L6': ['bin', 'api'],
-            'L5': ['strategy', 'analysis'],
-            'L4': ['indicators', 'formula'],
-            'L3': ['db/interfaces', 'db/managers'],
-            'L2': ['db/clickhouse_db.py'],
-            'L1': ['utils', 'config', 'enums']
+            'L1': ['utils', 'enums', 'config'],
+            'L2': ['db', 'indicators', 'formula'],
+            'L3': ['analysis', 'strategy'],
+            'L4': ['bin', 'scripts'],
+            'L5': ['tests']
         }
         
-    def check_all_violations(self) -> Dict[str, List]:
-        """检查所有架构违规"""
-        print("开始架构合规性检查...")
+        # 创建文件到层级的映射
+        self.file_to_layer = {}
+        for layer, dirs in self.layer_mapping.items():
+            for dir_name in dirs:
+                self.file_to_layer[dir_name] = layer
         
-        # 1. 检查分层架构违规
-        self._check_layer_violations()
-        
-        # 2. 检查直接数据库依赖
-        self._check_direct_db_dependencies()
-        
-        # 3. 检查代码重复
-        self._check_code_duplication()
-        
-        # 4. 检查命名规范
-        self._check_naming_conventions()
-        
-        # 5. 检查导入规范
-        self._check_import_violations()
-        
-        # 6. 检查数据库查询规范
-        self._check_database_query_violations()
-        
-        return dict(self.violations)
+        # 违规统计
+        self.violations = {
+            'layer_violations': [],
+            'direct_db_dependencies': [],
+            'code_duplication': [],
+            'naming_violations': [],
+            'import_violations': [],
+            'database_query_violations': []
+        }
     
-    def _check_layer_violations(self):
-        """检查分层架构违规"""
-        print("检查分层架构违规...")
+    def _get_files_to_check(self) -> List[str]:
+        """获取需要检查的文件列表"""
+        files_to_check = []
         
-        for py_file in self.project_root.rglob("*.py"):
-            if self._should_skip_file(py_file):
-                continue
-                
+        # 检查的目录
+        check_dirs = [
+            'analysis', 'api', 'bin', 'config', 'db', 'enums', 
+            'formula', 'indicators', 'scripts', 'strategy', 
+            'tests', 'utils', 'examples'
+        ]
+        
+        for dir_name in check_dirs:
+            dir_path = os.path.join(self.project_root, dir_name)
+            if os.path.exists(dir_path):
+                for root, dirs, files in os.walk(dir_path):
+                    for file in files:
+                        if file.endswith('.py') and not file.startswith('__'):
+                            file_path = os.path.join(root, file)
+                            # 跳过当前检查脚本本身
+                            if not file_path.endswith('architecture_compliance_check.py'):
+                                files_to_check.append(file_path)
+        
+        return files_to_check
+    
+    def _check_layer_violations(self, files: List[str]) -> List[Violation_info]:
+        """检查分层架构违规"""
+        violations = []
+        
+        for file_path in files:
             try:
-                with open(py_file, 'r', encoding='utf-8') as f:
+                if not os.path.exists(file_path):
+                    continue
+                    
+                with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
-                # 获取文件所在层级
-                file_layer = self._get_file_layer(py_file)
+                # 获取文件所属层级
+                rel_path = os.path.relpath(file_path, self.project_root)
+                path_parts = rel_path.split(os.sep)
+                
+                if len(path_parts) < 2:
+                    continue
+                
+                file_layer = self.file_to_layer.get(path_parts[0])
                 if not file_layer:
                     continue
                 
-                # 检查导入的模块层级
-                imports = self._extract_imports(content)
-                for import_module in imports:
-                    import_layer = self._get_module_layer(import_module)
-                    if import_layer and self._is_layer_violation(file_layer, import_layer):
-                        self.violations['layer_violations'].append({
-                            'file': str(py_file.relative_to(self.project_root)),
-                            'file_layer': file_layer,
-                            'import_module': import_module,
-                            'import_layer': import_layer,
-                            'violation': f'L{file_layer}层文件不能直接导入L{import_layer}层模块'
-                        })
+                # 检查导入语句
+                import_pattern = r'from\s+(\w+)(?:\.\w+)*\s+import|import\s+(\w+)(?:\.\w+)*'
+                matches = re.finditer(import_pattern, content)
+                
+                for match in matches:
+                    imported_module = match.group(1) or match.group(2)
+                    if imported_module in self.file_to_layer:
+                        imported_layer = self.file_to_layer[imported_module]
                         
-            except Exception as e:
-                print(f"检查文件 {py_file} 时出错: {e}")
-    
-    def _check_direct_db_dependencies(self):
-        """检查直接数据库依赖违规"""
-        print("检查直接数据库依赖...")
-        
-        prohibited_imports = [
-            'from db.clickhouse_db import',
-            'import db.clickhouse_db',
-            'get_clickhouse_db'
-        ]
-        
-        for py_file in self.project_root.rglob("*.py"):
-            if self._should_skip_file(py_file) or 'db/' in str(py_file):
-                continue
-                
-            try:
-                with open(py_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                for line_num, line in enumerate(content.split('\n'), 1):
-                    for prohibited in prohibited_imports:
-                        if prohibited in line:
-                            self.violations['direct_db_dependencies'].append({
-                                'file': str(py_file.relative_to(self.project_root)),
-                                'line': line_num,
-                                'content': line.strip(),
-                                'violation': f'禁止直接依赖数据库实现: {prohibited}'
-                            })
+                        # 检查是否违反分层原则
+                        if self._is_layer_violation(file_layer, imported_layer):
+                            violations.append(Violation_info(
+                                file_path=rel_path,
+                                violation_type="Layer Violation",
+                                description=f"L{file_layer[-1]}层文件不能直接导入L{imported_layer[-1]}层模块"
+                            ))
                             
             except Exception as e:
-                print(f"检查文件 {py_file} 时出错: {e}")
-    
-    def _check_code_duplication(self):
-        """检查代码重复"""
-        print("检查代码重复...")
-        
-        # 收集所有类名和方法名
-        class_methods = defaultdict(list)
-        
-        for py_file in self.project_root.rglob("*.py"):
-            if self._should_skip_file(py_file):
+                self.logger.error(f"检查文件 {file_path} 的分层违规时出错: {e}")
                 continue
-                
-            try:
-                with open(py_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                # 解析AST
-                tree = ast.parse(content)
-                
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.ClassDef):
-                        class_methods[node.name].append(str(py_file.relative_to(self.project_root)))
-                    elif isinstance(node, ast.FunctionDef):
-                        if not node.name.startswith('_'):  # 忽略私有方法
-                            class_methods[node.name].append(str(py_file.relative_to(self.project_root)))
-                            
-            except Exception as e:
-                print(f"解析文件 {py_file} 时出错: {e}")
         
-        # 检查重复
-        for name, files in class_methods.items():
-            if len(files) > 1:
-                self.violations['code_duplication'].append({
-                    'name': name,
-                    'files': files,
-                    'violation': f'发现重复的类/方法名: {name}'
-                })
-    
-    def _check_naming_conventions(self):
-        """检查命名规范"""
-        print("检查命名规范...")
-        
-        for py_file in self.project_root.rglob("*.py"):
-            if self._should_skip_file(py_file):
-                continue
-                
-            try:
-                with open(py_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                tree = ast.parse(content)
-                
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.ClassDef):
-                        # 检查类名（应该是大驼峰）
-                        if not self._is_pascal_case(node.name):
-                            self.violations['naming_violations'].append({
-                                'file': str(py_file.relative_to(self.project_root)),
-                                'type': 'class',
-                                'name': node.name,
-                                'violation': '类名应使用大驼峰命名法'
-                            })
-                    
-                    elif isinstance(node, ast.FunctionDef):
-                        # 检查方法名（应该是小写+下划线）
-                        if not self._is_snake_case(node.name) and not node.name.startswith('__'):
-                            self.violations['naming_violations'].append({
-                                'file': str(py_file.relative_to(self.project_root)),
-                                'type': 'function',
-                                'name': node.name,
-                                'violation': '方法名应使用小写+下划线命名法'
-                            })
-                            
-            except Exception as e:
-                print(f"检查文件 {py_file} 时出错: {e}")
-    
-    def _check_import_violations(self):
-        """检查导入规范违规"""
-        print("检查导入规范...")
-        
-        for py_file in self.project_root.rglob("*.py"):
-            if self._should_skip_file(py_file):
-                continue
-                
-            try:
-                with open(py_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                for line_num, line in enumerate(content.split('\n'), 1):
-                    line = line.strip()
-                    
-                    # 检查通配符导入
-                    if re.match(r'from .* import \*', line):
-                        self.violations['import_violations'].append({
-                            'file': str(py_file.relative_to(self.project_root)),
-                            'line': line_num,
-                            'content': line,
-                            'violation': '禁止使用通配符导入'
-                        })
-                    
-                    # 检查相对导入
-                    if re.match(r'from \.\.', line):
-                        self.violations['import_violations'].append({
-                            'file': str(py_file.relative_to(self.project_root)),
-                            'line': line_num,
-                            'content': line,
-                            'violation': '禁止使用相对导入'
-                        })
-                        
-            except Exception as e:
-                print(f"检查文件 {py_file} 时出错: {e}")
-    
-    def _check_database_query_violations(self):
-        """检查数据库查询规范违规"""
-        print("检查数据库查询规范...")
-        
-        for py_file in self.project_root.rglob("*.py"):
-            if self._should_skip_file(py_file):
-                continue
-                
-            try:
-                with open(py_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                for line_num, line in enumerate(content.split('\n'), 1):
-                    line_lower = line.lower().strip()
-                    
-                    # 检查SELECT *
-                    if 'select *' in line_lower and 'from' in line_lower:
-                        self.violations['database_query_violations'].append({
-                            'file': str(py_file.relative_to(self.project_root)),
-                            'line': line_num,
-                            'content': line.strip(),
-                            'violation': '禁止使用SELECT *'
-                        })
-                    
-                    # 检查缺少WHERE条件的查询
-                    if ('select' in line_lower and 'from stock_info' in line_lower and 
-                        'where' not in line_lower and 'limit' not in line_lower):
-                        self.violations['database_query_violations'].append({
-                            'file': str(py_file.relative_to(self.project_root)),
-                            'line': line_num,
-                            'content': line.strip(),
-                            'violation': '查询stock_info表必须包含WHERE条件'
-                        })
-                        
-            except Exception as e:
-                print(f"检查文件 {py_file} 时出错: {e}")
-    
-    def _should_skip_file(self, file_path: Path) -> bool:
-        """判断是否应该跳过文件"""
-        skip_patterns = [
-            '__pycache__',
-            '.git',
-            '.idea',
-            'venv',
-            '.pytest_cache',
-            'test_',
-            '_test.py'
-        ]
-        
-        file_str = str(file_path)
-        return any(pattern in file_str for pattern in skip_patterns)
-    
-    def _get_file_layer(self, file_path: Path) -> str:
-        """获取文件所在的架构层级"""
-        relative_path = file_path.relative_to(self.project_root)
-        path_parts = relative_path.parts
-        
-        for layer, directories in self.layer_mapping.items():
-            for directory in directories:
-                if directory in str(relative_path):
-                    return layer.replace('L', '')
-        
-        return None
-    
-    def _get_module_layer(self, module_name: str) -> str:
-        """获取模块所在的架构层级"""
-        for layer, directories in self.layer_mapping.items():
-            for directory in directories:
-                if module_name.startswith(directory.replace('/', '.')):
-                    return layer.replace('L', '')
-        
-        return None
+        return violations
     
     def _is_layer_violation(self, from_layer: str, to_layer: str) -> bool:
-        """判断是否为分层违规"""
-        layer_order = ['6', '5', '4', '3', '2', '1']
+        """判断是否违反分层原则"""
+        layer_order = ['L1', 'L2', 'L3', 'L4', 'L5']
         
         try:
             from_index = layer_order.index(from_layer)
             to_index = layer_order.index(to_layer)
             
-            # 只能调用相邻下层或同层
-            return to_index < from_index - 1
-        except ValueError:
+            # 低层不能依赖高层
+            return from_index < to_index
+        except Value_error:
             return False
     
-    def _extract_imports(self, content: str) -> List[str]:
-        """提取文件中的导入模块"""
-        imports = []
+    def _check_direct_db_dependencies(self, files: List[str]) -> List[Violation_info]:
+        """检查直接数据库依赖"""
+        violations = []
         
-        try:
-            tree = ast.parse(content)
-            
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    for alias in node.names:
-                        imports.append(alias.name)
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module:
-                        imports.append(node.module)
+        for file_path in files:
+            try:
+                if not os.path.exists(file_path):
+                    continue
+                
+                # 跳过架构合规性检查脚本本身
+                if file_path.endswith('architecture_compliance_check.py'):
+                    continue
+                    
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                
+                for line_num, line in enumerate(lines, 1):
+                    # 跳过注释行
+                    stripped_line = line.strip()
+                    if stripped_line.startswith('#'):
+                        continue
+                    
+                    for pattern in self.direct_db_patterns:
+                        if re.search(pattern, line):
+                            # 修复f-string中的反斜杠问题
+                            clean_pattern = pattern.replace('\\\\', '\\')
+                            violations.append(Violation_info(
+                                file_path=os.path.relpath(file_path, self.project_root),
+                                line_number=line_num,
+                                content=line.strip(),
+                                violation_type="Direct DB Dependency",
+                                description=f"禁止直接依赖数据库实现: {clean_pattern}"
+                            ))
+                            
+            except Exception as e:
+                self.logger.error(f"检查文件 {file_path} 的直接数据库依赖时出错: {e}")
+                continue
+        
+        return violations
+    
+    def _check_code_duplication(self, files: List[str]) -> List[Violation_info]:
+        """检查代码重复"""
+        violations = []
+        
+        # 收集所有类名和方法名
+        class_method_names = {}
+        
+        for file_path in files:
+            try:
+                if not os.path.exists(file_path):
+                    continue
+                    
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # 使用AST解析Python代码
+                try:
+                    tree = ast.parse(content)
+                    
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.Class_def):
+                            name = node.name
+                            if name in class_method_names:
+                                class_method_names[name].append(file_path)
+                            else:
+                                class_method_names[name] = [file_path]
+                        elif isinstance(node, ast.Function_def):
+                            name = node.name
+                            if name in class_method_names:
+                                class_method_names[name].append(file_path)
+                            else:
+                                class_method_names[name] = [file_path]
+                                
+                except Syntax_error:
+                    # 如果AST解析失败，跳过该文件
+                    continue
+                    
+            except Exception as e:
+                self.logger.error(f"检查文件 {file_path} 的代码重复时出错: {e}")
+                continue
+        
+        # 找出重复的名称
+        for name, files_list in class_method_names.items():
+            if len(files_list) > 1:
+                violations.append(Violation_info(
+                    file_path="N/A",
+                    violation_type="Code Duplication",
+                    description=f"发现重复的类/方法名: {name}"
+                ))
+        
+        return violations
+    
+    def _check_naming_violations(self, files: List[str]) -> List[Violation_info]:
+        """检查命名规范违规"""
+        violations = []
+        
+        for file_path in files:
+            try:
+                if not os.path.exists(file_path):
+                    continue
+                    
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # 使用AST解析Python代码
+                try:
+                    tree = ast.parse(content)
+                    
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.Class_def):
+                            # 检查类名是否使用大驼峰命名法
+                            if not self._is_camel_case(node.name):
+                                violations.append(Violation_info(
+                                    file_path=os.path.relpath(file_path, self.project_root),
+                                    violation_type="Naming Violation",
+                                    description="类名应使用大驼峰命名法"
+                                ))
+                                
+                except Syntax_error:
+                    # 如果AST解析失败，跳过该文件
+                    continue
+                    
+            except Exception as e:
+                self.logger.error(f"检查文件 {file_path} 的命名规范时出错: {e}")
+                continue
+        
+        return violations
+    
+    def _is_camel_case(self, name: str) -> bool:
+        """检查是否是驼峰命名法"""
+        # 简单的驼峰命名法检查
+        return name[0].isupper() and '_' not in name
+    
+    def _check_import_violations(self, files: List[str]) -> List[Violation_info]:
+        """检查导入规范违规"""
+        violations = []
+        
+        for file_path in files:
+            try:
+                if not os.path.exists(file_path):
+                    continue
+                    
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                
+                for line_num, line in enumerate(lines, 1):
+                    # 检查通配符导入
+                    if re.search(r'from\s+\w+\s+import\s+\*', line):
+                        violations.append(Violation_info(
+                            file_path=os.path.relpath(file_path, self.project_root),
+                            line_number=line_num,
+                            content=line.strip(),
+                            violation_type="Import Violation",
+                            description="禁止使用通配符导入"
+                        ))
                         
-        except Exception:
-            # 如果AST解析失败，使用正则表达式
-            import_patterns = [
-                r'from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import',
-                r'import\s+([a-zA-Z_][a-zA-Z0-9_.]*)'
-            ]
-            
-            for pattern in import_patterns:
-                matches = re.findall(pattern, content)
-                imports.extend(matches)
+            except Exception as e:
+                self.logger.error(f"检查文件 {file_path} 的导入规范时出错: {e}")
+                continue
         
-        return imports
+        return violations
     
-    def _is_pascal_case(self, name: str) -> bool:
-        """检查是否为大驼峰命名"""
-        return bool(re.match(r'^[A-Z][a-zA-Z0-9]*$', name))
-    
-    def _is_snake_case(self, name: str) -> bool:
-        """检查是否为小写+下划线命名"""
-        return bool(re.match(r'^[a-z_][a-z0-9_]*$', name))
-    
-    def generate_report(self) -> str:
-        """生成检查报告"""
-        report = ["# 架构合规性检查报告\n"]
+    def _check_database_query_violations(self, files: List[str]) -> List[Violation_info]:
+        """检查数据库查询规范违规"""
+        violations = []
         
-        total_violations = sum(len(violations) for violations in self.violations.values())
+        for file_path in files:
+            try:
+                if not os.path.exists(file_path):
+                    continue
+                    
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                
+                for line_num, line in enumerate(lines, 1):
+                    # 检查SELECT code, name, date, level, open, close, high, low, volume
+                    if re.search(r'SELECT\s+\*', line, re.IGNORECASE):
+                        violations.append(Violation_info(
+                            file_path=os.path.relpath(file_path, self.project_root),
+                            line_number=line_num,
+                            content=line.strip(),
+                            violation_type="Database Query Violation",
+                            description="禁止使用SELECT code, name, date, level, open, close, high, low, volume"
+                        ))
+                    
+                    # 检查stock_info表查询是否有WHERE条件
+                    if re.search(r'FROM\s+stock_info(?!\s+WHERE)', line, re.IGNORECASE):
+                        violations.append(Violation_info(
+                            file_path=os.path.relpath(file_path, self.project_root),
+                            line_number=line_num,
+                            content=line.strip(),
+                            violation_type="Database Query Violation",
+                            description="查询stock_info表必须包含WHERE条件"
+                        ))
+                        
+            except Exception as e:
+                self.logger.error(f"检查文件 {file_path} 的数据库查询规范时出错: {e}")
+                continue
+        
+        return violations
+    
+    def run_compliance_check(self) -> Dict[str, List[Violation_info]]:
+        """运行合规性检查"""
+        self.logger.info("开始架构合规性检查...")
+        
+        # 获取需要检查的文件
+        files_to_check = self._get_files_to_check()
+        self.logger.info(f"共需检查 {len(files_to_check)} 个文件")
+        
+        # 执行各项检查
+        self.logger.info("检查分层架构违规...")
+        self.violations['layer_violations'] = self._check_layer_violations(files_to_check)
+        
+        self.logger.info("检查直接数据库依赖...")
+        self.violations['direct_db_dependencies'] = self._check_direct_db_dependencies(files_to_check)
+        
+        self.logger.info("检查代码重复...")
+        self.violations['code_duplication'] = self._check_code_duplication(files_to_check)
+        
+        self.logger.info("检查命名规范...")
+        self.violations['naming_violations'] = self._check_naming_violations(files_to_check)
+        
+        self.logger.info("检查导入规范...")
+        self.violations['import_violations'] = self._check_import_violations(files_to_check)
+        
+        self.logger.info("检查数据库查询规范...")
+        self.violations['database_query_violations'] = self._check_database_query_violations(files_to_check)
+        
+        return self.violations
+    
+    def generate_report_Check(self, violations: Dict[str, List[Violation_info]]) -> str:
+        """生成合规性报告"""
+        report_lines = []
+        
+        # 统计总违规数
+        total_violations = sum(len(v) for v in violations.values())
+        
+        report_lines.append("# 架构合规性检查报告\n")
         
         if total_violations == 0:
-            report.append("✅ 恭喜！未发现架构违规问题。\n")
-            return "\n".join(report)
+            report_lines.append("✅ 未发现架构违规问题！\n")
+        else:
+            report_lines.append(f"❌ 发现 {total_violations} 个架构违规问题：\n")
         
-        report.append(f"❌ 发现 {total_violations} 个架构违规问题：\n")
-        
-        # 按类型统计违规
-        for violation_type, violations in self.violations.items():
-            if not violations:
+        # 各类违规详情
+        for violation_type, violation_list in violations.items():
+            if not violation_list:
                 continue
                 
-            report.append(f"## {violation_type.replace('_', ' ').title()} ({len(violations)}个)\n")
+            type_name = violation_type.replace('_', ' ').title()
+            report_lines.append(f"## {type_name} ({len(violation_list)}个)\n")
             
-            for i, violation in enumerate(violations[:10], 1):  # 只显示前10个
-                report.append(f"{i}. **文件**: {violation.get('file', 'N/A')}")
-                if 'line' in violation:
-                    report.append(f"   **行号**: {violation['line']}")
-                if 'content' in violation:
-                    report.append(f"   **内容**: `{violation['content']}`")
-                report.append(f"   **违规**: {violation['violation']}\n")
+            for i, violation in enumerate(violation_list[:10], 1):  # 只显示前10个
+                report_lines.append(f"{i}. **文件**: {violation.file_path}")
+                if violation.line_number:
+                    report_lines.append(f"   **行号**: {violation.line_number}")
+                if violation.content:
+                    report_lines.append(f"   **内容**: `{violation.content}`")
+                report_lines.append(f"   **违规**: {violation.description}\n")
             
-            if len(violations) > 10:
-                report.append(f"   ... 还有 {len(violations) - 10} 个类似违规\n")
+            if len(violation_list) > 10:
+                report_lines.append(f"   ... 还有 {len(violation_list) - 10} 个类似违规\n")
         
-        return "\n".join(report)
+        # 保存报告
+        report_content = '\n'.join(report_lines)
+        report_file = os.path.join(self.reports_dir, 'architecture_compliance_report.md')
+        
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write(report_content)
+        
+        self.logger.info(f"详细报告已保存到: {report_file}")
+        
+        return report_content
 
-
-def main():
+def main_architecturecompliancecheck():
     """主函数"""
-    checker = ArchitectureComplianceChecker(root_dir)
-    violations = checker.check_all_violations()
+    checker = Architecture_compliance_checker()
+    
+    # 运行检查
+    violations = checker.run_compliance_check()
     
     # 生成报告
-    report = checker.generate_report()
-    print(report)
+    report = checker.generate_report_Check(violations)
     
-    # 保存报告到文件
-    report_file = os.path.join(root_dir, 'reports', 'architecture_compliance_report.md')
-    os.makedirs(os.path.dirname(report_file), exist_ok=True)
-    
-    with open(report_file, 'w', encoding='utf-8') as f:
-        f.write(report)
-    
-    print(f"详细报告已保存到: {report_file}")
-    
-    # 返回退出码
+    # 打印摘要
     total_violations = sum(len(v) for v in violations.values())
-    if total_violations > 0:
-        print(f"\n❌ 发现 {total_violations} 个违规问题，请修复后再提交代码！")
-        sys.exit(1)
+    
+    if total_violations == 0:
+        print("✅ 架构合规性检查通过！")
+        return 0
     else:
-        print("\n✅ 架构合规性检查通过！")
-        sys.exit(0)
-
+        print(f"❌ 发现 {total_violations} 个违规问题，请修复后再提交代码！")
+        return 1
 
 if __name__ == "__main__":
-    main() 
+    sys.exit(main_architecturecompliancecheck()) 

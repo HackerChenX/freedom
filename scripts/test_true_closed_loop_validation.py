@@ -20,7 +20,7 @@ from typing import List, Dict, Any, Optional
 
 from utils.logger import get_logger
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_executor import Strategy_executor
 from utils.date_utils import get_previous_trading_date
 
 logger = get_logger(__name__)
@@ -39,7 +39,7 @@ class TrueClosedLoopValidator:
     
     def __init__(self):
         self.data_manager = get_unified_data_manager()
-        self.strategy_executor = StrategyExecutor()
+        self.strategy_executor = Strategy_executor()
         self.validation_date = "2024-12-28"
         
     def validate_indicator_closed_loop(self, indicator_name: str) -> Dict[str, Any]:
@@ -97,7 +97,7 @@ class TrueClosedLoopValidator:
             # 最终判断
             result['consistency_rate'] = consistency_result['consistency_rate']
             result['closed_loop_verified'] = consistency_result['consistency_rate'] >= 0.8  # 80%以上一致性
-            result['quality_score'] = self._calculate_quality_score(result)
+            result['quality_score'] = self._calculate_quality_score_Test_True_Closed_Loop_Validation(result)
             
             if result['closed_loop_verified']:
                 logger.info(f"✅ {indicator_name}指标通过真正闭环验证 (一致性: {result['consistency_rate']:.1%})")
@@ -124,7 +124,7 @@ class TrueClosedLoopValidator:
             stock_pool = self._get_test_stock_pool()
             
             # 执行选股
-            selected_stocks = self._execute_strategy_selection(strategy_config, stock_pool)
+            selected_stocks = self._execute_strategy_selection_Test_True_Closed_Loop_Validation(strategy_config, stock_pool)
             
             return {
                 'strategy_config': strategy_config,
@@ -230,7 +230,7 @@ class TrueClosedLoopValidator:
         
         return strategy_config
     
-    def _execute_strategy_selection(self, strategy_config: Dict[str, Any], stock_pool: List[str]) -> List[str]:
+    def _execute_strategy_selection_Test_True_Closed_Loop_Validation(self, strategy_config: Dict[str, Any], stock_pool: List[str]) -> List[str]:
         """
         执行策略选股（简化版，避免复杂的策略执行器问题）
         """
@@ -335,7 +335,7 @@ class TrueClosedLoopValidator:
             operator = condition['operator']
             
             # 计算指标
-            indicator_data = self._calculate_indicator(stock_data, indicator_id, period)
+            indicator_data = self._calculate_indicator_Test_True_Closed_Loop_Validation(stock_data, indicator_id, period)
             
             if indicator_data is None or indicator_data.empty:
                 return False
@@ -391,7 +391,7 @@ class TrueClosedLoopValidator:
             logger.warning(f"检查指标条件失败: {e}")
             return False
     
-    def _calculate_indicator(self, stock_data: pd.DataFrame, indicator_id: str, period: int) -> Optional[pd.DataFrame]:
+    def _calculate_indicator_Test_True_Closed_Loop_Validation(self, stock_data: pd.DataFrame, indicator_id: str, period: int) -> Optional[pd.DataFrame]:
         """
         计算技术指标
         """
@@ -432,7 +432,7 @@ class TrueClosedLoopValidator:
                         gains.append(0)
                         losses.append(-change)
                 
-                rsi_values = [np.nan] * (period)  # 前period个值为NaN
+                rsi_values = [np.nan] * (period)  # 前period个值为Na_n
                 
                 if len(gains) >= period:
                     for i in range(period-1, len(gains)):
@@ -558,7 +558,7 @@ class TrueClosedLoopValidator:
                 operator = condition['operator']
                 
                 # 重新计算指标
-                indicator_data = self._calculate_indicator(stock_data, indicator_id, period)
+                indicator_data = self._calculate_indicator_Test_True_Closed_Loop_Validation(stock_data, indicator_id, period)
                 
                 if indicator_data is None or indicator_data.empty:
                     return {
@@ -659,7 +659,7 @@ class TrueClosedLoopValidator:
         else:
             return '很差'
     
-    def _calculate_quality_score(self, result: Dict[str, Any]) -> float:
+    def _calculate_quality_score_Test_True_Closed_Loop_Validation(self, result: Dict[str, Any]) -> float:
         """计算质量评分"""
         try:
             score = 0.0
@@ -693,11 +693,11 @@ class TrueClosedLoopValidator:
             return ['000001', '000002', '000858', '002415', '600000', '600036', '600519']
 
 
-def test_single_indicator(indicator_name: str):
+def test_single_indicator_Validation(indicator_name: str):
     """测试单个指标的真正闭环验证"""
     logger.info(f"🚀 开始{indicator_name}指标的真正闭环验证测试")
     
-    validator = TrueClosedLoopValidator()
+    validator = True_closed_loop_validator()
     result = validator.validate_indicator_closed_loop(indicator_name)
     
     # 保存结果
@@ -727,7 +727,7 @@ def test_single_indicator(indicator_name: str):
     return result
 
 
-def main():
+def main_testtrueclosedloopvalidation():
     """主函数"""
     import argparse
     
@@ -739,7 +739,7 @@ def main():
     args = parser.parse_args()
     
     try:
-        result = test_single_indicator(args.indicator)
+        result = test_single_indicator_Validation(args.indicator)
         
         if result['closed_loop_verified']:
             logger.info(f"🎉 {args.indicator}指标通过真正闭环验证！")
@@ -752,4 +752,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_testtrueclosedloopvalidation()

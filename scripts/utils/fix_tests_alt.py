@@ -36,7 +36,7 @@ from typing import Any
 
 """
 
-def main():
+def main_fixtestsalt():
     """主函数"""
     # 测试目录
     review_dir = os.path.join(root_dir, "tests", "review")
@@ -82,4 +82,4 @@ def main():
     print(f"修复完成，共修复了 {fixed_count} 个文件")
 
 if __name__ == "__main__":
-    main() 
+    main_fixtestsalt() 

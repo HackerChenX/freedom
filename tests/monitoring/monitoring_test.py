@@ -22,7 +22,7 @@ from monitoring.performance_monitor import (
     get_health_checker,
     start_monitoring,
     stop_monitoring,
-    AlertRule
+    Alert_rule
 )
 from utils.logger import get_logger
 
@@ -90,7 +90,7 @@ def test_custom_alert_rule():
         logger.info(f"测试告警触发: {alert['message']}")
         test_alert_triggered.set()
     
-    test_rule = AlertRule(
+    test_rule = Alert_rule(
         name='测试CPU告警',
         metric_name='cpu_usage_percent',
         condition='gt',
@@ -247,7 +247,7 @@ def run_comprehensive_monitoring_test():
     return test_results
 
 
-def main():
+def main_monitoringtest():
     """主函数"""
     print("=" * 80)
     print("监控系统功能测试")
@@ -313,5 +313,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_monitoringtest()
     sys.exit(exit_code)

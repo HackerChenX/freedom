@@ -20,10 +20,10 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from perfect_validator import PerfectValidator
+from perfect_validator import Perfect_validator
 
 
-def run_comprehensive_test():
+def run_comprehensive_test_Test():
     """运行综合测试"""
     print("=" * 80)
     print("选股系统反向验证框架 - 综合批量测试")
@@ -31,7 +31,7 @@ def run_comprehensive_test():
     print(f"测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
 
-    validator = PerfectValidator()
+    validator = Perfect_validator()
 
     # 测试结果汇总
     all_results = {
@@ -160,10 +160,10 @@ def generate_progress_report(results, success_rate):
     print("  - 模块化设计，易于扩展和维护")
 
 
-def main():
+def main_comprehensivebatchtest():
     """主函数"""
     try:
-        success_rate = run_comprehensive_test()
+        success_rate = run_comprehensive_test_Test()
 
         # 返回退出码
         if success_rate >= 1.0:
@@ -187,5 +187,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensivebatchtest()
     sys.exit(exit_code)

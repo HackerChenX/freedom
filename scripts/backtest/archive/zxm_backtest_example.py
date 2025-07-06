@@ -15,11 +15,11 @@ import numpy as np
 import json
 from typing import List, Dict, Any, Optional, Tuple, Union
 
-from enums.kline_period import KlinePeriod
+from enums.kline_period import Kline_period
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir
 from db.db_manager import DBManager
-from unified_backtest import UnifiedBacktest
+from unified_backtest import Unified_backtest
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -38,7 +38,7 @@ def zxm_backtest_single_stock(code: str, buy_date: str, output_file: str = None,
         logger.info(f"开始对股票 {code} 进行ZXM体系回测分析，买点日期：{buy_date}")
         
         # 创建统一回测系统实例
-        backtest = UnifiedBacktest()
+        backtest = Unified_backtest()
         
         # 分析股票
         result = backtest.analyze_stock(code, buy_date, pattern_type)
@@ -84,7 +84,7 @@ def zxm_backtest_from_file(input_file: str, output_file: str = None, pattern_typ
         logger.info(f"开始从文件 {input_file} 批量读取股票进行ZXM体系回测分析")
         
         # 创建统一回测系统实例
-        backtest = UnifiedBacktest()
+        backtest = Unified_backtest()
         
         # 如果未指定输出文件，则使用默认文件名
         if output_file is None:
@@ -258,7 +258,7 @@ def print_zxm_indicators_results(result, title="ZXM体系指标分析结果"):
     print("=" * 50)
 
 
-def main():
+def main_zxmbacktestexample():
     """主函数"""
     parser = argparse.ArgumentParser(description='ZXM体系指标回测分析工具')
     parser.add_argument('--mode', type=str, choices=['single', 'batch'], default='single', help='分析模式：单只股票或批量分析')
@@ -284,4 +284,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_zxmbacktestexample() 

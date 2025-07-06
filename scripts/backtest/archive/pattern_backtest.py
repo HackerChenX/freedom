@@ -21,13 +21,14 @@ import argparse
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
+from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
 from indicators.complete_indicator_registry import complete_registry
-from indicators.base_indicator import PatternResult
-from db.clickhouse_db import get_clickhouse_db
+from indicators.base_indicator import Pattern_result
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir
-from enums.kline_period import KlinePeriod
+from enums.kline_period import Kline_period
 
 logger = get_logger(__name__)
 
@@ -52,7 +53,7 @@ class PatternBacktester:
         self.periods = periods or ["DAILY"]
         
         # 创建形态识别分析器
-        self.analyzer = PatternRecognitionAnalyzer(
+        self.analyzer = Pattern_recognition_analyzer(
             indicators=self.indicators,
             periods=self.periods
         )
@@ -69,7 +70,7 @@ class PatternBacktester:
         }
         
         # 初始化数据库连接
-        self.db = get_clickhouse_db()
+        self.data_access = get_container().resolve(IData_access)
         
         logger.info(f"初始化形态回测器，指标: {self.indicators}，周期: {self.periods}")
 
@@ -148,7 +149,7 @@ class PatternBacktester:
             aligned_data = {}
             for period, data in period_data.items():
                 # 找到买点日期在数据中的位置
-                if isinstance(data.index, pd.DatetimeIndex):
+                if isinstance(data.index, pd.Datetime_index):
                     buy_date_dt = pd.to_datetime(buy_date)
                     # 找到不晚于买点日期的最后一个日期
                     mask = data.index <= buy_date_dt
@@ -316,7 +317,7 @@ class PatternBacktester:
             future_date_dt = pd.to_datetime(future_date)
             future_price = None
             
-            if isinstance(future_price_data.index, pd.DatetimeIndex):
+            if isinstance(future_price_data.index, pd.Datetime_index):
                 # 找到距离目标日期最近的行
                 closest_idx = (future_price_data.index - future_date_dt).abs().argmin()
                 future_price = future_price_data['close'].iloc[closest_idx]
@@ -403,11 +404,11 @@ class PatternBacktester:
                 logger.error(f"回测股票 {stock_code} 时出错: {e}")
         
         # 生成回测总结
-        self._generate_summary()
+        self._generate_summary_Pattern_Backtest()
         
         return self.backtest_results
     
-    def _generate_summary(self) -> None:
+    def _generate_summary_Pattern_Backtest(self) -> None:
         """生成回测总结"""
         # 计算全局形态的成功率和平均收益
         for pattern_key, stats in self.backtest_results["patterns"].items():
@@ -511,7 +512,7 @@ class PatternBacktester:
         return indicator_stats
 
 
-def parse_args():
+def parse_args_Backtest_Pattern_Backtest():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="形态回测工具")
     
@@ -525,12 +526,12 @@ def parse_args():
     parser.add_argument("--threshold", type=float, default=0.02, help="收益率阈值，默认为0.02（2%）")
     parser.add_argument("--output", "-o", default=None, help="输出文件路径")
     
-    return parser.parse_args()
+    return parser.parse_args_Backtest_Pattern_Backtest()
 
 
-def main():
+def main_patternbacktest():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Backtest_Pattern_Backtest()
     
     # 解析参数
     stock_codes = [s.strip() for s in args.stocks.split(",")]
@@ -561,7 +562,7 @@ def main():
     logger.info(f"收益率阈值: {args.threshold}")
     
     # 创建回测器
-    backtester = PatternBacktester(indicators=indicators, periods=periods)
+    backtester = Pattern_backtester(indicators=indicators, periods=periods)
     
     # 运行回测
     if len(stock_codes) == 1:
@@ -627,4 +628,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_patternbacktest() 

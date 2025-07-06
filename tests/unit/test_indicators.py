@@ -15,7 +15,7 @@ from indicators.complete_indicator_registry import complete_registry
 class TestIndicators(unittest.TestCase):
     """技术指标测试类"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestindicators(self):
         """测试前准备"""
         # 创建测试数据
         dates = [datetime(2023, 1, 1) + timedelta(days=i) for i in range(100)]

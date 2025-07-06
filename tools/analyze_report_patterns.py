@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 
 
 @dataclass
-class ReportPattern:
+class Report_pattern:
     """报告中的模式"""
     indicator_name: str
     pattern_name: str
@@ -31,7 +31,7 @@ class ReportPattern:
     line_number: int
 
 
-class ReportPatternAnalyzer:
+class Report_pattern_analyzer:
     """报告模式分析器"""
     
     def __init__(self, report_path: str):
@@ -65,7 +65,7 @@ class ReportPatternAnalyzer:
             'oversold_bounce', 'bottom', 'low', 'opportunity', 'signal'
         }
     
-    def parse_report(self) -> List[ReportPattern]:
+    def parse_report(self) -> List[Report_pattern]:
         """解析报告文件，提取所有模式"""
         patterns = []
         current_period = ""
@@ -73,7 +73,7 @@ class ReportPatternAnalyzer:
         try:
             with open(self.report_path, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
-        except FileNotFoundError:
+        except File_not_found_error:
             logger.error(f"报告文件不存在: {self.report_path}")
             return []
         
@@ -97,7 +97,7 @@ class ReportPatternAnalyzer:
                 hit_count = int(match.group(4))
                 avg_score = float(match.group(5))
                 
-                patterns.append(ReportPattern(
+                patterns.append(Report_pattern(
                     indicator_name=indicator_name,
                     pattern_name=pattern_name,
                     hit_ratio=hit_ratio,
@@ -109,12 +109,12 @@ class ReportPatternAnalyzer:
         
         return patterns
     
-    def classify_pattern_polarity(self, pattern: ReportPattern) -> Tuple[PatternPolarity, float, str]:
+    def classify_pattern_polarity(self, pattern: Report_pattern) -> Tuple[Pattern_polarity, float, str]:
         """
         分类模式极性
         
         Returns:
-            Tuple[PatternPolarity, float, str]: (极性, 置信度, 推理)
+            Tuple[Pattern_polarity, float, str]: (极性, 置信度, 推理)
         """
         text = f"{pattern.indicator_name} {pattern.pattern_name}".lower()
         
@@ -128,31 +128,31 @@ class ReportPatternAnalyzer:
         if negative_count > positive_count:
             confidence = min(0.9, 0.6 + negative_count * 0.15)
             reasoning_parts.append(f"包含{negative_count}个负面关键词")
-            polarity = PatternPolarity.NEGATIVE
+            polarity = Pattern_polarity.NEGATIVE
         elif positive_count > negative_count:
             confidence = min(0.9, 0.6 + positive_count * 0.15)
             reasoning_parts.append(f"包含{positive_count}个正面关键词")
-            polarity = PatternPolarity.POSITIVE
+            polarity = Pattern_polarity.POSITIVE
         else:
             confidence = 0.3
             reasoning_parts.append("无明显极性关键词")
-            polarity = PatternPolarity.NEUTRAL
+            polarity = Pattern_polarity.NEUTRAL
         
         # 特殊规则调整
         if '无' in pattern.pattern_name and '信号' in pattern.pattern_name:
-            polarity = PatternPolarity.NEGATIVE
+            polarity = Pattern_polarity.NEGATIVE
             confidence = max(confidence, 0.8)
             reasoning_parts.append("'无...信号'模式为负面")
         
         if '买点' in pattern.pattern_name:
-            polarity = PatternPolarity.POSITIVE
+            polarity = Pattern_polarity.POSITIVE
             confidence = max(confidence, 0.8)
             reasoning_parts.append("包含'买点'为正面")
         
         reasoning = " | ".join(reasoning_parts)
         return polarity, confidence, reasoning
     
-    def analyze_patterns(self) -> Dict[str, List[ReportPattern]]:
+    def analyze_patterns(self) -> Dict[str, List[Report_pattern]]:
         """分析所有模式并按极性分组"""
         patterns = self.parse_report()
         
@@ -172,11 +172,11 @@ class ReportPatternAnalyzer:
             pattern.reasoning = reasoning
             
             # 分组
-            if polarity == PatternPolarity.NEGATIVE:
+            if polarity == Pattern_polarity.NEGATIVE:
                 result['negative'].append(pattern)
                 if confidence >= 0.7:
                     result['high_confidence_negative'].append(pattern)
-            elif polarity == PatternPolarity.POSITIVE:
+            elif polarity == Pattern_polarity.POSITIVE:
                 result['positive'].append(pattern)
             else:
                 result['neutral'].append(pattern)
@@ -244,7 +244,7 @@ class ReportPatternAnalyzer:
         return "\n".join(report)
 
 
-def main():
+def main_analyzereportpatterns():
     """主函数"""
     report_path = "results/analysis/common_indicators_report.md"
     
@@ -254,7 +254,7 @@ def main():
     
     print("🔍 分析买点分析报告中的模式极性...")
     
-    analyzer = ReportPatternAnalyzer(report_path)
+    analyzer = Report_pattern_analyzer(report_path)
     analysis_report = analyzer.generate_report()
     
     # 保存分析报告
@@ -267,7 +267,7 @@ def main():
     print(f"✅ 分析完成，报告已保存到: {output_path}")
     
     # 显示摘要
-    analyzer_obj = ReportPatternAnalyzer(report_path)
+    analyzer_obj = Report_pattern_analyzer(report_path)
     analysis = analyzer_obj.analyze_patterns()
     
     total = sum(len(patterns) for patterns in analysis.values() if isinstance(patterns, list))
@@ -284,4 +284,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_analyzereportpatterns()

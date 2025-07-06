@@ -10,12 +10,12 @@ from pathlib import Path
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
-def get_pattern_info_template():
+def get_pattern_info_template_Info():
     """返回get_pattern_info方法的模板"""
     return '''
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Fix_Missing_Get_Pattern_Info_Fix_Missing_Get_Pattern_Info(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -51,7 +51,7 @@ def get_pattern_info_template():
 
 def has_get_pattern_info_method(file_content: str) -> bool:
     """检查文件是否已有get_pattern_info方法"""
-    return 'def get_pattern_info(' in file_content
+    return 'def get_pattern_info_Fix_Missing_Get_Pattern_Info_Fix_Missing_Get_Pattern_Info(' in file_content
 
 def add_get_pattern_info_method(file_path: str) -> bool:
     """为指定文件添加get_pattern_info方法"""
@@ -91,7 +91,7 @@ def add_get_pattern_info_method(file_path: str) -> bool:
             return False
         
         # 插入get_pattern_info方法
-        method_lines = get_pattern_info_template().split('\n')
+        method_lines = get_pattern_info_template_Info().split('\n')
         lines[insert_position:insert_position] = method_lines
         
         # 写回文件
@@ -118,7 +118,7 @@ def find_indicator_files():
     
     return indicator_files
 
-def main():
+def main_fixmissinggetpatterninfo():
     """主函数"""
     logger.info("开始批量修复缺失get_pattern_info方法的问题...")
     
@@ -147,4 +147,4 @@ def main():
         logger.info(f"\n✅ 所有指标文件都已有get_pattern_info方法")
 
 if __name__ == "__main__":
-    main()
+    main_fixmissinggetpatterninfo()

@@ -16,19 +16,19 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
 class TestVOL(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestvolumeindicators(self):
         self.indicator = VOL()
         self.expected_columns = ['vol', 'vol_ma5', 'vol_ma10']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
 
-class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class TestOBV_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """OBV指标单元测试类"""
 
-    def setUp(self):
+    def setUp_IndicatorsTestvolumeindicators(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        LogCaptureMixin.setUp_IndicatorsTestvolumeindicators(self)  # 显式调用Mixin的setUp
         self.indicator = OBV(ma_period=30)
         self.expected_columns = ['obv', 'obv_ma']
         # 使用一个包含多种走势的数据进行通用测试
@@ -37,11 +37,11 @@ class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tearDown(self):
+    def tearDown_IndicatorsTestvolumeindicators(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)  # 显式调用Mixin的tearDown
+        LogCaptureMixin.tearDown_IndicatorsTestvolumeindicators(self)  # 显式调用Mixin的tearDown
 
-    def test_basic_calculation(self):
+    def test_basic_calculation_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试OBV基础计算功能"""
         result = self.indicator.calculate(self.data)
 
@@ -105,7 +105,7 @@ class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(result, pd.DataFrame, "背离数据计算结果应为DataFrame")
         self.assertIn('obv', result.columns, "结果应包含obv列")
 
-    def test_signal_generation(self):
+    def test_signal_generation_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试OBV信号生成"""
         # 生成包含多种走势的数据
         data = TestDataGenerator.generate_price_sequence([
@@ -128,7 +128,7 @@ class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         conflict_ratio = simultaneous_signals.sum() / len(signals)
         self.assertLess(conflict_ratio, 0.1, f"同时信号比例过高: {conflict_ratio:.2%}")
 
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestvolumeindicators(self):
         """测试OBV评分计算功能"""
         # 生成测试数据
         data = TestDataGenerator.generate_price_sequence([
@@ -157,7 +157,7 @@ class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(raw_score, pd.Series, "原始评分应为Series")
         self.assertTrue(all(0 <= s <= 100 for s in raw_score if not pd.isna(s)), "原始评分应在0-100范围内")
 
-    def test_parameter_setting(self):
+    def test_parameter_setting_Indicators(self):
         """测试OBV参数设置"""
         # 测试参数设置方法
         new_ma_period = 20
@@ -171,7 +171,7 @@ class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(self.data)
         self.assertIn('obv_ma', result.columns, "结果应包含obv_ma列")
 
-    def test_edge_cases(self):
+    def test_edge_cases_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试边界条件"""
         # 测试数据长度不足的情况
         short_data = TestDataGenerator.generate_price_sequence([
@@ -199,7 +199,7 @@ class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             # OBV应该保持在初始值
             self.assertTrue(all(val == obv_values.iloc[0] for val in obv_values), "价格无变化时OBV应保持不变")
 
-    def test_robustness(self):
+    def test_robustness_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试OBV指标的鲁棒性"""
         # 测试包含异常值的数据
         data = TestDataGenerator.generate_price_sequence([
@@ -220,20 +220,20 @@ class TestOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         obv_values = result['obv'].dropna()
         self.assertTrue(all(np.isfinite(val) for val in obv_values), "OBV值应为有限数值")
 
-class TestMFI(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestMFI_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestvolumeindicators(self):
         self.indicator = MFI(period=14)
         self.expected_columns = ['mfi']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'm_shape', 'start_price': 100, 'top_price': 110, 'periods': 50}
         ])
 
-class TestAD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class TestAD_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """AD指标单元测试类"""
 
-    def setUp(self):
+    def setUp_IndicatorsTestvolumeindicators(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        LogCaptureMixin.setUp_IndicatorsTestvolumeindicators(self)  # 显式调用Mixin的setUp
         self.indicator = AD()
         self.expected_columns = ['AD', 'AD_MA']
         # 使用一个包含多种走势的数据进行通用测试
@@ -242,11 +242,11 @@ class TestAD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tearDown(self):
+    def tearDown_IndicatorsTestvolumeindicators(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)  # 显式调用Mixin的tearDown
+        LogCaptureMixin.tearDown_IndicatorsTestvolumeindicators(self)  # 显式调用Mixin的tearDown
 
-    def test_basic_calculation(self):
+    def test_basic_calculation_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试AD基础计算功能"""
         result = self.indicator.calculate(self.data)
 
@@ -359,7 +359,7 @@ class TestAD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             # 在回调过程中可能检测到死叉
             self.assertGreaterEqual(len(death_cross_patterns), 0, "可能检测到AD死叉")
 
-    def test_signal_generation(self):
+    def test_signal_generation_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试AD信号生成"""
         # 生成包含多种走势的数据
         data = TestDataGenerator.generate_price_sequence([
@@ -390,7 +390,7 @@ class TestAD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         conflict_ratio = simultaneous_signals.sum() / len(signals)
         self.assertLess(conflict_ratio, 0.1, f"同时信号比例过高: {conflict_ratio:.2%}")
 
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestvolumeindicators(self):
         """测试AD评分计算功能"""
         # 生成测试数据
         data = TestDataGenerator.generate_price_sequence([
@@ -411,7 +411,7 @@ class TestAD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(raw_score, pd.Series, "原始评分应为Series")
         self.assertTrue(all(0 <= s <= 100 for s in raw_score if not pd.isna(s)), "原始评分应在0-100范围内")
 
-    def test_edge_cases(self):
+    def test_edge_cases_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试边界条件"""
         # 测试数据长度不足的情况
         short_data = TestDataGenerator.generate_price_sequence([
@@ -441,7 +441,7 @@ class TestAD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             # 由于价格位置为0，AD的变化应该很小
             self.assertTrue(all(abs(val) < 1000 for val in ad_values), "高低价相等时AD变化应该很小")
 
-    def test_robustness(self):
+    def test_robustness_Indicators_Test_Volume_Indicators_Test_Volume_IndicatorsTestvolumeindicators(self):
         """测试AD指标的鲁棒性"""
         # 测试包含异常值的数据
         data = TestDataGenerator.generate_price_sequence([

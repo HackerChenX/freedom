@@ -14,17 +14,17 @@ from typing import List, Dict, Optional, Any, Union, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class MTM(BaseIndicator, PatternSignalMixin):
+class Momentum(BaseIndicator, PatternSignalMixin):
     """
     动量指标(MTM)
     
     分类：震荡类指标
-    计算方法：MTM = CLOSE - REF(CLOSE, N)
+    计算方法：mtm = CLOSE - REF(CLOSE, N)
     参数：N，一般取10或12，表示计算周期
     """
     
@@ -47,7 +47,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
         self.oversold = oversold
         self._auto_threshold = (overbought == 0 and oversold == 0)
     
-    def set_parameters(self, period: int = None, ma_period: int = None, overbought: float = None, oversold: float = None):
+    def set_parameters_Mtm_Mtm_Mtm_mtm(self, period: int = None, ma_period: int = None, overbought: float = None, oversold: float = None):
         """
         设置指标参数
         """
@@ -63,15 +63,15 @@ class MTM(BaseIndicator, PatternSignalMixin):
         if overbought is not None or oversold is not None:
             self._auto_threshold = False
     
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_mtm(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算MTM指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 
         Returns:
-            包含MTM指标的DataFrame
+            包含MTM指标的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
@@ -104,7 +104,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
 
         return df_copy
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Mtm(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取MTM相关形态
 
@@ -113,7 +113,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
@@ -175,7 +175,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
         
         return angle_deg
     
-    def _calculate_divergence_strength(self, current_price, previous_price, current_mtm, previous_mtm):
+    def _calculate_divergence_strength_Mtm(self, current_price, previous_price, current_mtm, previous_mtm):
         """计算背离强度"""
         # 计算价格变化百分比
         price_change = abs(current_price - previous_price) / previous_price
@@ -188,7 +188,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
         # 背离越明显，强度越大
         return min(price_change / max(mtm_change, 1e-6), 1.0)
     
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Mtm(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
@@ -252,7 +252,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
                 signals['signal_strength'].iloc[i] = float(60 + min((mtm.iloc[i-1] - self.overbought) / abs(self.overbought) * 30, 30))
         
         # 基于MTM形态生成信号
-        patterns_df = self.get_patterns(data, **kwargs)
+        patterns_df = self.get_patterns_Mtm(data, **kwargs)
 
         # 基于金叉形态增强买入信号
         if 'MTM_GOLDEN_CROSS' in patterns_df.columns:
@@ -274,7 +274,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
     
         return signals
         
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Mtm(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算指标原始评分
         
@@ -338,7 +338,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
                 score.iloc[i] = max(score.iloc[i] - adjust, 10)
         
         # 结合形态增强评分
-        patterns_df = self.get_patterns(data, **kwargs)
+        patterns_df = self.get_patterns_Mtm(data, **kwargs)
 
         # 基于强势形态调整评分
         if 'MTM_STRONG_UP' in patterns_df.columns:
@@ -351,13 +351,13 @@ class MTM(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Mtm(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
         """
         计算MTM指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -416,7 +416,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def register_patterns(self):
+    def register_patterns_Mtm(self):
         """
         注册MTM指标的形态到全局形态注册表
         """
@@ -486,7 +486,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
             polarity="POSITIVE"
         )
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Mtm(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -499,7 +499,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Mtm(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -516,10 +516,10 @@ class MTM(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Mtm(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Mtm(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -529,7 +529,7 @@ class MTM(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Mtm(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -613,46 +613,11 @@ class MTM(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
-    def __init__(self, **kwargs):
-        """
-        初始化MTM指标
-
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-
-        self.name = "MTM"
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-
-        # 确保MTM特有属性存在
-        if not hasattr(self, 'period'):
-            self.period = 10
-        if not hasattr(self, 'ma_period'):
-            self.ma_period = 6
-        if not hasattr(self, 'overbought'):
-            self.overbought = 0
-        if not hasattr(self, 'oversold'):
-            self.oversold = 0
-        if not hasattr(self, '_auto_threshold'):
-            self._auto_threshold = True
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_mtm(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 10, "ma_period": 6, "overbought": 0, "oversold": 0}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Mtm_Mtm_Mtm_mtm_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -661,8 +626,8 @@ class MTM(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -671,8 +636,8 @@ class MTM(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('MTM', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"MTM参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

@@ -20,8 +20,8 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger, setup_logger
 from utils.path_utils import ensure_dir_exists
-from analysis.simple_performance_analyzer import SimplePerformanceAnalyzer
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from analysis.simple_performance_analyzer import Simple_performance_analyzer
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
 logger = get_logger(__name__)
 
@@ -68,7 +68,7 @@ def run_performance_analysis(input_csv: str,
     """
     logger.info(f"开始性能分析，测试类型: {test_type}, 采样大小: {sample_size}")
     
-    analyzer = SimplePerformanceAnalyzer()
+    analyzer = Simple_performance_analyzer()
     results = {}
     
     # 批量处理性能测试
@@ -85,7 +85,7 @@ def run_performance_analysis(input_csv: str,
         logger.info("执行指标计算性能测试...")
         
         # 获取测试数据
-        base_analyzer = BuyPointBatchAnalyzer()
+        base_analyzer = Buy_point_batch_analyzer()
         buypoints_df = base_analyzer.load_buypoints_from_csv(input_csv)
         
         if not buypoints_df.empty:
@@ -108,7 +108,7 @@ def run_performance_analysis(input_csv: str,
     if test_type in ['all', 'data']:
         logger.info("执行数据加载性能测试...")
         
-        base_analyzer = BuyPointBatchAnalyzer()
+        base_analyzer = Buy_point_batch_analyzer()
         buypoints_df = base_analyzer.load_buypoints_from_csv(input_csv)
         
         if not buypoints_df.empty:
@@ -140,7 +140,7 @@ def analyze_processing_stages(input_csv: str, sample_size: int = 3) -> dict:
     logger.info("开始分析处理阶段耗时分布...")
     
     # 加载买点数据
-    analyzer = BuyPointBatchAnalyzer()
+    analyzer = Buy_point_batch_analyzer()
     buypoints_df = analyzer.load_buypoints_from_csv(input_csv)
     
     if buypoints_df.empty:
@@ -217,7 +217,7 @@ def analyze_processing_stages(input_csv: str, sample_size: int = 3) -> dict:
     return result
 
 
-def main():
+def main_22():
     """主函数"""
     args = parse_arguments()
     
@@ -244,7 +244,7 @@ def main():
         )
         
         # 生成优化建议
-        analyzer = SimplePerformanceAnalyzer()
+        analyzer = Simple_performance_analyzer()
         recommendations = analyzer.generate_optimization_recommendations(performance_results)
         
         # 保存结果
@@ -368,4 +368,4 @@ def print_performance_summary(results: dict):
 
 
 if __name__ == "__main__":
-    main()
+    main_22()

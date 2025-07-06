@@ -13,15 +13,15 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.path_utils import get_backtest_result_dir, get_strategies_dir
-from strategy.strategy_factory import StrategyFactory
-from strategy.strategy_manager import StrategyManager
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_factory import Strategy_factory
+from strategy.strategy_manager import Strategy_manager
+from strategy.strategy_executor import Strategy_executor
 from db.db_manager import DBManager
 
 # 获取日志记录器
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class StrategyValidator:
     """
@@ -35,7 +35,7 @@ class StrategyValidator:
     5. 失效预警 - 监控策略表现随时间的变化趋势
     """
     
-    def __init__(self):
+    def __init___98(self):
         """初始化策略验证器"""
         logger.info("初始化策略验证器")
         
@@ -48,10 +48,10 @@ class StrategyValidator:
         os.makedirs(self.strategy_dir, exist_ok=True)
         
         # 初始化策略管理器
-        self.strategy_manager = StrategyManager()
+        self.strategy_manager = Strategy_manager()
         
         # 初始化策略执行器
-        self.strategy_executor = StrategyExecutor()
+        self.strategy_executor = Strategy_executor()
         
         # 初始化数据库管理器
         self.db_manager = DBManager.get_instance()
@@ -905,7 +905,7 @@ class StrategyValidator:
                 "error": str(e)
             }
 
-def main():
+def main_46():
     """命令行入口函数"""
     import argparse
     
@@ -943,7 +943,7 @@ def main():
     args = parser.parse_args()
     
     # 创建验证器
-    validator = StrategyValidator()
+    validator = Strategy_validator()
     
     if args.command == 'multi_period':
         # 读取股票池
@@ -1009,4 +1009,4 @@ def main():
         parser.print_help()
     
 if __name__ == "__main__":
-    main() 
+    main_46() 

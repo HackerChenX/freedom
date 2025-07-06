@@ -21,7 +21,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class AntiCrawlerAnalyzer:
+class Anti_crawler_analyzer:
     """反爬虫机制分析器"""
 
     def __init__(self):
@@ -165,14 +165,14 @@ class AntiCrawlerAnalyzer:
         analysis['recommendations'] = recommendations
 
 
-def main():
+def main_anticrawleranalyzer():
     """主函数"""
     print("=== 股市讨论社区反爬虫机制诊断 ===")
     print(f"分析时间: {datetime.now()}")
     print("目标网站: 雪球网、淘股吧、韭研公社")
     print("=" * 60)
 
-    analyzer = AntiCrawlerAnalyzer()
+    analyzer = Anti_crawler_analyzer()
 
     try:
         all_results = {}
@@ -203,4 +203,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_anticrawleranalyzer()

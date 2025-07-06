@@ -20,16 +20,16 @@ from collections import Counter, defaultdict
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.path_utils import ensure_dir_exists
-from analysis.buypoints.period_data_processor import PeriodDataProcessor
-from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
-from strategy.strategy_generator import StrategyGenerator
+from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
+from strategy.strategy_generator import Strategy_generator
 from indicators.complete_indicator_registry import complete_registry
-from indicators.pattern_registry import PatternRegistry
-from enums.pattern_polarity import PatternPolarity
+from indicators.pattern_registry import Pattern_registry
+from enums.pattern_polarity import Pattern_polarity
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 # 所有技术指标的形态定义已成功迁移到各自的register_patterns()方法中，
 # 并注册到PatternRegistry。系统现在使用完全分散式架构，无需集中式映射表。
@@ -40,10 +40,10 @@ logger = get_logger(__name__)
 class PatternPolarityFilter:
     """模式极性过滤器 - 基于注册信息过滤负面模式"""
 
-    def __init__(self):
+    def __init___106_buypointbatchanalyzer(self):
         from indicators.complete_indicator_registry import complete_registry
-        self.registry = PatternRegistry()
-        self.polarity_enum = PatternPolarity
+        self.registry = Pattern_registry()
+        self.polarity_enum = Pattern_polarity
 
         # 保留关键词作为后备机制（用于未明确标注的模式）
         self.negative_keywords = {
@@ -102,13 +102,6 @@ class PatternPolarityFilter:
 class BuyPointBatchAnalyzer:
     """买点批量分析器"""
     
-    def __init__(self):
-        """初始化分析器"""
-        self.data_processor = PeriodDataProcessor()
-        self.indicator_analyzer = AutoIndicatorAnalyzer()
-        self.strategy_generator = StrategyGenerator()
-        self.polarity_filter = PatternPolarityFilter()
-        
     def load_buypoints_from_csv(self, csv_file: str) -> pd.DataFrame:
         """
         从CSV文件加载买点数据
@@ -311,7 +304,7 @@ class BuyPointBatchAnalyzer:
         批量分析买点
         
         Args:
-            buypoints_df: 买点数据DataFrame
+            buypoints_df: 买点数据Data_frame
             
         Returns:
             List[Dict[str, Any]]: 分析结果列表
@@ -585,7 +578,7 @@ class BuyPointBatchAnalyzer:
         
     def get_precise_pattern_info(self, indicator_name: str, pattern: str, description: str) -> Dict[str, str]:
         """
-        获取精确的形态信息，优先从PatternRegistry查找，然后回退到映射字典
+        获取精确的形态信息，优先从Pattern_registry查找，然后回退到映射字典
 
         Args:
             indicator_name: 指标名称
@@ -596,7 +589,7 @@ class BuyPointBatchAnalyzer:
             Dict[str, str]: 包含形态名称和描述的字典
         """
         # 1. 优先从PatternRegistry查找
-        registry = PatternRegistry()
+        registry = Pattern_registry()
 
         # 1.1 尝试直接通过指标名称和形态ID查找
         pattern_id = f"{indicator_name}_{pattern}".upper()
@@ -851,7 +844,7 @@ class BuyPointBatchAnalyzer:
             logger.error(f"生成选股策略时出错: {e}")
             return {}
     
-    def save_results(self, output_dir: str, results: List[Dict[str, Any]]) -> None:
+    def save_results_Analyzer_Buypoint_Batch_Analyzer(self, output_dir: str, results: List[Dict[str, Any]]) -> None:
         """
         保存分析结果
         
@@ -866,7 +859,7 @@ class BuyPointBatchAnalyzer:
             # 保存原始结果
             results_file = os.path.join(output_dir, 'analysis_results.json')
             with open(results_file, 'w', encoding='utf-8') as f:
-                json.dump(results, f, ensure_ascii=False, indent=2, cls=CustomJSONEncoder)
+                json.dump(results, f, ensure_ascii=False, indent=2, cls=Custom_jSONEncoder)
                 
             # 提取共性指标
             common_indicators = self.extract_common_indicators(results)
@@ -879,7 +872,7 @@ class BuyPointBatchAnalyzer:
                 strategy_file = os.path.join(output_dir, 'generated_strategy.json')
                 strategy_config = self.generate_strategy(common_indicators)
                 with open(strategy_file, 'w', encoding='utf-8') as f:
-                    json.dump(strategy_config, f, ensure_ascii=False, indent=2, cls=CustomJSONEncoder)
+                    json.dump(strategy_config, f, ensure_ascii=False, indent=2, cls=Custom_jSONEncoder)
             else:
                 logger.warning("未能提取到共性指标")
                 
@@ -1151,14 +1144,14 @@ class BuyPointBatchAnalyzer:
             )
             
             # 保存结果
-            self.save_results(output_dir, buypoint_results)
+            self.save_results_Analyzer_Buypoint_Batch_Analyzer(output_dir, buypoint_results)
             
             logger.info(f"买点批量分析完成")
             
         except Exception as e:
             logger.error(f"运行买点批量分析时出错: {e}")
 
-class CustomJSONEncoder(json.JSONEncoder):
+class CustomJsonencoder(json.JSONEncoder):
     """自定义JSON编码器，处理特殊数据类型"""
     
     def default(self, obj):

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 测试修复后的增强指标选股能力
 
@@ -16,7 +18,7 @@ import json
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from indicators.enhanced_rsi import ENHANCED_RSI
 from indicators.enhanced_stochrsi import ENHANCED_STOCHRSI
 from indicators.enhanced_wr import ENHANCED_WR
@@ -30,7 +32,7 @@ def get_test_stocks():
     return ['000001', '000002', '000858', '002415', '603359']
 
 
-def get_stock_data(code: str, days: int = 100):
+def get_stock_data_Fix(code: str, days: int = 100):
     """
     获取股票数据
     
@@ -42,40 +44,35 @@ def get_stock_data(code: str, days: int = 100):
         股票数据DataFrame
     """
     try:
-        db = get_clickhouse_db()
+        container = get_container()
+        data_access = container.get_data_access()
         
         # 计算日期范围
         end_date = datetime.now().strftime('%Y-%m-%d')
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
         
-        query = f"""
-        SELECT 
-            date,
-            code,
-            open,
-            high,
-            low,
-            close,
-            volume,
-            turnover as amount
-        FROM stock_info 
+        # 获取股票数据
+        sql = f"""
+        SELECT date, open, high, low, close, volume
+        FROM stock_info WHERE 1=1
         WHERE code = '{code}'
-        AND level = '日线'
-        AND date BETWEEN '{start_date}' AND '{end_date}'
+          AND level = '日线'
+          AND date >= '{start_date}'
+          AND date <= '{end_date}'
         ORDER BY date
         """
         
-        df = db.query(query)
-        if df is not None and len(df) > 0:
-            df['date'] = pd.to_datetime(df['date'])
-            df = df.sort_values('date').reset_index(drop=True)
+        data = data_access.query_dataframe(sql)
+        if data is not None and len(data) > 0:
+            data['date'] = pd.to_datetime(data['date'])
+            data = data.sort_values('date').reset_index(drop=True)
             
             # 确保数据类型正确
-            for col in ['open', 'high', 'low', 'close', 'volume', 'amount']:
-                if col in df.columns:
-                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                if col in data.columns:
+                    data[col] = pd.to_numeric(data[col], errors='coerce')
             
-            return df
+            return data
         else:
             logger.warning(f"未找到股票 {code} 的数据")
             return None
@@ -163,7 +160,7 @@ def test_indicator(indicator_class, indicator_name, stock_data):
         }
 
 
-def main():
+def main_testenhancedindicatorsfix():
     """主函数"""
     print("=" * 80)
     print("测试修复后的增强指标选股能力")
@@ -185,7 +182,7 @@ def main():
         print(f"\n正在测试股票: {stock_code}")
         
         # 获取股票数据
-        stock_data = get_stock_data(stock_code)
+        stock_data = get_stock_data_Fix(stock_code)
         if stock_data is None or len(stock_data) < 50:
             print(f"  跳过股票 {stock_code}：数据不足")
             continue
@@ -270,4 +267,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    mainTestenhancedindicatorsfix() 

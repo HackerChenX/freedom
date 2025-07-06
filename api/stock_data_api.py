@@ -10,48 +10,48 @@ import json
 import requests
 
 # 定义抽象数据API基类
-class StockDataAPI(abc.ABC):
+class Stock_data_aPI(abc.ABC):
     """股票数据API抽象基类"""
     
     @abc.abstractmethod
-    def get_index_data(self, index_code, start_date, end_date):
+    def get_index_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, index_code, start_date, end_date):
         """获取指数历史数据"""
         pass
     
     @abc.abstractmethod
-    def get_stock_list(self, date=None):
+    def get_stock_list_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         """获取股票列表"""
         pass
     
     @abc.abstractmethod
-    def get_stock_data(self, stock_code, start_date, end_date):
+    def get_stock_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, stock_code, start_date, end_date):
         """获取股票历史数据"""
         pass
     
     @abc.abstractmethod
-    def get_market_data(self, date=None):
+    def get_market_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         """获取市场涨跌停数据"""
         pass
     
     @abc.abstractmethod
-    def get_fund_flow_data(self, date=None):
+    def get_fund_flow_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         """获取资金流向数据"""
         pass
     
     @abc.abstractmethod
-    def get_latest_trade_date(self):
+    def get_latest_trade_date_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self):
         """获取最新交易日期"""
         pass
     
-    def format_date(self, date):
+    def format_date_Api(self, date):
         """格式化日期为YYYYMMDD格式"""
         if isinstance(date, str):
             try:
                 return datetime.strptime(date, '%Y%m%d').strftime('%Y%m%d')
-            except ValueError:
+            except Value_error:
                 try:
                     return datetime.strptime(date, '%Y-%m-%d').strftime('%Y%m%d')
-                except ValueError:
+                except Value_error:
                     return datetime.now().strftime('%Y%m%d')
         elif isinstance(date, datetime):
             return date.strftime('%Y%m%d')
@@ -63,10 +63,10 @@ class StockDataAPI(abc.ABC):
         if isinstance(date, str):
             try:
                 return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
-            except ValueError:
+            except Value_error:
                 try:
                     return datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
-                except ValueError:
+                except Value_error:
                     return datetime.now().strftime('%Y-%m-%d')
         elif isinstance(date, datetime):
             return date.strftime('%Y-%m-%d')
@@ -75,7 +75,7 @@ class StockDataAPI(abc.ABC):
 
 
 # AKShare数据API实现
-class AKShareAPI(StockDataAPI):
+class AKShare_aPI(Stock_data_aPI):
     """基于AKShare的数据API实现"""
     
     def __init__(self):
@@ -84,11 +84,11 @@ class AKShareAPI(StockDataAPI):
             import akshare as ak
             self.ak = ak
             self.available = True
-        except ImportError:
+        except Import_error:
             print("AKShare未安装或无法导入，部分功能可能不可用")
             self.available = False
     
-    def get_latest_trade_date(self):
+    def get_latest_trade_date_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self):
         """获取最新交易日期
         
         返回:
@@ -156,15 +156,15 @@ class AKShareAPI(StockDataAPI):
             print(f"AKShare获取最新交易日失败: {e}")
             return datetime.now().strftime('%Y%m%d')
     
-    def get_index_data(self, index_code, start_date, end_date):
+    def get_index_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, index_code, start_date, end_date):
         """获取指数历史数据"""
         if not self.available:
             return pd.DataFrame()
         
         try:
             # 格式化日期
-            start_date = self.format_date(start_date)
-            end_date = self.format_date(end_date)
+            start_date = self.format_date_Api(start_date)
+            end_date = self.format_date_Api(end_date)
             
             # AKShare的指数代码可能需要转换
             index_map = {
@@ -216,7 +216,7 @@ class AKShareAPI(StockDataAPI):
                         }, inplace=True)
                     
                     return filtered_data
-            except TypeError:
+            except Type_error:
                 # 如果报TypeError异常，可能是旧版接口（接受日期参数）
                 try:
                     index_data = self.ak.stock_zh_index_daily(
@@ -279,7 +279,7 @@ class AKShareAPI(StockDataAPI):
             print(f"AKShare获取指数数据失败: {e}")
             return pd.DataFrame()
     
-    def get_stock_list(self, date=None):
+    def get_stock_list_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         """获取股票列表"""
         if not self.available:
             return pd.DataFrame()
@@ -292,7 +292,7 @@ class AKShareAPI(StockDataAPI):
             print(f"AKShare获取股票列表失败: {e}")
             return pd.DataFrame()
     
-    def get_stock_data(self, stock_code, start_date, end_date):
+    def get_stock_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, stock_code, start_date, end_date):
         """获取股票历史数据"""
         if not self.available:
             return pd.DataFrame()
@@ -326,14 +326,14 @@ class AKShareAPI(StockDataAPI):
             print(f"AKShare获取股票数据失败: {e}")
             return pd.DataFrame()
     
-    def get_market_data(self, date=None):
+    def get_market_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         """获取市场涨跌停数据"""
         if not self.available:
             return pd.DataFrame(), pd.DataFrame()
         
         try:
             # 格式化日期 (不带连字符的格式)
-            date_str = self.format_date(date) if date else self.get_latest_trade_date()
+            date_str = self.format_date_Api(date) if date else self.get_latest_trade_date_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi()
             
             # 尝试不同的AK方法获取涨跌家数数据
             stock_data = pd.DataFrame()
@@ -355,10 +355,10 @@ class AKShareAPI(StockDataAPI):
                     except requests.exceptions.HTTPError as e:
                         print(f"HTTP错误: {e}")
                         continue
-                    except json.JSONDecodeError as e:
+                    except json.JSONDecode_error as e:
                         print(f"JSON解析错误: {e}. API可能返回了非JSON响应")
                         continue
-                    except ValueError as e:
+                    except Value_error as e:
                         if "Can not decode value starting with character '<'" in str(e):
                             print(f"API返回了HTML而不是JSON: {e}")
                         else:
@@ -413,10 +413,10 @@ class AKShareAPI(StockDataAPI):
                                 limit_up_data['连板数'] = 1
                             success = True
                             break
-                    except json.JSONDecodeError as e:
+                    except json.JSONDecode_error as e:
                         print(f"涨停数据JSON解析错误: {e}")
                         continue
-                    except ValueError as e:
+                    except Value_error as e:
                         if "Can not decode value starting with character '<'" in str(e):
                             print(f"涨停数据API返回了HTML而不是JSON: {e}")
                         else:
@@ -446,14 +446,14 @@ class AKShareAPI(StockDataAPI):
                 print("建议稍后重试或检查网络设置")
             return pd.DataFrame(), pd.DataFrame()
     
-    def get_fund_flow_data(self, date):
+    def get_fund_flow_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date):
         """获取指定日期的资金流向数据，包括行业资金流和北向资金"""
         if not self.available:
             return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
             
         try:
             # 格式化日期
-            date_str = self.format_date(date)
+            date_str = self.format_date_Api(date)
             date_hyphen = self.format_date_hyphen(date)
             
             # 获取行业资金流向数据
@@ -510,7 +510,7 @@ class AKShareAPI(StockDataAPI):
 
 
 # BaoStock数据API实现
-class BaoStockAPI(StockDataAPI):
+class Bao_stock_aPI(Stock_data_aPI):
     """基于BaoStock的数据API实现"""
     
     def __init__(self):
@@ -521,7 +521,7 @@ class BaoStockAPI(StockDataAPI):
             self.available = True
             # 登录系统
             self.login()
-        except ImportError:
+        except Import_error:
             print("BaoStock未安装或无法导入，部分功能可能不可用")
             self.available = False
     
@@ -544,11 +544,11 @@ class BaoStockAPI(StockDataAPI):
             except Exception as e:
                 print(f"BaoStock登出异常: {e}")
     
-    def __del__(self):
+    def __del___Stock_Data_Api(self):
         """析构函数，确保登出"""
         self.logout()
     
-    def get_index_data(self, index_code, start_date, end_date):
+    def get_index_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, index_code, start_date, end_date):
         """获取指数历史数据"""
         if not self.available:
             return pd.DataFrame()
@@ -629,7 +629,7 @@ class BaoStockAPI(StockDataAPI):
             print(f"BaoStock获取指数数据失败: {e}")
             return pd.DataFrame()
             
-    def get_latest_trade_date(self):
+    def get_latest_trade_date_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self):
         """获取最新交易日期
         
         返回:
@@ -683,7 +683,7 @@ class BaoStockAPI(StockDataAPI):
             print(f"BaoStock获取最新交易日失败: {e}")
             return datetime.now().strftime('%Y%m%d')
     
-    def get_stock_list(self, date=None):
+    def get_stock_list_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         """获取股票列表"""
         if not self.available:
             return pd.DataFrame()
@@ -728,7 +728,7 @@ class BaoStockAPI(StockDataAPI):
             print(f"BaoStock获取股票列表失败: {e}")
             return pd.DataFrame()
     
-    def get_stock_data(self, stock_code, start_date, end_date):
+    def get_stock_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, stock_code, start_date, end_date):
         """获取股票历史数据"""
         if not self.available:
             return pd.DataFrame()
@@ -785,14 +785,14 @@ class BaoStockAPI(StockDataAPI):
             print(f"BaoStock获取股票数据失败: {e}")
             return pd.DataFrame()
     
-    def get_market_data(self, date):
+    def get_market_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date):
         """获取指定日期的市场数据，返回股票涨跌幅数据和涨停数据"""
         if not self.available:
             return pd.DataFrame(), pd.DataFrame()
             
         try:
             # 格式化日期
-            date_str = self.format_date(date)
+            date_str = self.format_date_Api(date)
             
             # 获取所有股票代码
             rs = self.bs.query_all_stock(day=date_str)
@@ -808,7 +808,7 @@ class BaoStockAPI(StockDataAPI):
                     stock_data = stock_data.copy()
                 else:
                     raise ValueError("通过get_data获取股票数据失败")
-            except (ValueError, AttributeError) as e:
+            except (Value_error, Attribute_error) as e:
                 print(f"尝试get_data方法失败: {e}，使用传统方法获取")
                 # 传统获取方法：逐行读取
                 stock_data = pd.DataFrame()
@@ -854,7 +854,7 @@ class BaoStockAPI(StockDataAPI):
                         df = self.bs.get_data(rs_k)
                         if df is not None and not df.empty:
                             batch_data = pd.concat([batch_data, df], ignore_index=True)
-                    except (ValueError, AttributeError):
+                    except (Value_error, Attribute_error):
                         # 传统获取方法：逐行读取
                         while (rs_k.error_code == '0') & rs_k.next():
                             data_list = rs_k.get_row_data()
@@ -890,7 +890,7 @@ class BaoStockAPI(StockDataAPI):
                             info_df = self.bs.get_data(rs_info)
                             if info_df is not None and not info_df.empty:
                                 all_stock_names = pd.concat([all_stock_names, info_df], ignore_index=True)
-                        except (ValueError, AttributeError):
+                        except (Value_error, Attribute_error):
                             while (rs_info.error_code == '0') & rs_info.next():
                                 info_data = rs_info.get_row_data()
                                 all_stock_names = pd.concat([all_stock_names, pd.DataFrame([info_data])], ignore_index=True)
@@ -934,17 +934,17 @@ class BaoStockAPI(StockDataAPI):
             print(f"BaoStock获取市场数据失败: {e}")
             return pd.DataFrame(), pd.DataFrame()
     
-    def get_fund_flow_data(self, date):
+    def get_fund_flow_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date):
         """获取指定日期的资金流向数据，包括行业资金流和北向资金
         
-        注意：BaoStock不直接提供全面的资金流向数据，这里我们尝试构建相关数据
+        注意：Bao_stock不直接提供全面的资金流向数据，这里我们尝试构建相关数据
         """
         if not self.available:
             return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
             
         try:
             # 格式化日期
-            date_str = self.format_date(date)
+            date_str = self.format_date_Api(date)
             date_hyphen = self.format_date_hyphen(date)
             
             # 获取行业分类数据
@@ -1043,7 +1043,7 @@ class BaoStockAPI(StockDataAPI):
 
 
 # 创建一个数据源工厂类
-class StockDataFactory:
+class Stock_data_factory:
     """股票数据源工厂类"""
     
     @staticmethod
@@ -1054,18 +1054,18 @@ class StockDataFactory:
             api_type: 数据源类型，可选值: "akshare", "baostock", "auto"
         
         返回:
-            StockDataAPI实例
+            Stock_data_aPI实例
         """
         if api_type == "auto":
             # 尝试创建AKShare API
-            ak_api = AKShareAPI()
+            ak_api = AKShare_aPI()
             # 尝试创建BaoStock API
-            bs_api = BaoStockAPI()
+            bs_api = Bao_stock_aPI()
             
             # 返回可用性较高的API
             if ak_api.available and bs_api.available:
                 # 创建混合API
-                return DualSourceAPI(ak_api, bs_api)
+                return Dual_source_aPI(ak_api, bs_api)
             elif ak_api.available:
                 return ak_api
             elif bs_api.available:
@@ -1073,62 +1073,62 @@ class StockDataFactory:
             else:
                 # 如果都不可用，返回一个空实现
                 print("警告：所有数据源都不可用！")
-                return EmptyAPI()
+                return Empty_aPI()
         
         elif api_type == "akshare":
-            return AKShareAPI()
+            return AKShare_aPI()
         
         elif api_type == "baostock":
-            return BaoStockAPI()
+            return Bao_stock_aPI()
         
         elif api_type == "dual":
             # 创建并返回混合API
-            ak_api = AKShareAPI()
-            bs_api = BaoStockAPI()
+            ak_api = AKShare_aPI()
+            bs_api = Bao_stock_aPI()
             if ak_api.available or bs_api.available:
-                return DualSourceAPI(ak_api, bs_api)
+                return Dual_source_aPI(ak_api, bs_api)
             else:
                 print("警告：所有数据源都不可用！")
-                return EmptyAPI()
+                return Empty_aPI()
         
         else:
             raise ValueError(f"不支持的数据源类型: {api_type}")
 
 
 # 新增一个空API实现
-class EmptyAPI(StockDataAPI):
+class Empty_aPI(Stock_data_aPI):
     """空API实现，所有方法返回空数据"""
     
     def __init__(self):
         self.available = False
     
-    def get_index_data(self, index_code, start_date, end_date):
+    def get_index_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, index_code, start_date, end_date):
         print("警告: 无可用数据源，返回空数据")
         return pd.DataFrame()
     
-    def get_stock_list(self, date=None):
+    def get_stock_list_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         print("警告: 无可用数据源，返回空数据")
         return pd.DataFrame()
     
-    def get_stock_data(self, stock_code, start_date, end_date):
+    def get_stock_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, stock_code, start_date, end_date):
         print("警告: 无可用数据源，返回空数据")
         return pd.DataFrame()
     
-    def get_market_data(self, date=None):
+    def get_market_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         print("警告: 无可用数据源，返回空数据")
         return pd.DataFrame(), pd.DataFrame()
     
-    def get_fund_flow_data(self, date=None):
+    def get_fund_flow_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date=None):
         print("警告: 无可用数据源，返回空数据")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     
-    def get_latest_trade_date(self):
+    def get_latest_trade_date_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self):
         print("警告: 无可用数据源，使用当前日期")
         return datetime.now().strftime('%Y%m%d')
 
 
 # 新增一个双源混合API实现
-class DualSourceAPI(StockDataAPI):
+class Dual_source_aPI(Stock_data_aPI):
     """双数据源API类，可以在主数据源失败时自动切换到备用数据源"""
     def __init__(self, primary_api, fallback_api):
         self.primary_api = primary_api  # 主数据源
@@ -1156,12 +1156,12 @@ class DualSourceAPI(StockDataAPI):
                     return tuple(r.copy() if not r.empty else r for r in result)
                 
                 return result
-            except json.JSONDecodeError as e:
+            except json.JSONDecode_error as e:
                 # 特殊处理JSON解析错误
                 print(f"主数据源JSON解析错误: {e}，尝试使用备用数据源")
                 self.primary_error_count += 1
                 raise  # 重新抛出异常，将由外部catch块处理
-            except ValueError as e:
+            except Value_error as e:
                 # 特殊处理HTML响应错误
                 if "Can not decode value starting with character '<'" in str(e):
                     print(f"主数据源返回了HTML而不是JSON: {e}，尝试使用备用数据源")
@@ -1215,7 +1215,7 @@ class DualSourceAPI(StockDataAPI):
                 else:
                     return None
     
-    def get_index_data(self, index_code, start_date, end_date):
+    def get_index_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, index_code, start_date, end_date):
         """获取指数历史数据"""
         return self._safe_call(
             self.primary_api.get_index_data,
@@ -1223,21 +1223,21 @@ class DualSourceAPI(StockDataAPI):
             index_code, start_date, end_date
         )
     
-    def get_latest_trade_date(self):
+    def get_latest_trade_date_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self):
         """获取最新交易日期"""
         return self._safe_call(
             self.primary_api.get_latest_trade_date,
             self.fallback_api.get_latest_trade_date
         )
     
-    def get_stock_list(self):
+    def get_stock_list_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self):
         """获取股票列表"""
         return self._safe_call(
             self.primary_api.get_stock_list,
             self.fallback_api.get_stock_list
         )
     
-    def get_stock_data(self, stock_code, start_date, end_date):
+    def get_stock_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, stock_code, start_date, end_date):
         """获取股票历史数据"""
         return self._safe_call(
             self.primary_api.get_stock_data,
@@ -1245,7 +1245,7 @@ class DualSourceAPI(StockDataAPI):
             stock_code, start_date, end_date
         )
     
-    def get_market_data(self, date):
+    def get_market_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date):
         """获取市场数据"""
         return self._safe_call(
             self.primary_api.get_market_data,
@@ -1253,7 +1253,7 @@ class DualSourceAPI(StockDataAPI):
             date
         )
     
-    def get_fund_flow_data(self, date):
+    def get_fund_flow_data_Api_Stock_Data_Api_Stock_Data_Api_stockdataapi(self, date):
         """获取资金流向数据"""
         return self._safe_call(
             self.primary_api.get_fund_flow_data,

@@ -4,10 +4,10 @@ import numpy as np
 from indicators.trend.enhanced_trix import EnhancedTRIX
 
 
-class TestEnhancedTRIX(unittest.TestCase):
+class TestEnhancedTRIX_Trix(unittest.TestCase):
     """测试增强型TRIX三重指数平滑移动平均线指标"""
 
-    def setUp(self):
+    def setUp_Trix_Test_Enhanced_Trix(self):
         """准备测试数据"""
         # 创建模拟价格数据
         np.random.seed(42)  # 确保结果可重现
@@ -37,7 +37,7 @@ class TestEnhancedTRIX(unittest.TestCase):
         # 创建增强型TRIX实例
         self.trix = EnhancedTRIX(n=12, m=9, secondary_n=24, adaptive_period=True)
 
-    def test_calculation(self):
+    def test_calculation_Trix(self):
         """测试TRIX基础计算功能"""
         result = self.trix.calculate(self.test_data)
         
@@ -57,7 +57,7 @@ class TestEnhancedTRIX(unittest.TestCase):
         self.assertFalse(result['TRIX'].isna().all())
         self.assertFalse(result['MATRIX'].isna().all())
 
-    def test_adaptive_period(self):
+    def test_adaptive_period_Trix(self):
         """测试自适应周期调整功能"""
         # 计算TRIX
         self.trix.calculate(self.test_data)
@@ -104,7 +104,7 @@ class TestEnhancedTRIX(unittest.TestCase):
         # 检查背离强度范围
         self.assertTrue((divergence['divergence_strength'] >= 0).all())
 
-    def test_multi_period_synergy(self):
+    def test_multi_period_synergy_Trix(self):
         """测试多周期协同分析功能"""
         # 计算TRIX
         self.trix.calculate(self.test_data)
@@ -156,7 +156,7 @@ class TestEnhancedTRIX(unittest.TestCase):
         if not pd.isna(max_score):
             self.assertTrue(max_score <= 100)
 
-    def test_pattern_identification(self):
+    def test_pattern_identification_Trix(self):
         """测试形态识别功能"""
         # 计算TRIX
         self.trix.calculate(self.test_data)
@@ -177,7 +177,7 @@ class TestEnhancedTRIX(unittest.TestCase):
         # 检查钝化形态识别
         self.assertIn('stagnation_near_zero', patterns.columns)
 
-    def test_score_calculation(self):
+    def test_score_calculation_Trix(self):
         """测试评分计算功能"""
         # 计算TRIX
         self.trix.calculate(self.test_data)
@@ -201,7 +201,7 @@ class TestEnhancedTRIX(unittest.TestCase):
         # 检查市场环境是否影响评分
         self.assertFalse(bull_score.equals(bear_score))
 
-    def test_signal_generation(self):
+    def test_signal_generation_Trix(self):
         """测试信号生成功能"""
         # 计算TRIX并生成信号
         signals = self.trix.generate_signals(self.test_data)

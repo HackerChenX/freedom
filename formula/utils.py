@@ -8,12 +8,12 @@ import numpy as np
 import pandas as pd
 from typing import Union, List, Tuple, Optional, Dict, Any
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-def mergeList(list1, list2, n, func):
+def merge_List(list1, list2, n, func):
     """
     合并两个列表，应用给定的函数，返回最后n个元素
     
@@ -35,7 +35,7 @@ def mergeList(list1, list2, n, func):
     return result[-n:]
 
 
-def mergeAndGetLast(list1, list2, func):
+def merge_And_get_last(list1, list2, func):
     """
     合并两个列表，并返回应用函数后的最后一个元素
     
@@ -45,7 +45,7 @@ def mergeAndGetLast(list1, list2, func):
         func: 应用于两个列表对应元素的函数
         
     Returns:
-        最后一个元素的计算结果，或者在处理NaN时返回False
+        最后一个元素的计算结果，或者在处理Na_n时返回False
     """
     if len(list1) != len(list2):
         raise Exception("列表长度不一致")
@@ -57,7 +57,7 @@ def mergeAndGetLast(list1, list2, func):
     return False
 
 
-def countListAllMatch(lst, n, m, func):
+def count_List_all_match(lst, n, m, func):
     """
     检查列表中最后n个元素是否有至少m个满足条件
     
@@ -77,7 +77,7 @@ def countListAllMatch(lst, n, m, func):
     return count >= m
 
 
-def countListAnyMatch(lst, n, func):
+def count_list_any_match_Utils(lst, n, func):
     """
     检查列表中最后n个元素是否有任意一个满足条件
     
@@ -116,7 +116,7 @@ def gt(n):
     return lambda x: x > n
 
 
-def countTrue(lst, n):
+def count_True(lst, n):
     """
     检查列表中True的数量是否大于等于n
     
@@ -135,7 +135,7 @@ def 合并K线(stock_data):
     合并K线数据
     
     Args:
-        stock_data: StockData对象
+        stock_data: Stock_data对象
         
     Returns:
         tuple: (close, high, low, volume)
@@ -151,7 +151,7 @@ def 合并K线(stock_data):
     return close, high, low, volume
 
 
-def ma(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
+def ma_Utils(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
     """
     计算移动平均线
     
@@ -160,7 +160,7 @@ def ma(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
         periods: 周期或周期列表
         
     Returns:
-        pd.DataFrame: 包含MA值的DataFrame
+        pd.DataFrame: 包含MA值的Data_frame
     """
     if isinstance(periods, int):
         periods = [periods]
@@ -174,7 +174,7 @@ def ma(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
     return result
 
 
-def ema(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
+def ema_Utils_Utils(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
     """
     计算指数移动平均线
     
@@ -183,7 +183,7 @@ def ema(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
         periods: 周期或周期列表
         
     Returns:
-        pd.DataFrame: 包含EMA值的DataFrame
+        pd.DataFrame: 包含EMA值的Data_frame
     """
     if isinstance(periods, int):
         periods = [periods]
@@ -197,7 +197,7 @@ def ema(series: pd.Series, periods: Union[int, List[int]]) -> pd.DataFrame:
     return result
 
 
-def macd(series: pd.Series, fast_period: int = 12, slow_period: int = 26, 
+def macd_Utils_Utils(series: pd.Series, fast_period: int = 12, slow_period: int = 26, 
         signal_period: int = 9) -> pd.DataFrame:
     """
     计算MACD指标
@@ -209,7 +209,7 @@ def macd(series: pd.Series, fast_period: int = 12, slow_period: int = 26,
         signal_period: 信号线周期，默认为9
         
     Returns:
-        pd.DataFrame: 包含MACD线、信号线和柱状图的DataFrame
+        pd.DataFrame: 包含MACD线、信号线和柱状图的Data_frame
     """
     # 计算快线和慢线
     fast_ema = series.ewm(span=fast_period, adjust=False).mean()
@@ -230,7 +230,7 @@ def macd(series: pd.Series, fast_period: int = 12, slow_period: int = 26,
     return result
 
 
-def rsi(series: pd.Series, periods: Union[int, List[int]] = 14) -> pd.DataFrame:
+def rsi_Utils_Utils(series: pd.Series, periods: Union[int, List[int]] = 14) -> pd.DataFrame:
     """
     计算RSI指标
     
@@ -239,7 +239,7 @@ def rsi(series: pd.Series, periods: Union[int, List[int]] = 14) -> pd.DataFrame:
         periods: 周期或周期列表，默认为14
         
     Returns:
-        pd.DataFrame: 包含RSI值的DataFrame
+        pd.DataFrame: 包含RSI值的Data_frame
     """
     if isinstance(periods, int):
         periods = [periods]
@@ -271,7 +271,7 @@ def rsi(series: pd.Series, periods: Union[int, List[int]] = 14) -> pd.DataFrame:
     return result
 
 
-def bollinger_bands(series: pd.Series, period: int = 20, std_dev: float = 2.0) -> pd.DataFrame:
+def bollinger_bands_Utils(series: pd.Series, period: int = 20, std_dev: float = 2.0) -> pd.DataFrame:
     """
     计算布林带指标
     
@@ -281,7 +281,7 @@ def bollinger_bands(series: pd.Series, period: int = 20, std_dev: float = 2.0) -
         std_dev: 标准差倍数，默认为2.0
         
     Returns:
-        pd.DataFrame: 包含布林带上轨、中轨和下轨的DataFrame
+        pd.DataFrame: 包含布林带上轨、中轨和下轨的Data_frame
     """
     # 计算中轨（简单移动平均线）
     middle_band = series.rolling(window=period).mean()
@@ -305,7 +305,7 @@ def bollinger_bands(series: pd.Series, period: int = 20, std_dev: float = 2.0) -
     return result
 
 
-def kdj(high: pd.Series, low: pd.Series, close: pd.Series, 
+def kdj_Utils(high: pd.Series, low: pd.Series, close: pd.Series, 
        n: int = 9, m1: int = 3, m2: int = 3) -> pd.DataFrame:
     """
     计算KDJ指标
@@ -319,7 +319,7 @@ def kdj(high: pd.Series, low: pd.Series, close: pd.Series,
         m2: D值平滑因子，默认为3
         
     Returns:
-        pd.DataFrame: 包含K、D、J值的DataFrame
+        pd.DataFrame: 包含K、D、J值的Data_frame
     """
     # 计算RSV
     low_n = low.rolling(window=n).min()
@@ -345,7 +345,7 @@ def kdj(high: pd.Series, low: pd.Series, close: pd.Series,
     return result
 
 
-def atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+def atr_Utils_Utils(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
     """
     计算平均真实范围(ATR)
     
@@ -370,7 +370,7 @@ def atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> 
     return atr
 
 
-def obv(close: pd.Series, volume: pd.Series) -> pd.Series:
+def obv_Utils(close: pd.Series, volume: pd.Series) -> pd.Series:
     """
     计算能量潮(OBV)指标
     
@@ -417,17 +417,17 @@ def williams_r(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 
     return williams_r
 
 
-def calculate_indicator(df: pd.DataFrame, indicator: str, **kwargs) -> pd.DataFrame:
+def calculate_indicator_Utils(df: pd.DataFrame, indicator: str, **kwargs) -> pd.DataFrame:
     """
     根据指标名称计算相应的技术指标
     
     Args:
-        df: 输入数据，包含价格和成交量数据的DataFrame
+        df: 输入数据，包含价格和成交量数据的Data_frame
         indicator: 指标名称
         kwargs: 指标参数
         
     Returns:
-        pd.DataFrame: 包含指标值的DataFrame
+        pd.DataFrame: 包含指标值的Data_frame
         
     Raises:
         ValueError: 如果指标名称不支持
@@ -437,39 +437,39 @@ def calculate_indicator(df: pd.DataFrame, indicator: str, **kwargs) -> pd.DataFr
     try:
         if indicator == 'ma':
             periods = kwargs.get('periods', [5, 10, 20, 60])
-            return ma(df['close'], periods)
+            return ma_Utils(df['close'], periods)
         
         elif indicator == 'ema':
             periods = kwargs.get('periods', [5, 10, 20, 60])
-            return ema(df['close'], periods)
+            return ema_Utils_Utils(df['close'], periods)
         
         elif indicator == 'macd':
             fast_period = kwargs.get('fast_period', 12)
             slow_period = kwargs.get('slow_period', 26)
             signal_period = kwargs.get('signal_period', 9)
-            return macd(df['close'], fast_period, slow_period, signal_period)
+            return macd_Utils_Utils(df['close'], fast_period, slow_period, signal_period)
         
         elif indicator == 'rsi':
             periods = kwargs.get('periods', [14])
-            return rsi(df['close'], periods)
+            return rsi_Utils_Utils(df['close'], periods)
         
         elif indicator == 'bollinger':
             period = kwargs.get('period', 20)
             std_dev = kwargs.get('std_dev', 2.0)
-            return bollinger_bands(df['close'], period, std_dev)
+            return bollinger_bands_Utils(df['close'], period, std_dev)
         
         elif indicator == 'kdj':
             n = kwargs.get('n', 9)
             m1 = kwargs.get('m1', 3)
             m2 = kwargs.get('m2', 3)
-            return kdj(df['high'], df['low'], df['close'], n, m1, m2)
+            return kdj_Utils(df['high'], df['low'], df['close'], n, m1, m2)
         
         elif indicator == 'atr':
             period = kwargs.get('period', 14)
-            return pd.DataFrame({'ATR': atr(df['high'], df['low'], df['close'], period)})
+            return pd.DataFrame({'ATR': atr_Utils_Utils(df['high'], df['low'], df['close'], period)})
         
         elif indicator == 'obv':
-            return pd.DataFrame({'OBV': obv(df['close'], df['volume'])})
+            return pd.DataFrame({'OBV': obv_Utils(df['close'], df['volume'])})
         
         elif indicator == 'williams_r':
             period = kwargs.get('period', 14)

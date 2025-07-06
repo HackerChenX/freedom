@@ -6,7 +6,7 @@
 """
 
 # 从统一周期模块导入
-from enums.period import Period as PeriodType
+from enums.period import Period as Period_type
 
 # 为了保持完全兼容性，重新导出所有功能
 __all__ = ['PeriodType']
@@ -15,6 +15,6 @@ __all__ = ['PeriodType']
 import warnings
 warnings.warn(
     "PeriodType已合并到Period中，请使用'from enums.period import Period'代替",
-    DeprecationWarning,
+    Deprecation_warning,
     stacklevel=2
 ) 

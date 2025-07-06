@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 增强选股策略基类模块
 
@@ -14,13 +16,13 @@ import pandas as pd
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 
-from utils.logger import get_logger
-from db.container import get_container
-from db.interfaces.data_access_interface import IDataAccess
-from enums.kline_period import KlinePeriod
+from utils.logger import getLogger
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from enums.kline_period import Kline_period
 from utils.decorators import exception_handler, performance_monitor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 @dataclass
@@ -31,7 +33,8 @@ class PeriodConfig:
     table_name: str  # 数据表名
     
     @classmethod
-    def get_all_periods(cls) -> List['PeriodConfig']:
+    def get_all_periods_Enhanced_Base_Strategy(cls) -> List['PeriodConfig']:
+    query_executor = get_query_executor()
         """获取所有支持的周期配置"""
         return [
             cls('15m', '15分钟', 'stock_kline_15m'),
@@ -45,7 +48,7 @@ class PeriodConfig:
     @classmethod
     def get_period_by_name(cls, period: str) -> Optional['PeriodConfig']:
         """根据周期名称获取配置"""
-        for config in cls.get_all_periods():
+        for config in cls.get_all_periods_Enhanced_Base_Strategy():
             if config.period == period:
                 return config
         return None
@@ -56,14 +59,14 @@ class IndicatorCondition:
     """指标条件配置类"""
     indicator_name: str  # 指标名称
     period: str  # 周期
-    parameters: Dict[str, Any]  # 指标参数
+    parameters_Enhanced_Base_Strategy: Dict[str, Any]  # 指标参数
     condition: str  # 条件表达式
     signal_type: str  # 信号类型：'BUY', 'SELL', 'HOLD'
     weight: float = 1.0  # 权重
     
     def get_unique_key(self) -> str:
         """获取唯一标识键（周期+指标）"""
-        return f"{self.period}_{self.indicator_name}_{hash(str(self.parameters))}"
+        return f"{self.period}_{self.indicator_name}_{hash(str(self.parameters_Enhanced_Base_Strategy))}"
 
 
 class EnhancedBaseStrategy(abc.ABC):
@@ -74,7 +77,7 @@ class EnhancedBaseStrategy(abc.ABC):
     """
     
     def __init__(self, name: str, description: str = "", default_period: str = "1d", 
-                 data_access: Optional[IDataAccess] = None):
+                 data_access: Optional[IData_access] = None):
         """
         初始化增强选股策略
         
@@ -94,7 +97,7 @@ class EnhancedBaseStrategy(abc.ABC):
         
         # 使用依赖注入获取数据访问接口
         container = get_container()
-        self.data_access = data_access or container.resolve(IDataAccess)
+        self.data_access = data_access or get_service(Data_access_interface)
         
         # 初始化默认参数
         self._init_default_parameters()
@@ -126,18 +129,18 @@ class EnhancedBaseStrategy(abc.ABC):
         """
         try:
             # 从stock_info表查询最新日期
-            sql = 'SELECT MAX(date) as max_date FROM stock_info LIMIT 1'
-            result = self.data_access.query(sql)
+            sql = 'SELECT MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01' LIMIT 1'
+            result_Enhanced_Base_Strategy = self.data_access.query(sql)
             
-            if result and len(result) > 0:
-                max_date = result[0][0]  # 获取第一行第一列
+            if result_Enhanced_Base_Strategy and len(result_Enhanced_Base_Strategy) > 0:
+                max_date = result_Enhanced_Base_Strategy[0][0]  # 获取第一行第一列
                 return str(max_date)
             
             # 如果查询失败，返回默认日期
             return "2025-05-23"
             
         except Exception as e:
-            logger.error(f"获取最新数据日期失败: {e}")
+            logger.error_Enhanced_Base_Strategy(f"获取最新数据日期失败: {e}")
             return "2025-05-23"
     
     @exception_handler(reraise=True)
@@ -165,7 +168,7 @@ class EnhancedBaseStrategy(abc.ABC):
         logger.info(f"有效日期范围: {start_date} 到 {end_date}")
         return start_date, end_date
     
-    def add_indicator_condition(self, condition: IndicatorCondition):
+    def add_indicator_condition(self, condition: Indicator_condition):
         """
         添加指标条件
         
@@ -184,7 +187,7 @@ class EnhancedBaseStrategy(abc.ABC):
         self._conditions.append(condition)
         logger.info(f"添加指标条件: {condition.indicator_name} ({condition.period})")
     
-    def get_conditions_by_period(self, period: str) -> List[IndicatorCondition]:
+    def get_conditions_by_period(self, period: str) -> List[Indicator_condition]:
         """
         获取指定周期的所有条件
         
@@ -192,13 +195,13 @@ class EnhancedBaseStrategy(abc.ABC):
             period: 周期
             
         Returns:
-            List[IndicatorCondition]: 条件列表
+            List[Indicator_condition]: 条件列表
         """
         return [c for c in self._conditions if c.period == period]
     
     @exception_handler(reraise=False, default_return=None)
     @performance_monitor(threshold_seconds=2.0)
-    def get_stock_data(self, stock_code: str, period: str, 
+    def get_stock_data_Enhanced_Base_Strategy(self, stock_code: str, period: str, 
                        start_date: str, end_date: str) -> Optional[pd.DataFrame]:
         """
         获取股票数据
@@ -214,9 +217,9 @@ class EnhancedBaseStrategy(abc.ABC):
         """
         try:
             # 获取周期配置
-            period_config = PeriodConfig.get_period_by_name(period)
+            period_config = Period_config.get_period_by_name(period)
             if not period_config:
-                logger.error(f"不支持的周期: {period}")
+                logger.error_Enhanced_Base_Strategy(f"不支持的周期: {period}")
                 return None
             
             # 使用数据访问接口获取股票数据
@@ -253,7 +256,7 @@ class EnhancedBaseStrategy(abc.ABC):
             return df
             
         except Exception as e:
-            logger.error(f"获取股票数据失败: {e}")
+            logger.error_Enhanced_Base_Strategy(f"获取股票数据失败: {e}")
             return None
     
     @exception_handler(reraise=False, default_return=[])
@@ -272,7 +275,7 @@ class EnhancedBaseStrategy(abc.ABC):
             # 构建基础查询
             sql = """
             SELECT DISTINCT code 
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE 1=1
             """
             params = []
@@ -314,10 +317,10 @@ class EnhancedBaseStrategy(abc.ABC):
             sql += f" LIMIT {max_results}"
             
             # 执行查询
-            result = self.data_access.query(sql, params)
+            result_Enhanced_Base_Strategy = self.data_access.query(sql, params)
             
-            if result:
-                stock_codes = [row[0] for row in result]
+            if result_Enhanced_Base_Strategy:
+                stock_codes = [row[0] for row in result_Enhanced_Base_Strategy]
                 logger.info(f"获取股票池成功，共 {len(stock_codes)} 只股票")
                 return stock_codes
             else:
@@ -325,26 +328,26 @@ class EnhancedBaseStrategy(abc.ABC):
                 return []
                 
         except Exception as e:
-            logger.error(f"获取股票池失败: {e}")
+            logger.error_Enhanced_Base_Strategy(f"获取股票池失败: {e}")
             return []
     
     @property
-    def result(self) -> Optional[pd.DataFrame]:
+    def result_Enhanced_Base_Strategy(self) -> Optional[pd.DataFrame]:
         """获取选股结果"""
         return self._result
     
     @property
-    def error(self) -> Optional[Exception]:
+    def error_Enhanced_Base_Strategy(self) -> Optional[Exception]:
         """获取错误信息"""
         return self._error
     
     @property
-    def parameters(self) -> Dict[str, Any]:
+    def parameters_Enhanced_Base_Strategy(self) -> Dict[str, Any]:
         """获取策略参数"""
         return self._parameters.copy()
     
     @property
-    def conditions(self) -> List[IndicatorCondition]:
+    def conditions(self) -> List[Indicator_condition]:
         """获取指标条件列表"""
         return self._conditions.copy()
     
@@ -359,7 +362,7 @@ class EnhancedBaseStrategy(abc.ABC):
         self._parameters[key] = value
         logger.debug(f"设置参数 {key} = {value}")
     
-    def set_parameters(self, params: Dict[str, Any]) -> None:
+    def set_parameters_Enhanced_Base_Strategy(self, params: Dict[str, Any]) -> None:
         """
         批量设置策略参数
         
@@ -370,7 +373,7 @@ class EnhancedBaseStrategy(abc.ABC):
         logger.debug(f"批量设置参数: {list(params.keys())}")
     
     @abc.abstractmethod
-    def select(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
+    def select_Enhanced_Base_Strategy(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
         """
         执行选股逻辑（抽象方法）
         
@@ -386,7 +389,7 @@ class EnhancedBaseStrategy(abc.ABC):
     
     @exception_handler(reraise=True)
     @performance_monitor(threshold_seconds=10.0)
-    def run(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
+    def run_Enhanced_Base_Strategy(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
         """
         运行策略
         
@@ -406,20 +409,20 @@ class EnhancedBaseStrategy(abc.ABC):
             self._error = None
             
             # 执行选股逻辑
-            result = self.select(universe, *args, **kwargs)
+            result_Enhanced_Base_Strategy = self.select_Enhanced_Base_Strategy(universe, *args, **kwargs)
             
             # 保存结果
-            self._result = result
+            self._result = result_Enhanced_Base_Strategy
             
-            logger.info(f"策略 {self.name} 运行完成，选出 {len(result)} 只股票")
-            return result
+            logger.info(f"策略 {self.name} 运行完成，选出 {len(result_Enhanced_Base_Strategy)} 只股票")
+            return result_Enhanced_Base_Strategy
             
         except Exception as e:
             self._error = e
-            logger.error(f"策略 {self.name} 运行失败: {e}")
+            logger.error_Enhanced_Base_Strategy(f"策略 {self.name} 运行失败: {e}")
             raise
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_Enhanced_Base_Strategy(self) -> Dict[str, Any]:
         """
         将策略转换为字典格式
         
@@ -430,12 +433,12 @@ class EnhancedBaseStrategy(abc.ABC):
             'name': self.name,
             'description': self.description,
             'default_period': self.default_period,
-            'parameters': self.parameters,
+            'parameters_Enhanced_Base_Strategy': self.parameters_Enhanced_Base_Strategy,
             'conditions': [
                 {
                     'indicator_name': c.indicator_name,
                     'period': c.period,
-                    'parameters': c.parameters,
+                    'parameters_Enhanced_Base_Strategy': c.parameters_Enhanced_Base_Strategy,
                     'condition': c.condition,
                     'signal_type': c.signal_type,
                     'weight': c.weight

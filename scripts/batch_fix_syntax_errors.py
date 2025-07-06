@@ -83,7 +83,7 @@ def fix_syntax_error(file_path):
         # 查找_calculate方法的最后一个return语句
         calculate_pattern = r'(def _calculate\(.*?\n.*?)(return\s+[a-zA-Z_]+)(\s*\n\s*def|\s*$)'
         
-        def add_pattern_signal_before_return(match):
+        def add_pattern_signal_before_return_Errors(match):
             method_body = match.group(1)
             return_statement = match.group(2)
             after_return = match.group(3) if match.group(3) else ''
@@ -124,7 +124,7 @@ def fix_syntax_error(file_path):
         print(f"修复文件 {file_path} 时出错: {e}")
         return False
 
-def main():
+def main_batchfixsyntaxerrors():
     """主函数"""
     print("=== 批量修复语法错误指标 ===")
     print()
@@ -176,4 +176,4 @@ def main():
         print(f"❌ 测试修复效果时出错: {e}")
 
 if __name__ == "__main__":
-    main()
+    main_batchfixsyntaxerrors()

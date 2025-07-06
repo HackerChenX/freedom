@@ -172,7 +172,7 @@ def test_indicator_fix(indicator_file):
     except Exception as e:
         return False
 
-def main():
+def main_fixp2syntaxerrors():
     """主函数"""
     print("=== P2语法错误指标批量修复 ===")
     print()
@@ -235,4 +235,4 @@ def main():
         print(f"❌ 测试修复效果时出错: {e}")
 
 if __name__ == "__main__":
-    main()
+    main_fixp2syntaxerrors()

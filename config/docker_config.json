@@ -1,0 +1,29 @@
+{
+  "docker": {
+    "redis": {
+      "image": "redis:7-alpine",
+      "port": 6379,
+      "volumes": [
+        "redis_data:/data"
+      ],
+      "restart": "unless-stopped"
+    },
+    "clickhouse": {
+      "image": "clickhouse/clickhouse-server:latest",
+      "http_port": 8123,
+      "native_port": 9000,
+      "volumes": [
+        "clickhouse_data:/var/lib/clickhouse"
+      ],
+      "database": "stock_crawler",
+      "user": "default",
+      "password": "",
+      "restart": "unless-stopped"
+    },
+    "crawler": {
+      "max_workers": 5,
+      "use_proxy": false,
+      "restart": "unless-stopped"
+    }
+  }
+}

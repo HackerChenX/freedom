@@ -11,14 +11,14 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base_indicator import BaseIndicator
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.technical_utils import find_peaks_and_troughs
 from utils.indicator_utils import crossover, crossunder
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class EnhancedOBV(BaseIndicator, PatternSignalMixin):
+class EnhancedObv(BaseIndicator, PatternSignalMixin):
     """
     增强型能量潮(On Balance Volume)指标
     
@@ -66,7 +66,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         self._result = None
         self._price_data = None
     
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Obv(self) -> str:
         """
         获取指标类型
         
@@ -75,7 +75,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         """
         return self.indicator_type
     
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_enhancedobv(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         实现BaseIndicator的抽象方法
         
@@ -85,9 +85,9 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         Returns:
             pd.DataFrame: 计算结果
         """
-        return self.calculate(data)
+        return self.calculate_Obv_Enhanced_Obv(data)
 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate_Obv_Enhanced_Obv(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型OBV指标
         
@@ -222,7 +222,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         
         return corr
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Obv_Enhanced_Obv(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算增强型OBV原始评分
         
@@ -235,7 +235,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算OBV
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Obv_Enhanced_Obv(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -261,7 +261,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         score += divergence_score
         
         # 3. 多周期OBV趋势一致性评分 (新增)
-        multi_period_score = self._calculate_multi_period_consistency(data)
+        multi_period_score = self._calculate_multi_period_consistency_Enhanced_Obv(data)
         score += multi_period_score
         
         # 4. OBV动量评分 (新增)
@@ -366,7 +366,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
 
         return divergence_score.clip(-30, 30)
     
-    def _calculate_multi_period_consistency(self, data: pd.DataFrame) -> pd.Series:
+    def _calculate_multi_period_consistency_Enhanced_Obv(self, data: pd.DataFrame) -> pd.Series:
         """
         计算多周期OBV趋势一致性评分
         
@@ -431,7 +431,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
             return 0.5
         
         # 计算OBV多周期一致性
-        multi_period_score = self._calculate_multi_period_consistency(data)
+        multi_period_score = self._calculate_multi_period_consistency_Enhanced_Obv(data)
         
         # 计算量价相关性
         volume_price_corr = self._result['volume_price_corr']
@@ -449,7 +449,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         
         return quality_score
     
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Obv(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成OBV交易信号
         
@@ -458,11 +458,11 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
             *args, **kwargs: 其他参数
             
         Returns:
-            pd.DataFrame: 信号DataFrame
+            pd.DataFrame: 信号Data_frame
         """
         # 确保已计算OBV
         if not self.has_result():
-            self.calculate(data, *args, **kwargs)
+            self.calculate_Obv_Enhanced_Obv(data, *args, **kwargs)
             
         result = self._result.copy()
         obv_smooth = result['obv_smooth']
@@ -474,7 +474,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         signals['obv_ma'] = result['obv_ma']
         
         # 计算OBV评分
-        obv_score = self.calculate_raw_score(data)
+        obv_score = self.calculate_raw_score_Obv_Enhanced_Obv(data)
         signals['score'] = obv_score
         
         # 生成买入信号
@@ -508,17 +508,17 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         signals['bear_trend'] = signals['score'] < 40
         
         # 添加信号强度
-        signals['signal_strength'] = self._calculate_signal_strength(result, signals)
+        signals['signal_strength'] = self._calculate_signal_strength_Enhanced_Obv(result, signals)
         
         return signals
     
-    def _calculate_signal_strength(self, result: pd.DataFrame, signals: pd.DataFrame) -> pd.Series:
+    def _calculate_signal_strength_Enhanced_Obv(self, result: pd.DataFrame, signals: pd.DataFrame) -> pd.Series:
         """
         计算信号强度
         
         Args:
             result: 指标计算结果
-            signals: 信号DataFrame
+            signals: 信号Data_frame
             
         Returns:
             pd.Series: 信号强度序列
@@ -557,7 +557,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         
         return strength
     
-    def set_market_environment(self, environment: str) -> None:
+    def set_market_environment_Obv(self, environment: str) -> None:
         """
         设置市场环境
         
@@ -575,7 +575,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         计算资金流向梯度
         
         Returns:
-            pd.DataFrame: 包含资金流向梯度分析的DataFrame
+            pd.DataFrame: 包含资金流向梯度分析的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -613,12 +613,12 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         
         return flow_gradient
     
-    def detect_divergence(self) -> pd.DataFrame:
+    def detect_divergence_Obv(self) -> pd.DataFrame:
         """
         检测OBV与价格之间的背离
         
         Returns:
-            pd.DataFrame: 包含背离分析结果的DataFrame
+            pd.DataFrame: 包含背离分析结果的Data_frame
         """
         if self._result is None or self._price_data is None:
             return pd.DataFrame()
@@ -734,7 +734,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         计算价格与成交量的协同性
         
         Returns:
-            pd.DataFrame: 包含量价协同分析的DataFrame
+            pd.DataFrame: 包含量价协同分析的Data_frame
         """
         if self._result is None or self._price_data is None:
             return pd.DataFrame()
@@ -788,12 +788,12 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         
         return synergy
     
-    def identify_patterns(self) -> pd.DataFrame:
+    def identify_patterns_Obv(self) -> pd.DataFrame:
         """
         识别OBV形态
         
         Returns:
-            pd.DataFrame: 包含形态识别结果的DataFrame
+            pd.DataFrame: 包含形态识别结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -804,7 +804,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         flow = self.calculate_flow_gradient()
         
         # 获取背离数据
-        divergence = self.detect_divergence()
+        divergence = self.detect_divergence_Obv()
         
         # 创建形态DataFrame
         patterns = pd.DataFrame(index=self._result.index)
@@ -856,7 +856,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Obv_Enhanced_Obv(self, **kwargs):
         """
         设置指标参数
 
@@ -880,13 +880,13 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         if 'smoothing_period' in kwargs:
             self.smoothing_period = kwargs['smoothing_period']
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Obv_Enhanced_Obv(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算EnhancedOBV指标的置信度
+        计算Enhanced_oBV指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -936,20 +936,20 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Obv_Enhanced_Obv(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EnhancedOBV相关形态
+        获取Enhanced_oBV相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Obv_Enhanced_Obv(data)
 
         if self._result is None:
             return pd.DataFrame(index=data.index)
@@ -984,9 +984,9 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Obv(self):
         """
-        注册EnhancedOBV指标的形态到全局形态注册表
+        注册Enhanced_oBV指标的形态到全局形态注册表
         """
         # 注册OBV交叉形态
         self.register_pattern_to_registry(
@@ -1072,9 +1072,9 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Obv(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成EnhancedOBV交易信号
+        生成Enhanced_oBV交易信号
 
         Args:
             data: 输入数据
@@ -1085,7 +1085,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Obv_Enhanced_Obv(data)
 
         if self._result is None:
             return {
@@ -1140,7 +1140,7 @@ class EnhancedOBV(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Obv(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

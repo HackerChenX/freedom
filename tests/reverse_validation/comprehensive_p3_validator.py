@@ -21,16 +21,16 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from intelligent_p3_generator import IntelligentP3Generator
-from extended_technical_indicators import ExtendedTechnicalIndicators
+from intelligent_p3_generator import Intelligent_p3_generator
+from extended_technical_indicators import Extended_technical_indicators
 
 
-class ComprehensiveP3Validator:
+class Comprehensive_p3_validator:
     """全面的P3专业指标验证器"""
     
     def __init__(self):
-        self.intelligent_generator = IntelligentP3Generator()
-        self.extended_indicators = ExtendedTechnicalIndicators()
+        self.intelligent_generator = Intelligent_p3_generator()
+        self.extended_indicators = Extended_technical_indicators()
     
     def validate_volatility_indicators(self) -> dict:
         """验证波动率指标（ATR、KC、VIX）"""
@@ -330,7 +330,7 @@ class ComprehensiveP3Validator:
         return summary
 
 
-def main():
+def main_comprehensivep3validator():
     """主函数"""
     print("=" * 80)
     print("全面P3专业指标验证测试")
@@ -339,7 +339,7 @@ def main():
     print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    validator = ComprehensiveP3Validator()
+    validator = Comprehensive_p3_validator()
     
     try:
         results = validator.validate_all_p3_comprehensive()
@@ -400,5 +400,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensivep3validator()
     sys.exit(exit_code)

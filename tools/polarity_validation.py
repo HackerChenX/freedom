@@ -20,27 +20,27 @@ logger = get_logger(__name__)
 
 
 @dataclass
-class ValidationResult:
+class Validation_result:
     """验证结果"""
     pattern_id: str
     indicator_name: str
     display_name: str
-    polarity: PatternPolarity
+    polarity: Pattern_polarity
     has_polarity: bool
     is_consistent: bool
     issues: List[str]
 
 
-class PolarityValidator:
+class Polarity_validator:
     """极性标注验证器"""
     
     def __init__(self):
-        self.registry = PatternRegistry()
+        self.registry = Pattern_registry()
         
         # 初始化所有指标以注册模式
-        self._initialize_indicators()
+        self._initialize_indicators_Polarity_Validation()
     
-    def _initialize_indicators(self):
+    def _initialize_indicators_Polarity_Validation(self):
         """初始化所有指标以确保模式被注册"""
         indicators = []
 
@@ -140,7 +140,7 @@ class PolarityValidator:
 
         logger.info(f"已初始化 {len(indicators)} 个指标")
     
-    def validate_all_patterns(self) -> List[ValidationResult]:
+    def validate_all_patterns(self) -> List[Validation_result]:
         """验证所有模式的极性标注"""
         results = []
         all_patterns = self.registry.get_all_patterns()
@@ -153,7 +153,7 @@ class PolarityValidator:
         
         return results
     
-    def _validate_single_pattern(self, pattern_id: str, pattern_info: Dict) -> ValidationResult:
+    def _validate_single_pattern(self, pattern_id: str, pattern_info: Dict) -> Validation_result:
         """验证单个模式的极性标注"""
         issues = []
         
@@ -174,7 +174,7 @@ class PolarityValidator:
         
         if has_polarity:
             # 检查极性与模式类型的一致性
-            if polarity == PatternPolarity.POSITIVE:
+            if polarity == Pattern_polarity.POSITIVE:
                 if pattern_type and 'BEARISH' in str(pattern_type):
                     issues.append(f"极性为POSITIVE但模式类型为{pattern_type}")
                     is_consistent = False
@@ -182,7 +182,7 @@ class PolarityValidator:
                     issues.append(f"极性为POSITIVE但评分影响为{score_impact}")
                     is_consistent = False
             
-            elif polarity == PatternPolarity.NEGATIVE:
+            elif polarity == Pattern_polarity.NEGATIVE:
                 if pattern_type and 'BULLISH' in str(pattern_type):
                     issues.append(f"极性为NEGATIVE但模式类型为{pattern_type}")
                     is_consistent = False
@@ -193,7 +193,7 @@ class PolarityValidator:
             # 检查显示名称与极性的一致性
             display_lower = display_name.lower()
             
-            if polarity == PatternPolarity.POSITIVE:
+            if polarity == Pattern_polarity.POSITIVE:
                 negative_words = ['死叉', '下行', '空头', '看跌', '下跌', 'bearish', 'death', 'falling']
                 for word in negative_words:
                     if word in display_lower:
@@ -201,7 +201,7 @@ class PolarityValidator:
                         is_consistent = False
                         break
             
-            elif polarity == PatternPolarity.NEGATIVE:
+            elif polarity == Pattern_polarity.NEGATIVE:
                 positive_words = ['金叉', '上行', '多头', '看涨', '上涨', 'bullish', 'golden', 'rising']
                 for word in positive_words:
                     if word in display_lower:
@@ -209,7 +209,7 @@ class PolarityValidator:
                         is_consistent = False
                         break
         
-        return ValidationResult(
+        return Validation_result(
             pattern_id=pattern_id,
             indicator_name=indicator_name,
             display_name=display_name,
@@ -219,7 +219,7 @@ class PolarityValidator:
             issues=issues
         )
     
-    def generate_validation_report(self, results: List[ValidationResult]) -> str:
+    def generate_validation_report(self, results: List[Validation_result]) -> str:
         """生成验证报告"""
         report = []
         report.append("# 模式极性标注验证报告")
@@ -292,7 +292,7 @@ class PolarityValidator:
             report.append("")
             
             # 按极性分组显示示例
-            for polarity in [PatternPolarity.POSITIVE, PatternPolarity.NEGATIVE, PatternPolarity.NEUTRAL]:
+            for polarity in [Pattern_polarity.POSITIVE, Pattern_polarity.NEGATIVE, Pattern_polarity.NEUTRAL]:
                 examples = [r for r in correct_examples if r.polarity == polarity]
                 if examples:
                     report.append(f"### {polarity.value} 极性示例")
@@ -307,17 +307,17 @@ class PolarityValidator:
         results = self.validate_all_patterns()
         return [r.pattern_id for r in results if not r.has_polarity]
     
-    def get_inconsistent_patterns(self) -> List[ValidationResult]:
+    def get_inconsistent_patterns(self) -> List[Validation_result]:
         """获取极性标注不一致的模式"""
         results = self.validate_all_patterns()
         return [r for r in results if r.has_polarity and not r.is_consistent]
 
 
-def main():
+def main_polarityvalidation():
     """主函数"""
     print("🔍 开始验证模式极性标注...")
     
-    validator = PolarityValidator()
+    validator = Polarity_validator()
     results = validator.validate_all_patterns()
     
     # 生成报告
@@ -349,4 +349,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_polarityvalidation()

@@ -8,15 +8,15 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 from typing import Dict, Any
 import pandas as pd
 import numpy as np
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.technical_utils import calculate_macd, crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
-class MACD(BaseIndicator, PatternSignalMixin):
+class MacdMacd(BaseIndicator, PatternSignalMixin):
     """MACD指标"""
     
     def __init__(self, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9,
@@ -37,7 +37,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
         super().__init__()
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
-        self.name = "MACD"
+        self.name = "MACD_Macd"
         
         # 设置MACD参数
         self._parameters = {
@@ -86,13 +86,13 @@ class MACD(BaseIndicator, PatternSignalMixin):
         self._registered_patterns = False
         
         # 设置形态注册表允许覆盖，避免警告
-        PatternRegistry.set_allow_override(True)
+        Pattern_registry.set_allow_override(True)
         
         # 初始化基类（会自动调用register_patterns方法）
         super().__init__()
         
         # 重置形态注册表为不允许覆盖
-        PatternRegistry.set_allow_override(False)
+        Pattern_registry.set_allow_override(False)
         
         self.is_available = True
     
@@ -267,13 +267,13 @@ class MACD(BaseIndicator, PatternSignalMixin):
         """获取参数"""
         return self._parameters.copy()
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Macd_Macd_Macd_macd(self, **kwargs):
         """设置指标参数"""
         for key, value in kwargs.items():
             if key in self._parameters:
                 self._parameters[key] = value
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_macd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算MACD指标
         
@@ -281,7 +281,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
             data: 输入数据，必须包含 'close' 列
             
         Returns:
-            pd.DataFrame: 包含MACD线、信号线和柱状图的DataFrame
+            pd.DataFrame: 包含MACD线、信号线和柱状图的Data_frame
         """
         price_col = self._parameters['price_col']
         
@@ -367,7 +367,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
 
         return result_df
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Macd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算MACD指标的各种形态
 
@@ -376,13 +376,13 @@ class MACD(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数，用于覆盖默认参数
 
         Returns:
-            一个包含各种形态布尔值的DataFrame
+            一个包含各种形态布尔值的Data_frame
         """
         # 覆盖默认参数
         self._parameters.update(kwargs)
 
         # 核心计算
-        macd_df = self._calculate(data, **self._parameters)
+        macd_df = self._calculate_macd(data, **self._parameters)
         dif = macd_df['macd_line']
         dea = macd_df['macd_signal']
         hist = macd_df['macd_histogram']
@@ -391,15 +391,15 @@ class MACD(BaseIndicator, PatternSignalMixin):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 1. 金叉和死叉
-        patterns_df['MACD_GOLDEN_CROSS'] = self._detect_robust_crossover(dif, dea, window=3, cross_type='above')
-        patterns_df['MACD_DEATH_CROSS'] = self._detect_robust_crossover(dif, dea, window=3, cross_type='below')
+        patterns_df['MACD_GOLDEN_CROSS'] = self._detect_robust_crossover_Macd(dif, dea, window=3, cross_type='above')
+        patterns_df['MACD_DEATH_CROSS'] = self._detect_robust_crossover_Macd(dif, dea, window=3, cross_type='below')
 
         # 2. 零轴穿越
-        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self._detect_robust_crossover(dif, 0, window=1, cross_type='above')
-        patterns_df['MACD_ZERO_CROSS_BELOW'] = self._detect_robust_crossover(dif, 0, window=1, cross_type='below')
+        patterns_df['MACD_ZERO_CROSS_ABOVE'] = self._detect_robust_crossover_Macd(dif, 0, window=1, cross_type='above')
+        patterns_df['MACD_ZERO_CROSS_BELOW'] = self._detect_robust_crossover_Macd(dif, 0, window=1, cross_type='below')
 
         # 3. 背离检测
-        bullish_divergence, bearish_divergence = self._detect_divergence(
+        bullish_divergence, bearish_divergence = self._detect_divergence_Macd(
             data['close'],
             macd_df['macd_line'],
             window=self._parameters['divergence_window']
@@ -463,16 +463,16 @@ class MACD(BaseIndicator, PatternSignalMixin):
         # 只返回形态结果，不包含基础计算结果
         return patterns_df
 
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Macd(self) -> str:
         """
         获取指标类型
         
         Returns:
             str: 指标类型字符串
         """
-        return "MACD"
+        return "MACD_Macd"
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Macd(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算MACD的原始得分
         
@@ -483,10 +483,10 @@ class MACD(BaseIndicator, PatternSignalMixin):
             pd.Series: MACD得分
         """
         # 首先获取所有形态
-        patterns_df = self.get_patterns(data)
+        patterns_df = self.get_patterns_Macd(data)
 
         # 获取MACD计算结果用于额外评分
-        macd_df = self._calculate(data, **self._parameters)
+        macd_df = self._calculate_macd(data, **self._parameters)
 
         # 初始化得分
         total_score = pd.Series(0.0, index=data.index)
@@ -533,7 +533,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
         
         return total_score
 
-    def _detect_robust_crossover(self, series1: pd.Series, series2: Union[pd.Series, float, int], window: int = 3, cross_type: str = 'above') -> pd.Series:
+    def _detect_robust_crossover_Macd(self, series1: pd.Series, series2: Union[pd.Series, float, int], window: int = 3, cross_type: str = 'above') -> pd.Series:
         """
         更稳健的交叉检测，考虑交叉后的持续性
         
@@ -612,7 +612,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
                     
         return result
 
-    def _detect_divergence(self, price: pd.Series, indicator: pd.Series, window: int = 14) -> Tuple[pd.Series, pd.Series]:
+    def _detect_divergence_Macd(self, price: pd.Series, indicator: pd.Series, window: int = 14) -> Tuple[pd.Series, pd.Series]:
         """
         检测价格与指标之间的背离
         
@@ -691,7 +691,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
                     
         return bullish_divergence, bearish_divergence
 
-    def get_signals(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def get_signals_Macd(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         生成买入/卖出信号
         
@@ -702,7 +702,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
             Dict[str, Any]: 包含买卖信号和其他分析结果的字典
         """
         # 首先，获取包含所有形态的DataFrame
-        patterns_df = self.get_patterns(data)
+        patterns_df = self.get_patterns_Macd(data)
         
         # 初始化信号字典
         signals = {
@@ -753,7 +753,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
         Returns:
             float: 最后一个时间点的综合得分
         """
-        raw_score_series = self.calculate_raw_score(data)
+        raw_score_series = self.calculate_raw_score_Macd(data)
         
         if raw_score_series.empty:
             return 0.0
@@ -775,10 +775,10 @@ class MACD(BaseIndicator, PatternSignalMixin):
             List[Dict]: 包含该形态发生详情的列表
         """
         # 获取所有形态
-        patterns_df = self.get_patterns(data)
+        patterns_df = self.get_patterns_Macd(data)
 
         # 获取MACD计算结果用于上下文信息
-        macd_df = self._calculate(data, **self._parameters)
+        macd_df = self._calculate_macd(data, **self._parameters)
 
         # 检查形态ID是否存在
         if pattern_id not in patterns_df.columns:
@@ -838,7 +838,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
         bottom_results = self.analyze_pattern("MACD_DOUBLE_BOTTOM", data)
         return top_results + bottom_results
 
-    def calculate_confidence(self, score: pd.Series, patterns: list, signals: dict) -> float:
+    def calculate_confidence_Macd(self, score: pd.Series, patterns: list, signals: dict) -> float:
         """
         计算指标的置信度
         
@@ -870,7 +870,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
         
         return min(confidence, 1.0)
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Macd(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -950,7 +950,7 @@ class MACD(BaseIndicator, PatternSignalMixin):
             'type': 'neutral'
         })
 
-    def register_patterns(self):
+    def register_patterns_Macd(self):
         """
         注册MACD指标的形态到全局形态注册表
         """
@@ -1060,45 +1060,11 @@ class MACD(BaseIndicator, PatternSignalMixin):
             score_impact=22.0,
             polarity="POSITIVE"
         )
-    def __init__(self, **kwargs):
-        """
-        初始化MACD指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "MACD"
-
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-
-        # 初始化_parameters属性以保持向后兼容
-        self._parameters = {
-            'fast_period': kwargs.get('fast_period', 12),
-            'slow_period': kwargs.get('slow_period', 26),
-            'signal_period': kwargs.get('signal_period', 9),
-            'price_col': 'close',
-            'histogram_threshold': kwargs.get('histogram_threshold', 0.0),
-            'divergence_window': kwargs.get('divergence_window', 20),
-            'divergence_threshold': kwargs.get('divergence_threshold', 0.05),
-            'zero_line_sensitivity': kwargs.get('zero_line_sensitivity', 0.001)
-        }
-
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_macd(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Macd_Macd_Macd_macd_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -1107,18 +1073,18 @@ class MACD(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('MACD', params)
+            is_valid, errors = validator.validate_indicator_parameters('MACD_Macd', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"MACD参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

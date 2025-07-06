@@ -427,7 +427,7 @@ class CompleteValidationWorkflow:
         print(f"  摘要报告: {report_file}")
 
 
-def main():
+def main_completevalidationworkflow():
     """主函数"""
     parser = argparse.ArgumentParser(description="完整的买点策略验证工作流")
     parser.add_argument("--buypoints", required=True, help="买点数据文件")
@@ -448,7 +448,7 @@ def main():
     
     # 创建工作流并执行
     output_dir = args.output or "results/complete_validation"
-    workflow = CompleteValidationWorkflow(output_dir)
+    workflow = Complete_validation_workflow(output_dir)
     
     print(f"🚀 启动完整验证工作流")
     print(f"买点文件: {args.buypoints}")
@@ -480,4 +480,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_completevalidationworkflow()

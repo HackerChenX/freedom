@@ -1,24 +1,24 @@
 """
-FibonacciTools指标单元测试
+Fibonacci_tools指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_fibonacci_tools(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """FibonacciTools指标测试类"""
     
-    def setUp(self):
+    def set_up_Tools(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Tools(self)
         
-        self.indicator = FibonacciTools()
+        self.indicator = Fibonacci_tools()
         self.expected_columns = [
             'FIB_GOLDEN_RATIO_SUPPORT', 'FIB_GOLDEN_RATIO_RESISTANCE',
             'FIB_50_PERCENT_RETRACEMENT', 'FIB_382_RETRACEMENT', 'FIB_618_RETRACEMENT',
@@ -29,18 +29,18 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
             'FIB_TIME_CYCLE', 'FIB_VOLUME_CONFIRMATION',
             'FIB_TREND_ALIGNMENT', 'FIB_REVERSAL_SIGNAL'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Tools(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Tools(self)
     
     def test_fibonacci_tools_initialization(self):
         """测试FibonacciTools初始化"""
         # 测试默认初始化
-        default_indicator = FibonacciTools()
+        default_indicator = Fibonacci_tools()
         self.assertEqual(default_indicator.name, "FibonacciTools")
         self.assertIn("斐波那契工具指标", default_indicator.description)
     
@@ -49,7 +49,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         result = self.indicator.calculate(self.data)
         
         # 验证FibonacciTools列存在
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 验证包含斐波那契水平线
         fib_columns = [col for col in result.columns if 'fib_' in col]
@@ -73,28 +73,28 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_fibonacci_tools_required_columns(self):
         """测试FibonacciTools必需列"""
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_fibonacci_tools_patterns(self):
         """测试FibonacciTools形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -106,16 +106,16 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_fibonacci_tools_retracement_calculation(self):
         """测试FibonacciTools回调线计算"""
         # 使用足够的数据进行回调线计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -137,7 +137,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
     def test_fibonacci_tools_extension_calculation(self):
         """测试FibonacciTools扩展线计算"""
         # 使用足够的数据进行扩展线计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -154,7 +154,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
     def test_fibonacci_tools_time_series_calculation(self):
         """测试FibonacciTools时间序列计算"""
         # 使用足够的数据进行时间序列计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 150}
         ])
         
@@ -168,38 +168,38 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
     def test_fibonacci_tools_swing_point_detection(self):
         """测试FibonacciTools摆动点检测"""
         # 使用足够的数据进行摆动点检测
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         swing_high_idx, swing_low_idx = self.indicator._detect_swing_points(long_data)
         
         # 验证摆动点索引有效
-        self.assertIsInstance(swing_high_idx, int)
-        self.assertIsInstance(swing_low_idx, int)
-        self.assertGreaterEqual(swing_high_idx, 0)
-        self.assertGreaterEqual(swing_low_idx, 0)
-        self.assertLess(swing_high_idx, len(long_data))
-        self.assertLess(swing_low_idx, len(long_data))
+        self.assert_is_instance(swing_high_idx, int)
+        self.assert_is_instance(swing_low_idx, int)
+        self.assert_greater_equal(swing_high_idx, 0)
+        self.assert_greater_equal(swing_low_idx, 0)
+        self.assert_less(swing_high_idx, len(long_data))
+        self.assert_less(swing_low_idx, len(long_data))
     
     def test_fibonacci_tools_pattern_identification(self):
         """测试FibonacciTools形态识别"""
         # 使用足够的数据进行形态识别
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         patterns = self.indicator.identify_patterns(long_data)
         
         # 验证返回形态列表
-        self.assertIsInstance(patterns, list)
+        self.assert_is_instance(patterns, list)
     
     def test_fibonacci_tools_score_calculation(self):
         """测试FibonacciTools评分计算"""
         raw_score_df = self.indicator.calculate_raw_score(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         
         # 验证包含score列
         self.assertIn('score', raw_score_df.columns)
@@ -212,16 +212,16 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
     def test_fibonacci_tools_fibonacci_types(self):
         """测试FibonacciTools斐波那契类型"""
         # 测试回调线类型
-        result_retracement = self.indicator.calculate(self.data, fib_type=FibonacciType.RETRACEMENT)
-        self.assertIsInstance(result_retracement, pd.DataFrame)
+        result_retracement = self.indicator.calculate(self.data, fib_type=Fibonacci_type.RETRACEMENT)
+        self.assert_is_instance(result_retracement, pd.DataFrame)
         
         # 测试扩展线类型
-        result_extension = self.indicator.calculate(self.data, fib_type=FibonacciType.EXTENSION)
-        self.assertIsInstance(result_extension, pd.DataFrame)
+        result_extension = self.indicator.calculate(self.data, fib_type=Fibonacci_type.EXTENSION)
+        self.assert_is_instance(result_extension, pd.DataFrame)
         
         # 测试时间序列类型
-        result_time = self.indicator.calculate(self.data, fib_type=FibonacciType.TIME_SERIES)
-        self.assertIsInstance(result_time, pd.DataFrame)
+        result_time = self.indicator.calculate(self.data, fib_type=Fibonacci_type.TIME_SERIES)
+        self.assert_is_instance(result_time, pd.DataFrame)
     
     def test_fibonacci_tools_volume_confirmation(self):
         """测试FibonacciTools成交量确认"""
@@ -232,7 +232,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         raw_score_df = self.indicator.calculate_raw_score(data_with_volume)
         
         # 验证成交量确认在评分中的影响
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         self.assertIn('score', raw_score_df.columns)
     
     def test_fibonacci_tools_edge_cases(self):
@@ -242,7 +242,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         result = self.indicator.calculate(small_data)
         
         # FibonacciTools应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_fibonacci_tools_validation(self):
         """测试FibonacciTools数据验证"""
@@ -251,7 +251,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
 
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_fibonacci_tools_indicator_type(self):
         """测试FibonacciTools指标类型"""
@@ -266,7 +266,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         # 验证形态已注册（通过检查是否有异常抛出）
         self.assertTrue(True, "形态注册应该成功完成")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Tools(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -277,9 +277,9 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Tools(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -290,7 +290,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

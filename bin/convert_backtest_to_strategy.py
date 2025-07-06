@@ -591,15 +591,15 @@ from datetime import datetime, timedelta
         # 添加通用函数
         strategy_code += """
 # 通用函数定义
-def MA(close, period):
+def m_a(close, period):
     """计算移动平均线"""
     return pd.Series(close).rolling(period).mean().values
 
-def EMA(close, period):
+def e_m_a(close, period):
     """计算指数移动平均线"""
     return pd.Series(close).ewm(span=period, adjust=False).mean().values
 
-def SMA(series, n, m):
+def s_m_a(series, n, m):
     """计算平滑移动平均"""
     result = np.zeros_like(series, dtype=float)
     result[0] = series[0]
@@ -607,28 +607,28 @@ def SMA(series, n, m):
         result[i] = (m * series[i] + (n - m) * result[i-1]) / n
     return result
 
-def REF(series, n):
+def r_e_f(series, n):
     """引用N个周期前的数据"""
     if n <= 0:
         return series
     series_pd = pd.Series(series)
     return series_pd.shift(n).values
 
-def HHV(series, n):
+def h_h_v(series, n):
     """N个周期内的最高值"""
     return pd.Series(series).rolling(n).max().values
 
-def LLV(series, n):
+def l_l_v(series, n):
     """N个周期内的最低值"""
     return pd.Series(series).rolling(n).min().values
 
-def CROSS(series1, series2):
+def c_r_o_s_s(series1, series2):
     """判断series1是否上穿series2"""
     cond1 = series1 > series2
     cond2 = REF(series1, 1) <= REF(series2, 1)
     return cond1 & cond2
 
-def MACD(close, fast=12, slow=26, signal=9):
+def m_a_c_d(close, fast=12, slow=26, signal=9):
     """计算MACD指标"""
     ema_fast = EMA(close, fast)
     ema_slow = EMA(close, slow)
@@ -637,7 +637,7 @@ def MACD(close, fast=12, slow=26, signal=9):
     macd = (dif - dea) * 2
     return dif, dea, macd
 
-def KDJ(close, high, low, n=9, m1=3, m2=3):
+def k_d_j(close, high, low, n=9, m1=3, m2=3):
     """计算KDJ指标"""
     high_n = pd.Series(high).rolling(n).max()
     low_n = pd.Series(low).rolling(n).min()
@@ -649,7 +649,7 @@ def KDJ(close, high, low, n=9, m1=3, m2=3):
     
     return k.values, d.values, j.values
 
-def RSI(close, period=14):
+def r_s_i(close, period=14):
     """计算RSI指标"""
     diff = pd.Series(close).diff(1)
     up = diff.clip(lower=0)
@@ -661,7 +661,7 @@ def RSI(close, period=14):
     rsi = 100 - (100 / (1 + ma_up / ma_down))
     return rsi.values
 
-def BOLL(close, period=20, dev=2):
+def b_o_l_l(close, period=20, dev=2):
     """计算BOLL指标"""
     middle = pd.Series(close).rolling(period).mean()
     std = pd.Series(close).rolling(period).std()
@@ -671,20 +671,20 @@ def BOLL(close, period=20, dev=2):
     
     return upper.values, middle.values, lower.values
 
-def BIAS(close, period=6):
+def b_i_a_s(close, period=6):
     """计算BIAS指标"""
     ma = MA(close, period)
     bias = (close - ma) / ma * 100
     return bias
 
-def WR(high, low, close, period=14):
+def w_r(high, low, close, period=14):
     """计算威廉指标"""
     highest = pd.Series(high).rolling(period).max()
     lowest = pd.Series(low).rolling(period).min()
     wr = (highest - close) / (highest - lowest) * 100
     return wr.values
 
-def CCI(high, low, close, period=14):
+def c_c_i(high, low, close, period=14):
     """计算CCI顺势指标"""
     tp = (high + low + close) / 3
     ma_tp = pd.Series(tp).rolling(period).mean()
@@ -692,7 +692,7 @@ def CCI(high, low, close, period=14):
     cci = (tp - ma_tp) / (0.015 * md_tp)
     return cci.values
 
-def ATR(high, low, close, period=14):
+def a_t_r(high, low, close, period=14):
     """计算ATR指标"""
     tr1 = high - low
     tr2 = np.abs(high - REF(close, 1))
@@ -701,7 +701,7 @@ def ATR(high, low, close, period=14):
     atr = pd.Series(tr).rolling(period).mean().values
     return atr
 
-def EMV(high, low, volume, period=14, volume_scale=10000):
+def e_m_v(high, low, volume, period=14, volume_scale=10000):
     """计算EMV指标"""
     midpoint = (high + low) / 2
     midpoint_move = np.zeros_like(midpoint)

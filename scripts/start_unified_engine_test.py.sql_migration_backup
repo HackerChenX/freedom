@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+
+"""
+统一分析引擎测试启动脚本
+
+提供交互式界面，让用户选择测试类型和参数
+支持早停机制，连接真实Click_house数据
+"""
+
+import sys
+import os
+import time
+from datetime import datetime
+
+# 添加项目根目录到路径
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
+
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def print_banner_Test():
+    """打印测试横幅"""
+    print("\n" + "="*80)
+    print("🔍 统一分析引擎全面测试系统")
+    print("="*80)
+    print("📊 连接真实ClickHouse数据")
+    print("⚡ 支持早停机制，发现错误立即停止")
+    print("🎯 88个指标全覆盖测试")
+    print("🚀 复杂选股条件组合验证")
+    print("="*80)
+
+
+def show_test_menu():
+    """显示测试菜单"""
+    print("\n📋 请选择测试类型:")
+    print("1. 🔥 快速测试 (推荐) - 测试核心指标，约5分钟")
+    print("2. ⭐ 优先级测试 - 测试最重要的10个指标，约10分钟")
+    print("3. 🔍 逻辑验证测试 - 深度验证指标计算逻辑，约15分钟")
+    print("4. 🎯 ZXM指标测试 - 测试ZXM体系24个指标，约20分钟")
+    print("5. 🔧 增强指标测试 - 测试11个增强指标，约15分钟")
+    print("6. 📊 全面测试 - 测试所有88个指标，约60分钟")
+    print("7. 💡 自定义测试 - 自定义测试参数")
+    print("0. 🚪 退出")
+    print("-"*80)
+
+
+def get_user_choice():
+    """获取用户选择"""
+    while True:
+        try:
+            choice = input("👉 请输入选择 (0-7): ").strip()
+            if choice in ['0', '1', '2', '3', '4', '5', '6', '7']:
+                return choice
+            else:
+                print("❌ 无效选择，请输入0-7之间的数字")
+        except Keyboard_interrupt:
+            print("\n\n👋 用户取消操作")
+            return '0'
+        except Exception as e:
+            print(f"❌ 输入错误: {e}")
+
+
+def get_custom_parameters():
+    """获取自定义测试参数"""
+    print("\n🔧 自定义测试参数:")
+    
+    # 股票数量
+    while True:
+        try:
+            stock_count = input("📈 测试股票数量 (默认100): ").strip()
+            if not stock_count:
+                stock_count = 100
+            else:
+                stock_count = int(stock_count)
+            if 1 <= stock_count <= 5000:
+                break
+            else:
+                print("❌ 股票数量应在1-5000之间")
+        except Value_error:
+            print("❌ 请输入有效的数字")
+    
+    # 并发数
+    while True:
+        try:
+            concurrent = input("⚡ 并发测试数 (默认3): ").strip()
+            if not concurrent:
+                concurrent = 3
+            else:
+                concurrent = int(concurrent)
+            if 1 <= concurrent <= 10:
+                break
+            else:
+                print("❌ 并发数应在1-10之间")
+        except Value_error:
+            print("❌ 请输入有效的数字")
+    
+    # 早停机制
+    while True:
+        early_stop = input("🛑 启用早停机制? (y/n, 默认y): ").strip().lower()
+        if not early_stop or early_stop in ['y', 'yes']:
+            early_stop = True
+            break
+        elif early_stop in ['n', 'no']:
+            early_stop = False
+            break
+        else:
+            print("❌ 请输入y或n")
+    
+    # 指标组选择
+    print("\n📊 可选指标组:")
+    print("1. priority_indicators - 优先级指标")
+    print("2. core_indicators - 核心指标")  
+    print("3. enhanced_indicators - 增强指标")
+    print("4. zxm_indicators - ZXM指标")
+    print("5. composite_indicators - 复合指标")
+    print("6. pattern_indicators - 形态指标")
+    print("7. all - 所有指标")
+    
+    indicator_groups = input("🎯 选择指标组 (用逗号分隔，默认priority_indicators): ").strip()
+    if not indicator_groups:
+        indicator_groups = ['priority_indicators']
+    else:
+        indicator_groups = [g.strip() for g in indicator_groups.split(',')]
+    
+    return {
+        'stock_count': stock_count,
+        'concurrent': concurrent,
+        'early_stop': early_stop,
+        'indicator_groups': indicator_groups
+    }
+
+
+def run_test_Test(test_type: str, custom_params: dict = None):
+    """运行测试"""
+    print(f"\n🚀 开始执行测试: {test_type}")
+    print(f"⏰ 开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    try:
+        # 导入测试运行器
+        from bin.run_unified_engine_test import Unified_engine_test_runner
+        
+        # 创建测试运行器
+        runner = Unified_engine_test_runner()
+        
+        # 根据测试类型执行相应测试
+        if test_type == 'quick':
+            print("⚡ 执行快速测试...")
+            result = runner.run_quick_test()
+        elif test_type == 'priority':
+            print("⭐ 执行优先级测试...")
+            result = runner.run_priority_test()
+        elif test_type == 'logic':
+            print("🔍 执行逻辑验证测试...")
+            result = runner.run_logic_validation(2)
+        elif test_type == 'zxm':
+            print("🎯 执行ZXM指标测试...")
+            result = runner.run_zxm_test()
+        elif test_type == 'enhanced':
+            print("🔧 执行增强指标测试...")
+            result = runner.run_enhanced_test()
+        elif test_type == 'comprehensive':
+            print("📊 执行全面测试...")
+            result = runner.run_comprehensive_test()
+        elif test_type == 'custom':
+            print("💡 执行自定义测试...")
+            # 应用自定义参数
+            if custom_params:
+                # 临时修改配置
+                original_config = runner.config['test_configuration'].copy()
+                runner.config['test_configuration'].update({
+                    'test_stock_count': custom_params['stock_count'],
+                    'max_concurrent_tests': custom_params['concurrent'],
+                    'enable_early_stop': custom_params['early_stop']
+                })
+                
+                try:
+                    if 'all' in custom_params['indicator_groups']:
+                        result = runner.run_comprehensive_test()
+                    else:
+                        result = runner.run_comprehensive_test(custom_params['indicator_groups'])
+                finally:
+                    # 恢复原配置
+                    runner.config['test_configuration'] = original_config
+            else:
+                result = runner.run_comprehensive_test()
+        
+        # 生成最终报告
+        final_report = runner.generate_final_report()
+        
+        # 显示结果摘要
+        print_test_summary(final_report)
+        
+        return True
+        
+    except Keyboard_interrupt:
+        print("\n\n🛑 用户中断测试")
+        return False
+    except Exception as e:
+        print(f"\n❌ 测试执行失败: {e}")
+        logger.error(f"测试执行失败: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return False
+
+
+def print_test_summary(final_report: dict):
+    """打印测试摘要"""
+    print("\n" + "="*80)
+    print("📊 测试结果摘要")
+    print("="*80)
+    
+    assessment = final_report.get('overall_assessment', {})
+    
+    # 总体状态
+    status = assessment.get('overall_status', 'UNKNOWN')
+    status_emoji = {
+        'EXCELLENT': '🎉',
+        'GOOD': '✅', 
+        'FAIR': '⚠️',
+        'POOR': '❌',
+        'UNKNOWN': '❓'
+    }.get(status, '❓')
+    
+    print(f"🎯 总体评估: {status_emoji} {status}")
+    print(f"📈 成功率: {assessment.get('overall_success_rate', 0):.1f}%")
+    print(f"✅ 成功测试: {assessment.get('total_successful', 0)}")
+    print(f"❌ 失败测试: {assessment.get('total_failed', 0)}")
+    print(f"📊 总测试数: {assessment.get('total_indicators_tested', 0)}")
+    
+    # 建议
+    recommendations = assessment.get('recommendations', [])
+    if recommendations:
+        print(f"\n💡 建议:")
+        for rec in recommendations:
+            print(f"   • {rec}")
+    
+    # 测试详情
+    test_overview = final_report.get('test_overview', {})
+    print(f"\n📋 测试详情:")
+    print(f"   • 测试时间: {test_overview.get('test_date', 'Unknown')}")
+    print(f"   • 执行的测试: {', '.join(test_overview.get('tests_executed', []))}")
+    
+    print("="*80)
+
+
+def check_prerequisites():
+    """检查前置条件"""
+    print("🔍 检查系统前置条件...")
+    
+    try:
+        # 检查数据库连接
+        from db.unified_data_manager import get_unified_data_manager
+        data_manager = get_unified_data_manager()
+        
+        # 简单查询测试连接
+        test_query = "SELECT COUNT(*) as count FROM stock_info WHERE date >= '2020-01-01' LIMIT 1"
+        result = data_manager.query(test_query)
+        
+        if not result.empty:
+            print("✅ ClickHouse数据库连接正常")
+            return True
+        else:
+            print("❌ ClickHouse数据库连接失败")
+            return False
+            
+    except Exception as e:
+        print(f"❌ 前置条件检查失败: {e}")
+        return False
+
+
+def main_startunifiedenginetest():
+    """主函数"""
+    print_banner_Test()
+    
+    # 检查前置条件
+    if not check_prerequisites():
+        print("\n❌ 前置条件检查失败，请检查数据库连接后重试")
+        return 1
+    
+    while True:
+        show_test_menu()
+        choice = get_user_choice()
+        
+        if choice == '0':
+            print("\n👋 感谢使用统一分析引擎测试系统！")
+            break
+        
+        elif choice == '1':
+            success = run_test_Test('quick')
+        elif choice == '2':
+            success = run_test_Test('priority')
+        elif choice == '3':
+            success = run_test_Test('logic')
+        elif choice == '4':
+            success = run_test_Test('zxm')
+        elif choice == '5':
+            success = run_test_Test('enhanced')
+        elif choice == '6':
+            success = run_test_Test('comprehensive')
+        elif choice == '7':
+            custom_params = get_custom_parameters()
+            success = run_test_Test('custom', custom_params)
+        
+        # 询问是否继续
+        if choice != '0':
+            print(f"\n⏰ 测试完成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            while True:
+                continue_choice = input("\n🔄 是否继续其他测试? (y/n): ").strip().lower()
+                if continue_choice in ['n', 'no']:
+                    print("\n👋 感谢使用统一分析引擎测试系统！")
+                    return 0
+                elif continue_choice in ['y', 'yes', '']:
+                    break
+                else:
+                    print("❌ 请输入y或n")
+    
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        exit(main_startunifiedenginetest())
+    except Keyboard_interrupt:
+        print("\n\n👋 用户取消操作，退出程序")
+        exit(0)
+    except Exception as e:
+        print(f"\n❌ 程序异常退出: {e}")
+        exit(1) 

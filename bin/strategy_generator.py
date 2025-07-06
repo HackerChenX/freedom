@@ -5,6 +5,8 @@ import sys
 import os
 
 # 添加项目根目录到Python路径
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
@@ -62,7 +64,7 @@ def load_stock_list(input_file: str) -> List[Dict[str, str]]:
         return result
 
 
-def run_analysis(input_file: str, output_file: str = None, source_type: str = 'csv') -> Dict:
+def run_analysis_Generator(input_file: str, output_file: str = None, source_type: str = 'csv') -> Dict:
     """
     运行买点指标分析
     
@@ -90,7 +92,7 @@ def run_analysis(input_file: str, output_file: str = None, source_type: str = 'c
     return result
 
 
-def generate_strategy(analysis_result: Dict, strategy_type: str = None, output_file: str = None) -> str:
+def generate_strategy_Generator(analysis_result: Dict, strategy_type: str = None, output_file: str = None) -> str:
     """
     根据分析结果生成选股策略
     
@@ -271,11 +273,11 @@ def run(args):
                 args.type = 'db'
         
         # 运行分析
-        analysis_result = run_analysis(args.input, args.output, args.type)
+        analysis_result = run_analysis_Generator(args.input, args.output, args.type)
         
         # 生成策略
         if analysis_result and analysis_result.get('stocks_count', 0) > 0:
-            strategy_file = generate_strategy(analysis_result, args.strategy_type)
+            strategy_file = generate_strategy_Generator(analysis_result, args.strategy_type)
             logger.info(f"策略生成完成: {strategy_file}")
         else:
             logger.warning("由于分析结果为空，未生成策略")

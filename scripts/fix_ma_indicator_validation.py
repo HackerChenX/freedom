@@ -21,8 +21,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_executor import Strategy_executor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -44,7 +44,7 @@ def test_ma_indicator_with_daily_data():
             print(f"\n--- 测试股票: {stock_code} ---")
             
             # 获取股票信息
-            stock_info = data_manager.get_stock_info(stock_code)
+            stock_info WHERE 1=1 = data_manager.get_stock_info(stock_code)
             df = stock_info.to_dataframe()
             
             # 过滤日线数据
@@ -101,7 +101,7 @@ def test_strategy_condition_with_daily_data():
     
     try:
         # 初始化条件评估器
-        evaluator = StrategyConditionEvaluator()
+        evaluator = Strategy_condition_evaluator()
         data_manager = get_unified_data_manager()
         
         # 获取一只股票的日线数据
@@ -110,7 +110,7 @@ def test_strategy_condition_with_daily_data():
         print(f"测试股票: {stock_code}")
         
         # 获取股票信息并过滤日线数据
-        stock_info = data_manager.get_stock_info(stock_code)
+        stock_info WHERE 1=1 = data_manager.get_stock_info(stock_code)
         df = stock_info.to_dataframe()
         daily_data = df[df['level'] == '日线'].copy()
         
@@ -187,7 +187,7 @@ def test_simplified_ma_strategy():
         }
         
         # 初始化策略执行器
-        strategy_executor = StrategyExecutor()
+        strategy_executor = Strategy_executor()
         
         # 执行策略
         print("执行简化MA策略...")
@@ -236,7 +236,7 @@ def fix_ma_strategy_conditions():
     return improved_conditions
 
 
-def main():
+def main_fixmaindicatorvalidation():
     """主函数"""
     print("🔧 开始修复MA指标验证问题...")
     
@@ -261,4 +261,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_fixmaindicatorvalidation() 

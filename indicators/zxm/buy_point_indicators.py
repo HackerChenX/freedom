@@ -25,7 +25,9 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-日MACD指标"""
-        super().__init__(name="ZXMDailyMACD", description="ZXM买点-日MACD指标，判断日线MACD值是否小于0.9")
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMDailyMACD"
+        self.description = "ZXM买点-日MACD指标，判断日线MACD值是否小于0.9"
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -454,6 +456,31 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         self.signal_period = kwargs.get('signal_period', 9)
         self.threshold = kwargs.get('threshold', 0.9)
 
+    # 抽象方法实现
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate(data, *args, **kwargs)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """抽象基类要求的置信度方法"""
+        return self.calculate_confidence(score, patterns, signals)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters(**kwargs)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共计算接口"""
+        return self._calculate(data, **kwargs)
+
 
 class ZXMTurnover(BaseIndicator, PatternSignalMixin):
     """
@@ -465,7 +492,9 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-换手率指标"""
-        super().__init__(name="ZXMTurnover", description="ZXM买点-换手率指标，判断日线换手率是否大于0.7%")
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMTurnover"
+        self.description = "ZXM买点-换手率指标，判断日线换手率是否大于0.7%"
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -818,6 +847,31 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
         """
         self.threshold = kwargs.get('threshold', 0.7)
 
+    # 抽象方法实现
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate(data, *args, **kwargs)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """抽象基类要求的置信度方法"""
+        return self.calculate_confidence(score, patterns, signals)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters(**kwargs)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共计算接口"""
+        return self._calculate(data, **kwargs)
+
 
 class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
     """
@@ -829,7 +883,9 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-缩量指标"""
-        super().__init__(name="ZXMVolumeShrink", description="ZXM买点-缩量指标，判断成交量是否明显缩量")
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMVolumeShrink"
+        self.description = "ZXM买点-缩量指标，判断成交量是否缩量"
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -1139,6 +1195,31 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
         self.ma_period = kwargs.get('ma_period', 2)
         self.shrink_threshold = kwargs.get('shrink_threshold', 0.9)
 
+    # 抽象方法实现
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate(data, *args, **kwargs)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """抽象基类要求的置信度方法"""
+        return self.calculate_confidence(score, patterns, signals)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters(**kwargs)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共计算接口"""
+        return self._calculate(data, **kwargs)
+
 
 class ZXMMACallback(BaseIndicator, PatternSignalMixin):
     """
@@ -1155,7 +1236,9 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
         Args:
             callback_percent: 回踩百分比，默认为4%
         """
-        super().__init__(name="ZXMMACallback", description="ZXM买点-回踩均线指标，判断价格是否回踩至关键均线附近")
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMMACallback"
+        self.description = "ZXM买点-均线回调指标，判断股价是否回调到均线附近"
         self.callback_percent = callback_percent
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
@@ -1546,8 +1629,33 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
                 - callback_percent: 回踩百分比，默认4.0
         """
         self.callback_percent = kwargs.get('callback_percent', 4.0)
+
+    # 抽象方法实现
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate(data, *args, **kwargs)
     
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score(data, **kwargs)
     
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """抽象基类要求的置信度方法"""
+        return self.calculate_confidence(score, patterns, signals)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters(**kwargs)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共计算接口"""
+        return self._calculate(data, **kwargs)
+
+
 class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-BS吸筹指标
@@ -1558,7 +1666,9 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-BS吸筹指标"""
-        super().__init__(name="ZXMBSAbsorb", description="ZXM买点-BS吸筹指标，判断60分钟级别是否存在低位吸筹特征")
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMBSAbsorb"
+        self.description = "ZXM买点-BS吸筹指标，检测主力吸筹行为"
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -2026,6 +2136,31 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
             polarity="POSITIVE"
         )
 
+    # 抽象方法实现
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate(data, *args, **kwargs)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """抽象基类要求的置信度方法"""
+        return self.calculate_confidence(score, patterns, signals)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters(**kwargs)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共计算接口"""
+        return self._calculate(data, **kwargs)
+
 
 class BuyPointDetector(BaseIndicator, PatternSignalMixin):
     """
@@ -2037,7 +2172,9 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点检测指标"""
-        super().__init__(name="BuyPointDetector", description="ZXM买点检测指标，检测多种买点形态")
+        # 移除super().__init__调用，直接设置属性
+        self.name = "BuyPointDetector"
+        self.description = "ZXM买点检测指标，检测多种买点形态"
         
     def set_parameters(self, **kwargs):
         """

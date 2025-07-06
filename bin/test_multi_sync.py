@@ -24,9 +24,9 @@ import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from scripts.akshare_to_clickhouse import AKShareToClickHouse, DataSourceManager
+from scripts.akshare_to_clickhouse import AKShare_to_click_house, Data_source_manager
 
-def main():
+def main_37():
     """测试多线程同步功能"""
     # 创建命令行参数解析器
     parser = argparse.ArgumentParser(description='测试多线程同步功能')
@@ -82,7 +82,7 @@ def main():
     start_time = time.time()
     
     # 初始化同步器
-    synchronizer = AKShareToClickHouse(max_workers=args.threads, batch_size=args.batch, 
+    synchronizer = AKShare_to_click_house(max_workers=args.threads, batch_size=args.batch, 
                                      force_sync=args.force, data_source=args.source)
     
     # 如果禁用自动切换，修改数据源管理器的最大失败次数为一个非常大的值
@@ -106,7 +106,7 @@ def main():
         elapsed_time = end_time - start_time
         
         print(f"同步完成，总耗时: {elapsed_time:.2f} 秒，成功处理股票数量: {success_count}")
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print("\n用户中断，停止同步...")
     except Exception as e:
         print(f"同步过程中发生错误: {e}")
@@ -117,4 +117,4 @@ def main():
                 os.remove(temp_csv)
 
 if __name__ == "__main__":
-    main() 
+    main_37() 

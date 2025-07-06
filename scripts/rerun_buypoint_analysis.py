@@ -19,7 +19,7 @@ from analysis.buypoints.period_data_processor import PeriodDataProcessor
 
 logger = get_logger(__name__)
 
-def main():
+def main_rerunbuypointanalysis():
     """重新运行买点分析"""
     print("🚀 开始重新运行买点分析...")
     print("📋 目标:")
@@ -138,5 +138,5 @@ def main():
         return False
 
 if __name__ == "__main__":
-    success = main()
+    success = mainRerunbuypointanalysis()
     sys.exit(0 if success else 1)

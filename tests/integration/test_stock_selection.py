@@ -8,26 +8,26 @@ import unittest
 import os
 import json
 import tempfile
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, Magic_mock
 
 import pandas as pd
 import numpy as np
 
-from strategy.strategy_parser import StrategyParser
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_parser import Strategy_parser
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_manager import Strategy_manager
 from db.unified_data_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
-from strategy.selector import StockSelector
+from strategy.selector import Stock_selector
 
 
-class TestStockSelectionWorkflow(unittest.TestCase):
+class Test_stock_selection_workflow(unittest.Test_case):
     """选股流程集成测试类"""
     
-    def setUp(self):
+    def set_up_Selection(self):
         """测试前准备"""
         # 创建测试用临时目录
-        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_dir = tempfile.Temporary_directory()
         
         # 创建测试用的策略配置
         self.strategy_config = {
@@ -134,13 +134,13 @@ class TestStockSelectionWorkflow(unittest.TestCase):
         }
         
         # 创建测试用指标
-        self.mock_ma_cross = MagicMock()
+        self.mock_ma_cross = Magic_mock()
         self.mock_ma_cross.generate_signals.return_value = pd.DataFrame({
             'golden_cross': [False] * 29 + [True],  # 最后一天金叉
             'signal_strength': [0] * 29 + [0.8]     # 最后一天信号强度0.8
         }, index=dates)
         
-        self.mock_rsi_oversold = MagicMock()
+        self.mock_rsi_oversold = Magic_mock()
         self.mock_rsi_oversold.generate_signals.return_value = pd.DataFrame({
             'oversold': [False] * 29 + [True],      # 最后一天超卖
             'signal_strength': [0] * 29 + [0.6]     # 最后一天信号强度0.6
@@ -152,20 +152,20 @@ class TestStockSelectionWorkflow(unittest.TestCase):
             'RSI_OVERSOLD': self.mock_rsi_oversold
         }
         
-        self.mock_db_conn = MagicMock()
+        self.mock_db_conn = Magic_mock()
         self.data_manager = get_unified_data_manager()
         self.data_manager.db_conn = self.mock_db_conn
-        self.strategy_manager = MagicMock()
-        self.stock_selector = StockSelector(self.data_manager, self.strategy_manager)
+        self.strategy_manager = Magic_mock()
+        self.stock_selector = Stock_selector(self.data_manager, self.strategy_manager)
         
-    def tearDown(self):
+    def tear_down_Selection(self):
         """测试后清理"""
         self.temp_dir.cleanup()
         
     @patch.object(IndicatorFactory, 'create')
     @patch.object(DataManager, 'get_stock_list')
     @patch.object(DataManager, 'get_kline_data')
-    def test_end_to_end_selection(self, mock_get_kline, mock_get_stocks, mock_create_indicator):
+    def test_end_to_end_selection_Selection(self, mock_get_kline, mock_get_stocks, mock_create_indicator):
         """测试端到端的选股流程"""
         # 配置模拟对象行为
         mock_get_stocks.return_value = self.stock_list
@@ -173,8 +173,8 @@ class TestStockSelectionWorkflow(unittest.TestCase):
         mock_create_indicator.side_effect = lambda indicator_id, **kwargs: self.indicator_dict.get(indicator_id)
         
         # 创建解析器和执行器
-        parser = StrategyParser()
-        executor = StrategyExecutor()
+        parser = Strategy_parser()
+        executor = Strategy_executor()
         
         # 解析策略
         strategy_plan = parser.parse_from_file(self.strategy_file)
@@ -186,13 +186,13 @@ class TestStockSelectionWorkflow(unittest.TestCase):
         )
         
         # 验证结果
-        self.assertIsNotNone(result)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_not_none(result)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 验证选出的股票
         # 只有000001和000004应该被选中，但000004因为市值过滤被排除
         expected_stocks = ['000001']
-        self.assertEqual(len(result), len(expected_stocks))
+        self.assert_equal(len(result), len(expected_stocks))
         for stock in expected_stocks:
             self.assertIn(stock, result['stock_code'].values)
         
@@ -217,8 +217,8 @@ class TestStockSelectionWorkflow(unittest.TestCase):
         mock_get_strategy.return_value = self.strategy_config
         
         # 创建策略管理器和执行器
-        manager = StrategyManager()
-        executor = StrategyExecutor()
+        manager = Strategy_manager()
+        executor = Strategy_executor()
         
         # 执行选股（通过策略ID）
         with patch.object(StrategyParser, 'parse_strategy', return_value=StrategyParser().parse_strategy(self.strategy_config)):
@@ -229,12 +229,12 @@ class TestStockSelectionWorkflow(unittest.TestCase):
             )
         
         # 验证结果
-        self.assertIsNotNone(result)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_not_none(result)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 验证选出的股票
         expected_stocks = ['000001']
-        self.assertEqual(len(result), len(expected_stocks))
+        self.assert_equal(len(result), len(expected_stocks))
         for stock in expected_stocks:
             self.assertIn(stock, result['stock_code'].values)
     
@@ -249,8 +249,8 @@ class TestStockSelectionWorkflow(unittest.TestCase):
         mock_create_indicator.side_effect = lambda indicator_id, **kwargs: self.indicator_dict.get(indicator_id)
         
         # 创建解析器和执行器
-        parser = StrategyParser()
-        executor = StrategyExecutor()
+        parser = Strategy_parser()
+        executor = Strategy_executor()
         
         # 解析策略
         strategy_plan = parser.parse_from_file(self.strategy_file)
@@ -273,8 +273,8 @@ class TestStockSelectionWorkflow(unittest.TestCase):
         
         # 验证缓存是否生效
         # 如果缓存正常工作，get_kline_data应该不会被调用或调用次数减少
-        self.assertLess(mock_get_kline.call_count, 5)  # 少于股票数量的调用
-        self.assertEqual(mock_create_indicator.call_count, 0)  # 不应再创建指标
+        self.assert_less(mock_get_kline.call_count, 5)  # 少于股票数量的调用
+        self.assert_equal(mock_create_indicator.call_count, 0)  # 不应再创建指标
 
 
 if __name__ == '__main__':

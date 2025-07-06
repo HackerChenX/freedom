@@ -19,9 +19,9 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from strategy.strategy_executor import StrategyExecutor
-from strategy.optimized_strategy_executor import OptimizedStrategyExecutor
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.optimized_strategy_executor import Optimized_strategy_executor
+from strategy.strategy_manager import Strategy_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,7 +31,7 @@ class PerformanceComparator:
     """性能对比器"""
     
     def __init__(self):
-        self.strategy_manager = StrategyManager()
+        self.strategy_manager = Strategy_manager()
         
         # 创建测试策略
         self.test_strategy = {
@@ -125,14 +125,14 @@ class PerformanceComparator:
         
         try:
             # 创建原始执行器
-            executor = StrategyExecutor(max_workers=16, cache_enabled=True)
+            executor = Strategy_executor(max_workers=16, cache_enabled=True)
             
             # 保存测试策略
             strategy_id = "test_original_strategy"
             self.strategy_manager.save_strategy(strategy_id, self.test_strategy)
             
             # 执行策略
-            def progress_callback(progress, message):
+            def progress_callback_Selection_Test_Optimized_Stock_Selection_Test_Optimized_Stock_Selection_testoptimizedstockselection(progress, message):
                 print(f"原始执行器进度: {progress:.1%} - {message}")
             
             results = executor.execute_strategy_by_id(
@@ -190,7 +190,7 @@ class PerformanceComparator:
         
         try:
             # 创建优化执行器
-            executor = OptimizedStrategyExecutor(
+            executor = Optimized_strategy_executor(
                 max_workers=32,  # 增加并发数
                 cache_enabled=True,
                 batch_size=150,  # 使用较大的批次
@@ -198,7 +198,6 @@ class PerformanceComparator:
             )
             
             # 执行优化策略
-            def progress_callback(progress, message):
                 print(f"优化执行器进度: {progress:.1%} - {message}")
             
             results = executor.execute_strategy_optimized(
@@ -363,12 +362,12 @@ class PerformanceComparator:
         print("\n" + "="*80)
 
 
-def main():
+def main_testoptimizedstockselection():
     """主函数"""
     print("🚀 开始股票选股性能优化测试")
     
     # 创建性能对比器
-    comparator = PerformanceComparator()
+    comparator = Performance_comparator()
     
     # 运行性能对比测试
     # 从小样本开始测试，避免系统压力过大
@@ -395,4 +394,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testoptimizedstockselection() 

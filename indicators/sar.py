@@ -16,12 +16,12 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class SAR(BaseIndicator, PatternSignalMixin):
+class ParabolicSar(BaseIndicator, PatternSignalMixin):
     """
     抛物线转向系统(SAR) (SAR)
     
@@ -45,7 +45,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
         # 注册SAR形态
         # self._register_sar_patterns()
         
-    def set_parameters(self, acceleration: float = None, maximum: float = None):
+    def set_parameters_Sar_Sar_Sar_sar(self, acceleration: float = None, maximum: float = None):
         """
         设置指标参数
         """
@@ -54,26 +54,26 @@ class SAR(BaseIndicator, PatternSignalMixin):
         if maximum is not None:
             self.maximum = maximum
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Sar(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算SAR指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含SAR指标的DataFrame
+            包含SAR指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_sar(data)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Sar(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算SAR指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -123,32 +123,32 @@ class SAR(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
         
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_sar(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
             df: 数据帧
             required_columns: 所需的列名列表
         
         Raises:
-            ValueError: 如果DataFrame不包含所需的列
+            ValueError: 如果Data_frame不包含所需的列
         """
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             raise ValueError(f"DataFrame缺少所需的列: {missing_columns}")
     
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_sar(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算抛物线转向系统(SAR)指标
         
         Args:
-            df: 包含OHLC数据的DataFrame
+            df: 包含OHLC数据的Data_frame
             
         Returns:
-            包含SAR值的DataFrame
+            包含SAR值的Data_frame
         """
-        self._validate_dataframe(df, ['high', 'low', 'close'])
+        self._validate_dataframeSar(df, ['high', 'low', 'close'])
         
         high = df['high'].values
         low = df['low'].values
@@ -239,15 +239,15 @@ class SAR(BaseIndicator, PatternSignalMixin):
 
         return result
     
-    def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+    def generate_signals_Sar(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         根据SAR生成买卖信号
         
         Args:
-            df: 包含SAR值的DataFrame
+            df: 包含SAR值的Data_frame
             
         Returns:
-            包含买卖信号的DataFrame
+            包含买卖信号的Data_frame
         """
         signals = pd.DataFrame(index=df.index)
         trend = df['trend'].values
@@ -270,7 +270,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
         
         return signals
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Sar(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取SAR相关形态
 
@@ -279,11 +279,11 @@ class SAR(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Sar(data)
 
         if self._result is None or 'sar' not in self._result.columns:
             return pd.DataFrame(index=data.index)
@@ -348,7 +348,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Sar(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算SAR原始评分
 
@@ -361,7 +361,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算SAR
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Sar(data)
 
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -497,19 +497,19 @@ class SAR(BaseIndicator, PatternSignalMixin):
 
         return score
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Sar(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算SAR指标
         
         Args:
-            df: 包含OHLC数据的DataFrame
+            df: 包含OHLC数据的Data_frame
             
         Returns:
-            包含SAR值和信号的DataFrame
+            包含SAR值和信号的Data_frame
         """
         try:
-            result = self.calculate(df)
-            signals = self.generate_signals(result)
+            result = self.calculate_Sar(df)
+            signals = self.generate_signals_Sar(result)
             # 合并结果
             result['buy_signal'] = signals['buy']
             result['sell_signal'] = signals['sell']
@@ -519,7 +519,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             logger.error(f"计算指标 {self.name} 时出错: {str(e)}")
             raise
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Sar(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -532,7 +532,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Sar(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -549,10 +549,10 @@ class SAR(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Sar(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Sar(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -562,7 +562,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def register_patterns(self):
+    def register_patterns_Sar(self):
         """
         注册SAR指标的形态到全局形态注册表
         """
@@ -646,10 +646,10 @@ class SAR(BaseIndicator, PatternSignalMixin):
         """
         注册SAR形态
         """
-        from indicators.pattern_registry import PatternRegistry, PatternType
+        from indicators.pattern_registry import Pattern_registry, Pattern_type
         
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 注册趋势反转形态
         registry.register(
@@ -657,7 +657,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR做多信号",
             description="SAR由下降趋势转为上升趋势，产生做多信号",
             indicator_id="SAR",
-            pattern_type=PatternType.REVERSAL,
+            pattern_type=Pattern_type.REVERSAL,
             score_impact=15.0
         )
         
@@ -666,7 +666,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR做空信号",
             description="SAR由上升趋势转为下降趋势，产生做空信号",
             indicator_id="SAR",
-            pattern_type=PatternType.REVERSAL,
+            pattern_type=Pattern_type.REVERSAL,
             score_impact=-15.0
         )
         
@@ -676,7 +676,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR强势上升趋势",
             description="SAR长期保持在价格下方，表示强势上升趋势",
             indicator_id="SAR",
-            pattern_type=PatternType.TREND,
+            pattern_type=Pattern_type.TREND,
             score_impact=10.0
         )
         
@@ -685,7 +685,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR上升趋势",
             description="SAR保持在价格下方，表示上升趋势",
             indicator_id="SAR",
-            pattern_type=PatternType.TREND,
+            pattern_type=Pattern_type.TREND,
             score_impact=7.0
         )
         
@@ -694,7 +694,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR短期上升趋势",
             description="SAR刚刚转为上升趋势",
             indicator_id="SAR",
-            pattern_type=PatternType.TREND,
+            pattern_type=Pattern_type.TREND,
             score_impact=5.0
         )
         
@@ -703,7 +703,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR强势下降趋势",
             description="SAR长期保持在价格上方，表示强势下降趋势",
             indicator_id="SAR",
-            pattern_type=PatternType.TREND,
+            pattern_type=Pattern_type.TREND,
             score_impact=-10.0
         )
         
@@ -712,7 +712,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR下降趋势",
             description="SAR保持在价格上方，表示下降趋势",
             indicator_id="SAR",
-            pattern_type=PatternType.TREND,
+            pattern_type=Pattern_type.TREND,
             score_impact=-7.0
         )
         
@@ -721,7 +721,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR短期下降趋势",
             description="SAR刚刚转为下降趋势",
             indicator_id="SAR",
-            pattern_type=PatternType.TREND,
+            pattern_type=Pattern_type.TREND,
             score_impact=-5.0
         )
         
@@ -731,7 +731,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR接近价格",
             description="SAR与价格距离较近，可能即将反转",
             indicator_id="SAR",
-            pattern_type=PatternType.WARNING,
+            pattern_type=Pattern_type.WARNING,
             score_impact=0.0
         )
         
@@ -740,7 +740,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR与价格中等距离",
             description="SAR与价格保持中等距离",
             indicator_id="SAR",
-            pattern_type=PatternType.CONTINUATION,
+            pattern_type=Pattern_type.CONTINUATION,
             score_impact=5.0
         )
         
@@ -749,7 +749,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR远离价格",
             description="SAR与价格距离较远，趋势强劲",
             indicator_id="SAR",
-            pattern_type=PatternType.TREND,
+            pattern_type=Pattern_type.TREND,
             score_impact=8.0
         )
         
@@ -759,7 +759,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR高加速趋势",
             description="SAR加速因子较高，趋势强劲",
             indicator_id="SAR",
-            pattern_type=PatternType.MOMENTUM,
+            pattern_type=Pattern_type.MOMENTUM,
             score_impact=10.0
         )
         
@@ -768,7 +768,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR中等加速趋势",
             description="SAR加速因子中等，趋势稳定",
             indicator_id="SAR",
-            pattern_type=PatternType.MOMENTUM,
+            pattern_type=Pattern_type.MOMENTUM,
             score_impact=5.0
         )
         
@@ -777,7 +777,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR低加速趋势",
             description="SAR加速因子较低，趋势刚开始或较弱",
             indicator_id="SAR",
-            pattern_type=PatternType.MOMENTUM,
+            pattern_type=Pattern_type.MOMENTUM,
             score_impact=2.0
         )
         
@@ -787,7 +787,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR稳定趋势",
             description="SAR趋势稳定，没有频繁转向",
             indicator_id="SAR",
-            pattern_type=PatternType.STABILITY,
+            pattern_type=Pattern_type.STABILITY,
             score_impact=8.0
         )
         
@@ -796,7 +796,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR波动趋势",
             description="SAR趋势不稳定，频繁转向",
             indicator_id="SAR",
-            pattern_type=PatternType.STABILITY,
+            pattern_type=Pattern_type.STABILITY,
             score_impact=-5.0
         )
         
@@ -806,7 +806,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR支撑",
             description="SAR作为价格支撑位",
             indicator_id="SAR",
-            pattern_type=PatternType.SUPPORT_RESISTANCE,
+            pattern_type=Pattern_type.SUPPORT_RESISTANCE,
             score_impact=12.0
         )
         
@@ -815,11 +815,11 @@ class SAR(BaseIndicator, PatternSignalMixin):
             display_name="SAR阻力",
             description="SAR作为价格阻力位",
             indicator_id="SAR",
-            pattern_type=PatternType.SUPPORT_RESISTANCE,
+            pattern_type=Pattern_type.SUPPORT_RESISTANCE,
             score_impact=-12.0
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Sar(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
@@ -832,7 +832,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Sar(data, **kwargs)
         
         # 初始化信号
         signals = {}
@@ -846,7 +846,7 @@ class SAR(BaseIndicator, PatternSignalMixin):
         
         return signals
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Sar(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -880,40 +880,11 @@ class SAR(BaseIndicator, PatternSignalMixin):
         return pattern_info_map.get(pattern_id, default_pattern)
 
 
-    def __init__(self, **kwargs):
-        """
-        初始化SAR指标
-
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__(name="SAR", description="抛物线转向系统，判断价格趋势反转信号")
-            except:
-                pass
-
-        self.name = "SAR"
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-
-        # 确保SAR特有属性存在
-        if not hasattr(self, 'acceleration'):
-            self.acceleration = 0.02
-        if not hasattr(self, 'maximum'):
-            self.maximum = 0.2
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_sar(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"acceleration": 0.02, "maximum": 0.2}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Sar_Sar_Sar_sar_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -922,8 +893,8 @@ class SAR(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -932,8 +903,8 @@ class SAR(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('SAR', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"SAR参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

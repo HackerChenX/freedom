@@ -1,24 +1,24 @@
 """
-ZXMPatternIndicator指标单元测试
+ZXMPattern_indicator指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testzxmpatternindicator_patterns(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """ZXMPatternIndicator指标测试类"""
     
-    def setUp(self):
+    def set_up_Patterns_Test_Zxm_Patterns(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Patterns_Test_Zxm_Patterns(self)
         
-        self.indicator = ZXMPatternIndicator()
+        self.indicator = ZXMPattern_indicator()
         self.expected_columns = [
             'class_one_buy', 'class_two_buy', 'class_three_buy',
             'breakout_pullback_buy', 'volume_shrink_platform_buy',
@@ -28,18 +28,18 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
             'ma_convergence', 'macd_zero_hover', 'long_lower_shadow',
             'ma_precise_support', 'small_alternating'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Patterns_Test_Zxm_Patterns(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Patterns_Test_Zxm_Patterns(self)
     
     def test_zxm_pattern_indicator_initialization(self):
         """测试ZXMPatternIndicator初始化"""
         # 测试默认初始化
-        default_indicator = ZXMPatternIndicator()
+        default_indicator = ZXMPattern_indicator()
         self.assertEqual(default_indicator.name, "ZXMPattern")
         self.assertIn("基于ZXM体系的买点和吸筹形态识别指标", default_indicator.description)
     
@@ -79,9 +79,9 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_zxm_pattern_indicator_parameter_update(self):
         """测试ZXMPatternIndicator参数更新"""
@@ -95,19 +95,19 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_zxm_pattern_indicator_patterns(self):
         """测试ZXMPatternIndicator形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -119,11 +119,11 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_zxm_pattern_indicator_buy_points(self):
         """测试ZXMPatternIndicator买点识别"""
@@ -169,7 +169,7 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         raw_score_df = self.indicator.calculate_raw_score(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         
         # 验证包含score列
         self.assertIn('score', raw_score_df.columns)
@@ -182,7 +182,7 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
     def test_zxm_pattern_indicator_class_one_buy(self):
         """测试ZXMPatternIndicator一类买点"""
         # 需要足够的数据进行一类买点识别
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -201,7 +201,7 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
     def test_zxm_pattern_indicator_class_two_buy(self):
         """测试ZXMPatternIndicator二类买点"""
         # 需要足够的数据进行二类买点识别
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -258,10 +258,10 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         raw_score_df = self.indicator.calculate_raw_score(data_with_volume)
         
         # 验证成交量确认在评分中的影响
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         self.assertIn('score', raw_score_df.columns)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Patterns(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -272,11 +272,11 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Patterns(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -287,7 +287,7 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_zxm_pattern_indicator_register_patterns(self):
         """测试ZXMPatternIndicator形态注册"""
@@ -304,7 +304,7 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         result = self.indicator.calculate(small_data)
         
         # ZXMPatternIndicator应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_zxm_pattern_indicator_validation(self):
         """测试ZXMPatternIndicator数据验证"""
@@ -313,7 +313,7 @@ class TestZXMPatternIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureM
 
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_zxm_pattern_indicator_indicator_type(self):
         """测试ZXMPatternIndicator指标类型"""

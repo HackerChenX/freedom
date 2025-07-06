@@ -1,13 +1,13 @@
 import numpy as np
-from enums.indicators import *
-from enums.kline_period import KlinePeriod
-from formula.utils import mergeList, mergeAndGetLast, countListAnyMatch, ltn, gt, countTrue, ge
+from enums.indicators import IndicatorType_Indicators, CrossType, TrendType, VolumePattern_Indicators, PatternType_Indicators
+from enums.kline_period import Kline_period
+from formula.utils import merge_List, merge_And_get_last, count_list_any_match_Utils as count_List_any_match, ltn, gt, count_True, ge
 from db.db_manager import DBManager
 from utils.logger import stock_logger
 
 
 # 添加缺失的技术指标函数
-def SMA(series, n, m=1):
+def SMA_Stock_Formula(series, n, m=1):
     """
     计算简单移动平均线
     
@@ -28,7 +28,7 @@ def SMA(series, n, m=1):
     return result
 
 
-def EMA(series, n):
+def EMA_Formula(series, n):
     """
     计算指数移动平均线
     
@@ -49,7 +49,7 @@ def EMA(series, n):
     return result
 
 
-def REF(series, n):
+def REF_Stock_Formula(series, n):
     """
     计算向前引用值
     
@@ -70,7 +70,7 @@ def REF(series, n):
     return result
 
 
-def LLV(series, n):
+def LLV_Stock_Formula(series, n):
     """
     计算周期内最低值
     
@@ -92,7 +92,7 @@ def LLV(series, n):
     return result
 
 
-def HHV(series, n):
+def HHV_Stock_Formula(series, n):
     """
     计算周期内最高值
     
@@ -114,7 +114,7 @@ def HHV(series, n):
     return result
 
 
-def KDJ(series, high, low, n=9, m1=3, m2=3):
+def KDJ_Formula_Stock_Formula_Stock_Formula_stockformula(series, high, low, n=9, m1=3, m2=3):
     """
     计算KDJ指标
     
@@ -144,14 +144,14 @@ def KDJ(series, high, low, n=9, m1=3, m2=3):
                 rsv[i] = (series[i] - llv) / (hhv - llv) * 100
     
     # 计算K、D、J值
-    K = SMA(rsv, m1, 1)
-    D = SMA(K, m2, 1)
-    J = 3 * K - 2 * D
+    k = SMA_Stock_Formula(rsv, m1, 1)
+    d = SMA_Stock_Formula(k, m2, 1)
+    j = 3 * k - 2 * d
     
-    return K, D, J
+    return k, d, j
 
 
-def MACD(series, short=12, long=26, mid=9):
+def MACD_Formula_Stock_Formula_Stock_Formula_stockformula(series, short=12, long=26, mid=9):
     """
     计算MACD指标
     
@@ -164,16 +164,16 @@ def MACD(series, short=12, long=26, mid=9):
     Returns:
         tuple: (DIFF, DEA, MACD)
     """
-    ema_short = EMA(series, short)
-    ema_long = EMA(series, long)
+    ema_short = EMA_Formula(series, short)
+    ema_long = EMA_Formula(series, long)
     diff = ema_short - ema_long
-    dea = EMA(diff, mid)
+    dea = EMA_Formula(diff, mid)
     macd = 2 * (diff - dea)
     
     return diff, dea, macd
 
 
-def BOLL(series, n=20, p=2):
+def BOLL_Formula(series, n=20, p=2):
     """
     计算布林带指标
     
@@ -203,7 +203,7 @@ def BOLL(series, n=20, p=2):
     return upper, mid, lower
 
 
-def ABS(series):
+def abs(series):
     """
     计算绝对值
     
@@ -216,7 +216,7 @@ def ABS(series):
     return np.abs(series)
 
 
-def MA(series, n):
+def MA_Formula(series, n):
     """
     计算简单移动平均线
     
@@ -254,18 +254,18 @@ class StockData:
         self.history = None
         
         if sync:
-            self.init_ef(stock_code, level, sync, start, end)
+            self.init_ef_Formula_Stock_Formula_Stock_Formula_stockformula(stock_code, level, sync, start, end)
         else:
-            self.init_db(stock_code, level, start, end)
+            self.init_db_Formula_Stock_Formula_Stock_Formula_stockformula(stock_code, level, start, end)
 
-    def init_ef(self, stock_code, level=KlinePeriod.DAILY, sync=False, start="20170101", end="20240101"):
+    def init_ef_Formula_Stock_Formula_Stock_FormulaStockformula(self, stock_code, level=KlinePeriod.DAILY, sync=False, start="20170101", end="20240101"):
         import efinance as ef
         
         # 使用数据库管理器单例
         db_manager = DBManager.get_instance()
         
         try:
-            klt = KlinePeriod.get_klt_code(level)
+            klt = Kline_period.get_klt_code(level)
             history = ef.stock.get_quote_history(stock_code, start, end, klt)
             
             if history is None or history.empty:
@@ -277,7 +277,7 @@ class StockData:
             self.high = history['最高'].values
             self.low = history['最低'].values
             self.volume = history['成交量'].values
-            if level == KlinePeriod.DAILY:
+            if level == Kline_period.DAILY:
                 self.turnover_rate = history['换手率'].values
             
             if sync:
@@ -287,7 +287,7 @@ class StockData:
         except Exception as e:
             stock_logger.error(f"初始化股票 {stock_code} {level.value} 数据失败: {e}")
 
-    def init_db(self, stock_code, level=KlinePeriod.DAILY, start="20170101", end="20240101"):
+    def init_db_Formula_Stock_Formula_Stock_FormulaStockformula(self, stock_code, level=KlinePeriod.DAILY, start="20170101", end="20240101"):
         import pandas as pd
         
         # 使用数据库管理器单例
@@ -340,23 +340,7 @@ class IndustryData:
     行业数据类，用于封装行业指数数据
     """
     
-    def __init__(self, symbol, start="20200101", end="20250101", sync=False):
-        # 初始化实例变量
-        self.close = []
-        self.open = []
-        self.high = []
-        self.low = []
-        self.volume = []
-        self.history = None
-        self.date = []
-        self.symbol = symbol
-        
-        if sync:
-            self.init_ef(symbol, start, end, sync)
-        else:
-            self.init_db(symbol, start, end)
-
-    def init_ef(self, symbol, start="20200101", end="20240101", sync=False):
+    def init_ef_Formula_Stock_Formula_Stock_FormulaStockformula_duplicate(self, symbol, start="20200101", end="20240101", sync=False):
         import akshare as ak
         
         # 使用数据库管理器单例
@@ -385,8 +369,7 @@ class IndustryData:
         except Exception as e:
             stock_logger.error(f"初始化行业 {symbol} 数据失败: {e}")
 
-    def init_db(self, symbol, start="20200101", end="20240101"):
-        import pandas as pd
+    def init_db_Formula_Stock_Formula_Stock_FormulaStockformula_duplicate(self, symbol, start="20200101", end="20240101"):
         
         # 使用数据库管理器单例
         db_manager = DBManager.get_instance()
@@ -424,22 +407,22 @@ class IndustryData:
         except Exception as e:
             stock_logger.error(f"从数据库加载行业 {symbol} 数据失败: {e}")
 
-    def 吸筹(self, n=10) -> bool:
+    def 吸筹_Formula_Stock_Formula_Stock_Formula_stockformula(self, n=10) -> bool:
         if not self.close or len(self.close) == 0:
             return False
             
-        C = self.close
-        L = self.low
-        H = self.high
+        c = self.close
+        l = self.low
+        h = self.high
         
         # 确保数据量充足
-        if len(C) < 55 or len(L) < 55 or len(H) < 55:
+        if len(c) < 55 or len(l) < 55 or len(h) < 55:
             stock_logger.debug(f"行业 {self.symbol} 数据量不足，无法计算吸筹")
             return False
             
         try:
-            llv = LLV(L, 55)
-            hhv = HHV(H, 55)
+            llv = LLV_Stock_Formula(l, 55)
+            hhv = HHV_Stock_Formula(h, 55)
             
             # 防止除以零
             denominator = hhv - llv
@@ -447,12 +430,12 @@ class IndustryData:
                 stock_logger.debug(f"行业 {self.symbol} 计算吸筹时出现除零错误")
                 return False
             
-            v11 = 3 * SMA((C - llv) / (hhv - llv) * 100, 5, 1) - 2 * SMA(SMA((C - llv) / (hhv - llv) * 100, 5, 1), 3, 1)
-            v12 = (EMA(v11, 3) - REF(EMA(v11, 3), 1)) / REF(EMA(v11, 3), 1) * 100
-            ema_v11 = EMA(v11, 3)
+            v11 = 3 * SMA_Stock_Formula((c - llv) / (hhv - llv) * 100, 5, 1) - 2 * SMA_Stock_Formula(SMA_Stock_Formula((c - llv) / (hhv - llv) * 100, 5, 1), 3, 1)
+            v12 = (EMA_Formula(v11, 3) - REF_Stock_Formula(EMA_Formula(v11, 3), 1)) / REF_Stock_Formula(EMA_Formula(v11, 3), 1) * 100
+            ema_v11 = EMA_Formula(v11, 3)
             
-            return countListAnyMatch(ema_v11, n, ltn(13)) or (
-                    countListAnyMatch(ema_v11, n, ltn(13)) and countListAnyMatch(v12, n, gt(13)))
+            return count_List_any_match(ema_v11, n, ltn(13)) or (
+                    count_List_any_match(ema_v11, n, ltn(13)) and count_List_any_match(v12, n, gt(13)))
         except Exception as e:
             stock_logger.error(f"计算行业 {self.symbol} 吸筹指标失败: {e}")
             return False
@@ -463,28 +446,6 @@ class StockFormula:
     股票公式类，封装各种技术指标的计算和选股条件
     """
     
-    def __init__(self, code, start="20000101", end="20241231", sync=False):
-        self.stock_code = code
-        self.start_time = start
-        self.end_time = end
-        
-        # 初始化各周期数据
-        self.dataDay = StockData(code, KlinePeriod.DAILY, start, end, sync)
-        self.dataWeek = StockData(code, KlinePeriod.WEEKLY, start, end, sync)
-        self.dataMonth = StockData(code, KlinePeriod.MONTHLY, start, end, sync)
-        self.data15 = StockData(code, KlinePeriod.MIN_15, start, end, sync)
-        self.data30 = StockData(code, KlinePeriod.MIN_30, start, end, sync)
-        self.data60 = StockData(code, KlinePeriod.MIN_60, start, end, sync)
-        
-        # 确保日线数据已加载
-        if self.dataDay.history is not None and len(self.dataDay.history) > 0:
-            self.name = self.dataDay.history['name'].values[0]
-            self.industry = self.dataDay.history['industry'].values[0]
-        else:
-            self.name = ""
-            self.industry = ""
-            stock_logger.warning(f"股票 {code} 日线数据为空，无法获取名称和行业信息")
-
     def get_code(self):
         return self.stock_code
 
@@ -492,12 +453,12 @@ class StockFormula:
         return self.stock_code + " " + self.name + " " + self.industry
 
     def 弹性(self) -> bool:
-        low = self.dataDay.low
-        high = self.dataDay.high
-        close = self.dataDay.close
+        low = self.data_Day.low
+        high = self.data_Day.high
+        close = self.data_Day.close
         np.seterr(divide='ignore', invalid='ignore')
         振幅 = 100 * (high - low) / low > 8.1
-        涨幅 = close / REF(close, 1) > 1.07
+        涨幅 = close / REF_Stock_Formula(close, 1) > 1.07
         if len(high) > 110:
             振幅周期 = 110
             涨幅周期 = 60
@@ -507,23 +468,23 @@ class StockFormula:
         return EXIST(振幅, 振幅周期)[-1] and EXIST(涨幅, 涨幅周期)[-1]
 
     def 日均线上移(self) -> bool:
-        close = self.dataDay.close
+        close = self.data_Day.close
         lst = [30, 60, 120]
         result = []
         for i in lst:
-            result.append(mergeAndGetLast(MA(close, i), REF(MA(close, i), 1), ge()))
-        return countTrue(result, 2)
+            result.append(merge_And_get_last(MA_Formula(close, i), REF_Stock_Formula(MA_Formula(close, i), 1), ge()))
+        return count_True(result, 2)
 
     def 周均线上移(self) -> bool:
-        week_close = self.dataWeek.close
+        week_close = self.data_Week.close
         lst = [10, 20, 30]
         result = []
         for i in lst:
-            result.append(mergeAndGetLast(MA(week_close, i), REF(MA(week_close, i), 1), ge()))
-        return countTrue(result, 2)
+            result.append(merge_And_get_last(MA_Formula(week_close, i), REF_Stock_Formula(MA_Formula(week_close, i), 1), ge()))
+        return count_True(result, 2)
 
-    def KDJ(self, level) -> (list, list, list):
-        data = self.getLevelData(level)
+    def KDJ_Formula_Stock_Formula_Stock_Formula_stockformula_duplicate(self, level) -> (list, list, list):
+        data = self.get_Level_data(level)
         close = data.close
         low = data.low
         high = data.high
@@ -533,12 +494,12 @@ class StockFormula:
             # 返回三个空数组，而不是None
             return np.array([]), np.array([]), np.array([])
             
-        return KDJ(close, high, low, 9, 3, 3)
+        return KDJ_Formula_Stock_Formula_Stock_Formula_stockformula(close, high, low, 9, 3, 3)
 
-    def MACD(self, level) -> (list, list, list):
-        data = self.getLevelData(level)
+    def MACD_Formula_Stock_Formula_Stock_Formula_stockformula_duplicate(self, level) -> (list, list, list):
+        data = self.get_Level_data(level)
         close = data.close
-        return MACD(close, 12, 26, 9)
+        return MACD_Formula_Stock_Formula_Stock_Formula_stockformula(close, 12, 26, 9)
 
     def K和D上移(self, level) -> bool:
         return self.K上移(level) and self.D上移(level)
@@ -563,112 +524,112 @@ class StockFormula:
         return self.D上移(level) and self.K上移(level) and self.DEA上移(level)
 
     def D上移(self, level) -> bool:
-        K, D, J = self.KDJ(level)
-        return mergeAndGetLast(D, REF(D, 1), ge())
+        K, D, j = self.KDJ_Formula_Stock_Formula_Stock_Formula_stockformula(level)
+        return merge_And_get_last(D, REF_Stock_Formula(D, 1), ge())
 
     def K上移(self, level) -> bool:
-        K, D, J = self.KDJ(level)
-        return mergeAndGetLast(K, REF(K, 1), ge())
+        K, D, j = self.KDJ_Formula_Stock_Formula_Stock_Formula_stockformula(level)
+        return merge_And_get_last(K, REF_Stock_Formula(K, 1), ge())
 
     def J上移(self, level) -> bool:
-        K, D, J = self.KDJ(level)
-        return mergeAndGetLast(J, REF(J, 1), ge())
+        K, D, j = self.KDJ_Formula_Stock_Formula_Stock_Formula_stockformula(level)
+        return merge_And_get_last(j, REF_Stock_Formula(j, 1), ge())
 
     def DEA上移(self, level) -> bool:
-        diff, dea, macd = self.MACD(level)
-        return mergeAndGetLast(dea, REF(dea, 1), ge())
+        diff, dea, macd = self.MACD_Formula_Stock_Formula_Stock_Formula_stockformula(level)
+        return merge_And_get_last(dea, REF_Stock_Formula(dea, 1), ge())
 
     def DIFF上移(self, level) -> bool:
-        diff, dea, macd = self.MACD(level)
-        return mergeAndGetLast(diff, REF(diff, 1), ge())
+        diff, dea, macd = self.MACD_Formula_Stock_Formula_Stock_Formula_stockformula(level)
+        return merge_And_get_last(diff, REF_Stock_Formula(diff, 1), ge())
 
     def MACD上移(self, level) -> bool:
-        diff, dea, macd = self.MACD(level)
-        return mergeAndGetLast(macd, REF(macd, 1), ge())
+        diff, dea, macd = self.MACD_Formula_Stock_Formula_Stock_Formula_stockformula(level)
+        return merge_And_get_last(macd, REF_Stock_Formula(macd, 1), ge())
 
     def MACD小于(self, level, num) -> bool:
-        diff, dea, macd = self.MACD(level)
+        diff, dea, macd = self.MACD_Formula_Stock_Formula_Stock_Formula_stockformula(level)
         return macd[-1] < num
 
     def 换手率大于(self, num) -> bool:
-        return self.dataDay.turnover_rate[-1] > num
+        return self.data_Day.turnover_rate[-1] > num
 
     def 缩量(self) -> bool:
-        volume = self.dataDay.volume
-        volumeDiff = mergeList(volume, MA(volume, 2), 5, lambda x, y: (x / y))
-        return countListAnyMatch(volumeDiff, 3, ltn(0.95))
+        volume = self.data_Day.volume
+        volume_diff = merge_List(volume, MA_Formula(volume, 2), 5, lambda x, y: (x / y))
+        return count_List_any_match(volume_diff, 3, ltn(0.95))
 
     def 回踩均线(self, level, n=4) -> bool:
-        close = self.getLevelData(level).close
+        close = self.get_Level_data(level).close
         arrays = [self.__均线偏移量(close, 10), self.__均线偏移量(close, 20), self.__均线偏移量(close, 30),
                   self.__均线偏移量(close, 60), self.__均线偏移量(close, 120), self.__均线偏移量(close, 244)]
         for i in range(0, arrays.__len__()):
-            if countListAnyMatch(arrays[i], 8, ltn(n)):
+            if count_List_any_match(arrays[i], 8, ltn(n)):
                 return True
         return False
 
     def __均线偏移量(self, close, n):
-        return ABS((close / MA(close, n) - 1) * 100)
+        return abs((close / MA_Formula(close, n) - 1) * 100)
 
     def macd任意2个上移(self, level) -> bool:
-        return countTrue([self.DEA上移(level), self.DIFF上移(level), self.MACD上移(level)], 2)
+        return count_True([self.DEA上移(level), self.DIFF上移(level), self.MACD上移(level)], 2)
 
-    def 吸筹(self, level, n=10) -> bool:
-        data = self.getLevelData(level)
+    def 吸筹_Formula_Stock_Formula_Stock_Formula_stockformula_duplicate(self, level, n=10) -> bool:
+        data = self.get_Level_data(level)
         # n = 吸筹周期(level, day)
         
         # 检查数据是否为空
         if not hasattr(data, 'close') or not isinstance(data.close, (list, np.ndarray)) or len(data.close) == 0:
             return False
             
-        C = data.close
-        L = data.low
-        H = data.high
+        c = data.close
+        l = data.low
+        h = data.high
         
         # 确保数据量充足
-        if len(C) < 55 or len(L) < 55 or len(H) < 55:
+        if len(c) < 55 or len(l) < 55 or len(h) < 55:
             return False
             
         try:
-            llv = LLV(L, 55)
-            hhv = HHV(H, 55)
+            llv = LLV_Stock_Formula(l, 55)
+            hhv = HHV_Stock_Formula(h, 55)
             
             # 防止除以零
             denominator = hhv - llv
             if np.any(denominator == 0):
                 return False
             
-            v11 = 3 * SMA((C - llv) / (hhv - llv) * 100, 5, 1) - 2 * SMA(SMA((C - llv) / (hhv - llv) * 100, 5, 1), 3, 1)
-            ema_v11 = EMA(v11, 3)
+            v11 = 3 * SMA_Stock_Formula((c - llv) / (hhv - llv) * 100, 5, 1) - 2 * SMA_Stock_Formula(SMA_Stock_Formula((c - llv) / (hhv - llv) * 100, 5, 1), 3, 1)
+            ema_v11 = EMA_Formula(v11, 3)
             
             # 检查ema_v11是否包含NaN
             if np.isnan(ema_v11).any():
                 return False
                 
             # 计算v12前检查分母是否为0或NaN
-            ref_ema = REF(ema_v11, 1)
+            ref_ema = REF_Stock_Formula(ema_v11, 1)
             if np.any(np.isnan(ref_ema)) or np.any(ref_ema == 0):
                 # 如果只验证ema_v11小于13的条件
-                return countListAnyMatch(ema_v11, n, ltn(13))
+                return count_List_any_match(ema_v11, n, ltn(13))
                 
             v12 = (ema_v11 - ref_ema) / ref_ema * 100
             
-            return countListAnyMatch(ema_v11, n, ltn(13)) or (
-                    countListAnyMatch(ema_v11, n, ltn(13)) and countListAnyMatch(v12, n, gt(13)))
+            return count_List_any_match(ema_v11, n, ltn(13)) or (
+                    count_List_any_match(ema_v11, n, ltn(13)) and count_List_any_match(v12, n, gt(13)))
         except Exception as e:
             stock_logger.error(f"计算股票 {self.stock_code} 级别 {level} 吸筹指标失败: {e}")
             return False
 
-    def boll(self):
-        dataDay = self.dataDay
-        return BOLL(dataDay.close, 20, 2)
+    def boll_Formula(self):
+        data_day = self.data_Day
+        return BOLL_Formula(data_Day.close, 20, 2)
 
     def 大于boll中轨(self):
-        return self.dataDay.close[-1] > self.boll()[1][-1]
+        return self.data_Day.close[-1] > self.boll_Formula()[1][-1]
 
-    def getLevelData(self, level) -> StockData:
+    def get_Level_data(self, level) -> Stock_data:
         # 如果已经是KlinePeriod类型，直接使用
-        if isinstance(level, KlinePeriod):
+        if isinstance(level, Kline_period):
             period = level
         else:
             # 否则尝试将字符串转换为KlinePeriod枚举
@@ -683,19 +644,19 @@ class StockFormula:
                 "60": KlinePeriod.MIN_60,
                 "60分钟": KlinePeriod.MIN_60
             }
-            period = period_map.get(level, KlinePeriod.DAILY)
+            period = period_map.get(level, Kline_period.DAILY)
         
-        if period == KlinePeriod.DAILY:
-            return self.dataDay
-        elif period == KlinePeriod.WEEKLY:
-            return self.dataWeek
-        elif period == KlinePeriod.MONTHLY:
-            return self.dataMonth
-        elif period == KlinePeriod.MIN_15:
+        if period == Kline_period.DAILY:
+            return self.data_Day
+        elif period == Kline_period.WEEKLY:
+            return self.data_Week
+        elif period == Kline_period.MONTHLY:
+            return self.data_Month
+        elif period == Kline_period.MIN_15:
             return self.data15
-        elif period == KlinePeriod.MIN_30:
+        elif period == Kline_period.MIN_30:
             return self.data30
-        elif period == KlinePeriod.MIN_60:
+        elif period == Kline_period.MIN_60:
             return self.data60
 
 
@@ -708,8 +669,8 @@ def 主线():
                   '农药兽药', '旅游酒店', '软件服务', '机场航运', '石油行业', '食品饮料', '装修装饰', '园林工程', '安防设备', '公用事业', '电子商务',
                   '船舶制造', '环保工程']
     for industry in industries:
-        industryData = IndustryData(industry)
-        if industryData.吸筹():
+        industry_data = Industry_data(industry)
+        if industry_Data.吸筹_Formula_Stock_Formula_Stock_Formula_stockformula():
             print(industry)
 
 
@@ -723,7 +684,7 @@ def 吸筹板块():
                   '船舶制造', '环保工程']
     result = []
     for industry in industries:
-        industryData = IndustryData(industry)
-        if industryData.吸筹():
+        industry_data = Industry_data(industry)
+        if industry_Data.吸筹_Formula_Stock_Formula_Stock_Formula_stockformula():
             result.append(industry)
     return result 

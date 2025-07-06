@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-指数移动平均线(EMA)
+指数移动平均线(EMA_Ema)
 
 对近期价格赋予更高权重
 """
@@ -14,14 +14,14 @@ from typing import List, Dict, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class EMA(BaseIndicator, PatternSignalMixin):
+class EmaEma(BaseIndicator, PatternSignalMixin):
     """
-    指数移动平均线(EMA)
+    指数移动平均线(EMA_Ema)
     
     分类：趋势类指标
     描述：对近期价格赋予更高权重
@@ -32,26 +32,26 @@ class EMA(BaseIndicator, PatternSignalMixin):
 
     def __init__(self, **kwargs):
         """
-        初始化指数移动平均线(EMA)指标
+        初始化指数移动平均线(EMA_Ema)指标
         Args:
             **kwargs: 指标参数，支持period、price_field、alpha等
         """
-        super().__init__(name="EMA", description="指数移动平均线")
+        super().__init__(name="EMA_Ema", description="指数移动平均线")
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_ema()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Ema(**kwargs)
 
         self.ma_cols = [f'{self.ma_type}{self.period}']
-        self.register_patterns()
+        self.register_patterns_Ema()
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_ema(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 12, "price_field": "close", "alpha": None}
         
-    def set_parameters(self, **kwargs):
+    def set_parameters_Ema(self, **kwargs):
         """
         设置指标参数
 
@@ -62,18 +62,18 @@ class EMA(BaseIndicator, PatternSignalMixin):
                 - alpha: 平滑因子
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
 
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('EMA', params)
+            is_valid, errors = validator.validate_indicator_parameters('EMA_Ema', params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
@@ -89,14 +89,14 @@ class EMA(BaseIndicator, PatternSignalMixin):
 
         # 保持向后兼容性
         self.periods = [self.period]  # 为了兼容现有代码
-        self.ma_type = 'EMA'
+        self.ma_type = 'EMA_Ema'
 
         if hasattr(self, 'ma_cols'):
             self.ma_cols = [f'{self.ma_type}{self.period}']
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_ema(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        计算指数移动平均线(EMA)指标
+        计算指数移动平均线(EMA_Ema)指标
         """
         for p in self.periods:
             df[f'{self.ma_type}{p}'] = df['close'].ewm(span=p, adjust=True).mean()
@@ -160,7 +160,7 @@ class EMA(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def calculate_raw_score(self, df: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score_Ema(self, df: pd.DataFrame) -> pd.Series:
         """
         计算EMA原始评分。
         评分标准:
@@ -201,13 +201,13 @@ class EMA(BaseIndicator, PatternSignalMixin):
 
         return score.clip(0, 100)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Ema(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算置信度。
         """
         return 0.5
 
-    def get_patterns(self, df: pd.DataFrame) -> pd.DataFrame:
+    def get_patterns_Ema(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         识别EMA技术形态
         """
@@ -233,7 +233,7 @@ class EMA(BaseIndicator, PatternSignalMixin):
         
         return pd.DataFrame(patterns)
 
-    def register_patterns(self):
+    def register_patterns_Ema(self):
         """
         注册与该指标相关的技术形态。
         """
@@ -244,14 +244,14 @@ class EMA(BaseIndicator, PatternSignalMixin):
         
         self.register_pattern_to_registry(
             pattern_id=f"EMA_{p_short}_{p_long}_GOLDEN_CROSS",
-            display_name=f"EMA({p_short},{p_long})金叉",
+            display_name=f"EMA_Ema({p_short},{p_long})金叉",
             description=f"当短期EMA({p_short})上穿长期EMA({p_long})时，被视为看涨信号。",
             pattern_type="BULLISH",
             polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id=f"EMA_{p_short}_{p_long}_DEATH_CROSS",
-            display_name=f"EMA({p_short},{p_long})死叉",
+            display_name=f"EMA_Ema({p_short},{p_long})死叉",
             description=f"当短期EMA({p_short})下穿长期EMA({p_long})时，被视为看跌信号。",
             pattern_type="BEARISH",
             polarity="NEGATIVE"
@@ -285,7 +285,7 @@ class EMA(BaseIndicator, PatternSignalMixin):
             score_impact=-15.0,
             polarity="NEGATIVE"
         )
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Ema(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         

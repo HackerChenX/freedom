@@ -19,23 +19,23 @@ from pathlib import Path
 from typing import Dict, List, Set, Any, Optional, Tuple
 import time
 import warnings
+import logging
+import traceback
 warnings.filterwarnings('ignore')
 
 # 添加项目根目录到路径
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from db.clickhouse_db import get_clickhouse_db
-from indicators.zxm.buy_point_indicators import (
-    ZXMVolumeShrink, ZXMBSAbsorb, ZXMTurnover, 
-    ZXMDailyMACD, ZXMMACallback
-)
-from indicators.enhanced_macd import EnhancedMACD
-from indicators.enhanced_rsi import EnhancedRSI
-from indicators.enhanced_kdj import EnhancedKDJ
-from indicators.boll_bandwidth import BollBandwidth
-from indicators.unified_ma import UnifiedMA
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
+from utils.decorators import exception_handler, performance_monitor
 from utils.logger import get_logger
+from utils.date_utils import get_trading_day
+from strategy.strategy_manager import StrategyManager
+from strategy.backtester import Backtester
+from risk.portfolio_risk import PortfolioRiskManager
+from monitoring.performance_monitor import PerformanceMonitor
 
 logger = get_logger(__name__)
 
@@ -44,693 +44,842 @@ class ProductionStrategyValidator:
     """生产环境策略验证器"""
     
     def __init__(self):
-        """初始化验证器"""
-        try:
-            self.db = get_clickhouse_db()
-            logger.info("✅ 成功连接到ClickHouse数据库")
-            
-            # 初始化可用指标
-            self.available_indicators = {
-                # ZXM体系指标
-                'volume_shrink': {
-                    'class': ZXMVolumeShrink,
-                    'name': 'ZXM缩量指标',
-                    'description': '判断成交量是否较2日平均成交量缩减10%以上'
-                },
-                'bs_absorb': {
-                    'class': ZXMBSAbsorb,
-                    'name': 'ZXM BS吸筹指标',
-                    'description': '判断60分钟级别是否存在低位吸筹特征'
-                },
-                'turnover': {
-                    'class': ZXMTurnover,
-                    'name': 'ZXM换手率指标',
-                    'description': '判断换手率是否处于合理区间'
-                },
-                'daily_macd': {
-                    'class': ZXMDailyMACD,
-                    'name': 'ZXM日线MACD指标',
-                    'description': '判断日线MACD指标是否小于0.9'
-                },
-                'ma_callback': {
-                    'class': ZXMMACallback,
-                    'name': 'ZXM均线回调指标',
-                    'description': '判断价格是否回调到均线附近'
-                },
-                # 技术指标
-                'enhanced_macd': {
-                    'class': EnhancedMACD,
-                    'name': '增强版MACD',
-                    'description': '增强版MACD指标，包含多种信号'
-                },
-                'enhanced_rsi': {
-                    'class': EnhancedRSI,
-                    'name': '增强版RSI',
-                    'description': '增强版RSI指标，包含超买超卖信号'
-                },
-                'enhanced_kdj': {
-                    'class': EnhancedKDJ,
-                    'name': '增强版KDJ',
-                    'description': '增强版KDJ指标，包含金叉死叉信号'
-                },
-                'boll_bandwidth': {
-                    'class': BollBandwidth,
-                    'name': '布林带宽度',
-                    'description': '布林带宽度指标，判断波动性'
-                },
-                'unified_ma': {
-                    'class': UnifiedMA,
-                    'name': '统一移动平均',
-                    'description': '统一移动平均指标，多周期均线'
-                }
-            }
-            
-            logger.info(f"✅ 初始化完成，可用指标数量: {len(self.available_indicators)}")
-            
-        except Exception as e:
-            logger.error(f"❌ 初始化失败: {e}")
-            raise
-    
-    def get_latest_trade_date(self) -> str:
-        """获取ClickHouse中最新的交易日期"""
-        try:
-            latest_date = self.db.get_stock_max_date()
-            if latest_date:
-                logger.info(f"📅 获取到最新交易日期: {latest_date}")
-                return latest_date
-            else:
-                # 如果无法获取，使用当前日期的前一个工作日
-                today = datetime.now()
-                if today.weekday() == 0:  # 周一
-                    latest_date = (today - timedelta(days=3)).strftime('%Y-%m-%d')
-                elif today.weekday() == 6:  # 周日
-                    latest_date = (today - timedelta(days=2)).strftime('%Y-%m-%d')
-                else:
-                    latest_date = (today - timedelta(days=1)).strftime('%Y-%m-%d')
-                
-                logger.warning(f"⚠️ 无法从数据库获取最新日期，使用估算日期: {latest_date}")
-                return latest_date
-        except Exception as e:
-            logger.error(f"❌ 获取最新交易日期失败: {e}")
-            # 返回一个合理的默认日期
-            return (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-    
-    def get_stock_pool(self, test_date: str, max_stocks: int = 1000) -> List[str]:
+        """初始化生产环境策略验证器"""
+        self.container = get_container()
+        self.data_access = self.get_service(DataAccessInterface)
+        self.strategy_manager = StrategyManager()
+        self.risk_manager = PortfolioRiskManager()
+        self.performance_monitor = PerformanceMonitor()
+        self.validation_results = {}
+        
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=30.0)
+    def validate_strategy_performance(self, strategy_name: str, 
+                                    validation_period: int = 30) -> Dict[str, Any]:
         """
-        获取测试股票池
+        验证策略性能
         
         Args:
-            test_date: 测试日期
-            max_stocks: 最大股票数量
-            
-        Returns:
-            List[str]: 股票代码列表
-        """
-        try:
-            logger.info(f"🔍 获取 {test_date} 的股票池...")
-            
-            # 获取指定日期的股票数据，过滤掉ST股票和价格异常的股票
-            query = """
-            SELECT DISTINCT code, name, close, volume
-            FROM stock_info
-            WHERE date = %(test_date)s
-              AND level = '日线'
-              AND close > 2.0
-              AND close < 200.0
-              AND volume > 1000
-              AND name NOT LIKE '%ST%'
-              AND name NOT LIKE '%*%'
-              AND name NOT LIKE '%退%'
-            ORDER BY volume DESC
-            LIMIT %(max_stocks)s
-            """
-            
-            params = {
-                'test_date': test_date,
-                'max_stocks': max_stocks
-            }
-            
-            result = self.db.query(query, params)
-            
-            if result.empty:
-                logger.warning(f"⚠️ 未找到 {test_date} 的股票数据")
-                return []
-            
-            stock_codes = result['code'].tolist()
-            logger.info(f"✅ 获取到 {len(stock_codes)} 只股票")
-            
-            return stock_codes
-            
-        except Exception as e:
-            logger.error(f"❌ 获取股票池失败: {e}")
-            return []
-    
-    def get_stock_data(self, stock_code: str, end_date: str, days: int = 100) -> pd.DataFrame:
-        """
-        获取股票历史数据
-        
-        Args:
-            stock_code: 股票代码
-            end_date: 结束日期
-            days: 历史天数
-            
-        Returns:
-            pd.DataFrame: 股票数据
-        """
-        try:
-            # 计算开始日期（考虑到交易日）
-            start_date = (datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=days*2)).strftime('%Y-%m-%d')
-            
-            query = """
-            SELECT date, open, high, low, close, volume, turnover
-            FROM stock_info
-            WHERE code = %(stock_code)s
-              AND level = '日线'
-              AND date >= %(start_date)s
-              AND date <= %(end_date)s
-            ORDER BY date ASC
-            """
-            
-            params = {
-                'stock_code': stock_code,
-                'start_date': start_date,
-                'end_date': end_date
-            }
-            
-            result = self.db.query(query, params)
-            
-            if result.empty:
-                return pd.DataFrame()
-            
-            # 确保数据类型正确
-            result['date'] = pd.to_datetime(result['date'])
-            result = result.set_index('date')
-            
-            # 只保留最近的指定天数
-            if len(result) > days:
-                result = result.tail(days)
-            
-            return result
-            
-        except Exception as e:
-            logger.warning(f"⚠️ 获取股票 {stock_code} 数据失败: {e}")
-            return pd.DataFrame()
-    
-    def validate_single_indicator(self, indicator_name: str, test_date: str = None, 
-                                 max_stocks: int = 1000) -> Dict[str, Any]:
-        """
-        验证单个指标的选股效果
-        
-        Args:
-            indicator_name: 指标名称
-            test_date: 测试日期，如果为None则使用最新交易日期
-            max_stocks: 最大测试股票数量
+            strategy_name: 策略名称
+            validation_period: 验证期间（天数）
             
         Returns:
             Dict[str, Any]: 验证结果
         """
-        if indicator_name not in self.available_indicators:
-            raise ValueError(f"不支持的指标: {indicator_name}")
-        
-        # 获取测试日期
-        if test_date is None:
-            test_date = self.get_latest_trade_date()
-        
-        logger.info(f"🚀 开始验证指标: {indicator_name} (测试日期: {test_date})")
-        
-        start_time = time.time()
-        
-        # 获取股票池
-        stock_pool = self.get_stock_pool(test_date, max_stocks)
-        if not stock_pool:
-            return {
-                'indicator_name': indicator_name,
-                'test_date': test_date,
-                'error': '无法获取股票池',
-                'success': False
-            }
-        
-        # 初始化指标
-        indicator_info = self.available_indicators[indicator_name]
-        indicator = indicator_info['class']()
-        
-        selected_stocks = []
-        failed_stocks = []
-        indicator_values = {}
-        
-        logger.info(f"📊 开始处理 {len(stock_pool)} 只股票...")
-        
-        for i, stock_code in enumerate(stock_pool):
-            if i % 100 == 0:
-                logger.info(f"⏳ 进度: {i}/{len(stock_pool)} ({i/len(stock_pool)*100:.1f}%)")
+        try:
+            logger.info(f"开始验证策略性能: {strategy_name}")
             
-            try:
-                # 获取股票数据
-                stock_data = self.get_stock_data(stock_code, test_date)
-                if stock_data.empty or len(stock_data) < 30:
-                    failed_stocks.append(stock_code)
-                    continue
-                
-                # 计算指标
-                result = indicator.calculate(stock_data)
-                if result.empty:
-                    failed_stocks.append(stock_code)
-                    continue
-                
-                # 获取最新的买入信号
-                latest_result = result.iloc[-1]
-                
-                # 检查是否有买入信号
-                has_buy_signal = False
-                if hasattr(latest_result, 'buy_signal') and latest_result.buy_signal:
-                    has_buy_signal = True
-                elif hasattr(latest_result, 'XG') and latest_result.XG:
-                    has_buy_signal = True
-                elif 'buy_signal' in result.columns and result['buy_signal'].iloc[-1]:
-                    has_buy_signal = True
-                elif 'XG' in result.columns and result['XG'].iloc[-1]:
-                    has_buy_signal = True
-                
-                if has_buy_signal:
-                    selected_stocks.append(stock_code)
-                    
-                    # 保存指标值用于分析
-                    indicator_values[stock_code] = {
-                        'latest_close': stock_data['close'].iloc[-1],
-                        'latest_volume': stock_data['volume'].iloc[-1],
-                        'indicator_result': latest_result.to_dict() if hasattr(latest_result, 'to_dict') else str(latest_result)
-                    }
-                
-            except Exception as e:
-                logger.debug(f"处理股票 {stock_code} 时出错: {e}")
-                failed_stocks.append(stock_code)
-                continue
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # 计算统计信息
-        total_stocks = len(stock_pool)
-        selected_count = len(selected_stocks)
-        failed_count = len(failed_stocks)
-        success_rate = (total_stocks - failed_count) / total_stocks if total_stocks > 0 else 0
-        selection_rate = selected_count / total_stocks if total_stocks > 0 else 0
-        
-        logger.info(f"✅ 指标 {indicator_name} 验证完成:")
-        logger.info(f"   - 总股票数: {total_stocks}")
-        logger.info(f"   - 选中股票数: {selected_count}")
-        logger.info(f"   - 选股率: {selection_rate:.2%}")
-        logger.info(f"   - 执行时间: {execution_time:.2f}秒")
-        
-        result = {
-            'indicator_name': indicator_name,
-            'indicator_info': indicator_info,
-            'test_date': test_date,
-            'execution_time': execution_time,
-            'statistics': {
-                'total_stocks': total_stocks,
-                'selected_count': selected_count,
-                'failed_count': failed_count,
-                'success_rate': success_rate,
-                'selection_rate': selection_rate
-            },
-            'selected_stocks': selected_stocks,
-            'failed_stocks': failed_stocks,
-            'indicator_values': indicator_values,
-            'success': True
-        }
-        
-        return result
+            # 获取验证期间
+            end_date = get_trading_day()
+            start_date = (datetime.strptime(end_date, '%Y%m%d') - timedelta(days=validation_period*2)).strftime('%Y%m%d')
+            
+            # 加载策略
+            strategy = self.strategy_manager.load_strategy(strategy_name)
+            
+            # 获取验证数据
+            validation_data = self._load_validation_data(start_date, end_date)
+            
+            # 运行策略验证
+            strategy_results = self._run_strategy_validation(strategy, validation_data, start_date, end_date)
+            
+            # 性能分析
+            performance_metrics = self._analyze_strategy_performance(strategy_results)
+            
+            # 风险评估
+            risk_assessment = self._assess_strategy_risk(strategy_results)
+            
+            # 稳定性检查
+            stability_check = self._check_strategy_stability(strategy_results)
+            
+            # 合规性检查
+            compliance_check = self._check_strategy_compliance(strategy, strategy_results)
+            
+            validation_result = {
+                'strategy_name': strategy_name,
+                'validation_period': f"{start_date} - {end_date}",
+                'validation_timestamp': datetime.now().isoformat(),
+                'strategy_results': strategy_results,
+                'performance_metrics': performance_metrics,
+                'risk_assessment': risk_assessment,
+                'stability_check': stability_check,
+                'compliance_check': compliance_check,
+                'overall_status': self._determine_overall_status(
+                    performance_metrics, risk_assessment, stability_check, compliance_check
+                )
+            }
+            
+            logger.info(f"策略 {strategy_name} 验证完成")
+            return validation_result
+            
+        except Exception as e:
+            logger.error(f"验证策略性能失败: {e}")
+            raise
     
-    def validate_multiple_indicators(self, indicator_names: List[str], test_date: str = None,
-                                   max_stocks: int = 1000) -> Dict[str, Any]:
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=15.0)
+    def _load_validation_data(self, start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
+        """加载验证数据"""
+        try:
+            logger.info("加载验证数据")
+            
+            # 获取股票池
+            stock_codes = self.data_access.get_active_stock_codes()
+            
+            validation_data = {}
+            failed_loads = 0
+            
+            for i, code in enumerate(stock_codes[:100], 1):  # 限制为前100只股票进行验证
+                try:
+                    if i % 20 == 0:
+                        logger.info(f"数据加载进度: {i}/{min(100, len(stock_codes))}")
+                    
+                    data = self.data_access.get_stock_data(
+                        code=code,
+                        start_date=datetime.strptime(start_date, '%Y%m%d').strftime('%Y-%m-%d'),
+                        end_date=datetime.strptime(end_date, '%Y%m%d').strftime('%Y-%m-%d'),
+                        level='日线'
+                    )
+                    
+                    if not data.empty and len(data) >= 20:  # 确保有足够的数据
+                        validation_data[code] = data
+                    else:
+                        failed_loads += 1
+                        
+                except Exception as e:
+                    logger.warning(f"加载股票 {code} 数据失败: {e}")
+                    failed_loads += 1
+                    continue
+            
+            logger.info(f"成功加载 {len(validation_data)} 只股票数据，失败 {failed_loads} 只")
+            
+            if len(validation_data) < 10:
+                raise ValueError("验证数据不足，无法进行有效验证")
+            
+            return validation_data
+            
+        except Exception as e:
+            logger.error(f"加载验证数据失败: {e}")
+            raise
+    
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=20.0)
+    def _run_strategy_validation(self, strategy, validation_data: Dict[str, pd.DataFrame],
+                               start_date: str, end_date: str) -> Dict[str, Any]:
+        """运行策略验证"""
+        try:
+            logger.info("运行策略验证")
+            
+            # 创建回测器
+            backtester = Backtester(
+                initial_capital=1000000,  # 100万初始资金
+                commission_rate=0.0003,   # 0.03%手续费
+                slippage_rate=0.001       # 0.1%滑点
+            )
+            
+            # 运行回测
+            backtest_result = backtester.run_backtest(
+                strategy=strategy,
+                stock_data=validation_data,
+                start_date=datetime.strptime(start_date, '%Y%m%d').strftime('%Y-%m-%d'),
+                end_date=datetime.strptime(end_date, '%Y%m%d').strftime('%Y-%m-%d')
+            )
+            
+            # 提取关键结果
+            strategy_results = {
+                'backtest_result': backtest_result,
+                'portfolio_values': backtest_result.get('portfolio_values', pd.Series()),
+                'trades': backtest_result.get('trades', []),
+                'positions': backtest_result.get('positions', {}),
+                'daily_returns': backtest_result.get('daily_returns', pd.Series()),
+                'total_trades': len(backtest_result.get('trades', [])),
+                'profitable_trades': len([t for t in backtest_result.get('trades', []) if t.get('profit', 0) > 0])
+            }
+            
+            logger.info("策略验证运行完成")
+            return strategy_results
+            
+        except Exception as e:
+            logger.error(f"运行策略验证失败: {e}")
+            raise
+    
+    @exception_handler(reraise=True)
+    def _analyze_strategy_performance(self, strategy_results: Dict[str, Any]) -> Dict[str, float]:
+        """分析策略性能"""
+        try:
+            portfolio_values = strategy_results.get('portfolio_values', pd.Series())
+            daily_returns = strategy_results.get('daily_returns', pd.Series())
+            
+            if portfolio_values.empty or len(portfolio_values) < 2:
+                return {'error': 'insufficient_data'}
+            
+            # 基础性能指标
+            total_return = (portfolio_values.iloc[-1] / portfolio_values.iloc[0]) - 1
+            annual_return = (1 + total_return) ** (252 / len(portfolio_values)) - 1
+            
+            if not daily_returns.empty:
+                volatility = daily_returns.std() * (252 ** 0.5)
+                sharpe_ratio = annual_return / volatility if volatility > 0 else 0
+                
+                # 最大回撤
+                cumulative_returns = (1 + daily_returns).cumprod()
+                rolling_max = cumulative_returns.expanding().max()
+                drawdowns = (cumulative_returns - rolling_max) / rolling_max
+                max_drawdown = drawdowns.min()
+                
+                # 胜率
+                win_rate = (daily_returns > 0).sum() / len(daily_returns) if len(daily_returns) > 0 else 0
+            else:
+                volatility = 0
+                sharpe_ratio = 0
+                max_drawdown = 0
+                win_rate = 0
+            
+            # 交易指标
+            total_trades = strategy_results.get('total_trades', 0)
+            profitable_trades = strategy_results.get('profitable_trades', 0)
+            profit_ratio = profitable_trades / total_trades if total_trades > 0 else 0
+            
+            performance_metrics = {
+                'total_return': total_return,
+                'annual_return': annual_return,
+                'volatility': volatility,
+                'sharpe_ratio': sharpe_ratio,
+                'max_drawdown': max_drawdown,
+                'win_rate': win_rate,
+                'total_trades': total_trades,
+                'profitable_trades': profitable_trades,
+                'profit_ratio': profit_ratio,
+                'avg_trade_return': total_return / total_trades if total_trades > 0 else 0
+            }
+            
+            return performance_metrics
+            
+        except Exception as e:
+            logger.error(f"分析策略性能失败: {e}")
+            return {'error': str(e)}
+    
+    @exception_handler(reraise=True)
+    def _assess_strategy_risk(self, strategy_results: Dict[str, Any]) -> Dict[str, Any]:
+        """评估策略风险"""
+        try:
+            portfolio_values = strategy_results.get('portfolio_values', pd.Series())
+            positions = strategy_results.get('positions', {})
+            
+            # 使用风险管理器进行风险评估
+            risk_metrics = self.risk_manager.analyze_portfolio_risk(portfolio_values)
+            
+            # 持仓集中度风险
+            if positions:
+                position_values = list(positions.values())
+                total_value = sum(position_values)
+                concentration_risk = max(position_values) / total_value if total_value > 0 else 0
+            else:
+                concentration_risk = 0
+            
+            # 流动性风险评估
+            liquidity_risk = self._assess_liquidity_risk(strategy_results)
+            
+            # 市场风险评估
+            market_risk = self._assess_market_risk(strategy_results)
+            
+            risk_assessment = {
+                'risk_metrics': risk_metrics,
+                'concentration_risk': concentration_risk,
+                'liquidity_risk': liquidity_risk,
+                'market_risk': market_risk,
+                'overall_risk_level': self._determine_risk_level(
+                    risk_metrics, concentration_risk, liquidity_risk, market_risk
+                )
+            }
+            
+            return risk_assessment
+            
+        except Exception as e:
+            logger.error(f"评估策略风险失败: {e}")
+            return {'error': str(e)}
+    
+    def _assess_liquidity_risk(self, strategy_results: Dict[str, Any]) -> Dict[str, float]:
+        """评估流动性风险"""
+        try:
+            trades = strategy_results.get('trades', [])
+            
+            # 计算平均交易规模
+            trade_sizes = [trade.get('quantity', 0) for trade in trades]
+            avg_trade_size = np.mean(trade_sizes) if trade_sizes else 0
+            
+            # 计算交易频率
+            trade_frequency = len(trades) / 30 if trades else 0  # 每月交易次数
+            
+            return {
+                'avg_trade_size': avg_trade_size,
+                'trade_frequency': trade_frequency,
+                'liquidity_score': min(100, max(0, 100 - avg_trade_size * trade_frequency / 1000))
+            }
+            
+        except Exception as e:
+            logger.error(f"评估流动性风险失败: {e}")
+            return {'liquidity_score': 50}
+    
+    def _assess_market_risk(self, strategy_results: Dict[str, Any]) -> Dict[str, float]:
+        """评估市场风险"""
+        try:
+            daily_returns = strategy_results.get('daily_returns', pd.Series())
+            
+            if daily_returns.empty:
+                return {'market_beta': 0, 'market_correlation': 0}
+            
+            # 获取市场基准数据
+            try:
+                market_data = self.data_access.get_stock_data(
+                    code='000300.SH',  # 沪深300作为基准
+                    start_date=(datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d'),
+                    end_date=datetime.now().strftime('%Y-%m-%d')
+                )
+                
+                if not market_data.empty:
+                    market_returns = market_data['close'].pct_change().dropna()
+                    
+                    # 对齐时间序列
+                    aligned_returns = daily_returns.align(market_returns, join='inner')
+                    strategy_aligned, market_aligned = aligned_returns
+                    
+                    if len(strategy_aligned) > 10:
+                        # 计算Beta
+                        covariance = np.cov(strategy_aligned, market_aligned)[0, 1]
+                        market_variance = np.var(market_aligned)
+                        beta = covariance / market_variance if market_variance > 0 else 0
+                        
+                        # 计算相关性
+                        correlation = np.corrcoef(strategy_aligned, market_aligned)[0, 1]
+                        
+                        return {
+                            'market_beta': beta,
+                            'market_correlation': correlation,
+                            'systematic_risk': abs(beta) * 100
+                        }
+                        
+            except Exception as e:
+                logger.warning(f"获取市场基准数据失败: {e}")
+            
+            return {'market_beta': 0, 'market_correlation': 0, 'systematic_risk': 0}
+            
+        except Exception as e:
+            logger.error(f"评估市场风险失败: {e}")
+            return {'market_beta': 0, 'market_correlation': 0}
+    
+    def _determine_risk_level(self, risk_metrics: Dict, concentration_risk: float,
+                            liquidity_risk: Dict, market_risk: Dict) -> str:
+        """确定风险水平"""
+        try:
+            risk_score = 0
+            
+            # 集中度风险评分
+            if concentration_risk > 0.3:
+                risk_score += 30
+            elif concentration_risk > 0.2:
+                risk_score += 20
+            elif concentration_risk > 0.1:
+                risk_score += 10
+            
+            # 流动性风险评分
+            liquidity_score = liquidity_risk.get('liquidity_score', 50)
+            if liquidity_score < 30:
+                risk_score += 25
+            elif liquidity_score < 50:
+                risk_score += 15
+            elif liquidity_score < 70:
+                risk_score += 10
+            
+            # 市场风险评分
+            systematic_risk = market_risk.get('systematic_risk', 0)
+            if systematic_risk > 150:
+                risk_score += 25
+            elif systematic_risk > 100:
+                risk_score += 15
+            elif systematic_risk > 50:
+                risk_score += 10
+            
+            # 确定风险等级
+            if risk_score >= 60:
+                return "高风险"
+            elif risk_score >= 40:
+                return "中高风险"
+            elif risk_score >= 20:
+                return "中等风险"
+            else:
+                return "低风险"
+                
+        except Exception as e:
+            logger.error(f"确定风险水平失败: {e}")
+            return "未知风险"
+    
+    @exception_handler(reraise=True)
+    def _check_strategy_stability(self, strategy_results: Dict[str, Any]) -> Dict[str, Any]:
+        """检查策略稳定性"""
+        try:
+            portfolio_values = strategy_results.get('portfolio_values', pd.Series())
+            daily_returns = strategy_results.get('daily_returns', pd.Series())
+            
+            stability_metrics = {}
+            
+            if not portfolio_values.empty:
+                # 收益稳定性
+                returns_std = daily_returns.std() if not daily_returns.empty else 0
+                stability_metrics['returns_stability'] = max(0, 100 - returns_std * 100)
+                
+                # 回撤稳定性
+                cumulative_returns = (1 + daily_returns).cumprod() if not daily_returns.empty else pd.Series([1])
+                rolling_max = cumulative_returns.expanding().max()
+                drawdowns = (cumulative_returns - rolling_max) / rolling_max
+                max_consecutive_loss_days = self._calculate_max_consecutive_loss_days(daily_returns)
+                
+                stability_metrics['drawdown_stability'] = max(0, 100 + drawdowns.min() * 100)
+                stability_metrics['max_consecutive_loss_days'] = max_consecutive_loss_days
+                
+                # 交易稳定性
+                trades = strategy_results.get('trades', [])
+                if trades:
+                    trade_returns = [trade.get('return', 0) for trade in trades]
+                    trade_consistency = 100 - (np.std(trade_returns) * 100) if trade_returns else 0
+                    stability_metrics['trade_consistency'] = max(0, min(100, trade_consistency))
+                else:
+                    stability_metrics['trade_consistency'] = 0
+            
+            # 综合稳定性评分
+            if stability_metrics:
+                avg_stability = np.mean(list(stability_metrics.values()))
+                stability_level = self._get_stability_level(avg_stability)
+            else:
+                avg_stability = 0
+                stability_level = "不稳定"
+            
+            return {
+                'stability_metrics': stability_metrics,
+                'overall_stability_score': avg_stability,
+                'stability_level': stability_level
+            }
+            
+        except Exception as e:
+            logger.error(f"检查策略稳定性失败: {e}")
+            return {'error': str(e)}
+    
+    def _calculate_max_consecutive_loss_days(self, daily_returns: pd.Series) -> int:
+        """计算最大连续亏损天数"""
+        try:
+            if daily_returns.empty:
+                return 0
+            
+            loss_days = daily_returns < 0
+            max_consecutive = 0
+            current_consecutive = 0
+            
+            for is_loss in loss_days:
+                if is_loss:
+                    current_consecutive += 1
+                    max_consecutive = max(max_consecutive, current_consecutive)
+                else:
+                    current_consecutive = 0
+            
+            return max_consecutive
+            
+        except Exception as e:
+            logger.error(f"计算最大连续亏损天数失败: {e}")
+            return 0
+    
+    def _get_stability_level(self, stability_score: float) -> str:
+        """获取稳定性等级"""
+        if stability_score >= 80:
+            return "非常稳定"
+        elif stability_score >= 60:
+            return "稳定"
+        elif stability_score >= 40:
+            return "一般稳定"
+        elif stability_score >= 20:
+            return "不太稳定"
+        else:
+            return "不稳定"
+    
+    @exception_handler(reraise=True)
+    def _check_strategy_compliance(self, strategy, strategy_results: Dict[str, Any]) -> Dict[str, Any]:
+        """检查策略合规性"""
+        try:
+            compliance_results = {}
+            
+            # 检查持仓限制
+            positions = strategy_results.get('positions', {})
+            max_position_ratio = max(positions.values()) / sum(positions.values()) if positions else 0
+            compliance_results['position_limit_check'] = {
+                'max_position_ratio': max_position_ratio,
+                'compliant': max_position_ratio <= 0.1,  # 单只股票不超过10%
+                'limit': 0.1
+            }
+            
+            # 检查交易频率
+            trades = strategy_results.get('trades', [])
+            daily_trade_count = len(trades) / 30  # 平均每日交易次数
+            compliance_results['trading_frequency_check'] = {
+                'daily_trade_count': daily_trade_count,
+                'compliant': daily_trade_count <= 10,  # 每日交易不超过10次
+                'limit': 10
+            }
+            
+            # 检查风险控制
+            portfolio_values = strategy_results.get('portfolio_values', pd.Series())
+            if not portfolio_values.empty:
+                max_loss = (portfolio_values.min() / portfolio_values.iloc[0]) - 1
+                compliance_results['risk_control_check'] = {
+                    'max_loss': max_loss,
+                    'compliant': max_loss >= -0.2,  # 最大亏损不超过20%
+                    'limit': -0.2
+                }
+            
+            # 综合合规性
+            all_compliant = all(
+                check.get('compliant', False) 
+                for check in compliance_results.values()
+            )
+            
+            compliance_results['overall_compliance'] = {
+                'compliant': all_compliant,
+                'compliance_score': sum(
+                    1 for check in compliance_results.values() 
+                    if check.get('compliant', False)
+                ) / len(compliance_results) * 100 if compliance_results else 0
+            }
+            
+            return compliance_results
+            
+        except Exception as e:
+            logger.error(f"检查策略合规性失败: {e}")
+            return {'error': str(e)}
+    
+    def _determine_overall_status(self, performance_metrics: Dict, risk_assessment: Dict,
+                                stability_check: Dict, compliance_check: Dict) -> Dict[str, Any]:
+        """确定整体状态"""
+        try:
+            status_score = 0
+            issues = []
+            
+            # 性能评分
+            sharpe_ratio = performance_metrics.get('sharpe_ratio', 0)
+            if sharpe_ratio > 1.5:
+                status_score += 30
+            elif sharpe_ratio > 1.0:
+                status_score += 20
+            elif sharpe_ratio > 0.5:
+                status_score += 10
+            else:
+                issues.append("夏普比率偏低")
+            
+            # 风险评分
+            risk_level = risk_assessment.get('overall_risk_level', '未知风险')
+            if risk_level == '低风险':
+                status_score += 25
+            elif risk_level == '中等风险':
+                status_score += 15
+            elif risk_level == '中高风险':
+                status_score += 5
+            else:
+                issues.append(f"风险水平较高: {risk_level}")
+            
+            # 稳定性评分
+            stability_score = stability_check.get('overall_stability_score', 0)
+            if stability_score > 80:
+                status_score += 25
+            elif stability_score > 60:
+                status_score += 15
+            elif stability_score > 40:
+                status_score += 10
+            else:
+                issues.append("策略稳定性不足")
+            
+            # 合规性评分
+            compliance_score = compliance_check.get('overall_compliance', {}).get('compliance_score', 0)
+            if compliance_score == 100:
+                status_score += 20
+            elif compliance_score >= 80:
+                status_score += 15
+            elif compliance_score >= 60:
+                status_score += 10
+            else:
+                issues.append("存在合规性问题")
+            
+            # 确定状态
+            if status_score >= 80:
+                status = "优秀"
+            elif status_score >= 60:
+                status = "良好"
+            elif status_score >= 40:
+                status = "一般"
+            elif status_score >= 20:
+                status = "需要改进"
+            else:
+                status = "不合格"
+            
+            return {
+                'status': status,
+                'status_score': status_score,
+                'issues': issues,
+                'recommendation': self._generate_recommendation_Production_Strategy_Validator(status, issues)
+            }
+            
+        except Exception as e:
+            logger.error(f"确定整体状态失败: {e}")
+            return {'status': '评估失败', 'error': str(e)}
+    
+    def _generate_recommendation_Production_Strategy_Validator(self, status: str, issues: List[str]) -> str:
+        """生成建议"""
+        if status == "优秀":
+            return "策略表现优秀，可以继续使用"
+        elif status == "良好":
+            return "策略表现良好，建议持续监控"
+        elif status == "一般":
+            return "策略表现一般，建议优化参数"
+        elif status == "需要改进":
+            return f"策略需要改进，主要问题: {', '.join(issues[:3])}"
+        else:
+            return f"策略不合格，不建议使用。问题: {', '.join(issues[:3])}"
+    
+    @exception_handler(reraise=True)
+    def validate_multiple_strategies(self, strategy_names: List[str],
+                                   validation_period: int = 30) -> Dict[str, Dict[str, Any]]:
         """
-        批量验证多个指标的选股效果
+        验证多个策略
         
         Args:
-            indicator_names: 指标名称列表
-            test_date: 测试日期
-            max_stocks: 最大测试股票数量
+            strategy_names: 策略名称列表
+            validation_period: 验证期间（天数）
             
         Returns:
-            Dict[str, Any]: 批量验证结果
+            Dict[str, Dict[str, Any]]: 多策略验证结果
         """
-        logger.info(f"🚀 开始批量验证 {len(indicator_names)} 个指标")
-        
-        batch_start_time = time.time()
-        individual_results = {}
-        
-        # 逐个验证指标
-        for indicator_name in indicator_names:
-            try:
-                result = self.validate_single_indicator(indicator_name, test_date, max_stocks)
-                individual_results[indicator_name] = result
-            except Exception as e:
-                logger.error(f"❌ 验证指标 {indicator_name} 时失败: {e}")
-                individual_results[indicator_name] = {
-                    'indicator_name': indicator_name,
-                    'error': str(e),
-                    'success': False
+        try:
+            logger.info(f"开始验证多个策略，数量: {len(strategy_names)}")
+            
+            results = {}
+            
+            for i, strategy_name in enumerate(strategy_names, 1):
+                try:
+                    logger.info(f"验证策略 {i}/{len(strategy_names)}: {strategy_name}")
+                    
+                    result = self.validate_strategy_performance(strategy_name, validation_period)
+                    results[strategy_name] = result
+                    
+                except Exception as e:
+                    logger.error(f"验证策略 {strategy_name} 失败: {e}")
+                    results[strategy_name] = {
+                        'strategy_name': strategy_name,
+                        'error': str(e),
+                        'overall_status': {'status': '验证失败'}
+                    }
+                    continue
+            
+            # 生成对比分析
+            comparison_analysis = self._generate_strategy_comparison_Production_Strategy_Validator(results)
+            results['_comparison_analysis'] = comparison_analysis
+            
+            logger.info(f"多策略验证完成，成功验证 {len([r for r in results.values() if 'error' not in r])} 个策略")
+            return results
+            
+        except Exception as e:
+            logger.error(f"验证多个策略失败: {e}")
+            raise
+    
+    def _generate_strategy_comparison_Production_Strategy_Validator(self, results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        """生成策略对比分析"""
+        try:
+            valid_results = {k: v for k, v in results.items() if 'error' not in v and not k.startswith('_')}
+            
+            if len(valid_results) < 2:
+                return {}
+            
+            # 提取性能指标
+            strategy_metrics = {}
+            for strategy_name, result in valid_results.items():
+                metrics = result.get('performance_metrics', {})
+                overall_status = result.get('overall_status', {})
+                
+                strategy_metrics[strategy_name] = {
+                    'sharpe_ratio': metrics.get('sharpe_ratio', 0),
+                    'annual_return': metrics.get('annual_return', 0),
+                    'max_drawdown': metrics.get('max_drawdown', 0),
+                    'status_score': overall_status.get('status_score', 0),
+                    'status': overall_status.get('status', '未知')
                 }
-        
-        batch_end_time = time.time()
-        batch_execution_time = batch_end_time - batch_start_time
-        
-        # 分析指标间的重叠度
-        overlap_analysis = self._analyze_indicator_overlap(individual_results)
-        
-        # 生成批量验证总结
-        batch_summary = self._generate_batch_summary(individual_results)
-        
-        logger.info(f"✅ 批量验证完成，总耗时: {batch_execution_time:.2f}秒")
-        
-        return {
-            'test_date': test_date or self.get_latest_trade_date(),
-            'batch_execution_time': batch_execution_time,
-            'individual_results': individual_results,
-            'overlap_analysis': overlap_analysis,
-            'batch_summary': batch_summary,
-            'success': True
-        }
+            
+            # 排名
+            rankings = {
+                'by_sharpe_ratio': sorted(strategy_metrics.items(), key=lambda x: x[1]['sharpe_ratio'], reverse=True),
+                'by_annual_return': sorted(strategy_metrics.items(), key=lambda x: x[1]['annual_return'], reverse=True),
+                'by_status_score': sorted(strategy_metrics.items(), key=lambda x: x[1]['status_score'], reverse=True)
+            }
+            
+            # 最佳策略
+            best_overall = rankings['by_status_score'][0] if rankings['by_status_score'] else None
+            
+            return {
+                'strategy_count': len(valid_results),
+                'rankings': rankings,
+                'best_overall_strategy': best_overall[0] if best_overall else None,
+                'summary_statistics': {
+                    'avg_sharpe_ratio': np.mean([m['sharpe_ratio'] for m in strategy_metrics.values()]),
+                    'avg_annual_return': np.mean([m['annual_return'] for m in strategy_metrics.values()]),
+                    'excellent_strategies': len([m for m in strategy_metrics.values() if m['status'] == '优秀']),
+                    'good_strategies': len([m for m in strategy_metrics.values() if m['status'] == '良好'])
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"生成策略对比分析失败: {e}")
+            return {}
     
-    def _analyze_indicator_overlap(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
-        """分析指标间的重叠度"""
-        successful_results = {k: v for k, v in individual_results.items() 
-                            if v.get('success', False)}
-        
-        if len(successful_results) < 2:
-            return {'overlap_matrix': {}, 'common_stocks': {}}
-        
-        # 构建重叠矩阵
-        overlap_matrix = {}
-        indicator_stocks = {}
-        
-        for indicator_name, result in successful_results.items():
-            indicator_stocks[indicator_name] = set(result.get('selected_stocks', []))
-        
-        # 计算两两重叠度
-        indicator_names = list(indicator_stocks.keys())
-        for i, indicator1 in enumerate(indicator_names):
-            overlap_matrix[indicator1] = {}
-            for j, indicator2 in enumerate(indicator_names):
-                if i == j:
-                    overlap_matrix[indicator1][indicator2] = 1.0
-                else:
-                    stocks1 = indicator_stocks[indicator1]
-                    stocks2 = indicator_stocks[indicator2]
-                    intersection = len(stocks1 & stocks2)
-                    union = len(stocks1 | stocks2)
-                    overlap_rate = intersection / union if union > 0 else 0
-                    overlap_matrix[indicator1][indicator2] = overlap_rate
-        
-        # 找出共同选中的股票
-        if indicator_stocks:
-            common_stocks = set.intersection(*indicator_stocks.values())
-        else:
-            common_stocks = set()
-        
-        return {
-            'overlap_matrix': overlap_matrix,
-            'common_stocks': list(common_stocks),
-            'common_stock_count': len(common_stocks)
-        }
-    
-    def _generate_batch_summary(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
-        """生成批量验证总结"""
-        successful_results = {k: v for k, v in individual_results.items() 
-                            if v.get('success', False)}
-        
-        if not successful_results:
-            return {'total_indicators': 0, 'successful_indicators': 0}
-        
-        # 统计信息
-        total_indicators = len(individual_results)
-        successful_indicators = len(successful_results)
-        
-        # 选股效果统计
-        selection_rates = []
-        selected_counts = []
-        
-        for result in successful_results.values():
-            stats = result.get('statistics', {})
-            selection_rates.append(stats.get('selection_rate', 0))
-            selected_counts.append(stats.get('selected_count', 0))
-        
-        # 最佳和最差指标
-        if selection_rates:
-            best_indicator = max(successful_results.items(), 
-                               key=lambda x: x[1].get('statistics', {}).get('selection_rate', 0))
-            worst_indicator = min(successful_results.items(), 
-                                key=lambda x: x[1].get('statistics', {}).get('selection_rate', 0))
-        else:
-            best_indicator = None
-            worst_indicator = None
-        
-        return {
-            'total_indicators': total_indicators,
-            'successful_indicators': successful_indicators,
-            'failed_indicators': total_indicators - successful_indicators,
-            'average_selection_rate': np.mean(selection_rates) if selection_rates else 0,
-            'total_unique_selections': sum(selected_counts),
-            'best_indicator': {
-                'name': best_indicator[0],
-                'selection_rate': best_indicator[1].get('statistics', {}).get('selection_rate', 0),
-                'selected_count': best_indicator[1].get('statistics', {}).get('selected_count', 0)
-            } if best_indicator else None,
-            'worst_indicator': {
-                'name': worst_indicator[0],
-                'selection_rate': worst_indicator[1].get('statistics', {}).get('selection_rate', 0),
-                'selected_count': worst_indicator[1].get('statistics', {}).get('selected_count', 0)
-            } if worst_indicator else None
-        }
-    
-    def save_results(self, results: Dict[str, Any], output_dir: str = "results/validation") -> str:
+    @exception_handler(reraise=True)
+    def save_validation_results(self, results: Dict[str, Any], 
+                              output_file: str) -> None:
         """
         保存验证结果
         
         Args:
             results: 验证结果
-            output_dir: 输出目录
-            
-        Returns:
-            str: 输出目录路径
+            output_file: 输出文件路径
         """
-        # 创建输出目录
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = Path(output_dir) / f"validation_{timestamp}"
-        output_path.mkdir(parents=True, exist_ok=True)
-        
-        # 保存JSON结果
-        json_path = output_path / "validation_results.json"
-        with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(results, f, ensure_ascii=False, indent=2, default=str)
-        
-        # 生成文本报告
-        report_path = output_path / "validation_report.txt"
-        self._generate_text_report(results, str(report_path))
-        
-        # 保存选股结果CSV
-        csv_path = self._save_selection_csv(results, str(output_path), timestamp)
-        
-        logger.info(f"📄 验证结果已保存到: {output_path}")
-        logger.info(f"   - JSON结果: {json_path}")
-        logger.info(f"   - 文本报告: {report_path}")
-        if csv_path:
-            logger.info(f"   - 选股结果: {csv_path}")
-        
-        return str(output_path)
+        try:
+            # 确保输出目录存在
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            
+            # 转换为可序列化格式
+            serializable_results = self._make_serializable_Production_Strategy_Validator(results)
+            
+            # 保存为JSON格式
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(serializable_results, f, indent=2, ensure_ascii=False, default=str)
+                
+            logger.info(f"验证结果已保存到: {output_file}")
+            
+            # 生成汇总报告
+            summary_file = output_file.replace('.json', '_summary.txt')
+            self._generate_validation_summary(results, summary_file)
+            
+        except Exception as e:
+            logger.error(f"保存验证结果失败: {e}")
+            raise
     
-    def _generate_text_report(self, results: Dict[str, Any], report_path: str):
-        """生成文本格式的验证报告"""
-        with open(report_path, 'w', encoding='utf-8') as f:
-            f.write("=" * 80 + "\n")
-            f.write("生产环境策略验证报告\n")
-            f.write("=" * 80 + "\n\n")
-            
-            # 基本信息
-            f.write(f"测试日期: {results.get('test_date', 'N/A')}\n")
-            f.write(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-            
-            # 如果是批量验证结果
-            if 'batch_summary' in results:
-                batch_summary = results['batch_summary']
-                f.write("批量验证总结:\n")
-                f.write("-" * 40 + "\n")
-                f.write(f"总指标数: {batch_summary.get('total_indicators', 0)}\n")
-                f.write(f"成功验证: {batch_summary.get('successful_indicators', 0)}\n")
-                f.write(f"验证失败: {batch_summary.get('failed_indicators', 0)}\n")
-                f.write(f"平均选股率: {batch_summary.get('average_selection_rate', 0):.2%}\n")
-                f.write(f"总选股数: {batch_summary.get('total_unique_selections', 0)}\n\n")
+    def _make_serializable_Production_Strategy_Validator(self, obj):
+        """将对象转换为可序列化格式"""
+        if isinstance(obj, dict):
+            return {k: self._make_serializable_Production_Strategy_Validator(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._make_serializable_Production_Strategy_Validator(item) for item in obj]
+        elif isinstance(obj, pd.DataFrame):
+            return obj.to_dict('records')
+        elif isinstance(obj, pd.Series):
+            return obj.to_list()
+        elif isinstance(obj, (pd.Timestamp, datetime)):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(obj, (int, float, str, bool)) or obj is None:
+            return obj
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return str(obj)
+    
+    def _generate_validation_summary(self, results: Dict[str, Any], 
+                                   summary_file: str) -> None:
+        """生成验证汇总报告"""
+        try:
+            with open(summary_file, 'w', encoding='utf-8') as f:
+                f.write("生产环境策略验证汇总报告\n")
+                f.write("=" * 60 + "\n\n")
                 
-                # 最佳和最差指标
-                if batch_summary.get('best_indicator'):
-                    best = batch_summary['best_indicator']
-                    f.write(f"最佳指标: {best['name']} (选股率: {best['selection_rate']:.2%}, 选股数: {best['selected_count']})\n")
+                f.write(f"验证时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 
-                if batch_summary.get('worst_indicator'):
-                    worst = batch_summary['worst_indicator']
-                    f.write(f"最差指标: {worst['name']} (选股率: {worst['selection_rate']:.2%}, 选股数: {worst['selected_count']})\n\n")
-                
-                # 重叠分析
-                if 'overlap_analysis' in results:
-                    overlap = results['overlap_analysis']
-                    f.write("指标重叠分析:\n")
+                # 如果是多策略验证
+                if '_comparison_analysis' in results:
+                    comparison = results['_comparison_analysis']
+                    strategy_count = len(results) - 1
+                    
+                    f.write(f"验证策略数量: {strategy_count}\n\n")
+                    
+                    # 最佳策略
+                    best_strategy = comparison.get('best_overall_strategy')
+                    if best_strategy:
+                        f.write(f"最佳策略: {best_strategy}\n\n")
+                    
+                    # 策略状态统计
+                    summary_stats = comparison.get('summary_statistics', {})
+                    f.write("策略状态统计:\n")
+                    f.write("-" * 30 + "\n")
+                    f.write(f"优秀策略: {summary_stats.get('excellent_strategies', 0)} 个\n")
+                    f.write(f"良好策略: {summary_stats.get('good_strategies', 0)} 个\n")
+                    f.write(f"平均夏普比率: {summary_stats.get('avg_sharpe_ratio', 0):.3f}\n")
+                    f.write(f"平均年化收益率: {summary_stats.get('avg_annual_return', 0):.2%}\n\n")
+                    
+                    # 详细验证结果
+                    f.write("详细验证结果:\n")
                     f.write("-" * 40 + "\n")
-                    f.write(f"共同选中股票数: {overlap.get('common_stock_count', 0)}\n")
-                    if overlap.get('common_stocks'):
-                        f.write(f"共同选中股票: {', '.join(overlap['common_stocks'][:10])}")
-                        if len(overlap['common_stocks']) > 10:
-                            f.write(f" (显示前10只，共{len(overlap['common_stocks'])}只)")
-                        f.write("\n\n")
+                    for strategy_name, result in results.items():
+                        if strategy_name.startswith('_'):
+                            continue
+                        
+                        if 'error' in result:
+                            f.write(f"\n{strategy_name}: 验证失败 - {result['error']}\n")
+                            continue
+                        
+                        overall_status = result.get('overall_status', {})
+                        performance = result.get('performance_metrics', {})
+                        
+                        f.write(f"\n{strategy_name}:\n")
+                        f.write(f"  状态: {overall_status.get('status', '未知')}\n")
+                        f.write(f"  评分: {overall_status.get('status_score', 0):.1f}\n")
+                        f.write(f"  夏普比率: {performance.get('sharpe_ratio', 0):.3f}\n")
+                        f.write(f"  年化收益率: {performance.get('annual_return', 0):.2%}\n")
+                        f.write(f"  最大回撤: {performance.get('max_drawdown', 0):.2%}\n")
+                        
+                        issues = overall_status.get('issues', [])
+                        if issues:
+                            f.write(f"  问题: {', '.join(issues[:2])}\n")
                 
-                # 各指标详细结果
-                individual_results = results.get('individual_results', {})
-                f.write("各指标详细结果:\n")
-                f.write("=" * 80 + "\n")
+                else:
+                    # 单策略验证
+                    strategy_name = results.get('strategy_name', '未知策略')
+                    overall_status = results.get('overall_status', {})
+                    performance = results.get('performance_metrics', {})
+                    
+                    f.write(f"验证策略: {strategy_name}\n")
+                    f.write(f"验证期间: {results.get('validation_period', '未知')}\n\n")
+                    
+                    f.write("验证结果:\n")
+                    f.write("-" * 30 + "\n")
+                    f.write(f"整体状态: {overall_status.get('status', '未知')}\n")
+                    f.write(f"状态评分: {overall_status.get('status_score', 0):.1f}\n")
+                    f.write(f"夏普比率: {performance.get('sharpe_ratio', 0):.3f}\n")
+                    f.write(f"年化收益率: {performance.get('annual_return', 0):.2%}\n")
+                    f.write(f"最大回撤: {performance.get('max_drawdown', 0):.2%}\n")
+                    f.write(f"胜率: {performance.get('win_rate', 0):.2%}\n")
+                    
+                    recommendation = overall_status.get('recommendation', '')
+                    if recommendation:
+                        f.write(f"\n建议: {recommendation}\n")
                 
-                for indicator_name, result in individual_results.items():
-                    if not result.get('success', False):
-                        f.write(f"\n指标: {indicator_name} (验证失败)\n")
-                        f.write(f"错误: {result.get('error', 'Unknown error')}\n")
-                        continue
-                    
-                    f.write(f"\n指标: {indicator_name}\n")
-                    f.write("-" * 40 + "\n")
-                    
-                    info = result.get('indicator_info', {})
-                    f.write(f"名称: {info.get('name', indicator_name)}\n")
-                    f.write(f"描述: {info.get('description', 'N/A')}\n")
-                    
-                    stats = result.get('statistics', {})
-                    f.write(f"总股票数: {stats.get('total_stocks', 0)}\n")
-                    f.write(f"选中股票数: {stats.get('selected_count', 0)}\n")
-                    f.write(f"选股率: {stats.get('selection_rate', 0):.2%}\n")
-                    f.write(f"成功率: {stats.get('success_rate', 0):.2%}\n")
-                    f.write(f"执行时间: {result.get('execution_time', 0):.2f}秒\n")
-                    
-                    # 显示部分选中股票
-                    selected_stocks = result.get('selected_stocks', [])
-                    if selected_stocks:
-                        f.write(f"选中股票 (前20只): {', '.join(selected_stocks[:20])}")
-                        if len(selected_stocks) > 20:
-                            f.write(f" (共{len(selected_stocks)}只)")
-                        f.write("\n")
+            logger.info(f"验证汇总报告已生成: {summary_file}")
             
-            # 如果是单个指标验证结果
-            elif 'indicator_name' in results:
-                indicator_name = results['indicator_name']
-                f.write(f"指标验证结果: {indicator_name}\n")
-                f.write("-" * 40 + "\n")
-                
-                if not results.get('success', False):
-                    f.write(f"验证失败: {results.get('error', 'Unknown error')}\n")
-                    return
-                
-                info = results.get('indicator_info', {})
-                f.write(f"指标名称: {info.get('name', indicator_name)}\n")
-                f.write(f"指标描述: {info.get('description', 'N/A')}\n")
-                
-                stats = results.get('statistics', {})
-                f.write(f"总股票数: {stats.get('total_stocks', 0)}\n")
-                f.write(f"选中股票数: {stats.get('selected_count', 0)}\n")
-                f.write(f"选股率: {stats.get('selection_rate', 0):.2%}\n")
-                f.write(f"成功率: {stats.get('success_rate', 0):.2%}\n")
-                f.write(f"执行时间: {results.get('execution_time', 0):.2f}秒\n\n")
-                
-                # 选中股票列表
-                selected_stocks = results.get('selected_stocks', [])
-                if selected_stocks:
-                    f.write("选中股票列表:\n")
-                    f.write("-" * 40 + "\n")
-                    for i, stock_code in enumerate(selected_stocks, 1):
-                        f.write(f"{i:3d}. {stock_code}\n")
-    
-    def _save_selection_csv(self, results: Dict[str, Any], output_dir: str, timestamp: str) -> Optional[str]:
-        """保存选股结果为CSV文件"""
-        csv_data = []
-        
-        # 如果是批量验证结果
-        if 'individual_results' in results:
-            for indicator_name, result in results['individual_results'].items():
-                if not result.get('success', False):
-                    continue
-                
-                selected_stocks = result.get('selected_stocks', [])
-                indicator_values = result.get('indicator_values', {})
-                
-                for stock_code in selected_stocks:
-                    row = {
-                        'indicator': indicator_name,
-                        'stock_code': stock_code,
-                        'test_date': results.get('test_date', ''),
-                    }
-                    
-                    # 添加指标值信息
-                    if stock_code in indicator_values:
-                        values = indicator_values[stock_code]
-                        row.update({
-                            'latest_close': values.get('latest_close', ''),
-                            'latest_volume': values.get('latest_volume', ''),
-                        })
-                    
-                    csv_data.append(row)
-        
-        # 如果是单个指标验证结果
-        elif 'selected_stocks' in results:
-            indicator_name = results.get('indicator_name', 'unknown')
-            selected_stocks = results.get('selected_stocks', [])
-            indicator_values = results.get('indicator_values', {})
-            
-            for stock_code in selected_stocks:
-                row = {
-                    'indicator': indicator_name,
-                    'stock_code': stock_code,
-                    'test_date': results.get('test_date', ''),
-                }
-                
-                # 添加指标值信息
-                if stock_code in indicator_values:
-                    values = indicator_values[stock_code]
-                    row.update({
-                        'latest_close': values.get('latest_close', ''),
-                        'latest_volume': values.get('latest_volume', ''),
-                    })
-                
-                csv_data.append(row)
-        
-        if not csv_data:
-            return None
-        
-        # 保存CSV文件
-        df = pd.DataFrame(csv_data)
-        csv_path = Path(output_dir) / f"selected_stocks_{timestamp}.csv"
-        df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-        
-        return str(csv_path)
-    
-    def list_available_indicators(self) -> List[str]:
-        """列出所有可用的指标"""
-        return list(self.available_indicators.keys())
-    
-    def get_indicator_info(self, indicator_name: str) -> Dict[str, str]:
-        """获取指标信息"""
-        if indicator_name not in self.available_indicators:
-            return {}
-        return self.available_indicators[indicator_name]
+        except Exception as e:
+            logger.error(f"生成验证汇总报告失败: {e}")
 
-
-def main():
+@exception_handler(reraise=True)
+@performance_monitor(threshold_seconds=180.0)
+def main_productionstrategyvalidator():
     """主函数"""
-    parser = argparse.ArgumentParser(description="生产环境策略验证工具")
-    parser.add_argument('--date', type=str, help='测试日期 (YYYY-MM-DD)，默认使用最新交易日期')
-    parser.add_argument('--indicators', type=str, nargs='+', 
-                       help='要验证的指标名称列表，支持多个指标')
-    parser.add_argument('--max-stocks', type=int, default=1000,
-                       help='最大测试股票数量，默认1000')
-    parser.add_argument('--output-dir', type=str, default='results/validation',
-                       help='输出目录，默认results/validation')
-    parser.add_argument('--list-indicators', action='store_true',
-                       help='列出所有可用的指标')
+    parser = argparse.ArgumentParser(description='生产环境策略验证器')
+    parser.add_argument('--strategies', type=str, nargs='+', 
+                       help='策略名称列表')
+    parser.add_argument('--period', type=int, default=30,
+                       help='验证期间（天数）')
+    parser.add_argument('--output', type=str, 
+                       default='data/result/strategy_validation_results.json',
+                       help='输出文件路径')
+    parser.add_argument('--single', type=str,
+                       help='验证单个策略')
     
     args = parser.parse_args()
     
@@ -738,50 +887,54 @@ def main():
         # 初始化验证器
         validator = ProductionStrategyValidator()
         
-        # 如果只是列出指标
-        if args.list_indicators:
-            print("可用指标列表:")
-            print("=" * 50)
-            for indicator_name in validator.list_available_indicators():
-                info = validator.get_indicator_info(indicator_name)
-                print(f"{indicator_name:20s} - {info.get('name', indicator_name)}")
-                print(f"{'':20s}   {info.get('description', 'N/A')}")
-                print()
-            return
+        # 获取策略列表
+        if args.single:
+            strategy_names = [args.single]
+        elif args.strategies:
+            strategy_names = args.strategies
+        else:
+            # 默认策略列表
+            strategy_names = ['momentum_strategy', 'mean_reversion_strategy']
         
-        # 如果没有指定指标，默认验证所有ZXM指标
-        if not args.indicators:
-            args.indicators = ['volume_shrink', 'bs_absorb', 'turnover', 'daily_macd', 'ma_callback']
-            logger.info(f"未指定指标，默认验证ZXM体系指标: {args.indicators}")
+        logger.info(f"开始生产环境策略验证")
+        logger.info(f"策略列表: {strategy_names}")
+        logger.info(f"验证期间: {args.period} 天")
         
-        # 验证指标
-        if len(args.indicators) == 1:
-            # 单个指标验证
-            results = validator.validate_single_indicator(
-                args.indicators[0], 
-                args.date, 
-                args.max_stocks
+        # 运行验证
+        if len(strategy_names) == 1:
+            # 单策略验证
+            results = validator.validate_strategy_performance(
+                strategy_name=strategy_names[0],
+                validation_period=args.period
             )
         else:
-            # 批量指标验证
-            results = validator.validate_multiple_indicators(
-                args.indicators, 
-                args.date, 
-                args.max_stocks
+            # 多策略验证
+            results = validator.validate_multiple_strategies(
+                strategy_names=strategy_names,
+                validation_period=args.period
             )
         
         # 保存结果
-        output_path = validator.save_results(results, args.output_dir)
+        validator.save_validation_results(results, args.output)
         
-        print(f"\n✅ 验证完成！结果已保存到: {output_path}")
+        logger.info("生产环境策略验证完成")
         
-    except KeyboardInterrupt:
-        logger.info("用户中断操作")
-        sys.exit(1)
+        # 输出简要结果
+        if args.single:
+            overall_status = results.get('overall_status', {})
+            print(f"\n策略: {args.single}")
+            print(f"状态: {overall_status.get('status', '未知')}")
+            print(f"评分: {overall_status.get('status_score', 0):.1f}")
+        else:
+            comparison = results.get('_comparison_analysis', {})
+            best_strategy = comparison.get('best_overall_strategy')
+            if best_strategy:
+                print(f"\n最佳策略: {best_strategy}")
+        
     except Exception as e:
-        logger.error(f"验证过程中发生错误: {e}")
+        logger.error(f"生产环境策略验证失败: {e}")
+        print(f"验证失败: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
-    main() 
+    mainProductionstrategyvalidator() 

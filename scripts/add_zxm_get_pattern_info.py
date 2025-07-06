@@ -24,13 +24,13 @@ def add_get_pattern_info_to_zxm_class(file_path: str, class_name: str) -> bool:
             content = f.read()
         
         # 检查是否已经有get_pattern_info方法
-        if f'def get_pattern_info(' in content:
+        if f'def get_pattern_info_Add_Zxm_Get_Pattern_Info_Add_Zxm_Get_Pattern_Info(' in content:
             print(f"  ℹ️  {class_name} 已经有get_pattern_info方法")
             return False
         
         # 生成get_pattern_info方法代码
         method_code = f'''
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Add_Zxm_Get_Pattern_Info_Add_Zxm_Get_Pattern_Info(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -130,7 +130,7 @@ def add_get_pattern_info_to_zxm_class(file_path: str, class_name: str) -> bool:
         print(f"  ❌ 处理类 {class_name} 时出错: {e}")
         return False
 
-def main():
+def main_addzxmgetpatterninfo():
     """主函数"""
     print("🔧 开始为ZXM指标添加get_pattern_info方法...")
     
@@ -173,4 +173,4 @@ def main():
     print(f"\n✅ ZXM指标get_pattern_info方法批量添加完成！")
 
 if __name__ == "__main__":
-    main()
+    main_addzxmgetpatterninfo()

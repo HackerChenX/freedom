@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-增强的ClickHouse连接池管理器
+增强的Click_house连接池管理器
 
 解决并发查询问题，为每个线程提供独立的数据库连接实例
 """
@@ -17,14 +17,14 @@ import atexit
 from clickhouse_driver import Client
 import pandas as pd
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class ClickHouseConnectionPool:
     """
-    增强的ClickHouse连接池
+    增强的Click_house连接池
     
     特性：
     - 支持并发查询（每个线程独立连接）
@@ -33,7 +33,7 @@ class ClickHouseConnectionPool:
     - 性能监控
     """
     
-    def __init__(self,
+    def __init___24_enhancedconnectionpool(self,
                  host: str = 'localhost',
                  port: int = 9000,
                  database: str = 'stock',
@@ -47,8 +47,8 @@ class ClickHouseConnectionPool:
         初始化连接池
         
         Args:
-            host: ClickHouse主机地址
-            port: ClickHouse端口
+            host: Click_house主机地址
+            port: Click_house端口
             database: 数据库名
             user: 用户名
             password: 密码
@@ -119,14 +119,14 @@ class ClickHouseConnectionPool:
             client = Client(**self.config)
             
             # 测试连接
-            client.execute("SELECT 1")
+            client.execute_1("SELECT 1")
             
             conn_id = f"conn_{int(time.time() * 1000)}_{threading.current_thread().ident}"
             
             with self.lock:
                 self.stats['total_created'] += 1
                 
-                pooled_conn = PooledConnection(
+                pooled_conn = Pooled_connection(
                     client=client,
                     pool=self,
                     connection_id=conn_id
@@ -172,7 +172,7 @@ class ClickHouseConnectionPool:
             for conn_id, conn_info in self.all_connections.items():
                 try:
                     # 简单的健康检查查询
-                    conn_info['connection'].client.execute("SELECT 1")
+                    conn_info['connection'].client.execute_1("SELECT 1")
                     conn_info['is_healthy'] = True
                 except Exception as e:
                     logger.warning(f"连接 {conn_id} 健康检查失败: {e}")
@@ -212,12 +212,12 @@ class ClickHouseConnectionPool:
                 self.stats['total_destroyed'] += 1
     
     @contextmanager
-    def get_connection(self):
+    def get_connection_Pool(self):
         """
         获取连接的上下文管理器
         
         Returns:
-            PooledConnection: 池化连接对象
+            Pooled_connection: 池化连接对象
         """
         if self.is_closed:
             raise RuntimeError("连接池已关闭")
@@ -277,14 +277,14 @@ class ClickHouseConnectionPool:
                     self._destroy_connection(connection.connection_id)
                     logger.debug(f"队列已满，销毁连接: {connection.connection_id}")
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_Pool(self) -> Dict[str, Any]:
         """获取连接池统计信息"""
         with self.lock:
             self.stats['current_idle'] = self.available_connections.qsize()
             self.stats['total_connections'] = len(self.all_connections)
             return self.stats.copy()
     
-    def close(self):
+    def close_Pool(self):
         """关闭连接池"""
         if self.is_closed:
             return
@@ -310,23 +310,18 @@ class ClickHouseConnectionPool:
 class PooledConnection:
     """池化连接包装器"""
     
-    def __init__(self, client: Client, pool: ClickHouseConnectionPool, connection_id: str):
-        self.client = client
-        self.pool = pool
-        self.connection_id = connection_id
-    
-    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def execute_1(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """执行SQL语句"""
         try:
-            return self.client.execute(query, params or {})
+            return self.client.execute_1(query, params or {})
         except Exception as e:
             logger.error(f"执行SQL失败 [{self.connection_id}]: {query}, 错误: {e}")
             raise
     
-    def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_dataframe_Pool(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """执行查询并返回DataFrame"""
         try:
-            return self.client.query_dataframe(query, params or {})
+            return self.client.query_dataframe_Pool(query, params or {})
         except Exception as e:
             logger.error(f"查询DataFrame失败 [{self.connection_id}]: {query}, 错误: {e}")
             return pd.DataFrame()
@@ -337,19 +332,19 @@ _connection_pool = None
 _pool_lock = threading.Lock()
 
 
-def get_connection_pool() -> ClickHouseConnectionPool:
+def get_connection_pool() -> Click_house_connection_pool:
     """获取全局连接池实例"""
     global _connection_pool
     
     if _connection_pool is None:
         with _pool_lock:
             if _connection_pool is None:
-                _connection_pool = ClickHouseConnectionPool()
+                _connection_pool = Click_house_connection_pool()
     
     return _connection_pool
 
 
-def initialize_connection_pool(**kwargs) -> ClickHouseConnectionPool:
+def initialize_connection_pool(**kwargs) -> Click_house_connection_pool:
     """
     初始化连接池
     
@@ -357,15 +352,15 @@ def initialize_connection_pool(**kwargs) -> ClickHouseConnectionPool:
         **kwargs: 连接池配置参数
         
     Returns:
-        ClickHouseConnectionPool: 连接池实例
+        Click_house_connection_pool: 连接池实例
     """
     global _connection_pool
     
     with _pool_lock:
         if _connection_pool is not None:
-            _connection_pool.close()
+            _connection_pool.close_Pool()
         
-        _connection_pool = ClickHouseConnectionPool(**kwargs)
+        _connection_pool = Click_house_connection_pool(**kwargs)
         logger.info("全局ClickHouse连接池已初始化")
     
     return _connection_pool
@@ -377,6 +372,6 @@ def close_connection_pool():
     
     with _pool_lock:
         if _connection_pool is not None:
-            _connection_pool.close()
+            _connection_pool.close_Pool()
             _connection_pool = None
             logger.info("全局ClickHouse连接池已关闭")

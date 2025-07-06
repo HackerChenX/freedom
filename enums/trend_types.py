@@ -6,33 +6,33 @@
 
 from enum import Enum, auto
 
-class TrendDirection(Enum):
+class Trend_direction(Enum):
     """趋势方向枚举"""
-    UP = auto()        # 上升趋势
-    DOWN = auto()      # 下降趋势
-    SIDEWAYS = auto()  # 盘整趋势
-    UNKNOWN = auto()   # 未知趋势
+    up = auto()        # 上升趋势
+    down = auto()      # 下降趋势
+    sideways = auto()  # 盘整趋势
+    unknown = auto()   # 未知趋势
 
-class TrendStrength(Enum):
+class Trendstrength_types(Enum):
     """趋势强度枚举"""
-    STRONG = auto()    # 强势趋势
-    MEDIUM = auto()    # 中等趋势
-    WEAK = auto()      # 弱势趋势
-    UNCERTAIN = auto() # 不确定趋势
+    strong = auto()    # 强势趋势
+    medium = auto()    # 中等趋势
+    weak = auto()      # 弱势趋势
+    uncertain = auto() # 不确定趋势
 
-class TrendPhase(Enum):
+class Trend_phase(Enum):
     """趋势阶段枚举"""
-    BEGINNING = auto()  # 趋势初期
-    MIDDLE = auto()     # 趋势中期
-    ENDING = auto()     # 趋势后期
-    REVERSAL = auto()   # 趋势反转
-    CONTINUATION = auto() # 趋势延续
+    beginning = auto()  # 趋势初期
+    middle = auto()     # 趋势中期
+    ending = auto()     # 趋势后期
+    reversal = auto()   # 趋势反转
+    continuation = auto() # 趋势延续
 
-class TrendPattern(Enum):
+class Trend_pattern(Enum):
     """趋势形态枚举"""
-    BREAKOUT = auto()     # 突破
-    PULLBACK = auto()     # 回调
-    CONSOLIDATION = auto() # 整固
-    REVERSAL = auto()      # 反转
-    ACCELERATION = auto()  # 加速
-    EXHAUSTION = auto()    # 衰竭 
+    breakout = auto()     # 突破
+    pullback = auto()     # 回调
+    consolidation = auto() # 整固
+    reversal = auto()      # 反转
+    acceleration = auto()  # 加速
+    exhaustion = auto()    # 衰竭 

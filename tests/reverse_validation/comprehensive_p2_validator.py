@@ -21,16 +21,16 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from intelligent_p2_generator import IntelligentP2Generator
-from extended_technical_indicators import ExtendedTechnicalIndicators
+from intelligent_p2_generator import Intelligent_p2_generator
+from extended_technical_indicators import Extended_technical_indicators
 
 
-class ComprehensiveP2Validator:
+class Comprehensive_p2_validator:
     """全面的P2指标验证器"""
     
     def __init__(self):
-        self.intelligent_generator = IntelligentP2Generator()
-        self.extended_indicators = ExtendedTechnicalIndicators()
+        self.intelligent_generator = Intelligent_p2_generator()
+        self.extended_indicators = Extended_technical_indicators()
     
     def validate_stochrsi_patterns(self) -> dict:
         """验证StochRSI指标的5个形态"""
@@ -325,7 +325,7 @@ class ComprehensiveP2Validator:
         return summary
 
 
-def main():
+def main_comprehensivep2validator():
     """主函数"""
     print("=" * 80)
     print("全面P2常用指标验证测试")
@@ -334,7 +334,7 @@ def main():
     print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    validator = ComprehensiveP2Validator()
+    validator = Comprehensive_p2_validator()
     
     try:
         results = validator.validate_all_p2_comprehensive()
@@ -394,5 +394,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensivep2validator()
     sys.exit(exit_code)

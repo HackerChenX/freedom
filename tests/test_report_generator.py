@@ -8,13 +8,13 @@ import os
 import json
 import time
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import Magic_mock, patch
 import unittest
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import coverage
-from xml.etree import ElementTree as ET
+from xml.etree import Element_tree as ET
 
 from utils.path_utils import get_result_dir
 from utils.logger import get_logger, setup_logger
@@ -22,7 +22,7 @@ from utils.logger import get_logger, setup_logger
 logger = get_logger(__name__)
 
 
-class TestReportGenerator:
+class Test_report_generator:
     """测试报告生成器类"""
     
     def __init__(self, report_dir=None):
@@ -118,7 +118,7 @@ class TestReportGenerator:
                 'packages': []
             }
     
-    def generate_performance_report(self, performance_results):
+    def generate_performance_report_Generator(self, performance_results):
         """生成性能测试报告
         
         Args:
@@ -149,7 +149,7 @@ class TestReportGenerator:
         """生成性能测试图表
         
         Args:
-            performance_df: 性能测试结果DataFrame
+            performance_df: 性能测试结果Data_frame
         """
         # 创建图表目录
         charts_dir = os.path.join(self.report_dir, f'performance_charts_{self.run_timestamp}')
@@ -194,7 +194,7 @@ class TestReportGenerator:
         """生成测试总结报告
         
         Args:
-            test_results: 测试结果（来自unittest的TestResult）
+            test_results: 测试结果（来自unittest的Test_result）
             coverage_summary: 覆盖率摘要
             performance_file: 性能测试报告文件路径
             
@@ -413,17 +413,17 @@ class TestReportGenerator:
 def run_tests_with_coverage():
     """运行所有测试并生成覆盖率报告"""
     # 创建报告生成器
-    report_generator = TestReportGenerator()
+    report_generator = Test_report_generator()
     
     # 开始收集覆盖率
     report_generator.start_coverage()
     
     # 运行测试
-    loader = unittest.TestLoader()
+    loader = unittest.Test_loader()
     start_dir = os.path.dirname(os.path.abspath(__file__))
     suite = loader.discover(start_dir, pattern='test_*.py')
     
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    result = unittest.Text_test_runner(verbosity=2).run(suite)
     
     # 停止覆盖率收集
     report_generator.stop_coverage()
@@ -434,7 +434,7 @@ def run_tests_with_coverage():
     # 如果有性能测试结果，生成性能报告
     # 这里示例性能测试结果，实际项目中应从性能测试中收集
     performance_results = collect_performance_results()
-    performance_file = report_generator.generate_performance_report(performance_results)
+    performance_file = report_generator.generate_performance_report_Generator(performance_results)
     
     # 生成总结报告
     summary_file = report_generator.generate_test_summary(

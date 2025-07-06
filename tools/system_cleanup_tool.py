@@ -24,13 +24,13 @@ sys.path.append(project_root)
 try:
     from utils.logger import get_logger
     logger = get_logger(__name__)
-except ImportError:
+except Import_error:
     import logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
+    logging.basic_config(level=logging.INFO)
+    logger = logging.get_logger(__name__)
 
 
-class SystemCleanupTool:
+class System_cleanup_tool:
     """系统清理工具"""
     
     def __init__(self, project_root: str = "."):
@@ -186,7 +186,7 @@ class SystemCleanupTool:
                     if not contents:
                         relative_path = dir_path.relative_to(self.project_root)
                         empty_dirs.append(str(relative_path))
-                except PermissionError:
+                except Permission_error:
                     continue
         
         logger.info(f"发现 {len(empty_dirs)} 个空目录")
@@ -218,7 +218,7 @@ class SystemCleanupTool:
                                 'size_mb': file_size / (1024 * 1024),
                                 'modified': datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
                             })
-                    except (OSError, PermissionError):
+                    except (OSError, Permission_error):
                         continue
         
         # 按大小排序
@@ -260,7 +260,7 @@ class SystemCleanupTool:
                                 'modified': modified_time.isoformat(),
                                 'size_mb': file_path.stat().st_size / (1024 * 1024)
                             })
-                    except (OSError, PermissionError):
+                    except (OSError, Permission_error):
                         continue
         
         # 按修改时间排序
@@ -448,14 +448,14 @@ class SystemCleanupTool:
         return output_file
 
 
-def main():
+def main_systemcleanuptool():
     """主函数"""
     print("🧹 系统清理工具")
     print("=" * 50)
     
     try:
         # 创建清理工具
-        cleanup_tool = SystemCleanupTool()
+        cleanup_tool = System_cleanup_tool()
         
         # 生成清理建议
         recommendations = cleanup_tool.generate_cleanup_recommendations()
@@ -511,4 +511,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_systemcleanuptool()

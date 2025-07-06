@@ -12,9 +12,9 @@ import numpy as np
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
+from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
-def generate_test_data(size: int = 1000) -> pd.DataFrame:
+def generate_test_data_Engine(size: int = 1000) -> pd.DataFrame:
     np.random.seed(42)
     base_price = 10.0
     price_changes = np.random.normal(0, 0.02, size).cumsum()
@@ -36,12 +36,12 @@ def generate_test_data(size: int = 1000) -> pd.DataFrame:
         "volume": volumes
     })
 
-def main():
+def main_benchmarkunifiedindicatorengine():
     print("🚀 统一指标计算引擎性能基准测试")
     print("=" * 60)
     
-    engine = UnifiedIndicatorEngine(enable_cache=False)
-    test_data = generate_test_data(1000)
+    engine = Unified_indicator_engine(enable_cache=False)
+    test_data = generate_test_data_Engine(1000)
     
     print("📊 测试MA指标...")
     start_time = time.time()
@@ -78,4 +78,4 @@ def main():
     print("🎉 基准测试完成！")
 
 if __name__ == "__main__":
-    main()
+    main_benchmarkunifiedindicatorengine()

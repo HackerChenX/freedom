@@ -1,9 +1,11 @@
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 股票数据同步工具
 ---------------
-本模块用于从多个数据源获取股票数据并同步到ClickHouse数据库。
+本模块用于从多个数据源获取股票数据并同步到Click_house数据库。
 支持多数据源、自动容错和故障转移、增量同步等功能。
 
 主要特点:
@@ -23,64 +25,50 @@ python bin/test_multi_sync.py [--csv 股票代码文件] [--threads 线程数]
 
 import sys
 import os
+import logging
+import time
+import traceback
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any, List, Tuple
+import pandas as pd
+import efinance as ef
+import akshare as ak
+import baostock as bs
+import concurrent.futures
+import threading
+import queue
+from logging.handlers import Rotating_file_handler
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+import random
+from dataclasses import dataclass
+from enum import Enum
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-import pandas as pd
-import efinance as ef
-import akshare as ak  # 引入akshare
-import time
-import logging
-import datetime
-import concurrent.futures
-import threading
-import queue
-from logging.handlers import RotatingFileHandler
-from db.clickhouse_db import get_clickhouse_db, get_default_config
-import random
+from utils.logger import get_logger
+from utils.date_utils import get_last_trade_date, format_date
+from config.config_manager import get_config
+from utils.dependency_injection import get_service
 
-from enums.kline_period import KlinePeriod
+class DataType(Enum):
+    """数据类型枚举"""
+    stock_info WHERE 1=1 = "stock_info"
+    STOCK_LIST = "stock_list"
+    INDEX_DATA = "index_data"
+    CONCEPT_DATA = "concept_data"
 
-# 确保日志目录存在
-log_dir = 'logs'
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+@dataclass
+class SyncTask:
+    """同步任务"""
+    data_type: Data_type
+    params: Dict[str, Any]
+    priority: int = 1
+    retry_count: int = 0
+    max_retries: int = 3
 
-# 创建日志文件处理器，使用RotatingFileHandler支持日志轮转
-log_file = os.path.join(log_dir, 'akshare_sync.log')
-file_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-
-# 创建控制台处理器
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-
-# 配置日志记录器
-logger = logging.getLogger('akshare_sync')
-logger.setLevel(logging.INFO)
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
-
-# 创建一个线程锁，用于保护日志输出
-log_lock = threading.Lock()
-
-# 创建一个线程安全的日志函数
-def thread_safe_log(level, message):
-    with log_lock:
-        if level == 'info':
-            logger.info(message)
-        elif level == 'error':
-            logger.error(message)
-        elif level == 'warning':
-            logger.warning(message)
-        elif level == 'debug':
-            logger.debug(message)
-
-# 添加数据源适配器类
 class DataSourceAdapter:
     """
     数据源适配器，支持多种股票数据API
@@ -102,7 +90,6 @@ class DataSourceAdapter:
         # 初始化baostock（如果使用）
         if data_source == self.SOURCE_BAOSTOCK:
             try:
-                import baostock as bs
                 self.bs = bs
                 self.bs.login()
                 logger.info("Baostock登录成功")
@@ -116,12 +103,12 @@ class DataSourceAdapter:
         if hasattr(self, 'bs') and self.data_source == self.SOURCE_BAOSTOCK:
             self.bs.logout()
     
-    def get_stock_daily_data(self, stock_code, start_date=None):
+    def get_stock_daily_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(self, stock_code, start_date=None):
         """
         获取股票日线数据
         :param stock_code: 股票代码
         :param start_date: 开始日期 (YYYYMMDD)
-        :return: 股票数据DataFrame
+        :return: 股票数据Data_frame
         """
         # 确保股票代码是6位，不足前面补0
         stock_code = str(stock_code).zfill(6)
@@ -171,7 +158,7 @@ class DataSourceAdapter:
             else:
                 start_date = "2000-01-01"  # akshare默认起始日期
             
-            end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            end_date = datetime.now().strftime("%Y-%m-%d")
             
             # 判断股票代码所属市场
             if stock_code.startswith(('0', '3')):
@@ -221,7 +208,7 @@ class DataSourceAdapter:
             else:
                 start_date = "2000-01-01"  # baostock默认起始日期
             
-            end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            end_date = datetime.now().strftime("%Y-%m-%d")
             
             # 判断股票代码所属市场
             if stock_code.startswith(('0', '3')):
@@ -277,7 +264,7 @@ class DataSourceAdapter:
         获取15分钟K线数据
         :param stock_code: 股票代码
         :param start_date: 开始日期 (YYYYMMDD)
-        :return: 股票数据DataFrame
+        :return: 股票数据Data_frame
         """
         # 确保股票代码是6位，不足前面补0
         stock_code = str(stock_code).zfill(6)
@@ -309,7 +296,7 @@ class DataSourceAdapter:
             logger.warning(f"数据源 {self.data_source} 暂不支持15分钟数据获取")
             return pd.DataFrame()
     
-    def get_stock_weekly_data(self, stock_code, start_date=None):
+    def get_stock_weekly_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(self, stock_code, start_date=None):
         """获取周线数据"""
         # 根据数据源类型选择不同的实现
         if self.data_source == self.SOURCE_EFINANCE:
@@ -331,7 +318,7 @@ class DataSourceAdapter:
             logger.warning(f"数据源 {self.data_source} 暂不支持周线数据获取")
             return pd.DataFrame()
     
-    def get_stock_monthly_data(self, stock_code, start_date=None):
+    def get_stock_monthly_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(self, stock_code, start_date=None):
         """获取月线数据"""
         # 根据数据源类型选择不同的实现
         if self.data_source == self.SOURCE_EFINANCE:
@@ -353,7 +340,6 @@ class DataSourceAdapter:
             logger.warning(f"数据源 {self.data_source} 暂不支持月线数据获取")
             return pd.DataFrame()
 
-# 数据源自动切换类
 class DataSourceManager:
     """
     数据源管理器，支持自动切换数据源
@@ -362,7 +348,6 @@ class DataSourceManager:
     # 数据源列表，按优先级排序
     SOURCES = ['efinance', 'akshare', 'baostock']
     
-    def __init__(self, initial_source='efinance'):
         """
         初始化数据源管理器
         :param initial_source: 初始数据源
@@ -374,7 +359,7 @@ class DataSourceManager:
             self.current_source = 'efinance'
         
         # 初始化数据源适配器
-        self.adapter = DataSourceAdapter(self.current_source)
+        self.adapter = Data_source_adapter(self.current_source)
         logger.info(f"初始数据源: {self.current_source}")
         
         # 记录数据源失败次数
@@ -464,7 +449,7 @@ class DataSourceManager:
             self.current_source = next_source
             
             # 创建新的适配器
-            self.adapter = DataSourceAdapter(self.current_source)
+            self.adapter = Data_source_adapter(self.current_source)
             
             # 重置当前数据源的失败计数
             self.failure_counts[self.current_source] = 0
@@ -486,22 +471,25 @@ class DataSourceManager:
             self.failure_counts[source] = 0
             logger.info(f"重置数据源 {source} 的失败计数")
 
-class AKShareToClickHouse:
+class AkshareToClickHouse:
     """
-    使用AKShare API将股票数据同步到ClickHouse
+    使用AKShare API将股票数据同步到Click_house
     """
     
-    def __init__(self, clickhouse_config=None, max_workers=10, batch_size=20, force_sync=False, data_source='efinance'):
         """
         初始化同步器
-        :param clickhouse_config: ClickHouse配置
+        :param config: Click_house配置
         :param max_workers: 最大工作线程数
         :param batch_size: 每批处理的股票数量
         :param force_sync: 是否强制同步，忽略最新日期检查
         :param data_source: 数据源类型
         """
-        # 使用clickhouse_db模块提供的默认配置
-        self.clickhouse_config = clickhouse_config or get_default_config()
+        self.logger = get_logger(__name__)
+        self.config = config or get_config()
+        
+        # 使用依赖注入获取数据访问接口
+        container = get_container()
+        self.data_access = container.get_data_access()
         
         # 确保ClickHouse中有必要的数据库和表
         self.init_clickhouse()
@@ -515,14 +503,14 @@ class AKShareToClickHouse:
         self.connection_semaphore = threading.Semaphore(self.max_workers * 2)
         
         # 初始化数据源管理器
-        self.data_source_manager = DataSourceManager(data_source)
+        self.data_source_manager = Data_source_manager(data_source)
         
         # 获取最新交易日期
-        self.latest_trade_date = self.get_latest_trade_date()
+        self.latest_trade_date = self.get_latest_trade_date_Clickhouse()
 
     def save_stock_data_to_clickhouse(self, stock_data, level='15分钟'):
         """
-        保存股票数据到ClickHouse，使用独立连接直接插入
+        保存股票数据到Click_house，使用独立连接直接插入
         :param stock_data: 处理后的股票数据
         :param level: 数据级别
         """
@@ -543,22 +531,22 @@ class AKShareToClickHouse:
                     stock_code = stock_data['代码'].iloc[0]
                     
                     # 直接尝试插入所有数据，依赖数据库主键约束避免重复
-                    thread_safe_log('info', f"正在保存 {len(stock_data)} 条 {level} 级别数据到ClickHouse")
+                    self.logger.info(f"正在保存 {len(stock_data)} 条 {level} 级别数据到ClickHouse")
                     
                     # 创建新的连接
-                    db = get_clickhouse_db(config=self.clickhouse_config)
+                    db = get_service(Data_access_interface)
                     db.save_stock_info(stock_data, level)
-                    thread_safe_log('info', f"{level}数据保存成功")
+                    self.logger.info(f"{level}数据保存成功")
                     return
                 except Exception as e:
                     retry_count += 1
-                    thread_safe_log('error', f"保存{level}数据到ClickHouse失败 (尝试 {retry_count}/{max_retries}): {e}")
+                    self.logger.error(f"保存{level}数据到ClickHouse失败 (尝试 {retry_count}/{max_retries}): {e}")
                     if retry_count < max_retries:
                         wait_time = retry_count * 2  # 递增等待时间
-                        thread_safe_log('info', f"等待 {wait_time} 秒后重试...")
+                        self.logger.info(f"等待 {wait_time} 秒后重试...")
                         time.sleep(wait_time)
                     else:
-                        thread_safe_log('error', f"达到最大重试次数，放弃保存数据")
+                        self.logger.error(f"达到最大重试次数，放弃保存数据")
                         return
                 finally:
                     # 确保在finally块中关闭连接
@@ -567,7 +555,7 @@ class AKShareToClickHouse:
                             # 显式关闭连接
                             db.client.disconnect()
                         except Exception as e:
-                            thread_safe_log('error', f"关闭数据库连接失败: {e}")
+                            self.logger.error(f"关闭数据库连接失败: {e}")
 
     def sync_single_stock(self, stock_code, stock_name, idx=0, total=0):
         """
@@ -589,19 +577,19 @@ class AKShareToClickHouse:
                 
                 # 对于已知的问题股票，增加特殊处理
                 if stock_code in ['000006', '000010']:  # 深振业A等问题股票
-                    thread_safe_log('warning', f"检测到问题股票: {stock_code} - {stock_name}，使用额外的延时和重试机制")
+                    self.logger.warning(f"检测到问题股票: {stock_code} - {stock_name}，使用额外的延时和重试机制")
                     # 增加延时，避免连接冲突
                     time.sleep(2)
                 
-                thread_safe_log('info', f"线程 {threading.current_thread().name} 开始处理第 {idx + 1}/{total} 只股票: {stock_code} - {stock_name}")
+                self.logger.info(f"线程 {threading.current_thread().name} 开始处理第 {idx + 1}/{total} 只股票: {stock_code} - {stock_name}")
                 
                 # 首先检查日线数据是否已经是最新的，如果是则跳过该股票
                 # 只有在非强制同步模式下才进行检查
                 daily_latest_date = None
                 if not self.force_sync:
-                    daily_latest_date = self.get_stock_latest_date(stock_code, KlinePeriod.DAILY.value)
+                    daily_latest_date = self.get_stock_latest_date(stock_code, 'daily')
                     if daily_latest_date and daily_latest_date >= self.latest_trade_date:
-                        thread_safe_log('info', f"股票 {stock_code} - {stock_name} 已同步到最新交易日 {self.latest_trade_date}，跳过同步")
+                        self.logger.info(f"股票 {stock_code} - {stock_name} 已同步到最新交易日 {self.latest_trade_date}，跳过同步")
                         # 标记当前数据源数据已是最新
                         current_source = self.data_source_manager.current_source
                         self.data_source_manager.record_up_to_date(current_source)
@@ -611,36 +599,36 @@ class AKShareToClickHouse:
                 # 日线数据
                 if daily_latest_date:
                     # 将日期向后调整一天，作为同步的起始日期
-                    daily_start_date = (daily_latest_date + datetime.timedelta(days=1)).strftime('%Y%m%d')
+                    daily_start_date = (daily_latest_date + timedelta(days=1)).strftime('%Y%m%d')
                 else:
                     daily_start_date = self.get_adjusted_start_date(70)
                 
                 # 15分钟数据
-                min15_latest_date = self.get_stock_latest_date(stock_code, KlinePeriod.MIN_15.value)
+                min15_latest_date = self.get_stock_latest_date(stock_code, '15分钟')
                 if min15_latest_date:
                     # 将日期向后调整一天，作为同步的起始日期
-                    min15_start_date = (min15_latest_date + datetime.timedelta(days=1)).strftime('%Y%m%d')
+                    min15_start_date = (min15_latest_date + timedelta(days=1)).strftime('%Y%m%d')
                 else:
                     min15_start_date = self.get_adjusted_start_date(70)
                 
                 # 周线数据
-                weekly_latest_date = self.get_stock_latest_date(stock_code, KlinePeriod.WEEKLY.value)
+                weekly_latest_date = self.get_stock_latest_date(stock_code, 'weekly')
                 if weekly_latest_date:
                     # 将日期向后调整一天，作为同步的起始日期
-                    weekly_start_date = (weekly_latest_date + datetime.timedelta(days=1)).strftime('%Y%m%d')
+                    weekly_start_date = (weekly_latest_date + timedelta(days=1)).strftime('%Y%m%d')
                 else:
                     weekly_start_date = '20050101'
                 
                 # 月线数据
-                monthly_latest_date = self.get_stock_latest_date(stock_code, KlinePeriod.MONTHLY.value)
+                monthly_latest_date = self.get_stock_latest_date(stock_code, 'monthly')
                 if monthly_latest_date:
                     # 将日期向后调整一天，作为同步的起始日期
-                    monthly_start_date = (monthly_latest_date + datetime.timedelta(days=1)).strftime('%Y%m%d')
+                    monthly_start_date = (monthly_latest_date + timedelta(days=1)).strftime('%Y%m%d')
                 else:
                     monthly_start_date = '20000101'
             
                 # 获取并处理15分钟级别数据
-                thread_safe_log('info', f"从 {min15_start_date} 开始同步股票 {stock_code} 的15分钟数据")
+                self.logger.info(f"从 {min15_start_date} 开始同步股票 {stock_code} 的15分钟数据")
                 # 直接获取15分钟数据，某些数据源可能不支持15分钟数据
                 try:
                     adapter = self.data_source_manager.get_adapter()
@@ -648,50 +636,50 @@ class AKShareToClickHouse:
                     if not stock_data_15min.empty:
                         processed_data = self.prepare_stock_data_for_clickhouse(stock_data_15min, stock_code, stock_name)
                         if not processed_data.empty:
-                            self.save_stock_data_to_clickhouse(processed_data, KlinePeriod.MIN_15.value)
+                            self.save_stock_data_to_clickhouse(processed_data, '15分钟')
                 except Exception as e:
-                    thread_safe_log('warning', f"获取15分钟数据失败: {e}，继续处理其他级别数据")
+                    self.logger.warning(f"获取15分钟数据失败: {e}，继续处理其他级别数据")
             
                 # 获取并处理日线数据
-                thread_safe_log('info', f"从 {daily_start_date} 开始同步股票 {stock_code} 的日线数据")
-                stock_data_daily = self.get_stock_daily_data(stock_code, daily_start_date)
+                self.logger.info(f"从 {daily_start_date} 开始同步股票 {stock_code} 的日线数据")
+                stock_data_daily = self.get_stock_daily_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(stock_code, daily_start_date)
                 if not stock_data_daily.empty:
                     processed_data = self.prepare_stock_data_for_clickhouse(stock_data_daily, stock_code, stock_name)
                     if not processed_data.empty:
-                        self.save_stock_data_to_clickhouse(processed_data, KlinePeriod.DAILY.value)
+                        self.save_stock_data_to_clickhouse(processed_data, 'daily')
             
                 # 获取并处理周线数据
-                thread_safe_log('info', f"从 {weekly_start_date} 开始同步股票 {stock_code} 的周线数据")
-                stock_data_weekly = self.get_stock_weekly_data(stock_code, weekly_start_date)
+                self.logger.info(f"从 {weekly_start_date} 开始同步股票 {stock_code} 的周线数据")
+                stock_data_weekly = self.get_stock_weekly_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(stock_code, weekly_start_date)
                 if not stock_data_weekly.empty:
                     processed_data = self.prepare_stock_data_for_clickhouse(stock_data_weekly, stock_code, stock_name)
                     if not processed_data.empty:
-                        self.save_stock_data_to_clickhouse(processed_data, KlinePeriod.WEEKLY.value)
+                        self.save_stock_data_to_clickhouse(processed_data, 'weekly')
             
                 # 获取并处理月线数据
-                thread_safe_log('info', f"从 {monthly_start_date} 开始同步股票 {stock_code} 的月线数据")
-                stock_data_monthly = self.get_stock_monthly_data(stock_code, monthly_start_date)
+                self.logger.info(f"从 {monthly_start_date} 开始同步股票 {stock_code} 的月线数据")
+                stock_data_monthly = self.get_stock_monthly_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(stock_code, monthly_start_date)
                 if not stock_data_monthly.empty:
                     processed_data = self.prepare_stock_data_for_clickhouse(stock_data_monthly, stock_code, stock_name)
                     if not processed_data.empty:
-                        self.save_stock_data_to_clickhouse(processed_data, KlinePeriod.MONTHLY.value)
+                        self.save_stock_data_to_clickhouse(processed_data, 'monthly')
             
                 # 添加短暂延时防止API限流，不同线程使用不同的延时，减少同时请求
                 delay = 1.0 + (hash(threading.current_thread().name) % 10) / 10.0
                 time.sleep(delay)
             
-                thread_safe_log('info', f"股票 {stock_code} - {stock_name} 数据同步成功")
+                self.logger.info(f"股票 {stock_code} - {stock_name} 数据同步成功")
                 return True
                 
             except Exception as e:
                 retry_count += 1
-                thread_safe_log('error', f"处理股票 {stock_code} 时发生错误 (尝试 {retry_count}/{max_retries}): {e}")
+                self.logger.error(f"处理股票 {stock_code} 时发生错误 (尝试 {retry_count}/{max_retries}): {e}")
                 if retry_count < max_retries:
                     wait_time = retry_count * 5  # 逐渐增加等待时间：5秒、10秒...
-                    thread_safe_log('info', f"等待 {wait_time} 秒后重试...")
+                    self.logger.info(f"等待 {wait_time} 秒后重试...")
                     time.sleep(wait_time)
                 else:
-                    thread_safe_log('error', f"达到最大重试次数，放弃处理股票 {stock_code}")
+                    self.logger.error(f"达到最大重试次数，放弃处理股票 {stock_code}")
                     return False
         
         return False
@@ -706,16 +694,16 @@ class AKShareToClickHouse:
         # 读取股票代码列表
         stock_df = self.read_stock_codes(csv_file)
         if stock_df.empty:
-            logger.error("无法获取股票代码列表，同步终止")
+            self.logger.error("无法获取股票代码列表，同步终止")
             return 0
         
         total_stocks = len(stock_df)
         
         # 获取当前日期作为最大结束日期
-        today = datetime.datetime.now().strftime('%Y%m%d')
+        today = datetime.now().strftime('%Y%m%d')
         
-        logger.info(f"开始多线程同步 {total_stocks} 只股票的多周期数据，到 {today}")
-        logger.info(f"最大线程数: {self.max_workers}, 每批处理股票数: {self.batch_size}")
+        self.logger.info(f"开始多线程同步 {total_stocks} 只股票的多周期数据，到 {today}")
+        self.logger.info(f"最大线程数: {self.max_workers}, 每批处理股票数: {self.batch_size}")
         
         # 创建结果统计变量
         success_count = 0
@@ -725,14 +713,14 @@ class AKShareToClickHouse:
         # 将股票列表分批处理，避免一次创建过多线程
         for batch_start in range(0, total_stocks, self.batch_size):
             batch_end = min(batch_start + self.batch_size, total_stocks)
-            logger.info(f"处理第 {batch_start+1}-{batch_end} 只股票，共 {total_stocks} 只")
+            self.logger.info(f"处理第 {batch_start+1}-{batch_end} 只股票，共 {total_stocks} 只")
             
             # 记录当前批次处理的股票数和跳过的股票数
             batch_processed = 0
             batch_skipped = 0
             
             # 创建线程池
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            with concurrent.futures.Thread_pool_executor(max_workers=self.max_workers) as executor:
                 # 创建任务列表
                 future_to_stock = {}
                 
@@ -745,9 +733,9 @@ class AKShareToClickHouse:
                     # 检查是否需要跳过当前股票的同步（非强制同步模式下）
                     if not self.force_sync:
                         # 创建独立连接查询最新日期
-                        daily_latest_date = self.get_stock_latest_date(stock_code, KlinePeriod.DAILY.value)
+                        daily_latest_date = self.get_stock_latest_date(stock_code, 'daily')
                         if daily_latest_date and daily_latest_date >= self.latest_trade_date:
-                            logger.info(f"股票 {stock_code} - {stock_name} 已同步到最新交易日 {self.latest_trade_date}，跳过同步")
+                            self.logger.info(f"股票 {stock_code} - {stock_name} 已同步到最新交易日 {self.latest_trade_date}，跳过同步")
                             # 标记当前数据源为数据最新
                             self.data_source_manager.record_up_to_date()
                             skipped_count += 1
@@ -772,38 +760,38 @@ class AKShareToClickHouse:
                         else:
                             error_count += 1
                     except Exception as exc:
-                        logger.error(f"股票 {stock_code} - {stock_name} 处理异常: {exc}")
+                        self.logger.error(f"股票 {stock_code} - {stock_name} 处理异常: {exc}")
                         error_count += 1
             
             # 批次间休息时间，给数据库和网络一些恢复时间
             # 只有当批次中有股票实际被处理时才需要休息
             if batch_processed > 0:
                 sleep_time = 1  # 从10秒改为1秒
-                logger.info(f"批次处理完成，有 {batch_processed} 只股票被处理，休息{sleep_time}秒")
+                self.logger.info(f"批次处理完成，有 {batch_processed} 只股票被处理，休息{sleep_time}秒")
                 time.sleep(sleep_time)
             else:
-                logger.info(f"批次中所有股票 ({batch_skipped} 只) 都已是最新，无需休息")
+                self.logger.info(f"批次中所有股票 ({batch_skipped} 只) 都已是最新，无需休息")
         
-        logger.info(f"多线程同步完成，成功: {success_count}/{total_stocks}, 跳过: {skipped_count}/{total_stocks}, 失败: {error_count}/{total_stocks}")
+        self.logger.info(f"多线程同步完成，成功: {success_count}/{total_stocks}, 跳过: {skipped_count}/{total_stocks}, 失败: {error_count}/{total_stocks}")
         return success_count
 
     def init_clickhouse(self):
         """
-        初始化ClickHouse数据库和表
+        初始化Click_house数据库和表
         """
         # 创建新的连接执行初始化
         db = None
         try:
             # 使用ClickHouseDB的init_database方法初始化数据库和表
-            database_name = self.clickhouse_config['database']
-            db = get_clickhouse_db(config=self.clickhouse_config)
+            database_name = self.config['database']
+            db = get_service(Data_access_interface)
             if not db.init_database(database_name):
-                logger.error(f"初始化数据库失败: {database_name}")
+                self.logger.error(f"初始化数据库失败: {database_name}")
                 raise Exception(f"初始化数据库失败: {database_name}")
             else:
-                logger.info(f"数据库初始化成功: {database_name}")
+                self.logger.info(f"数据库初始化成功: {database_name}")
         except Exception as e:
-            logger.error(f"初始化数据库出错: {e}")
+            self.logger.error(f"初始化数据库出错: {e}")
             raise
         finally:
             # 确保关闭连接
@@ -811,16 +799,16 @@ class AKShareToClickHouse:
                 try:
                     db.client.disconnect()
                 except Exception as e:
-                    logger.error(f"关闭数据库连接失败: {e}")
+                    self.logger.error(f"关闭数据库连接失败: {e}")
 
     def read_stock_codes(self, csv_file='stock_code_name.csv'):
         """
         从CSV文件读取股票代码列表
         :param csv_file: CSV文件路径
-        :return: 包含股票代码和名称的DataFrame
+        :return: 包含股票代码和名称的Data_frame
         """
         try:
-            logger.info(f"正在读取股票代码文件: {csv_file}")
+            self.logger.info(f"正在读取股票代码文件: {csv_file}")
             df = pd.read_csv(csv_file)
             
             # 清理股票代码数据
@@ -830,12 +818,12 @@ class AKShareToClickHouse:
             original_count = len(df)
             df = df[df['code'].str.len() <= 6]
             if len(df) < original_count:
-                logger.warning(f"过滤掉 {original_count - len(df)} 条不符合规范的股票代码记录")
+                self.logger.warning(f"过滤掉 {original_count - len(df)} 条不符合规范的股票代码记录")
             
-            logger.info(f"成功读取股票代码，共 {len(df)} 条记录")
+            self.logger.info(f"成功读取股票代码，共 {len(df)} 条记录")
             return df
         except Exception as e:
-            logger.error(f"读取股票代码文件失败: {e}")
+            self.logger.error(f"读取股票代码文件失败: {e}")
             return pd.DataFrame()
     
     def get_adjusted_start_date(self, days_back=70):
@@ -847,8 +835,8 @@ class AKShareToClickHouse:
         # 考虑到非交易日和可能的数据缺失，将实际天数扩大1.5倍
         calendar_days = days_back * 1.5
         # 从当前日期往前推指定的自然日
-        start_date = (datetime.datetime.now() - datetime.timedelta(days=calendar_days)).strftime('%Y%m%d')
-        logger.info(f"为确保至少获取{days_back}个交易周期的数据，设置起始日期为: {start_date}")
+        start_date = (datetime.now() - timedelta(days=calendar_days)).strftime('%Y%m%d')
+        self.logger.info(f"为确保至少获取{days_back}个交易周期的数据，设置起始日期为: {start_date}")
         return start_date
     
     def execute_query_safely(self, query, params=None):
@@ -863,11 +851,11 @@ class AKShareToClickHouse:
         with self.connection_semaphore:
             try:
                 # 每次查询都创建新的连接
-                db = get_clickhouse_db(config=self.clickhouse_config)
+                db = get_service(Data_access_interface)
                 result = db.client.execute(query, params or {})
                 return result
             except Exception as e:
-                thread_safe_log('error', f"执行查询失败: {e}")
+                self.logger.error(f"执行查询失败: {e}")
                 return None
             finally:
                 # 确保在finally块中关闭连接
@@ -876,11 +864,11 @@ class AKShareToClickHouse:
                         # 显式关闭连接
                         db.client.disconnect()
                     except Exception as e:
-                        thread_safe_log('error', f"关闭数据库连接失败: {e}")
+                        self.logger.error(f"关闭数据库连接失败: {e}")
 
     def get_stock_latest_date(self, stock_code, level):
         """
-        获取股票在ClickHouse中的最新日期
+        获取股票在Click_house中的最新日期
         :param stock_code: 股票代码
         :param level: K线级别
         :return: 最新日期 (datetime.date类型) 或 None (如果没有数据)
@@ -890,17 +878,17 @@ class AKShareToClickHouse:
             stock_code = str(stock_code).zfill(6)
             
             # 查询数据库中该股票指定级别的最新记录
-            thread_safe_log('info', f"查询股票 {stock_code} {level} 级别的最新记录")
+            self.logger.info(f"查询股票 {stock_code} {level} 级别的最新记录")
             
             # 创建独立连接进行查询
             with self.connection_semaphore:
                 db = None
                 try:
-                    db = get_clickhouse_db(config=self.clickhouse_config)
+                    db = get_service(Data_access_interface)
                     
                     # 查询最大日期
                     query = f"""
-                    SELECT max(date) FROM stock_info 
+                    SELECT max(date) FROM stock_info WHERE 1=1
                     WHERE code = '{stock_code}' AND level = '{level}'
                     """
                     
@@ -908,10 +896,10 @@ class AKShareToClickHouse:
                 
                     if result and result[0][0]:
                         latest_date = result[0][0]
-                        thread_safe_log('info', f"股票 {stock_code} {level} 级别的最新日期为: {latest_date}")
+                        self.logger.info(f"股票 {stock_code} {level} 级别的最新日期为: {latest_date}")
                         return latest_date  # 直接返回datetime.date类型
                     else:
-                        thread_safe_log('warning', f"股票 {stock_code} {level} 级别在数据库中没有记录")
+                        self.logger.warning(f"股票 {stock_code} {level} 级别在数据库中没有记录")
                         return None
                 finally:
                     # 确保关闭连接
@@ -919,14 +907,14 @@ class AKShareToClickHouse:
                         try:
                             db.client.disconnect()
                         except Exception as e:
-                            thread_safe_log('error', f"关闭数据库连接失败: {e}")
+                            self.logger.error(f"关闭数据库连接失败: {e}")
         except Exception as e:
-            thread_safe_log('error', f"查询股票 {stock_code} {level} 级别最新日期失败: {e}")
+            self.logger.error(f"查询股票 {stock_code} {level} 级别最新日期失败: {e}")
             return None
 
     def prepare_stock_data_for_clickhouse(self, stock_data, stock_code, stock_name):
         """
-        准备股票数据以便保存到ClickHouse
+        准备股票数据以便保存到Click_house
         :param stock_data: 原始股票数据
         :param stock_code: 股票代码
         :param stock_name: 股票名称
@@ -942,7 +930,7 @@ class AKShareToClickHouse:
             # 转换日期和时间为标准格式
             # efinance的日期列是'日期'，转换为datetime类型
             if not '日期' in stock_data_processed.columns:
-                logger.error(f"股票数据缺少日期列，列名: {stock_data_processed.columns.tolist()}")
+                self.logger.error(f"股票数据缺少日期列，列名: {stock_data_processed.columns.tolist()}")
                 return pd.DataFrame()
             
             # 检查原始数据是否有时间信息（包含在日期字段中）
@@ -973,7 +961,7 @@ class AKShareToClickHouse:
             # 将日期列转换为date类型
             stock_data_processed['日期'] = pd.to_datetime(stock_data_processed['日期']).dt.date
             
-            # 添加必要的列 - 使用clickhouse_db.py中save_stock_info方法能识别的列名
+            # 添加必要的列 - 使用data_access.py中save_stock_info方法能识别的列名
             stock_data_processed['代码'] = stock_code
             stock_data_processed['名称'] = stock_name
             
@@ -991,7 +979,7 @@ class AKShareToClickHouse:
             # 确保所有必要的列都存在
             for standard_name in ['开盘', '收盘', '最高', '最低', '成交量']:
                 if not standard_name in stock_data_processed.columns:
-                    logger.error(f"股票数据缺少列: {standard_name}")
+                    self.logger.error(f"股票数据缺少列: {standard_name}")
                     return pd.DataFrame()
             
             # 计算或设置其他必要的列
@@ -1006,15 +994,14 @@ class AKShareToClickHouse:
             
             return stock_data_processed
         except Exception as e:
-            logger.error(f"处理股票 {stock_code} 数据失败: {e}")
+            self.logger.error(f"处理股票 {stock_code} 数据失败: {e}")
             return pd.DataFrame()
 
-    def get_stock_daily_data(self, stock_code, start_date=None):
         """
         获取股票日线级别数据，使用数据源适配器
         :param stock_code: 股票代码
         :param start_date: 开始日期 (YYYYMMDD)
-        :return: 股票数据DataFrame
+        :return: 股票数据Data_frame
         """
         if start_date is None:
             start_date = self.get_adjusted_start_date(70)
@@ -1028,8 +1015,8 @@ class AKShareToClickHouse:
                 # 使用适配器获取数据
                 adapter = self.data_source_manager.get_adapter()
                 current_source = self.data_source_manager.current_source
-                logger.info(f"使用数据源 {current_source} 获取股票 {stock_code} 的日线数据")
-                stock_data = adapter.get_stock_daily_data(stock_code, start_date)
+                self.logger.info(f"使用数据源 {current_source} 获取股票 {stock_code} 的日线数据")
+                stock_data = adapter.get_stock_daily_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(stock_code, start_date)
                 
                 if not stock_data.empty:
                     # 成功获取数据，重置失败计数
@@ -1037,32 +1024,32 @@ class AKShareToClickHouse:
                     return stock_data
                 else:
                     # 对于空结果，需要判断是否是因为数据已是最新
-                    logger.warning(f"数据源 {current_source} 返回的股票 {stock_code} 日线数据为空")
+                    self.logger.warning(f"数据源 {current_source} 返回的股票 {stock_code} 日线数据为空")
                     
                     # 检查是否因为已经是最新
-                    current_date = datetime.datetime.now().date()
-                    start_date_obj = datetime.datetime.strptime(start_date, '%Y%m%d').date() if len(start_date) == 8 else None
+                    current_date = datetime.now().date()
+                    start_date_obj = datetime.strptime(start_date, '%Y%m%d').date() if len(start_date) == 8 else None
                     
                     is_empty_normal = False
                     if start_date_obj and start_date_obj > current_date:
-                        logger.info(f"查询日期 {start_date} 晚于当前日期 {current_date}，空结果是正常的")
+                        self.logger.info(f"查询日期 {start_date} 晚于当前日期 {current_date}，空结果是正常的")
                         is_empty_normal = True
                         
                     # 检查数据源是否已标记为数据最新
                     if self.data_source_manager.is_up_to_date[current_source]:
-                        logger.info(f"数据源 {current_source} 已标记为数据最新，空结果是正常的")
+                        self.logger.info(f"数据源 {current_source} 已标记为数据最新，空结果是正常的")
                         is_empty_normal = True
                     
                     # 如果是正常的空结果，不计为失败
                     if is_empty_normal:
-                        logger.info(f"空结果是正常的，不计为失败")
+                        self.logger.info(f"空结果是正常的，不计为失败")
                         return pd.DataFrame()
                     
                     # 否则记录失败并尝试切换数据源
                     switched = self.data_source_manager.record_failure(is_empty_result=True)
                     
                     if switched:
-                        logger.info(f"由于空结果，已切换数据源到: {self.data_source_manager.current_source}")
+                        self.logger.info(f"由于空结果，已切换数据源到: {self.data_source_manager.current_source}")
                         # 切换数据源后继续尝试
                         continue
                     else:
@@ -1071,29 +1058,28 @@ class AKShareToClickHouse:
                     
             except Exception as e:
                 retry_count += 1
-                logger.error(f"获取股票 {stock_code} 的日线数据失败 (尝试 {retry_count}/{max_retries}): {e}")
+                self.logger.error(f"获取股票 {stock_code} 的日线数据失败 (尝试 {retry_count}/{max_retries}): {e}")
                 
                 # 记录数据源失败
                 switched = self.data_source_manager.record_failure(is_empty_result=False)
                 
                 if switched:
-                    logger.info(f"由于错误，已切换数据源到: {self.data_source_manager.current_source}")
+                    self.logger.info(f"由于错误，已切换数据源到: {self.data_source_manager.current_source}")
                     # 如果切换了数据源，重置重试计数
                     retry_count = 0
                 elif retry_count < max_retries:
                     wait_time = retry_count * 5  # 递增等待时间
-                    logger.info(f"等待 {wait_time} 秒后重试...")
+                    self.logger.info(f"等待 {wait_time} 秒后重试...")
                     time.sleep(wait_time)
                 else:
-                    logger.error(f"达到最大重试次数，放弃获取股票 {stock_code} 的日线数据")
+                    self.logger.error(f"达到最大重试次数，放弃获取股票 {stock_code} 的日线数据")
                     return pd.DataFrame()
     
-    def get_stock_weekly_data(self, stock_code, start_date=None):
         """
         获取股票周线级别数据，使用数据源适配器
         :param stock_code: 股票代码
         :param start_date: 开始日期 (YYYYMMDD)
-        :return: 股票数据DataFrame
+        :return: 股票数据Data_frame
         """
         if start_date is None:
             # 周线数据设置更久远的起始日期，确保获取足够数据
@@ -1107,7 +1093,7 @@ class AKShareToClickHouse:
             try:
                 # 使用适配器获取数据
                 adapter = self.data_source_manager.get_adapter()
-                stock_data = adapter.get_stock_weekly_data(stock_code, start_date)
+                stock_data = adapter.get_stock_weekly_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(stock_code, start_date)
                 
                 if not stock_data.empty:
                     # 成功获取数据，重置失败计数
@@ -1119,29 +1105,28 @@ class AKShareToClickHouse:
                     
             except Exception as e:
                 retry_count += 1
-                logger.error(f"获取股票 {stock_code} 的周线数据失败 (尝试 {retry_count}/{max_retries}): {e}")
+                self.logger.error(f"获取股票 {stock_code} 的周线数据失败 (尝试 {retry_count}/{max_retries}): {e}")
                 
                 # 记录数据源失败
                 switched = self.data_source_manager.record_failure()
                 
                 if switched:
-                    logger.info(f"已切换数据源到: {self.data_source_manager.current_source}")
+                    self.logger.info(f"已切换数据源到: {self.data_source_manager.current_source}")
                     # 如果切换了数据源，重置重试计数
                     retry_count = 0
                 elif retry_count < max_retries:
                     wait_time = retry_count * 5  # 递增等待时间
-                    logger.info(f"等待 {wait_time} 秒后重试...")
+                    self.logger.info(f"等待 {wait_time} 秒后重试...")
                     time.sleep(wait_time)
                 else:
-                    logger.error(f"达到最大重试次数，放弃获取股票 {stock_code} 的周线数据")
+                    self.logger.error(f"达到最大重试次数，放弃获取股票 {stock_code} 的周线数据")
                     return pd.DataFrame()
     
-    def get_stock_monthly_data(self, stock_code, start_date=None):
         """
         获取股票月线级别数据，使用数据源适配器
         :param stock_code: 股票代码
         :param start_date: 开始日期 (YYYYMMDD)
-        :return: 股票数据DataFrame
+        :return: 股票数据Data_frame
         """
         if start_date is None:
             # 月线数据需要更长的历史，从创业板成立前获取数据（约2000年）
@@ -1155,7 +1140,7 @@ class AKShareToClickHouse:
             try:
                 # 使用适配器获取数据
                 adapter = self.data_source_manager.get_adapter()
-                stock_data = adapter.get_stock_monthly_data(stock_code, start_date)
+                stock_data = adapter.get_stock_monthly_data_Clickhouse_Akshare_To_Clickhouse_Akshare_To_Clickhouse_aksharetoclickhouse(stock_code, start_date)
                 
                 if not stock_data.empty:
                     # 成功获取数据，重置失败计数
@@ -1167,57 +1152,57 @@ class AKShareToClickHouse:
                     
             except Exception as e:
                 retry_count += 1
-                logger.error(f"获取股票 {stock_code} 的月线数据失败 (尝试 {retry_count}/{max_retries}): {e}")
+                self.logger.error(f"获取股票 {stock_code} 的月线数据失败 (尝试 {retry_count}/{max_retries}): {e}")
                 
                 # 记录数据源失败
                 switched = self.data_source_manager.record_failure()
                 
                 if switched:
-                    logger.info(f"已切换数据源到: {self.data_source_manager.current_source}")
+                    self.logger.info(f"已切换数据源到: {self.data_source_manager.current_source}")
                     # 如果切换了数据源，重置重试计数
                     retry_count = 0
                 elif retry_count < max_retries:
                     wait_time = retry_count * 5  # 递增等待时间
-                    logger.info(f"等待 {wait_time} 秒后重试...")
+                    self.logger.info(f"等待 {wait_time} 秒后重试...")
                     time.sleep(wait_time)
                 else:
-                    logger.error(f"达到最大重试次数，放弃获取股票 {stock_code} 的月线数据")
+                    self.logger.error(f"达到最大重试次数，放弃获取股票 {stock_code} 的月线数据")
                     return pd.DataFrame()
 
-    def get_latest_trade_date(self):
+    def get_latest_trade_date_Clickhouse(self):
         """
         获取最新交易日期
         :return: 最新交易日期 (datetime.date类型)
         """
         try:
             # 由于获取实时交易日期有困难，我们采用更实用的方法
-            logger.info("计算最新交易日期...")
+            self.logger.info("计算最新交易日期...")
             
             # 获取当前日期
-            today = datetime.datetime.now().date()
+            today = datetime.now().date()
             
             # 周末不是交易日
             if today.weekday() >= 5:  # 5是星期六，6是星期日
                 # 如果是周末，返回最近的周五
                 days_to_subtract = today.weekday() - 4  # 5减去1得到4，6减去2得到4
-                latest_trade_date = today - datetime.timedelta(days=days_to_subtract)
+                latest_trade_date = today - timedelta(days=days_to_subtract)
             else:
                 # 如果是工作日，返回当天日期
                 # 注意：这里没有考虑法定节假日，如果需要更精确，需要引入节假日数据
                 latest_trade_date = today
             
-            logger.info(f"计算得到最新交易日期: {latest_trade_date}")
+            self.logger.info(f"计算得到最新交易日期: {latest_trade_date}")
             return latest_trade_date
         except Exception as e:
             # 如果发生异常，使用昨天的日期作为备选
-            yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).date()
-            logger.error(f"计算最新交易日期失败: {e}，使用昨天日期作为备选: {yesterday}")
+            yesterday = (datetime.now() - timedelta(days=1)).date()
+            self.logger.error(f"计算最新交易日期失败: {e}，使用昨天日期作为备选: {yesterday}")
             return yesterday
 
-if __name__ == "__main__":
+def main_aksharetoclickhouse():
+    """主函数"""
     import argparse
     
-    # 创建命令行参数解析器
     parser = argparse.ArgumentParser(description='使用多线程方式同步股票数据到ClickHouse')
     parser.add_argument('--csv', type=str, default='data/reference/stock_code_name.csv', 
                         help='股票代码CSV文件路径')
@@ -1234,14 +1219,13 @@ if __name__ == "__main__":
     parser.add_argument('--debug', action='store_true',
                         help='开启调试模式，显示更详细的日志')
     
-    # 解析命令行参数
     args = parser.parse_args()
     
     # 设置日志级别
     if args.debug:
-        logger.setLevel(logging.DEBUG)
-        console_handler.setLevel(logging.DEBUG)
-        file_handler.setLevel(logging.DEBUG)
+        logger.set_level(logging.DEBUG)
+        console_handler.set_level(logging.DEBUG)
+        file_handler.set_level(logging.DEBUG)
         print("调试模式已开启，将显示更详细的日志信息")
     
     print(f"最大线程数: {args.threads}")
@@ -1264,7 +1248,7 @@ if __name__ == "__main__":
         csv_path = args.csv
     
     # 初始化同步器，传入自定义参数
-    synchronizer = AKShareToClickHouse(max_workers=args.threads, batch_size=args.batch, 
+    synchronizer = AKShare_to_click_house(max_workers=args.threads, batch_size=args.batch, 
                                       force_sync=args.force, data_source=args.source)
     
     # 获取并显示最新交易日期
@@ -1291,4 +1275,7 @@ if __name__ == "__main__":
     if args.code:
         import os
         if os.path.exists(temp_csv):
-            os.remove(temp_csv) 
+            os.remove(temp_csv)
+
+if __name__ == "__main__":
+    main_aksharetoclickhouse() 

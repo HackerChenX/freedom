@@ -20,34 +20,34 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-from analysis.intelligent_cache_system import IntelligentCacheSystem, CachedIndicatorCalculator
-from analysis.vectorized_indicator_optimizer import VectorizedIndicatorOptimizer
+from utils.logger import getLogger
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
+from analysis.intelligent_cache_system import Intelligent_cache_system, Cached_indicator_calculator
+from analysis.vectorized_indicator_optimizer import Vectorized_indicator_optimizer
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class OptimizedBuyPointAnalyzer(BuyPointBatchAnalyzer):
+class OptimizedBuyPointAnalyzer(Buy_point_batch_analyzer):
     """优化后的买点分析器"""
     
-    def __init__(self, enable_cache: bool = True, enable_vectorization: bool = True):
-        super().__init__()
+    def __init___86(self, enable_cache: bool = True, enable_vectorization: bool = True):
+        super().__init___86()
         
         # 初始化优化组件
         self.enable_cache = enable_cache
         self.enable_vectorization = enable_vectorization
         
         if self.enable_cache:
-            self.cache_system = IntelligentCacheSystem(
+            self.cache_system = Intelligent_cache_system(
                 max_memory_cache_size=500,
                 enable_disk_cache=True,
                 cache_dir="data/cache/indicators"
             )
-            self.cached_calculator = CachedIndicatorCalculator(self.cache_system)
+            self.cached_calculator = Cached_indicator_calculator(self.cache_system)
         
         if self.enable_vectorization:
-            self.vectorized_optimizer = VectorizedIndicatorOptimizer()
+            self.vectorized_optimizer = Vectorized_indicator_optimizer()
         
         # 性能统计
         self.performance_stats = {
@@ -271,7 +271,7 @@ def performance_comparison_test(sample_size: int = 3):
     print("="*60)
     
     # 加载测试数据
-    base_analyzer = BuyPointBatchAnalyzer()
+    base_analyzer = Buy_point_batch_analyzer()
     buypoints_df = base_analyzer.load_buypoints_from_csv("data/buypoints.csv")
     
     if buypoints_df.empty:
@@ -292,7 +292,7 @@ def performance_comparison_test(sample_size: int = 3):
     
     # 测试优化分析器
     print(f"2. 测试优化分析器（{sample_size}个买点）...")
-    optimized_analyzer = OptimizedBuyPointAnalyzer(enable_cache=True, enable_vectorization=True)
+    optimized_analyzer = Optimized_buy_point_analyzer(enable_cache=True, enable_vectorization=True)
     start_time = time.time()
     optimized_results = []
     for _, row in test_df.iterrows():

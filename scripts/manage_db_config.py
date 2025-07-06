@@ -4,7 +4,7 @@
 """
 数据库配置管理工具
 
-提供命令行界面来管理ClickHouse数据库配置，包括：
+提供命令行界面来管理Click_house数据库配置，包括：
 1. 查看当前配置
 2. 设置密码
 3. 测试连接
@@ -22,9 +22,9 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.database_config_manager import DatabaseConfigManager, get_database_config_manager
+from config.database_config_manager import Database_config_manager, get_database_config_manager
 
-def show_config(args):
+def show_config_Config(args):
     """显示当前配置"""
     manager = get_database_config_manager()
     config = manager.get_config()
@@ -54,7 +54,7 @@ def show_config(args):
     print("3. user_config.json 文件")
     print("4. 默认配置 (最低优先级)")
 
-def set_password(args):
+def set_password_Config(args):
     """设置数据库密码"""
     manager = get_database_config_manager()
     
@@ -71,7 +71,7 @@ def set_password(args):
     encrypt = not args.no_encrypt
     save_to_file = not args.no_save
     
-    manager.set_password(password, encrypt=encrypt, save_to_file=save_to_file)
+    manager.set_password_Config(password, encrypt=encrypt, save_to_file=save_to_file)
     
     if save_to_file:
         encrypt_status = "加密" if encrypt else "明文"
@@ -79,14 +79,14 @@ def set_password(args):
     else:
         print("✅ 密码已设置（仅在内存中，未保存到文件）")
 
-def test_connection(args):
+def test_connection_Config(args):
     """测试数据库连接"""
     manager = get_database_config_manager()
     
     print("🔍 正在测试数据库连接...")
     
     # 验证配置
-    if not manager.validate_config():
+    if not manager.validate_config_Config():
         print("❌ 配置验证失败")
         return
     
@@ -100,7 +100,7 @@ def test_connection(args):
             return
     
     # 测试连接
-    if manager.test_connection():
+    if manager.test_connection_Config():
         print("✅ 数据库连接测试成功！")
         
         # 显示连接信息
@@ -114,13 +114,13 @@ def test_connection(args):
         print("  3. 用户名和密码是否正确")
         print("  4. 网络连接是否正常")
 
-def validate_config(args):
+def validate_config_Config(args):
     """验证配置"""
     manager = get_database_config_manager()
     
     print("🔍 正在验证配置...")
     
-    if manager.validate_config():
+    if manager.validate_config_Config():
         print("✅ 配置验证通过")
         
         # 显示配置摘要
@@ -144,13 +144,13 @@ def migrate_config(args):
     # 检查是否有旧的硬编码配置需要迁移
     old_configs = []
     
-    # 检查 clickhouse_db.py 中的硬编码配置
-    clickhouse_db_file = project_root / 'db' / 'clickhouse_db.py'
+    # 检查 data_access.py 中的硬编码配置
+    clickhouse_db_file = project_root / 'db' / 'data_access.py'
     if clickhouse_db_file.exists():
         with open(clickhouse_db_file, 'r', encoding='utf-8') as f:
             content = f.read()
             if "'password': '123456'" in content:
-                old_configs.append("db/clickhouse_db.py 中发现硬编码密码 '123456'")
+                old_configs.append("db/data_access.py 中发现硬编码密码 '123456'")
     
     # 检查测试脚本中的硬编码配置
     test_script_file = project_root / 'scripts' / 'simple_clickhouse_test.py'
@@ -208,11 +208,11 @@ def show_env_vars(args):
     print("可以在 config/.env 文件中设置这些环境变量")
     print("或者在系统环境中直接设置")
 
-def main():
+def main_managedbconfig():
     """主函数"""
-    parser = argparse.ArgumentParser(
+    parser = argparse.Argument_parser(
         description="ClickHouse数据库配置管理工具",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.Raw_description_help_formatter,
         epilog="""
 示例用法:
   python scripts/manage_db_config.py show              # 显示当前配置
@@ -260,7 +260,7 @@ def main():
     
     try:
         args.func(args)
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print("\n\n操作已取消")
     except Exception as e:
         print(f"\n❌ 执行失败: {e}")
@@ -268,4 +268,4 @@ def main():
             print("请检查ClickHouse服务是否运行，以及配置是否正确")
 
 if __name__ == '__main__':
-    main()
+    main_managedbconfig()

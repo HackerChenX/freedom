@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 指标逻辑验证工具
 
@@ -23,8 +25,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
-from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
+from analysis.engines.unified_indicator_engine import Unified_indicator_engine
+from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from utils.date_utils import get_latest_trading_date
@@ -45,8 +47,8 @@ class IndicatorLogicValidator:
         """
         self.debug_mode = debug_mode
         self.data_manager = get_unified_data_manager()
-        self.indicator_engine = UnifiedIndicatorEngine(enable_cache=True)
-        self.condition_evaluator = SharedConditionEvaluator(self.indicator_engine)
+        self.indicator_engine = Unified_indicator_engine(enable_cache=True)
+        self.condition_evaluator = Shared_condition_evaluator(self.indicator_engine)
         
         # 验证统计
         self.validation_stats = {
@@ -71,7 +73,7 @@ class IndicatorLogicValidator:
         try:
             query = f"""
             SELECT code as stock_code, close, volume, turnover_rate
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE date = '{self.test_date}'
             AND level = '日线'
             AND close > 5.0 AND close < 100.0
@@ -99,7 +101,7 @@ class IndicatorLogicValidator:
             
             query = f"""
             SELECT date, open, high, low, close, volume, 0 as amount, turnover_rate
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE code = '{stock_code}'
             AND level = '日线'
             AND date >= '{start_date}' AND date <= '{end_date}'
@@ -126,7 +128,7 @@ class IndicatorLogicValidator:
             logger.error(f"获取股票 {stock_code} 数据失败: {e}")
             return pd.DataFrame()
     
-    def validate_single_indicator(self, indicator_name: str, stock_code: str = None) -> Dict[str, Any]:
+    def validate_single_indicator_Validator_Indicator_Logic_Validator(self, indicator_name: str, stock_code: str = None) -> Dict[str, Any]:
         """验证单个指标"""
         if stock_code is None:
             stock_code = self.test_stocks[0]
@@ -572,7 +574,7 @@ class IndicatorLogicValidator:
         
         return conditions
     
-    def validate_all_indicators(self, sample_stocks: int = 3) -> Dict[str, Any]:
+    def validate_all_indicators_Validator_Indicator_Logic_Validator(self, sample_stocks: int = 3) -> Dict[str, Any]:
         """验证所有指标"""
         logger.info("🚀 开始验证所有指标")
         
@@ -591,7 +593,7 @@ class IndicatorLogicValidator:
             # 对每个测试股票验证指标
             indicator_results = []
             for stock_code in test_stocks:
-                result = self.validate_single_indicator(indicator_name, stock_code)
+                result = self.validate_single_indicator_Validator_Indicator_Logic_Validator(indicator_name, stock_code)
                 indicator_results.append(result)
             
             # 汇总结果
@@ -612,7 +614,7 @@ class IndicatorLogicValidator:
                 if any('data' in error.lower() for error in overall_result.get('common_errors', [])):
                     self.validation_stats['data_errors'] += 1
         
-        return self._generate_validation_report()
+        return self._generate_validation_report_Indicator_Logic_Validator()
     
     def _summarize_indicator_results(self, indicator_name: str, results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """汇总单个指标的验证结果"""
@@ -646,7 +648,7 @@ class IndicatorLogicValidator:
         
         return summary
     
-    def _generate_validation_report(self) -> Dict[str, Any]:
+    def _generate_validation_report_Indicator_Logic_Validator(self) -> Dict[str, Any]:
         """生成验证报告"""
         success_rate = (
             self.validation_stats['valid_indicators'] / self.validation_stats['total_indicators'] * 100
@@ -799,16 +801,16 @@ class IndicatorLogicValidator:
         print("="*80)
 
 
-def main():
+def main_indicatorlogicvalidator():
     """主函数"""
     print("🔍 启动指标逻辑验证工具")
     
     # 创建验证器
-    validator = IndicatorLogicValidator(debug_mode=True)
+    validator = Indicator_logic_validator(debug_mode=True)
     
     try:
         # 运行全面验证
-        report = validator.validate_all_indicators(sample_stocks=2)
+        report = validator.validate_all_indicators_Validator_Indicator_Logic_Validator(sample_stocks=2)
         
         # 显示验证摘要
         validator.print_validation_summary(report)
@@ -838,4 +840,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit(main())
+    exit(main_indicatorlogicvalidator())

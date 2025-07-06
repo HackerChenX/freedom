@@ -1,0 +1,39 @@
+{
+  "test_time": "2025-07-06 22:02:48",
+  "results": {
+    "基础导入": {
+      "status": "PASS",
+      "success": true
+    },
+    "配置系统": {
+      "status": "PASS",
+      "success": true
+    },
+    "数据库配置": {
+      "status": "PASS",
+      "success": true
+    },
+    "指标结构": {
+      "status": "PASS",
+      "success": true
+    },
+    "策略结构": {
+      "status": "PASS",
+      "success": true
+    },
+    "分析结构": {
+      "status": "PASS",
+      "success": true
+    },
+    "工具结构": {
+      "status": "PASS",
+      "success": true
+    }
+  },
+  "summary": {
+    "total_tests": 7,
+    "passed_tests": 7,
+    "failed_tests": 0,
+    "success_rate": 100.0
+  }
+}

@@ -22,7 +22,7 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.pvt import PVT
 
 
-def generate_test_data(length=100):
+def generate_test_data_Scoring_Test_Momentum_Emv_Vosc_Pvt_Scoring(length=100):
     """
     生成测试数据
     
@@ -30,7 +30,7 @@ def generate_test_data(length=100):
         length: 数据长度
         
     Returns:
-        pd.DataFrame: 包含OHLCV数据的DataFrame
+        pd.DataFrame: 包含OHLCV数据的Data_frame
     """
     np.random.seed(42)  # 固定随机种子确保结果可重现
     
@@ -74,14 +74,14 @@ def generate_test_data(length=100):
     return data
 
 
-def test_momentum_scoring():
+def test_momentum_scoring_Scoring():
     """测试Momentum指标评分功能"""
     print("=" * 60)
     print("测试Momentum指标评分功能")
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Momentum_Emv_Vosc_Pvt_Scoring(100)
     
     # 创建Momentum指标实例
     momentum = Momentum(period=10, signal_period=6)
@@ -128,7 +128,7 @@ def test_vosc_scoring():
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Momentum_Emv_Vosc_Pvt_Scoring(100)
     
     # 创建VOSC指标实例
     vosc = VOSC(short_period=12, long_period=26)
@@ -166,7 +166,7 @@ def test_pvt_scoring():
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Momentum_Emv_Vosc_Pvt_Scoring(100)
     
     # 创建PVT指标实例
     pvt = PVT(ma_period=12)
@@ -204,7 +204,7 @@ def test_all_indicators_summary():
     print("=" * 60)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Momentum_Emv_Vosc_Pvt_Scoring(100)
     
     # 创建所有指标实例
     indicators = {
@@ -264,14 +264,14 @@ def test_all_indicators_summary():
     return True
 
 
-def main():
+def main_testmomentumemvvoscpvtscoring():
     """主函数"""
     print("开始测试Momentum、EMV、VOSC、PVT指标评分功能")
     print("测试时间:", pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'))
     
     try:
         # 测试各个指标
-        test_momentum_scoring()
+        test_momentum_scoring_Scoring()
         test_emv_scoring()
         test_vosc_scoring()
         test_pvt_scoring()
@@ -290,4 +290,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testmomentumemvvoscpvtscoring() 

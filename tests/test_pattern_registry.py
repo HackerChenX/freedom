@@ -12,16 +12,16 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.wma import WMA
 from indicators.vol import VOL
 from indicators.bias import BIAS
-from indicators.platform_breakout import PlatformBreakout
+from indicators.platform_breakout import Platform_breakout
 
 
-class TestPatternRegistry(unittest.TestCase):
+class Test_pattern_registry(unittest.Test_case):
     """测试形态注册表功能"""
     
-    def setUp(self):
+    def set_up_Registry(self):
         """测试前准备"""
         # 清空PatternRegistry
-        PatternRegistry.clear_registry()
+        Pattern_registry.clear_registry()
         
         # 创建模拟数据
         self.data = pd.DataFrame({
@@ -32,21 +32,21 @@ class TestPatternRegistry(unittest.TestCase):
             'volume': [1000, 1100, 1200, 1100, 1000, 900, 1000, 1100, 1200, 1300]
         })
         
-    def tearDown(self):
+    def tear_down(self):
         """测试后清理"""
-        PatternRegistry.clear_registry()
+        Pattern_registry.clear_registry()
     
     def test_boll_patterns(self):
         """测试BOLL指标形态注册"""
         # 清空PatternRegistry
-        PatternRegistry.clear_registry()
+        Pattern_registry.clear_registry()
         
         # 创建BOLL指标实例并注册形态
         boll = BOLL()
         boll._register_boll_patterns()
         
         # 从PatternRegistry获取形态列表
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("BOLL")
         
         # 验证形态数量
@@ -75,7 +75,7 @@ class TestPatternRegistry(unittest.TestCase):
         kdj._register_kdj_patterns()
         
         # 获取指标注册的形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("KDJ")
         
         # 验证形态数量
@@ -95,7 +95,7 @@ class TestPatternRegistry(unittest.TestCase):
         dmi._register_dmi_patterns()
         
         # 获取指标注册的形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("DMI")
         
         # 验证形态数量
@@ -115,7 +115,7 @@ class TestPatternRegistry(unittest.TestCase):
         trix._register_trix_patterns()
         
         # 获取指标注册的形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("TRIX")
         
         # 验证形态数量
@@ -135,7 +135,7 @@ class TestPatternRegistry(unittest.TestCase):
         wma._register_wma_patterns()
         
         # 获取指标注册的形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("WMA")
         
         # 验证形态数量
@@ -155,7 +155,7 @@ class TestPatternRegistry(unittest.TestCase):
         vol._register_volume_patterns()
         
         # 获取指标注册的形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("VOL")
         
         # 验证形态数量
@@ -175,7 +175,7 @@ class TestPatternRegistry(unittest.TestCase):
         bias._register_bias_patterns()
         
         # 获取指标注册的形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("BIAS")
         
         # 验证形态数量
@@ -189,14 +189,14 @@ class TestPatternRegistry(unittest.TestCase):
     def test_platform_breakout_patterns(self):
         """测试平台突破指标形态注册"""
         # 清空PatternRegistry
-        PatternRegistry.clear_registry()
+        Pattern_registry.clear_registry()
         
         # 创建平台突破指标实例并注册形态
-        indicator = PlatformBreakout()
+        indicator = Platform_breakout()
         indicator._register_breakout_patterns()
         
         # 从PatternRegistry获取所有形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("PLATFORM_BREAKOUT")
         
         # 打印实际的形态ID，以便调试
@@ -221,7 +221,7 @@ class TestPatternRegistry(unittest.TestCase):
     def test_get_registered_patterns(self):
         """测试BaseIndicator.get_registered_patterns方法"""
         # 清空PatternRegistry
-        PatternRegistry.clear_registry()
+        Pattern_registry.clear_registry()
         
         # 创建KDJ指标实例并注册形态
         kdj = KDJ()
@@ -229,7 +229,7 @@ class TestPatternRegistry(unittest.TestCase):
         kdj._register_kdj_patterns()
         
         # 从PatternRegistry验证形态已注册
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         pattern_ids = registry.get_patterns_by_indicator("KDJ")
         print(f"从PatternRegistry获取的KDJ形态ID: {pattern_ids}")
         self.assertTrue(len(pattern_ids) > 0, "KDJ指标未注册任何形态到PatternRegistry")
@@ -250,7 +250,7 @@ class TestPatternRegistry(unittest.TestCase):
     def test_pattern_registration(self):
         """测试各个指标的形态注册功能"""
         # 清空PatternRegistry
-        PatternRegistry.clear_registry()
+        Pattern_registry.clear_registry()
         
         # 创建各个指标的实例
         boll = BOLL()
@@ -260,7 +260,7 @@ class TestPatternRegistry(unittest.TestCase):
         wma = WMA()
         vol = VOL()
         bias = BIAS()
-        platform_breakout = PlatformBreakout()
+        platform_breakout = Platform_breakout()
         
         # 调用各个指标的形态注册方法
         boll._register_boll_patterns()
@@ -273,7 +273,7 @@ class TestPatternRegistry(unittest.TestCase):
         platform_breakout._register_breakout_patterns()
         
         # 获取注册表中的所有形态
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         all_patterns = registry.get_all_patterns()
         
         # 验证每个指标的形态都已注册

@@ -19,12 +19,12 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import get_pattern_registry
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import get_logger
-from enums.kline_period import KlinePeriod
+from utils.logger import getLogger
+from enums.kline_period import Kline_period
 from utils.decorators import validate_dataframe, log_calls, exception_handler, performance_monitor, cache_result
 from utils.scoring_validator import validate_score
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class PatternType(Enum):
     """K线形态类型枚举"""
@@ -35,9 +35,9 @@ class PatternType(Enum):
     
 class PatternStrength(Enum):
     """形态强度枚举"""
-    WEAK = 1  # 弱信号
-    MEDIUM = 2  # 中等信号
-    STRONG = 3  # 强信号
+    weak = 1  # 弱信号
+    medium = 2  # 中等信号
+    strong = 3  # 强信号
 
 class PatternRecognitionAnalyzer:
     """
@@ -46,7 +46,7 @@ class PatternRecognitionAnalyzer:
     提供多指标形态识别、多周期形态分析和形态统计评分功能
     """
     
-    def __init__(self, indicators: List[str] = None, periods: List[str] = None):
+    def __init___90(self, indicators: List[str] = None, periods: List[str] = None):
         """
         初始化形态识别分析器
         
@@ -62,7 +62,7 @@ class PatternRecognitionAnalyzer:
         self._indicator_instances: Dict[str, BaseIndicator] = {}
         
         # 初始化形态管理器
-        self.pattern_manager = PatternManager.get_instance()
+        self.pattern_manager = Pattern_manager.get_instance()
         
         # 初始化形态注册表
         self.pattern_registry = get_pattern_registry()
@@ -230,16 +230,16 @@ class PatternRecognitionAnalyzer:
         self.periods.append(period)
         logger.info(f"已添加周期 {period} 到分析器")
     
-    def identify_patterns(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    def identify_patterns_Pattern_Recognition_Analyzer(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         """
         使用 TA-Lib 识别所有支持的K线形态
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
             Dict[str, pd.DataFrame]: 包含所有已识别形态的字典，
-                                     键是形态名称，值是包含形态信息的DataFrame
+                                     键是形态名称，值是包含形态信息的Data_frame
         """
         if not all(col in data.columns for col in ['open', 'high', 'low', 'close']):
             logger.error("输入数据缺少OHLC列，无法进行形态识别")
@@ -337,7 +337,7 @@ class PatternRecognitionAnalyzer:
                 continue
                 
             # 获取最新日期
-            latest_date = period_data.index[-1] if isinstance(period_data.index, pd.DatetimeIndex) else period_data.iloc[-1].name
+            latest_date = period_data.index[-1] if isinstance(period_data.index, pd.Datetime_index) else period_data.iloc[-1].name
             latest_date_str = latest_date.strftime("%Y-%m-%d") if isinstance(latest_date, (pd.Timestamp, datetime)) else str(latest_date)
             
             # 按指标分析形态
@@ -1171,7 +1171,7 @@ class PatternRecognitionAnalyzer:
             patterns: 要识别的形态列表，如果为None则识别所有支持的形态
             
         Returns:
-            pd.DataFrame: 包含形态识别结果的DataFrame
+            pd.DataFrame: 包含形态识别结果的Data_frame
         """
         # 检查必要的列
         required_columns = ["open", "high", "low", "close"]
@@ -1259,7 +1259,7 @@ class PatternRecognitionAnalyzer:
         return value != 0
     
     @performance_monitor()
-    def get_pattern_type(self, pattern: str) -> PatternType:
+    def get_pattern_type(self, pattern: str) -> Pattern_type:
         """
         获取形态类型
         
@@ -1267,16 +1267,16 @@ class PatternRecognitionAnalyzer:
             pattern: 形态名称
             
         Returns:
-            PatternType: 形态类型
+            Pattern_type: 形态类型
         """
         # 处理engulfing特殊情况
         if pattern == "engulfing":
-            return PatternType.REVERSAL  # 吞噬形态可能是看涨或看跌的反转形态
+            return Pattern_type.REVERSAL  # 吞噬形态可能是看涨或看跌的反转形态
         
-        return self.pattern_types.get(pattern, PatternType.REVERSAL)
+        return self.pattern_types.get(pattern, Pattern_type.REVERSAL)
     
     @performance_monitor()
-    def get_pattern_strength(self, pattern: str) -> PatternStrength:
+    def get_pattern_strength(self, pattern: str) -> Pattern_strength:
         """
         获取形态强度
         
@@ -1284,9 +1284,9 @@ class PatternRecognitionAnalyzer:
             pattern: 形态名称
             
         Returns:
-            PatternStrength: 形态强度
+            Pattern_strength: 形态强度
         """
-        return self.pattern_strengths.get(pattern, PatternStrength.WEAK)
+        return self.pattern_strengths.get(pattern, Pattern_strength.WEAK)
     
     @performance_monitor()
     def detect_pattern_sequence(self, stock_data: pd.DataFrame, 

@@ -5,7 +5,7 @@
 """
 
 try:
-    from .concept_extractor import ConceptStockExtractor
+    from crawler.processors.concept_extractor import ConceptStockExtractor
 except ImportError:
     ConceptStockExtractor = None
 

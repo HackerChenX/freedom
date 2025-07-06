@@ -15,7 +15,7 @@ def update_stock_code_name():
     
     try:
         # 使用akshare获取A股所有股票代码和名称
-        stock_info = ak.stock_info_a_code_name()
+        stock_info WHERE 1=1 = ak.stock_info_a_code_name()
         
         if stock_info.empty:
             print("无法获取股票信息，请检查网络连接或ak接口")

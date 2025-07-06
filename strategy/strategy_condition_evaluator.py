@@ -11,28 +11,28 @@ import operator
 import re
 import ast
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from db.unified_data_manager import get_unified_data_manager
-from utils.parameter_standardizer import ParameterStandardizer
-from utils.indicator_parameter_validator import IndicatorParameterValidator
+from utils.parameter_standardizer import Parameter_standardizer
+from utils.indicator_parameter_validator import Indicator_parameter_validator
 from indicators.complete_indicator_registry import complete_registry
 from utils.indicator_name_mapper import indicator_name_mapper
 from utils.decorators import performance_monitor, cache_result
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class StrategyConditionEvaluator:
     """策略条件评估器，用于高效评估选股策略条件"""
     
-    def __init__(self):
+    def __init___80(self):
         """初始化条件评估器"""
         self.data_manager = get_unified_data_manager()
         self.indicator_registry = complete_registry
         self.condition_cache = {}
 
         # 初始化参数标准化器和验证器
-        self.parameter_standardizer = ParameterStandardizer()
-        self.parameter_validator = IndicatorParameterValidator()
+        self.parameter_standardizer = Parameter_standardizer()
+        self.parameter_validator = Indicator_parameter_validator()
 
         logger.info("策略条件评估器已初始化，支持参数标准化和验证")
         
@@ -188,7 +188,7 @@ class StrategyConditionEvaluator:
     
     @performance_monitor()
     @cache_result(cache_size=100)
-    def evaluate_condition(self, condition: Dict[str, Any], 
+    def evaluate_condition_Evaluator(self, condition: Dict[str, Any], 
                          stock_data: pd.DataFrame,
                          date: str) -> bool:
         """
@@ -206,17 +206,17 @@ class StrategyConditionEvaluator:
             condition_type = condition.get("type", "")
             
             if condition_type == "basic":
-                return self._evaluate_basic_condition(condition, stock_data, date)
+                return self._evaluate_basic_condition_Strategy_Condition_Evaluator(condition, stock_data, date)
             elif condition_type == "price":
                 return self._evaluate_price_condition(condition, stock_data, date)
             elif condition_type == "volume":
-                return self._evaluate_volume_condition(condition, stock_data, date)
+                return self._evaluate_volume_condition_Strategy_Condition_Evaluator(condition, stock_data, date)
             elif condition_type == "indicator":
-                return self._evaluate_indicator_condition(condition, stock_data, date)
+                return self._evaluate_indicator_condition_Strategy_Condition_Evaluator(condition, stock_data, date)
             elif condition_type == "fundamental":
                 return self._evaluate_fundamental_condition(condition, stock_data, date)
             elif condition_type == "pattern":
-                return self._evaluate_pattern_condition(condition, stock_data, date)
+                return self._evaluate_pattern_condition_Strategy_Condition_Evaluator(condition, stock_data, date)
             elif condition_type == "logic":
                 return self._evaluate_logic_condition(condition, stock_data, date)
             elif condition_type == "expression":
@@ -230,7 +230,7 @@ class StrategyConditionEvaluator:
             return False
     
     @performance_monitor()
-    def evaluate_conditions(self, conditions: List[Dict[str, Any]], 
+    def evaluate_conditions_Evaluator(self, conditions: List[Dict[str, Any]], 
                          stock_data: pd.DataFrame,
                          date: str,
                          logic: str = "and") -> bool:
@@ -251,7 +251,7 @@ class StrategyConditionEvaluator:
         
         # 处理NOT逻辑操作符 - NOT只对第一个条件取反
         if logic.lower() == "not" and conditions:
-            first_result = self.evaluate_condition(conditions[0], stock_data, date)
+            first_result = self.evaluate_condition_Evaluator(conditions[0], stock_data, date)
             # 对第一个条件结果取反
             return not first_result
             
@@ -268,7 +268,7 @@ class StrategyConditionEvaluator:
                 continue
                 
             # 评估当前条件
-            condition_result = self.evaluate_condition(condition, stock_data, date)
+            condition_result = self.evaluate_condition_Evaluator(condition, stock_data, date)
             results.append(condition_result)
         
         # 根据逻辑关系组合结果
@@ -280,7 +280,7 @@ class StrategyConditionEvaluator:
             logger.debug(f"未知的逻辑操作符: {current_logic}，默认使用AND")
             return all(results)
     
-    def _evaluate_basic_condition(self, condition: Dict[str, Any], 
+    def _evaluate_basic_condition_Strategy_Condition_Evaluator(self, condition: Dict[str, Any], 
                                stock_data: pd.DataFrame,
                                date: str) -> bool:
         """
@@ -353,7 +353,7 @@ class StrategyConditionEvaluator:
         # 执行比较
         return op_func(current_price, value)
     
-    def _evaluate_volume_condition(self, condition: Dict[str, Any], 
+    def _evaluate_volume_condition_Strategy_Condition_Evaluator(self, condition: Dict[str, Any], 
                                 stock_data: pd.DataFrame,
                                 date: str) -> bool:
         """
@@ -394,7 +394,7 @@ class StrategyConditionEvaluator:
         # 执行比较
         return op_func(current_volume, value)
     
-    def _evaluate_indicator_condition(self, condition: Dict[str, Any],
+    def _evaluate_indicator_condition_Strategy_Condition_Evaluator(self, condition: Dict[str, Any],
                                    stock_data: pd.DataFrame,
                                    date: str) -> bool:
         """
@@ -441,7 +441,7 @@ class StrategyConditionEvaluator:
 
             # 步骤6：如果需要与其他指标比较
             if compare_indicator:
-                compare_value = self._get_indicator_value(stock_data, compare_indicator, compare_parameter, date)
+                compare_value = self._get_indicator_value_Strategy_Condition_Evaluator(stock_data, compare_indicator, compare_parameter, date)
 
                 if compare_value is None:
                     logger.debug(f"无法获取比较指标值: {compare_indicator}.{compare_parameter}")
@@ -595,7 +595,7 @@ class StrategyConditionEvaluator:
         # 执行比较
         return op_func(fundamental_value, value)
     
-    def _evaluate_pattern_condition(self, condition: Dict[str, Any], 
+    def _evaluate_pattern_condition_Strategy_Condition_Evaluator(self, condition: Dict[str, Any], 
                                  stock_data: pd.DataFrame,
                                  date: str) -> bool:
         """
@@ -644,11 +644,11 @@ class StrategyConditionEvaluator:
                 sub_conditions = [sub_conditions[0]]
             
             # 对单个条件的结果取反
-            result = self.evaluate_condition(sub_conditions[0], stock_data, date)
+            result = self.evaluate_condition_Evaluator(sub_conditions[0], stock_data, date)
             return not result
         
         # 处理组合条件 (AND/OR)
-        return self.evaluate_conditions(sub_conditions, stock_data, date, logic_operator)
+        return self.evaluate_conditions_Evaluator(sub_conditions, stock_data, date, logic_operator)
     
     def _evaluate_expression_condition(self, condition: Dict[str, Any], 
                                     stock_data: pd.DataFrame,
@@ -671,7 +671,7 @@ class StrategyConditionEvaluator:
             return False
             
         # 解析并执行表达式
-        return self._evaluate_expression(expression, stock_data, date)
+        return self._evaluate_expression_Strategy_Condition_Evaluator(expression, stock_data, date)
     
     def _get_value_on_date(self, data: pd.DataFrame, field: str, date: str) -> Optional[float]:
         """
@@ -774,7 +774,7 @@ class StrategyConditionEvaluator:
             logger.debug(f"计算平均值时出错: {e}")
             return None
     
-    def _get_indicator_value(self, stock_data: pd.DataFrame, 
+    def _get_indicator_value_Strategy_Condition_Evaluator(self, stock_data: pd.DataFrame, 
                           indicator_name: str, parameter: str, 
                           date: str) -> Optional[float]:
         """
@@ -892,7 +892,7 @@ class StrategyConditionEvaluator:
             logger.error(f"识别形态 {pattern_name} 时出错: {e}")
             return False
     
-    def _evaluate_expression(self, expression: str, 
+    def _evaluate_expression_Strategy_Condition_Evaluator(self, expression: str, 
                           stock_data: pd.DataFrame,
                           date: str) -> bool:
         """
@@ -908,7 +908,7 @@ class StrategyConditionEvaluator:
         """
         try:
             # 替换变量
-            expr = self._replace_variables(expression, stock_data, date)
+            expr = self._replace_variables_Strategy_Condition_Evaluator(expression, stock_data, date)
             
             # 安全执行表达式
             return self._safe_eval(expr)
@@ -917,7 +917,7 @@ class StrategyConditionEvaluator:
             logger.error(f"评估表达式 '{expression}' 时出错: {e}")
             return False
     
-    def _replace_variables(self, expression: str, 
+    def _replace_variables_Strategy_Condition_Evaluator(self, expression: str, 
                         stock_data: pd.DataFrame,
                         date: str) -> str:
         """
@@ -934,7 +934,7 @@ class StrategyConditionEvaluator:
         # 匹配变量 ${var_name}
         pattern = r'\${([^}]*)}'
         
-        def replace_var(match):
+        def replace_var_Evaluator(match):
             var_name = match.group(1)
             
             # 处理指标变量，格式：indicator.name.parameter
@@ -943,7 +943,7 @@ class StrategyConditionEvaluator:
                 if len(parts) >= 3:
                     indicator_name = parts[1]
                     parameter = parts[2]
-                    value = self._get_indicator_value(stock_data, indicator_name, parameter, date)
+                    value = self._get_indicator_value_Strategy_Condition_Evaluator(stock_data, indicator_name, parameter, date)
                     return str(value) if value is not None else 'None'
             
             # 处理价格变量，格式：price.field
@@ -1113,11 +1113,11 @@ class StrategyConditionEvaluator:
                     return self._get_value_on_date(stock_data, indicator_col, date)
 
             # 回退到原始方法
-            return self._get_indicator_value(stock_data, indicator_name, parameter, date)
+            return self._get_indicator_value_Strategy_Condition_Evaluator(stock_data, indicator_name, parameter, date)
 
         except Exception as e:
             logger.debug(f"使用参数获取指标值失败: {e}，回退到原始方法")
-            return self._get_indicator_value(stock_data, indicator_name, parameter, date)
+            return self._get_indicator_value_Strategy_Condition_Evaluator(stock_data, indicator_name, parameter, date)
 
     def _evaluate_indicator_condition_legacy(self, condition: Dict[str, Any],
                                            stock_data: pd.DataFrame,
@@ -1144,14 +1144,14 @@ class StrategyConditionEvaluator:
         compare_parameter = condition.get("compare_parameter", "")
 
         # 获取指标值
-        indicator_value = self._get_indicator_value(stock_data, indicator_name, parameter, date)
+        indicator_value = self._get_indicator_value_Strategy_Condition_Evaluator(stock_data, indicator_name, parameter, date)
 
         if indicator_value is None:
             return False
 
         # 如果需要与其他指标比较
         if compare_indicator:
-            compare_value = self._get_indicator_value(stock_data, compare_indicator, compare_parameter, date)
+            compare_value = self._get_indicator_value_Strategy_Condition_Evaluator(stock_data, compare_indicator, compare_parameter, date)
 
             if compare_value is None:
                 return False
@@ -1168,7 +1168,7 @@ class StrategyConditionEvaluator:
         # 执行比较
         return op_func(indicator_value, value)
 
-    def clear_cache(self):
+    def clear_cache_Evaluator_Strategy_Condition_Evaluator(self):
         """清除缓存"""
         self.condition_cache.clear()
         logger.info("已清除条件评估缓存")

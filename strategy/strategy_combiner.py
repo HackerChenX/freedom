@@ -10,13 +10,13 @@ import json
 import concurrent.futures
 from datetime import datetime, timedelta
 
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_manager import Strategy_manager
 from db.unified_data_manager import get_unified_data_manager
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class StrategyCombiner:
@@ -26,9 +26,9 @@ class StrategyCombiner:
     负责执行多个策略并合并结果，支持并行执行和加权评分
     """
     
-    def __init__(self, strategy_manager: Optional[StrategyManager] = None,
-                 strategy_executor: Optional[StrategyExecutor] = None,
-                 data_manager: Optional[DataManager] = None):
+    def __init__(self, strategy_manager: Optional[Strategy_manager] = None,
+                 strategy_executor: Optional[Strategy_executor] = None,
+                 data_manager: Optional[Data_manager] = None):
         """
         初始化策略组合管理器
         
@@ -37,8 +37,8 @@ class StrategyCombiner:
             strategy_executor: 策略执行器实例
             data_manager: 数据管理器实例
         """
-        self.strategy_manager = strategy_manager or StrategyManager()
-        self.strategy_executor = strategy_executor or StrategyExecutor()
+        self.strategy_manager = strategy_manager or Strategy_manager()
+        self.strategy_executor = strategy_executor or Strategy_executor()
         self.data_manager = data_manager or get_unified_data_manager()
         
     @performance_monitor(threshold=10.0)
@@ -63,7 +63,7 @@ class StrategyCombiner:
             max_workers: 最大并行工作线程数
             
         Returns:
-            合并后的选股结果DataFrame
+            合并后的选股结果Data_frame
         """
         # 设置默认日期
         if end_date is None:
@@ -154,7 +154,7 @@ class StrategyCombiner:
             end_date: 结束日期
             
         Returns:
-            策略执行结果字典，键为策略ID，值为结果DataFrame
+            策略执行结果字典，键为策略ID，值为结果Data_frame
         """
         results = {}
         
@@ -197,12 +197,12 @@ class StrategyCombiner:
             max_workers: 最大并行工作线程数
             
         Returns:
-            策略执行结果字典，键为策略ID，值为结果DataFrame
+            策略执行结果字典，键为策略ID，值为结果Data_frame
         """
         results = {}
         
         # 创建线程池
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        with concurrent.futures.Thread_pool_executor(max_workers=max_workers) as executor:
             # 提交任务
             future_to_strategy = {
                 executor.submit(
@@ -247,13 +247,13 @@ class StrategyCombiner:
             end_date: 结束日期
             
         Returns:
-            策略执行结果DataFrame或None
+            策略执行结果Data_frame或None
         """
         logger.info(f"执行策略: {strategy_id}")
         
         try:
             # 创建新的执行器实例，避免共享状态
-            executor = StrategyExecutor()
+            executor = Strategy_executor()
             
             result = executor.execute_strategy(
                 strategy_plan=strategy_plan,
@@ -282,7 +282,7 @@ class StrategyCombiner:
             weights: 策略权重字典
             
         Returns:
-            合并后的结果DataFrame
+            合并后的结果Data_frame
         """
         if not strategy_results:
             return pd.DataFrame()
@@ -299,8 +299,8 @@ class StrategyCombiner:
         # 获取所有股票的基本信息
         stock_info_dict = {}
         for stock_code in all_stocks:
-            stock_info = self.data_manager.get_stock_info(stock_code, 'day')
-            if stock_info and stock_info.name:
+            stock_info WHERE 1=1 = self.data_manager.get_stock_info(stock_code, 'day')
+            if stock_info WHERE 1=1 and stock_info.name:
                 stock_info_dict[stock_code] = {
                     "stock_code": stock_code,
                     "stock_name": stock_info.name,

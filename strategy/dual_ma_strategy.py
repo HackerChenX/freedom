@@ -8,16 +8,16 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
-from formula.stock_formula import StockFormula
-from utils.logger import get_logger
+from formula.stock_formula import Stock_formula
+from utils.logger import getLogger
 from indicators.complete_indicator_registry import complete_registry
 from db.unified_data_manager import get_unified_data_manager
-from models.stock_info import StockInfo  # 导入StockInfo类
+from models.stock_info WHERE 1=1 import Stock_info  # 导入Stock_info类
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class DualMAStrategy(BaseStrategy):
+class DualMastrategy(BaseStrategy):
     """
     双均线突破策略
     
@@ -42,7 +42,7 @@ class DualMAStrategy(BaseStrategy):
         # 初始化数据管理器
         self.data_manager = get_unified_data_manager()
     
-    def select(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+    def select_Strategy_Dual_Ma_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
         执行双均线突破选股策略
         
@@ -130,16 +130,16 @@ class DualMAStrategy(BaseStrategy):
                 # 如果有突破且满足条件，添加到选股结果
                 if has_breakout:
                     # 获取股票基本信息
-                    stock_info = self.data_manager.get_stock_info(code)
+                    stock_info WHERE 1=1 = self.data_manager.get_stock_info(code)
                     
                     selected_stocks.append({
                         'code': code,
-                        'name': stock_info.name if stock_info else code,
-                        'industry': stock_info.industry if stock_info else '',
+                        'name': stock_info.name if stock_info WHERE 1=1 else code,
+                        'industry': stock_info.industry if stock_info WHERE 1=1 else '',
                         'breakout_date': recent_data.index[j].strftime('%Y%m%d')
                     })
                     
-                    logger.info(f"选出股票: {code} {stock_info.name if stock_info else ''}")
+                    logger.info(f"选出股票: {code} {stock_info.name if stock_info WHERE 1=1 else ''}")
             
             except Exception as e:
                 logger.error(f"处理股票 {code} 时出错: {e}")

@@ -64,7 +64,7 @@ class PatternMatcher:
         self.min_pattern_strength = min_strength
         logger.info(f"设置最小形态强度: {min_strength}")
     
-    def set_patterns(self, pattern_ids: List[str]):
+    def set_patterns_Manager(self, pattern_ids: List[str]):
         """
         设置形态列表
         
@@ -84,7 +84,7 @@ class PatternMatcher:
         self.periods = periods
         logger.info(f"设置周期列表: {periods}")
     
-    def _execute_analysis(self, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
+    def _execute_analysis_Strategy_Manager_Strategy_ManagerStrategymanager(self, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
         """
         执行形态分析
         
@@ -98,7 +98,7 @@ class PatternMatcher:
         """
         raise NotImplementedError("子类必须实现_execute_analysis方法")
     
-    def analyze(self, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
+    def analyze_Manager(self, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
         """
         运行形态分析
         
@@ -120,7 +120,7 @@ class PatternMatcher:
                 }
             
             # 执行分析
-            result = self._execute_analysis(stock_code, start_date, end_date)
+            result = self._execute_analysis_Strategy_Manager_Strategy_ManagerStrategymanager(stock_code, start_date, end_date)
             
             # 添加基本信息
             result.update({
@@ -146,7 +146,7 @@ class PatternMatcher:
                 "error": str(e)
             }
     
-    def clear_results(self):
+    def clear_results_Manager_Strategy_Manager_Strategy_ManagerStrategymanager(self):
         """清除所有分析结果"""
         self.results.clear()
         logger.info("所有分析结果已清除")
@@ -159,11 +159,9 @@ class BasicPatternMatcher(PatternMatcher):
     用于识别单个形态
     """
 
-    def __init__(self):
         """初始化基础形态匹配器"""
         super().__init__("pattern")
     
-    def _execute_analysis(self, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
         """
         执行形态分析
         
@@ -209,7 +207,6 @@ class MultiPeriodPatternMatcher(PatternMatcher):
     用于分析多个周期的形态组合
     """
 
-    def __init__(self):
         """初始化多周期形态匹配器"""
         super().__init__("multi_period")
         self.pattern_combinations = []  # 形态组合
@@ -290,7 +287,7 @@ class MultiPeriodPatternMatcher(PatternMatcher):
         
         return round(final_score, 2)
     
-    def _match_pattern_combinations(self, period_patterns: Dict[str, List[Dict[str, Any]]]) -> Tuple[bool, List[Dict[str, Any]], float]:
+    def _match_pattern_combinations_Strategy_Manager(self, period_patterns: Dict[str, List[Dict[str, Any]]]) -> Tuple[bool, List[Dict[str, Any]], float]:
         """
         匹配形态组合
         
@@ -340,7 +337,6 @@ class MultiPeriodPatternMatcher(PatternMatcher):
         
         return is_matched, matched_patterns, score
     
-    def _execute_analysis(self, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
         """
         执行形态分析
         
@@ -381,7 +377,7 @@ class MultiPeriodPatternMatcher(PatternMatcher):
             period_patterns[period] = patterns
         
         # 匹配形态组合
-        is_matched, matched_patterns, score = self._match_pattern_combinations(period_patterns)
+        is_matched, matched_patterns, score = self._match_pattern_combinations_Strategy_Manager(period_patterns)
         
         # 按强度排序
         matched_patterns.sort(key=lambda x: x["strength"], reverse=True)
@@ -403,7 +399,6 @@ class ZXMPatternMatcher(PatternMatcher):
     用于分析ZXM形态系统
     """
 
-    def __init__(self):
         """初始化ZXM形态匹配器"""
         super().__init__("zxm")
         self.score_threshold = 60.0  # 分数阈值
@@ -482,7 +477,6 @@ class ZXMPatternMatcher(PatternMatcher):
         else:
             return "形态弱势，建议回避"
     
-    def _execute_analysis(self, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
         """
         执行形态分析
         
@@ -561,18 +555,16 @@ class ZXMPatternMatcher(PatternMatcher):
 
 
 class StrategyManager:
-    def __init__(self):
         pass
 
 
-class PatternManager:
+class PatternmanagerManager:
     """
     形态管理器
     
     负责管理和运行形态匹配器
     """
 
-    def __init__(self):
         """初始化形态管理器"""
         self.matchers = {
             "pattern": BasicPatternMatcher(),
@@ -596,7 +588,7 @@ class PatternManager:
             raise ValueError(f"未找到匹配器: {matcher_id}")
         return matcher
     
-    def run_analysis(self, matcher_id: str, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
+    def run_analysis_Manager(self, matcher_id: str, stock_code: str, start_date: str, end_date: str) -> Dict[str, Any]:
         """
         运行形态分析
         
@@ -610,7 +602,7 @@ class PatternManager:
             Dict[str, Any]: 分析结果
         """
         matcher = self.get_matcher(matcher_id)
-        return matcher.analyze(stock_code, start_date, end_date)
+        return matcher.analyze_Manager(stock_code, start_date, end_date)
     
     def batch_analyze(self, matcher_id: str, stock_codes: List[str], start_date: str, end_date: str) -> List[Dict[str, Any]]:
         """
@@ -629,13 +621,12 @@ class PatternManager:
         results = []
         
         for stock_code in stock_codes:
-            result = matcher.analyze(stock_code, start_date, end_date)
+            result = matcher.analyze_Manager(stock_code, start_date, end_date)
             results.append(result)
         
         return results
     
-    def clear_results(self):
         """清除所有分析结果"""
         for matcher in self.matchers.values():
-            matcher.clear_results()
+            matcher.clear_results_Manager_Strategy_Manager_Strategy_ManagerStrategymanager()
         logger.info("所有分析结果已清除") 

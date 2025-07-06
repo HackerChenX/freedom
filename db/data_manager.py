@@ -2,6 +2,7 @@
 数据管理器模块
 
 负责从数据库获取数据，并提供高效的缓存机制
+使用依赖注入模式，通过容器获取数据访问接口
 """
 
 import time
@@ -12,22 +13,23 @@ import pandas as pd
 import json
 import hashlib
 
-from db.clickhouse_db import get_clickhouse_db
-from utils.logger import get_logger
-from utils.decorators import singleton, performance_monitor, safe_run, cache_result
-from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import Data_access_interface
+from utils.logger import getLogger
+, performance_monitor, safe_run, cache_result
+from utils.exceptions import Data_access_error, Data_not_found_error, Data_validation_error
 from enums.period import Period
-from models.stock_info import StockInfo  # 导入StockInfo类
+from models.stock_info WHERE 1=1 import Stock_info  # 导入Stock_info类
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-@singleton
-class DataManager:
+class DatamanagerManager:
     """
     数据管理器，负责数据的获取和缓存
     
     使用单例模式确保系统中只有一个数据管理器实例
+    使用依赖注入模式获取数据访问接口
     """
     
     def __init__(self, cache_enabled=True, max_cache_size=1000, default_ttl=3600):
@@ -39,7 +41,10 @@ class DataManager:
             max_cache_size: 最大缓存条目数
             default_ttl: 默认缓存有效期（秒）
         """
-        self.db = get_clickhouse_db()
+        # 通过容器获取数据访问接口
+        self.container = get_container()
+        self.data_access = self.container.get_data_access()
+        
         self.cache_enabled = cache_enabled
         self.default_ttl = default_ttl
         self.max_cache_size = max_cache_size
@@ -60,7 +65,7 @@ class DataManager:
         logger.info(f"数据管理器初始化完成，缓存{'启用' if cache_enabled else '禁用'}，"
                    f"最大缓存条目数: {max_cache_size}，默认缓存有效期: {default_ttl}秒")
 
-    def test_connection(self) -> bool:
+    def test_connection_Manager_Data_Manager(self) -> bool:
         """
         测试数据库连接
 
@@ -68,18 +73,12 @@ class DataManager:
             bool: 连接成功返回True，否则返回False
         """
         try:
-            # 测试数据库连接
-            if hasattr(self.db, 'test_connection'):
-                return self.db.test_connection()
-            else:
-                # 如果没有test_connection方法，尝试执行简单查询
-                result = self.db.execute_query("SELECT 1")
-                return result is not None
+            return self.data_access.test_connection_Manager_Data_Manager()
         except Exception as e:
             logger.error(f"数据库连接测试失败: {e}")
             return False
 
-    def get_stock_list(self, limit: int = None) -> pd.DataFrame:
+    def get_stock_list_Manager_Data_Manager(self, limit: int = None) -> pd.DataFrame:
         """
         获取股票列表
 
@@ -90,18 +89,12 @@ class DataManager:
             pd.DataFrame: 股票列表
         """
         try:
-            # 使用ClickHouseDB获取股票列表
-            if hasattr(self.db, 'get_stock_list'):
-                return self.db.get_stock_list(limit=limit)
-            else:
-                # 如果没有get_stock_list方法，使用get_stock_info
-                stock_info = self.db.get_stock_info(limit=limit, group_by="code")
-                return stock_info.to_dataframe()[['code', 'name']].drop_duplicates()
+            return self.data_access.get_stock_list_Manager_Data_Manager(limit=limit)
         except Exception as e:
             logger.error(f"获取股票列表失败: {e}")
             return pd.DataFrame()
 
-    def get_stock_data(self, stock_code: str, start_date: str = None, end_date: str = None,
+    def get_stock_data_Manager_Data_Manager(self, stock_code: str, start_date: str = None, end_date: str = None,
                       period: str = 'daily', lookback_days: Optional[int] = None) -> pd.DataFrame:
         """
         获取股票数据（增强版，支持30分钟数据计算和历史数据优化）
@@ -118,19 +111,19 @@ class DataManager:
         """
         try:
             # 转换周期参数
-            level = self._convert_period_to_level(period)
+            level = self._convert_period_to_level_Data_Manager(period)
 
             # 如果是30分钟数据且数据库中不存在，尝试从15分钟数据计算
-            if period in ['30min', 'min30'] and not self._has_30min_data(stock_code, start_date, end_date):
+            if period in ['30min', 'min30'] and not self._has_30min_data_Data_Manager(stock_code, start_date, end_date):
                 logger.info(f"数据库中没有{stock_code}的30分钟数据，尝试从15分钟数据计算")
-                return self._generate_30min_from_15min(stock_code, start_date, end_date, lookback_days)
+                return self._generate_30min_from_15min_Data_Manager(stock_code, start_date, end_date, lookback_days)
 
             # 优化历史数据查询：根据周期和指标需求调整查询范围
-            optimized_start_date, optimized_limit = self._optimize_data_query(
+            optimized_start_date, optimized_limit = self._optimize_data_query_Data_Manager(
                 period, start_date, end_date, None, lookback_days
             )
 
-            stock_info = self.db.get_stock_info(
+            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level=level,
                 start_date=optimized_start_date,
@@ -140,10 +133,10 @@ class DataManager:
             df = stock_info.to_dataframe()
 
             # 如果获取的数据不足，尝试扩大查询范围
-            if not df.empty and len(df) < self._get_min_data_requirement(period):
+            if not df.empty and len(df) < self._get_min_data_requirement_Data_Manager(period):
                 logger.warning(f"数据不足({len(df)}条)，尝试扩大查询范围")
-                extended_start_date = self._extend_start_date(optimized_start_date, period)
-                stock_info = self.db.get_stock_info(
+                extended_start_date = self._extend_start_date_Data_Manager(optimized_start_date, period)
+                stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
                     stock_code=stock_code,
                     level=level,
                     start_date=extended_start_date,
@@ -158,13 +151,13 @@ class DataManager:
             return pd.DataFrame()
 
     @performance_monitor(threshold=0.5)
-    def get_stock_info(self, stock_code: Union[str, List[str]] = None, level: Union[str, Period] = None,
+    def get_stock_info_Manager(self, stock_code: Union[str, List[str]] = None, level: Union[str, Period] = None,
                        start_date: Optional[str] = None, end_date: Optional[str] = None,
                        filters: Optional[Dict[str, Any]] = None,
                        limit: Optional[int] = None, order_by: str = "date DESC",
-                       group_by: Optional[str] = None, cache_ttl: Optional[int] = None) -> StockInfo:
+                       group_by: Optional[str] = None, cache_ttl: Optional[int] = None) -> Stock_info:
         """
-        获取股票数据并返回StockInfo对象
+        获取股票数据并返回Stock_info对象
         
         Args:
             stock_code: 股票代码或股票代码列表，如果为None则查询所有股票
@@ -178,10 +171,10 @@ class DataManager:
             cache_ttl: 缓存有效期（秒），None表示使用默认值
             
         Returns:
-            StockInfo: 股票数据对象
+            Stock_info: 股票数据对象
             
         Raises:
-            DataAccessError: 数据访问错误
+            Data_access_error: 数据访问错误
         """
         try:
             # 构建缓存键
@@ -201,12 +194,12 @@ class DataManager:
             ttl = cache_ttl if cache_ttl is not None else self.default_ttl
             
             # 检查缓存
-            cached_data = self._get_from_cache(cache_key, ttl)
+            cached_data = self._get_from_cache_Data_Manager(cache_key, ttl)
             if cached_data is not None:
                 return cached_data
             
-            # 使用ClickHouseDB的get_stock_info方法获取数据
-            stock_info = self.db.get_stock_info(
+            # 使用数据访问接口获取数据
+            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level=level,
                 start_date=start_date,
@@ -218,25 +211,23 @@ class DataManager:
             )
             
             # 缓存结果
-            self._set_cache(cache_key, stock_info, ttl)
+            self._set_cache_Data_Manager(cache_key, stock_info, ttl)
             
-            return stock_info
-            
-        except Exception as e:
+            return stock_info WHERE 1=1 except Exception as e:
             logger.error(f"获取股票数据出错: {e}")
             raise DataAccessError(f"获取股票数据失败: {e}")
 
-    def get_kline_data(self, stock_code: str, start_date: Optional[str] = None,
+    def get_kline_data_Manager_Data_Manager(self, stock_code: str, start_date: Optional[str] = None,
                          end_date: Optional[str] = None, level: str = 'day',
-                         **kwargs) -> StockInfo:
+                         **kwargs) -> Stock_info:
         """
         获取K线数据的兼容性接口（别名）。
-        内部直接调用 get_stock_info 并返回其结果。
+        内部直接调用 get_stock_info WHERE 1=1 并返回其结果。
         """
         logger.warning("方法 get_kline_data 已被弃用，请尽快切换到 get_stock_info。")
 
         # 调用主方法并直接返回StockInfo对象
-        return self.get_stock_info(
+        return self.get_stock_info_Manager(
             stock_code=stock_code,
             start_date=start_date,
             end_date=end_date,
@@ -244,13 +235,13 @@ class DataManager:
         )
     
     @performance_monitor(threshold=0.5)
-    def save_selection_result(self, result: pd.DataFrame, strategy_id: str, 
+    def save_selection_result_Manager(self, result: pd.DataFrame, strategy_id: str, 
                              selection_date: str = None) -> bool:
         """
         保存选股结果
         
         Args:
-            result: 选股结果DataFrame
+            result: 选股结果Data_frame
             strategy_id: 策略ID
             selection_date: 选股日期，默认为当前日期
             
@@ -258,8 +249,8 @@ class DataManager:
             保存成功返回True，否则返回False
         
         Raises:
-            DataAccessError: 数据访问错误
-            DataValidationError: 参数验证错误
+            Data_access_error: 数据访问错误
+            Data_validation_error: 参数验证错误
         """
         try:
             # 参数验证
@@ -270,15 +261,15 @@ class DataManager:
             if not strategy_id:
                 raise DataValidationError("策略ID不能为空")
             
-            # 使用ClickHouseDB的save_selection_result方法保存数据
-            return self.db.save_selection_result(result, strategy_id, selection_date)
+            # 使用数据访问接口保存数据
+            return self.data_access.save_selection_result_Manager(result, strategy_id, selection_date)
             
         except Exception as e:
             logger.error(f"保存选股结果出错: {e}")
             raise DataAccessError(f"保存选股结果失败: {str(e)}")
     
     @performance_monitor(threshold=0.5)
-    def get_selection_history(self, strategy_id: Optional[str] = None, 
+    def get_selection_history_Manager(self, strategy_id: Optional[str] = None, 
                              start_date: Optional[str] = None, 
                              end_date: Optional[str] = None,
                              limit: int = 100) -> pd.DataFrame:
@@ -292,21 +283,21 @@ class DataManager:
             limit: 返回记录数限制
             
         Returns:
-            选股历史记录DataFrame
+            选股历史记录Data_frame
         
         Raises:
-            DataAccessError: 数据访问错误
+            Data_access_error: 数据访问错误
         """
         try:
-            # 使用ClickHouseDB的get_selection_history方法获取数据
-            return self.db.get_selection_history(strategy_id, start_date, end_date, limit)
+            # 使用数据访问接口获取数据
+            return self.data_access.get_selection_history_Manager(strategy_id, start_date, end_date, limit)
             
         except Exception as e:
             logger.error(f"获取选股历史记录出错: {e}")
             raise DataAccessError(f"获取选股历史记录失败: {str(e)}")
     
     @performance_monitor(threshold=0.5)
-    def get_selection_result(self, strategy_id: str, selection_date: str) -> pd.DataFrame:
+    def get_selection_result_Manager(self, strategy_id: str, selection_date: str) -> pd.DataFrame:
         """
         获取指定日期的选股结果
         
@@ -315,11 +306,11 @@ class DataManager:
             selection_date: 选股日期
             
         Returns:
-            选股结果DataFrame
+            选股结果Data_frame
         
         Raises:
-            DataAccessError: 数据访问错误
-            DataValidationError: 参数验证错误
+            Data_access_error: 数据访问错误
+            Data_validation_error: 参数验证错误
         """
         try:
             # 参数验证
@@ -329,16 +320,16 @@ class DataManager:
             if not selection_date:
                 raise DataValidationError("选股日期不能为空")
             
-            # 使用ClickHouseDB的get_selection_result方法获取数据
-            return self.db.get_selection_result(strategy_id, selection_date)
+            # 使用数据访问接口获取数据
+            return self.data_access.get_selection_result_Manager(strategy_id, selection_date)
             
         except Exception as e:
-            if isinstance(e, DataValidationError):
+            if isinstance(e, Data_validation_error):
                 raise
             logger.error(f"获取选股结果出错: {e}")
             raise DataAccessError(f"获取选股结果失败: {str(e)}")
     
-    def clear_cache(self, pattern: str = None):
+    def clear_cache_Manager_Data_Manager_Data_Manager(self, pattern: str = None):
         """
         清除缓存
         
@@ -360,7 +351,7 @@ class DataManager:
                     self.cache_access_count.pop(key, None)
                 logger.info(f"已清除匹配 '{pattern}' 的缓存，共 {len(keys_to_remove)} 项")
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats_Manager_Data_Manager(self) -> Dict[str, Any]:
         """
         获取缓存统计信息
         
@@ -386,16 +377,16 @@ class DataManager:
                 
             return stats
     
-    def transaction(self):
+    def transaction_Manager(self):
         """
         创建事务上下文
         
         Returns:
             事务上下文管理器
         """
-        return self.db.transaction()
+        return self.data_access.transaction_Manager()
     
-    def _get_from_cache(self, key: str, ttl: int) -> Optional[Any]:
+    def _get_from_cache_Data_Manager(self, key: str, ttl: int) -> Optional[Any]:
         """
         从缓存中获取数据
         
@@ -446,14 +437,14 @@ class DataManager:
             # 检查缓存大小是否超限
             if len(self.cache) >= self.max_cache_size and key not in self.cache:
                 # 缓存已满，删除最不常用的项
-                self._evict_cache_item()
+                self._evict_cache_item_Data_Manager()
             
             # 更新缓存
             self.cache[key] = value
             self.cache_timestamps[key] = time.time()
             self.cache_access_count[key] = 1
     
-    def _evict_cache_item(self):
+    def _evict_cache_item_Data_Manager(self):
         """驱逐最不常用的缓存项"""
         if not self.cache:
             return
@@ -469,7 +460,7 @@ class DataManager:
         self.cache_evictions += 1
         logger.debug(f"缓存驱逐: {min_key}")
     
-    def _set_cache(self, key: str, value: Any, ttl: int) -> None:
+    def _set_cache_Data_Manager(self, key: str, value: Any, ttl: int) -> None:
         """
         设置缓存
         
@@ -481,7 +472,7 @@ class DataManager:
         if self.cache_enabled:
             # 如果缓存已满，先清理
             if len(self.cache) >= self.max_cache_size:
-                self._evict_cache_item()
+                self._evict_cache_item_Data_Manager()
                 
             # 设置缓存
             self.cache[key] = value
@@ -490,7 +481,7 @@ class DataManager:
             logger.debug(f"缓存已设置: {key}")
     
     @performance_monitor(threshold=0.5)
-    def get_stock_info_info(self, stock_codes: List[str]) -> pd.DataFrame:
+    def get_stock_info_info_Manager(self, stock_codes: List[str]) -> pd.DataFrame:
         """
         获取股票基本信息 (兼容旧接口，内部调用get_stock_info)
         
@@ -498,10 +489,10 @@ class DataManager:
             stock_codes: 股票代码列表
             
         Returns:
-            pd.DataFrame: 股票基本信息DataFrame
+            pd.DataFrame: 股票基本信息Data_frame
             
         Raises:
-            DataAccessError: 数据访问错误
+            Data_access_error: 数据访问错误
         """
         try:
             if not stock_codes:
@@ -515,12 +506,12 @@ class DataManager:
             ttl = self.default_ttl
             
             # 检查缓存
-            cached_data = self._get_from_cache(cache_key, ttl)
+            cached_data = self._get_from_cache_Data_Manager(cache_key, ttl)
             if cached_data is not None:
                 return cached_data
             
-            # 使用ClickHouseDB的get_stock_info方法获取数据
-            stock_info = self.db.get_stock_info(
+            # 使用数据访问接口获取数据
+            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
                 stock_code=stock_codes,
                 level='日线',
                 order_by="date DESC",
@@ -540,7 +531,7 @@ class DataManager:
                 result = result[['stock_code', 'stock_name', 'industry']].drop_duplicates()
             
             # 缓存结果
-            self._set_cache(cache_key, result, ttl)
+            self._set_cache_Data_Manager(cache_key, result, ttl)
             
             return result
             
@@ -548,7 +539,7 @@ class DataManager:
             logger.error(f"获取股票基本信息出错: {e}")
             raise DataAccessError(f"获取股票基本信息失败: {e}")
             
-    def get_industry_list(self) -> pd.DataFrame:
+    def get_industry_list_Manager(self) -> pd.DataFrame:
         """
         获取行业列表
 
@@ -556,13 +547,13 @@ class DataManager:
             pd.DataFrame: 行业列表
         """
         try:
-            # 使用ClickHouseDB的get_industry_list方法获取数据
-            return self.db.get_industry_list()
+            # 使用数据访问接口获取数据
+            return self.data_access.get_industry_list_Manager()
         except Exception as e:
             logger.error(f"获取行业列表出错: {e}")
             raise DataAccessError(f"获取行业列表失败: {e}")
 
-    def _convert_period_to_level(self, period: str) -> str:
+    def _convert_period_to_level_Data_Manager(self, period: str) -> str:
         """
         转换周期参数到level参数
 
@@ -589,7 +580,7 @@ class DataManager:
 
         return period_mapping.get(period.lower(), '日线')
 
-    def _has_30min_data(self, stock_code: str, start_date: Optional[str] = None,
+    def _has_30min_data_Data_Manager(self, stock_code: str, start_date: Optional[str] = None,
                        end_date: Optional[str] = None) -> bool:
         """
         检查数据库中是否存在30分钟数据
@@ -603,7 +594,7 @@ class DataManager:
             bool: 存在返回True，否则返回False
         """
         try:
-            stock_info = self.db.get_stock_info(
+            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level='30分钟',
                 start_date=start_date,
@@ -616,7 +607,7 @@ class DataManager:
             logger.debug(f"检查30分钟数据存在性失败: {e}")
             return False
 
-    def _generate_30min_from_15min(self, stock_code: str, start_date: Optional[str] = None,
+    def _generate_30min_from_15min_Data_Manager(self, stock_code: str, start_date: Optional[str] = None,
                                   end_date: Optional[str] = None, lookback_days: Optional[int] = None) -> pd.DataFrame:
         """
         从15分钟数据生成30分钟数据
@@ -633,7 +624,6 @@ class DataManager:
         try:
             # 扩大查询范围以获取足够的15分钟数据
             if lookback_days:
-                from datetime import datetime, timedelta
                 if start_date:
                     start_dt = datetime.strptime(start_date, '%Y-%m-%d')
                     extended_start = start_dt - timedelta(days=lookback_days)
@@ -644,7 +634,7 @@ class DataManager:
                 extended_start_date = start_date
 
             # 获取15分钟数据
-            stock_info = self.db.get_stock_info(
+            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level='15分钟',
                 start_date=extended_start_date,
@@ -717,7 +707,7 @@ class DataManager:
             logger.error(f"从15分钟数据生成30分钟数据失败: {e}")
             return pd.DataFrame()
 
-    def _optimize_data_query(self, period: str, start_date: Optional[str], end_date: Optional[str],
+    def _optimize_data_query_Data_Manager(self, period: str, start_date: Optional[str], end_date: Optional[str],
                            limit: Optional[int], lookback_days: Optional[int]) -> tuple:
         """
         优化数据查询参数
@@ -733,8 +723,6 @@ class DataManager:
             tuple: (优化后的开始日期, 优化后的限制数)
         """
         try:
-            from datetime import datetime, timedelta
-
             # 如果指定了lookback_days，优先使用
             if lookback_days:
                 if end_date:
@@ -750,7 +738,7 @@ class DataManager:
                 return optimized_start_date, None  # 移除limit限制以获取足够数据
 
             # 根据周期设置默认的历史数据窗口
-            default_lookback = self._get_default_lookback_days(period)
+            default_lookback = self._get_default_lookback_days_Data_Manager(period)
 
             if start_date:
                 # 如果有start_date，检查是否需要扩展
@@ -777,7 +765,7 @@ class DataManager:
                 optimized_start_date = start_dt.strftime('%Y-%m-%d')
 
             # 根据周期调整limit
-            optimized_limit = self._get_optimized_limit(period, limit)
+            optimized_limit = self._get_optimized_limit_Data_Manager(period, limit)
 
             return optimized_start_date, optimized_limit
 
@@ -785,7 +773,7 @@ class DataManager:
             logger.error(f"优化数据查询参数失败: {e}")
             return start_date, limit
 
-    def _get_default_lookback_days(self, period: str) -> int:
+    def _get_default_lookback_days_Data_Manager(self, period: str) -> int:
         """
         根据周期获取默认的历史数据窗口期
 
@@ -812,7 +800,7 @@ class DataManager:
 
         return lookback_mapping.get(period.lower(), 120)  # 默认4个月
 
-    def _get_optimized_limit(self, period: str, original_limit: Optional[int]) -> Optional[int]:
+    def _get_optimized_limit_Data_Manager(self, period: str, original_limit: Optional[int]) -> Optional[int]:
         """
         根据周期获取优化的查询限制
 
@@ -843,3 +831,63 @@ class DataManager:
         }
 
         return limit_mapping.get(period.lower(), 500)
+
+    def _get_min_data_requirement_Data_Manager(self, period: str) -> int:
+        """
+        获取最小数据要求
+        
+        Args:
+            period: 周期
+            
+        Returns:
+            int: 最小数据条数
+        """
+        min_requirements = {
+            'daily': 30, 'day': 30,          # 日线：至少30天
+            'weekly': 12, 'week': 12,        # 周线：至少12周
+            'monthly': 6, 'month': 6,        # 月线：至少6个月
+            '15min': 100, 'min15': 100,      # 15分钟：至少100条
+            '30min': 50, 'min30': 50,        # 30分钟：至少50条
+            '60min': 30, 'min60': 30         # 60分钟：至少30条
+        }
+        return min_requirements.get(period.lower(), 30)
+
+    def _extend_start_date_Data_Manager(self, start_date: Optional[str], period: str) -> str:
+        """
+        扩展开始日期以获取更多数据
+        
+        Args:
+            start_date: 原始开始日期
+            period: 周期
+            
+        Returns:
+            str: 扩展后的开始日期
+        """
+        try:
+            if not start_date:
+                # 如果没有开始日期，使用默认扩展
+                current_dt = datetime.now()
+                extended_days = self._get_default_lookback_days_Data_Manager(period) * 2
+                extended_dt = current_dt - timedelta(days=extended_days)
+                return extended_dt.strftime('%Y-%m-%d')
+
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            # 根据周期扩展不同的天数
+            extension_days = self._get_default_lookback_days_Data_Manager(period)
+            extended_dt = start_dt - timedelta(days=extension_days)
+            return extended_dt.strftime('%Y-%m-%d')
+
+        except Exception as e:
+            logger.error(f"扩展开始日期失败: {e}")
+            return start_date or '2020-01-01'  # 返回默认日期
+
+def get_datamanagermanager():
+    """获取DatamanagerManager实例（通过依赖注入）"""
+    try:
+        container = get_service_container()
+        if not container.is_registered(DatamanagerManager):
+            container.register_singleton(DatamanagerManager)
+        return container.get_service(DatamanagerManager)
+    except Exception:
+        # 降级处理：如果依赖注入失败，直接创建实例
+        return DatamanagerManager()

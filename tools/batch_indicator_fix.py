@@ -12,7 +12,7 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-class BatchIndicatorFixer:
+class Batch_indicator_fixer:
     """批量指标修复器"""
     
     def __init__(self):
@@ -20,11 +20,11 @@ class BatchIndicatorFixer:
         self.fixed_count = 0
         self.failed_count = 0
         
-    def get_high_risk_indicators(self) -> List[str]:
+    def get_high_risk_indicators_Fix(self) -> List[str]:
         """获取高风险指标列表"""
-        from tools.automated_risk_detection import AutomatedRiskDetector
+        from tools.automated_risk_detection import Automated_risk_detector
         
-        detector = AutomatedRiskDetector()
+        detector = Automated_risk_detector()
         results = detector.scan_all_indicators()
         
         high_risk_indicators = []
@@ -250,10 +250,10 @@ class BatchIndicatorFixer:
         return results
 
 if __name__ == "__main__":
-    fixer = BatchIndicatorFixer()
+    fixer = Batch_indicator_fixer()
     
     # 获取高风险指标
-    high_risk_indicators = fixer.get_high_risk_indicators()
+    high_risk_indicators = fixer.get_high_risk_indicators_Fix()
     print(f"发现 {len(high_risk_indicators)} 个高风险指标")
     
     # 这里需要手动指定指标类型，因为自动检测可能不准确

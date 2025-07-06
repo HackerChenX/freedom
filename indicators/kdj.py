@@ -17,15 +17,15 @@ from enum import Enum
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternInfo
-from utils.logger import get_logger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength, Pattern_info
+from utils.logger import getLogger
 from utils.decorators import log_calls, error_handling
 from utils.technical_utils import calculate_kdj
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class KDJ(BaseIndicator, PatternSignalMixin):
+class KdjKdj(BaseIndicator, PatternSignalMixin):
     """
     KDJ随机指标
     
@@ -42,7 +42,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             m1: K值平滑因子，默认为3
             m2: D值平滑因子，默认为3
         """
-        super().__init__(name="KDJ", description="随机指标")
+        super().__init__(name="KDJ_Kdj", description="随机指标")
         self.n = n
         self.m1 = m1
         self.m2 = m2
@@ -107,7 +107,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Kdj_Kdj_Kdj_kdj(self, **kwargs):
         """设置指标参数，可设置 'n', 'm1', 'm2'"""
         if 'n' in kwargs:
             self.n = int(kwargs['n'])
@@ -116,7 +116,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         if 'm2' in kwargs:
             self.m2 = int(kwargs['m2'])
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Kdj(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取KDJ指标的技术形态
         
@@ -125,10 +125,10 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
             
         Returns:
-            pd.DataFrame: 包含形态信号的DataFrame
+            pd.DataFrame: 包含形态信号的Data_frame
         """
         if 'K' not in data.columns or 'D' not in data.columns:
-            calculated_data = self._calculate(data)
+            calculated_data = self._calculate_kdj(data)
         else:
             calculated_data = data
 
@@ -156,7 +156,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         
         return patterns_df
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Kdj(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算KDJ指标的置信度。
 
@@ -168,7 +168,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
 
         Args:
             score: 原始评分序列 (当前未使用)
-            patterns: 形态DataFrame (当前未使用)
+            patterns: 形态Data_frame (当前未使用)
             signals: 信号字典 (当前未使用)
 
         Returns:
@@ -207,7 +207,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0到1之间
         return max(0.0, min(1.0, confidence))
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+    def calculate_score_Kdj(self, data: pd.DataFrame, **kwargs) -> dict:
         """
         计算KDJ指标评分（0-100分制）
 
@@ -218,8 +218,8 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         Returns:
             dict: 包含评分和置信度的字典
         """
-        raw_score = self.calculate_raw_score(data, **kwargs)
-        patterns = self.get_patterns(data, **kwargs)
+        raw_score = self.calculate_raw_score_Kdj(data, **kwargs)
+        patterns = self.get_patterns_Kdj(data, **kwargs)
 
         if raw_score.empty:
             return {
@@ -232,7 +232,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         last_score = raw_score.iloc[-1]
 
         # 计算置信度
-        confidence = self.calculate_confidence(raw_score, patterns, {})
+        confidence = self.calculate_confidence_Kdj(raw_score, patterns, {})
 
         # 计算最终评分
         final_score = float(np.clip(last_score, 0, 100))
@@ -539,7 +539,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             
         return False
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate_Kdj(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算KDJ指标
         
@@ -547,11 +547,11 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             data: 输入数据，必须包含 'high', 'low', 'close' 列
             
         Returns:
-            pd.DataFrame: 包含K, D, J列的DataFrame
+            pd.DataFrame: 包含K, D, J列的Data_frame
         """
         try:
             # 调用核心计算逻辑
-            result_df = self._calculate(data)
+            result_df = self._calculate_kdj(data)
             
             # 检查结果是否为DataFrame
             if not isinstance(result_df, pd.DataFrame):
@@ -572,7 +572,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             # 在出错时返回一个空的DataFrame，结构与输入数据保持一致
             return pd.DataFrame(index=data.index)
 
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_kdj(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         核心计算逻辑
         """
@@ -613,13 +613,13 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         添加KDJ交易信号
         
         Args:
-            data: 包含KDJ指标的DataFrame
+            data: 包含KDJ指标的Data_frame
             k_col: K值列名
             d_col: D值列名
             j_col: J值列名
             
         Returns:
-            pd.DataFrame: 添加了信号的DataFrame
+            pd.DataFrame: 添加了信号的Data_frame
         """
         result = data.copy()
         
@@ -646,7 +646,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         获取KDJ买入信号
         
         Args:
-            data: 包含KDJ指标的DataFrame
+            data: 包含KDJ指标的Data_frame
             k_col: K值列名
             d_col: D值列名
             
@@ -664,7 +664,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         获取KDJ卖出信号
         
         Args:
-            data: 包含KDJ指标的DataFrame
+            data: 包含KDJ指标的Data_frame
             k_col: K值列名
             d_col: D值列名
             
@@ -689,7 +689,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         """
         if suffix:
             return f"KDJ_{suffix}"
-        return "KDJ"
+        return "KDJ_Kdj"
     
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -711,9 +711,9 @@ class KDJ(BaseIndicator, PatternSignalMixin):
     
     def get_indicator_type(self) -> str:
         """获取指标类型"""
-        return "KDJ"
+        return "KDJ_Kdj"
     
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Kdj(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
@@ -725,7 +725,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             Dict[str, pd.Series]: 信号字典
         """
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Kdj(data)
 
         result = self._result
 
@@ -816,25 +816,25 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         # 确保强度在1-5范围内
         return pd.Series(np.clip(strength, 1, 5), index=data.index)
     
-    def identify_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
+    def identify_patterns_Kdj(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         识别KDJ指标的所有技术形态
         
         Args:
-            data: 包含价格和KDJ指标的DataFrame
+            data: 包含价格和KDJ指标的Data_frame
             
         Returns:
-            pd.DataFrame: 包含所有已识别形态的DataFrame，每列代表一种形态
+            pd.DataFrame: 包含所有已识别形态的Data_frame，每列代表一种形态
         """
         # 确保KDJ值已计算
         if not all(col in data.columns for col in ['K', 'D', 'J']):
-             data = self.calculate(data)
+             data = self.calculate_Kdj(data)
 
         patterns = pd.DataFrame(index=data.index)
         
         # 使用已注册的检测函数
-        registry = PatternRegistry()
-        kdj_patterns = registry.get_patterns_by_indicator('KDJ')
+        registry = Pattern_registry()
+        kdj_patterns = registry.get_patterns_by_indicator('KDJ_Kdj')
         
         for pattern_id in kdj_patterns:
             pattern_info = registry.get_pattern(pattern_id)
@@ -856,7 +856,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
 
         return patterns
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Kdj(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算KDJ指标的原始评分（0-100分制）
         
@@ -868,7 +868,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             pd.Series: 原始评分序列，取值范围0-100
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Kdj(data, **kwargs)
         
         # 获取KDJ指标值
         if self._result is None or not all(col in self._result.columns for col in ['K', 'D', 'J']):
@@ -925,13 +925,13 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         )
         
         # 最后，检测形态对评分的额外影响
-        patterns = self.get_patterns(data, **kwargs)
+        patterns = self.get_patterns_Kdj(data, **kwargs)
         
         # 形态影响分数：最多调整15分
         pattern_adjustment = pd.Series(0.0, index=data.index)
         
         # 使用PatternRegistry获取模式信息
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 遍历所有检测到的形态
         for pattern_col in patterns.columns:
@@ -1121,7 +1121,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         
         return 50.0
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Kdj(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -1177,7 +1177,7 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             'type': 'neutral'
         })
 
-    def register_patterns(self):
+    def register_patterns_Kdj(self):
         """
         注册KDJ指标的形态到全局形态注册表
         """
@@ -1246,49 +1246,11 @@ class KDJ(BaseIndicator, PatternSignalMixin):
             score_impact=-25.0,
             polarity="NEGATIVE"
         )
-    def __init__(self, **kwargs):
-        """
-        初始化KDJ指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "KDJ"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保KDJ特有属性存在
-        if not hasattr(self, 'n'):
-            self.n = 9
-        if not hasattr(self, 'm1'):
-            self.m1 = 3
-        if not hasattr(self, 'm2'):
-            self.m2 = 3
-        
-        # 确保KDJ特有属性存在
-        if not hasattr(self, 'n'):
-            self.n = 9
-        if not hasattr(self, 'm1'):
-            self.m1 = 3
-        if not hasattr(self, 'm2'):
-            self.m2 = 3
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_kdj(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'n': 9, 'm1': 3, 'm2': 3}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Kdj_Kdj_Kdj_kdj_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -1297,18 +1259,18 @@ class KDJ(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('KDJ', params)
+            is_valid, errors = validator.validate_indicator_parameters('KDJ_Kdj', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"KDJ参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

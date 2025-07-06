@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 指标验证框架
 
@@ -12,7 +14,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Thread_pool_executor, as_completed
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -22,14 +24,14 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_manager import Strategy_manager
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.path_utils import get_result_dir
 from utils.decorators import performance_monitor, safe_run
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class ValidationMode(Enum):
@@ -40,7 +42,7 @@ class ValidationMode(Enum):
     FULL = "full"               # 完整验证：验证所有指标
 
 
-class ValidationResult(Enum):
+class ValidationresultFramework(Enum):
     """验证结果枚举"""
     SUCCESS = "success"          # 成功：能够选出股票且符合预期
     NO_SELECTION = "no_selection"  # 未选出：策略未选出任何股票
@@ -52,7 +54,7 @@ class ValidationResult(Enum):
 @dataclass
 class IndicatorValidationConfig:
     """指标验证配置"""
-    mode: ValidationMode = ValidationMode.FULL
+    mode: validation_mode = Validation_mode.FULL
     stock_pool_size: int = 1000
     max_selection_ratio: float = 0.1  # 最大选股比例
     min_selection_count: int = 1      # 最小选股数量
@@ -73,14 +75,15 @@ class IndicatorValidationFramework:
     提供全面的指标验证功能，支持多种验证模式和输出格式
     """
     
-    def __init__(self, config: IndicatorValidationConfig = None):
+    def __init___113(self, config: indicator_validation_config = None):
+    query_executor = get_query_executor()
         """
         初始化验证框架
         
         Args:
             config: 验证配置
         """
-        self.config = config or IndicatorValidationConfig()
+        self.config = config or Indicator_validation_config()
         
         # 设置默认验证日期
         if self.config.validation_date is None:
@@ -89,7 +92,7 @@ class IndicatorValidationFramework:
         # 初始化数据管理器和策略执行器
         try:
             self.data_manager = get_unified_data_manager()
-            self.strategy_executor = StrategyExecutor()
+            self.strategy_executor = Strategy_executor()
             
             logger.info("✅ 指标验证框架初始化完成")
         except Exception as e:
@@ -244,7 +247,7 @@ class IndicatorValidationFramework:
         """根据验证模式获取指标列表"""
         all_indicators = complete_registry.get_indicator_names()
         
-        if self.config.mode == ValidationMode.QUICK:
+        if self.config.mode == Validation_mode.QUICK:
             # 快速模式：只验证核心指标
             core_indicators = [
                 'MA', 'EMA', 'MACD', 'RSI', 'KDJ', 'BOLL', 
@@ -252,7 +255,7 @@ class IndicatorValidationFramework:
             ]
             return [ind for ind in core_indicators if ind in all_indicators]
             
-        elif self.config.mode == ValidationMode.PRIORITY:
+        elif self.config.mode == Validation_mode.PRIORITY:
             # 优先级模式：按重要性排序
             priority_order = [
                 # 第一优先级：基础技术指标
@@ -269,7 +272,7 @@ class IndicatorValidationFramework:
             remaining = [ind for ind in all_indicators if ind not in priority_order]
             return [ind for ind in priority_order if ind in all_indicators] + remaining
             
-        elif self.config.mode == ValidationMode.CATEGORY:
+        elif self.config.mode == Validation_mode.CATEGORY:
             # 分类模式：按类型分组
             return self._categorize_indicators(all_indicators)
             
@@ -322,7 +325,7 @@ class IndicatorValidationFramework:
             # 获取活跃股票列表
             query = f"""
             SELECT DISTINCT code 
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE level = '日线' AND date = '{self.config.validation_date}'
             AND volume > 0 
             AND close > 0
@@ -351,7 +354,7 @@ class IndicatorValidationFramework:
                 # 使用最近可用日期的数据
                 query = """
                 SELECT DISTINCT code 
-                FROM stock_info 
+                FROM stock_info WHERE 1=1
                 WHERE level = '日线' 
                 AND volume > 0 AND close > 0
                 ORDER BY date DESC, volume DESC
@@ -378,7 +381,7 @@ class IndicatorValidationFramework:
             logger.info(f"✅ 准备股票池完成: {len(stock_pool)} 只股票")
             return stock_pool
             
-        except ConnectionError:
+        except Connection_error:
             # 重新抛出连接错误，让上层处理
             raise
         except Exception as e:
@@ -403,7 +406,7 @@ class IndicatorValidationFramework:
             logger.info("⚠️ 配置了早停功能，切换到顺序验证模式以确保及时停止")
             return self._validate_sequential(indicators, stock_pool)
         
-        with ThreadPoolExecutor(max_workers=self.config.parallel_workers) as executor:
+        with Thread_pool_executor(max_workers=self.config.parallel_workers) as executor:
             # 提交任务
             future_to_indicator = {
                 executor.submit(self._validate_indicator, indicator, stock_pool): indicator
@@ -779,11 +782,11 @@ class IndicatorValidationFramework:
         summary = {
             'total_indicators': len(results),
             'validation_results': {
-                ValidationResult.SUCCESS.value: 0,
-                ValidationResult.NO_SELECTION.value: 0,
-                ValidationResult.OVER_SELECTION.value: 0,
-                ValidationResult.ERROR.value: 0,
-                ValidationResult.TIMEOUT.value: 0
+                Validation_result.SUCCESS.value: 0,
+                Validation_result.NO_SELECTION.value: 0,
+                Validation_result.OVER_SELECTION.value: 0,
+                Validation_result.ERROR.value: 0,
+                Validation_result.TIMEOUT.value: 0
             },
             'success_rate': 0.0,
             'average_selection_ratio': 0.0,
@@ -801,7 +804,7 @@ class IndicatorValidationFramework:
             status = result.get('status', ValidationResult.ERROR.value)
             summary['validation_results'][status] += 1
             
-            if status == ValidationResult.SUCCESS.value:
+            if status == Validation_result.SUCCESS.value:
                 selection_ratios.append(result.get('selection_ratio', 0))
                 selected_counts.append(result.get('selected_count', 0))
                 summary['top_performing_indicators'].append({
@@ -809,7 +812,7 @@ class IndicatorValidationFramework:
                     'selected_count': result.get('selected_count', 0),
                     'selection_ratio': result.get('selection_ratio', 0)
                 })
-            elif status in [ValidationResult.ERROR.value, ValidationResult.TIMEOUT.value]:
+            elif status in [Validation_result.ERROR.value, Validation_result.TIMEOUT.value]:
                 summary['failed_indicators'].append({
                     'indicator': result['indicator_name'],
                     'status': status,
@@ -886,14 +889,14 @@ class IndicatorValidationFramework:
             logger.error(f"保存验证结果失败: {e}")
 
 
-def main():
+def main_49():
     """主函数：演示指标验证框架的使用"""
     print("指标验证框架演示")
     print("=" * 50)
     
     # 配置验证参数
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=500,
         max_selection_ratio=0.05,
         parallel_workers=2,
@@ -902,7 +905,7 @@ def main():
     )
     
     # 创建验证框架
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     # 执行验证
     try:
@@ -925,4 +928,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_49() 

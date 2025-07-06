@@ -182,7 +182,7 @@ def detect_oversold(series: np.ndarray, threshold: float = 30) -> List[int]:
     
     return oversold_points
 
-def detect_divergence(price: np.ndarray, indicator: np.ndarray, window: int = 10) -> List[Tuple[int, str, float]]:
+def detect_divergence_Utils(price: np.ndarray, indicator: np.ndarray, window: int = 10) -> List[Tuple[int, str, float]]:
     """
     检测背离信号
     
@@ -389,23 +389,23 @@ def combine_signals(signal_lists: List[List[int]], logic: str = 'union') -> List
     else:
         raise ValueError(f"不支持的组合逻辑: {logic}")
 
-def signal_to_dataframe(signals: List[Tuple[int, str, float]], dates: List = None) -> pd.DataFrame:
+def signal_to_dataframe(signals: List[Tuple[int, str, float]], dates: list = None) -> pd.DataFrame:
     """
-    将信号列表转换为DataFrame
+    将信号列表转换为Data_frame
     
     Args:
         signals: 信号列表，每个元素为(位置, 类型, 强度)
         dates: 日期列表，用于添加日期信息
         
     Returns:
-        pd.DataFrame: 包含信号信息的DataFrame
+        pd.DataFrame: 包含信号信息的Data_frame
     """
     df = pd.DataFrame(signals, columns=['position', 'type', 'strength'])
     if dates and len(dates) > df['position'].max():
         df['date'] = df['position'].apply(lambda x: dates[x] if 0 <= x < len(dates) else None)
     return df
 
-def crossunder(series1, series2):
+def crossunder_Utils_Signal_Utils(series1, series2):
     """
     判断series1是否下穿series2
     
@@ -422,7 +422,7 @@ def crossunder(series1, series2):
     # 判断当前值是否小于等于series2，且前一个值大于series2
     return (series1.iloc[-1] <= series2.iloc[-1]) and (series1.iloc[-2] > series2.iloc[-2])
 
-def crossover(series1, series2):
+def crossover_Utils_Signal_Utils(series1, series2):
     """
     判断series1是否上穿series2
     

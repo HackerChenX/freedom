@@ -20,7 +20,7 @@ from urllib.parse import urljoin, urlparse
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,8 +29,8 @@ logger = get_logger(__name__)
 class ExtendedStockCrawler:
     """扩展版股市爬虫 - 包含讨论社区"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___3(self):
+        self.concept_extractor = Concept_stock_extractor()
 
         # 设置请求会话
         self.session = requests.Session()
@@ -97,7 +97,7 @@ class ExtendedStockCrawler:
             'Cache-Control': 'max-age=0'
         }
 
-    def safe_request(self, url: str, site_config: Dict[str, Any]) -> Dict[str, Any]:
+    def safe_request_Extended(self, url: str, site_config: Dict[str, Any]) -> Dict[str, Any]:
         """安全请求页面内容"""
         try:
             # 更新请求头
@@ -193,7 +193,7 @@ class ExtendedStockCrawler:
 
             try:
                 # 获取热门话题页面
-                hot_page = self.safe_request(site_config['hot_url'], site_config)
+                hot_page = self.safe_request_Extended(site_config['hot_url'], site_config)
 
                 if hot_page.get('error'):
                     print(f"❌ {site_config['name']} 访问失败")
@@ -227,7 +227,7 @@ class ExtendedStockCrawler:
                     try:
                         print(f"💬 正在爬取讨论 {i+1}/3: {discussion_link['title'][:30]}...")
 
-                        discussion_content = self.safe_request(discussion_link['url'], site_config)
+                        discussion_content = self.safe_request_Extended(discussion_link['url'], site_config)
 
                         if not discussion_content.get('error'):
                             # 提取概念股信息
@@ -278,7 +278,7 @@ class ExtendedStockCrawler:
 
             try:
                 # 获取新闻列表页
-                news_page = self.safe_request(site_config['news_url'], {'delay': (1, 2)})
+                news_page = self.safe_request_Extended(site_config['news_url'], {'delay': (1, 2)})
 
                 if news_page.get('error'):
                     print(f"❌ {site_config['name']} 访问失败")
@@ -311,7 +311,7 @@ class ExtendedStockCrawler:
                     try:
                         print(f"📖 正在爬取新闻 {i+1}/3: {article_link['title'][:30]}...")
 
-                        article_content = self.safe_request(article_link['url'], {'delay': (1, 2)})
+                        article_content = self.safe_request_Extended(article_link['url'], {'delay': (1, 2)})
 
                         if not article_content.get('error'):
                             # 提取概念股信息
@@ -397,7 +397,7 @@ class ExtendedStockCrawler:
         return analysis
 
 
-def main():
+def main_4():
     """主函数"""
     print("=== 扩展版股市信息爬虫系统 ===")
     print(f"启动时间: {datetime.now()}")
@@ -407,7 +407,7 @@ def main():
     print("=" * 60)
 
     # 创建扩展爬虫实例
-    crawler = ExtendedStockCrawler()
+    crawler = Extended_stock_crawler()
 
     try:
         # 爬取社区讨论
@@ -506,4 +506,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_4()

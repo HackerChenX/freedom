@@ -24,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ComprehensiveIndicatorScoring:
+class Comprehensive_indicator_scoring:
     """
     综合指标评分系统
     """
@@ -55,7 +55,7 @@ class ComprehensiveIndicatorScoring:
             'DMI': 0.10,     # 趋势指标
         }
     
-    def calculate_comprehensive_score(self, data: pd.DataFrame) -> Dict:
+    def calculate_comprehensive_score_Demo(self, data: pd.DataFrame) -> Dict:
         """
         计算综合评分
         
@@ -149,7 +149,7 @@ class ComprehensiveIndicatorScoring:
             'average_confidence': avg_confidence,
             'individual_scores': individual_scores,
             'patterns_summary': patterns_summary,
-            'recommendation': self._generate_recommendation(comprehensive_score, avg_confidence)
+            'recommendation': self._generate_recommendation_Comprehensive_Indicator_Scoring_Demo(comprehensive_score, avg_confidence)
         }
         
         return results
@@ -179,7 +179,7 @@ class ComprehensiveIndicatorScoring:
         else:
             return "强烈卖出"
     
-    def _generate_recommendation(self, score: float, confidence: float) -> str:
+    def _generate_recommendation_Comprehensive_Indicator_Scoring_Demo(self, score: float, confidence: float) -> str:
         """
         生成投资建议
         
@@ -377,7 +377,7 @@ def generate_sample_data(symbol: str = "TEST", periods: int = 100) -> pd.DataFra
     return data
 
 
-def main():
+def main_comprehensiveindicatorscoringdemo():
     """
     主演示函数
     """
@@ -393,7 +393,7 @@ def main():
     
     # 初始化评分系统
     print("\n🔧 初始化综合评分系统...")
-    scoring_system = ComprehensiveIndicatorScoring()
+    scoring_system = Comprehensive_indicator_scoring()
     print(f"已加载 {len(scoring_system.indicators)} 个技术指标")
     
     # 分析市场环境
@@ -403,7 +403,7 @@ def main():
     
     # 计算综合评分
     print("\n⚡ 开始综合技术分析...")
-    results = scoring_system.calculate_comprehensive_score(stock_data)
+    results = scoring_system.calculate_comprehensive_score_Demo(stock_data)
     
     # 打印详细报告
     scoring_system.print_detailed_report(results)
@@ -421,4 +421,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_comprehensiveindicatorscoringdemo() 

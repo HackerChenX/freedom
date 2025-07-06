@@ -18,17 +18,17 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from enhanced_pattern_generator import EnhancedPatternGenerator
-from technical_indicators import TechnicalIndicators, PatternRecognizer
+from enhanced_pattern_generator import Enhanced_pattern_generator
+from technical_indicators import Technical_indicators, Pattern_recognizer
 
 
 def test_enhanced_rsi_patterns():
     """测试增强版RSI形态生成"""
     print("测试增强版RSI形态生成...")
 
-    generator = EnhancedPatternGenerator()
-    indicators = TechnicalIndicators()
-    recognizer = PatternRecognizer()
+    generator = Enhanced_pattern_generator()
+    indicators = Technical_indicators()
+    recognizer = Pattern_recognizer()
 
     # 测试RSI超买形态
     print("\n1. 测试RSI超买形态")
@@ -109,7 +109,7 @@ def test_enhanced_rsi_patterns():
     return success_rate >= 0.8  # 80%以上认为成功
 
 
-def main():
+def main_testenhancedgenerator():
     """主测试函数"""
     print("=" * 60)
     print("增强版数据生成器测试")
@@ -146,5 +146,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_testenhancedgenerator()
     sys.exit(exit_code)

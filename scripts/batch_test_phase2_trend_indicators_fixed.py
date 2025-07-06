@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 第二批测试：趋势指标扩展（10个）
 
@@ -24,7 +26,8 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -34,10 +37,10 @@ class Phase2TrendIndicatorTester:
     """第二批趋势指标测试器"""
     
     def __init__(self):
-        self.db = get_clickhouse_db()
+        self.data_access = get_container().resolve(IDataAccess)
         self.stock_pool_size = 100
         self.test_stocks_per_indicator = 5
-        self.latest_date = self._get_latest_data_date()
+        self.latest_date = self._get_latest_data_date_Batch_Test_Phase2_Trend_Indicators_Fixed()
         
         # 第二批测试指标配置
         self.indicators_config = {
@@ -117,10 +120,10 @@ class Phase2TrendIndicatorTester:
         logger.info(f"最新数据日期: {self.latest_date}")
         logger.info(f"测试指标数量: {len(self.indicators_config)}")
     
-    def _get_latest_data_date(self) -> str:
+    def _get_latest_data_date_Batch_Test_Phase2_Trend_Indicators_Fixed(self) -> str:
         """获取数据库中的最新数据日期"""
         try:
-            result = self.db.query('SELECT MAX(date) as max_date FROM stock_info LIMIT 1')
+            result = self.data_access.execute_query('SELECT MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01' LIMIT 1')
             if not result.empty:
                 return str(result.iloc[0]['max_date'])
             return "2025-05-23"
@@ -128,7 +131,7 @@ class Phase2TrendIndicatorTester:
             logger.error(f"获取最新数据日期失败: {e}")
             return "2025-05-23"
     
-    def _get_stock_pool(self, period: str = '1d') -> List[str]:
+    def _get_stock_pool_Batch_Test_Phase2_Trend_Indicators_Fixed(self, period: str = '1d') -> List[str]:
         """获取股票池"""
         try:
             table_name = 'stock_info'
@@ -143,7 +146,7 @@ class Phase2TrendIndicatorTester:
             LIMIT {self.stock_pool_size}
             """
             
-            result = self.db.query(query)
+            result = self.data_access.execute_query(query)
             if not result.empty:
                 return result['code'].tolist()
             return []
@@ -151,7 +154,7 @@ class Phase2TrendIndicatorTester:
             logger.error(f"获取股票池失败: {e}")
             return []
     
-    def _load_stock_data(self, stock_codes: List[str], period: str = '1d', 
+    def _load_stock_data_Batch_Test_Phase2_Trend_Indicators_Fixed(self, stock_codes: List[str], period: str = '1d', 
                         days_back: int = 100) -> pd.DataFrame:
         """加载股票数据"""
         try:
@@ -168,7 +171,7 @@ class Phase2TrendIndicatorTester:
             LIMIT {len(stock_codes) * days_back}
             """
             
-            result = self.db.query(query)
+            result = self.data_access.execute_query(query)
             if not result.empty:
                 # 转换数据类型
                 result['date'] = pd.to_datetime(result['date'])
@@ -314,13 +317,13 @@ class Phase2TrendIndicatorTester:
         
         return vi_plus, vi_minus
     
-    def validate_indicator(self, indicator_name: str, period: str = '1d') -> Dict[str, Any]:
+    def validate_indicator_Batch_Test_Phase2_Trend_Indicators_Fixed(self, indicator_name: str, period: str = '1d') -> Dict[str, Any]:
         """验证单个指标"""
         logger.info(f"开始验证指标: {indicator_name} (周期: {period})")
         
         try:
             # 获取股票池
-            stock_pool = self._get_stock_pool(period)
+            stock_pool = self._get_stock_pool_Batch_Test_Phase2_Trend_Indicators_Fixed(period)
             if not stock_pool:
                 return {
                     'indicator': indicator_name,
@@ -335,7 +338,7 @@ class Phase2TrendIndicatorTester:
             test_stocks = stock_pool[:self.test_stocks_per_indicator]
             
             # 加载数据
-            stock_data = self._load_stock_data(test_stocks, period)
+            stock_data = self._load_stock_data_Batch_Test_Phase2_Trend_Indicators_Fixed(test_stocks, period)
             if stock_data.empty:
                 return {
                     'indicator': indicator_name,
@@ -516,7 +519,7 @@ class Phase2TrendIndicatorTester:
             logger.info(f"进度: {i}/{total_indicators} - 测试指标: {indicator_name}")
             
             for period in config['periods']:
-                result = self.validate_indicator(indicator_name, period)
+                result = self.validate_indicator_Batch_Test_Phase2_Trend_Indicators_Fixed(indicator_name, period)
                 
                 key = f"{indicator_name}_{period}"
                 validation_results['results'][key] = result

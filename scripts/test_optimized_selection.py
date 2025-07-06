@@ -69,15 +69,15 @@ def test_batch_data_optimizer():
         return False
 
 
-def test_optimized_executor():
+def test_optimized_executor_Selection():
     """测试优化的策略执行器"""
     print("\n🧪 测试优化的策略执行器")
     
     try:
-        from strategy.optimized_strategy_executor import OptimizedStrategyExecutor
+        from strategy.optimized_strategy_executor import Optimized_strategy_executor
         
         # 创建优化执行器
-        executor = OptimizedStrategyExecutor(
+        executor = Optimized_strategy_executor(
             max_workers=16,
             cache_enabled=True,
             batch_size=50,
@@ -107,7 +107,7 @@ def test_optimized_executor():
         # 执行测试
         start_time = time.time()
         
-        def progress_callback(progress, message):
+        def progress_callback_Selection_Test_Optimized_Selection(progress, message):
             print(f"   进度: {progress:.1%} - {message}")
         
         results = executor.execute_strategy_optimized(
@@ -137,7 +137,7 @@ def test_optimized_executor():
         return False
 
 
-def main():
+def main_testoptimizedselection():
     """主函数"""
     print("🚀 开始股票选股性能优化测试")
     print("="*60)
@@ -146,7 +146,7 @@ def main():
     batch_test_success = test_batch_data_optimizer()
     
     # 测试优化执行器
-    executor_test_success = test_optimized_executor()
+    executor_test_success = test_optimized_executor_Selection()
     
     # 总结
     print("\n" + "="*60)
@@ -161,4 +161,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testoptimizedselection() 

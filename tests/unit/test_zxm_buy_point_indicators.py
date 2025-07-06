@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 ZXM买点指标测试模块
 测试ZXM体系中的买点相关指标
@@ -70,21 +73,21 @@ class TestZXMBuyPointIndicators(unittest.TestCase):
         self.assertIn('DEA', result.columns)
         
         # 测试评分功能
-        score = indicator.calculate_raw_score(self.test_data)
+        score = indicator.calculate_raw_score_Indicator_Base_Indicator(self.test_data)
         self.assertIsInstance(score, pd.Series)
         self.assertTrue(all(0 <= s <= 100 for s in score))
         
         # 测试形态识别
-        patterns = indicator.identify_patterns(self.test_data)
-        self.assertIsInstance(patterns, list)
+        patterns_df = indicator.get_patterns_Indicator_Base_Indicator(self.test_data)
+        self.assertIsInstance(patterns_df, pd.DataFrame)
         
         # 测试置信度计算
-        confidence = indicator.calculate_confidence(score, patterns, {})
+        confidence = indicator.calculate_confidence_Indicator_Base_Indicator(score, [], {})
         self.assertIsInstance(confidence, float)
         self.assertTrue(0 <= confidence <= 1)
         
         # 测试形态获取
-        patterns_df = indicator.get_patterns(self.test_data)
+        patterns_df = indicator.get_patterns_Indicator_Base_Indicator(self.test_data)
         self.assertIsInstance(patterns_df, pd.DataFrame)
         
         print(f"✅ ZXM日线MACD指标测试通过 - 评分范围: {score.min():.1f}-{score.max():.1f}, 置信度: {confidence:.3f}")
@@ -100,22 +103,22 @@ class TestZXMBuyPointIndicators(unittest.TestCase):
         self.assertIn('Turnover', result.columns)
         
         # 测试评分功能
-        score = indicator.calculate_raw_score(self.test_data)
+        score = indicator.calculate_raw_score_Indicator_Base_Indicator(self.test_data)
         self.assertIsInstance(score, pd.Series)
         self.assertTrue(all(0 <= s <= 100 for s in score))
         
         # 测试形态识别
-        patterns = indicator.identify_patterns(self.test_data)
-        self.assertIsInstance(patterns, list)
+        patterns_df = indicator.get_patterns_Indicator_Base_Indicator(self.test_data)
+        self.assertIsInstance(patterns_df, pd.DataFrame)
         
         # 测试置信度计算
-        confidence = indicator.calculate_confidence(score, patterns, {})
+        confidence = indicator.calculate_confidence_Indicator_Base_Indicator(score, [], {})
         self.assertIsInstance(confidence, float)
         self.assertTrue(0 <= confidence <= 1)
         
         print(f"✅ ZXM换手率指标测试通过 - 评分范围: {score.min():.1f}-{score.max():.1f}, 置信度: {confidence:.3f}")
     
-    def test_zxm_volume_shrink(self):
+    def test_zxm_volume_shrink_Indicators(self):
         """测试ZXM缩量指标"""
         indicator = ZXMVolumeShrink()
         
@@ -127,16 +130,16 @@ class TestZXMBuyPointIndicators(unittest.TestCase):
         self.assertIn('MA_VOL_2', result.columns)
         
         # 测试评分功能
-        score = indicator.calculate_raw_score(self.test_data)
+        score = indicator.calculate_raw_score_Indicator_Base_Indicator(self.test_data)
         self.assertIsInstance(score, pd.Series)
         self.assertTrue(all(0 <= s <= 100 for s in score))
         
         # 测试形态识别
-        patterns = indicator.identify_patterns(self.test_data)
-        self.assertIsInstance(patterns, list)
+        patterns_df = indicator.get_patterns_Indicator_Base_Indicator(self.test_data)
+        self.assertIsInstance(patterns_df, pd.DataFrame)
         
         # 测试置信度计算
-        confidence = indicator.calculate_confidence(score, patterns, {})
+        confidence = indicator.calculate_confidence_Indicator_Base_Indicator(score, [], {})
         self.assertIsInstance(confidence, float)
         self.assertTrue(0 <= confidence <= 1)
         
@@ -156,16 +159,16 @@ class TestZXMBuyPointIndicators(unittest.TestCase):
         self.assertIn('A120', result.columns)
         
         # 测试评分功能
-        score = indicator.calculate_raw_score(self.test_data)
+        score = indicator.calculate_raw_score_Indicator_Base_Indicator(self.test_data)
         self.assertIsInstance(score, pd.Series)
         self.assertTrue(all(0 <= s <= 100 for s in score))
         
         # 测试形态识别
-        patterns = indicator.identify_patterns(self.test_data)
-        self.assertIsInstance(patterns, list)
+        patterns_df = indicator.get_patterns_Indicator_Base_Indicator(self.test_data)
+        self.assertIsInstance(patterns_df, pd.DataFrame)
         
         # 测试置信度计算
-        confidence = indicator.calculate_confidence(score, patterns, {})
+        confidence = indicator.calculate_confidence_Indicator_Base_Indicator(score, [], {})
         self.assertIsInstance(confidence, float)
         self.assertTrue(0 <= confidence <= 1)
         
@@ -185,22 +188,22 @@ class TestZXMBuyPointIndicators(unittest.TestCase):
         self.assertIn('BB', result.columns)
         
         # 测试评分功能
-        score = indicator.calculate_raw_score(self.test_data)
+        score = indicator.calculate_raw_score_Indicator_Base_Indicator(self.test_data)
         self.assertIsInstance(score, pd.Series)
         self.assertTrue(all(0 <= s <= 100 for s in score))
         
         # 测试形态识别
-        patterns = indicator.identify_patterns(self.test_data)
-        self.assertIsInstance(patterns, list)
+        patterns_df = indicator.get_patterns_Indicator_Base_Indicator(self.test_data)
+        self.assertIsInstance(patterns_df, pd.DataFrame)
         
         # 测试置信度计算
-        confidence = indicator.calculate_confidence(score, patterns, {})
+        confidence = indicator.calculate_confidence_Indicator_Base_Indicator(score, [], {})
         self.assertIsInstance(confidence, float)
         self.assertTrue(0 <= confidence <= 1)
         
         print(f"✅ ZXM BS吸筹指标测试通过 - 评分范围: {score.min():.1f}-{score.max():.1f}, 置信度: {confidence:.3f}")
     
-    def test_all_indicators_integration(self):
+    def test_all_indicators_integration_Indicators(self):
         """测试所有买点指标的集成"""
         indicators = [
             ZXMDailyMACD(),
@@ -216,9 +219,9 @@ class TestZXMBuyPointIndicators(unittest.TestCase):
         for indicator in indicators:
             try:
                 result = indicator.calculate(self.test_data)
-                score = indicator.calculate_raw_score(self.test_data)
-                patterns = indicator.identify_patterns(self.test_data)
-                confidence = indicator.calculate_confidence(score, patterns, {})
+                score = indicator.calculate_raw_score_Indicator_Base_Indicator(self.test_data)
+                patterns_df = indicator.get_patterns_Indicator_Base_Indicator(self.test_data)
+                confidence = indicator.calculate_confidence_Indicator_Base_Indicator(score, [], {})
                 
                 results[indicator.name] = result
                 scores[indicator.name] = score
@@ -226,7 +229,7 @@ class TestZXMBuyPointIndicators(unittest.TestCase):
                 # 验证基本要求
                 self.assertIsInstance(result, pd.DataFrame)
                 self.assertIsInstance(score, pd.Series)
-                self.assertIsInstance(patterns, list)
+                self.assertIsInstance(patterns_df, pd.DataFrame)
                 self.assertIsInstance(confidence, float)
                 self.assertTrue(0 <= confidence <= 1)
                 self.assertTrue(all(0 <= s <= 100 for s in score))

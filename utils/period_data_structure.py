@@ -13,9 +13,9 @@ from collections import defaultdict
 import json
 
 from enums.period import Period
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class IndicatorPeriodResult:
@@ -25,7 +25,7 @@ class IndicatorPeriodResult:
     存储单个指标在特定周期下的计算结果、形态和评分
     """
     
-    def __init__(self, indicator_name: str, period: Period):
+    def __init___61_perioddatastructure(self, indicator_name: str, period: Period):
         """
         初始化指标周期结果
         
@@ -61,11 +61,11 @@ class IndicatorPeriodResult:
         """设置指标信号"""
         self.signals = signals
         
-    def add_metadata(self, key: str, value: Any):
+    def add_metadata_Structure_Period_Data_Structure_Period_Data_Structure_1_perioddatastructure(self, key: str, value: Any):
         """添加元数据"""
         self.metadata[key] = value
         
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_Structure_Period_Data_Structure_Period_Data_Structure_1_perioddatastructure(self) -> Dict[str, Any]:
         """转换为字典表示"""
         result = {
             'indicator_name': self.indicator_name,
@@ -79,7 +79,7 @@ class IndicatorPeriodResult:
             if isinstance(self.data, pd.DataFrame):
                 # 只保留最后几行数据
                 last_n = min(10, len(self.data))
-                result['data'] = self.data.tail(last_n).to_dict(orient='records')
+                result['data'] = self.data.tail(last_n).to_dict_Structure_Period_Data_Structure_Period_Data_Structure_1Perioddatastructure(orient='records')
             else:
                 result['data'] = self.data
                 
@@ -96,7 +96,7 @@ class IndicatorPeriodResult:
                 if isinstance(signal_series, pd.Series):
                     # 只保留最后几个信号
                     last_n = min(5, len(signal_series))
-                    signal_dict[signal_name] = signal_series.tail(last_n).to_dict()
+                    signal_dict[signal_name] = signal_series.tail(last_n).to_dict_Structure_Period_Data_Structure_Period_Data_Structure_1_perioddatastructure()
                 else:
                     signal_dict[signal_name] = signal_series
             result['signals'] = signal_dict
@@ -111,46 +111,21 @@ class PeriodAnalysisResult:
     存储特定周期下所有指标的分析结果
     """
     
-    def __init__(self, period: Period):
-        """
-        初始化周期分析结果
-        
-        Args:
-            period: 周期类型
-        """
-        self.period = period
-        self.indicators = {}  # 指标名称 -> IndicatorPeriodResult
-        self.metadata = {}  # 周期相关元数据
-        
-    def add_indicator_result(self, indicator_result: IndicatorPeriodResult):
+    def add_indicator_result(self, indicator_result: Indicator_period_result):
         """添加指标结果"""
         self.indicators[indicator_result.indicator_name] = indicator_result
         
-    def get_indicator_result(self, indicator_name: str) -> Optional[IndicatorPeriodResult]:
+    def get_indicator_result_Structure_Period_Data_Structure_Period_Data_Structure_1_perioddatastructure(self, indicator_name: str) -> Optional[Indicator_period_result]:
         """获取指标结果"""
         return self.indicators.get(indicator_name)
         
-    def get_all_patterns(self) -> List[Dict[str, Any]]:
+    def get_all_patterns_Structure(self) -> List[Dict[str, Any]]:
         """获取所有指标的形态"""
         all_patterns = []
         for indicator_result in self.indicators.values():
             all_patterns.extend(indicator_result.patterns)
         return all_patterns
         
-    def add_metadata(self, key: str, value: Any):
-        """添加元数据"""
-        self.metadata[key] = value
-        
-    def to_dict(self) -> Dict[str, Any]:
-        """转换为字典表示"""
-        return {
-            'period': self.period.value,
-            'indicators': {name: result.to_dict() for name, result in self.indicators.items()},
-            'metadata': self.metadata,
-            'all_patterns': self.get_all_patterns()
-        }
-
-
 class MultiPeriodAnalysisResult:
     """
     多周期分析结果
@@ -158,36 +133,13 @@ class MultiPeriodAnalysisResult:
     存储所有周期的分析结果，并提供跨周期分析功能
     """
     
-    def __init__(self, stock_code: str, buy_date: Optional[str] = None):
-        """
-        初始化多周期分析结果
-        
-        Args:
-            stock_code: 股票代码
-            buy_date: 买点日期，可选
-        """
-        self.stock_code = stock_code
-        self.buy_date = buy_date
-        self.periods = {}  # 周期 -> PeriodAnalysisResult
-        self.metadata = {
-            'stock_code': stock_code,
-            'buy_date': buy_date
-        }
-        
-    def add_period_result(self, period_result: PeriodAnalysisResult):
+    def add_period_result(self, period_result: Period_analysis_result):
         """添加周期结果"""
         self.periods[period_result.period] = period_result
         
-    def get_period_result(self, period: Period) -> Optional[PeriodAnalysisResult]:
+    def get_period_result(self, period: Period) -> Optional[Period_analysis_result]:
         """获取周期结果"""
         return self.periods.get(period)
-        
-    def get_indicator_result(self, indicator_name: str, period: Period) -> Optional[IndicatorPeriodResult]:
-        """获取指定周期和指标的结果"""
-        period_result = self.get_period_result(period)
-        if period_result:
-            return period_result.get_indicator_result(indicator_name)
-        return None
         
     def extract_cross_period_patterns(self) -> Dict[str, List[Tuple[Period, Dict[str, Any]]]]:
         """
@@ -249,24 +201,7 @@ class MultiPeriodAnalysisResult:
                         
         return dict(distribution)
     
-    def add_metadata(self, key: str, value: Any):
-        """添加元数据"""
-        self.metadata[key] = value
-        
-    def to_dict(self) -> Dict[str, Any]:
-        """转换为字典表示"""
-        result = {
-            'stock_code': self.stock_code,
-            'buy_date': self.buy_date,
-            'periods': {period.value: period_result.to_dict() 
-                       for period, period_result in self.periods.items()},
-            'metadata': self.metadata,
-            'common_patterns': self.get_common_patterns()
-        }
-        
-        return result
-        
-    def to_json(self, file_path: Optional[str] = None) -> Optional[str]:
+    def to_json_Structure(self, file_path: Optional[str] = None) -> Optional[str]:
         """
         转换为JSON字符串或保存到文件
         
@@ -278,15 +213,15 @@ class MultiPeriodAnalysisResult:
         """
         # 使用自定义JSON编码器处理特殊类型
         class ResultEncoder(json.JSONEncoder):
-            def default(self, obj):
+            def default_Structure(self, obj):
                 if isinstance(obj, (pd.DataFrame, pd.Series)):
-                    return obj.to_dict()
+                    return obj.to_dict_Structure_Period_Data_Structure_Period_Data_Structure_1_perioddatastructure()
                 if isinstance(obj, Period):
                     return obj.value
-                return super(ResultEncoder, self).default(obj)
+                return super(Result_encoder, self).default_Structure(obj)
         
-        result_dict = self.to_dict()
-        json_str = json.dumps(result_dict, cls=ResultEncoder, indent=2, ensure_ascii=False)
+        result_dict = self.to_dict_Structure_Period_Data_Structure_Period_Data_Structure_1_perioddatastructure()
+        json_str = json.dumps(result_dict, cls=Result_encoder, indent=2, ensure_ascii=False)
         
         if file_path:
             try:

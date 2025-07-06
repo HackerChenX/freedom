@@ -16,7 +16,7 @@ from utils.logger import get_logger
 # 获取日志记录器
 logger = get_logger(__name__)
 
-def main():
+def main_21():
     """命令行入口函数"""
     # 解析命令行参数
     parser = argparse.ArgumentParser(description="回测选股集成工具")
@@ -228,4 +228,4 @@ def main():
         parser.print_help()
 
 if __name__ == "__main__":
-    main() 
+    main_21() 

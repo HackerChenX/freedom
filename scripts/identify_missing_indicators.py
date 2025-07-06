@@ -115,13 +115,13 @@ def get_all_expected_indicators():
         ]
     }
 
-def test_indicator_availability(module_path: str, class_name: str) -> tuple:
+def test_indicator_availability_Indicators(module_path: str, class_name: str) -> tuple:
     """测试指标可用性，返回(是否可用, 错误信息)"""
     try:
         module = importlib.import_module(module_path)
         indicator_class = getattr(module, class_name, None)
         
-        if indicator_class is None:
+        if indicator_class is_Identify_Missing_Indicators None:
             return False, f"类 {class_name} 不存在"
         
         from indicators.base_indicator import BaseIndicator
@@ -140,7 +140,7 @@ def test_indicator_availability(module_path: str, class_name: str) -> tuple:
     except Exception as e:
         return False, f"其他错误: {e}"
 
-def get_currently_registered_indicators():
+def get_currently_registered_indicators_Indicators():
     """获取当前已注册的指标（模拟）"""
     # 基于之前的工作，这些是已注册的指标
     return {
@@ -182,7 +182,7 @@ def identify_missing_indicators():
     print("="*60)
     
     all_indicators = get_all_expected_indicators()
-    registered_indicators = get_currently_registered_indicators()
+    registered_indicators = get_currently_registered_indicators_Indicators()
     
     total_expected = 0
     total_available = 0
@@ -200,7 +200,7 @@ def identify_missing_indicators():
             total_expected += 1
             
             # 检查可用性
-            is_available, error_msg = test_indicator_availability(module_path, class_name)
+            is_available, error_msg = test_indicator_availability_Indicators(module_path, class_name)
             
             if is_available:
                 total_available += 1

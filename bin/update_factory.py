@@ -18,7 +18,7 @@ sys.path.append(root_dir)
 
 from utils.logger import get_logger
 from utils.path_utils import get_indicators_dir
-from enums.indicator_types import IndicatorType
+from enums.indicator_types import Indicator_type
 
 logger = get_logger(__name__)
 
@@ -54,7 +54,7 @@ def get_indicator_class_names() -> Dict[str, str]:
     result = {}
     
     # 从IndicatorType枚举中获取所有指标类名
-    for indicator in IndicatorType:
+    for indicator in Indicator_type:
         if isinstance(indicator.value, str):  # 跳过auto()生成的枚举值
             indicator_name = indicator.name
             module_name = indicator_name.lower()
@@ -170,7 +170,7 @@ def update_create_indicator_method(factory_file: str, indicator_modules: Dict[st
         content = f.read()
     
     # 找到create_indicator方法
-    create_method_match = re.search(r'def create_indicator.*?:.*?return.*?$', content, re.DOTALL)
+    create_method_match = re.search(r'def create_indicator_Update_Factory.*?:.*?return.*?$', content, re.DOTALL)
     if not create_method_match:
         logger.error("无法在工厂文件中找到create_indicator方法")
         return False
@@ -217,7 +217,7 @@ def update_create_indicator_method(factory_file: str, indicator_modules: Dict[st
     return False
 
 
-def main():
+def main_8():
     """主函数"""
     logger.info("开始更新指标工厂文件")
     
@@ -246,4 +246,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_8() 

@@ -15,12 +15,12 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class PSY(BaseIndicator, PatternSignalMixin):
+class PsychologicalLine(BaseIndicator, PatternSignalMixin):
     """
     心理线指标(Psychological Line)
     
@@ -44,10 +44,10 @@ class PSY(BaseIndicator, PatternSignalMixin):
         self.name = "PSY"
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_psy()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Psy_Psy_Psy_psy(**kwargs)
 
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.market_environment = "normal"
@@ -70,11 +70,11 @@ class PSY(BaseIndicator, PatternSignalMixin):
         if not hasattr(self, 'period'):
             self.period = 12
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_psy(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'period': 12, 'enhanced': False}
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Psy_Psy_Psy_psy(self, **kwargs):
         """
         设置指标参数
 
@@ -83,8 +83,8 @@ class PSY(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator(silent_mode=True)
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator(silent_mode=True)
 
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -108,7 +108,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         self.volatility_lookback = kwargs.get('volatility_lookback', 20)
         self.enhanced = kwargs.get('enhanced', False)
     
-    def set_market_environment(self, environment: str) -> None:
+    def set_market_environment_Psy(self, environment: str) -> None:
         """
         设置市场环境
         
@@ -121,21 +121,21 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         self.market_environment = environment
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算PSY指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            添加了PSY指标的DataFrame
+            添加了PSY指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_psy(data, **kwargs)
         self._result = result
         return result
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算PSY指标
         
@@ -217,7 +217,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         根据市场波动率动态调整PSY周期参数
         
         Args:
-            data: 包含价格数据的DataFrame
+            data: 包含价格数据的Data_frame
         """
         # 计算价格波动率
         close = data['close']
@@ -327,7 +327,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         return mean_reversion
     
-    def get_signals(self, data: pd.DataFrame, overbought: float = 75, oversold: float = 25) -> pd.DataFrame:
+    def get_signals_Psy(self, data: pd.DataFrame, overbought: float = 75, oversold: float = 25) -> pd.DataFrame:
         """
         生成PSY信号
         
@@ -340,7 +340,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 包含PSY信号的数据框
         """
         if "psy" not in data.columns:
-            data = self.calculate(data)
+            data = self.calculate_Psy(data)
         
         # 初始化信号列
         data["psy_signal"] = np.nan
@@ -408,7 +408,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 包含市场状态的数据框
         """
         if "psy" not in data.columns:
-            data = self.calculate(data)
+            data = self.calculate_Psy(data)
         
         # 初始化状态列
         data["market_status"] = np.nan
@@ -434,7 +434,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         return data
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Psy(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算PSY原始评分
         
@@ -447,7 +447,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算PSY
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Psy(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -496,13 +496,13 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Psy_Psy_Psy_psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取PSY形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Psy(data, **kwargs)
         return pd.DataFrame(index=data.index)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Psy_Psy_Psy_psy(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.7
     
@@ -600,7 +600,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         score = pd.Series(0.0, index=data.index)
         
         # 使用get_signals方法中的背离识别逻辑
-        signals = self.get_signals(data)
+        signals = self.get_signals_Psy(data)
         
         # 底背离加分
         bullish_divergence = signals["psy_divergence"] == 1
@@ -612,13 +612,13 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Psy_Psy_Psy_psy_duplicate(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
         """
         计算PSY指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -677,7 +677,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Psy_Psy_Psy_psy_duplicate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取PSY相关形态
 
@@ -686,11 +686,11 @@ class PSY(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Psy(data, **kwargs)
 
         if self._result is None or 'psy' not in self._result.columns:
             return pd.DataFrame(index=data.index)
@@ -735,7 +735,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Psy(self):
         """
         注册PSY指标的形态到全局形态注册表
         """
@@ -888,7 +888,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
             polarity="POSITIVE"
         )
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Psy_Psy_Psy_psy_duplicate(self, **kwargs):
         """
         设置PSY指标参数
 
@@ -914,7 +914,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
                 self._multi_period_psy = {}
                 self._adaptive_period = self.period
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
+    def identify_patterns_Psy(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
         """
         识别PSY指标形态
         
@@ -934,7 +934,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算PSY
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Psy(data, **kwargs)
         
         if self._result is None or len(self._result) < 5:
             return patterns
@@ -1015,7 +1015,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算PSY
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Psy(data, **kwargs)
         
         if self._result is None or len(self._result) < 10:
             return patterns
@@ -1310,7 +1310,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         
         return synergy
 
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Psy(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成PSY指标标准化交易信号
         
@@ -1320,11 +1320,11 @@ class PSY(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 确保已计算PSY指标
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Psy(data)
         
         # 初始化信号DataFrame
         signals = pd.DataFrame(index=data.index)
@@ -1338,7 +1338,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
         signals['confidence'] = 50.0
         
         # 计算评分
-        score = self.calculate_raw_score(data, **kwargs)
+        score = self.calculate_raw_score_Psy(data, **kwargs)
         signals['score'] = score
         
         # 获取PSY数据
@@ -1430,7 +1430,7 @@ class PSY(BaseIndicator, PatternSignalMixin):
 
 
 # 向后兼容的代理类
-class EnhancedPSY(PSY):
+class EnhancedPsy(PSY):
     """
     增强型心理线指标(Enhanced PSY)
     
@@ -1443,35 +1443,7 @@ class EnhancedPSY(PSY):
     4. 形态识别系统：识别PSY极值反转、区间突破和均值回归等形态
     """
     
-    def __init__(self, 
-                 period: int = 12,
-                 secondary_period: int = 24,
-                 multi_periods: List[int] = None,
-                 adaptive_period: bool = True,
-                 volatility_lookback: int = 20):
-        """
-        初始化增强型PSY指标
-        
-        Args:
-            period: 主要周期，默认为12日
-            secondary_period: 次要周期，默认为24日
-            multi_periods: 多周期分析参数，默认为[6, 12, 24, 48]
-            adaptive_period: 是否启用自适应周期，默认为True
-            volatility_lookback: 波动率计算回溯期，默认为20
-        """
-        import warnings
-        warnings.warn(
-            "EnhancedPSY类已被弃用，请使用带有enhanced=True参数的PSY类代替",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        super().__init__(period=period, 
-                         secondary_period=secondary_period,
-                         multi_periods=multi_periods,
-                         adaptive_period=adaptive_period,
-                         volatility_lookback=volatility_lookback,
-                         enhanced=True) 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Psy(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -1555,63 +1527,3 @@ class EnhancedPSY(PSY):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
-
-    def __init__(self, **kwargs):
-        """
-        初始化PSY指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "PSY"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
-        """获取默认参数"""
-        return {}
-    
-    def set_parameters(self, **kwargs):
-        """
-        设置指标参数
-        
-        Args:
-            **kwargs: 参数字典
-        """
-        # 验证参数
-        try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
-            
-            # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
-            params.update(kwargs)
-            
-            # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('PSY', params)
-            if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
-                logger.warning(f"PSY参数验证失败: {'; '.join(errors)}")
-                # 使用默认参数
-                params = self._default_parameters.copy()
-            
-            # 设置参数（保持向后兼容）
-            for key, value in params.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-                    
-        except Exception:
-            # 如果验证失败，静默处理
-            pass

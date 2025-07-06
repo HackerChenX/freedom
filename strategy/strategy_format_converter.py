@@ -7,9 +7,10 @@
 
 import copy
 from typing import Dict, List, Any, Optional
-from utils.logger import get_logger
+from utils.logger import getLogger
+from utils.dependency_injection import get_container
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class StrategyFormatConverter:
@@ -197,76 +198,52 @@ class StrategyFormatConverter:
     
     def _convert_indicator_condition(self, condition: Dict[str, Any]) -> Dict[str, Any]:
         """转换指标条件为简单格式"""
-        try:
-            # 提取参数
-            params = condition.get("parameters", {})
-            indicator_id = condition.get("indicator_id", "UNKNOWN")
-            
-            # 构建简化条件
-            converted = {
-                "type": "indicator",
-                "indicator_id": indicator_id,
-                "period": condition.get("period", "DAILY"),
-                "operator": params.get("operator", ">"),
-                "value": params.get("value", 0),
-                "parameters": params
-            }
-            
-            return converted
-            
-        except Exception as e:
-            logger.warning(f"转换指标条件失败: {e}")
-            return condition
+        return {
+            "type": "indicator",
+            "indicator_id": condition.get("indicator_id"),
+            "operator": condition.get("operator", ">"),
+            "value": condition.get("value", 0),
+            "parameters": condition.get("parameters", {})
+        }
     
     def _clean_conditions(self, conditions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """清理条件列表，移除独立的逻辑连接符"""
+        """清理条件中的逻辑连接符"""
         cleaned = []
-        
         for condition in conditions:
-            # 跳过独立的逻辑连接符
-            if "logic" in condition and len(condition) == 1:
-                continue
-            
-            # 保留有实际内容的条件
-            if "type" in condition or "indicator_id" in condition:
+            # 跳过纯逻辑连接符
+            if not ("logic" in condition and len(condition) == 1):
                 cleaned.append(condition)
-        
         return cleaned
     
     def convert_to_execution_format(self, strategy_config: Dict[str, Any]) -> Dict[str, Any]:
         """
-        转换为执行器可用的格式
+        转换为执行格式
         
         Args:
-            strategy_config: 标准化的策略配置
+            strategy_config: 策略配置
             
         Returns:
-            Dict[str, Any]: 执行器格式的策略配置
+            Dict[str, Any]: 执行格式配置
         """
-        try:
-            # 先标准化为v2.0格式
-            normalized = self.normalize_to_v2(strategy_config)
-            strategy = normalized["strategy"]
-            
-            # 转换为执行器期望的格式
-            execution_format = {
-                "strategy_id": strategy["strategy_id"],
-                "name": strategy["name"],
-                "description": strategy.get("description", ""),
-                "conditions": strategy.get("conditions", []),
-                "filters": strategy.get("filters", {}),
-                "result_filters": strategy.get("result_filters", {"max_results": 50})
-            }
-            
-            return execution_format
-            
-        except Exception as e:
-            logger.error(f"转换为执行格式失败: {e}")
-            raise ValueError(f"转换为执行格式失败: {e}")
+        # 先标准化为v2.0格式
+        normalized = self.normalize_to_v2(strategy_config)
+        
+        # 提取执行所需的关键信息
+        strategy = normalized["strategy"]
+        execution_config = {
+            "strategy_id": strategy.get("strategy_id"),
+            "name": strategy.get("name"),
+            "conditions": strategy.get("conditions", []),
+            "filters": strategy.get("filters", {}),
+            "result_filters": strategy.get("result_filters", {"max_results": 50}),
+            "parameters": strategy.get("parameters", {})
+        }
+        
+        return execution_config
     
     def validate_format(self, strategy_config: Dict[str, Any]) -> bool:
         """
-        验证策略格式是否有效
+        验证策略配置格式
         
         Args:
             strategy_config: 策略配置
@@ -275,37 +252,57 @@ class StrategyFormatConverter:
             bool: 是否有效
         """
         try:
-            # 尝试标准化
             normalized = self.normalize_to_v2(strategy_config)
+            strategy = normalized.get("strategy", {})
             
             # 检查必要字段
-            strategy = normalized.get("strategy", {})
-            required_fields = ["strategy_id", "name", "conditions"]
-            
+            required_fields = ["strategy_id", "name"]
             for field in required_fields:
                 if field not in strategy:
-                    logger.warning(f"策略配置缺少必要字段: {field}")
+                    logger.error(f"策略配置缺少必要字段: {field}")
+                    return False
+            
+            # 检查条件格式
+            conditions = strategy.get("conditions", [])
+            for condition in conditions:
+                if not isinstance(condition, dict):
+                    logger.error(f"无效的条件格式: {condition}")
                     return False
             
             return True
             
         except Exception as e:
-            logger.warning(f"策略格式验证失败: {e}")
+            logger.error(f"验证策略配置格式失败: {e}")
             return False
 
 
+# ===== 依赖注入和兼容性接口 =====
+
 def create_format_converter() -> StrategyFormatConverter:
-    """创建策略格式转换器实例"""
+    """创建格式转换器实例（兼容性方法）"""
     return StrategyFormatConverter()
 
 
-# 全局转换器实例
-_converter_instance = None
-
-
 def get_format_converter() -> StrategyFormatConverter:
-    """获取全局策略格式转换器实例"""
-    global _converter_instance
-    if _converter_instance is None:
-        _converter_instance = create_format_converter()
-    return _converter_instance
+    """
+    获取格式转换器实例（依赖注入方式）
+    
+    Returns:
+        StrategyFormatConverter: 格式转换器实例
+    """
+    try:
+        container = get_container()
+        return container.resolve(StrategyFormatConverter)
+    except Exception as e:
+        logger.warning(f"从依赖注入容器获取StrategyFormatConverter失败，创建新实例: {e}")
+        return StrategyFormatConverter()
+
+
+# 注册到依赖注入容器
+try:
+    container = get_container()
+    if not container.is_registered(StrategyFormatConverter):
+        container.register_singleton(StrategyFormatConverter, StrategyFormatConverter)
+        logger.info("StrategyFormatConverter已注册到依赖注入容器")
+except Exception as e:
+    logger.warning(f"注册StrategyFormatConverter到依赖注入容器失败: {e}")

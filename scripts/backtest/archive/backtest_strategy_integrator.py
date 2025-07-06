@@ -321,7 +321,7 @@ class BacktestStrategyIntegrator:
         
         return params 
 
-    def generate_strategy(self, backtest_file: str, output_file: str = None) -> Dict[str, Any]:
+    def generate_strategy_Integrator(self, backtest_file: str, output_file: str = None) -> Dict[str, Any]:
         """
         根据回测结果生成选股策略
         
@@ -606,7 +606,7 @@ class BacktestStrategyIntegrator:
         logger.warning(f"无法转换形态为条件: {pattern_name}")
         return None
         
-    def validate_strategy(self, strategy_config: Dict[str, Any], 
+    def validate_strategy_Integrator(self, strategy_config: Dict[str, Any], 
                         start_date: str = None, end_date: str = None,
                         stock_pool: List[str] = None) -> Dict[str, Any]:
         """
@@ -680,7 +680,7 @@ class BacktestStrategyIntegrator:
                 "error": str(e)
             }
 
-    def optimize_strategy(self, strategy_config: Dict[str, Any], 
+    def optimize_strategy_Integrator(self, strategy_config: Dict[str, Any], 
                         validation_result: Dict[str, Any]) -> Dict[str, Any]:
         """
         根据验证结果优化策略参数
@@ -850,7 +850,7 @@ class BacktestStrategyIntegrator:
         
         return config
 
-def main():
+def main_backteststrategyintegrator():
     """命令行入口函数"""
     import argparse
     
@@ -870,7 +870,7 @@ def main():
     integrator = BacktestStrategyIntegrator()
     
     # 生成策略
-    strategy_config = integrator.generate_strategy(args.input, args.output)
+    strategy_config = integrator.generate_strategy_Integrator(args.input, args.output)
     
     if not strategy_config:
         logger.error("生成策略失败")
@@ -888,7 +888,7 @@ def main():
                 logger.error(f"读取股票池文件时出错: {e}")
         
         # 执行验证
-        validation_result = integrator.validate_strategy(
+        validation_result = integrator.validate_strategy_Integrator(
             strategy_config, args.start_date, args.end_date, stock_pool)
         
         # 显示验证结果
@@ -897,7 +897,7 @@ def main():
         
         # 优化策略
         if args.optimize and validation_result:
-            optimized_config = integrator.optimize_strategy(strategy_config, validation_result)
+            optimized_config = integrator.optimize_strategy_Integrator(strategy_config, validation_result)
             
             # 保存优化后的策略
             if args.output:
@@ -914,4 +914,4 @@ def main():
             logger.info(f"优化后的策略已保存到: {output_file}")
     
 if __name__ == "__main__":
-    main() 
+    mainBackteststrategyintegrator() 

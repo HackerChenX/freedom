@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -21,13 +21,13 @@ def demo_concept_extraction():
     # 测试文本
     test_text = """
     【中金油气化工】原材料成本下行叠加关税影响消化，轮胎迎来向上拐点
-    天胶价格从高点下降幅度超3,000元/吨，2H25轮胎企业或明显受益。
+    天胶价格从高点下降幅度超3,000元/吨，2_h25轮胎企业或明显受益。
     相关企业包括中策橡胶（未覆盖）、赛轮轮胎(601058)、森麒麟(002984)、玲珑轮胎(601966)等。
     新能源汽车、锂电池、光伏等概念值得关注。
     """
 
     # 初始化概念股提取器
-    extractor = ConceptStockExtractor()
+    extractor = Concept_stock_extractor()
 
     # 提取信息
     result = extractor.extract_stocks(test_text)
@@ -41,7 +41,7 @@ def demo_concept_extraction():
     return result
 
 
-def main():
+def main_demo():
     """主函数"""
     logger.info("=== 股市信息爬虫系统演示 ===")
 
@@ -56,4 +56,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_demo()

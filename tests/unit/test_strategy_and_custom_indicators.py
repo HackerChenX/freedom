@@ -20,14 +20,14 @@ def setUpModule():
     pass
 
 class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         try:
             self.indicator = complete_registry.create_indicator(
                 'ENHANCEDMACD', fast_period=12, slow_period=26, signal_period=9
             )
         except Exception as e:
             self.skipTest(f"无法创建ENHANCEDMACD: {e}")
-        # The parent MACD class returns 'DIF', 'DEA', 'MACD'. The test needs to reflect that.
+        # The parent MACD class Returns 'DIF', 'DEA', 'MACD'. The test needs to reflect that.
         self.expected_columns = ['DIF', 'DEA', 'MACD']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 90, 'periods': 50}
@@ -98,7 +98,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertEqual(death_cross_points[0]['start_index'], 2)
 
 class TestEnhancedRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('ENHANCEDRSI', periods=[14])
         except Exception as e:
@@ -154,8 +154,8 @@ class TestEnhancedRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertFalse(overbought_points.empty, "未检测到超买信号")
         self.assertTrue((result_ob.loc[overbought_points.index, 'RSI14'] > 70).all())
 
-class TestCompositeIndicator(unittest.TestCase):
-    def setUp(self):
+class TestCompositeIndicator_Test_Strategy_And_Custom_Indicators(unittest.TestCase):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         """准备一个包含MACD和RSI的复合指标实例"""
         self.macd_indicator = complete_registry.create_indicator('MACD')
         self.rsi_indicator = complete_registry.create_indicator('RSI')
@@ -196,7 +196,7 @@ class TestCompositeIndicator(unittest.TestCase):
 class TestFormulaIndicator(unittest.TestCase):
     @patch('formula.stock_formula.StockData')
     @patch('formula.stock_formula.MA')
-    def setUp(self, MockMA, MockStockData):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self, MockMA, MockStockData):
         self.mock_stock_data = MockStockData.return_value
         self.mock_ma = MockMA
         self.indicator = Formula("mock_code")
@@ -222,7 +222,7 @@ class TestFormulaIndicator(unittest.TestCase):
         self.assertFalse(self.indicator.缩量(), "在成交量不满足缩量条件时，'缩量'应返回False")
 
 class TestPlatformBreakout(unittest.TestCase):
-    def setUp(self):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         """准备一个默认参数的PlatformBreakout实例"""
         try:
             self.indicator = complete_registry.create_indicator('PLATFORM_BREAKOUT', platform_period=20, max_volatility=0.05)
@@ -289,7 +289,7 @@ class TestPlatformBreakout(unittest.TestCase):
         self.assertFalse(result['up_breakout'].iloc[-1], "成交量不足时不应识别为向上突破")
 
 class TestVShapedReversal(unittest.TestCase):
-    def setUp(self):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('V_SHAPED_REVERSAL')
         except Exception as e:
@@ -334,7 +334,7 @@ class TestVShapedReversal(unittest.TestCase):
         self.assertFalse(result['v_bottom'].drop(index=result.index[5]).any(), "V形底部信号在不应触发的位置触发")
 
 class TestIslandReversal(unittest.TestCase):
-    def setUp(self):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('ISLAND_REVERSAL')
         except Exception as e:
@@ -369,7 +369,7 @@ class TestIslandReversal(unittest.TestCase):
         self.assertFalse(result['bottom_island_reversal'].drop(index=result.index[6]).any(), "在不应触发的位置触发了岛形反转信号")
 
 class TestZXMAbsorb(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         try:
             self.indicator = complete_registry.create_indicator(
                 'ZXM_ABSORB', short_ma=5, long_ma=10, volume_ma=10, absorb_threshold=1.5
@@ -383,7 +383,7 @@ class TestZXMAbsorb(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         ])
 
 class TestZXMWashplate(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststrategyandcustomindicators(self):
         try:
             self.indicator = complete_registry.create_indicator(
                 'ZXM_WASHPLATE', short_ma=5, long_ma=60, shrink_threshold=0.8

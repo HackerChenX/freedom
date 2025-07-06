@@ -13,7 +13,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-def find_indicator_files():
+def find_indicator_files_Indicators():
     """查找所有指标文件"""
     indicator_files = []
     indicators_dir = project_root / "indicators"
@@ -44,7 +44,7 @@ def check_if_needs_fix(file_path):
         print(f"检查文件 {file_path} 时出错: {e}")
         return False
 
-def fix_indicator_file(file_path):
+def fix_indicator_file_Indicators(file_path):
     """修复单个指标文件"""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -109,13 +109,13 @@ def fix_indicator_file(file_path):
         print(f"修复文件 {file_path} 时出错: {e}")
         return False
 
-def main():
+def main_batchfixindicators():
     """主函数"""
     print("=== 批量修复技术指标脚本 ===")
     print()
     
     # 查找所有指标文件
-    indicator_files = find_indicator_files()
+    indicator_files = find_indicator_files_Indicators()
     print(f"找到 {len(indicator_files)} 个指标文件")
     
     # 检查需要修复的文件
@@ -135,7 +135,7 @@ def main():
     for i, file_path in enumerate(files_to_fix, 1):
         print(f"{i:2d}/{len(files_to_fix)} 修复 {file_path.name}...", end=" ")
         
-        if fix_indicator_file(file_path):
+        if fix_indicator_file_Indicators(file_path):
             print("✅ 成功")
             success_count += 1
         else:
@@ -147,4 +147,4 @@ def main():
     print(f"成功率: {success_count/len(files_to_fix):.1%}")
 
 if __name__ == "__main__":
-    main()
+    mainBatchfixindicators()

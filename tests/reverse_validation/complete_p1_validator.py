@@ -22,18 +22,18 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from smart_pattern_generator import SmartPatternGenerator
-from extended_technical_indicators import ExtendedTechnicalIndicators
+from smart_pattern_generator import Smart_pattern_generator
+from extended_technical_indicators import Extended_technical_indicators
 
 
-class CompleteP1Validator:
+class Complete_p1_validator:
     """完整的P1指标验证器"""
     
     def __init__(self):
-        self.smart_generator = SmartPatternGenerator()
-        self.extended_indicators = ExtendedTechnicalIndicators()
+        self.smart_generator = Smart_pattern_generator()
+        self.extended_indicators = Extended_technical_indicators()
     
-    def validate_sar_complete(self) -> dict:
+    def validate_sar_complete_Validator(self) -> dict:
         """验证SAR指标的所有5个形态"""
         print("  测试SAR指标（5个形态）...")
         
@@ -193,7 +193,7 @@ class CompleteP1Validator:
         results['success_rate'] = results['successful_patterns'] / results['total_patterns']
         return results
     
-    def validate_adx_complete(self) -> dict:
+    def validate_adx_complete_Validator(self) -> dict:
         """验证ADX指标的所有5个形态"""
         print("  测试ADX指标（5个形态）...")
         
@@ -351,13 +351,13 @@ class CompleteP1Validator:
         total_successful = 0
         
         # 验证SAR（5个形态）
-        sar_results = self.validate_sar_complete()
+        sar_results = self.validate_sar_complete_Validator()
         all_results['SAR'] = sar_results
         total_patterns += sar_results['total_patterns']
         total_successful += sar_results['successful_patterns']
         
         # 验证ADX（5个形态）
-        adx_results = self.validate_adx_complete()
+        adx_results = self.validate_adx_complete_Validator()
         all_results['ADX'] = adx_results
         total_patterns += adx_results['total_patterns']
         total_successful += adx_results['successful_patterns']
@@ -377,7 +377,7 @@ class CompleteP1Validator:
         return summary
 
 
-def main():
+def main_completep1validator():
     """主函数"""
     print("=" * 80)
     print("完整P1重要指标验证测试")
@@ -386,7 +386,7 @@ def main():
     print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    validator = CompleteP1Validator()
+    validator = Complete_p1_validator()
     
     try:
         results = validator.validate_all_p1_complete()
@@ -442,5 +442,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_completep1validator()
     sys.exit(exit_code)

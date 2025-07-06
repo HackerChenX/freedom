@@ -2,7 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 """
-测试ClickHouse数据库连接
+测试Click_house数据库连接
+使用依赖注入架构
 """
 
 import os
@@ -14,42 +15,62 @@ import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 
-def test_connection():
+def test_connection_Connection():
     """测试数据库连接并执行简单查询"""
     try:
-        # 获取数据库连接
-        print("正在连接到ClickHouse数据库...")
-        db = get_clickhouse_db()
+        # 通过容器获取数据访问接口
+        print("正在通过依赖注入容器连接到数据库...")
+        container = get_container()
+        data_access = container.get_data_access()
         
-        # 测试简单查询
-        print("执行测试查询...")
-        df = db.query("SELECT 1")
-        print(f"查询结果: {df}")
+        # 测试连接
+        print("测试数据库连接...")
+        if data_access.test_connection_Connection():
+            print("数据库连接成功!")
+        else:
+            print("数据库连接失败!")
+            return False
         
-        # 获取表列表
-        print("获取数据库表列表...")
-        tables_df = db.query("SHOW TABLES")
-        print(f"数据库中的表:\n{tables_df}")
+        # 获取股票列表
+        print("获取股票列表...")
+        stocks_df = data_access.get_stock_list(limit=10)
+        if not stocks_df.empty:
+            print(f"股票列表 (前10条):\n{stocks_df}")
+        else:
+            print("未找到股票数据")
         
-        # 如果有表，查询第一个表的结构
-        if not tables_df.empty:
-            first_table = tables_df.iloc[0, 0]
-            print(f"\n获取表 '{first_table}' 的结构...")
-            structure_df = db.query(f"DESCRIBE TABLE {first_table}")
-            print(f"表结构:\n{structure_df}")
+        # 获取行业列表
+        print("\n获取行业列表...")
+        try:
+            industry_df = data_access.get_industry_list()
+            if not industry_df.empty:
+                print(f"行业列表 (前5条):\n{industry_df.head()}")
+                print(f"总共 {len(industry_df)} 个行业")
+            else:
+                print("未找到行业数据")
+        except Exception as e:
+            print(f"获取行业列表失败: {e}")
+        
+        # 测试获取股票数据
+        print("\n测试获取股票数据...")
+        try:
+            stock_info WHERE 1=1 = data_access.get_stock_info(
+                stock_code='000001',
+                level='日线',
+                limit=5
+            )
             
-            # 获取第一个表的行数
-            count_df = db.query(f"SELECT COUNT(*) FROM {first_table}")
-            print(f"\n表 '{first_table}' 中的行数: {count_df.iloc[0, 0]}")
-            
-            # 获取第一个表的前5行数据
-            print(f"\n表 '{first_table}' 的前5行数据:")
-            data_df = db.query(f"SELECT * FROM {first_table} LIMIT 5")
-            print(data_df)
+            df = stock_info.to_dataframe()
+            if not df.empty:
+                print(f"000001 股票数据 (前5条):\n{df}")
+            else:
+                print("未找到000001的股票数据")
+        except Exception as e:
+            print(f"获取股票数据失败: {e}")
         
-        print("\nClickHouse连接测试成功!")
+        print("\n数据库连接测试成功!")
         return True
     
     except Exception as e:
@@ -57,4 +78,4 @@ def test_connection():
         return False
 
 if __name__ == "__main__":
-    test_connection() 
+    test_connection_Connection() 

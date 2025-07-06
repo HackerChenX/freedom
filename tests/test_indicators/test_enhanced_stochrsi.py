@@ -7,7 +7,7 @@ from indicators.enhanced_stochrsi import EnhancedSTOCHRSI
 class TestEnhancedSTOCHRSI(unittest.TestCase):
     """测试增强型随机相对强弱指标(STOCHRSI)"""
 
-    def setUp(self):
+    def setUp_Stochrsi_Test_Enhanced_Stochrsi(self):
         """准备测试数据"""
         # 创建模拟价格数据
         np.random.seed(42)  # 确保结果可重现
@@ -37,7 +37,7 @@ class TestEnhancedSTOCHRSI(unittest.TestCase):
         # 创建增强型STOCHRSI实例
         self.stochrsi = EnhancedSTOCHRSI(n=14, m=3, p=3, secondary_n=28, adaptive_threshold=True)
 
-    def test_calculation(self):
+    def test_calculation_Stochrsi(self):
         """测试STOCHRSI基础计算功能"""
         result = self.stochrsi.calculate(self.test_data)
         
@@ -63,7 +63,7 @@ class TestEnhancedSTOCHRSI(unittest.TestCase):
         self.assertTrue((result['STOCHRSI_K'].dropna() >= 0).all())
         self.assertTrue((result['STOCHRSI_K'].dropna() <= 100).all())
 
-    def test_adaptive_threshold(self):
+    def test_adaptive_threshold_Stochrsi(self):
         """测试自适应阈值调整功能"""
         # 计算STOCHRSI
         self.stochrsi.calculate(self.test_data)
@@ -91,7 +91,7 @@ class TestEnhancedSTOCHRSI(unittest.TestCase):
         # 检查熊市环境下超卖阈值是否低于原始阈值
         self.assertTrue(bear_oversold <= original_oversold)
 
-    def test_divergence_detection(self):
+    def test_divergence_detection_Stochrsi(self):
         """测试背离检测功能"""
         # 计算STOCHRSI
         self.stochrsi.calculate(self.test_data)
@@ -115,7 +115,7 @@ class TestEnhancedSTOCHRSI(unittest.TestCase):
         # 检查背离强度范围
         self.assertTrue((divergence['divergence_strength'] >= 0).all())
 
-    def test_multi_period_synergy(self):
+    def test_multi_period_synergy_Stochrsi(self):
         """测试多周期协同分析功能"""
         # 计算STOCHRSI
         self.stochrsi.calculate(self.test_data)
@@ -167,7 +167,7 @@ class TestEnhancedSTOCHRSI(unittest.TestCase):
         if not pd.isna(max_score):
             self.assertTrue(max_score <= 100)
 
-    def test_pattern_identification(self):
+    def test_pattern_identification_Stochrsi(self):
         """测试形态识别功能"""
         # 计算STOCHRSI
         self.stochrsi.calculate(self.test_data)
@@ -190,7 +190,7 @@ class TestEnhancedSTOCHRSI(unittest.TestCase):
         for col in patterns.columns:
             self.assertTrue(patterns[col].dtype == bool)
 
-    def test_score_calculation(self):
+    def test_score_calculation_Stochrsi(self):
         """测试评分计算功能"""
         # 计算STOCHRSI
         self.stochrsi.calculate(self.test_data)
@@ -214,7 +214,7 @@ class TestEnhancedSTOCHRSI(unittest.TestCase):
         # 检查市场环境是否影响评分
         self.assertFalse(bull_score.equals(bear_score))
 
-    def test_signal_generation(self):
+    def test_signal_generation_Stochrsi(self):
         """测试信号生成功能"""
         # 计算STOCHRSI并生成信号
         signals = self.stochrsi.generate_signals(self.test_data)

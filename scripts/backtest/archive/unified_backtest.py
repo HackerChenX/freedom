@@ -19,7 +19,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from formula import formula
-from enums.kline_period import KlinePeriod
+from enums.kline_period import Kline_period
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_stock_result_file, get_strategies_dir
 from db.db_manager import DBManager
@@ -29,9 +29,9 @@ from indicators.complete_indicator_registry import complete_registry
 logger = get_logger(__name__)
 
 # 添加JSON编码器处理numpy类型
-class NumpyEncoder(json.JSONEncoder):
+class NumpyencoderBacktest(json.JSONEncoder):
     """处理numpy类型的JSON编码器"""
-    def default(self, obj):
+    def default_Backtest(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
@@ -42,7 +42,7 @@ class NumpyEncoder(json.JSONEncoder):
             return bool(obj)
         elif obj is None or obj == np.nan:
             return None
-        return super(NumpyEncoder, self).default(obj)
+        return super(Numpy_encoder, self).default_Backtest(obj)
 
 class UnifiedBacktest:
     """
@@ -70,7 +70,7 @@ class UnifiedBacktest:
         self.stocks_data = []
         self.pattern_stats = defaultdict(int)
         
-    def analyze_stock(self, code: str, buy_date: str, pattern_type: str = "", 
+    def analyze_stock_Backtest_Unified_Backtest(self, code: str, buy_date: str, pattern_type: str = "", 
                      days_before: int = 20, days_after: int = 10) -> Dict[str, Any]:
         """
         分析单个股票的买点，包括所有可用技术指标和多周期分析
@@ -95,7 +95,7 @@ class UnifiedBacktest:
             f = formula.Formula(code, end=end_date)
             
             # 检查数据有效性
-            if not isinstance(f.dataDay.close, (list, np.ndarray)) or len(f.dataDay.close) == 0 or not np.any(f.dataDay.close):
+            if not isinstance(f.data_day.close, (list, np.ndarray)) or len(f.data_day.close) == 0 or not np.any(f.data_day.close):
                 logger.warning(f"股票 {code} 数据为空")
                 return {}
                 
@@ -134,12 +134,12 @@ class UnifiedBacktest:
             }
             
             for period_name, period_type in periods.items():
-                period_result = self._analyze_period(code, buy_date, period_type, buy_index, end_date=end_date)
+                period_result = self._analyze_period_Unified_Backtest(code, buy_date, period_type, buy_index, end_date=end_date)
                 if period_result:
                     result['periods'][period_name] = period_result
             
             # 提取跨周期共性特征
-            result['cross_period_patterns'] = self._extract_cross_period_patterns(result['periods'])
+            result['cross_period_patterns'] = self._extract_cross_period_patterns_Unified_Backtest(result['periods'])
             
             # 合并所有周期的形态
             all_patterns = []
@@ -164,7 +164,7 @@ class UnifiedBacktest:
             logger.error(f"分析股票 {code} 时出错: {e}")
             return {}
             
-    def _analyze_period(self, code: str, buy_date: str, period: KlinePeriod, daily_buy_index: int,
+    def _analyze_period_Unified_Backtest(self, code: str, buy_date: str, period: Kline_period, daily_buy_index: int,
                        start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         """
         分析指定周期的技术指标
@@ -182,7 +182,7 @@ class UnifiedBacktest:
         """
         try:
             # 获取股票数据，不指定起始日期，只指定结束日期
-            stock_data = formula.StockData(code, period, end=end_date)
+            stock_data = formula.Stock_data(code, period, end=end_date)
             
             if not hasattr(stock_data, 'close') or len(stock_data.close) == 0:
                 logger.warning(f"未获取到股票 {code} 周期 {period.name} 的数据")
@@ -299,7 +299,7 @@ class UnifiedBacktest:
         """
         try:
             # 计算MA指标
-            ma_indicator = IndicatorFactory.create_indicator("MA", periods=[5, 10, 20, 30, 60])
+            ma_indicator = IndicatorFactory.create_indicator("MA_Unified_Backtest", periods=[5, 10, 20, 30, 60])
             ma_result = ma_indicator.compute(data)
             
             close = data['close'].values
@@ -340,7 +340,7 @@ class UnifiedBacktest:
                     result['patterns'].append('MA10上穿MA20')
                     
             # 计算EMA指标
-            ema_indicator = IndicatorFactory.create_indicator("EMA", periods=[5, 10, 20, 30, 60])
+            ema_indicator = IndicatorFactory.create_indicator("EMA_Unified_Backtest", periods=[5, 10, 20, 30, 60])
             ema_result = ema_indicator.compute(data)
             
             ema5 = ema_result['EMA5'].values
@@ -406,12 +406,12 @@ class UnifiedBacktest:
         """
         try:
             # 计算MACD指标
-            macd_indicator = IndicatorFactory.create_indicator("MACD")
+            macd_indicator = IndicatorFactory.create_indicator("MACD_Unified_Backtest")
             macd_result = macd_indicator.compute(data)
             
             diff = macd_result['DIF'].values
             dea = macd_result['DEA'].values
-            macd = macd_result['MACD'].values
+            macd = macd_result['MACD_Unified_Backtest'].values
             
             result['indicators']['macd'] = {
                 'diff': diff[buy_index],
@@ -466,7 +466,7 @@ class UnifiedBacktest:
         """
         try:
             # 计算KDJ指标
-            kdj_indicator = IndicatorFactory.create_indicator("KDJ")
+            kdj_indicator = IndicatorFactory.create_indicator("KDJ_Unified_Backtest")
             kdj_result = kdj_indicator.compute(data)
             
             k = kdj_result['K'].values
@@ -523,7 +523,7 @@ class UnifiedBacktest:
         """
         try:
             # 计算RSI指标，使用双周期策略：6周期和14周期
-            rsi_indicator = IndicatorFactory.create_indicator("RSI", periods=[6, 14])
+            rsi_indicator = IndicatorFactory.create_indicator("RSI_Unified_Backtest", periods=[6, 14])
             rsi_result = rsi_indicator.compute(data)
             
             # 提取RSI值
@@ -611,7 +611,7 @@ class UnifiedBacktest:
         """
         try:
             # 计算BOLL指标
-            boll_indicator = IndicatorFactory.create_indicator("BOLL")
+            boll_indicator = IndicatorFactory.create_indicator("BOLL_Unified_Backtest")
             boll_result = boll_indicator.compute(data)
             
             upper = boll_result['upper'].values
@@ -1036,7 +1036,7 @@ class UnifiedBacktest:
                 zxm_daily_macd = IndicatorFactory.create_indicator("ZXM_DAILY_MACD")
                 zxm_daily_macd_result = zxm_daily_macd.compute(data)
                 
-                macd = zxm_daily_macd_result['MACD'].values if 'MACD' in zxm_daily_macd_result.columns else np.zeros(len(data))
+                macd = zxm_daily_macd_result['MACD_Unified_Backtest'].values if 'MACD_Unified_Backtest' in zxm_daily_macd_result.columns else np.zeros(len(data))
                 xg = zxm_daily_macd_result['XG'].values if 'XG' in zxm_daily_macd_result.columns else np.zeros(len(data), dtype=bool)
                 
                 result['indicators']['zxm_buypoint']['daily_macd'] = {
@@ -1209,7 +1209,7 @@ class UnifiedBacktest:
         except Exception as e:
             logger.error(f"计算ZXM体系指标时出错: {e}")
             
-    def _identify_patterns(self, data: pd.DataFrame, buy_index: int, days_before: int, result: Dict[str, Any]) -> None:
+    def _identify_patterns_Unified_Backtest(self, data: pd.DataFrame, buy_index: int, days_before: int, result: Dict[str, Any]) -> None:
         """
         识别特殊形态
         
@@ -1281,7 +1281,7 @@ class UnifiedBacktest:
         except Exception as e:
             logger.error(f"识别特殊形态时出错: {e}")
             
-    def _extract_cross_period_patterns(self, periods_data: Dict[str, Dict]) -> List[str]:
+    def _extract_cross_period_patterns_Unified_Backtest(self, periods_data: Dict[str, Dict]) -> List[str]:
         """
         提取跨周期共性特征
         
@@ -1344,7 +1344,7 @@ class UnifiedBacktest:
             logger.error(f"提取跨周期共性特征时出错: {e}")
             return []
     
-    def batch_analyze(self, input_file: str, output_file: str, pattern_type: str = "") -> None:
+    def batch_analyze_Backtest_Unified_Backtest(self, input_file: str, output_file: str, pattern_type: str = "") -> None:
         """
         批量分析多个股票
         
@@ -1377,18 +1377,18 @@ class UnifiedBacktest:
             logger.info(f"开始批量分析 {len(input_data)} 个买点")
             for i, (code, buy_date, type_desc) in enumerate(input_data):
                 logger.info(f"[{i+1}/{len(input_data)}] 分析 {code} {buy_date} {type_desc}")
-                self.analyze_stock(code, buy_date, type_desc)
+                self.analyze_stock_Backtest_Unified_Backtest(code, buy_date, type_desc)
                 
             # 保存结果
-            self.save_results(output_file)
+            self.save_results_Backtest_Unified_Backtest(output_file)
             
             # 打印模式统计
-            self._print_pattern_stats()
+            self._print_pattern_stats_Unified_Backtest()
             
         except Exception as e:
             logger.error(f"批量分析失败: {e}")
             
-    def save_results(self, output_file: str) -> None:
+    def save_results_Backtest_Unified_Backtest(self, output_file: str) -> None:
         """
         保存分析结果
         
@@ -1400,7 +1400,7 @@ class UnifiedBacktest:
             os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
             
             # 保存分析结果
-            self.save_analysis_results(output_file)
+            self.save_analysis_results_Backtest(output_file)
             
             # 生成并保存Markdown格式的结果报告
             markdown_file = output_file.replace('.json', '.md')
@@ -1409,7 +1409,7 @@ class UnifiedBacktest:
         except Exception as e:
             logger.error(f"保存分析结果失败: {e}")
             
-    def save_analysis_results(self, output_file):
+    def save_analysis_results_Backtest(self, output_file):
         """
         保存分析结果到文件
         
@@ -1478,7 +1478,7 @@ class UnifiedBacktest:
             except Exception as e2:
                 logger.error(f"所有修复方法均失败: {str(e2)}")
             
-    def _print_pattern_stats(self) -> None:
+    def _print_pattern_stats_Unified_Backtest(self) -> None:
         """打印模式统计信息"""
         if not self.pattern_stats:
             logger.info("没有检测到任何模式")
@@ -1497,7 +1497,7 @@ class UnifiedBacktest:
             
         logger.info("=" * 40)
         
-    def generate_strategy(self, output_file: str) -> None:
+    def generate_strategy_Backtest_Unified_Backtest(self, output_file: str) -> None:
         """
         根据分析结果生成策略
         
@@ -1532,30 +1532,30 @@ from datetime import datetime, timedelta
             
             # 添加通用函数定义
             strategy_text += """
-def MA(close, period):
+def MA_Unified_Backtest(close, period):
     \"\"\"计算移动平均线\"\"\"
     return pd.Series(close).rolling(period).mean().values
 
-def EMA(close, period):
+def EMA_Unified_Backtest(close, period):
     \"\"\"计算指数移动平均线\"\"\"
     return pd.Series(close).ewm(span=period, adjust=False).mean().values
 
-def REF(series, n):
+def REF_Unified_Backtest(series, n):
     \"\"\"引用N个周期前的数据\"\"\"
     if n <= 0:
         return series
     series_pd = pd.Series(series)
     return series_pd.shift(n).values
 
-def HHV(series, n):
+def HHV_Unified_Backtest(series, n):
     \"\"\"N个周期内的最高值\"\"\"
     return pd.Series(series).rolling(n).max().values
 
-def LLV(series, n):
+def LLV_Unified_Backtest(series, n):
     \"\"\"N个周期内的最低值\"\"\"
     return pd.Series(series).rolling(n).min().values
 
-def SMA(series, n, m):
+def SMA_Unified_Backtest(series, n, m):
     \"\"\"计算平滑移动平均\"\"\"
     result = np.zeros_like(series, dtype=float)
     result[0] = series[0]
@@ -1563,16 +1563,16 @@ def SMA(series, n, m):
         result[i] = (m * series[i] + (n - m) * result[i-1]) / n
     return result
 
-def MACD(close, fast=12, slow=26, signal=9):
+def MACD_Unified_Backtest(close, fast=12, slow=26, signal=9):
     \"\"\"计算MACD指标\"\"\"
-    ema_fast = EMA(close, fast)
-    ema_slow = EMA(close, slow)
+    ema_fast = EMA_Unified_Backtest(close, fast)
+    ema_slow = EMA_Unified_Backtest(close, slow)
     dif = ema_fast - ema_slow
-    dea = EMA(dif, signal)
+    dea = EMA_Unified_Backtest(dif, signal)
     macd = (dif - dea) * 2
     return dif, dea, macd
 
-def KDJ(close, high, low, n=9, m1=3, m2=3):
+def KDJ_Unified_Backtest(close, high, low, n=9, m1=3, m2=3):
     \"\"\"计算KDJ指标\"\"\"
     high_n = pd.Series(high).rolling(n).max()
     low_n = pd.Series(low).rolling(n).min()
@@ -1584,7 +1584,7 @@ def KDJ(close, high, low, n=9, m1=3, m2=3):
     
     return k.values, d.values, j.values
 
-def RSI(close, period=14):
+def RSI_Unified_Backtest(close, period=14):
     \"\"\"计算RSI指标\"\"\"
     diff = pd.Series(close).diff(1)
     up = diff.clip(lower=0)
@@ -1596,7 +1596,7 @@ def RSI(close, period=14):
     rsi = 100 - (100 / (1 + ma_up / ma_down))
     return rsi.values
 
-def BOLL(close, period=20, dev=2):
+def BOLL_Unified_Backtest(close, period=20, dev=2):
     \"\"\"计算BOLL指标\"\"\"
     middle = pd.Series(close).rolling(period).mean()
     std = pd.Series(close).rolling(period).std()
@@ -1609,7 +1609,7 @@ def BOLL(close, period=20, dev=2):
             
             # 添加买入信号函数
             strategy_text += """
-def is_buy_signal(context, stock):
+def is_buy_signal_Unified_Backtest(context, stock):
     \"\"\"
     买入信号判断
     
@@ -1632,20 +1632,20 @@ def is_buy_signal(context, stock):
     volume = stock.volume
     
     # 计算常用指标
-    ma5 = MA(close, 5)
-    ma10 = MA(close, 10)
-    ma20 = MA(close, 20)
-    ma60 = MA(close, 60)
+    ma5 = MA_Unified_Backtest(close, 5)
+    ma10 = MA_Unified_Backtest(close, 10)
+    ma20 = MA_Unified_Backtest(close, 20)
+    ma60 = MA_Unified_Backtest(close, 60)
     
     # MACD指标
-    dif, dea, macd = MACD(close)
+    dif, dea, macd = MACD_Unified_Backtest(close)
     
     # KDJ指标
-    k, d, j = KDJ(close, high, low)
+    k, d, j = KDJ_Unified_Backtest(close, high, low)
     
     # RSI指标
-    rsi6 = RSI(close, 6)
-    rsi12 = RSI(close, 12)
+    rsi6 = RSI_Unified_Backtest(close, 6)
+    rsi12 = RSI_Unified_Backtest(close, 12)
     
     # 策略条件 - 基于回测统计
     conditions = []
@@ -1664,7 +1664,7 @@ def is_buy_signal(context, stock):
                     strategy_text += "    conditions.append(k[-1] > d[-1] and k[-2] < d[-2])\n"
                 elif 'BOLL下轨支撑反弹' in pattern:
                     strategy_text += "    # BOLL下轨支撑反弹\n"
-                    strategy_text += "    upper, middle, lower = BOLL(close)\n"
+                    strategy_text += "    upper, middle, lower = BOLL_Unified_Backtest(close)\n"
                     strategy_text += "    conditions.append(close[-1] > lower[-1] and close[-2] < lower[-2])\n"
                 elif 'RSI超卖反弹' in pattern:
                     strategy_text += "    # RSI超卖反弹\n"
@@ -1898,9 +1898,9 @@ if __name__ == "__main__":
                 # 添加重要条件
                 if medium_freq_patterns:
                     for pattern, _ in medium_freq_patterns[:5]:
-                        if 'RSI' in pattern:
+                        if 'RSI_Unified_Backtest' in pattern:
                             f.write("        stock_data['rsi6'][-1] > stock_data['rsi6'][-2] and stock_data['rsi6'][-2] < 30,  # RSI超卖反弹\n")
-                        elif 'BOLL' in pattern:
+                        elif 'BOLL_Unified_Backtest' in pattern:
                             f.write("        stock_data['close'][-1] > stock_data['boll_lower'][-1] and stock_data['close'][-2] < stock_data['boll_lower'][-2],  # BOLL下轨支撑反弹\n")
                         elif '放量' in pattern:
                             f.write("        stock_data['volume'][-1] > stock_data['volume'][-2] * 1.5 and stock_data['close'][-1] > stock_data['close'][-2],  # 放量上涨\n")
@@ -2042,13 +2042,13 @@ if __name__ == "__main__":
                 for pattern in top_3_patterns:
                     if '均线多头排列' in pattern:
                         f.write("- **均线多头排列策略**: 当短期均线在上，中期均线在中，长期均线在下，形成多头排列时考虑买入\n")
-                    elif 'MACD' in pattern:
+                    elif 'MACD_Unified_Backtest' in pattern:
                         f.write("- **MACD策略**: 关注MACD指标的金叉和底背离信号\n")
-                    elif 'KDJ' in pattern:
+                    elif 'KDJ_Unified_Backtest' in pattern:
                         f.write("- **KDJ策略**: 当KDJ指标从超卖区金叉向上时考虑买入\n")
-                    elif 'RSI' in pattern:
+                    elif 'RSI_Unified_Backtest' in pattern:
                         f.write("- **RSI策略**: 当RSI指标从超卖区反弹上行时考虑买入\n")
-                    elif 'BOLL' in pattern:
+                    elif 'BOLL_Unified_Backtest' in pattern:
                         f.write("- **布林带策略**: 当价格触及下轨后反弹，或突破中轨上行时考虑买入\n")
                     elif 'ZXM吸筹' in pattern:
                         f.write("- **ZXM吸筹策略**: 关注成交量与价格关系，识别主力吸筹行为\n")

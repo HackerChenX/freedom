@@ -7,23 +7,23 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Any
-from enums.indicator_enum import IndicatorEnum
+from enums.indicator_enum import Indicator_enum
 
-from enums.indicator_types import TrendType, CrossType
+from enums.indicator_types import Trend_type, Cross_type
 from indicators.common import crossover, crossunder
-from .base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
-logger = logging.getLogger(__name__)
+logger = logging.get_Logger(__name__)
 
-class CMO(BaseIndicator, PatternSignalMixin):
+class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin):
     """
     钱德动量摆动指标 (Chande Momentum Oscillator)
     
     CMO是一种由图莎尔·钱德(Tushar Chande)创建的动量指标，结合了动量和波动的元素。
     该指标通过比较一段时间内上涨和下跌的总和来计算，范围为-100至+100。
     
-    CMO = 100 × ((Su - Sd) / (Su + Sd))
+    cmo = 100 × ((Su - Sd) / (Su + Sd))
     其中：
     - Su是特定周期内价格上涨总和
     - Sd是特定周期内价格下跌的绝对值总和
@@ -37,21 +37,21 @@ class CMO(BaseIndicator, PatternSignalMixin):
     def __init__(self, **kwargs):
         """初始化CMO指标"""
         super().__init__("CMO", "钱德动量摆动指标")
-        self.indicator_type = IndicatorEnum.CMO.name
+        self.indicator_type = Indicator_enum.CMO.name
         self._result = None
         self.REQUIRED_COLUMNS = ['close']
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_cmo()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Cmo(**kwargs)
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_cmo(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14, "overbought": 50.0, "oversold": -50.0}
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Cmo(self, **kwargs):
         """
         设置指标参数
 
@@ -62,15 +62,15 @@ class CMO(BaseIndicator, PatternSignalMixin):
                 - oversold: 超卖阈值
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
 
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('CMO', params)
@@ -87,15 +87,15 @@ class CMO(BaseIndicator, PatternSignalMixin):
         self.overbought = params.get('overbought', 50.0)
         self.oversold = params.get('oversold', -50.0)
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_cmo(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算CMO指标
         
         Args:
-            df: 包含close列的DataFrame
+            df: 包含close列的Data_frame
             
         Returns:
-            包含CMO列的DataFrame
+            包含CMO列的Data_frame
         """
         if self._result is not None:
             return self._result
@@ -132,12 +132,12 @@ class CMO(BaseIndicator, PatternSignalMixin):
         self._result = result
         return result
     
-    def generate_signals(self, df: pd.DataFrame) -> List[Dict]:
+    def generate_signals_Cmo(self, df: pd.DataFrame) -> List[Dict]:
         """
         生成标准化的交易信号
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
             
         Returns:
             包含交易信号的字典列表
@@ -162,13 +162,13 @@ class CMO(BaseIndicator, PatternSignalMixin):
         
         # 判断趋势方向
         if cmo > 0:
-            trend = TrendType.UP
+            trend = Trend_type.UP
             trend_strength = min(100, 50 + cmo * 0.5)
         elif cmo < 0:
-            trend = TrendType.DOWN
+            trend = Trend_type.DOWN
             trend_strength = min(100, 50 - cmo * 0.5)
         else:
-            trend = TrendType.FLAT
+            trend = Trend_type.FLAT
             trend_strength = 50
         
         # 基础信号评分(0-100)
@@ -339,12 +339,12 @@ class CMO(BaseIndicator, PatternSignalMixin):
         signals.append(signal)
         return signals
         
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Cmo(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算原始评分(0-100分)
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             包含评分的Series，范围0-100
@@ -398,13 +398,13 @@ class CMO(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Cmo(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算CMO指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -449,12 +449,12 @@ class CMO(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Cmo(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别CMO指标的技术形态
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             形态描述列表
@@ -516,7 +516,7 @@ class CMO(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Cmo(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取CMO指标的技术形态
 
@@ -525,7 +525,7 @@ class CMO(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算CMO
         if not self.has_result():
@@ -567,7 +567,7 @@ class CMO(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Cmo(self):
         """
         注册CMO指标的技术形态
         """
@@ -695,7 +695,7 @@ class CMO(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def get_pattern_info(self, pattern_id: str = None) -> Dict[str, Any]:
+    def get_pattern_info_Cmo(self, pattern_id: str = None) -> Dict[str, Any]:
         """
         获取CMO指标的形态信息
 

@@ -1,24 +1,24 @@
 """
-GannTools指标单元测试
+Gann_tools指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_gann_tools(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """GannTools指标测试类"""
     
-    def setUp(self):
+    def set_up_Tools_Test_Gann_Tools(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Tools_Test_Gann_Tools(self)
         
-        self.indicator = GannTools()
+        self.indicator = Gann_tools()
         self.expected_columns = [
             'GANN_1X1_SUPPORT', 'GANN_1X1_RESISTANCE',
             'GANN_1X2_SUPPORT', 'GANN_1X2_RESISTANCE',
@@ -30,18 +30,18 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             'GANN_PRICE_TARGET_UP', 'GANN_PRICE_TARGET_DOWN',
             'GANN_VOLUME_CONFIRMATION', 'GANN_TREND_ALIGNMENT'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Tools_Test_Gann_Tools(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Tools_Test_Gann_Tools(self)
     
     def test_gann_tools_initialization(self):
         """测试GannTools初始化"""
         # 测试默认初始化
-        default_indicator = GannTools()
+        default_indicator = Gann_tools()
         self.assertEqual(default_indicator.name, "GannTools")
         self.assertIn("江恩理论工具指标", default_indicator.description)
     
@@ -50,7 +50,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(self.data)
         
         # 验证GannTools列存在
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 验证包含江恩角度线
         gann_columns = [col for col in result.columns if 'gann_' in col]
@@ -74,9 +74,9 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_gann_tools_parameter_update(self):
         """测试GannTools参数更新"""
@@ -84,29 +84,29 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(pivot_idx=10, price_unit=0.5, time_unit=2, levels=12)
         
         # 验证参数已设置
-        self.assertEqual(self.indicator.pivot_idx, 10)
-        self.assertEqual(self.indicator.price_unit, 0.5)
-        self.assertEqual(self.indicator.time_unit, 2)
-        self.assertEqual(self.indicator.levels, 12)
+        self.assert_equal(self.indicator.pivot_idx, 10)
+        self.assert_equal(self.indicator.price_unit, 0.5)
+        self.assert_equal(self.indicator.time_unit, 2)
+        self.assert_equal(self.indicator.levels, 12)
     
     def test_gann_tools_required_columns(self):
         """测试GannTools必需列"""
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_gann_tools_patterns(self):
         """测试GannTools形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -118,16 +118,16 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_gann_tools_angle_lines_calculation(self):
         """测试GannTools角度线计算"""
         # 使用足够的数据进行角度线计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -145,7 +145,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_gann_tools_time_cycles_calculation(self):
         """测试GannTools时间周期计算"""
         # 使用足够的数据进行时间周期计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 200}
         ])
         
@@ -161,14 +161,14 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_gann_tools_gann_square_calculation(self):
         """测试GannTools江恩方格计算"""
         # 使用足够的数据进行江恩方格计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         result = self.indicator.calculate_gann_square(long_data)
         
         # 验证江恩方格结构
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         expected_square_columns = ['level', 'price', 'time_factor']
         for col in expected_square_columns:
             self.assertIn(col, result.columns, f"缺少江恩方格列: {col}")
@@ -176,21 +176,21 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_gann_tools_pattern_identification(self):
         """测试GannTools形态识别"""
         # 使用足够的数据进行形态识别
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         patterns = self.indicator.identify_patterns(long_data)
         
         # 验证返回形态列表
-        self.assertIsInstance(patterns, list)
+        self.assert_is_instance(patterns, list)
     
     def test_gann_tools_score_calculation(self):
         """测试GannTools评分计算"""
         raw_score_df = self.indicator.calculate_raw_score(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         
         # 验证包含score列
         self.assertIn('score', raw_score_df.columns)
@@ -203,28 +203,28 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_gann_tools_angle_enums(self):
         """测试GannTools角度枚举"""
         # 测试角度枚举
-        self.assertIsInstance(GannAngle.ANGLE_1X1, GannAngle)
-        self.assertIsInstance(GannAngle.ANGLE_1X2, GannAngle)
-        self.assertIsInstance(GannAngle.ANGLE_2X1, GannAngle)
+        self.assert_is_instance(Gann_angle.ANGLE_1_x1, Gann_angle)
+        self.assert_is_instance(Gann_angle.ANGLE_1_x2, Gann_angle)
+        self.assert_is_instance(Gann_angle.ANGLE_2_x1, Gann_angle)
         
         # 测试角度比例
-        self.assertIn(GannAngle.ANGLE_1X1, self.indicator.ANGLE_RATIOS)
-        self.assertEqual(self.indicator.ANGLE_RATIOS[GannAngle.ANGLE_1X1], (1, 1))
+        self.assert_in(Gann_angle.ANGLE_1_x1, self.indicator.ANGLE_RATIOS)
+        self.assert_equal(self.indicator.ANGLE_RATIOS[Gann_angle.ANGLE_1_x1], (1, 1))
     
     def test_gann_tools_time_cycle_enums(self):
         """测试GannTools时间周期枚举"""
         # 测试时间周期枚举
-        self.assertIsInstance(GannTimeCycle.CYCLE_144, GannTimeCycle)
-        self.assertIsInstance(GannTimeCycle.CYCLE_360, GannTimeCycle)
+        self.assert_is_instance(Gann_time_cycle.CYCLE_144, Gann_time_cycle)
+        self.assert_is_instance(Gann_time_cycle.CYCLE_360, Gann_time_cycle)
         
         # 测试时间周期值
-        self.assertIn(GannTimeCycle.CYCLE_144, self.indicator.TIME_CYCLES)
-        self.assertEqual(self.indicator.TIME_CYCLES[GannTimeCycle.CYCLE_144], 144)
+        self.assert_in(Gann_time_cycle.CYCLE_144, self.indicator.TIME_CYCLES)
+        self.assert_equal(self.indicator.TIME_CYCLES[Gann_time_cycle.CYCLE_144], 144)
     
     def test_gann_tools_1x1_line_analysis(self):
         """测试GannTools 1x1线分析"""
         # 使用足够的数据进行1x1线分析
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -241,26 +241,26 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_gann_tools_angle_cluster_analysis(self):
         """测试GannTools角度线聚集分析"""
         # 使用足够的数据进行角度线聚集分析
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         patterns = self.indicator.identify_patterns(long_data)
         
         # 验证形态识别结果
-        self.assertIsInstance(patterns, list)
+        self.assert_is_instance(patterns, list)
     
     def test_gann_tools_price_target_analysis(self):
         """测试GannTools价格目标分析"""
         # 使用足够的数据进行价格目标分析
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         raw_score_df = self.indicator.calculate_raw_score(long_data)
         
         # 验证价格目标分析在评分中的影响
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         self.assertIn('score', raw_score_df.columns)
     
     def test_gann_tools_volume_confirmation(self):
@@ -272,7 +272,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         raw_score_df = self.indicator.calculate_raw_score(data_with_volume)
         
         # 验证成交量确认在评分中的影响
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         self.assertIn('score', raw_score_df.columns)
     
     def test_gann_tools_edge_cases(self):
@@ -282,7 +282,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # GannTools应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_gann_tools_validation(self):
         """测试GannTools数据验证"""
@@ -291,7 +291,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_gann_tools_indicator_type(self):
         """测试GannTools指标类型"""
@@ -306,7 +306,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 验证形态已注册（通过检查是否有异常抛出）
         self.assertTrue(True, "形态注册应该成功完成")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Tools_Test_Gann_Tools(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -317,9 +317,9 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Tools_Test_Gann_Tools(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -330,7 +330,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

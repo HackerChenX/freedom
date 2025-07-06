@@ -23,7 +23,7 @@ sys.path.append(current_dir)
 from perfect_validator import PerfectValidator
 
 
-def main():
+def mainTestallindicatorsperfect():
     """主函数"""
     print("=" * 80)
     print("选股系统反向验证框架 - 最终完美验证测试")
@@ -211,5 +211,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = mainTestallindicatorsperfect()
     sys.exit(exit_code)

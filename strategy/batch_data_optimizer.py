@@ -16,13 +16,13 @@ from datetime import datetime, timedelta
 import logging
 
 from db.unified_data_manager import get_unified_data_manager
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class BatchDataOptimizer:
+class BatchdataoptimizerOptimizer:
     """
     批量数据查询优化器
     
@@ -49,7 +49,7 @@ class BatchDataOptimizer:
         logger.info(f"批量数据优化器初始化完成，批次大小: {batch_size}, 缓存: {cache_enabled}")
     
     @performance_monitor(threshold=1.0)
-    def get_stocks_data_batch(
+    def get_stocks_data_batch_Optimizer(
         self,
         stock_codes: List[str],
         end_date: str,
@@ -110,7 +110,7 @@ class BatchDataOptimizer:
         """
         try:
             # 使用统一数据管理器的方法获取批量股票数据
-            stock_info = self.data_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
                 stock_code=stock_codes,
                 level='日线',
                 start_date=start_date,
@@ -194,7 +194,7 @@ class BatchDataOptimizer:
         results = {}
         
         # 使用线程池并行计算指标
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        with concurrent.futures.Thread_pool_executor(max_workers=8) as executor:
             # 为每只股票提交指标计算任务
             future_to_stock = {}
             for stock_code, stock_data in stocks_data.items():
@@ -261,10 +261,10 @@ class BatchDataOptimizer:
                 results['volume_ma10'] = stock_data['volume'].rolling(10).mean().iloc[-1] if len(stock_data) >= 10 else None
             
             if 'rsi' in indicators:
-                results['rsi'] = self._calculate_rsi(stock_data['close'])
+                results['rsi'] = self._calculate_rsi_Batch_Data_Optimizer(stock_data['close'])
             
             if 'macd' in indicators:
-                macd_results = self._calculate_macd(stock_data['close'])
+                macd_results = self._calculate_macd_Batch_Data_Optimizer(stock_data['close'])
                 results.update(macd_results)
             
             return results
@@ -273,7 +273,7 @@ class BatchDataOptimizer:
             logger.error(f"计算股票 {stock_code} 指标时出错: {e}")
             return None
     
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> Optional[float]:
+    def _calculate_rsi_Batch_Data_Optimizer(self, prices: pd.Series, period: int = 14) -> Optional[float]:
         """计算RSI指标"""
         if len(prices) < period + 1:
             return None
@@ -288,7 +288,7 @@ class BatchDataOptimizer:
         except:
             return None
     
-    def _calculate_macd(self, prices: pd.Series) -> Dict[str, Optional[float]]:
+    def _calculate_macd_Batch_Data_Optimizer(self, prices: pd.Series) -> Dict[str, Optional[float]]:
         """计算MACD指标"""
         if len(prices) < 26:
             return {'macd_dif': None, 'macd_dea': None, 'macd_hist': None}
@@ -348,13 +348,13 @@ class BatchDataOptimizer:
         
         return market_data
     
-    def clear_cache(self):
+    def clear_cache_Optimizer(self):
         """清理缓存"""
         if self.cache:
             self.cache.clear()
             logger.info("批量数据优化器缓存已清理")
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats_Optimizer(self) -> Dict[str, Any]:
         """获取缓存统计信息"""
         if not self.cache:
             return {'cache_enabled': False}
@@ -370,7 +370,7 @@ class BatchDataOptimizer:
 _batch_optimizer = None
 
 
-def get_batch_optimizer(batch_size: int = 100, cache_enabled: bool = True) -> BatchDataOptimizer:
+def get_batch_optimizer(batch_size: int = 100, cache_enabled: bool = True) -> Batch_data_optimizer:
     """
     获取批量数据优化器实例
     
@@ -379,11 +379,11 @@ def get_batch_optimizer(batch_size: int = 100, cache_enabled: bool = True) -> Ba
         cache_enabled: 是否启用缓存
         
     Returns:
-        BatchDataOptimizer: 优化器实例
+        Batch_data_optimizer: 优化器实例
     """
     global _batch_optimizer
     
     if _batch_optimizer is None:
-        _batch_optimizer = BatchDataOptimizer(batch_size, cache_enabled)
+        _batch_optimizer = Batch_data_optimizer_Optimizer(batch_size, cache_enabled)
     
     return _batch_optimizer 

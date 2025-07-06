@@ -19,10 +19,10 @@ init_logging(level="INFO")
 logger = get_logger(__name__)
 
 
-class Test603359RealDataValidation(unittest.TestCase):
+class Test603359_real_data_validation(unittest.Test_case):
     """603359真实数据验证测试类"""
     
-    def setUp(self):
+    def set_up_Validation_Test_603359_Real_Data_Validation(self):
         """设置测试环境"""
         self.data_manager = get_unified_data_manager()
         self.target_stock = "603359"
@@ -86,7 +86,7 @@ class Test603359RealDataValidation(unittest.TestCase):
                     buy_signal_count += 1
             
             # 关键验证：XG > 0 的数量应该等于 buy_signal = True 的数量
-            self.assertEqual(xg_positive_count, buy_signal_count, 
+            self.assert_equal(xg_positive_count, buy_signal_count, 
                            f"XG>0的数量({xg_positive_count})应该等于buy_signal=True的数量({buy_signal_count})")
             
             # 验证语义一致性：当XG > 0时，buy_signal应该为True

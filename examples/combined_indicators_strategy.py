@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -39,13 +41,13 @@ from indicators.macd import MACD
 from indicators.kdj import KDJ
 from indicators.rsi import RSI
 from indicators.boll import BOLL
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+def get_stock_data_Strategy(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     从ClickHouse获取股票数据
     
@@ -58,7 +60,8 @@ def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFr
         pd.DataFrame: 股票数据
     """
     try:
-        db = get_clickhouse_db()
+        container = get_container()
+        data_access = container.get_data_access()
         
         query = f"""
         SELECT 
@@ -76,7 +79,7 @@ def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFr
         ORDER BY trade_date
         """
         
-        data = db.query_dataframe(query)
+        data = data_access.query_dataframe(query)
         
         # 验证数据有效性
         if data.empty:
@@ -668,7 +671,7 @@ def backtest_strategy(data: pd.DataFrame, initial_capital: float = 100000.0) -> 
         return {"error": str(e)}
 
 
-def get_stock_list() -> List[str]:
+def get_stock_list_Strategy() -> List[str]:
     """
     获取用于测试的股票列表
     
@@ -949,7 +952,7 @@ def save_commonality_analysis(all_results: List[Dict], all_commonality: Dict, ou
         logger.error(f"保存分析结果时发生错误: {e}")
 
 
-def main():
+def mainCombinedindicatorsstrategy():
     """主函数"""
     try:
         print("开始运行综合指标回测系统...")
@@ -971,7 +974,7 @@ def main():
             print(f"测试周期: {start_date} 至 {end_date}")
             
             # 获取股票列表
-            stock_list = get_stock_list()
+            stock_list = get_stock_list_Strategy()
             print(f"测试股票列表: {stock_list}")
             
             # 保存所有股票的回测结果
@@ -984,7 +987,7 @@ def main():
                     print(f"\n分析股票 {stock_code}...")
                     # 获取股票数据
                     print(f"获取股票数据...")
-                    data = get_stock_data(stock_code, start_date, end_date)
+                    data = get_stock_data_Strategy(stock_code, start_date, end_date)
                     
                     if data.empty:
                         print(f"无法获取股票 {stock_code} 的数据，跳过")
@@ -1177,7 +1180,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        mainCombinedindicatorsstrategy()
     except KeyboardInterrupt:
         print("\n程序被用户中断")
     except Exception as e:

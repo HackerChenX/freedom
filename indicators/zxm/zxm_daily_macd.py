@@ -3,7 +3,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from typing import Dict
 
-class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
+class ZxmdailymacdMacd(BaseIndicator, PatternSignalMixin):
     """
     主力资金日MACD (ZXM Daily MACD)
     
@@ -15,28 +15,28 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         self.long_period = long_period
         self.mid_period = mid_period
 
-    def set_parameters(self, short_period=12, long_period=26, mid_period=9):
+    def set_parameters_Macd_Zxm_Daily_Macd(self, short_period=12, long_period=26, mid_period=9):
         self.short_period = short_period
         self.long_period = long_period
         self.mid_period = mid_period
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Macd_Zxm_Daily_Macd(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         return 0.5
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Macd_Zxm_Daily_Macd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取ZXMDailyMACD相关形态
+        获取ZXMDaily_mACD相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_zxmdailymacd(data, **kwargs)
 
         patterns = pd.DataFrame(index=data.index)
 
@@ -62,9 +62,9 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Macd_Zxm_Daily_Macd(self):
         """
-        注册ZXMDailyMACD指标的形态到全局形态注册表
+        注册ZXMDaily_mACD指标的形态到全局形态注册表
         """
         # 注册MACD金叉形态
         self.register_pattern_to_registry(
@@ -99,7 +99,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
             polarity="POSITIVE"
         )
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_zxmdailymacd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算主力资金日MACD
         """
@@ -141,7 +141,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Macd_Zxm_Daily_Macd(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

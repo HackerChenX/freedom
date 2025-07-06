@@ -15,12 +15,12 @@ import datetime
 import json
 
 from formula import formula
-from enums.kline_period import KlinePeriod
+from enums.kline_period import Kline_period
 from utils.logger import get_logger
 from utils.path_utils import get_stock_result_file, get_backtest_result_dir
 from db.db_manager import DBManager
 from indicators.complete_indicator_registry import complete_registry
-from scripts.backtest.indicator_analysis import IndicatorAnalyzer
+from scripts.backtest.indicator_analysis import Indicator_analyzer
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -35,9 +35,9 @@ class MultiPeriodAnalyzer:
         """初始化分析器"""
         self.db_manager = DBManager.get_instance()
         self.result_dir = get_backtest_result_dir()
-        self.indicator_analyzer = IndicatorAnalyzer()
+        self.indicator_analyzer = Indicator_analyzer()
         
-    def analyze_stock(self, code: str, buy_date: str, pattern_type: str = "", 
+    def analyze_stock_Analyzer_Multi_Period_Analyzer(self, code: str, buy_date: str, pattern_type: str = "", 
                      days_before: int = 10, days_after: int = 5) -> Dict[str, Any]:
         """
         分析单个股票多周期买点附近的技术指标
@@ -59,7 +59,7 @@ class MultiPeriodAnalyzer:
             start_date = (buy_date_obj - datetime.timedelta(days=days_before*2)).strftime("%Y%m%d")
             
             # 获取基础分析结果（日线）
-            daily_result = self.indicator_analyzer.analyze_stock(
+            daily_result = self.indicator_analyzer.analyze_stock_Analyzer_Multi_Period_Analyzer(
                 code, buy_date, pattern_type, days_before, days_after
             )
             
@@ -77,11 +77,11 @@ class MultiPeriodAnalyzer:
                 'buy_price': daily_result.get('buy_price', 0),
                 'periods': {
                     'daily': daily_result,
-                    'min15': self._analyze_period(code, buy_date, KlinePeriod.MIN_15, start_date, end_date),
-                    'min30': self._analyze_period(code, buy_date, KlinePeriod.MIN_30, start_date, end_date),
-                    'min60': self._analyze_period(code, buy_date, KlinePeriod.MIN_60, start_date, end_date),
-                    'weekly': self._analyze_period(code, buy_date, KlinePeriod.WEEKLY, start_date, end_date),
-                    'monthly': self._analyze_period(code, buy_date, KlinePeriod.MONTHLY, start_date, end_date)
+                    'min15': self._analyze_period_Multi_Period_Analyzer(code, buy_date, KlinePeriod.MIN_15, start_date, end_date),
+                    'min30': self._analyze_period_Multi_Period_Analyzer(code, buy_date, KlinePeriod.MIN_30, start_date, end_date),
+                    'min60': self._analyze_period_Multi_Period_Analyzer(code, buy_date, KlinePeriod.MIN_60, start_date, end_date),
+                    'weekly': self._analyze_period_Multi_Period_Analyzer(code, buy_date, KlinePeriod.WEEKLY, start_date, end_date),
+                    'monthly': self._analyze_period_Multi_Period_Analyzer(code, buy_date, KlinePeriod.MONTHLY, start_date, end_date)
                 }
             }
             
@@ -94,7 +94,7 @@ class MultiPeriodAnalyzer:
             logger.error(f"多周期分析过程中出错: {code} - {e}")
             return {}
             
-    def _analyze_period(self, code: str, buy_date: str, period: KlinePeriod, 
+    def _analyze_period_Multi_Period_Analyzer(self, code: str, buy_date: str, period: Kline_period, 
                        start_date: str, end_date: str) -> Dict[str, Any]:
         """
         分析指定周期的技术指标
@@ -111,7 +111,7 @@ class MultiPeriodAnalyzer:
         """
         try:
             # 获取股票数据
-            stock_data = formula.StockData(code, period, start=start_date, end=end_date)
+            stock_data = formula.Stock_data(code, period, start=start_date, end=end_date)
             
             if not hasattr(stock_data, 'close') or len(stock_data.close) == 0:
                 logger.warning(f"未获取到股票 {code} 周期 {period.name} 的数据")
@@ -257,7 +257,7 @@ class MultiPeriodAnalyzer:
         
         return patterns
         
-    def analyze_multiple(self, stock_list: List[str], buy_dates: List[str], 
+    def analyze_multiple_Analyzer(self, stock_list: List[str], buy_dates: List[str], 
                        pattern_types: List[str] = None) -> List[Dict[str, Any]]:
         """
         分析多个股票的多周期数据
@@ -279,13 +279,13 @@ class MultiPeriodAnalyzer:
             buy_date = buy_dates[i] if i < len(buy_dates) else buy_dates[-1]
             pattern_type = pattern_types[i] if i < len(pattern_types) else ""
             
-            result = self.analyze_stock(code, buy_date, pattern_type)
+            result = self.analyze_stock_Analyzer_Multi_Period_Analyzer(code, buy_date, pattern_type)
             if result:
                 results.append(result)
                 
         return results
         
-    def analyze_from_csv(self, csv_file: str) -> List[Dict[str, Any]]:
+    def analyze_from_csv_Analyzer(self, csv_file: str) -> List[Dict[str, Any]]:
         """
         从CSV文件分析买点
         
@@ -306,13 +306,13 @@ class MultiPeriodAnalyzer:
             buy_dates = df['date'].astype(str).tolist()
             pattern_types = df['pattern_type'].tolist() if 'pattern_type' in df.columns else None
             
-            return self.analyze_multiple(stock_list, buy_dates, pattern_types)
+            return self.analyze_multiple_Analyzer(stock_list, buy_dates, pattern_types)
             
         except Exception as e:
             logger.error(f"从CSV文件 {csv_file} 分析买点时出错: {e}")
             return []
             
-    def save_to_json(self, results: List[Dict[str, Any]], output_file: str = None) -> str:
+    def save_to_json_Analyzer(self, results: List[Dict[str, Any]], output_file: str = None) -> str:
         """
         将分析结果保存为JSON文件
         
@@ -336,7 +336,7 @@ class MultiPeriodAnalyzer:
         logger.info(f"多周期分析结果已保存到 {output_file}")
         return output_file
         
-    def generate_report(self, results: List[Dict[str, Any]], output_file: str = None) -> str:
+    def generate_report_Analyzer(self, results: List[Dict[str, Any]], output_file: str = None) -> str:
         """
         生成多周期分析报告
         
@@ -476,7 +476,7 @@ class MultiPeriodAnalyzer:
         return period_names.get(period, period)
 
 
-def analyze_multi_period(input_source, source_type="csv", output_file=None, report_file=None):
+def analyze_multi_period_Analyzer(input_source, source_type="csv", output_file=None, report_file=None):
     """
     多周期分析入口函数
     
@@ -489,13 +489,13 @@ def analyze_multi_period(input_source, source_type="csv", output_file=None, repo
     Returns:
         tuple: (JSON文件路径, 报告文件路径)
     """
-    analyzer = MultiPeriodAnalyzer()
+    analyzer = Multi_period_analyzer()
     
     if source_type == "csv":
-        results = analyzer.analyze_from_csv(input_source)
+        results = analyzer.analyze_from_csv_Analyzer(input_source)
     elif source_type == "list":
         stock_list, buy_dates, pattern_types = input_source
-        results = analyzer.analyze_multiple(stock_list, buy_dates, pattern_types)
+        results = analyzer.analyze_multiple_Analyzer(stock_list, buy_dates, pattern_types)
     else:
         logger.error(f"不支持的输入源类型: {source_type}")
         return None, None
@@ -504,8 +504,8 @@ def analyze_multi_period(input_source, source_type="csv", output_file=None, repo
         logger.error("没有分析结果")
         return None, None
         
-    json_file = analyzer.save_to_json(results, output_file)
-    md_file = analyzer.generate_report(results, report_file)
+    json_file = analyzer.save_to_json_Analyzer(results, output_file)
+    md_file = analyzer.generate_report_Analyzer(results, report_file)
     
     return json_file, md_file
 
@@ -520,7 +520,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    json_file, md_file = analyze_multi_period(args.input, "csv", args.output, args.report)
+    json_file, md_file = analyze_multi_period_Analyzer(args.input, "csv", args.output, args.report)
     
     if json_file and md_file:
         logger.info("多周期分析完成")

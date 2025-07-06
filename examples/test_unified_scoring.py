@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 测试统一评分系统
 
@@ -17,7 +19,8 @@ sys.path.insert(0, root_dir)
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -28,10 +31,10 @@ def test_unified_scoring():
     logger.info("开始测试统一评分系统")
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info 
+    FROM stock_info WHERE 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
@@ -39,7 +42,7 @@ def test_unified_scoring():
     LIMIT 100
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     if data.empty:
         logger.error("没有获取到测试数据")
         return
@@ -97,10 +100,10 @@ def test_market_environment_detection():
     logger.info("\n=== 测试市场环境检测 ===")
     
     # 获取更长期的数据
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info 
+    FROM stock_info WHERE 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2023-01-01'
@@ -108,7 +111,7 @@ def test_market_environment_detection():
     LIMIT 300
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     if data.empty:
         logger.error("没有获取到测试数据")
         return
@@ -141,15 +144,15 @@ def test_market_environment_detection():
             logger.info(f"  - 年化波动率: {volatility:.2%}")
 
 
-def test_scoring_consistency():
+def test_scoring_consistency_Scoring():
     """测试评分一致性"""
     logger.info("\n=== 测试评分一致性 ===")
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info 
+    FROM stock_info WHERE 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
@@ -157,7 +160,7 @@ def test_scoring_consistency():
     LIMIT 50
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     if data.empty:
         logger.error("没有获取到测试数据")
         return
@@ -181,7 +184,7 @@ def test_scoring_consistency():
         logger.warning("✗ 评分计算一致性测试失败")
 
 
-def test_edge_cases():
+def test_edge_cases_Scoring_Test_Unified_Scoring():
     """测试边界情况"""
     logger.info("\n=== 测试边界情况 ===")
     
@@ -222,15 +225,15 @@ def test_edge_cases():
         logger.error(f"✗ 异常数据处理测试失败: {e}")
 
 
-def main():
+def main_testunifiedscoring():
     """主函数"""
     logger.info("开始统一评分系统测试")
     
     try:
         test_unified_scoring()
         test_market_environment_detection()
-        test_scoring_consistency()
-        test_edge_cases()
+        test_scoring_consistency_Scoring()
+        test_edge_cases_Scoring_Test_Unified_Scoring()
         
         logger.info("\n=== 测试完成 ===")
         logger.info("所有测试已完成，请查看上述结果")
@@ -242,4 +245,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testunifiedscoring() 

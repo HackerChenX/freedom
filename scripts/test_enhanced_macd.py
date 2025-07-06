@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 测试增强型MACD指标的脚本
 
@@ -15,14 +17,15 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
-from indicators.base_indicator import MarketEnvironment
+from indicators.base_indicator import Market_environment
 
 logger = get_logger(__name__)
 
 
-def get_test_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+def get_test_data_Macd(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     获取测试数据
     
@@ -36,7 +39,7 @@ def get_test_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFra
     """
     try:
         # 从数据库获取数据
-        db = get_clickhouse_db()
+        data_access = get_container().resolve(IData_access)
         query = f"""
         SELECT 
             trade_date,
@@ -50,7 +53,7 @@ def get_test_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFra
         AND trade_date BETWEEN '{start_date}' AND '{end_date}'
         ORDER BY trade_date
         """
-        data = db.query(query)
+        data = data_access.execute_query(query)
         
         # 设置日期索引
         data['trade_date'] = pd.to_datetime(data['trade_date'])
@@ -134,14 +137,14 @@ def generate_mock_data(start_date: str, end_date: str) -> pd.DataFrame:
     return data
 
 
-def test_enhanced_macd():
+def test_enhanced_macd_Macd():
     """
     测试增强型MACD指标
     """
     logger.info("开始测试增强型MACD指标...")
     
     # 获取测试数据（使用某一段时间的上证指数数据）
-    # data = get_test_data("000001.SH", "2022-01-01", "2022-12-31")
+    # data = get_test_data_Macd("000001.SH", "2022-01-01", "2022-12-31")
     # 如果无法从数据库获取，使用模拟数据
     data = generate_mock_data("2022-01-01", "2022-12-31")
     
@@ -154,12 +157,12 @@ def test_enhanced_macd():
     # 3. 测试不同市场环境下的MACD
     # 3.1 牛市环境
     bull_macd = MACD()
-    bull_macd.set_market_environment(MarketEnvironment.BULL_MARKET)
+    bull_macd.set_market_environment(Market_environment.BULL_MARKET)
     bull_result = bull_macd.calculate(data)
     
     # 3.2 熊市环境
     bear_macd = MACD()
-    bear_macd.set_market_environment(MarketEnvironment.BEAR_MARKET)
+    bear_macd.set_market_environment(Market_environment.BEAR_MARKET)
     bear_result = bear_macd.calculate(data)
     
     # 4. 测试信号生成
@@ -268,4 +271,4 @@ def analyze_signals(data, signals, score):
 
 
 if __name__ == "__main__":
-    test_enhanced_macd() 
+    test_enhanced_macd_Macd() 

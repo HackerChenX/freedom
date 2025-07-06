@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 测试指标评分系统
 
@@ -18,9 +20,10 @@ from indicators.macd_score import MACDScore
 from indicators.kdj_score import KDJScore
 from indicators.rsi_score import RSIScore
 from indicators.boll_score import BOLLScore
-from indicators.volume_score import VolumeScore
+from indicators.volume_score import Volume_score
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,10 +34,10 @@ def test_single_indicator_scoring():
     logger.info("开始测试单个指标评分")
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info 
+    FROM stock_info WHERE 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
@@ -42,7 +45,7 @@ def test_single_indicator_scoring():
     LIMIT 100
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     if data.empty:
         logger.error("没有获取到测试数据")
         return
@@ -78,15 +81,15 @@ def test_single_indicator_scoring():
     logger.info(f"- 信号数量: {len(kdj_result['signals'])}")
 
 
-def test_comprehensive_scoring():
+def test_comprehensive_scoring_Scoring():
     """测试综合评分系统"""
     logger.info("开始测试综合评分系统")
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info 
+    FROM stock_info WHERE 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
@@ -94,7 +97,7 @@ def test_comprehensive_scoring():
     LIMIT 100
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     if data.empty:
         logger.error("没有获取到测试数据")
         return
@@ -111,7 +114,7 @@ def test_comprehensive_scoring():
     kdj_scorer = KDJScore()
     rsi_scorer = RSIScore()
     boll_scorer = BOLLScore()
-    volume_scorer = VolumeScore()
+    volume_scorer = Volume_score()
     
     score_manager.register_indicator(macd_scorer, weight=1.5)  # MACD权重1.5
     score_manager.register_indicator(kdj_scorer, weight=1.2)   # KDJ权重1.2
@@ -191,10 +194,10 @@ def test_indicator_registry():
         logger.info("成功通过注册机制创建评分管理器")
         
         # 获取测试数据
-        db = get_clickhouse_db()
+        data_access = get_container().resolve(IData_access)
         sql = """
         SELECT date, open, high, low, close, volume
-        FROM stock_info 
+        FROM stock_info WHERE 1=1
         WHERE code = '000001'
         AND level = '日线'
         AND date >= '2024-01-01'
@@ -202,7 +205,7 @@ def test_indicator_registry():
         LIMIT 50
         """
         
-        data = db.query(sql)
+        data = data_access.execute_query(sql)
         if not data.empty:
             # 重新映射列名
             data.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -215,15 +218,15 @@ def test_indicator_registry():
         logger.error(f"测试指标注册机制失败: {e}")
 
 
-def test_pattern_recognition():
+def test_pattern_recognition_Scoring():
     """测试形态识别功能"""
     logger.info("开始测试形态识别功能")
     
     # 获取更多测试数据用于形态识别
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info 
+    FROM stock_info WHERE 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2023-01-01'
@@ -231,7 +234,7 @@ def test_pattern_recognition():
     LIMIT 500
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     if data.empty:
         logger.error("没有获取到测试数据")
         return
@@ -267,7 +270,7 @@ def test_pattern_recognition():
             logger.error(f"测试 {indicator_name} 形态识别失败: {e}")
 
 
-def main():
+def main_testindicatorscoring():
     """主函数"""
     logger.info("开始测试指标评分系统")
     
@@ -278,7 +281,7 @@ def main():
         print("\n" + "="*50 + "\n")
         
         # 测试综合评分
-        test_comprehensive_scoring()
+        test_comprehensive_scoring_Scoring()
         
         print("\n" + "="*50 + "\n")
         
@@ -288,7 +291,7 @@ def main():
         print("\n" + "="*50 + "\n")
         
         # 测试形态识别
-        test_pattern_recognition()
+        test_pattern_recognition_Scoring()
         
         logger.info("指标评分系统测试完成")
         
@@ -299,4 +302,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testindicatorscoring() 

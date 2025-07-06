@@ -12,21 +12,21 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class DivergenceType(Enum):
     """背离类型枚举"""
-    NONE = 0             # 无背离
-    POSITIVE = 1         # 正背离（底背离）：价格创新低，指标未创新低，看涨信号
-    NEGATIVE = 2         # 负背离（顶背离）：价格创新高，指标未创新高，看跌信号
+    none = 0             # 无背离
+    positive = 1         # 正背离（底背离）：价格创新低，指标未创新低，看涨信号
+    negative = 2         # 负背离（顶背离）：价格创新高，指标未创新高，看跌信号
     HIDDEN_POSITIVE = 3  # 隐藏正背离：价格未创新低，指标创新低，看涨信号
     HIDDEN_NEGATIVE = 4  # 隐藏负背离：价格未创新高，指标创新高，看跌信号
 
 
-class DIVERGENCE(BaseIndicator, PatternSignalMixin):
+class Divergence(BaseIndicator, PatternSignalMixin):
     """
     量价背离指标
     
@@ -46,7 +46,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         self.lookback_period = lookback_period
         self.confirm_period = confirm_period
     
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Divergence(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算量价背离指标
         
@@ -54,7 +54,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
             df: 输入数据，包含价格和成交量数据
                 
         Returns:
-            包含量价背离指标的DataFrame
+            包含量价背离指标的Data_frame
         """
         # 计算价格与成交量背离
         return self.price_volume_divergence(df, self.lookback_period, self.confirm_period)
@@ -103,7 +103,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         
         return result
     
-    def _calculate(self, data: pd.DataFrame, indicator_name: str = None, 
+    def _calculate_divergence(self, data: pd.DataFrame, indicator_name: str = None, 
                   lookback_period: int = 20, confirm_period: int = 5, 
                   *args, **kwargs) -> pd.DataFrame:
         """
@@ -119,22 +119,20 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 计算结果，包含各类背离信号
             
         公式说明：
-        PRICE_NEWLOW:=LOW=LLV(LOW,N);
+        PRICE_NEWLOW:=low=LLV(LOW,N);
         MACD_NO_NEWLOW:=MACD>LLV(MACD,N);
         POSITIVE_DIVERGENCE:=PRICE_NEWLOW AND MACD_NO_NEWLOW;
 
-        PRICE_NEWHIGH:=HIGH=HHV(HIGH,N);
+        PRICE_NEWHIGH:=high=HHV(HIGH,N);
         MACD_NO_NEWHIGH:=MACD<HHV(MACD,N);
         NEGATIVE_DIVERGENCE:=PRICE_NEWHIGH AND MACD_NO_NEWHIGH;
         """
         # 如果没有提供指标名称，则默认计算价格与成交量的背离
         if indicator_name is None:
-            
-        # 添加形态识别和信号生成
-        self = self.add_pattern_detection(self)
-        self = self.add_signal_generation(self)
-
-        return self.price_volume_divergence(data, lookback_period, confirm_period)
+            # 添加形态识别和信号生成
+            self = self.add_pattern_detection(self)
+            self = self.add_signal_generation(self)
+            return self.price_volume_divergence(data, lookback_period, confirm_period)
         
         # 确保数据包含必需的列
         self.ensure_columns(data, ["close", "high", "low", indicator_name])
@@ -228,7 +226,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         
         return result
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Divergence(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取背离指标的技术形态
 
@@ -238,14 +236,14 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
                 indicator_name: 用于对比的技术指标列名，默认为'macd'
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 获取参数
         indicator_name = kwargs.get('indicator_name', 'macd')
 
         # 确保已计算背离
         if not self.has_result():
-            self._calculate(data, indicator_name, **kwargs)
+            self._calculate_divergence(data, indicator_name, **kwargs)
 
         result = self._result.copy()
         patterns_df = pd.DataFrame(index=data.index)
@@ -267,7 +265,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Divergence(self):
         """
         注册DIVERGENCE指标的形态到全局形态注册表
         """
@@ -355,7 +353,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Divergence(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算量价背离指标原始评分 (0-100分)
         
@@ -559,7 +557,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         
         return self.calculate(data_with_obv, "OBV", lookback_period, confirm_period)
     
-    def _ema(self, series: np.ndarray, n: int) -> np.ndarray:
+    def _ema_Divergence(self, series: np.ndarray, n: int) -> np.ndarray:
         """
         计算指数移动平均
         
@@ -579,7 +577,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         
         return result
 
-    def generate_signals(self, data: pd.DataFrame, indicator_name: str = 'macd', *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Divergence(self, data: pd.DataFrame, indicator_name: str = 'macd', *args, **kwargs) -> pd.DataFrame:
         """
         生成背离指标交易信号
         
@@ -590,7 +588,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 初始化信号DataFrame
         signals = pd.DataFrame(index=data.index)
@@ -757,7 +755,7 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         
         return signals 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Divergence(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -790,33 +788,11 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         
         return pattern_info_map.get(pattern_id, default_pattern)
 
-    def __init__(self, **kwargs):
-        """
-        初始化DIVERGENCE指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "DIVERGENCE"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_divergence(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Divergence(self, **kwargs):
         """
         设置指标参数
         
@@ -825,8 +801,8 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -835,8 +811,8 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DIVERGENCE', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"DIVERGENCE参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -850,6 +826,6 @@ class DIVERGENCE(BaseIndicator, PatternSignalMixin):
             # 如果验证失败，静默处理
             pass
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Divergence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.5

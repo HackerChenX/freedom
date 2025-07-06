@@ -55,7 +55,7 @@ class ManualIndicatorRegistry:
                 self._stats['failed'] += 1
                 self._stats['failed_list'].append(indicator_name)
                 return False
-        except ImportError as e:
+        except Import_error as e:
             print(f"❌ 导入失败 {module_path}: {e}")
             self._stats['failed'] += 1
             self._stats['failed_list'].append(indicator_name)
@@ -176,11 +176,11 @@ class ManualIndicatorRegistry:
         for module_path, class_name, indicator_name, description in formula_indicators:
             self.register_from_import(module_path, class_name, indicator_name, description)
     
-    def get_indicator_names(self):
+    def get_indicator_names_Registration(self):
         """获取所有指标名称"""
         return list(self._indicators.keys())
     
-    def create_indicator(self, name: str, **kwargs):
+    def create_indicator_Registration(self, name: str, **kwargs):
         """创建指标实例"""
         if name not in self._indicators:
             return None
@@ -192,7 +192,7 @@ class ManualIndicatorRegistry:
             print(f"创建指标 {name} 实例失败: {e}")
             return None
     
-    def print_summary(self):
+    def print_summary_Registration_Manual_Indicator_Registration(self):
         """打印注册摘要"""
         total_registered = len(self._indicators)
         stats = self._stats
@@ -209,20 +209,20 @@ class ManualIndicatorRegistry:
         for i, name in enumerate(sorted(self._indicators.keys()), 1):
             print(f"{i:2d}. {name}")
 
-def main():
+def main_manualindicatorregistration():
     """主函数"""
-    registry = ManualIndicatorRegistry()
+    registry = Manual_indicator_registry()
     registry.register_all_available_indicators()
-    registry.print_summary()
+    registry.print_summary_Registration_Manual_Indicator_Registration()
     
     # 测试指标实例化
     print(f"\n=== 测试指标实例化 ===")
-    test_indicators = list(registry.get_indicator_names())[:10]
+    test_indicators = list(registry.get_indicator_names_Registration())[:10]
     successful_instances = 0
     
     for indicator_name in test_indicators:
         try:
-            indicator = registry.create_indicator(indicator_name)
+            indicator = registry.create_indicator_Registration(indicator_name)
             if indicator:
                 successful_instances += 1
                 print(f"✅ {indicator_name}: 实例化成功")
@@ -233,7 +233,7 @@ def main():
     
     print(f"\n实例化测试: {successful_instances}/{len(test_indicators)} 成功")
     
-    total_registered = len(registry.get_indicator_names())
+    total_registered = len(registry.get_indicator_names_Registration())
     if total_registered >= 50:
         print(f"\n🎉 手动注册成功！注册了 {total_registered} 个指标")
         return True
@@ -242,5 +242,5 @@ def main():
         return False
 
 if __name__ == "__main__":
-    success = main()
+    success = main_manualindicatorregistration()
     sys.exit(0 if success else 1)

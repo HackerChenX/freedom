@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
@@ -16,12 +18,13 @@ sys.path.append(root_dir)
 
 from indicators.zxm.score_indicators import ZXMElasticityScore, ZXMBuyPointScore
 from utils.logger import get_logger, init_logging
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 
 logger = get_logger(__name__)
 
 
-def test_zxm_elasticity_score():
+def test_zxm_elasticity_score_Indicators():
     """测试ZXM弹性评分指标"""
     logger.info("开始测试ZXM弹性评分指标")
     
@@ -29,7 +32,7 @@ def test_zxm_elasticity_score():
     elasticity_score = ZXMElasticityScore(threshold=75)
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IDataAccess)
     stock_code = "600585"  # 海螺水泥
     end_date = "2025-04-15"
     sql = f"""
@@ -45,7 +48,7 @@ def test_zxm_elasticity_score():
     LIMIT 250
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     data.set_index('trade_date', inplace=True)
     
     # 计算指标
@@ -70,7 +73,7 @@ def test_zxm_buypoint_score():
     buypoint_score = ZXMBuyPointScore(threshold=75)
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IDataAccess)
     stock_code = "600585"  # 海螺水泥
     end_date = "2025-04-15"
     sql = f"""
@@ -86,7 +89,7 @@ def test_zxm_buypoint_score():
     LIMIT 250
     """
     
-    data = db.query(sql)
+    data = data_access.execute_query(sql)
     data.set_index('trade_date', inplace=True)
     
     # 计算指标
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     init_logging()
     
     try:
-        test_zxm_elasticity_score()
+        test_zxm_elasticity_score_Indicators()
         print("\n" + "-" * 50 + "\n")
         test_zxm_buypoint_score()
     except Exception as e:

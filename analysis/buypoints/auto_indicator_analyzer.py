@@ -19,7 +19,7 @@ import logging
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.base_indicator import BaseIndicator
@@ -27,18 +27,18 @@ from indicators.score_manager import IndicatorScoreManager
 
 # 尝试导入pattern_recognition_analyzer，如果talib不可用则跳过
 try:
-    from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
+    from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
     PATTERN_ANALYZER_AVAILABLE = True
 except ImportError as e:
     PATTERN_ANALYZER_AVAILABLE = False
     print(f"警告: 形态识别分析器不可用，跳过K线形态分析: {e}")
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class AutoIndicatorAnalyzer:
     """自动指标分析器"""
     
-    def __init__(self):
+    def __init___104(self):
         """初始化分析器"""
         # 只使用完整指标注册系统
         self.complete_registry = None
@@ -65,7 +65,7 @@ class AutoIndicatorAnalyzer:
         self.pattern_analyzer = None
         if PATTERN_ANALYZER_AVAILABLE:
             try:
-                self.pattern_analyzer = PatternRecognitionAnalyzer()
+                self.pattern_analyzer = Pattern_recognition_analyzer()
             except Exception as e:
                 logger.error(f"初始化形态分析器时出错: {e}")
 
@@ -330,7 +330,7 @@ class AutoIndicatorAnalyzer:
         
         Args:
             indicator: 指标实例
-            indicator_df: 包含指标值的DataFrame
+            indicator_df: 包含指标值的Data_frame
             target_idx: 目标行索引
             
         Returns:

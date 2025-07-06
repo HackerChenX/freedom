@@ -9,22 +9,26 @@ import time
 import requests
 from typing import List, Dict, Optional
 from utils.logger import get_logger
+from config.unified_config import get_config_value
 
 # 可选导入redis
 try:
     import redis
     REDIS_AVAILABLE = True
-except ImportError:
+except Import_error:
     redis = None
     REDIS_AVAILABLE = False
 
 logger = get_logger(__name__)
 
 
-class ProxyPool:
+class Proxy_pool:
     """代理池管理器"""
 
-    def __init__(self, redis_host='localhost', redis_port=6379):
+    def __init__(self, redis_host=None, redis_port=None):
+        redis_host = redis_host or get_config_value('crawler.redis_host', 'localhost')
+        redis_port = redis_port or get_config_value('crawler.redis_port', 6379)
+        
         if REDIS_AVAILABLE:
             try:
                 self.redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
@@ -108,7 +112,7 @@ class ProxyPool:
         return self.redis_client.scard('available_proxies')
 
 
-class UserAgentRotator:
+class User_agent_rotator:
     """User-Agent轮换器"""
 
     def __init__(self):
@@ -135,7 +139,7 @@ class UserAgentRotator:
         return ua
 
 
-class CaptchaSolver:
+class Captcha_solver:
     """验证码识别器"""
 
     def __init__(self):
@@ -160,13 +164,16 @@ class CaptchaSolver:
         return None
 
 
-class AntiCrawlerModule:
+class Anti_crawler_module:
     """反爬虫处理模块"""
 
-    def __init__(self, redis_host='localhost', redis_port=6379):
-        self.proxy_pool = ProxyPool(redis_host, redis_port)
-        self.ua_rotator = UserAgentRotator()
-        self.captcha_solver = CaptchaSolver()
+    def __init__(self, redis_host=None, redis_port=None):
+        redis_host = redis_host or get_config_value('crawler.redis_host', 'localhost')
+        redis_port = redis_port or get_config_value('crawler.redis_port', 6379)
+        
+        self.proxy_pool = Proxy_pool(redis_host, redis_port)
+        self.ua_rotator = User_agent_rotator()
+        self.captcha_solver = Captcha_solver()
         if REDIS_AVAILABLE:
             try:
                 self.redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)

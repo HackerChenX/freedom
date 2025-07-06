@@ -28,7 +28,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def generate_test_data(periods: int = 100) -> pd.DataFrame:
+def generate_test_data_Scoring_Test_Additional_Indicators_Scoring(periods: int = 100) -> pd.DataFrame:
     """
     生成测试数据
     
@@ -77,7 +77,7 @@ def generate_test_data(periods: int = 100) -> pd.DataFrame:
     return data
 
 
-def test_indicator_scoring(indicator, data, indicator_name):
+def test_indicator_scoring_Scoring(indicator, data, indicator_name):
     """
     测试指标评分功能
     
@@ -146,7 +146,7 @@ def test_indicator_scoring(indicator, data, indicator_name):
         traceback.print_exc()
 
 
-def test_market_environment_detection():
+def test_market_environment_detection_Scoring():
     """
     测试市场环境检测功能
     """
@@ -234,7 +234,7 @@ def generate_sideways_data(periods=100):
     }, index=dates)
 
 
-def test_scoring_consistency():
+def test_scoring_consistency_Scoring_Test_Additional_Indicators_Scoring():
     """
     测试评分一致性
     """
@@ -242,7 +242,7 @@ def test_scoring_consistency():
     print("测试评分一致性")
     print(f"{'='*50}")
     
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Additional_Indicators_Scoring(100)
     
     # 测试多次计算的一致性
     boll = BOLL()
@@ -265,7 +265,7 @@ def test_scoring_consistency():
         print("✗ 未能完成足够多的评分计算以进行一致性测试")
 
 
-def test_edge_cases():
+def test_edge_cases_Scoring_Test_Additional_Indicators_Scoring():
     """
     测试边界情况
     """
@@ -284,7 +284,7 @@ def test_edge_cases():
     
     # 测试少量数据
     try:
-        small_data = generate_test_data(5)
+        small_data = generate_test_data_Scoring_Test_Additional_Indicators_Scoring(5)
         boll = BOLL()
         score_result = boll.calculate_score(small_data)
         if score_result:
@@ -296,7 +296,7 @@ def test_edge_cases():
     
     # 测试异常数据
     try:
-        abnormal_data = generate_test_data(50)
+        abnormal_data = generate_test_data_Scoring_Test_Additional_Indicators_Scoring(50)
         # 添加一些异常值
         abnormal_data.loc[abnormal_data.index[10], 'close'] = 1000000
         abnormal_data.loc[abnormal_data.index[20], 'volume'] = 0
@@ -308,13 +308,13 @@ def test_edge_cases():
         print(f"✓ 异常数据异常处理正常: {str(e)}")
     
     # 3. 包含NaN值的数据
-    nan_data = generate_test_data(100)
+    nan_data = generate_test_data_Scoring_Test_Additional_Indicators_Scoring(100)
     nan_data.iloc[10:20, 0] = np.nan  # 在open列中引入NaN
-    test_indicator_scoring(BOLL(), nan_data, "BOLL (with NaN)")
-    test_indicator_scoring(OBV(), nan_data, "OBV (with NaN)")
+    test_indicator_scoring_Scoring(BOLL(), nan_data, "BOLL (with NaN)")
+    test_indicator_scoring_Scoring(OBV(), nan_data, "OBV (with NaN)")
 
 
-def main():
+def mainTestadditionalindicatorsscoring():
     """
     主测试函数
     """
@@ -322,7 +322,7 @@ def main():
     print(f"测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # 生成测试数据
-    test_data = generate_test_data(100)
+    test_data = generate_test_data_Scoring_Test_Additional_Indicators_Scoring(100)
     print(f"生成测试数据: {test_data.shape[0]}行 x {test_data.shape[1]}列")
     
     # 测试各个指标
@@ -340,19 +340,19 @@ def main():
     
     for indicator, name in indicators:
         try:
-            test_indicator_scoring(indicator, test_data, name)
+            test_indicator_scoring_Scoring(indicator, test_data, name)
             success_count += 1
         except Exception as e:
             print(f"✗ {name} 测试失败: {str(e)}")
     
     # 测试市场环境检测
-    test_market_environment_detection()
+    test_market_environment_detection_Scoring()
     
     # 测试评分一致性
-    test_scoring_consistency()
+    test_scoring_consistency_Scoring_Test_Additional_Indicators_Scoring()
     
     # 测试边界情况
-    test_edge_cases()
+    test_edge_cases_Scoring_Test_Additional_Indicators_Scoring()
     
     # 输出测试总结
     print(f"\n{'='*50}")
@@ -371,4 +371,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    mainTestadditionalindicatorsscoring() 

@@ -15,13 +15,13 @@ from typing import Dict, List, Union, Optional, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from utils.logger import getLogger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class VR(BaseIndicator, PatternSignalMixin):
+class VolumeRatio(BaseIndicator, PatternSignalMixin):
     """
     成交量指标(Volume Ratio)
     
@@ -39,16 +39,16 @@ class VR(BaseIndicator, PatternSignalMixin):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_vr()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Vr(**kwargs)
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_vr(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'period': 26, 'ma_period': 6}
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Vr(self, **kwargs):
         """
         设置指标参数
 
@@ -56,8 +56,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             **kwargs: 参数字典
         """
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
 
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -78,38 +78,38 @@ class VR(BaseIndicator, PatternSignalMixin):
             self.period = 26
             self.ma_period = 6
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Vr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VR指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含VR指标的DataFrame
+            包含VR指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_vr(data)
 
-    def compute(self, data: pd.DataFrame) -> pd.DataFrame:
+    def compute_Vr(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算VR指标（兼容性方法）
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            包含VR指标的DataFrame
+            包含VR指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_vr(data)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Vr(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算VR指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -159,7 +159,7 @@ class VR(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Vr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取VR相关形态
 
@@ -168,11 +168,11 @@ class VR(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Vr(data)
 
         if self._result is None or 'vr' not in self._result.columns:
             return pd.DataFrame(index=data.index)
@@ -225,7 +225,7 @@ class VR(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Vr(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -238,7 +238,7 @@ class VR(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Vr(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -255,10 +255,10 @@ class VR(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Vr(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Vr(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -268,7 +268,7 @@ class VR(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def register_patterns(self):
+    def register_patterns_Vr(self):
         """
         注册VR指标的形态到全局形态注册表
         """
@@ -376,7 +376,7 @@ class VR(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_vr(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算VR指标
         
@@ -460,7 +460,7 @@ class VR(BaseIndicator, PatternSignalMixin):
 
         return result
     
-    def get_signals(self, data: pd.DataFrame, overbought: float = 160, oversold: float = 70) -> pd.DataFrame:
+    def get_signals_Vr(self, data: pd.DataFrame, overbought: float = 160, oversold: float = 70) -> pd.DataFrame:
         """
         生成VR信号
         
@@ -473,7 +473,7 @@ class VR(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 包含VR信号的数据框
         """
         if "vr" not in data.columns:
-            data = self.calculate(data)
+            data = self.calculate_Vr(data)
         
         # 初始化信号列
         data["vr_signal"] = np.nan
@@ -531,7 +531,7 @@ class VR(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 包含市场情绪的数据框
         """
         if "vr" not in data.columns:
-            data = self.calculate(data)
+            data = self.calculate_Vr(data)
         
         # 初始化情绪列
         data["market_sentiment"] = "中性"
@@ -556,14 +556,14 @@ class VR(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 包含VR变化率的数据框
         """
         if "vr" not in data.columns:
-            data = self.calculate(data)
+            data = self.calculate_Vr(data)
         
         # 计算VR变化率
         data["vr_change_rate"] = data["vr"].pct_change(periods=window) * 100
         
         return data
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Vr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算VR原始评分
         
@@ -576,7 +576,7 @@ class VR(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算VR
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Vr(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -605,7 +605,7 @@ class VR(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Vr(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别VR技术形态
         
@@ -620,7 +620,7 @@ class VR(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算VR
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Vr(data, **kwargs)
         
         if self._result is None:
             return patterns
@@ -1002,7 +1002,7 @@ class VR(BaseIndicator, PatternSignalMixin):
         注册VR指标相关形态
         """
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 注册VR超买超卖形态
         registry.register(
@@ -1010,8 +1010,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR超买",
             description="VR值高于超买阈值（通常为160-200），表明市场可能超买",
             indicator_id="VR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-15.0
         )
         
@@ -1020,8 +1020,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR超卖",
             description="VR值低于超卖阈值（通常为40-70），表明市场可能超卖",
             indicator_id="VR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=15.0
         )
         
@@ -1031,8 +1031,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR上升趋势",
             description="VR值连续上升，表明市场活跃度和买盘力量增强",
             indicator_id="VR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=12.0
         )
         
@@ -1041,8 +1041,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR下降趋势",
             description="VR值连续下降，表明市场活跃度和买盘力量减弱",
             indicator_id="VR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-12.0
         )
         
@@ -1052,8 +1052,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR金叉",
             description="VR上穿其均线，表明买盘力量增强",
             indicator_id="VR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=10.0
         )
         
@@ -1062,8 +1062,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR死叉",
             description="VR下穿其均线，表明买盘力量减弱",
             indicator_id="VR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-10.0
         )
         
@@ -1073,8 +1073,8 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR底背离",
             description="价格创新低但VR未创新低，可能预示反弹",
             indicator_id="VR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=20.0
         )
         
@@ -1083,12 +1083,12 @@ class VR(BaseIndicator, PatternSignalMixin):
             display_name="VR顶背离",
             description="价格创新高但VR未创新高，可能预示回调",
             indicator_id="VR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=-20.0
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Vr(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成VR指标的交易信号
 
@@ -1100,10 +1100,10 @@ class VR(BaseIndicator, PatternSignalMixin):
             Dict[str, pd.Series]: 包含交易信号的字典
         """
         # 计算VR指标
-        vr_data = self.calculate(data, **kwargs)
+        vr_data = self.calculate_Vr(data, **kwargs)
 
         # 获取信号
-        signals_df = self.get_signals(vr_data, **kwargs)
+        signals_df = self.get_signals_Vr(vr_data, **kwargs)
 
         # 提取买卖信号
         buy_signal = signals_df['vr_ma_cross'] == 1
@@ -1114,7 +1114,7 @@ class VR(BaseIndicator, PatternSignalMixin):
             "sell": sell_signal
         }
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Vr(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         

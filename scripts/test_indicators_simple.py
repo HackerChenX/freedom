@@ -26,7 +26,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def generate_mock_data(size: int = 200) -> pd.DataFrame:
+def generate_mock_data_Simple(size: int = 200) -> pd.DataFrame:
     """
     生成模拟K线数据用于测试
     
@@ -83,12 +83,12 @@ def generate_mock_data(size: int = 200) -> pd.DataFrame:
     return df
 
 
-def test_unified_ma():
+def test_unified_ma_Simple():
     """测试统一移动平均线指标"""
     logger.info("开始测试统一移动平均线指标")
     
     # 获取测试数据
-    df = generate_mock_data()
+    df = generate_mock_data_Simple()
     
     # 测试不同类型的MA
     ma_types = ['simple', 'ema', 'wma', 'ama', 'hma']
@@ -123,12 +123,12 @@ def test_unified_ma():
     logger.info("统一移动平均线测试完成")
 
 
-def test_enhanced_macd():
+def test_enhanced_macd_Simple():
     """测试增强版MACD指标"""
     logger.info("开始测试增强版MACD指标")
     
     # 获取测试数据
-    df = generate_mock_data()
+    df = generate_mock_data_Simple()
     
     # 创建增强版MACD实例
     macd = EnhancedMACD(
@@ -178,12 +178,12 @@ def test_enhanced_macd():
     logger.info("增强版MACD测试完成")
 
 
-def test_enhanced_rsi():
+def test_enhanced_rsi_Simple():
     """测试增强版RSI指标"""
     logger.info("开始测试增强版RSI指标")
     
     # 获取测试数据
-    df = generate_mock_data()
+    df = generate_mock_data_Simple()
     
     # --- 测试单周期 EnhancedRSI ---
     logger.info("测试单周期 EnhancedRSI")
@@ -234,12 +234,12 @@ def test_enhanced_rsi():
     logger.info("增强版RSI测试完成")
 
 
-def test_factory_creation():
+def test_factory_creation_Simple():
     """测试通过工厂创建增强指标"""
     logger.info("开始测试通过工厂创建增强指标")
     
     # 获取测试数据
-    df = generate_mock_data()
+    df = generate_mock_data_Simple()
     
     # 通过工厂创建统一移动平均线
     unified_ma = IndicatorFactory.create("UNIFIED_MA", periods=[5, 10, 20], ma_type="ema")
@@ -273,15 +273,15 @@ def test_factory_creation():
 
 if __name__ == "__main__":
     # 测试统一移动平均线
-    test_unified_ma()
+    test_unified_ma_Simple()
     
     # 测试增强版MACD
-    test_enhanced_macd()
+    test_enhanced_macd_Simple()
     
     # 测试增强版RSI
-    test_enhanced_rsi()
+    test_enhanced_rsi_Simple()
     
     # 测试通过工厂创建
-    test_factory_creation()
+    test_factory_creation_Simple()
     
     logger.info("所有测试完成") 

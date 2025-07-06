@@ -5,29 +5,29 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testichimoku_ichimoku(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """Ichimoku指标测试类"""
     
-    def setUp(self):
+    def set_up_Ichimoku(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Ichimoku(self)
         
         self.indicator = Ichimoku(tenkan_period=9, kijun_period=26, senkou_b_period=52, chikou_period=26)
         self.expected_columns = ['tenkan_sen', 'kijun_sen', 'senkou_span_a', 'senkou_span_b', 
                                 'chikou_span', 'kumo_top', 'kumo_bottom', 'kumo_thickness']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 120}
         ])
     
-    def tearDown(self):
+    def tear_down_Ichimoku(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Ichimoku(self)
     
     def test_ichimoku_calculation_accuracy(self):
         """测试Ichimoku计算准确性"""
@@ -70,9 +70,9 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_ichimoku_parameter_update(self):
         """测试Ichimoku参数更新"""
@@ -89,10 +89,10 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         )
         
         # 验证参数更新
-        self.assertEqual(self.indicator.tenkan_period, new_tenkan)
-        self.assertEqual(self.indicator.kijun_period, new_kijun)
-        self.assertEqual(self.indicator.senkou_b_period, new_senkou_b)
-        self.assertEqual(self.indicator.chikou_period, new_chikou)
+        self.assert_equal(self.indicator.tenkan_period, new_tenkan)
+        self.assert_equal(self.indicator.kijun_period, new_kijun)
+        self.assert_equal(self.indicator.senkou_b_period, new_senkou_b)
+        self.assert_equal(self.indicator.chikou_period, new_chikou)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -104,13 +104,13 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_cols = ['high', 'low', 'close']
         for col in expected_cols:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_ichimoku_comprehensive_score(self):
         """测试Ichimoku综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -123,7 +123,7 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证预期的形态列存在
         expected_patterns = [
@@ -146,7 +146,7 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 云图厚度应该都是非负数
         self.assertTrue(all(v >= 0 for v in kumo_thickness), "云图厚度应该都是非负数")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Ichimoku(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -157,11 +157,11 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Ichimoku(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -172,7 +172,7 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

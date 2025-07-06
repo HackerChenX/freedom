@@ -17,7 +17,7 @@ from indicators.zxm.trend_indicators import (
 class TestZXMTrendIndicators(unittest.TestCase):
     """ZXM趋势指标测试类"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestzxmtrendindicators(self):
         """设置测试数据"""
         # 生成测试数据
         dates = pd.date_range(start='2023-01-01', periods=200, freq='D')

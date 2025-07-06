@@ -19,7 +19,7 @@ from urllib.parse import urljoin, urlparse
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -30,8 +30,8 @@ import requests
 class AdvancedRealCrawler:
     """高级真实爬虫 - 无Selenium依赖"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___10(self):
+        self.concept_extractor = Concept_stock_extractor()
 
         # 创建高级会话
         self.session = requests.Session()
@@ -255,7 +255,7 @@ class AdvancedRealCrawler:
         return all_discussions
 
 
-def main():
+def main_17():
     """主函数"""
     print("=== 高级真实股市社区爬虫系统 ===")
     print(f"启动时间: {datetime.now()}")
@@ -264,7 +264,7 @@ def main():
     print("=" * 60)
 
     # 创建高级真实爬虫实例
-    crawler = AdvancedRealCrawler()
+    crawler = Advanced_real_crawler()
 
     try:
         # 爬取所有真实数据源
@@ -352,4 +352,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_17()

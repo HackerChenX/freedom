@@ -11,7 +11,7 @@ import os
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from tools.automated_risk_detection import AutomatedRiskDetector, IndicatorType, RiskLevel
+from tools.automated_risk_detection import Automated_risk_detector, Indicator_type, Risk_level
 from utils.logger import get_logger, init_logging
 
 # 初始化日志
@@ -19,12 +19,12 @@ init_logging(level="INFO")
 logger = get_logger(__name__)
 
 
-class TestAutomatedRiskDetection(unittest.TestCase):
+class Test_automated_risk_detection(unittest.Test_case):
     """自动化风险检测测试类"""
     
-    def setUp(self):
+    def set_up_Detection(self):
         """设置测试环境"""
-        self.detector = AutomatedRiskDetector()
+        self.detector = Automated_risk_detector()
     
     def test_risk_detector_initialization(self):
         """测试风险检测器初始化"""
@@ -126,11 +126,11 @@ class TestAutomatedRiskDetection(unittest.TestCase):
         
         # 验证信号一致性评分
         for name, result in results.items():
-            self.assertIsInstance(result.signal_consistency_score, float, 
+            self.assert_is_instance(result.signal_consistency_score, float, 
                                 f"{name}的信号一致性评分应该是浮点数")
-            self.assertGreaterEqual(result.signal_consistency_score, 0.0, 
+            self.assert_greater_equal(result.signal_consistency_score, 0.0, 
                                   f"{name}的信号一致性评分应该>=0")
-            self.assertLessEqual(result.signal_consistency_score, 100.0, 
+            self.assert_less_equal(result.signal_consistency_score, 100.0, 
                                f"{name}的信号一致性评分应该<=100")
         
         # 计算平均信号一致性评分
@@ -150,7 +150,7 @@ class TestAutomatedRiskDetection(unittest.TestCase):
         # 验证风险因素识别
         total_risk_factors = 0
         for name, result in results.items():
-            self.assertIsInstance(result.risk_factors, list, 
+            self.assert_is_instance(result.risk_factors, list, 
                                 f"{name}的风险因素应该是列表类型")
             total_risk_factors += len(result.risk_factors)
         
@@ -158,7 +158,7 @@ class TestAutomatedRiskDetection(unittest.TestCase):
         
         # 检查高风险指标是否有风险因素
         high_risk_indicators = [name for name, result in results.items() 
-                               if result.risk_level == RiskLevel.HIGH]
+                               if result.risk_level == Risk_level.HIGH]
         
         for indicator_name in high_risk_indicators:
             result = results[indicator_name]

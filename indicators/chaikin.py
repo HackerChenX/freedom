@@ -11,12 +11,12 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class CHAIKIN(BaseIndicator, PatternSignalMixin):
+class Chaikin(BaseIndicator, PatternSignalMixin):
     """
     CHAIKIN 指标 (Chaikin A/D Oscillator)
     
@@ -27,10 +27,10 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
     4. 正值表示买盘压力，负值表示卖盘压力
     
     计算方法:
-    1. 计算Money Flow Multiplier = ((Close - Low) - (High - Close)) / (High - Low)
-    2. 计算Money Flow Volume = Money Flow Multiplier * Volume
-    3. 计算A/D Line = 累积的Money Flow Volume
-    4. Chaikin Oscillator = EMA(A/D Line, fast_period) - EMA(A/D Line, slow_period)
+    1. 计算Money Flow multiplier = ((Close - Low) - (High - Close)) / (High - Low)
+    2. 计算Money Flow volume = Money Flow Multiplier * Volume
+    3. 计算A/D line = 累积的Money Flow Volume
+    4. Chaikin oscillator = EMA(A/D Line, fast_period) - EMA(A/D Line, slow_period)
     
     参数:
     - fast_period: 快速EMA周期，默认为3
@@ -48,16 +48,16 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         self.name = "CHAIKIN"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_chaikin()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Chaikin(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_chaikin(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"fast_period": 3, "slow_period": 10}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Chaikin(self, **kwargs):
         """
         设置指标参数
         
@@ -66,8 +66,8 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -87,29 +87,29 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         self.fast_period = kwargs.get('fast_period', 3)
         self.slow_period = kwargs.get('slow_period', 10)
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Chaikin(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算CHAIKIN指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了CHAIKIN指标的DataFrame
+            添加了CHAIKIN指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_chaikin(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_chaikin(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算CHAIKIN指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了CHAIKIN指标的DataFrame
+            添加了CHAIKIN指标的Data_frame
         """
         df = data.copy()
         
@@ -210,7 +210,7 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Chaikin(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算Chaikin指标的原始评分
         
@@ -221,7 +221,7 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         4. 零轴交叉：零轴突破的信号强度
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Chaikin(data, **kwargs)
         
         if 'CHAIKIN_VALUE' not in self._result.columns:
             return pd.Series(50.0, index=data.index)
@@ -327,7 +327,7 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         
         return scores
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Chaikin(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if not self.has_result():
             return 0.5
@@ -352,10 +352,10 @@ class CHAIKIN(BaseIndicator, PatternSignalMixin):
         confidence = (stability * 0.6 + signal_consistency * 0.4)
         return min(0.9, max(0.1, confidence))
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Chaikin(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Chaikin(data, **kwargs)
         
         patterns = pd.DataFrame(index=data.index)
         

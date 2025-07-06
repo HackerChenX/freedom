@@ -7,15 +7,15 @@ K线形态和吸筹买点模式的枚举类型
 from enum import Enum, auto
 
 
-class CandlePatternType(Enum):
+class Candle_pattern_type(Enum):
     """K线形态枚举"""
     
     # 单K线形态
-    DOJI = auto()               # 十字星
-    HAMMER = auto()             # 锤子线
+    doji = auto()               # 十字星
+    hammer = auto()             # 锤子线
     INVERTED_HAMMER = auto()    # 倒锤子线
     SHOOTING_STAR = auto()      # 流星线
-    MARUBOZU = auto()           # 光头光脚阳线/阴线
+    marubozu = auto()           # 光头光脚阳线/阴线
     LONG_LEGGED_DOJI = auto()   # 长腿十字
     DRAGONFLY_DOJI = auto()     # T字线（蜻蜓十字）
     GRAVESTONE_DOJI = auto()    # 倒T字线（墓碑十字）
@@ -44,13 +44,13 @@ class CandlePatternType(Enum):
     TRIPLE_TOP = auto()         # 三重顶
     TRIPLE_BOTTOM = auto()      # 三重底
     CUP_AND_HANDLE = auto()     # 杯柄形态
-    TRIANGLE = auto()           # 三角形
-    FLAG = auto()               # 旗形
-    WEDGE = auto()              # 楔形
-    RECTANGLE = auto()          # 矩形
+    triangle = auto()           # 三角形
+    flag = auto()               # 旗形
+    wedge = auto()              # 楔形
+    rectangle = auto()          # 矩形
 
 
-class AbsorptionPatternType(Enum):
+class Absorption_pattern_type(Enum):
     """吸筹形态枚举"""
     
     # 初期吸筹特征
@@ -82,7 +82,7 @@ class AbsorptionPatternType(Enum):
     INTRADAY_PATTERN = auto()   # 分时图早跌午拉尾盘突破
 
 
-class BuyPointType(Enum):
+class Buy_point_type(Enum):
     """买点形态枚举"""
     
     # 基本买点类型
@@ -104,19 +104,19 @@ class BuyPointType(Enum):
     SHAKEOUT_CONTINUOUS_DOWN = auto() # 连续阴线洗盘
 
 
-class KLinePosition(Enum):
+class KLine_position(Enum):
     """K线位置枚举"""
     
-    TOP = auto()        # 顶部
-    BOTTOM = auto()     # 底部
-    UPTREND = auto()    # 上升趋势中
-    DOWNTREND = auto()  # 下降趋势中
-    SIDEWAYS = auto()   # 横盘整理中
-    SUPPORT = auto()    # 支撑位附近
-    RESISTANCE = auto() # 压力位附近
+    top = auto()        # 顶部
+    bottom = auto()     # 底部
+    uptrend = auto()    # 上升趋势中
+    downtrend = auto()  # 下降趋势中
+    sideways = auto()   # 横盘整理中
+    support = auto()    # 支撑位附近
+    resistance = auto() # 压力位附近
 
 
-class VolumePattern(Enum):
+class Volume_pattern(Enum):
     """成交量形态枚举"""
     
     VOLUME_EXPANSION = auto()    # 放量
@@ -129,18 +129,18 @@ class VolumePattern(Enum):
     VOLUME_DRY_UP = auto()       # 量能枯竭(持续萎缩至极低)
     
     
-class PriceActionType(Enum):
+class Price_action_type(Enum):
     """价格行为形态枚举"""
     
-    BREAKOUT = auto()            # 突破
-    BREAKDOWN = auto()           # 跌破
-    PULLBACK = auto()            # 回调
-    BOUNCE = auto()              # 反弹
-    CONSOLIDATION = auto()       # 盘整
+    breakout = auto()            # 突破
+    breakdown = auto()           # 跌破
+    pullback = auto()            # 回调
+    bounce = auto()              # 反弹
+    consolidation = auto()       # 盘整
     GAP_UP = auto()              # 跳空上涨
     GAP_DOWN = auto()            # 跳空下跌
-    SQUEEZE = auto()             # 压缩(波动逐渐减小)
-    EXPANSION = auto()           # 扩张(波动逐渐增大)
+    squeeze = auto()             # 压缩(波动逐渐减小)
+    expansion = auto()           # 扩张(波动逐渐增大)
     TREND_CHANGE = auto()        # 趋势改变
     V_REVERSAL = auto()          # V型反转
     W_REVERSAL = auto()          # W型反转

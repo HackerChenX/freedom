@@ -1,3 +1,4 @@
+from typing import Dict, Any, Optional
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
@@ -5,18 +6,19 @@ import datetime
 import pandas as pd
 
 # 直接从indicators模块导入所需的函数
-from indicators import LLV, HHV, SMA, EMA, REF
-from db.clickhouse_db import get_clickhouse_db
-from kline_period import KlinePeriod
+# from indicators import  # 分层架构违规，已注释 LLV, HHV, SMA, EMA, REF
+from utils.dependency_injection import get_service
+from kline_period import Kline_period
 
 
-def main():
+def main_queryexample():
     """
-    演示如何使用ClickHouseDB类查询不同级别的数据
+    演示如何使用Click_house_dB类查询不同级别的数据
     """
     
-    # 连接到ClickHouse，使用get_clickhouse_db获取连接
-    db = get_clickhouse_db()
+    # 连接到ClickHouse，使用依赖注入获取连接
+    container = get_container()
+    db = container.get_data_access()
     
     # 获取今天的日期
     today = datetime.date.today()
@@ -34,7 +36,7 @@ def main():
         code=stock_code,
         start=start_date,
         end=end_date,
-        level=str(KlinePeriod.MIN_15)
+        level=str(Kline_period.MIN_15)
     )
     
     # 将列表转换为DataFrame
@@ -55,7 +57,7 @@ def main():
         code=stock_code,
         start=start_date,
         end=end_date,
-        level=str(KlinePeriod.MIN_30)
+        level=str(Kline_period.MIN_30)
     )
     
     # 将列表转换为DataFrame
@@ -76,7 +78,7 @@ def main():
         code=stock_code,
         start=start_date,
         end=end_date,
-        level=str(KlinePeriod.DAILY)
+        level=str(Kline_period.DAILY)
     )
     
     # 将列表转换为DataFrame
@@ -97,7 +99,7 @@ def main():
         code=stock_code,
         start=start_date,
         end=end_date,
-        level=str(KlinePeriod.WEEKLY)
+        level=str(Kline_period.WEEKLY)
     )
     
     # 将列表转换为DataFrame
@@ -116,7 +118,7 @@ def main():
         code=stock_code,
         start=start_date,
         end=end_date,
-        level=str(KlinePeriod.MONTHLY)
+        level=str(Kline_period.MONTHLY)
     )
     
     # 将列表转换为DataFrame
@@ -163,7 +165,7 @@ def 查找最近吸筹日期(stock_data, n=30):
     """查找最近一次满足吸筹条件的日期
 
     参数:
-        stock_data: 股票数据DataFrame
+        stock_data: 股票数据Data_frame
         n: 吸筹周期
 
     返回:
@@ -241,9 +243,9 @@ def 计算吸筹(data, n=10, index=None):
     if len(data.close) == 0:
         return False
 
-    C = data.close
-    L = data.low
-    H = data.high
+    c = data.close
+    l = data.low
+    h = data.high
 
     llv = LLV(L, 55)
     hhv = HHV(H, 55)
@@ -264,17 +266,17 @@ def 计算吸筹(data, n=10, index=None):
         return condition1 or (condition1 and condition2)
     else:
         # 计算最后一天的吸筹情况
-        condition1 = countListAnyMatch(ema_v11, n, lambda x: x < 13)
-        condition2 = countListAnyMatch(v12, n, lambda x: x > 13)
+        condition1 = count_list_any_match(ema_v11, n, lambda x: x < 13)
+        condition2 = count_list_any_match(v12, n, lambda x: x > 13)
 
         return condition1 or (condition1 and condition2)
 
 
-def countListAnyMatch(lst, n, func):
+def count_list_any_match(lst, n, func):
     """判断列表最后n个元素是否包含满足func条件的元素"""
     n = n if n < len(lst) else len(lst)
     return any([func(lst[i]) for i in range(len(lst) - n, len(lst))])
 
 
 if __name__ == "__main__":
-    main() 
+    main_queryexample() 

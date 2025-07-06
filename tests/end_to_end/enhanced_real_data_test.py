@@ -1,10 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 增强版真实数据环境性能测试
 
-使用ClickHouse真实数据，测试500-1000只股票的大规模数据处理能力
+使用Click_house真实数据，测试500-1000只股票的大规模数据处理能力
 """
 
 import sys
@@ -24,11 +26,12 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from utils.logger import get_logger
+from config.unified_config import get_config_value
 
 logger = get_logger(__name__)
 
 
-class EnhancedRealDataTest:
+class Enhanced_real_data_test:
     """增强版真实数据测试器"""
     
     def __init__(self):
@@ -47,9 +50,9 @@ class EnhancedRealDataTest:
         try:
             import clickhouse_connect
             self.client = clickhouse_connect.get_client(
-                host='localhost', 
-                port=8123, 
-                database='stock'
+                host=get_config_value('test.test_db_host', 'localhost'),
+                port=get_config_value('test.test_db_port', 8123),
+                database=get_config_value('test.test_db_database', 'stock')
             )
             logger.info("ClickHouse连接初始化成功")
         except Exception as e:
@@ -79,7 +82,7 @@ class EnhancedRealDataTest:
             query_start = time.time()
             result = self.client.query(f"""
                 SELECT DISTINCT code, name 
-                FROM stock_info 
+                FROM stock_info WHERE 1=1
                 WHERE date >= '2024-01-01' 
                 LIMIT {stock_limit}
             """)
@@ -91,7 +94,7 @@ class EnhancedRealDataTest:
                 'query_type': 'stock_list',
                 'duration': query_time,
                 'records': len(stock_list),
-                'query': 'SELECT DISTINCT code, name FROM stock_info'
+                'query': 'SELECT DISTINCT code, name FROM stock_info WHERE date >= 2020-01-01'
             })
             
             logger.info(f"股票列表查询完成: {len(stock_list)}只股票，耗时: {query_time:.3f}秒")
@@ -100,7 +103,7 @@ class EnhancedRealDataTest:
             query_start = time.time()
             recent_data_query = f"""
                 SELECT code, date, open, high, low, close, volume
-                FROM stock_info
+                FROM stock_info WHERE 1=1
                 WHERE date >= '2024-06-01'
                 AND code IN ({','.join([f"'{code}'" for code, _ in stock_list[:100]])})
                 ORDER BY code, date DESC
@@ -129,7 +132,7 @@ class EnhancedRealDataTest:
                     MAX(high) as max_price,
                     MIN(low) as min_price,
                     SUM(volume) as total_volume
-                FROM stock_info 
+                FROM stock_info WHERE 1=1
                 WHERE date >= '2024-01-01' 
                 AND code IN ({','.join([f"'{code}'" for code, _ in stock_list[:200]])})
                 GROUP BY code
@@ -156,7 +159,7 @@ class EnhancedRealDataTest:
                     code, date, close, volume,
                     (close - open) / open as daily_change,
                     volume / 1000000 as volume_millions
-                FROM stock_info
+                FROM stock_info WHERE 1=1
                 WHERE date >= '2024-05-01'
                 AND code IN ({','.join([f"'{code}'" for code, _ in stock_list[:50]])})
                 AND close > 10
@@ -264,7 +267,7 @@ class EnhancedRealDataTest:
                 if query_id % 3 == 0:
                     query = f"""
                         SELECT code, close, volume 
-                        FROM stock_info 
+                        FROM stock_info WHERE 1=1
                         WHERE date = '2024-06-20' 
                         AND close > {10 + query_id}
                         LIMIT 100
@@ -272,7 +275,7 @@ class EnhancedRealDataTest:
                 elif query_id % 3 == 1:
                     query = f"""
                         SELECT code, AVG(close) as avg_price
-                        FROM stock_info 
+                        FROM stock_info WHERE 1=1
                         WHERE date >= '2024-06-{10 + query_id % 10:02d}'
                         GROUP BY code
                         LIMIT 50
@@ -280,7 +283,7 @@ class EnhancedRealDataTest:
                 else:
                     query = f"""
                         SELECT COUNT(*) as count
-                        FROM stock_info 
+                        FROM stock_info WHERE 1=1
                         WHERE volume > {1000000 * (query_id + 1)}
                         AND date >= '2024-06-01'
                     """
@@ -309,7 +312,7 @@ class EnhancedRealDataTest:
         # 执行并发测试
         start_time = time.time()
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=concurrent_count) as executor:
+        with concurrent.futures.Thread_pool_executor(max_workers=concurrent_count) as executor:
             futures = [executor.submit(execute_concurrent_query, i) for i in range(concurrent_count)]
             
             for future in concurrent.futures.as_completed(futures):
@@ -507,7 +510,7 @@ def main():
     
     try:
         # 创建测试实例
-        test_framework = EnhancedRealDataTest()
+        test_framework = Enhanced_real_data_test()
         
         # 运行全面测试
         results = test_framework.run_comprehensive_real_data_test()

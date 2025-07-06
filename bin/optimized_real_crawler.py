@@ -18,7 +18,7 @@ from typing import Dict, List, Any
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -30,7 +30,7 @@ class OptimizedRealCrawler:
     """优化版真实爬虫"""
 
     def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+        self.concept_extractor = Concept_stock_extractor()
         self.session = requests.Session()
 
         # 高级User-Agent池
@@ -249,7 +249,7 @@ class OptimizedRealCrawler:
         return all_discussions
 
 
-def main():
+def main_optimizedrealcrawler():
     """主函数"""
     print("=== 优化版真实股市社区爬虫系统 ===")
     print(f"启动时间: {datetime.now()}")
@@ -257,7 +257,7 @@ def main():
     print("=" * 60)
 
     # 创建优化版爬虫实例
-    crawler = OptimizedRealCrawler()
+    crawler = Optimized_real_crawler()
 
     try:
         # 爬取优化的数据源
@@ -337,4 +337,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_optimizedrealcrawler()

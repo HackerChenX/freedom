@@ -30,10 +30,10 @@ def test_basic_functionality():
     try:
         # 加载配置管理器
         config_module = load_config_manager()
-        DatabaseConfigManager = config_module.DatabaseConfigManager
+        database_config_manager = config_module.Database_config_manager
         
         # 创建实例
-        manager = DatabaseConfigManager()
+        manager = Database_config_manager()
         
         # 测试获取配置
         config = manager.get_config()
@@ -75,10 +75,10 @@ def test_environment_variables():
         
         # 加载配置管理器
         config_module = load_config_manager()
-        DatabaseConfigManager = config_module.DatabaseConfigManager
+        database_config_manager = config_module.Database_config_manager
         
         # 创建新实例
-        manager = DatabaseConfigManager()
+        manager = Database_config_manager()
         config = manager.get_config()
         
         # 验证环境变量
@@ -120,13 +120,13 @@ def test_password_management():
     try:
         # 加载配置管理器
         config_module = load_config_manager()
-        DatabaseConfigManager = config_module.DatabaseConfigManager
+        database_config_manager = config_module.Database_config_manager
         
         # 创建实例
-        manager = DatabaseConfigManager()
+        manager = Database_config_manager()
         
         # 测试设置密码（不保存到文件）
-        test_password = "test_password_123"
+        test_password = os.getenv('TEST_PASSWORD', "test_password_123")
         manager.set_password(test_password, encrypt=True, save_to_file=False)
         
         # 验证密码
@@ -169,10 +169,10 @@ def test_file_operations():
     try:
         # 加载配置管理器
         config_module = load_config_manager()
-        DatabaseConfigManager = config_module.DatabaseConfigManager
+        database_config_manager = config_module.Database_config_manager
         
         # 创建实例
-        manager = DatabaseConfigManager()
+        manager = Database_config_manager()
         
         # 测试配置文件加载
         config = manager.get_config()
@@ -192,7 +192,7 @@ def test_file_operations():
         print(f"❌ 文件操作测试失败: {e}")
         return False
 
-def main():
+def main_standaloneconfigtest():
     """主函数"""
     print("🧪 独立数据库配置管理器测试")
     print("=" * 60)
@@ -229,5 +229,5 @@ def main():
     return passed == total
 
 if __name__ == '__main__':
-    success = main()
+    success = main_standaloneconfigtest()
     sys.exit(0 if success else 1)

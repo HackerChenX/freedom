@@ -21,14 +21,15 @@ sys.path.append(root_dir)
 
 from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
 from scripts.backtest.pattern_backtest import PatternBacktester
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir
 
 logger = get_logger("pattern_analysis_backtest")
 
 
-def parse_args():
+def parse_args_Backtest():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="运行形态识别分析和回测")
     
@@ -65,7 +66,7 @@ def parse_args():
                        default="both", help="运行模式：仅分析，仅回测，或两者都运行")
     
     # 解析参数
-    args = parser.parse_args()
+    args = parser.parse_args_Backtest()
     
     # 参数验证
     if not args.stock and not args.stock_list and not args.index:
@@ -82,10 +83,11 @@ def parse_args():
     return args
 
 
-def get_stock_list(args):
+def get_stock_list_Backtest(args):
     """获取股票列表"""
     stocks = []
-    db = get_clickhouse_db()
+    container = get_container()
+    data_access = container.get_data_access()
     
     # 从单个股票参数获取
     if args.stock:
@@ -105,7 +107,7 @@ def get_stock_list(args):
     # 从指数成分股获取
     if args.index:
         try:
-            index_stocks = db.get_index_stocks(args.index)
+            index_stocks = data_access.get_index_stocks(args.index)
             stocks.extend(index_stocks)
         except Exception as e:
             logger.error(f"获取指数 {args.index} 成分股出错: {e}")
@@ -116,7 +118,7 @@ def get_stock_list(args):
     # 过滤非法股票代码
     valid_stocks = []
     for stock in stocks:
-        if db.is_valid_stock(stock):
+        if data_access.is_valid_stock(stock):
             valid_stocks.append(stock)
         else:
             logger.warning(f"股票代码 {stock} 无效，已忽略")
@@ -133,13 +135,14 @@ def run_pattern_analysis(stock_code, args):
     )
     
     # 获取数据
-    db = get_clickhouse_db()
+    container = get_container()
+    data_access = container.get_data_access()
     periods_data = {}
     
     # 为每个周期获取数据
     for period in args.periods.split(','):
         try:
-            period_data = db.get_kline_data(
+            period_data = data_access.get_kline_data(
                 stock_code=stock_code,
                 start_date=args.start_date,
                 end_date=args.end_date,
@@ -159,7 +162,7 @@ def run_pattern_analysis(stock_code, args):
         return None
     
     # 获取股票名称
-    stock_name = db.get_stock_name(stock_code)
+    stock_name = data_access.get_stock_name(stock_code)
     
     # 运行分析
     result = analyzer.analyze(
@@ -171,7 +174,7 @@ def run_pattern_analysis(stock_code, args):
     return result
 
 
-def run_backtest(stock_codes, args):
+def run_backtest_Backtest(stock_codes, args):
     """运行形态回测"""
     # 初始化回测器
     backtester = PatternBacktester(
@@ -191,7 +194,7 @@ def run_backtest(stock_codes, args):
     return results
 
 
-def save_results(results, filepath, prefix=None):
+def save_results_Backtest(results, filepath, prefix=None):
     """保存结果到文件"""
     # 如果未指定文件名，则生成默认文件名
     if not filepath:
@@ -300,16 +303,16 @@ def print_backtest_summary(results):
             print(f"  {indicator}: 成功率 {success_rate:.2f}%, 平均收益 {avg_gain:.2f}% ({count}次)")
 
 
-def main():
+def main_14():
     # 解析命令行参数
-    args = parse_args()
+    args = parse_args_Backtest()
     
     # 设置日志级别
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     
     # 获取股票列表
-    stock_codes = get_stock_list(args)
+    stock_codes = get_stock_list_Backtest(args)
     
     if not stock_codes:
         logger.error("没有有效的股票代码，程序退出")
@@ -338,17 +341,17 @@ def main():
         
         # 保存分析结果
         if analysis_results:
-            save_results(analysis_results, args.output, "analysis")
+            save_results_Backtest(analysis_results, args.output, "analysis")
     
     if args.mode in ["backtest", "both"]:
         # 运行形态回测
         try:
             logger.info("开始回测")
-            backtest_results = run_backtest(stock_codes, args)
+            backtest_results = run_backtest_Backtest(stock_codes, args)
             
             # 保存回测结果
             if backtest_results:
-                save_results(backtest_results, args.output, "backtest")
+                save_results_Backtest(backtest_results, args.output, "backtest")
                 
                 # 打印回测摘要
                 print_backtest_summary(backtest_results)
@@ -359,4 +362,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_14() 

@@ -1,45 +1,45 @@
 """
-InstitutionalBehavior指标单元测试
+Institutional_behavior指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testinstitutionalbehavior_behavior(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """InstitutionalBehavior指标测试类"""
     
-    def setUp(self):
+    def set_up_Behavior_Test_Institutional_Behavior(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Behavior_Test_Institutional_Behavior(self)
         
         self.indicator = complete_registry.create_indicator('INSTITUTIONAL_BEHAVIOR')
         self.expected_columns = [
             'inst_concentration', 'inst_profit_ratio', 'inst_cost', 'inst_activity_score',
             'inst_phase', 'behavior_pattern', 'phase_change', 'behavior_intensity', 'behavior_description'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Behavior(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Behavior(self)
     
     def test_institutional_behavior_initialization(self):
         """测试InstitutionalBehavior初始化"""
         # 测试默认初始化
         default_indicator = complete_registry.create_indicator('INSTITUTIONAL_BEHAVIOR')
-        self.assertEqual(default_indicator.volume_quantile, 0.85)
+        self.assert_equal(default_indicator.volume_quantile, 0.85)
         
         # 测试参数设置
         default_indicator.set_parameters(volume_quantile=0.9)
-        self.assertEqual(default_indicator.volume_quantile, 0.9)
+        self.assert_equal(default_indicator.volume_quantile, 0.9)
     
     def test_institutional_behavior_calculation_accuracy(self):
         """测试InstitutionalBehavior计算准确性"""
@@ -54,14 +54,14 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
             concentration_values = result['inst_concentration'].dropna()
             if len(concentration_values) > 0:
                 # 集中度应该在0-1范围内
-                self.assertTrue(all(0 <= v <= 1 for v in concentration_values), 
+                self.assert_true(all(0 <= v <= 1 for v in concentration_values), 
                                "机构集中度应该在0-1范围内")
         
         if 'inst_profit_ratio' in result.columns:
             profit_values = result['inst_profit_ratio'].dropna()
             if len(profit_values) > 0:
                 # 获利盘比例应该在0-1范围内
-                self.assertTrue(all(0 <= v <= 1 for v in profit_values), 
+                self.assert_true(all(0 <= v <= 1 for v in profit_values), 
                                "机构获利盘比例应该在0-1范围内")
     
     def test_institutional_behavior_score_range(self):
@@ -80,9 +80,9 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_institutional_behavior_parameter_update(self):
         """测试InstitutionalBehavior参数更新"""
@@ -90,26 +90,26 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         self.indicator.set_parameters(volume_quantile=new_volume_quantile)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.volume_quantile, new_volume_quantile)
+        self.assert_equal(self.indicator.volume_quantile, new_volume_quantile)
     
     def test_institutional_behavior_required_columns(self):
         """测试InstitutionalBehavior必需列"""
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_institutional_behavior_patterns(self):
         """测试InstitutionalBehavior形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -126,11 +126,11 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_institutional_behavior_phase_determination(self):
         """测试InstitutionalBehavior阶段判断"""
@@ -200,7 +200,7 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         activity_values = result['inst_activity_score'].dropna()
         if len(activity_values) > 0:
             # 活跃度评分应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in activity_values), 
+            self.assert_true(all(np.isfinite(v) for v in activity_values), 
                            "活跃度评分应该是有限数值")
     
     def test_institutional_behavior_cost_calculation(self):
@@ -219,38 +219,38 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
     def test_institutional_behavior_classify_behavior(self):
         """测试InstitutionalBehavior行为分类"""
         # 需要足够的数据进行分类
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         classifications = self.indicator.classify_institutional_behavior(long_data)
         
         # 验证分类结果
-        self.assertIsInstance(classifications, list)
+        self.assert_is_instance(classifications, list)
         
         # 验证分类结果结构
         for classification in classifications:
-            self.assertIsInstance(classification, dict)
+            self.assert_is_instance(classification, dict)
             self.assertIn('type', classification)
             self.assertIn('description', classification)
     
     def test_institutional_behavior_predict_absorption(self):
         """测试InstitutionalBehavior吸筹预测"""
         # 需要足够的数据进行预测
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 80}
         ])
         
         prediction = self.indicator.predict_absorption_completion(long_data)
         
         # 验证预测结果
-        self.assertIsInstance(prediction, dict)
+        self.assert_is_instance(prediction, dict)
         expected_keys = [
             'is_in_absorption', 'completion_days_min', 'completion_days_max',
             'confidence', 'description'
         ]
         for key in expected_keys:
-            self.assertIn(key, prediction)
+            self.assert_in(key, prediction)
     
     def test_institutional_behavior_comprehensive_patterns(self):
         """测试InstitutionalBehavior综合形态"""
@@ -276,7 +276,7 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
                         for val in unique_values:
                             self.assertIsInstance(val, (bool, np.bool_), f"{pattern}应该是布尔值")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Behavior(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -287,11 +287,11 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Behavior(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -302,7 +302,7 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_institutional_behavior_register_patterns(self):
         """测试InstitutionalBehavior形态注册"""
@@ -319,9 +319,9 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
         result = self.indicator.calculate(small_data)
         
         # InstitutionalBehavior应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_institutional_behavior_validation(self):
         """测试InstitutionalBehavior数据验证"""
@@ -330,7 +330,7 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
 
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_institutional_behavior_indicator_type(self):
         """测试InstitutionalBehavior指标类型"""

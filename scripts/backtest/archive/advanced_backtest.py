@@ -14,15 +14,16 @@ from typing import List, Dict, Any, Tuple, Optional
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
-from scripts.backtest.pattern_backtest import PatternBacktester
-from db.clickhouse_db import get_clickhouse_db
+from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
+from scripts.backtest.pattern_backtest import Pattern_backtester
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir
 
 logger = get_logger("advanced_backtest")
 
-class AdvancedBacktester(PatternBacktester):
+class AdvancedbacktesterBacktest(Pattern_backtester):
     """
     高级形态回测器
     
@@ -58,7 +59,7 @@ class AdvancedBacktester(PatternBacktester):
             "config": self.config.copy()
         }
     
-    def set_config(self, config: Dict[str, Any]) -> None:
+    def set_config_Backtest_Advanced_Backtest(self, config: Dict[str, Any]) -> None:
         """
         设置回测配置
         
@@ -69,7 +70,7 @@ class AdvancedBacktester(PatternBacktester):
         self.advanced_results["config"] = self.config.copy()
         logger.info(f"已更新回测配置: {self.config}")
     
-    def backtest_with_combination(self, stock_codes: List[str], 
+    def backtest_with_combination_Backtest(self, stock_codes: List[str], 
                                 start_date: str, 
                                 end_date: str,
                                 pattern_combinations: List[Dict[str, Any]],
@@ -144,7 +145,7 @@ class AdvancedBacktester(PatternBacktester):
                             logger.error(f"获取 {stock_code} {period} 周期数据时出错: {e}")
                     
                     # 对齐数据到买点日期
-                    aligned_data = self._align_data_to_date(period_data, buy_date)
+                    aligned_data = self._align_data_to_date_Advanced_Backtest(period_data, buy_date)
                     
                     if not aligned_data:
                         logger.warning(f"股票 {stock_code} 在买点 {buy_date} 没有对齐的数据，跳过此买点")
@@ -161,7 +162,7 @@ class AdvancedBacktester(PatternBacktester):
                     )
                     
                     # 检测是否符合形态组合条件
-                    is_match, matched_patterns = self._match_pattern_combinations(
+                    is_match, matched_patterns = self._match_pattern_combinations_Advanced_Backtest(
                         analysis_result, 
                         pattern_combinations,
                         min_strength=self.config["min_pattern_strength"]
@@ -171,14 +172,14 @@ class AdvancedBacktester(PatternBacktester):
                         continue
                     
                     # 获取买点后的实际涨跌幅
-                    future_change, price_series = self._calculate_detailed_future_change(
+                    future_change, price_series = self._calculate_detailed_future_change_Advanced_Backtest(
                         stock_code=stock_code,
                         buy_date=buy_date,
                         forward_days=forward_days
                     )
                     
                     # 计算最大收益和最大回撤
-                    max_profit, max_drawdown, hold_days = self._calculate_price_metrics(
+                    max_profit, max_drawdown, hold_days = self._calculate_price_metrics_Advanced_Backtest(
                         price_series, 
                         profit_taking=self.config["profit_taking"],
                         stop_loss=self.config["stop_loss"]
@@ -188,7 +189,7 @@ class AdvancedBacktester(PatternBacktester):
                     is_success = future_change >= threshold
                     
                     # 记录组合结果
-                    combination_key = self._generate_combination_key(pattern_combinations)
+                    combination_key = self._generate_combination_key_Advanced_Backtest(pattern_combinations)
                     
                     if combination_key not in combination_results:
                         combination_results[combination_key] = {
@@ -240,11 +241,11 @@ class AdvancedBacktester(PatternBacktester):
         self.advanced_results["combinations"] = combination_results
         
         # 计算整体性能指标
-        self._calculate_overall_performance(combination_results)
+        self._calculate_overall_performance_Advanced_Backtest(combination_results)
         
         return self.advanced_results
     
-    def _align_data_to_date(self, period_data: Dict[str, pd.DataFrame], 
+    def _align_data_to_date_Advanced_Backtest(self, period_data: Dict[str, pd.DataFrame], 
                           target_date: str) -> Dict[str, pd.DataFrame]:
         """
         将各周期数据对齐到目标日期
@@ -264,7 +265,7 @@ class AdvancedBacktester(PatternBacktester):
                 continue
                 
             # 找到不晚于目标日期的最后一个日期
-            if isinstance(data.index, pd.DatetimeIndex):
+            if isinstance(data.index, pd.Datetime_index):
                 mask = data.index <= target_date_dt
                 if not mask.any():
                     logger.warning(f"目标日期 {target_date} 在 {period} 周期数据中不存在")
@@ -278,7 +279,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return aligned_data
     
-    def _match_pattern_combinations(self, analysis_result: Dict[str, Any], 
+    def _match_pattern_combinations_Advanced_Backtest(self, analysis_result: Dict[str, Any], 
                                   pattern_combinations: List[Dict[str, Any]],
                                   min_strength: float = 60) -> Tuple[bool, List[Dict[str, Any]]]:
         """
@@ -331,7 +332,7 @@ class AdvancedBacktester(PatternBacktester):
             # 至少一个形态匹配
             return len(matched_patterns) >= self.config["min_pattern_count"], matched_patterns
     
-    def _calculate_detailed_future_change(self, stock_code: str, buy_date: str, 
+    def _calculate_detailed_future_change_Advanced_Backtest(self, stock_code: str, buy_date: str, 
                                         forward_days: int) -> Tuple[float, pd.Series]:
         """
         计算未来涨跌幅和价格序列
@@ -381,7 +382,7 @@ class AdvancedBacktester(PatternBacktester):
             future_date_dt = pd.to_datetime(future_date)
             future_price = None
             
-            if isinstance(future_price_data.index, pd.DatetimeIndex):
+            if isinstance(future_price_data.index, pd.Datetime_index):
                 # 找到距离目标日期最近的行
                 closest_idx = (future_price_data.index - future_date_dt).abs().argmin()
                 future_price = future_price_data['close'].iloc[closest_idx]
@@ -400,7 +401,7 @@ class AdvancedBacktester(PatternBacktester):
             logger.error(f"计算未来涨跌幅时出错: {e}")
             return 0, pd.Series()
     
-    def _calculate_price_metrics(self, price_series: pd.Series, 
+    def _calculate_price_metrics_Advanced_Backtest(self, price_series: pd.Series, 
                                profit_taking: float = 0.05, 
                                stop_loss: float = -0.03) -> Tuple[float, float, int]:
         """
@@ -441,7 +442,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return max_profit, max_drawdown, hold_days
     
-    def _generate_combination_key(self, pattern_combinations: List[Dict[str, Any]]) -> str:
+    def _generate_combination_key_Advanced_Backtest(self, pattern_combinations: List[Dict[str, Any]]) -> str:
         """
         生成形态组合的唯一键
         
@@ -461,7 +462,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return "|".join(parts)
     
-    def _calculate_overall_performance(self, combination_results: Dict[str, Dict[str, Any]]) -> None:
+    def _calculate_overall_performance_Advanced_Backtest(self, combination_results: Dict[str, Dict[str, Any]]) -> None:
         """
         计算整体性能指标
         
@@ -514,7 +515,7 @@ class AdvancedBacktester(PatternBacktester):
             "sharpe_ratio": sharpe_ratio
         }
 
-    def backtest_with_pattern_combination(self, stock_codes: List[str], 
+    def backtest_with_pattern_combination_Backtest(self, stock_codes: List[str], 
                                          start_date: str, 
                                          end_date: str,
                                          forward_days: int = 5,
@@ -601,7 +602,7 @@ class AdvancedBacktester(PatternBacktester):
                             logger.error(f"获取 {stock_code} {period} 周期数据时出错: {e}")
                     
                     # 对齐数据到买点日期
-                    aligned_data = self._align_data_to_date(period_data, buy_date)
+                    aligned_data = self._align_data_to_date_Advanced_Backtest(period_data, buy_date)
                     
                     if not aligned_data:
                         logger.warning(f"股票 {stock_code} 在买点 {buy_date} 没有对齐的数据，跳过此买点")
@@ -628,14 +629,14 @@ class AdvancedBacktester(PatternBacktester):
                         continue
                     
                     # 获取买点后的实际涨跌幅
-                    future_change, price_series = self._calculate_detailed_future_change(
+                    future_change, price_series = self._calculate_detailed_future_change_Advanced_Backtest(
                         stock_code=stock_code,
                         buy_date=buy_date,
                         forward_days=forward_days
                     )
                     
                     # 计算最大收益和最大回撤
-                    max_profit, max_drawdown, hold_days = self._calculate_price_metrics(
+                    max_profit, max_drawdown, hold_days = self._calculate_price_metrics_Advanced_Backtest(
                         price_series, 
                         profit_taking=self.config["profit_taking"],
                         stop_loss=self.config["stop_loss"]
@@ -745,7 +746,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return results
 
-    def generate_strategy_from_backtest(self, backtest_results: Dict[str, Any], 
+    def generate_strategy_from_backtest_Backtest_Advanced_Backtest(self, backtest_results: Dict[str, Any], 
                                        min_success_rate: float = 60.0,
                                        min_profit_factor: float = 2.0,
                                        max_combinations: int = 5) -> Dict[str, Any]:
@@ -869,7 +870,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return strategy
 
-    def validate_strategy(self, strategy: Dict[str, Any], stock_codes: List[str], 
+    def validate_strategy_Backtest_Advanced_Backtest_Advanced_Backtest(self, strategy: Dict[str, Any], stock_codes: List[str], 
                          date: str) -> Dict[str, Any]:
         """
         验证策略在给定日期对给定股票的表现
@@ -920,7 +921,7 @@ class AdvancedBacktester(PatternBacktester):
                         logger.error(f"获取 {stock_code} {period} 周期数据时出错: {e}")
                 
                 # 对齐数据到指定日期
-                aligned_data = self._align_data_to_date(period_data, date)
+                aligned_data = self._align_data_to_date_Advanced_Backtest(period_data, date)
                 
                 if not aligned_data:
                     logger.warning(f"股票 {stock_code} 在日期 {date} 没有对齐的数据，跳过")
@@ -937,8 +938,8 @@ class AdvancedBacktester(PatternBacktester):
                 )
                 
                 # 检查是否满足策略条件
-                from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-                evaluator = StrategyConditionEvaluator()
+                from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+                evaluator = Strategy_condition_evaluator()
                 
                 # 获取主时间周期的数据用于条件评估
                 main_period = "DAILY"  # 默认使用日线
@@ -975,7 +976,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return results
 
-    def identify_cross_period_patterns(self, stock_code: str, date: str) -> Dict[str, Any]:
+    def identify_cross_period_patterns_Backtest(self, stock_code: str, date: str) -> Dict[str, Any]:
         """
         识别跨周期形态组合
         
@@ -1005,7 +1006,7 @@ class AdvancedBacktester(PatternBacktester):
                 logger.error(f"获取 {stock_code} {period} 周期数据时出错: {e}")
         
         # 对齐数据到指定日期
-        aligned_data = self._align_data_to_date(period_data, date)
+        aligned_data = self._align_data_to_date_Advanced_Backtest(period_data, date)
         
         if not aligned_data:
             logger.warning(f"股票 {stock_code} 在日期 {date} 没有对齐的数据")
@@ -1037,13 +1038,13 @@ class AdvancedBacktester(PatternBacktester):
 # 示例用法
 if __name__ == "__main__":
     # 初始化高级回测器
-    backtester = AdvancedBacktester(
+    backtester = Advanced_backtester_Backtest(
         indicators=["MACD", "KDJ", "RSI"],
         periods=["DAILY", "WEEKLY"]
     )
     
     # 设置回测配置
-    backtester.set_config({
+    backtester.set_config_Backtest_Advanced_Backtest({
         "min_pattern_strength": 70,
         "profit_taking": 0.08,
         "stop_loss": -0.05
@@ -1064,7 +1065,7 @@ if __name__ == "__main__":
     ]
     
     # 运行回测
-    results = backtester.backtest_with_combination(
+    results = backtester.backtest_with_combination_Backtest(
         stock_codes=["000001.SZ", "600000.SH"],
         start_date="2023-01-01",
         end_date="2023-06-30",

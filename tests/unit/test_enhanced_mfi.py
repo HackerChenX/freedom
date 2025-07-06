@@ -1,35 +1,35 @@
 """
-EnhancedMFI指标单元测试
+Enhanced_mFI指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_enhanced_mFI(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """EnhancedMFI指标测试类"""
     
-    def setUp(self):
+    def set_up_Mfi_Test_Enhanced_Mfi(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Mfi_Test_Enhanced_Mfi(self)
         
-        self.indicator = EnhancedMFI(period=14, volatility_lookback=20)
+        self.indicator = Enhanced_mFI(period=14, volatility_lookback=20)
         self.expected_columns = [
             'mfi', 'mfi_overbought', 'mfi_oversold', 'mfi_price_ratio',
             'mfi_momentum', 'mfi_slope', 'mfi_accel', 'mfi_adjusted'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Mfi(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Mfi(self)
     
     def test_enhanced_mfi_calculation_accuracy(self):
         """测试EnhancedMFI计算准确性"""
@@ -58,7 +58,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = EnhancedMFI(period=5, volatility_lookback=10)
+        test_indicator = Enhanced_mFI(period=5, volatility_lookback=10)
         result = test_indicator.calculate(simple_data)
         
         # 验证MFI计算逻辑
@@ -85,9 +85,9 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_enhanced_mfi_parameter_update(self):
         """测试EnhancedMFI参数更新"""
@@ -96,8 +96,8 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, volatility_lookback=new_volatility_lookback)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.period, new_period)
-        self.assertEqual(self.indicator.volatility_lookback, new_volatility_lookback)
+        self.assert_equal(self.indicator.period, new_period)
+        self.assert_equal(self.indicator.volatility_lookback, new_volatility_lookback)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -108,7 +108,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_enhanced_mfi_comprehensive_score(self):
         """测试EnhancedMFI综合评分"""
@@ -118,7 +118,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 然后计算评分
         raw_score = self.indicator.calculate_raw_score(self.data)
         
-        self.assertIsInstance(raw_score, pd.Series)
+        self.assert_is_instance(raw_score, pd.Series)
         
         # 验证评分范围
         valid_scores = raw_score.dropna()
@@ -129,13 +129,13 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试EnhancedMFI形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -162,22 +162,22 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         if len(overbought_values) > 0 and len(oversold_values) > 0:
             # 超买阈值应该大于超卖阈值
-            self.assertTrue(all(ob > os for ob, os in zip(overbought_values, oversold_values)),
+            self.assert_true(all(ob > os for ob, os in zip(overbought_values, oversold_values)),
                            "超买阈值应该大于超卖阈值")
     
     def test_enhanced_mfi_volume_filter(self):
         """测试EnhancedMFI成交量过滤"""
         # 测试启用成交量过滤
-        filtered_indicator = EnhancedMFI(period=14, enable_volume_filter=True)
+        filtered_indicator = Enhanced_mFI(period=14, enable_volume_filter=True)
         result1 = filtered_indicator.calculate(self.data)
         
         # 测试禁用成交量过滤
-        unfiltered_indicator = EnhancedMFI(period=14, enable_volume_filter=False)
+        unfiltered_indicator = Enhanced_mFI(period=14, enable_volume_filter=False)
         result2 = unfiltered_indicator.calculate(self.data)
         
         # 两种情况都应该能正常计算
-        self.assertIsInstance(result1, pd.DataFrame)
-        self.assertIsInstance(result2, pd.DataFrame)
+        self.assert_is_instance(result1, pd.DataFrame)
+        self.assert_is_instance(result2, pd.DataFrame)
         self.assertIn('mfi', result1.columns)
         self.assertIn('mfi', result2.columns)
     
@@ -188,10 +188,10 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         for env in environments:
             self.indicator.set_market_environment(env)
-            self.assertEqual(self.indicator.market_environment, env)
+            self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_mfi_price_structure_synergy(self):
@@ -203,14 +203,14 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         synergy = self.indicator.analyze_price_structure_synergy(self.data)
         
         # 验证协同分析结果
-        self.assertIsInstance(synergy, pd.DataFrame)
+        self.assert_is_instance(synergy, pd.DataFrame)
         self.assertIn('synergy_score', synergy.columns)
         
         # 验证协同评分的合理性
         synergy_scores = synergy['synergy_score'].dropna()
         if len(synergy_scores) > 0:
             # 协同评分应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in synergy_scores), 
+            self.assert_true(all(np.isfinite(v) for v in synergy_scores), 
                            "协同评分应该是有限数值")
     
     def test_enhanced_mfi_mfi_price_ratio(self):
@@ -224,7 +224,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         ratio_values = result['mfi_price_ratio'].dropna()
         if len(ratio_values) > 0:
             # 价格比率应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in ratio_values), 
+            self.assert_true(all(np.isfinite(v) for v in ratio_values), 
                            "MFI价格比率应该是有限数值")
     
     def test_enhanced_mfi_momentum_calculation(self):
@@ -241,7 +241,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             momentum_values = result[col].dropna()
             if len(momentum_values) > 0:
                 # 动量应该是有限数值
-                self.assertTrue(all(np.isfinite(v) for v in momentum_values), 
+                self.assert_true(all(np.isfinite(v) for v in momentum_values), 
                                f"{col}应该是有限数值")
     
     def test_enhanced_mfi_adjusted_calculation(self):
@@ -260,7 +260,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             adjusted_values = result['mfi_adjusted'].dropna()
             if len(adjusted_values) > 0:
                 # 调整后的MFI应该是有限数值
-                self.assertTrue(all(np.isfinite(v) for v in adjusted_values), 
+                self.assert_true(all(np.isfinite(v) for v in adjusted_values), 
                                f"在{env}环境下，调整后的MFI应该是有限数值")
     
     def test_enhanced_mfi_signals(self):
@@ -268,11 +268,11 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_enhanced_mfi_pattern_identification(self):
         """测试EnhancedMFI形态识别方法"""
@@ -283,7 +283,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.identify_patterns(self.data)
         
         # 验证形态识别结果
-        self.assertIsInstance(patterns, list)
+        self.assert_is_instance(patterns, list)
         
         # 验证形态类型
         valid_patterns = [
@@ -306,7 +306,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_signals(self.data)
         
         # 验证信号生成结果
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         
         expected_signal_columns = [
             'buy_signal', 'sell_signal', 'neutral_signal', 'trend', 'score',
@@ -316,7 +316,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         for col in expected_signal_columns:
             self.assertIn(col, signals.columns, f"缺少信号列: {col}")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Mfi(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -327,11 +327,11 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Mfi(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -342,7 +342,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_enhanced_mfi_register_patterns(self):
         """测试EnhancedMFI形态注册"""
@@ -359,7 +359,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # EnhancedMFI应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('mfi', result.columns)
     
     def test_enhanced_mfi_validation(self):
@@ -367,7 +367,7 @@ class TestEnhancedMFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['volume'], axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
 
 

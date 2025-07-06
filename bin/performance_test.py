@@ -20,14 +20,14 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger, setup_logger
 from utils.path_utils import ensure_dir_exists
-from analysis.performance_analyzer import PerformanceAnalyzer
-from analysis.optimized_batch_analyzer import OptimizedBatchAnalyzer
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from analysis.performance_analyzer import Performance_analyzer
+from analysis.optimized_batch_analyzer import Optimized_batch_analyzer
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
 logger = get_logger(__name__)
 
 
-def parse_arguments():
+def parse_arguments_Test():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='股票分析系统性能测试工具')
     
@@ -54,7 +54,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def run_performance_analysis(input_csv: str, 
+def run_performance_analysis_Test(input_csv: str, 
                            output_dir: str,
                            sample_size: int,
                            test_type: str) -> dict:
@@ -72,7 +72,7 @@ def run_performance_analysis(input_csv: str,
     """
     logger.info(f"开始性能分析，测试类型: {test_type}, 采样大小: {sample_size}")
     
-    analyzer = PerformanceAnalyzer()
+    analyzer = Performance_analyzer()
     results = {}
     
     # 批量处理性能测试
@@ -98,7 +98,7 @@ def run_performance_analysis(input_csv: str,
         logger.info("执行指标计算性能测试...")
         
         # 获取测试数据
-        base_analyzer = BuyPointBatchAnalyzer()
+        base_analyzer = Buy_point_batch_analyzer()
         buypoints_df = base_analyzer.load_buypoints_from_csv(input_csv)
         
         if not buypoints_df.empty:
@@ -121,7 +121,7 @@ def run_performance_analysis(input_csv: str,
     if test_type in ['all', 'data']:
         logger.info("执行数据加载性能测试...")
         
-        base_analyzer = BuyPointBatchAnalyzer()
+        base_analyzer = Buy_point_batch_analyzer()
         buypoints_df = base_analyzer.load_buypoints_from_csv(input_csv)
         
         if not buypoints_df.empty:
@@ -165,7 +165,7 @@ def run_optimized_comparison(input_csv: str,
     logger.info("开始优化版本对比测试...")
     
     # 加载测试数据
-    base_analyzer = BuyPointBatchAnalyzer()
+    base_analyzer = Buy_point_batch_analyzer()
     buypoints_df = base_analyzer.load_buypoints_from_csv(input_csv)
     
     if buypoints_df.empty:
@@ -193,7 +193,7 @@ def run_optimized_comparison(input_csv: str,
     
     # 测试优化版本
     logger.info("测试优化版本性能...")
-    optimized_analyzer = OptimizedBatchAnalyzer()
+    optimized_analyzer = Optimized_batch_analyzer()
     optimized_start = time.time()
     optimized_results = optimized_analyzer.analyze_batch_buypoints_optimized(test_df)
     optimized_time = time.time() - optimized_start
@@ -224,9 +224,9 @@ def run_optimized_comparison(input_csv: str,
     return results
 
 
-def main():
+def main_23():
     """主函数"""
-    args = parse_arguments()
+    args = parse_arguments_Test()
     
     # 设置日志
     setup_logger(log_level=args.log_level)
@@ -237,7 +237,7 @@ def main():
     
     try:
         # 运行性能分析
-        performance_results = run_performance_analysis(
+        performance_results = run_performance_analysis_Test(
             input_csv=args.input,
             output_dir=args.output,
             sample_size=args.sample_size,
@@ -254,7 +254,7 @@ def main():
             )
         
         # 生成优化建议
-        analyzer = PerformanceAnalyzer()
+        analyzer = Performance_analyzer()
         recommendations = analyzer.generate_optimization_recommendations(performance_results)
         
         # 保存结果
@@ -277,7 +277,7 @@ def main():
         
         # 生成性能报告
         report_path = os.path.join(args.output, 'performance_report.md')
-        generate_performance_report(final_results, report_path)
+        generate_performance_report_Test(final_results, report_path)
         
         logger.info(f"性能测试完成，结果已保存到: {args.output}")
         print(f"\n性能测试结果: {results_path}")
@@ -288,7 +288,7 @@ def main():
         sys.exit(1)
 
 
-def generate_performance_report(results: dict, output_path: str):
+def generate_performance_report_Test(results: dict, output_path: str):
     """生成性能报告"""
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("# 股票分析系统性能测试报告\n\n")
@@ -336,4 +336,4 @@ def generate_performance_report(results: dict, output_path: str):
 
 
 if __name__ == "__main__":
-    main()
+    main_23()

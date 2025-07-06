@@ -20,7 +20,7 @@ np.random.seed(42)
 random.seed(42)
 
 
-class TestDataFactory:
+class Test_data_factory:
     """测试数据工厂类，提供标准化的测试数据创建方法"""
 
     # 测试数据目录
@@ -43,7 +43,7 @@ class TestDataFactory:
             seed: 随机种子，用于生成可重现的数据
             
         Returns:
-            包含股票代码、名称等信息的DataFrame
+            包含股票代码、名称等信息的Data_frame
         """
         random.seed(seed)
         np.random.seed(seed)
@@ -127,7 +127,7 @@ class TestDataFactory:
             seed: 随机种子，用于生成可重现的数据
             
         Returns:
-            包含OHLCV等信息的DataFrame
+            包含OHLCV等信息的Data_frame
         """
         random.seed(seed)
         np.random.seed(seed)
@@ -191,10 +191,10 @@ class TestDataFactory:
         基于K线数据创建各类指标数据
         
         Args:
-            kline_data: K线数据DataFrame
+            kline_data: K线数据Data_frame
             
         Returns:
-            包含各类指标的字典，键为指标名称，值为指标数据DataFrame
+            包含各类指标的字典，键为指标名称，值为指标数据Data_frame
         """
         indicators = {}
         
@@ -207,15 +207,15 @@ class TestDataFactory:
             indicators[ma_name] = cls._calculate_ma(kline_data, period)
         
         # 计算MACD
-        indicators["MACD"] = cls._calculate_macd(kline_data)
+        indicators["MACD"] = cls._calculate_macd_Test_Data_Factory(kline_data)
         
         # 计算KDJ
-        indicators["KDJ"] = cls._calculate_kdj(kline_data)
+        indicators["KDJ"] = cls._calculate_kdj_Test_Data_Factory(kline_data)
         
         # 计算RSI
         for period in [6, 12, 24]:
             rsi_name = f"RSI{period}"
-            indicators[rsi_name] = cls._calculate_rsi(kline_data, period)
+            indicators[rsi_name] = cls._calculate_rsi_Test_Data_Factory(kline_data, period)
         
         return indicators
     
@@ -439,7 +439,7 @@ class TestDataFactory:
         return result[[f'MA{period}', 'date', 'code']]
     
     @staticmethod
-    def _calculate_macd(data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_macd_Test_Data_Factory(data: pd.DataFrame) -> pd.DataFrame:
         """计算MACD指标"""
         result = data.copy()
         # 计算12日EMA
@@ -460,7 +460,7 @@ class TestDataFactory:
         return result[['DIF', 'DEA', 'MACD', 'date', 'code']]
     
     @staticmethod
-    def _calculate_kdj(data: pd.DataFrame, n: int = 9) -> pd.DataFrame:
+    def _calculate_kdj_Test_Data_Factory(data: pd.DataFrame, n: int = 9) -> pd.DataFrame:
         """计算KDJ指标"""
         result = data.copy()
         
@@ -496,7 +496,7 @@ class TestDataFactory:
         return result[['K', 'D', 'J', 'date', 'code']]
     
     @staticmethod
-    def _calculate_rsi(data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def _calculate_rsi_Test_Data_Factory(data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
         """计算RSI指标"""
         result = data.copy()
         
@@ -528,5 +528,5 @@ class TestDataFactory:
 
 if __name__ == "__main__":
     # 生成标准测试数据集
-    TestDataFactory.generate_standard_test_dataset()
+    Test_data_factory.generate_standard_test_dataset()
     print(f"标准测试数据集已生成到: {TestDataFactory.TEST_DATA_DIR}") 

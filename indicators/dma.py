@@ -8,15 +8,15 @@ from typing import Dict, List, Any
 import numpy as np
 import pandas as pd
 
-from enums.indicator_types import TrendType, CrossType
-from enums.indicator_enum import IndicatorEnum
+from enums.indicator_types import Trend_type, Cross_type
+from enums.indicator_enum import Indicator_enum
 from indicators.common import crossover, crossunder
-from .base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
-logger = logging.getLogger(__name__)
+logger = logging.get_Logger(__name__)
 
-class DMA(BaseIndicator, PatternSignalMixin):
+class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin):
     """
     轨道线指标 (Different of Moving Average)
     
@@ -33,14 +33,14 @@ class DMA(BaseIndicator, PatternSignalMixin):
                  name: str = "DMA", description: str = "轨道线指标"):
         """初始化DMA指标"""
         super().__init__(name, description)
-        self.indicator_type = IndicatorEnum.DMA.name
+        self.indicator_type = Indicator_enum.DMA.name
         self.fast_period = fast_period
         self.slow_period = slow_period
         self.ama_period = ama_period
         self._result = None
         self.REQUIRED_COLUMNS = ['close']
 
-    def set_parameters(self, fast_period: int = None, slow_period: int = None, ama_period: int = None):
+    def set_parameters_Dma_Dma_Dma_dma(self, fast_period: int = None, slow_period: int = None, ama_period: int = None):
         """
         设置指标参数
 
@@ -56,15 +56,15 @@ class DMA(BaseIndicator, PatternSignalMixin):
         if ama_period is not None:
             self.ama_period = ama_period
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_dma(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算DMA指标
         
         Args:
-            df: 包含close列的DataFrame
+            df: 包含close列的Data_frame
             
         Returns:
-            包含DMA, AMA列的DataFrame
+            包含DMA, AMA列的Data_frame
         """
         if self._result is not None:
             return self._result
@@ -102,12 +102,12 @@ class DMA(BaseIndicator, PatternSignalMixin):
         self._result = result
         return result
     
-    def generate_signals(self, df: pd.DataFrame) -> List[Dict]:
+    def generate_signals_Dma(self, df: pd.DataFrame) -> List[Dict]:
         """
         生成标准化的交易信号
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
             
         Returns:
             包含交易信号的字典列表
@@ -134,13 +134,13 @@ class DMA(BaseIndicator, PatternSignalMixin):
         
         # 判断趋势方向
         if dma > 0 and dma > ama:
-            trend = TrendType.UP
+            trend = Trend_type.UP
             trend_strength = min(100, 50 + dma_pct * 2)
         elif dma < 0 and dma < ama:
-            trend = TrendType.DOWN
+            trend = Trend_type.DOWN
             trend_strength = min(100, 50 - dma_pct * 2)
         else:
-            trend = TrendType.FLAT
+            trend = Trend_type.FLAT
             trend_strength = 50
         
         # 基础信号评分(0-100)
@@ -268,12 +268,12 @@ class DMA(BaseIndicator, PatternSignalMixin):
         signals.append(signal)
         return signals
         
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Dma(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算原始评分(0-100分)
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             包含评分的Series，范围0-100
@@ -329,13 +329,13 @@ class DMA(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Dma(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算DMA指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -380,12 +380,12 @@ class DMA(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Dma(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别DMA指标形态
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             形态描述列表
@@ -448,7 +448,7 @@ class DMA(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Dma(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取DMA指标的技术形态
 
@@ -457,7 +457,7 @@ class DMA(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算DMA
         if not self.has_result():
@@ -509,7 +509,7 @@ class DMA(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Dma(self):
         """
         注册DMA指标的技术形态
         """
@@ -597,7 +597,7 @@ class DMA(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def get_pattern_info(self, pattern_id: str = None) -> Dict[str, Any]:
+    def get_pattern_info_Dma(self, pattern_id: str = None) -> Dict[str, Any]:
         """
         获取DMA指标的形态信息
 
@@ -667,47 +667,11 @@ class DMA(BaseIndicator, PatternSignalMixin):
                 'type': 'neutral',
                 'strength': 'medium'
             })
-    def __init__(self, **kwargs):
-        """
-        初始化DMA指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "DMA"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保DMA特有属性存在
-        if not hasattr(self, 'fast_period'):
-            self.fast_period = 10
-        if not hasattr(self, 'slow_period'):
-            self.slow_period = 50
-        
-        # 确保DMA特有属性存在
-        if not hasattr(self, 'fast_period'):
-            self.fast_period = 10
-        if not hasattr(self, 'slow_period'):
-            self.slow_period = 50
-        if not hasattr(self, 'ama_period'):
-            self.ama_period = 10
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_dma(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'fast_period': 10, 'slow_period': 50, 'ama_period': 10}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Dma_Dma_Dma_dma_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -716,8 +680,8 @@ class DMA(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -726,8 +690,8 @@ class DMA(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DMA', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"DMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

@@ -20,9 +20,9 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from analysis.engines.indicator_validation_framework import (
-    IndicatorValidationFramework, 
-    IndicatorValidationConfig,
-    ValidationMode
+    Indicator_validation_framework, 
+    Indicator_validation_config,
+    Validation_mode
 )
 
 logger = get_logger(__name__)
@@ -38,14 +38,14 @@ class OptimizedIndicatorValidator:
             config_path: 配置文件路径
         """
         self.config_path = config_path or "config/indicator_closed_loop_config.json"
-        self.config = self._load_config()
+        self.config = self._load_config_Optimized_Indicator_Validator()
         self.framework = None
         
         # 缓存控制
         self._stock_pool_cache = None
         self._cache_date = None
         
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config_Optimized_Indicator_Validator(self) -> Dict[str, Any]:
         """加载配置文件"""
         try:
             with open(self.config_path, 'r', encoding='utf-8') as f:
@@ -69,12 +69,12 @@ class OptimizedIndicatorValidator:
                 }
             }
     
-    def _create_validation_config(self) -> IndicatorValidationConfig:
+    def _create_validation_config(self) -> Indicator_validation_config:
         """创建验证配置"""
         validation_config = self.config.get("validation", {})
         
-        config = IndicatorValidationConfig()
-        config.mode = ValidationMode.PRIORITY
+        config = Indicator_validation_config()
+        config.mode = Validation_mode.PRIORITY
         config.validation_date = validation_config.get("date", "2024-12-28")
         config.stock_pool_size = validation_config.get("stock_pool_size", 4378)
         config.max_selection_ratio = validation_config.get("max_selection_ratio", 0.1)
@@ -88,7 +88,7 @@ class OptimizedIndicatorValidator:
         
         return config
     
-    def validate_single_indicator(self, indicator_name: str) -> Dict[str, Any]:
+    def validate_single_indicator_Validator_Optimized_Indicator_Validator(self, indicator_name: str) -> Dict[str, Any]:
         """
         验证单个指标（优化版本）
         
@@ -105,11 +105,11 @@ class OptimizedIndicatorValidator:
             config = self._create_validation_config()
             
             # 创建验证框架
-            self.framework = IndicatorValidationFramework(config)
+            self.framework = Indicator_validation_framework(config)
             
             # 执行验证
             start_time = datetime.now()
-            result = self.framework.validate_single_indicator(indicator_name)
+            result = self.framework.validate_single_indicator_Validator_Optimized_Indicator_Validator(indicator_name)
             end_time = datetime.now()
             
             # 计算执行时间
@@ -151,7 +151,7 @@ class OptimizedIndicatorValidator:
         
         print("="*60)
 
-def main():
+def main_optimizedindicatorvalidator():
     """主函数"""
     parser = argparse.ArgumentParser(description="优化版指标验证器")
     parser.add_argument("--indicator", type=str, help="验证单个指标")
@@ -161,19 +161,19 @@ def main():
     
     try:
         # 创建验证器
-        validator = OptimizedIndicatorValidator(args.config)
+        validator = Optimized_indicator_validator(args.config)
         
         if args.indicator:
             # 验证单个指标
-            result = validator.validate_single_indicator(args.indicator)
+            result = validator.validate_single_indicator_Validator_Optimized_Indicator_Validator(args.indicator)
         else:
             # 默认验证MA指标
             logger.info("未指定指标，使用默认MA指标")
-            result = validator.validate_single_indicator('MA')
+            result = validator.validate_single_indicator_Validator_Optimized_Indicator_Validator('MA')
         
         logger.info("🎉 验证完成")
         
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         logger.warning("🛑 用户中断验证")
         sys.exit(1)
     except Exception as e:
@@ -181,4 +181,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    main()
+    main_optimizedindicatorvalidator()

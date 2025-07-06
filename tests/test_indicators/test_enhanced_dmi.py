@@ -4,10 +4,10 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 
 
-class TestEnhancedDMI(unittest.TestCase):
+class TestEnhancedDMI_Dmi(unittest.TestCase):
     """测试增强型DMI指标"""
 
-    def setUp(self):
+    def setUp_Dmi_Test_Enhanced_Dmi(self):
         """准备测试数据"""
         # 创建模拟价格数据
         np.random.seed(42)  # 确保结果可重现
@@ -35,7 +35,7 @@ class TestEnhancedDMI(unittest.TestCase):
         # 创建DMI实例
         self.dmi = EnhancedDMI(period=14, adx_period=14, adaptive=True)
 
-    def test_calculation(self):
+    def test_calculation_Dmi(self):
         """测试DMI基础计算功能"""
         result = self.dmi.calculate(self.test_data)
         
@@ -55,7 +55,7 @@ class TestEnhancedDMI(unittest.TestCase):
         self.assertTrue((result['adx'].dropna() >= 0).all())
         self.assertTrue((result['adx'].dropna() <= 100).all())
 
-    def test_adaptive_period(self):
+    def test_adaptive_period_Dmi(self):
         """测试自适应周期调整功能"""
         # 创建高波动数据
         high_vol_data = self.test_data.copy()
@@ -120,7 +120,7 @@ class TestEnhancedDMI(unittest.TestCase):
         for col in synergy.columns:
             self.assertTrue(synergy[col].dtype == bool)
 
-    def test_score_calculation(self):
+    def test_score_calculation_Dmi(self):
         """测试评分计算功能"""
         self.dmi.calculate(self.test_data)
         score = self.dmi.calculate_score()
@@ -133,7 +133,7 @@ class TestEnhancedDMI(unittest.TestCase):
         self.assertTrue((score.dropna() >= 0).all())
         self.assertTrue((score.dropna() <= 100).all())
 
-    def test_pattern_identification(self):
+    def test_pattern_identification_Dmi(self):
         """测试形态识别功能"""
         self.dmi.calculate(self.test_data)
         patterns = self.dmi.identify_patterns()
@@ -153,7 +153,7 @@ class TestEnhancedDMI(unittest.TestCase):
         for col in patterns.columns:
             self.assertTrue(patterns[col].dtype == bool)
 
-    def test_signal_generation(self):
+    def test_signal_generation_Dmi(self):
         """测试信号生成功能"""
         signals = self.dmi.generate_signals(self.test_data)
         

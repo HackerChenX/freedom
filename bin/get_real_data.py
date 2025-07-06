@@ -15,8 +15,8 @@ from typing import Dict, List, Any
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.spiders.api_data_spider import APIDataSpider
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.spiders.api_data_spider import APIData_spider
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,9 +25,9 @@ logger = get_logger(__name__)
 class RealDataCollector:
     """真实数据收集器"""
 
-    def __init__(self):
-        self.api_spider = APIDataSpider()
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___8(self):
+        self.api_spider = APIData_spider()
+        self.concept_extractor = Concept_stock_extractor()
 
         # 热门股票代码列表
         self.hot_stocks = [
@@ -43,7 +43,7 @@ class RealDataCollector:
             '600036',  # 招商银行
         ]
 
-    def collect_real_stock_data(self) -> List[Dict[str, Any]]:
+    def collect_real_stock_data_Data(self) -> List[Dict[str, Any]]:
         """收集真实股票数据"""
         logger.info("开始收集真实股票数据...")
         print("正在获取股票实时数据...")
@@ -53,7 +53,7 @@ class RealDataCollector:
         logger.info(f"成功收集 {len(stock_data)} 只股票的实时数据")
         return stock_data
 
-    def analyze_stock_data(self, stock_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def analyze_stock_data_Data(self, stock_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """分析股票数据"""
         if not stock_data:
             return {}
@@ -119,7 +119,7 @@ class RealDataCollector:
         return concept_analysis
 
 
-def main():
+def main_13():
     """主函数"""
     parser = argparse.ArgumentParser(description='真实股市数据获取工具')
     parser.add_argument('--output', default='real_stock_data.json',
@@ -134,7 +134,7 @@ def main():
     print("=" * 50)
 
     # 创建数据收集器
-    collector = RealDataCollector()
+    collector = Real_data_collector()
 
     # 如果指定了股票代码，使用指定的代码
     if args.stocks:
@@ -143,7 +143,7 @@ def main():
 
     try:
         # 收集股票数据
-        stock_data = collector.collect_real_stock_data()
+        stock_data = collector.collect_real_stock_data_Data()
 
         if stock_data:
             print(f"\n=== 获取到 {len(stock_data)} 只股票的实时数据 ===")
@@ -165,7 +165,7 @@ def main():
                 print(f"{i:2d}. {name}({code}): {current:.2f} {change_str}")
 
             # 分析数据
-            analysis = collector.analyze_stock_data(stock_data)
+            analysis = collector.analyze_stock_data_Data(stock_data)
 
             print(f"\n=== 市场分析 ===")
             print(f"上涨股票: {analysis['rising_stocks']}")
@@ -217,4 +217,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_13()

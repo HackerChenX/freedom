@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 形态识别测试脚本
 
@@ -15,14 +19,14 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
-class TestPatternRecognition(unittest.TestCase):
+class Test_pattern_recognition(unittest.Test_case):
     """测试形态识别功能"""
 
     @classmethod
-    def setUpClass(cls):
+    def set_up_class_Recognition(cls):
         """在所有测试开始前执行"""
-        cls.db = get_clickhouse_db()
-        cls.indicator_factory = IndicatorFactory()
+        cls.data_access = get_container().resolve(IData_access)
+        cls.indicator_factory = Indicator_factory()
         
         # 获取测试股票列表
         try:
@@ -32,7 +36,7 @@ class TestPatternRecognition(unittest.TestCase):
             cls.date_180_days_ago = (datetime.strptime(cls.latest_trade_date, '%Y-%m-%d') - timedelta(days=180)).strftime('%Y-%m-%d')
             
             # 获取上证50股票列表进行测试
-            cls.test_stocks_df = cls.db.query("SELECT stock_code, stock_name FROM stock.stock_info WHERE stock_code IN (SELECT stock_code FROM stock.index_weight WHERE index_code = '000016.SH' LIMIT 5)")
+            cls.test_stocks_df = cls.data_access.execute_query("SELECT stock_code, stock_name FROM stock.stock_info WHERE stock_code IN (SELECT stock_code FROM stock.index_weight WHERE index_code = '000016.SH' LIMIT 5)")
             cls.test_stocks = cls.test_stocks_df['stock_code'].tolist()
             
             logger.info(f"测试准备完成, 测试股票数量: {len(cls.test_stocks)}, 最新交易日期: {cls.latest_trade_date}")

@@ -9,7 +9,7 @@ import argparse
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from scripts.akshare_to_clickhouse import AKShareToClickHouse
+from scripts.akshare_to_clickhouse import AKShare_to_click_house
 
 def sync_stock(stock_code, stock_name):
     """
@@ -20,7 +20,7 @@ def sync_stock(stock_code, stock_name):
     print(f"开始同步股票数据: {stock_code} - {stock_name}")
     
     # 初始化同步器
-    synchronizer = AKShareToClickHouse()
+    synchronizer = AKShare_to_click_house()
     
     # 获取股票数据
     # 15分钟数据

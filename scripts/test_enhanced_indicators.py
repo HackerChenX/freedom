@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
@@ -22,12 +24,13 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.enhanced_rsi import EnhancedRSI
 from indicators.factory import IndicatorFactory
 from utils.logger import get_logger
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 
 logger = get_logger(__name__)
 
 
-def get_test_data(stock_code: str = '000001.SZ', start_date: str = None, end_date: str = None, limit: int = 200):
+def get_test_data_Indicators(stock_code: str = '000001.SZ', start_date: str = None, end_date: str = None, limit: int = 200):
     """
     获取测试用的股票数据
     
@@ -42,7 +45,7 @@ def get_test_data(stock_code: str = '000001.SZ', start_date: str = None, end_dat
     """
     try:
         # 获取数据库连接
-        db = get_clickhouse_db()
+        data_access = get_container().resolve(IDataAccess)
         
         # 构建查询SQL
         if start_date is None:
@@ -69,12 +72,12 @@ def get_test_data(stock_code: str = '000001.SZ', start_date: str = None, end_dat
         """
         
         # 执行查询
-        df = db.query(sql)
+        df = data_access.execute_query(sql)
         
         # 检查结果
         if df is None or len(df) == 0:
             logger.warning(f"未查询到股票 {stock_code} 的数据")
-            return generate_mock_data(limit)
+            return generate_mock_data_Indicators(limit)
             
         # 设置日期索引
         df['date'] = pd.to_datetime(df['date'])
@@ -84,10 +87,10 @@ def get_test_data(stock_code: str = '000001.SZ', start_date: str = None, end_dat
         
     except Exception as e:
         logger.error(f"获取股票数据失败: {e}")
-        return generate_mock_data(limit)
+        return generate_mock_data_Indicators(limit)
 
 
-def generate_mock_data(size: int = 200) -> pd.DataFrame:
+def generate_mock_data_Indicators(size: int = 200) -> pd.DataFrame:
     """
     生成模拟K线数据用于测试
     
@@ -149,17 +152,17 @@ def test_unified_ma():
     logger.info("开始测试统一移动平均线指标")
 
 
-def test_enhanced_macd():
+def test_enhanced_macd_Indicators_Test_Enhanced_Indicators():
     """测试增强版MACD指标"""
     pass
 
 
-def test_enhanced_rsi():
+def test_enhanced_rsi_Indicators():
     """测试增强版RSI指标"""
     logger.info("开始测试增强版RSI指标")
     
     # 获取测试数据
-    df = get_test_data()
+    df = get_test_data_Indicators()
     
     # 创建增强版RSI实例（单周期）
     rsi = EnhancedRSI(
@@ -190,7 +193,7 @@ def test_factory_creation():
     logger.info("开始测试通过工厂创建增强指标")
     
     # 获取测试数据
-    df = get_test_data()
+    df = get_test_data_Indicators()
     
     # 通过工厂创建统一移动平均线
     unified_ma = IndicatorFactory.create("UNIFIED_MA", periods=[5, 10, 20], ma_type="ema")
@@ -228,10 +231,10 @@ if __name__ == "__main__":
     # test_unified_ma()
     
     # 测试增强版MACD
-    # test_enhanced_macd()
+    # test_enhanced_macd_Indicators_Test_Enhanced_Indicators()
     
     # 测试增强版RSI
-    test_enhanced_rsi()
+    test_enhanced_rsi_Indicators()
     
     # 测试通过工厂创建
     test_factory_creation()

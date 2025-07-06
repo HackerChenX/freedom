@@ -19,17 +19,17 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class StopLossType(Enum):
+class Stop_loss_type(Enum):
     """止损类型枚举"""
-    FIXED = 0           # 固定止损
-    TRAILING = 1        # 跟踪止损
-    VOLATILITY = 2      # 波动率止损
-    INDICATOR = 3       # 指标止损
-    SUPPORT = 4         # 支撑位止损
-    COMPOSITE = 5       # 复合止损
+    fixed = 0           # 固定止损
+    trailing = 1        # 跟踪止损
+    volatility = 2      # 波动率止损
+    indicator = 3       # 指标止损
+    support = 4         # 支撑位止损
+    composite = 5       # 复合止损
 
 
-class DynamicStopLoss:
+class Dynamic_stop_loss:
     """
     动态止损模型
     
@@ -51,10 +51,10 @@ class DynamicStopLoss:
                 - indicator_weights: 各指标权重，默认为均等权重
         """
         self._params = params or {}
-        self._initialize_params()
+        self._initialize_params_Dynamic_Stop_Loss()
         self._result = None
         
-    def _initialize_params(self):
+    def _initialize_params_Dynamic_Stop_Loss(self):
         """初始化参数，设置默认值"""
         # 基础参数
         self.base_percentage = self._params.get('base_percentage', 3.0)
@@ -75,19 +75,19 @@ class DynamicStopLoss:
         self.indicator_weights = self._params.get('indicator_weights', default_weights)
         
     def calculate_dynamic_stop_loss(self, df: pd.DataFrame, position_type: str = 'long',
-                                   stop_loss_type: StopLossType = StopLossType.COMPOSITE,
+                                   stop_loss_type: stop_loss_type = Stop_loss_type.COMPOSITE,
                                    entry_price: Optional[float] = None) -> pd.DataFrame:
         """
         计算动态止损位置
         
         Args:
-            df: 输入DataFrame，需包含OHLC数据
+            df: 输入Data_frame，需包含OHLC数据
             position_type: 持仓类型，'long'或'short'
             stop_loss_type: 止损类型
             entry_price: 入场价格，如果为None则使用每个K线的收盘价
             
         Returns:
-            添加了止损价格和止损百分比的DataFrame
+            添加了止损价格和止损百分比的Data_frame
         """
         result_df = df.copy()
         
@@ -105,36 +105,36 @@ class DynamicStopLoss:
             result_df = self._calculate_atr(result_df)
         
         # 基于不同的止损类型，计算止损位置
-        if stop_loss_type == StopLossType.FIXED:
+        if stop_loss_type == Stop_loss_type.FIXED:
             result_df = self._calculate_fixed_stop_loss(result_df, position_type, entry_price)
         
-        elif stop_loss_type == StopLossType.TRAILING:
+        elif stop_loss_type == Stop_loss_type.TRAILING:
             result_df = self._calculate_trailing_stop_loss(result_df, position_type, entry_price)
         
-        elif stop_loss_type == StopLossType.VOLATILITY:
+        elif stop_loss_type == Stop_loss_type.VOLATILITY:
             result_df = self._calculate_volatility_stop_loss(result_df, position_type, entry_price)
         
-        elif stop_loss_type == StopLossType.INDICATOR:
+        elif stop_loss_type == Stop_loss_type.INDICATOR:
             # 计算趋势强度作为指标止损的依据
             if 'trend_score' not in result_df.columns:
-                result_df = self._calculate_trend_strength(result_df)
+                result_df = self._calculate_trend_strength_Dynamic_Stop_Loss(result_df)
             
             result_df = self._calculate_indicator_stop_loss(result_df, position_type, entry_price)
         
-        elif stop_loss_type == StopLossType.SUPPORT:
+        elif stop_loss_type == Stop_loss_type.SUPPORT:
             # 计算支撑位和阻力位
             if not any(col.startswith('support_') for col in result_df.columns):
-                result_df = self._calculate_support_resistance(result_df)
+                result_df = self._calculate_support_resistance_Dynamic_Stop_Loss(result_df)
             
             result_df = self._calculate_support_stop_loss(result_df, position_type, entry_price)
         
-        elif stop_loss_type == StopLossType.COMPOSITE:
+        elif stop_loss_type == Stop_loss_type.COMPOSITE:
             # 计算市场环境和动量指标作为复合止损的依据
             if 'trend_score' not in result_df.columns:
-                result_df = self._calculate_trend_strength(result_df)
+                result_df = self._calculate_trend_strength_Dynamic_Stop_Loss(result_df)
             
             if not any(col.startswith('support_') for col in result_df.columns):
-                result_df = self._calculate_support_resistance(result_df)
+                result_df = self._calculate_support_resistance_Dynamic_Stop_Loss(result_df)
             
             if 'momentum_score' not in result_df.columns:
                 result_df = self._calculate_momentum(result_df)
@@ -168,12 +168,12 @@ class DynamicStopLoss:
         计算固定百分比止损
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             position_type: 持仓类型，'long'或'short'
             entry_price: 入场价格，如果为None则使用每个K线的收盘价
             
         Returns:
-            添加了固定止损价格的DataFrame
+            添加了固定止损价格的Data_frame
         """
         result_df = df.copy()
         
@@ -213,12 +213,12 @@ class DynamicStopLoss:
         计算跟踪止损
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             position_type: 持仓类型，'long'或'short'
             entry_price: 入场价格，如果为None则使用每个K线的收盘价
             
         Returns:
-            添加了跟踪止损价格的DataFrame
+            添加了跟踪止损价格的Data_frame
         """
         result_df = df.copy()
         
@@ -322,12 +322,12 @@ class DynamicStopLoss:
         计算基于波动率的止损
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             position_type: 持仓类型，'long'或'short'
             entry_price: 入场价格，如果为None则使用每个K线的收盘价
             
         Returns:
-            添加了波动率止损价格的DataFrame
+            添加了波动率止损价格的Data_frame
         """
         result_df = df.copy()
         
@@ -406,12 +406,12 @@ class DynamicStopLoss:
         计算基于技术指标的止损
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             position_type: 持仓类型，'long'或'short'
             entry_price: 入场价格，如果为None则使用每个K线的收盘价
             
         Returns:
-            添加了指标止损价格的DataFrame
+            添加了指标止损价格的Data_frame
         """
         result_df = df.copy()
         
@@ -522,12 +522,12 @@ class DynamicStopLoss:
         计算基于支撑位/阻力位的止损
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             position_type: 持仓类型，'long'或'short'
             entry_price: 入场价格，如果为None则使用每个K线的收盘价
             
         Returns:
-            添加了支撑位止损价格的DataFrame
+            添加了支撑位止损价格的Data_frame
         """
         result_df = df.copy()
         
@@ -536,7 +536,7 @@ class DynamicStopLoss:
         resistance_cols = [col for col in result_df.columns if col.startswith('resistance_')]
         
         if not support_cols or not resistance_cols:
-            result_df = self._calculate_support_resistance(result_df)
+            result_df = self._calculate_support_resistance_Dynamic_Stop_Loss(result_df)
             support_cols = [col for col in result_df.columns if col.startswith('support_')]
             resistance_cols = [col for col in result_df.columns if col.startswith('resistance_')]
         
@@ -658,12 +658,12 @@ class DynamicStopLoss:
         计算复合止损（综合多种止损方式）
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             position_type: 持仓类型，'long'或'short'
             entry_price: 入场价格，如果为None则使用每个K线的收盘价
             
         Returns:
-            添加了复合止损价格的DataFrame
+            添加了复合止损价格的Data_frame
         """
         result_df = df.copy()
         
@@ -772,11 +772,11 @@ class DynamicStopLoss:
         计算真实波动幅度（ATR）
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             period: ATR计算周期
             
         Returns:
-            添加了ATR的DataFrame
+            添加了ATR的Data_frame
         """
         result_df = df.copy()
         
@@ -811,15 +811,15 @@ class DynamicStopLoss:
         
         return result_df
     
-    def _calculate_trend_strength(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_trend_strength_Dynamic_Stop_Loss(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算趋势强度指标
         
         Args:
-            df: 输入DataFrame，需包含收盘价数据
+            df: 输入Data_frame，需包含收盘价数据
             
         Returns:
-            添加了趋势强度指标的DataFrame
+            添加了趋势强度指标的Data_frame
         """
         result_df = df.copy()
         
@@ -877,11 +877,11 @@ class DynamicStopLoss:
         计算平均趋向指数(ADX)
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             period: ADX计算周期
             
         Returns:
-            添加了ADX指标的DataFrame
+            添加了ADX指标的Data_frame
         """
         result_df = df.copy()
         
@@ -936,10 +936,10 @@ class DynamicStopLoss:
         计算动量指标
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了动量指标的DataFrame
+            添加了动量指标的Data_frame
         """
         result_df = df.copy()
         
@@ -1001,10 +1001,10 @@ class DynamicStopLoss:
         计算成交量特征
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了成交量特征的DataFrame
+            添加了成交量特征的Data_frame
         """
         result_df = df.copy()
         
@@ -1059,15 +1059,15 @@ class DynamicStopLoss:
         
         return result_df
 
-    def _calculate_support_resistance(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_support_resistance_Dynamic_Stop_Loss(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算关键支撑阻力位
         
         Args:
-            df: 输入DataFrame，需包含OHLC数据
+            df: 输入Data_frame，需包含OHLC数据
             
         Returns:
-            添加了支撑阻力位的DataFrame
+            添加了支撑阻力位的Data_frame
         """
         result_df = df.copy()
         
@@ -1117,10 +1117,10 @@ class DynamicStopLoss:
         识别关键价格水平
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了关键价格水平的DataFrame
+            添加了关键价格水平的Data_frame
         """
         result_df = df.copy()
         window_size = min(100, len(df))

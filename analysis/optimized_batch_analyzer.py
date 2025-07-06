@@ -26,25 +26,25 @@ from functools import lru_cache
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-from analysis.buypoints.period_data_processor import PeriodDataProcessor
-from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
+from utils.logger import getLogger
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
+from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 from indicators.complete_indicator_registry import complete_registry
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class OptimizedIndicatorCalculator:
     """优化的指标计算器"""
     
-    def __init__(self):
+    def __init___101_optimizedbatchanalyzer(self):
         self.indicator_cache = {}
         self.calculation_cache = {}
         self._lock = threading.Lock()
         
     @lru_cache(maxsize=128)
-    def get_indicator_instance(self, indicator_name: str):
+    def get_indicator_instance_Analyzer(self, indicator_name: str):
         """获取指标实例（带缓存）"""
         try:
             indicator = complete_registry.create_indicator(indicator_name)
@@ -66,7 +66,7 @@ class OptimizedIndicatorCalculator:
         Returns:
             List[Dict]: 计算结果列表
         """
-        indicator = self.get_indicator_instance(indicator_name)
+        indicator = self.get_indicator_instance_Analyzer(indicator_name)
         if indicator is None:
             return []
             
@@ -100,10 +100,6 @@ class OptimizedIndicatorCalculator:
 class ParallelDataProcessor:
     """并行数据处理器"""
     
-    def __init__(self, max_workers: Optional[int] = None):
-        self.max_workers = max_workers or min(multiprocessing.cpu_count(), 8)
-        self.data_cache = {}
-        
     def load_stock_data_parallel(self, 
                                 stock_buypoint_pairs: List[Tuple[str, str]]) -> List[Dict[str, pd.DataFrame]]:
         """
@@ -117,7 +113,7 @@ class ParallelDataProcessor:
         """
         logger.info(f"开始并行加载 {len(stock_buypoint_pairs)} 个股票数据，使用 {self.max_workers} 个进程")
         
-        with concurrent.futures.ProcessPoolExecutor(max_workers=self.max_workers) as executor:
+        with concurrent.futures.Process_pool_executor(max_workers=self.max_workers) as executor:
             # 提交所有任务
             future_to_pair = {
                 executor.submit(self._load_single_stock_data, stock_code, buypoint_date): (stock_code, buypoint_date)
@@ -150,7 +146,7 @@ class ParallelDataProcessor:
             Dict[str, pd.DataFrame]: 股票数据
         """
         try:
-            data_processor = PeriodDataProcessor()
+            data_processor = Period_data_processor()
             return data_processor.get_multi_period_data(
                 stock_code=stock_code,
                 end_date=buypoint_date
@@ -163,15 +159,6 @@ class ParallelDataProcessor:
 class OptimizedBatchAnalyzer:
     """优化的批量分析器"""
     
-    def __init__(self, max_workers: Optional[int] = None, enable_caching: bool = True):
-        self.max_workers = max_workers or min(multiprocessing.cpu_count(), 8)
-        self.enable_caching = enable_caching
-        self.data_processor = ParallelDataProcessor(max_workers)
-        self.indicator_calculator = OptimizedIndicatorCalculator()
-        self.base_analyzer = BuyPointBatchAnalyzer()
-        
-        logger.info(f"优化批量分析器初始化完成，最大工作进程: {self.max_workers}")
-        
     def analyze_batch_buypoints_optimized(self, 
                                         buypoints_df: pd.DataFrame,
                                         chunk_size: int = 4) -> List[Dict[str, Any]]:
@@ -179,7 +166,7 @@ class OptimizedBatchAnalyzer:
         优化的批量买点分析
         
         Args:
-            buypoints_df: 买点数据DataFrame
+            buypoints_df: 买点数据Data_frame
             chunk_size: 分块大小
             
         Returns:
@@ -239,7 +226,7 @@ class OptimizedBatchAnalyzer:
         results = []
         
         # 使用线程池并行分析指标
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        with concurrent.futures.Thread_pool_executor(max_workers=self.max_workers) as executor:
             # 为每个买点提交分析任务
             future_to_index = {}
             
@@ -288,7 +275,7 @@ class OptimizedBatchAnalyzer:
         """
         try:
             # 使用基础分析器的指标分析逻辑，但优化数据处理
-            indicator_analyzer = AutoIndicatorAnalyzer()
+            indicator_analyzer = Auto_indicator_analyzer()
             
             # 定位目标行
             target_rows = {}

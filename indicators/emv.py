@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-指数平均数指标(EMV)
+指数平均数指标(EMV_Emv)
 易市场数值（Ease of Movement Value）
 通过将价格变化与成交量因素的比率来衡量价格的变化是否容易，判断行情上涨或下跌的阻力大小。
 """
@@ -17,12 +17,12 @@ import logging
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = logging.getLogger(__name__)
+logger = logging.get_Logger(__name__)
 
 
-class EMV(BaseIndicator, PatternSignalMixin):
+class EmvEmv(BaseIndicator, PatternSignalMixin):
     """
     量能指标 (Ease of Movement Value)
     
@@ -38,12 +38,12 @@ class EMV(BaseIndicator, PatternSignalMixin):
     def __init__(self, volume_divisor: float = 10000, period: int = 14):
         self.REQUIRED_COLUMNS = ['high', 'low', 'volume']
         """初始化EMV指标"""
-        super().__init__(name="EMV", description="指数平均数指标，评估价格上涨下跌的难易程度")
+        super().__init__(name="EMV_Emv", description="指数平均数指标，评估价格上涨下跌的难易程度")
         self.volume_divisor = volume_divisor
         self.period = period
         self._result = None
 
-    def set_parameters(self, volume_divisor: float = None, period: int = None):
+    def set_parameters_Emv_Emv_Emv_emv(self, volume_divisor: float = None, period: int = None):
         """
         设置指标参数
 
@@ -56,15 +56,15 @@ class EMV(BaseIndicator, PatternSignalMixin):
         if period is not None:
             self.period = period
     
-    def _validate_dataframe(self, df: pd.DataFrame) -> None:
+    def _validate_dataframe_emv(self, df: pd.DataFrame) -> None:
         """
-        验证DataFrame是否包含计算所需的列
+        验证Data_frame是否包含计算所需的列
         
         Args:
-            df: 数据源DataFrame
+            df: 数据源Data_frame
             
         Raises:
-            ValueError: 如果DataFrame缺少所需的列
+            ValueError: 如果Data_frame缺少所需的列
         """
         required_columns = ['high', 'low', 'volume']
         for column in required_columns:
@@ -74,17 +74,17 @@ class EMV(BaseIndicator, PatternSignalMixin):
         if df['volume'].isnull().all():
             raise ValueError("所有成交量数据都是缺失的")
     
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_emv(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算EMV指标
         
         Args:
-            df: 包含high, low, close, volume列的DataFrame
+            df: 包含high, low, close, volume列的Data_frame
             
         Returns:
-            包含EMV和EMV_MA列的DataFrame
+            包含EMV和EMV_MA列的Data_frame
         """
-        self._validate_dataframe(df)
+        self._validate_dataframe_emv(df)
         
         # 创建副本以避免修改原始数据
         df_copy = df.copy()
@@ -99,13 +99,13 @@ class EMV(BaseIndicator, PatternSignalMixin):
         emv_one_day = mid_point_move / box_ratio
         
         # 计算n日EMV
-        df_copy['EMV'] = emv_one_day.rolling(window=self.period).sum()
+        df_copy['EMV_Emv'] = emv_one_day.rolling(window=self.period).sum()
         
         # 计算EMV的移动平均
-        df_copy['EMV_MA'] = df_copy['EMV'].rolling(window=9).mean()
+        df_copy['EMV_MA'] = df_copy['EMV_Emv'].rolling(window=9).mean()
         
         # 保存结果
-        self._result = df_copy[['EMV', 'EMV_MA']]
+        self._result = df_copy[['EMV_Emv', 'EMV_MA']]
         
         
         # 添加形态识别和信号生成
@@ -118,7 +118,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
         """检查是否已计算结果"""
         return self._result is not None and not self._result.empty
     
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Emv(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成EMV指标的标准化交易信号
         
@@ -128,14 +128,14 @@ class EMV(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
                 
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 确保已计算EMV指标
         if not self.has_result():
             self.calculate(data)
         
         # 获取EMV相关值
-        emv = self._result['EMV']
+        emv = self._result['EMV_Emv']
         emv_ma = self._result['EMV_MA']
         
         # 初始化信号DataFrame
@@ -340,7 +340,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
         
         return signals
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Emv(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算EMV原始评分
         
@@ -359,7 +359,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
             return pd.Series(50.0, index=data.index)
         
         # 获取EMV相关值
-        emv = self._result['EMV']
+        emv = self._result['EMV_Emv']
         emv_ma = self._result['EMV_MA']
         
         # 初始基础分50分
@@ -395,13 +395,13 @@ class EMV(BaseIndicator, PatternSignalMixin):
         # 限制评分范围在0-100之间
         return np.clip(score, 0, 100)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Emv(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算EMV指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -439,9 +439,9 @@ class EMV(BaseIndicator, PatternSignalMixin):
                 pass
 
         # 3. 基于EMV值的稳定性
-        if hasattr(self, '_result') and self._result is not None and 'EMV' in self._result.columns:
+        if hasattr(self, '_result') and self._result is not None and 'EMV_Emv' in self._result.columns:
             try:
-                emv_values = self._result['EMV'].dropna()
+                emv_values = self._result['EMV_Emv'].dropna()
                 if len(emv_values) >= 5:
                     recent_emv = emv_values.iloc[-5:]
                     emv_stability = 1.0 - (recent_emv.std() / (abs(recent_emv.mean()) + 0.001))
@@ -457,7 +457,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Emv(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别EMV技术形态
         
@@ -478,7 +478,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
             return patterns
         
         # 获取EMV相关值
-        emv = self._result['EMV']
+        emv = self._result['EMV_Emv']
         emv_ma = self._result['EMV_MA']
         
         # 最后一个有效的索引位置
@@ -534,7 +534,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Emv(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取EMV指标的技术形态
 
@@ -543,7 +543,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算EMV
         if not self.has_result():
@@ -552,7 +552,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
         if self._result is None:
             return pd.DataFrame(index=data.index)
 
-        emv = self._result['EMV']
+        emv = self._result['EMV_Emv']
         emv_ma = self._result['EMV_MA']
 
         patterns_df = pd.DataFrame(index=data.index)
@@ -599,7 +599,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Emv(self):
         """
         注册EMV指标的技术形态
         """
@@ -687,7 +687,7 @@ class EMV(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Emv(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -803,59 +803,27 @@ class EMV(BaseIndicator, PatternSignalMixin):
             'type': 'neutral'
         })
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Emv(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算并生成EMV指标信号
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
             
         Returns:
-            pd.DataFrame: 包含EMV指标和信号的DataFrame
+            pd.DataFrame: 包含EMV指标和信号的Data_frame
         """
         result = self.calculate(df)
-        signal_df = self.generate_signals(df, result)
+        signal_df = self.generate_signals_Emv(df, result)
         
         return signal_df
 
 
-    def __init__(self, **kwargs):
-        """
-        初始化EMV指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "EMV"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保EMV特有属性存在
-        if not hasattr(self, 'volume_divisor'):
-            self.volume_divisor = 10000
-        
-        # 确保EMV特有属性存在
-        if not hasattr(self, 'volume_divisor'):
-            self.volume_divisor = 10000
-        if not hasattr(self, 'period'):
-            self.period = 14
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_emv(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'volume_divisor': 10000, 'period': 14}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Emv_Emv_Emv_emv_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -864,18 +832,18 @@ class EMV(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('EMV', params)
+            is_valid, errors = validator.validate_indicator_parameters('EMV_Emv', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"EMV参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

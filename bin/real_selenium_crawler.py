@@ -2,7 +2,7 @@
 """
 真实Selenium爬虫系统
 
-使用Selenium解决JavaScript渲染和登录验证问题
+使用Selenium解决Java_script渲染和登录验证问题
 获取真实的股市讨论社区内容
 """
 
@@ -17,7 +17,7 @@ from typing import Dict, List, Any
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,14 +26,14 @@ logger = get_logger(__name__)
 try:
     from selenium import webdriver
     from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support.ui import Web_driver_wait
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.common.action_chains import ActionChains
-    from selenium.common.exceptions import TimeoutException, NoSuchElementException
+    from selenium.webdriver.common.action_chains import Action_chains
+    from selenium.common.exceptions import Timeout_exception, No_such_element_exception
     SELENIUM_AVAILABLE = True
     print("✅ Selenium可用")
-except ImportError:
+except Import_error:
     SELENIUM_AVAILABLE = False
     print("❌ Selenium未安装")
 
@@ -43,8 +43,8 @@ import requests
 class RealSeleniumCrawler:
     """真实Selenium爬虫"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___6(self):
+        self.concept_extractor = Concept_stock_extractor()
         self.driver = None
 
         # 备用请求会话

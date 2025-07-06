@@ -12,12 +12,12 @@ import os
 import atexit
 import numpy as np
 from enums.period import Period  # 添加 Period 枚举的导入
-from models.stock_info import StockInfo  # 导入StockInfo类
+from models.stock_info import Stock_info  # 导入Stock_info类
 import json
 
 # 导入KlinePeriod枚举，但使用try-except避免循环导入问题
 try:
-    from enums.kline_period import KlinePeriod
+    from enums.kline_period import Kline_period
 
     HAS_KLINE_PERIOD = True
 except ImportError:
@@ -29,6 +29,7 @@ logger = logging.getLogger('clickhouse_db')
 # 导入统一配置管理器
 try:
     from config.database_config_manager import get_clickhouse_connection_config
+    from utils.dependency_injection import get_service_Clickhouse_Db
     HAS_CONFIG_MANAGER = True
 except ImportError:
     HAS_CONFIG_MANAGER = False
@@ -44,7 +45,7 @@ except ImportError:
 
 def get_default_config() -> Dict[str, Any]:
     """
-    获取默认ClickHouse配置
+    获取默认Click_house配置
 
     Returns:
         Dict[str, Any]: 配置字典
@@ -65,68 +66,55 @@ def get_default_config() -> Dict[str, Any]:
     }
 
 
-class ClickHouseDBManager:
+class ClickHouseDbmanager:
     """
     ClickHouse数据库连接管理器
-    使用单例模式确保连接复用
+    支持连接池和依赖注入
     """
-    _instance = None
-    _connections: Dict[str, Dict[str, Any]] = {}  # 连接池
-    _lock = threading.RLock()  # 添加可重入锁，保护连接池
-    _max_idle_time = 600  # 连接最大空闲时间（秒），延长到10分钟
-    _cleanup_interval = 120  # 清理间隔（秒），延长到2分钟
-    _cleanup_thread = None  # 清理线程
-    _shutting_down = False  # 关闭标志
-
-    @classmethod
-    def get_instance(cls) -> 'ClickHouseDBManager':
-        """
-        获取单例实例
+    
+    def __init__(self):
+        """初始化连接管理器"""
+        self._connections: Dict[str, Dict[str, Any]] = {}  # 连接池
+        self._lock = threading.RLock()  # 添加可重入锁，保护连接池
+        self._max_idle_time = 600  # 连接最大空闲时间（秒），延长到10分钟
+        self._cleanup_interval = 120  # 清理间隔（秒），延长到2分钟
+        self._cleanup_thread = None  # 清理线程
+        self._shutting_down = False  # 关闭标志
         
-        Returns:
-            ClickHouseDBManager: 管理器实例
-        """
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = cls()
-                    cls._start_cleanup_thread()
-                    atexit.register(cls._cleanup_all_connections)
-        return cls._instance
+        # 启动清理线程
+        self._start_cleanup_thread()
+        atexit.register(self._cleanup_all_connections)
 
-    @classmethod
-    def _start_cleanup_thread(cls) -> None:
+    def _start_cleanup_thread(self) -> None:
         """启动连接池清理线程"""
-        if cls._cleanup_thread is None:
-            cls._cleanup_thread = threading.Thread(
-                target=cls._connection_cleanup_task,
+        if self._cleanup_thread is None:
+            self._cleanup_thread = threading.Thread(
+                target=self._connection_cleanup_task,
                 daemon=True
             )
-            cls._cleanup_thread.start()
+            self._cleanup_thread.start()
 
-    @classmethod
-    def _connection_cleanup_task(cls) -> None:
+    def _connection_cleanup_task(self) -> None:
         """定期清理空闲连接的任务"""
-        while not cls._shutting_down:
-            time.sleep(cls._cleanup_interval)
+        while not self._shutting_down:
+            time.sleep(self._cleanup_interval)
             try:
-                cls._cleanup_idle_connections()
+                self._cleanup_idle_connections_Clickhouse_Db()
             except Exception as e:
                 logger.error(f"清理空闲连接时出错: {e}")
 
-    @classmethod
-    def _cleanup_idle_connections(cls) -> None:
+    def _cleanup_idle_connections_Clickhouse_Db(self) -> None:
         """清理空闲连接"""
-        with cls._lock:
+        with self._lock:
             current_time = time.time()
             keys_to_remove = []
 
-            for key, conn_info in cls._connections.items():
+            for key, conn_info in self._connections.items():
                 if conn_info['in_use']:
                     continue
 
                 # 检查连接是否超过空闲时间
-                if current_time - conn_info['last_used'] > cls._max_idle_time:
+                if current_time - conn_info['last_used'] > self._max_idle_time:
                     try:
                         # 尝试健康检查
                         try:
@@ -144,28 +132,27 @@ class ClickHouseDBManager:
                     keys_to_remove.append(key)
 
             for key in keys_to_remove:
-                del cls._connections[key]
+                del self._connections[key]
                 
             if keys_to_remove:
                 logger.info(f"清理了 {len(keys_to_remove)} 个空闲连接")
 
-    @classmethod
-    def _cleanup_all_connections(cls) -> None:
+    def _cleanup_all_connections(self) -> None:
         """清理所有连接（程序退出时调用）"""
         logger.info("正在关闭所有数据库连接...")
-        cls._shutting_down = True
+        self._shutting_down = True
 
-        with cls._lock:
-            for key, conn_info in cls._connections.items():
+        with self._lock:
+            for key, conn_info in self._connections.items():
                 try:
                     conn_info['client'].disconnect()
                     logger.debug(f"关闭连接: {key}")
                 except Exception as e:
                     logger.warning(f"关闭连接时出错: {key}, 错误: {e}")
 
-            cls._connections.clear()
+            self._connections.clear()
 
-    def get_connection(self, config: Optional[Dict[str, Any]] = None) -> 'ClickHouseDBConnection':
+    def get_connection_Db(self, config: Optional[Dict[str, Any]] = None) -> 'ClickHouseDBConnection':
         """
         获取数据库连接
         
@@ -199,12 +186,12 @@ class ClickHouseDBManager:
                         'last_used': time.time(),
                         'config': config
                     }
-                    return ClickHouseDBConnection(self, new_conn_key)
+                    return ClickHouseDbconnection(self, new_conn_key)
 
                 # 标记连接为使用中并返回
                 conn_info['in_use'] = True
                 conn_info['last_used'] = time.time()
-                return ClickHouseDBConnection(self, conn_key)
+                return ClickHouseDbconnection(self, conn_key)
 
             # 创建新连接
             try:
@@ -215,7 +202,7 @@ class ClickHouseDBManager:
                     'last_used': time.time(),
                     'config': config
                 }
-                return ClickHouseDBConnection(self, conn_key)
+                return ClickHouseDbconnection(self, conn_key)
             except Exception as e:
                 logger.error(f"创建ClickHouse连接失败: {e}")
                 raise
@@ -235,12 +222,28 @@ class ClickHouseDBManager:
                 logger.warning(f"尝试释放不存在的连接: {conn_key}")
 
 
-class ClickHouseDBConnection:
+# ===== 兼容性接口 =====
+
+def get_clickhouse_db_manager() -> ClickHouseDbmanager:
     """
-    ClickHouse数据库连接包装类，支持上下文管理器模式
+    获取ClickHouse数据库管理器实例（兼容性方法）
+    
+    Returns:
+        ClickHouseDbmanager: 管理器实例
+    """
+    return ClickHouseDbmanager()
+
+
+# 为了向后兼容，保留原有的类方法接口
+ClickHouseDbmanager.get_instance_Db = staticmethod(get_clickhouse_db_manager)
+
+
+class ClickHouseDbconnection:
+    """
+    Click_house数据库连接包装类，支持上下文管理器模式
     """
 
-    def __init__(self, manager: ClickHouseDBManager, conn_key: str):
+    def __init__(self, manager: Click_house_dBManager, conn_key: str):
         """
         初始化连接对象
         
@@ -253,16 +256,16 @@ class ClickHouseDBConnection:
         self.client = manager._connections[conn_key]['client']
         self._database_created = False # 用于确保数据库只创建一次
 
-    def __enter__(self) -> 'ClickHouseDBConnection':
+    def __enter___Clickhouse_Db_Clickhouse_Db(self) -> 'ClickHouseDBConnection':
         """
         上下文管理器入口
         
         Returns:
-            ClickHouseDBConnection: 连接对象自身
+            Click_house_dBConnection: 连接对象自身
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit___Clickhouse_Db_Clickhouse_Db(self, exc_type, exc_val, exc_tb) -> None:
         """
         上下文管理器退出，自动释放连接
         """
@@ -285,7 +288,7 @@ class ClickHouseDBConnection:
             logger.error(f"执行SQL失败: {query}, 错误: {e}")
             raise
 
-    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_Db_Clickhouse_Db_Clickhouse_Db(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         执行查询并返回结果
         
@@ -301,7 +304,7 @@ class ClickHouseDBConnection:
         """
         try:
             # 使用 query_dataframe 方法，它能正确返回列名
-            result_with_columns = self.client.query_dataframe(query, params or {})
+            result_with_columns = self.client.query_dataframe_Db(query, params or {})
             return result_with_columns
         except Exception as e:
             logger.error("执行查询失败: %s, 错误: %s", query, e)
@@ -348,7 +351,7 @@ class ClickHouseDBConnection:
             
             select_part = select_match.group(1).strip()
             
-            # 如果是SELECT *，返回空列表（无法确定列名）
+            # 如果是SELECT code, name, date, level, open, close, high, low, volume，返回空列表（无法确定列名）
             if select_part.strip() == '*':
                 return []
             
@@ -380,9 +383,9 @@ class ClickHouseDBConnection:
             logger.warning(f"从查询中提取列名失败: {e}")
             return []
 
-    def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_dataframe_Db(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
-        执行查询并返回Pandas DataFrame
+        执行查询并返回Pandas Data_frame
         
         Args:
             query: SQL查询语句
@@ -392,74 +395,19 @@ class ClickHouseDBConnection:
             pd.DataFrame: 查询结果
         """
         try:
-            return self.client.query_dataframe(query, params)
+            return self.client.query_dataframe_Db(query, params)
         except Exception as e:
             logger.error(f"查询DataFrame失败: {query}, 错误: {e}")
             # 返回一个空的DataFrame以保持类型一致性
             return pd.DataFrame()
 
 
-class ClickHouseDB:
+class ClickHouseDb:
     """
-    ClickHouse数据库操作类，提供SQL执行和数据查询功能
+    Click_house数据库操作类，提供SQL执行和数据查询功能
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """
-        初始化ClickHouse数据库操作对象
-        
-        Args:
-            config: 数据库连接配置，如果为None则使用默认配置
-        """
-        self.config = config or get_default_config()
-        self.manager = ClickHouseDBManager.get_instance()
-        self.db_connection = self.manager.get_connection(self.config)
-
-    def __enter__(self) -> 'ClickHouseDB':
-        """
-        上下文管理器入口
-        
-        Returns:
-            ClickHouseDB: 数据库操作对象自身
-        """
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """
-        上下文管理器退出，自动释放连接
-        """
-        # 连接本身具有上下文管理器，会自动释放
-        pass
-
-    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> None:
-        """
-        执行SQL语句
-        
-        Args:
-            query: SQL查询语句
-            params: 查询参数
-            
-        Raises:
-            Exception: 执行失败时抛出
-        """
-        with self.manager.get_connection(self.config) as conn:
-            conn.execute(query, params)
-
-    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
-        """
-        执行查询并返回Pandas DataFrame
-
-        Args:
-            query: SQL查询语句
-            params: 查询参数
-
-        Returns:
-            pd.DataFrame: 查询结果
-        """
-        with self.manager.get_connection(self.config) as conn:
-            return conn.query(query, params)
-
-    def get_stock_info(self,
+    def get_stock_info_Db(self,
                        stock_code: Union[str, List[str]] = None,
                        level: Union[str, Period] = None,
                        start_date: Union[str, datetime.datetime, None] = None,
@@ -467,9 +415,9 @@ class ClickHouseDB:
                        filters: Optional[Dict[str, Any]] = None,
                        limit: Optional[int] = None,
                        order_by: str = "date DESC",
-                       group_by: Optional[str] = None) -> StockInfo:
+                       group_by: Optional[str] = None) -> Stock_info:
         """
-        统一的股票数据查询方法，替代 get_kline_data, get_stock_list 和原有的 get_stock_info 方法
+        统一的股票数据查询方法，替代 get_kline_data, get_stock_list 和原有的 get_stock_info WHERE 1=1 方法
         
         Args:
             stock_code: 股票代码或股票代码列表，如果为None则查询所有股票
@@ -482,7 +430,7 @@ class ClickHouseDB:
             group_by: 分组字段
             
         Returns:
-            StockInfo 对象
+            Stock_info 对象
             
         Raises:
             ValueError: 参数无效时抛出
@@ -526,7 +474,7 @@ class ClickHouseDB:
 
             # 使用固定的完整字段列表
             # 字段直接从 stockInfo 对象字段保持一致，从stockInfo对象中获取
-            fields = StockInfo.get_fields()
+            fields = Stock_info.get_fields()
             # 构建SQL查询
             field_str = ", ".join(fields)
 
@@ -632,7 +580,7 @@ class ClickHouseDB:
                 need_latest_by_code = False
 
             # 构建完整查询
-            query = f"SELECT {field_str} FROM stock_info"
+            query = f"SELECT {field_str} FROM stock_info WHERE date >= '2020-01-01'"
 
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
@@ -684,12 +632,12 @@ class ClickHouseDB:
 
             # 执行查询
             logger.debug(f"执行SQL查询: {query}, 参数: {params}")
-            result = self.query(query, params)
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             # 处理结果
             if result.empty:
                 # 返回空StockInfo对象
-                empty_stock = StockInfo()
+                empty_stock = Stock_info()
                 if isinstance(stock_code, str):
                     empty_stock.code = stock_code
                 empty_stock.level = level if isinstance(level, str) else (level.value if level else None)
@@ -711,12 +659,12 @@ class ClickHouseDB:
                 result = result.rename(columns=column_mapping)
 
             # 始终返回StockInfo对象
-            return StockInfo(result)
+            return Stock_info(result)
 
         except Exception as e:
             logger.error(f"查询股票数据失败: {e}")
             # 返回空StockInfo对象
-            empty_stock = StockInfo()
+            empty_stock = Stock_info()
             if isinstance(stock_code, str):
                 empty_stock.code = stock_code
             empty_stock.level = level if isinstance(level, str) else (level.value if level else None)
@@ -766,8 +714,7 @@ class ClickHouseDB:
             query = """
             SELECT 
                 date, code, name, open, high, low, close, volume, turnover
-            FROM 
-                stock_info
+            FROM stock_info WHERE 1=1
             WHERE 
                 (code = %(symbol)s OR industry = %(symbol)s) AND 
                 (level = '行业' OR level = '日线') AND
@@ -782,7 +729,7 @@ class ClickHouseDB:
                 'end_date': end_date
             }
 
-            result = self.query(query, params)
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             # 使用DataFrame.empty属性判断结果是否为空
             if result.empty:
@@ -826,13 +773,13 @@ class ClickHouseDB:
             # 直接查询stock_info表中的行业信息
             query = """
             SELECT DISTINCT code
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE level = '日线' AND industry = %(industry)s
             ORDER BY code
             """
 
             params = {'industry': industry}
-            df = self.query(query, params)
+            df = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             if df.empty:
                 logger.warning(f"未找到行业 {industry} 的股票，返回空列表")
@@ -902,12 +849,12 @@ class ClickHouseDB:
             # 构建查询
             query = f"""
             SELECT MIN(date) as min_date
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE {" AND ".join(conditions)}
             """
 
             # 执行查询
-            result = self.query(query, params)
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             if not result.empty and 'min_date' in result.columns and not pd.isna(result.iloc[0]['min_date']):
                 min_date = result.iloc[0]['min_date']
@@ -973,12 +920,12 @@ class ClickHouseDB:
                 params['level'] = db_level
 
             # 构建查询
-            query = "SELECT MAX(date) as max_date FROM stock_info"
+            query = "SELECT MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01'"
             if conditions:
                 query += f" WHERE {' AND '.join(conditions)}"
 
             # 执行查询
-            result = self.query(query, params)
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             if not result.empty and 'max_date' in result.columns and not pd.isna(result.iloc[0]['max_date']):
                 max_date = result.iloc[0]['max_date']
@@ -989,7 +936,7 @@ class ClickHouseDB:
             logger.error(f"获取股票最新日期时出错: {e}")
             return None
 
-    def get_industry_list(self) -> pd.DataFrame:
+    def get_industry_list_Db(self) -> pd.DataFrame:
         """
         获取行业列表
         
@@ -1000,13 +947,13 @@ class ClickHouseDB:
             # 构建查询
             query = """
             SELECT DISTINCT industry as name, '' as code
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE industry != ''
             ORDER BY industry
             """
 
             # 执行查询
-            result = self.query(query)
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query)
 
             # 处理列名
             if 'col_0' in result.columns:
@@ -1017,13 +964,13 @@ class ClickHouseDB:
             logger.error(f"获取行业列表时出错: {e}")
             return pd.DataFrame(columns=['name', 'code'])
 
-    def save_selection_result(self, result: pd.DataFrame, strategy_id: str,
+    def save_selection_result_Db(self, result: pd.DataFrame, strategy_id: str,
                               selection_date: Optional[str] = None) -> bool:
         """
         保存选股结果（注意：当前数据库中没有stock_selection_result表）
 
         Args:
-            result: 选股结果DataFrame
+            result: 选股结果Data_frame
             strategy_id: 策略ID
             selection_date: 选股日期，默认为当前日期
 
@@ -1176,13 +1123,12 @@ class ClickHouseDB:
         query = """
         SELECT 
             MAX(date) as max_date
-        FROM 
-            stock_info
+        FROM stock_info WHERE 1=1
         WHERE
             industry != ''
         """
 
-        result = self.query(query)
+        result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query)
         if result.empty or pd.isna(result.iloc[0, 0]):
             return datetime.datetime.now()
         return result.iloc[0, 0]
@@ -1208,8 +1154,7 @@ class ClickHouseDB:
         query = """
         SELECT
             AVG(close) as avg_price
-        FROM
-            stock_info
+        FROM stock_info WHERE 1=1
         WHERE
             code = %(code)s AND
             date >= %(start_date)s
@@ -1220,7 +1165,7 @@ class ClickHouseDB:
             'start_date': formatted_date
         }
 
-        result = self.query(query, params)
+        result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
         if result.empty or pd.isna(result.iloc[0, 0]):
             return 0.0
         return float(result.iloc[0, 0])
@@ -1230,7 +1175,7 @@ class ClickHouseDB:
         保存股票K线数据
         
         Args:
-            data: 股票数据DataFrame
+            data: 股票数据Data_frame
             level: K线周期
             
         Raises:
@@ -1272,12 +1217,12 @@ class ClickHouseDB:
         fields = ", ".join(data.columns)
 
         # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
-        with self.manager.get_connection(self.config) as conn:
+        with self.manager.get_connection_Db(self.config) as conn:
             for _, row in data.iterrows():
                 values = ", ".join([f"%(f{i})s" for i in range(len(row))])
 
                 query = f"""
-                INSERT INTO stock_info ({fields})
+                INSERT INTO stock_info WHERE 1=1 ({fields})
                 VALUES ({values})
                 """
 
@@ -1294,7 +1239,7 @@ class ClickHouseDB:
         保存行业指数数据
         
         Args:
-            data: 行业数据DataFrame
+            data: 行业数据Data_frame
             
         Raises:
             Exception: 保存失败时抛出
@@ -1314,12 +1259,12 @@ class ClickHouseDB:
         fields = ", ".join(data.columns)
 
         # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
-        with self.manager.get_connection(self.config) as conn:
+        with self.manager.get_connection_Db(self.config) as conn:
             for _, row in data.iterrows():
                 values = ", ".join([f"%(f{i})s" for i in range(len(row))])
 
                 query = f"""
-                INSERT INTO stock_info ({fields})
+                INSERT INTO stock_info WHERE 1=1 ({fields})
                 VALUES ({values})
                 """
 
@@ -1381,7 +1326,7 @@ class ClickHouseDB:
             logger.error(f"保存结果数据到文件时出错: {e}")
             raise
 
-    def get_stock_list(self, market: Optional[str] = None,
+    def get_stock_list_Db(self, market: Optional[str] = None,
                       industry: Optional[str] = None,
                       limit: Optional[int] = None) -> pd.DataFrame:
         """
@@ -1407,7 +1352,7 @@ class ClickHouseDB:
             # 构建查询
             query = f"""
             SELECT DISTINCT code, name, industry
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE {' AND '.join(conditions)}
             ORDER BY code
             """
@@ -1416,7 +1361,7 @@ class ClickHouseDB:
                 query += f" LIMIT {limit}"
 
             # 执行查询
-            result = self.query(query, params)
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             # 标准化列名
             if not result.empty and 'col_0' in result.columns:
@@ -1432,11 +1377,11 @@ class ClickHouseDB:
             logger.error(f"获取股票列表失败: {e}")
             return pd.DataFrame(columns=['code', 'name', 'industry'])
 
-    def get_kline_data(self, stock_code: Union[str, List[str]],
+    def get_kline_data_Db(self, stock_code: Union[str, List[str]],
                       start_date: Optional[str] = None,
                       end_date: Optional[str] = None,
                       level: str = 'day',
-                      **kwargs) -> StockInfo:
+                      **kwargs) -> Stock_info:
         """
         获取K线数据（兼容性方法）
 
@@ -1448,12 +1393,12 @@ class ClickHouseDB:
             **kwargs: 其他参数
 
         Returns:
-            StockInfo: 股票数据对象
+            Stock_info: 股票数据对象
         """
-        logger.warning("方法 get_kline_data 已被弃用，建议使用 get_stock_info 方法")
+        logger.warning("方法 get_kline_data 已被弃用，建议使用 get_stock_info WHERE 1=1 方法")
 
         # 调用统一的get_stock_info方法
-        return self.get_stock_info(
+        return self.get_stock_info_Db(
             stock_code=stock_code,
             level=level,
             start_date=start_date,
@@ -1461,7 +1406,7 @@ class ClickHouseDB:
             **kwargs
         )
 
-    def get_stocks_by_industry(self, industry: str) -> List[Dict[str, str]]:
+    def get_stocks_by_industry_Db(self, industry: str) -> List[Dict[str, str]]:
         """
         根据行业获取股票列表（注意：当前数据库中行业信息可能不完整）
 
@@ -1477,18 +1422,18 @@ class ClickHouseDB:
             # 直接查询stock_info表中的行业信息
             query = """
             SELECT DISTINCT code, name, industry
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE level = '日线' AND industry = %(industry)s
             ORDER BY code
             """
 
             params = {'industry': industry}
-            stocks_df = self.query(query, params)
+            stocks_df = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             if stocks_df.empty:
                 logger.warning(f"未找到行业 {industry} 的股票，返回示例股票")
                 # 返回一些示例股票
-                stocks_df = self.get_stock_list(limit=10)
+                stocks_df = self.get_stock_list_Db(limit=10)
 
             # 标准化列名
             if 'col_0' in stocks_df.columns:
@@ -1512,7 +1457,7 @@ class ClickHouseDB:
             logger.error(f"根据行业 {industry} 获取股票列表失败: {e}")
             return []
 
-    def get_index_stocks(self, index_code: str) -> List[Dict[str, str]]:
+    def get_index_stocks_Db(self, index_code: str) -> List[Dict[str, str]]:
         """
         根据指数代码获取成分股列表（注意：当前数据库中没有指数成分股数据）
 
@@ -1527,7 +1472,7 @@ class ClickHouseDB:
         # 返回一些示例股票作为替代
         try:
             # 获取前50只股票作为示例
-            stocks_df = self.get_stock_list(limit=50)
+            stocks_df = self.get_stock_list_Db(limit=50)
             if stocks_df.empty:
                 return []
 
@@ -1546,7 +1491,7 @@ class ClickHouseDB:
             logger.error(f"获取指数 {index_code} 成分股失败: {e}")
             return []
 
-    def get_stock_name(self, stock_code: str) -> str:
+    def get_stock_name_Db(self, stock_code: str) -> str:
         """
         获取股票名称
         Args:
@@ -1559,7 +1504,7 @@ class ClickHouseDB:
             SELECT code, name FROM stock_info WHERE code = %(stock_code)s AND level = '日线' LIMIT 1
             """
             params = {'stock_code': stock_code}
-            result = self.query(query, params)
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
             # 标准化列名
             if not result.empty:
                 if 'col_0' in result.columns:
@@ -1609,7 +1554,7 @@ class ClickHouseDB:
         # 其他类型，尝试转换为字符串
         return str(date_param)
 
-    def init_database(self):
+    def init_database_Db(self):
         """
         初始化数据库和表
         """
@@ -1693,14 +1638,18 @@ class ClickHouseDB:
             self._execute_sql_from_file(file_path)
 
 
-def get_clickhouse_db(config: Optional[Dict[str, Any]] = None) -> ClickHouseDB:
+def get_service_Clickhouse_Db(Data_access_interface) -> Click_house_dB:
     """
-    获取ClickHouseDB实例
+    获取Click_house_dB实例
     
     Args:
         config: 数据库连接配置，如果为None则使用默认配置
         
     Returns:
-        ClickHouseDB: 数据库操作对象
+        Click_house_dB: 数据库操作对象
     """
-    return ClickHouseDB(config)
+    return Click_house_dB(config)
+
+# 注意：ClickHouseDB现在通过依赖注入容器管理
+# 可以在应用启动时预注册：
+# container.register_singleton(ClickHouseDB, ClickHouseDB)

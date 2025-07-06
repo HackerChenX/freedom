@@ -13,7 +13,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class DataQualityRule:
+class Data_quality_rule:
     """数据质量规则"""
 
     def __init__(self, name: str, description: str, check_func, severity: str = "warning"):
@@ -48,7 +48,7 @@ class DataQualityRule:
             }
 
 
-class DataQualityChecker:
+class Data_quality_checker:
     """数据质量检查器"""
 
     def __init__(self):
@@ -64,7 +64,7 @@ class DataQualityChecker:
         """添加默认质量规则"""
 
         # 必填字段检查
-        self.add_rule(DataQualityRule(
+        self.add_rule(Data_quality_rule(
             name="required_fields",
             description="检查必填字段是否存在",
             check_func=self._check_required_fields,
@@ -72,7 +72,7 @@ class DataQualityChecker:
         ))
 
         # 数据格式检查
-        self.add_rule(DataQualityRule(
+        self.add_rule(Data_quality_rule(
             name="data_format",
             description="检查数据格式是否正确",
             check_func=self._check_data_format,
@@ -80,7 +80,7 @@ class DataQualityChecker:
         ))
 
         # 内容长度检查
-        self.add_rule(DataQualityRule(
+        self.add_rule(Data_quality_rule(
             name="content_length",
             description="检查内容长度是否合理",
             check_func=self._check_content_length,
@@ -88,7 +88,7 @@ class DataQualityChecker:
         ))
 
         # 重复数据检查
-        self.add_rule(DataQualityRule(
+        self.add_rule(Data_quality_rule(
             name="duplicate_check",
             description="检查是否存在重复数据",
             check_func=self._check_duplicates,
@@ -96,7 +96,7 @@ class DataQualityChecker:
         ))
 
         # 股票代码有效性检查
-        self.add_rule(DataQualityRule(
+        self.add_rule(Data_quality_rule(
             name="stock_code_validity",
             description="检查股票代码格式是否正确",
             check_func=self._check_stock_codes,
@@ -225,7 +225,7 @@ class DataQualityChecker:
             stock_codes = data['stock_codes']
             if isinstance(stock_codes, list):
                 for code in stock_codes:
-                    if not self._is_valid_stock_code(code):
+                    if not self._is_valid_stock_code_Data_Quality_Checker(code):
                         issues.append(f'无效股票代码: {code}')
 
         if issues:
@@ -241,7 +241,7 @@ class DataQualityChecker:
             'details': {}
         }
 
-    def _is_valid_stock_code(self, code: str) -> bool:
+    def _is_valid_stock_code_Data_Quality_Checker(self, code: str) -> bool:
         """验证股票代码格式"""
         if not isinstance(code, str) or len(code) != 6:
             return False
@@ -253,7 +253,7 @@ class DataQualityChecker:
         valid_prefixes = ['60', '688', '00', '002', '300']
         return any(code.startswith(prefix) for prefix in valid_prefixes)
 
-    def add_rule(self, rule: DataQualityRule):
+    def add_rule(self, rule: Data_quality_rule):
         """添加质量规则"""
         self.rules[rule.name] = rule
         logger.info(f"添加数据质量规则: {rule.name}")

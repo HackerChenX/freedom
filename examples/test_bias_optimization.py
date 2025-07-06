@@ -22,7 +22,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
+def load_test_data_Optimization_Test_Bias_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
     """
     加载测试数据
     
@@ -145,11 +145,11 @@ def test_bias_optimization(data):
     return simple_score, enhanced_score
 
 
-def main():
+def main_testbiasoptimization():
     """主函数"""
     try:
         # 加载测试数据
-        data = load_test_data(start_date='2022-01-01', end_date='2022-12-31')
+        data = load_test_data_Optimization_Test_Bias_Optimization(start_date='2022-01-01', end_date='2022-12-31')
         
         # 测试BIAS指标优化效果
         old_score, new_score = test_bias_optimization(data)
@@ -163,4 +163,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testbiasoptimization() 

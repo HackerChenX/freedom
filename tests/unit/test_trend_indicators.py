@@ -14,59 +14,59 @@ from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
 
 class TestMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
-        LogCaptureMixin.setUp(self)
+    def setUp_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
         self.indicator = MA(periods=[5, 20])
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['MA5', 'MA20']
 
-    def tearDown(self):
-        LogCaptureMixin.tearDown(self)
+    def tearDown_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
 
-class TestEMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
-        LogCaptureMixin.setUp(self)
+class TestEMA_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+    def setUp_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
         self.indicator = EMA(periods=[12, 26])
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['EMA12', 'EMA26']
 
-    def tearDown(self):
-        LogCaptureMixin.tearDown(self)
+    def tearDown_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
 
-class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
-        LogCaptureMixin.setUp(self)
+class TestWMA_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+    def setUp_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
         self.indicator = WMA(periods=[5, 10])
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['WMA5', 'WMA10']
 
-    def tearDown(self):
-        LogCaptureMixin.tearDown(self)
+    def tearDown_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
 
 class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp(self):
-        LogCaptureMixin.setUp(self)
+    def setUp_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
         self.indicator = DMI(period=14, adx_period=6)
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['pdi', 'mdi', 'adx', 'adxr']
 
-    def tearDown(self):
-        LogCaptureMixin.tearDown(self)
+    def tearDown_IndicatorsTesttrendindicators(self):
+        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
 
 class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """ATR指标单元测试类"""
 
-    def setUp(self):
+    def setUp_IndicatorsTesttrendindicators(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)  # 显式调用Mixin的setUp
         # ATR argument is period not periods
         self.indicator = ATR(params={'period': 14})
         self.expected_columns = ['TR', 'ATR14']
@@ -76,11 +76,11 @@ class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tearDown(self):
+    def tearDown_IndicatorsTesttrendindicators(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)  # 显式调用Mixin的tearDown
+        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)  # 显式调用Mixin的tearDown
 
-    def test_basic_calculation(self):
+    def test_basic_calculation_Indicators_Test_Trend_Indicators(self):
         """测试ATR基础计算功能"""
         result = self.indicator.calculate(self.data)
 
@@ -131,7 +131,7 @@ class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             avg_atr = atr_values.mean()
             self.assertGreater(avg_atr, 0, "即使在低波动性数据中ATR也应大于0")
 
-    def test_signal_generation(self):
+    def test_signal_generation_Indicators_Test_Trend_Indicators(self):
         """测试ATR信号生成"""
         # 生成包含多种走势的数据
         data = TestDataGenerator.generate_price_sequence([
@@ -149,7 +149,7 @@ class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIn('atr_rising', signals.columns, "信号结果应包含atr_rising列")
         self.assertIn('atr_falling', signals.columns, "信号结果应包含atr_falling列")
 
-    def test_pattern_detection(self):
+    def test_pattern_detection_Indicators(self):
         """测试ATR形态检测"""
         data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
@@ -167,7 +167,7 @@ class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         for pattern in expected_patterns:
             self.assertIn(pattern, patterns.columns, f"应包含{pattern}形态")
 
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTesttrendindicators(self):
         """测试ATR评分计算功能"""
         # 生成测试数据
         data = TestDataGenerator.generate_price_sequence([
@@ -181,7 +181,7 @@ class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(raw_score, pd.Series, "原始评分应为Series")
         self.assertTrue(all(0 <= s <= 100 for s in raw_score if not pd.isna(s)), "原始评分应在0-100范围内")
 
-    def test_parameter_setting(self):
+    def test_parameter_setting_Indicators_Test_Trend_Indicators(self):
         """测试ATR参数设置"""
         # 测试参数设置方法
         new_period = 21
@@ -197,7 +197,7 @@ class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(self.data)
         self.assertIn(f'ATR{new_period}', result.columns, f"结果应包含ATR{new_period}列")
 
-    def test_edge_cases(self):
+    def test_edge_cases_Indicators_Test_Trend_Indicators(self):
         """测试边界条件"""
         # 测试数据长度不足的情况
         short_data = TestDataGenerator.generate_price_sequence([
@@ -227,7 +227,7 @@ class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         if len(atr_values) > 0:
             self.assertTrue(all(val <= 0.01 for val in atr_values), "价格无变化时ATR应接近0")
 
-    def test_robustness(self):
+    def test_robustness_Indicators_Test_Trend_Indicators(self):
         """测试ATR指标的鲁棒性"""
         # 测试包含异常值的数据
         data = TestDataGenerator.generate_price_sequence([

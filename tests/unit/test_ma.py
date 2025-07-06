@@ -5,8 +5,8 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
-class TestMAIndicator(unittest.TestCase):
-    def setUp(self):
+class Test_mAIndicator(unittest.Test_case):
+    def set_up_Ma(self):
         """Set up test data and indicator."""
         # Longer data to avoid NaN issues with longer period MAs
         close_prices = [
@@ -27,9 +27,9 @@ class TestMAIndicator(unittest.TestCase):
     def test_initialization(self):
         """Test indicator initialization and pattern registration."""
         self.assertEqual(self.ma_indicator.name, "MA")
-        self.assertEqual(self.ma_indicator.periods, self.periods)
+        self.assert_equal(self.ma_indicator.periods, self.periods)
         
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         p_short, p_medium = sorted(self.periods)[:2]
         # The normalization logic in PatternRegistry prepends the indicator name if not already present.
         # Since our pattern_id in MA.py does not start with "MA_", it gets prepended.
@@ -39,7 +39,7 @@ class TestMAIndicator(unittest.TestCase):
         expected_pattern_id = f"MA_{p_short}_{p_medium}_GOLDEN_CROSS".upper()
         # Let's correct MA's registration to not include the prefix itself.
         # No, let's fix the test. The pattern in registry will be MA_5_10_GOLDEN_CROSS
-        self.assertIn(expected_pattern_id, [p.upper() for p in registry.get_all_pattern_ids()])
+        self.assert_in(expected_pattern_id, [p.upper() for p in registry.get_all_pattern_ids()])
 
     def test_calculate_ma(self):
         """Test calculation of moving averages."""
@@ -52,31 +52,31 @@ class TestMAIndicator(unittest.TestCase):
         expected_ma10_at_20 = self.df['close'].iloc[11:21].mean()
         self.assertAlmostEqual(self.indicator_df['SMA10'].iloc[20], expected_ma10_at_20)
 
-    def test_get_patterns(self):
+    def test_get_patterns_Ma(self):
         """Test pattern recognition."""
         patterns = self.ma_indicator.get_patterns(self.indicator_df)
         p_short, p_medium = sorted(self.periods)[:2]
         
         golden_cross_col = f"MA_{p_short}_{p_medium}_GOLDEN_CROSS"
         
-        self.assertIn(golden_cross_col, patterns.columns)
+        self.assert_in(golden_cross_col, patterns.columns)
         
         # Golden Cross at index 15
-        self.assertTrue(patterns[golden_cross_col].iloc[15])
+        self.assert_true(patterns[golden_cross_col].iloc[15])
         
         # Check for bullish arrangement at the end
         self.assertTrue(patterns["MA_BULLISH_ARRANGEMENT"].iloc[-1])
 
-    def test_calculate_raw_score(self):
+    def test_calculate_raw_score_Ma(self):
         """Test score calculation."""
         score = self.ma_indicator.calculate_raw_score(self.indicator_df)
-        self.assertIsInstance(score, pd.Series)
+        self.assert_is_instance(score, pd.Series)
         
         # At the end of the data (strong uptrend), we expect a high score
-        self.assertGreater(score.iloc[-1], 80)
+        self.assert_greater(score.iloc[-1], 80)
 
         # At the beginning of the data (downtrend), we expect a low score
-        self.assertLess(score.iloc[9], 20)
+        self.assert_less(score.iloc[9], 20)
 
     def test_calculate_confidence(self):
         """Test confidence calculation."""
@@ -84,19 +84,19 @@ class TestMAIndicator(unittest.TestCase):
         patterns = self.ma_indicator.get_patterns(self.indicator_df)
 
         confidence = self.ma_indicator.calculate_confidence(score, patterns, {})
-        self.assertIsInstance(confidence, float)
+        self.assert_is_instance(confidence, float)
 
         # Confidence should be between 0 and 1
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
 
     def test_set_parameters(self):
         """Test setting new parameters on an existing indicator."""
         ma_indicator = complete_registry.create_indicator('MA', periods=[5, 10])
         ma_indicator.set_parameters(periods=[20, 40])
-        self.assertEqual(ma_indicator.periods, [20, 40])
+        self.assert_equal(ma_indicator.periods, [20, 40])
 
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         all_patterns = [p.upper() for p in registry.get_all_pattern_ids()]
         self.assertIn('MA_20_40_GOLDEN_CROSS', all_patterns)
         

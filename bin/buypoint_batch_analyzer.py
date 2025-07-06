@@ -18,9 +18,9 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger, setup_logger
 from utils.path_utils import ensure_dir_exists
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
-def parse_arguments():
+def parse_arguments_Analyzer():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='买点批量分析工具')
     
@@ -42,10 +42,10 @@ def parse_arguments():
     
     return parser.parse_args()
 
-def main():
+def main_27():
     """主函数"""
     # 解析命令行参数
-    args = parse_arguments()
+    args = parse_arguments_Analyzer()
     
     # 确保输出目录存在
     ensure_dir_exists(args.output)
@@ -61,7 +61,7 @@ def main():
     
     try:
         # 创建分析器实例
-        analyzer = BuyPointBatchAnalyzer()
+        analyzer = Buy_point_batch_analyzer()
         
         # 运行分析
         analyzer.run_analysis(
@@ -90,4 +90,4 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main_27()) 

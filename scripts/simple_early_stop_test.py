@@ -17,9 +17,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from analysis.engines.indicator_validation_framework import (
-    IndicatorValidationFramework, 
-    IndicatorValidationConfig, 
-    ValidationMode
+    Indicator_validation_framework, 
+    Indicator_validation_config, 
+    Validation_mode
 )
 from utils.logger import get_logger
 
@@ -32,8 +32,8 @@ def test_early_stop_success():
     print("=" * 50)
     
     # 创建配置，使用更宽松的条件确保能选出股票
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=50,          # 更小的股票池
         max_selection_ratio=0.5,     # 更宽松的选股比例
         min_selection_count=1,       # 最少1只股票
@@ -44,7 +44,7 @@ def test_early_stop_success():
         timeout_seconds=60           # 较短的超时时间
     )
     
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     # 手动指定几个常见指标
     test_indicators = ['MA', 'EMA', 'RSI']
@@ -92,7 +92,7 @@ def test_early_stop_success():
         
         return results
         
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print(f"\n🛑 用户中断测试")
         return []
     except Exception as e:
@@ -106,8 +106,8 @@ def test_early_stop_error():
     print("=" * 50)
     
     # 创建配置，故意使用会出错的设置
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=10,          # 很小的股票池
         max_selection_ratio=0.01,    # 很严格的选股比例
         min_selection_count=1,
@@ -118,7 +118,7 @@ def test_early_stop_error():
         timeout_seconds=30           # 很短的超时时间
     )
     
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     # 包含一个可能出错的指标
     test_indicators = ['MA', 'INVALID_INDICATOR', 'RSI']
@@ -159,7 +159,7 @@ def test_early_stop_error():
         
         return results
         
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print(f"\n🛑 用户中断测试")
         return []
     except Exception as e:
@@ -167,7 +167,7 @@ def test_early_stop_error():
         return []
 
 
-def main():
+def main_simpleearlystoptest():
     """主函数"""
     print("🚀 开始早停功能测试")
     print("=" * 60)
@@ -194,4 +194,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_simpleearlystoptest() 

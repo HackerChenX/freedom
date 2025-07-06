@@ -3,18 +3,18 @@
 
 import pandas as pd
 import numpy as np
-from db.container import get_container
-from db.interfaces.data_access_interface import IDataAccess
-from enums.kline_period import KlinePeriod
-from enums.indicators import *
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from enums.kline_period import Kline_period
+from enums.indicators import IndicatorType_Indicators, CrossType, TrendType, VolumePattern_Indicators, PatternType_Indicators
 import json
 import sys
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import exception_handler, performance_monitor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class BuyPointAnalyzer:
@@ -22,7 +22,7 @@ class BuyPointAnalyzer:
     买点分析器 - 分析指定股票在指定日期的技术指标特征
     """
     
-    def __init__(self, data_access: Optional[IDataAccess] = None):
+    def __init___105(self, data_access: Optional[IData_access] = None):
         """
         初始化买点分析器
         
@@ -31,7 +31,7 @@ class BuyPointAnalyzer:
         """
         logger.info("初始化买点分析器")
         container = get_container()
-        self.data_access = data_access or container.resolve(IDataAccess)
+        self.data_access = data_access or get_service(Data_access_interface)
         logger.info("成功连接到数据服务")
     
     @exception_handler(reraise=False, default_return=None)
@@ -62,7 +62,7 @@ class BuyPointAnalyzer:
             # 从数据库获取数据
             stock_data = self.data_access.get_stock_info(
                 code=stock_code, 
-                level=KlinePeriod.DAILY.value, 
+                level=Kline_period.DAILY.value, 
                 start_date=start_date, 
                 end_date=end_date
             )
@@ -120,7 +120,7 @@ class BuyPointAnalyzer:
         计算企稳反弹买点的技术指标
         
         Args:
-            df: 股票数据DataFrame
+            df: 股票数据Data_frame
             buy_date_idx: 买点日期索引
         
         Returns:
@@ -138,23 +138,26 @@ class BuyPointAnalyzer:
             low = df['low'].values
             volume = df['volume'].values
             
+            # 导入指标计算函数
+            from indicators.common import ma, macd, kdj, sma, llv, hhv
+            
             # 计算移动平均线
-            ma5 = MA(close, 5)
-            ma10 = MA(close, 10)
-            ma20 = MA(close, 20)
-            ma30 = MA(close, 30)
-            ma60 = MA(close, 60)
+            ma5 = ma(close, 5)
+            ma10 = ma(close, 10)
+            ma20 = ma(close, 20)
+            ma30 = ma(close, 30)
+            ma60 = ma(close, 60)
             
             # 成交量移动平均
-            vol5 = MA(volume, 5)
-            vol10 = MA(volume, 10)
-            vol20 = MA(volume, 20)
+            vol5 = ma(volume, 5)
+            vol10 = ma(volume, 10)
+            vol20 = ma(volume, 20)
             
             # 计算MACD
-            dif, dea, macd = MACD(close, 12, 26, 9)
+            dif, dea, macd_hist = macd(close, 12, 26, 9)
             
             # 计算KDJ
-            kdj_k, kdj_d, kdj_j = KDJ(close, high, low, 9, 3, 3)
+            kdj_k, kdj_d, kdj_j = kdj(close, high, low, 9, 3, 3)
             
             # 计算买点日期的指标
             # 触及均线
@@ -176,13 +179,13 @@ class BuyPointAnalyzer:
                     ma10[buy_date_idx] > ma10[buy_date_idx-1])
             
             # WVAD指标计算
-            l55 = LLV(low, 55)
-            h55 = HHV(high, 55)
+            l55 = llv(low, 55)
+            h55 = hhv(high, 55)
             diff = (close - l55) / (h55 - l55) * 100
-            s1 = SMA(diff, 5, 1)
-            s2 = SMA(s1, 3, 1)
+            s1 = sma(diff, 5, 1)
+            s2 = sma(s1, 3, 1)
             wvad = 3 * s1 - 2 * s2
-            wv_ma = MA(wvad, 3)
+            wv_ma = ma(wvad, 3)
             wv_chg = np.zeros_like(wv_ma)
             wv_chg[1:] = (wv_ma[1:] - wv_ma[:-1]) / wv_ma[:-1] * 100
             
@@ -329,7 +332,7 @@ class BuyPointAnalyzer:
         总结分析发现
         
         Args:
-            results_df: 分析结果DataFrame
+            results_df: 分析结果Data_frame
             stats: 统计信息
             
         Returns:
@@ -447,7 +450,7 @@ def load_buypoints_config(config_file: str) -> List[Dict[str, str]]:
             else:
                 # 假设是CSV格式
                 import csv
-                reader = csv.DictReader(f)
+                reader = csv.Dict_reader(f)
                 data = list(reader)
         
         return data
@@ -458,13 +461,13 @@ def load_buypoints_config(config_file: str) -> List[Dict[str, str]]:
 
 
 @exception_handler(reraise=False)
-def main():
+def main_48():
     """
     主函数 - 运行买点分析
     """
     try:
         # 创建买点分析器
-        analyzer = BuyPointAnalyzer()
+        analyzer = Buy_point_analyzer()
         
         # 示例：分析单个买点
         result = analyzer.analyze_stock("000001", "20231201", "平安银行")
@@ -481,4 +484,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_48() 

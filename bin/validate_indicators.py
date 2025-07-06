@@ -168,7 +168,7 @@ def full_validation():
     return result
 
 
-def main():
+def main_9():
     """主函数"""
     parser = argparse.ArgumentParser(description="指标验证执行脚本")
     parser.add_argument("--mode", type=str, choices=["quick", "priority", "category", "full"], 
@@ -227,4 +227,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_9() 

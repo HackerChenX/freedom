@@ -8,15 +8,16 @@ from typing import Dict, List, Any, Optional, Callable, Tuple
 from enum import Enum
 import pandas as pd
 import numpy as np
-from utils.logger import get_logger
+from utils.logger import getLogger
+from utils.dependency_injection import get_container
 import os
 import json
 
 # 获取日志记录器
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class PatternType(Enum):
+class PatternTypePatternRegistry(Enum):
     """形态类型枚举"""
     BULLISH = "看涨形态"  # 看涨形态
     BEARISH = "看跌形态"  # 看跌形态
@@ -47,7 +48,7 @@ class PatternPolarity(Enum):
     NEUTRAL = "NEUTRAL"      # 中性信号，信息性质
 
 
-class PatternStrength(Enum):
+class PatternStrengthPatternRegistry(Enum):
     """形态强度枚举"""
     VERY_STRONG = 5  # 非常强
     STRONG = 4  # 强
@@ -63,9 +64,9 @@ class PatternInfo:
                 pattern_id: str,
                 display_name: str,
                 indicator_id: str,
-                pattern_type: PatternType,
+                pattern_type: PatternTypePatternRegistry,
                 description: str = "",
-                default_strength: PatternStrength = PatternStrength.MEDIUM,
+                default_strength: PatternStrengthPatternRegistry = PatternStrengthPatternRegistry.MEDIUM,
                 score_impact: int = 0,
                 detection_function: Optional[Callable] = None,
                 polarity: PatternPolarity = PatternPolarity.NEUTRAL):
@@ -93,7 +94,7 @@ class PatternInfo:
         self.detection_function = detection_function
         self.polarity = polarity
         
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_registry(self) -> Dict[str, Any]:
         """
         转换为字典表示
         
@@ -115,19 +116,16 @@ class PatternInfo:
 class PatternRegistry:
     """
     形态注册表，管理所有技术形态的唯一标识和相关信息
+    重构为普通类，支持依赖注入
     """
     
-    _instance = None
-    _allow_override = False  # 默认不允许覆盖
-    _registered_patterns = set()  # 用于跟踪已注册的形态ID
-    
-    def __new__(cls):
-        """单例模式实现"""
-        if cls._instance is None:
-            cls._instance = super(PatternRegistry, cls).__new__(cls)
-            cls._instance._patterns = {}
-            cls._instance._patterns_by_indicator = {}  # 按指标名称组织的形态
-        return cls._instance
+    def __init__(self):
+        """初始化形态注册表"""
+        self._patterns = {}
+        self._patterns_by_indicator = {}  # 按指标名称组织的形态
+        self._allow_override = False  # 默认不允许覆盖
+        self._registered_patterns = set()  # 用于跟踪已注册的形态ID
+        logger.info("形态注册表初始化完成")
     
     @classmethod
     def _normalize_pattern_id(cls, pattern_id: str, indicator_id: str) -> str:
@@ -151,13 +149,13 @@ class PatternRegistry:
                 pattern_id: str,
                 display_name: str,
                 indicator_id: str,
-                pattern_type: PatternType = PatternType.NEUTRAL,
-                default_strength: PatternStrength = PatternStrength.MEDIUM,
+                pattern_type: PatternTypePatternRegistry = PatternTypePatternRegistry.NEUTRAL,
+                default_strength: PatternStrengthPatternRegistry = PatternStrengthPatternRegistry.MEDIUM,
                 description: str = '',
                 score_impact: float = 0.0,
                 detection_function = None,
                 polarity: PatternPolarity = None,
-                _allow_override: bool = None) -> None:
+                allow_override: bool = None) -> None:
         """
         注册形态（统一入口）
 
@@ -171,17 +169,17 @@ class PatternRegistry:
             score_impact: 对评分的影响值
             detection_function: 形态检测函数
             polarity: 模式极性，用于买点分析过滤
-            _allow_override: 是否允许覆盖已注册的形态，默认使用类属性
+            allow_override: 是否允许覆盖已注册的形态，默认使用类属性
         """
         # 规范化形态ID
         normalized_pattern_id = self._normalize_pattern_id(pattern_id, indicator_id)
 
-        # 如果未指定是否允许覆盖，使用类属性
-        if _allow_override is None:
-            _allow_override = self.__class__._allow_override
+        # 如果未指定是否允许覆盖，使用实例属性
+        if allow_override is None:
+            allow_override = self._allow_override
 
         # 检查形态是否已存在
-        if normalized_pattern_id in self._registered_patterns and not _allow_override:
+        if normalized_pattern_id in self._registered_patterns and not allow_override:
             return
         elif normalized_pattern_id in self._registered_patterns:
             logger.debug(f"形态 {normalized_pattern_id} 已存在，将被覆盖")
@@ -203,245 +201,167 @@ class PatternRegistry:
             'polarity': polarity
         }
         
-        # 存储形态信息
+        # 注册形态
         self._patterns[normalized_pattern_id] = pattern_info
         self._registered_patterns.add(normalized_pattern_id)
         
-        # 按指标组织形态
+        # 按指标组织
         if indicator_id not in self._patterns_by_indicator:
-            self._patterns_by_indicator[indicator_id] = set()
-        self._patterns_by_indicator[indicator_id].add(normalized_pattern_id)
+            self._patterns_by_indicator[indicator_id] = []
+        
+        if normalized_pattern_id not in self._patterns_by_indicator[indicator_id]:
+            self._patterns_by_indicator[indicator_id].append(normalized_pattern_id)
         
         logger.debug(f"注册形态: {normalized_pattern_id} ({display_name})")
 
-    def _infer_polarity(self, pattern_type: PatternType, score_impact: float, display_name: str) -> PatternPolarity:
+    def _infer_polarity(self, pattern_type: PatternTypePatternRegistry, score_impact: float, display_name: str) -> PatternPolarity:
         """
-        根据形态类型、评分影响和显示名称自动推断极性
-
+        自动推断形态极性
+        
         Args:
             pattern_type: 形态类型
             score_impact: 评分影响
             display_name: 显示名称
-
+            
         Returns:
             PatternPolarity: 推断的极性
         """
-        # 基于显示名称的关键词判断
-        negative_keywords = [
-            '空头', '下行', '死叉', '下降', '负值', '超卖', '弱', '低于', '看跌',
-            '下跌', '回调', '深度', '短期下降', '无', '极低', '严重', '虚弱',
-            'FALLING', 'BEARISH', 'BELOW', 'NEGATIVE', 'WEAK', 'DOWN'
-        ]
-
-        positive_keywords = [
-            '多头', '上行', '金叉', '上升', '正值', '超买', '强', '高于', '看涨',
-            '上涨', '突破', '买点', '信号', '满足', '极高', '强烈',
-            'RISING', 'BULLISH', 'ABOVE', 'POSITIVE', 'STRONG', 'UP', 'BUY'
-        ]
-
-        # 检查显示名称中的关键词
+        # 基于形态类型推断
+        if pattern_type in [PatternTypePatternRegistry.BULLISH, PatternTypePatternRegistry.SUPPORT]:
+            return PatternPolarity.POSITIVE
+        elif pattern_type in [PatternTypePatternRegistry.BEARISH, PatternTypePatternRegistry.RESISTANCE]:
+            return PatternPolarity.NEGATIVE
+        
+        # 基于评分影响推断
+        if score_impact > 5:
+            return PatternPolarity.POSITIVE
+        elif score_impact < -5:
+            return PatternPolarity.NEGATIVE
+        
+        # 基于显示名称推断
+        positive_keywords = ['看涨', '买入', '支撑', '突破', '上涨', '强势']
+        negative_keywords = ['看跌', '卖出', '阻力', '下跌', '弱势', '空头']
+        
         display_lower = display_name.lower()
-
-        # 优先基于关键词判断
-        for keyword in negative_keywords:
-            if keyword.lower() in display_lower:
-                return PatternPolarity.NEGATIVE
-
-        for keyword in positive_keywords:
-            if keyword.lower() in display_lower:
-                return PatternPolarity.POSITIVE
-
-        # 基于形态类型判断
-        if pattern_type == PatternType.BEARISH:
-            return PatternPolarity.NEGATIVE
-        elif pattern_type == PatternType.BULLISH:
+        if any(keyword in display_lower for keyword in positive_keywords):
             return PatternPolarity.POSITIVE
-
-        # 基于评分影响判断
-        if score_impact < -5:
+        elif any(keyword in display_lower for keyword in negative_keywords):
             return PatternPolarity.NEGATIVE
-        elif score_impact > 5:
-            return PatternPolarity.POSITIVE
-
-        # 默认为中性
+        
         return PatternPolarity.NEUTRAL
 
-    @classmethod
-    def register_all_patterns(cls) -> None:
-        """
-        注册所有常用指标的形态
-        
-        这是一个便利方法，用于一次性注册所有常用指标的形态。
-        注意：继承自BaseIndicator的指标类会在实例化时自动注册其形态，
-        因此此方法主要用于注册那些未通过指标类实例自动注册的形态。
-        """
-        logger.info("开始注册全局形态...")
-        
-        # 这里可以添加那些未通过指标类自动注册的形态
-        # 例如，一些自定义形态或者跨指标的复合形态
-        
-        # 注册一些复合形态或全局形态示例
-        cls._register_global_patterns()
-        
-        # 不再调用各个具体指标的形态注册函数
-        # 所有指标形态现在应通过各自的指标类自动注册
-        
-        logger.info("完成全局形态注册")
+    def register_all_patterns(self) -> None:
+        """注册所有全局形态"""
+        self._register_global_patterns()
     
-    @classmethod
-    def _register_global_patterns(cls) -> None:
-        """注册全局复合形态或特殊形态"""
-        registry = cls()
+    def _register_global_patterns(self) -> None:
+        """注册全局通用形态"""
+        global_patterns = [
+            ("BULLISH_SIGNAL", "看涨信号", "GLOBAL", PatternTypePatternRegistry.BULLISH),
+            ("BEARISH_SIGNAL", "看跌信号", "GLOBAL", PatternTypePatternRegistry.BEARISH),
+            ("NEUTRAL_SIGNAL", "中性信号", "GLOBAL", PatternTypePatternRegistry.NEUTRAL),
+            ("TREND_REVERSAL", "趋势反转", "GLOBAL", PatternTypePatternRegistry.REVERSAL),
+            ("TREND_CONTINUATION", "趋势持续", "GLOBAL", PatternTypePatternRegistry.CONTINUATION),
+        ]
         
-        # 例如：注册跨指标的复合形态
-        registry.register(
-            pattern_id="GLOBAL_MULTI_INDICATOR_BULLISH",
-            display_name="多指标综合看涨",
-            description="多个关键指标同时产生看涨信号",
-            indicator_id="GLOBAL",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.VERY_STRONG,
-            score_impact=30.0
-        )
-        
-        registry.register(
-            pattern_id="GLOBAL_MULTI_INDICATOR_BEARISH",
-            display_name="多指标综合看跌",
-            description="多个关键指标同时产生看跌信号",
-            indicator_id="GLOBAL",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.VERY_STRONG,
-            score_impact=-30.0
-        )
-        
-        # 添加更多全局复合形态
-        registry.register(
-            pattern_id="GLOBAL_TREND_CONFIRMATION",
-            display_name="趋势确认信号",
-            description="多个趋势指标同时确认当前趋势方向",
-            indicator_id="GLOBAL",
-            pattern_type=PatternType.NEUTRAL,
-            default_strength=PatternStrength.STRONG,
-            score_impact=25.0
-        )
-        
-        registry.register(
-            pattern_id="GLOBAL_REVERSAL_SIGNAL",
-            display_name="趋势反转信号",
-            description="多个指标同时显示当前趋势可能反转",
-            indicator_id="GLOBAL",
-            pattern_type=PatternType.REVERSAL,
-            default_strength=PatternStrength.STRONG,
-            score_impact=25.0
-        )
-    
-    @classmethod
-    def register_indicator_pattern(cls, indicator_type: str, pattern_id: str, 
+        for pattern_id, display_name, indicator_id, pattern_type in global_patterns:
+            self.register(
+                pattern_id=pattern_id,
+                display_name=display_name,
+                indicator_id=indicator_id,
+                pattern_type=pattern_type,
+                allow_override=True
+            )
+
+    def register_indicator_pattern(self, indicator_type: str, pattern_id: str, 
                                  display_name: str, description: str = None,
                                  score_impact: float = 0.0, signal_type: str = None) -> str:
         """
-        注册指标特定的形态（兼容旧接口）
+        注册指标形态（兼容性方法）
         
         Args:
             indicator_type: 指标类型
-            pattern_id: 形态唯一标识
+            pattern_id: 形态ID
             display_name: 显示名称
-            description: 描述
-            score_impact: 对评分的影响
+            description: 形态描述
+            score_impact: 评分影响
             signal_type: 信号类型
             
         Returns:
-            str: 规范化后的形态ID
+            str: 完整的形态ID
         """
-        instance = cls()
+        # 推断形态类型
+        pattern_type = PatternTypePatternRegistry.NEUTRAL
+        if signal_type:
+            if 'bullish' in signal_type.lower() or '看涨' in signal_type:
+                pattern_type = PatternTypePatternRegistry.BULLISH
+            elif 'bearish' in signal_type.lower() or '看跌' in signal_type:
+                pattern_type = PatternTypePatternRegistry.BEARISH
         
-        # 判断形态类型
-        pattern_type = PatternType.NEUTRAL
-        if score_impact > 0:
-            pattern_type = PatternType.BULLISH
-        elif score_impact < 0:
-            pattern_type = PatternType.BEARISH
-            
-        # 判断形态强度
-        default_strength = PatternStrength.MEDIUM
-        abs_impact = abs(score_impact)
-        if abs_impact > 15:
-            default_strength = PatternStrength.STRONG
-        elif abs_impact < 5:
-            default_strength = PatternStrength.WEAK
-            
         # 注册形态
-        normalized_pattern_id = cls._normalize_pattern_id(pattern_id, indicator_type)
-        instance.register(
-            pattern_id=normalized_pattern_id,
+        self.register(
+            pattern_id=pattern_id,
             display_name=display_name,
             indicator_id=indicator_type,
             pattern_type=pattern_type,
-            default_strength=default_strength,
-            description=description,
+            description=description or "",
             score_impact=score_impact,
-            _allow_override=True
+            allow_override=True
         )
         
-        return normalized_pattern_id
-    
-    @classmethod
-    def register_patterns_batch(cls, patterns: List[PatternInfo], _allow_override: bool = False) -> None:
+        return self._normalize_pattern_id(pattern_id, indicator_type)
+
+    def register_patterns_batch(self, patterns: List[PatternInfo], allow_override: bool = False) -> None:
         """
-        批量注册形态（兼容旧接口）
+        批量注册形态
         
         Args:
-            patterns: 形态信息对象列表
-            _allow_override: 是否允许覆盖已注册的形态
+            patterns: 形态信息列表
+            allow_override: 是否允许覆盖已存在的形态
         """
-        instance = cls()
-        for pattern in patterns:
-            instance.register(
-                pattern_id=pattern.pattern_id,
-                display_name=pattern.display_name,
-                indicator_id=pattern.indicator_id,
-                pattern_type=pattern.pattern_type,
-                default_strength=pattern.default_strength,
-                description=pattern.description,
-                score_impact=pattern.score_impact,
-                detection_function=pattern.detection_function,
-                _allow_override=_allow_override
+        for pattern_info in patterns:
+            self.register(
+                pattern_id=pattern_info.pattern_id,
+                display_name=pattern_info.display_name,
+                indicator_id=pattern_info.indicator_id,
+                pattern_type=pattern_info.pattern_type,
+                default_strength=pattern_info.default_strength,
+                description=pattern_info.description,
+                score_impact=pattern_info.score_impact,
+                detection_function=pattern_info.detection_function,
+                polarity=pattern_info.polarity,
+                allow_override=allow_override
             )
-    
-    @classmethod
-    def auto_register_from_indicators(cls, indicators: List) -> None:
+
+    def auto_register_from_indicators(self, indicators: List) -> None:
         """
-        从指标列表中自动注册所有形态
+        从指标列表自动注册形态
         
         Args:
-            indicators: 指标实例列表
+            indicators: 指标列表
         """
         for indicator in indicators:
-            if hasattr(indicator, '_register_patterns'):
-                indicator._register_patterns()
-            elif hasattr(indicator, 'register_patterns_to_registry'):
-                indicator.register_patterns_to_registry()
-    
-    @classmethod
-    def set_allow_override(cls, allow: bool) -> None:
+            if hasattr(indicator, 'get_patterns'):
+                patterns = indicator.get_patterns()
+                for pattern_id, pattern_info in patterns.items():
+                    self.register(**pattern_info, allow_override=True)
+
+    def set_allow_override(self, allow: bool) -> None:
         """
-        设置是否允许覆盖已存在的形态
+        设置是否允许覆盖已注册的形态
         
         Args:
             allow: 是否允许覆盖
         """
-        cls._allow_override = allow
-    
-    @classmethod
-    def clear_registry(cls) -> None:
-        """
-        清空注册表（用于测试）
-        """
-        instance = cls()
-        instance._patterns.clear()
-        instance._patterns_by_indicator.clear()
-        cls._registered_patterns.clear()
-    
+        self._allow_override = allow
+
+    def clear_registry(self) -> None:
+        """清空注册表"""
+        self._patterns.clear()
+        self._patterns_by_indicator.clear()
+        self._registered_patterns.clear()
+        logger.info("形态注册表已清空")
+
     def get_pattern(self, pattern_id: str) -> Optional[Dict[str, Any]]:
         """
         获取形态信息
@@ -450,155 +370,118 @@ class PatternRegistry:
             pattern_id: 形态ID
             
         Returns:
-            Optional[Dict[str, Any]]: 形态信息，如果不存在则返回None
+            Optional[Dict[str, Any]]: 形态信息字典，如果不存在返回None
         """
-        return self._patterns.get(pattern_id)
-        
-    @classmethod
-    def get_patterns_by_indicator(cls, indicator_id: str) -> List[str]:
-        """获取适用于指定指标类型的所有形态ID"""
-        instance = cls()
-        
-        # 将指标ID转为大写以确保匹配
-        indicator_id_upper = indicator_id.upper()
-        
-        # 检查是否在_patterns_by_indicator中存在
-        if indicator_id_upper in instance._patterns_by_indicator:
-            return list(instance._patterns_by_indicator[indicator_id_upper])
-        
-        # 兼容旧代码：查找所有以该指标ID开头的形态
-        matched_patterns = []
-        for pattern_id in instance._patterns.keys():
-            if pattern_id.startswith(f"{indicator_id_upper}_"):
-                matched_patterns.append(pattern_id)
-        
-        return matched_patterns
+        return self._patterns.get(pattern_id.upper())
 
-    @classmethod
-    def get_pattern_infos_by_indicator(cls, indicator_id: str) -> List[Dict[str, Any]]:
-        """获取适用于指定指标类型的所有形态信息"""
-        instance = cls()
-
-        # 将指标ID转为大写以确保匹配
-        indicator_id_upper = indicator_id.upper()
-
-        matched_patterns = []
-
-        # 检查是否在_patterns_by_indicator中存在
-        if indicator_id_upper in instance._patterns_by_indicator:
-            pattern_ids = list(instance._patterns_by_indicator[indicator_id_upper])
-            for pattern_id in pattern_ids:
-                if pattern_id in instance._patterns:
-                    matched_patterns.append(instance._patterns[pattern_id].copy())
-        else:
-            # 兼容旧代码：查找所有以该指标ID开头的形态
-            for pattern_id, pattern_info in instance._patterns.items():
-                if pattern_id.startswith(f"{indicator_id_upper}_"):
-                    matched_patterns.append(pattern_info.copy())
-
-        return matched_patterns
-
-    @classmethod
-    def get_pattern_info(cls, pattern_id: str) -> Optional[Dict[str, Any]]:
-        """获取形态信息"""
-        instance = cls()
-        if pattern_id not in instance._patterns:
-            return None
-        return instance._patterns[pattern_id].copy()
-    
-    @classmethod
-    def get_display_name(cls, pattern_id: str) -> str:
-        """获取形态显示名称"""
-        instance = cls()
-        if pattern_id not in instance._patterns:
-            return pattern_id
-        return instance._patterns[pattern_id]['display_name']
-    
-    @classmethod
-    def get_description(cls, pattern_id: str) -> Optional[str]:
-        """获取形态描述"""
-        instance = cls()
-        if pattern_id not in instance._patterns:
-            return None
-        return instance._patterns[pattern_id]['description']
-    
-    @classmethod
-    def get_score_impact(cls, pattern_id: str) -> float:
-        """获取形态对评分的影响"""
-        instance = cls()
-        if pattern_id not in instance._patterns:
-            return 0.0
-        return instance._patterns[pattern_id]['score_impact']
-    
-    @classmethod
-    def get_signal_type(cls, pattern_id: str) -> Optional[str]:
-        """获取形态信号类型"""
-        instance = cls()
-        if pattern_id not in instance._patterns:
-            return None
-        return instance._patterns[pattern_id].get('signal_type')
-    
-    @classmethod
-    def get_pattern_by_signal_type(cls, signal_type: str) -> List[str]:
-        """获取指定信号类型的所有形态ID"""
-        instance = cls()
-        return [pid for pid, info in instance._patterns.items() 
-                if info.get('signal_type') == signal_type]
-    
-    @classmethod
-    def get_all_pattern_ids(cls) -> List[str]:
-        """获取所有形态ID"""
-        instance = cls()
-        return list(instance._patterns.keys())
-    
-    @classmethod
-    def get_all_patterns(cls) -> Dict[str, Dict[str, Any]]:
-        """获取所有形态信息"""
-        instance = cls()
-        return instance._patterns.copy()
-
-    @classmethod
-    def get_patterns_by_polarity(cls, polarity: PatternPolarity) -> List[str]:
+    def get_patterns_by_indicator(self, indicator_id: str) -> List[str]:
         """
-        根据极性获取形态ID列表
-
+        获取指定指标的所有形态ID
+        
         Args:
-            polarity: 要筛选的极性
-
+            indicator_id: 指标ID
+            
         Returns:
-            List[str]: 符合极性的形态ID列表
+            List[str]: 形态ID列表
         """
-        instance = cls()
-        return [pattern_id for pattern_id, pattern_info in instance._patterns.items()
-                if pattern_info.get('polarity') == polarity]
+        return self._patterns_by_indicator.get(indicator_id, [])
 
-    @classmethod
-    def get_positive_patterns(cls) -> List[str]:
-        """获取所有正面极性的形态ID"""
-        return cls.get_patterns_by_polarity(PatternPolarity.POSITIVE)
-
-    @classmethod
-    def get_negative_patterns(cls) -> List[str]:
-        """获取所有负面极性的形态ID"""
-        return cls.get_patterns_by_polarity(PatternPolarity.NEGATIVE)
-
-    @classmethod
-    def get_neutral_patterns(cls) -> List[str]:
-        """获取所有中性极性的形态ID"""
-        return cls.get_patterns_by_polarity(PatternPolarity.NEUTRAL)
-    
-    @classmethod
-    def calculate_combined_score_impact(cls, patterns: List[str]) -> float:
+    def get_pattern_infos_by_indicator(self, indicator_id: str) -> List[Dict[str, Any]]:
         """
-        计算多个形态组合的评分影响
+        获取指定指标的所有形态信息
+        
+        Args:
+            indicator_id: 指标ID
+            
+        Returns:
+            List[Dict[str, Any]]: 形态信息列表
+        """
+        pattern_ids = self.get_patterns_by_indicator(indicator_id)
+        return [self._patterns[pattern_id] for pattern_id in pattern_ids if pattern_id in self._patterns]
+
+    def get_pattern_info_registry(self, pattern_id: str) -> Optional[Dict[str, Any]]:
+        """获取形态信息（兼容性方法）"""
+        return self.get_pattern(pattern_id)
+
+    def get_display_name(self, pattern_id: str) -> str:
+        """获取形态显示名称"""
+        pattern = self.get_pattern(pattern_id)
+        return pattern.get('display_name', pattern_id) if pattern else pattern_id
+
+    def get_description(self, pattern_id: str) -> Optional[str]:
+        """获取形态描述"""
+        pattern = self.get_pattern(pattern_id)
+        return pattern.get('description') if pattern else None
+
+    def get_score_impact(self, pattern_id: str) -> float:
+        """获取形态评分影响"""
+        pattern = self.get_pattern(pattern_id)
+        return pattern.get('score_impact', 0.0) if pattern else 0.0
+
+    def get_signal_type(self, pattern_id: str) -> Optional[str]:
+        """获取信号类型（兼容性方法）"""
+        pattern = self.get_pattern(pattern_id)
+        if pattern:
+            pattern_type = pattern.get('pattern_type')
+            if hasattr(pattern_type, 'value'):
+                return pattern_type.value
+            return str(pattern_type)
+        return None
+
+    def get_pattern_by_signal_type(self, signal_type: str) -> List[str]:
+        """根据信号类型获取形态"""
+        matching_patterns = []
+        for pattern_id, pattern_info in self._patterns.items():
+            if signal_type.lower() in str(pattern_info.get('pattern_type', '')).lower():
+                matching_patterns.append(pattern_id)
+        return matching_patterns
+
+    def get_all_pattern_ids(self) -> List[str]:
+        """获取所有形态ID"""
+        return list(self._patterns.keys())
+
+    def get_all_patterns(self) -> Dict[str, Dict[str, Any]]:
+        """获取所有形态信息"""
+        return self._patterns.copy()
+
+    def get_patterns_by_polarity(self, polarity: PatternPolarity) -> List[str]:
+        """
+        根据极性获取形态
+        
+        Args:
+            polarity: 形态极性
+            
+        Returns:
+            List[str]: 匹配的形态ID列表
+        """
+        matching_patterns = []
+        for pattern_id, pattern_info in self._patterns.items():
+            if pattern_info.get('polarity') == polarity:
+                matching_patterns.append(pattern_id)
+        return matching_patterns
+
+    def get_positive_patterns(self) -> List[str]:
+        """获取正面形态列表"""
+        return self.get_patterns_by_polarity(PatternPolarity.POSITIVE)
+
+    def get_negative_patterns(self) -> List[str]:
+        """获取负面形态列表"""
+        return self.get_patterns_by_polarity(PatternPolarity.NEGATIVE)
+
+    def get_neutral_patterns(self) -> List[str]:
+        """获取中性形态列表"""
+        return self.get_patterns_by_polarity(PatternPolarity.NEUTRAL)
+
+    def calculate_combined_score_impact(self, patterns: List[str]) -> float:
+        """
+        计算多个形态的综合评分影响
         
         Args:
             patterns: 形态ID列表
             
         Returns:
-            float: 组合评分影响
+            float: 综合评分影响值
         """
-        instance = cls()
         total_impact = 0.0
         weights = {
             'bullish': 1.0,
@@ -611,19 +494,19 @@ class PatternRegistry:
         neutral_impact = 0.0
         
         for pattern_id in patterns:
-            if pattern_id not in instance._patterns:
+            if pattern_id not in self._patterns:
                 logger.warning(f"未找到形态: {pattern_id}")
                 continue
                 
-            pattern_info = instance._patterns[pattern_id]
+            pattern_info = self._patterns[pattern_id]
             impact = pattern_info.get('score_impact', 0.0)
             
             # 根据形态类型分类评分影响
-            if isinstance(pattern_info['pattern_type'], PatternType):
+            if isinstance(pattern_info['pattern_type'], PatternTypePatternRegistry):
                 pattern_type = pattern_info['pattern_type']
-                if pattern_type == PatternType.BULLISH:
+                if pattern_type == PatternTypePatternRegistry.BULLISH:
                     bullish_impact += impact
-                elif pattern_type == PatternType.BEARISH:
+                elif pattern_type == PatternTypePatternRegistry.BEARISH:
                     bearish_impact += impact
                 else:
                     neutral_impact += impact
@@ -649,8 +532,7 @@ class PatternRegistry:
         # 限制总影响范围
         return np.clip(total_impact, -25.0, 25.0)
 
-    @classmethod
-    def import_patterns_from_indicator(cls, indicator):
+    def import_patterns_from_indicator(self, indicator):
         """
         从指标实例导入形态（已弃用，保留此方法仅用于兼容性）
 
@@ -660,8 +542,7 @@ class PatternRegistry:
         logger.warning(f"import_patterns_from_indicator 方法已弃用，指标 {indicator.name} 的形态现在直接注册到PatternRegistry")
         return
     
-    @classmethod
-    def register_patterns_from_config(cls, config_file: str) -> None:
+    def register_patterns_from_config(self, config_file: str) -> None:
         """
         从配置文件注册形态
         
@@ -676,8 +557,6 @@ class PatternRegistry:
             with open(config_file, 'r', encoding='utf-8') as f:
                 config = json.load(f)
             
-            registry = cls()
-            
             for pattern_config in config.get('patterns', []):
                 pattern_id = pattern_config.get('id')
                 if not pattern_id:
@@ -689,36 +568,35 @@ class PatternRegistry:
                 
                 # 解析形态类型
                 pattern_type_str = pattern_config.get('type', 'neutral')
-                pattern_type = PatternType.NEUTRAL
+                pattern_type = PatternTypePatternRegistry.NEUTRAL
                 if pattern_type_str.lower() == 'bullish':
-                    pattern_type = PatternType.BULLISH
+                    pattern_type = PatternTypePatternRegistry.BULLISH
                 elif pattern_type_str.lower() == 'bearish':
-                    pattern_type = PatternType.BEARISH
+                    pattern_type = PatternTypePatternRegistry.BEARISH
                 
                 # 解析形态强度
                 strength_str = pattern_config.get('strength', 'medium')
-                default_strength = PatternStrength.MEDIUM
+                default_strength = PatternStrengthPatternRegistry.MEDIUM
                 if strength_str.lower() == 'strong':
-                    default_strength = PatternStrength.STRONG
+                    default_strength = PatternStrengthPatternRegistry.STRONG
                 elif strength_str.lower() == 'weak':
-                    default_strength = PatternStrength.WEAK
+                    default_strength = PatternStrengthPatternRegistry.WEAK
                 
                 # 注册形态
-                registry.register(
+                self.register(
                     pattern_id=pattern_id,
                     display_name=display_name,
                     indicator_id=indicator_id,
                     pattern_type=pattern_type,
                     default_strength=default_strength,
-                    _allow_override=True
+                    allow_override=True
                 )
             
             logger.info(f"从配置文件 {config_file} 注册了 {len(config.get('patterns', []))} 个形态")
         except Exception as e:
             logger.error(f"从配置文件注册形态时出错: {e}") 
 
-    @classmethod
-    def register_indicator_patterns(cls, indicator_type: str, patterns: List[Dict[str, Any]]) -> None:
+    def register_indicator_patterns(self, indicator_type: str, patterns: List[Dict[str, Any]]) -> None:
         """
         批量注册指标形态
         
@@ -726,8 +604,6 @@ class PatternRegistry:
             indicator_type: 指标类型
             patterns: 形态列表，每个形态为一个字典，包含id、name等信息
         """
-        registry = cls()
-        
         for pattern_info in patterns:
             pattern_id = pattern_info.get('id')
             if not pattern_id:
@@ -742,56 +618,69 @@ class PatternRegistry:
             pattern_type_str = pattern_info.get('type', 'neutral')
             
             # 转换形态类型
-            pattern_type = PatternType.NEUTRAL
+            pattern_type = PatternTypePatternRegistry.NEUTRAL
             if pattern_type_str.lower() == 'bullish':
-                pattern_type = PatternType.BULLISH
+                pattern_type = PatternTypePatternRegistry.BULLISH
             elif pattern_type_str.lower() == 'bearish':
-                pattern_type = PatternType.BEARISH
+                pattern_type = PatternTypePatternRegistry.BEARISH
             
             # 转换形态强度
             strength_str = pattern_info.get('strength', 'medium')
-            default_strength = PatternStrength.MEDIUM
+            default_strength = PatternStrengthPatternRegistry.MEDIUM
             if strength_str.lower() == 'strong':
-                default_strength = PatternStrength.STRONG
+                default_strength = PatternStrengthPatternRegistry.STRONG
             elif strength_str.lower() == 'weak':
-                default_strength = PatternStrength.WEAK
+                default_strength = PatternStrengthPatternRegistry.WEAK
             
             # 注册形态
-            registry.register(
+            self.register(
                 pattern_id=full_pattern_id,
                 display_name=display_name,
                 indicator_id=indicator_type,
                 pattern_type=pattern_type,
                 default_strength=default_strength,
-                _allow_override=True  # 允许覆盖
+                allow_override=True  # 允许覆盖
             ) 
 
-# 注意：所有具体指标的形态注册函数已移除
-# 各指标类现在负责在自己的类中注册相关形态
+
+# ===== 依赖注入和兼容性接口 =====
 
 def get_pattern_registry() -> PatternRegistry:
     """
-    获取形态注册表单例实例
+    获取形态注册表实例（依赖注入方式）
     
     Returns:
         PatternRegistry: 形态注册表实例
     """
-    return PatternRegistry()
-
-
-# 全局实例
-_pattern_registry = PatternRegistry()
+    try:
+        container = get_container()
+        return container.resolve(PatternRegistry)
+    except Exception as e:
+        logger.warning(f"从依赖注入容器获取PatternRegistry失败，创建新实例: {e}")
+        return PatternRegistry()
 
 
 def get_global_pattern_registry() -> PatternRegistry:
     """
-    获取全局形态注册表实例
+    获取全局形态注册表实例（向后兼容）
     
     Returns:
         PatternRegistry: 全局形态注册表实例
     """
-    return _pattern_registry
+    return get_pattern_registry()
+
+
+# 注册到依赖注入容器
+try:
+    container = get_container()
+    if not container.is_registered(PatternRegistry):
+        container.register_singleton(PatternRegistry, PatternRegistry)
+        logger.info("PatternRegistry已注册到依赖注入容器")
+except Exception as e:
+    logger.warning(f"注册PatternRegistry到依赖注入容器失败: {e}")
+
 
 if __name__ == "__main__":
     print("Pattern Registry Utility")
     print("使用方法: 在代码中导入并使用 PatternRegistry 类来管理技术形态")
+    print("现在支持依赖注入：使用 get_pattern_registry() 获取实例")

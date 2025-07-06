@@ -11,12 +11,12 @@ import numpy as np
 from indicators.volume.enhanced_mfi import EnhancedMFI
 
 
-class TestEnhancedMFI(unittest.TestCase):
+class TestEnhancedMFI_Mfi(unittest.TestCase):
     """
     测试增强型资金流向指标(EnhancedMFI)
     """
     
-    def setUp(self):
+    def setUp_Mfi_Test_Enhanced_Mfi_Test_Enhanced_Mfi(self):
         """
         准备测试数据
         """
@@ -48,7 +48,7 @@ class TestEnhancedMFI(unittest.TestCase):
         # 初始化指标
         self.mfi = EnhancedMFI(period=14)
     
-    def test_calculate(self):
+    def test_calculate_Mfi(self):
         """
         测试计算方法
         """
@@ -125,7 +125,7 @@ class TestEnhancedMFI(unittest.TestCase):
         self.assertIsInstance(synergy_result, pd.DataFrame)
         self.assertIn('synergy_score', synergy_result.columns)
     
-    def test_calculate_raw_score(self):
+    def test_calculate_raw_score_Mfi(self):
         """
         测试原始评分计算功能
         """

@@ -10,7 +10,7 @@ from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 
 class TestMomentum(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestmomentumindicators(self):
         self.indicator = Momentum(period=12, signal_period=6)
         self.expected_columns = ['mtm', 'signal']
         self.data = TestDataGenerator.generate_price_sequence([
@@ -18,15 +18,15 @@ class TestMomentum(unittest.TestCase, IndicatorTestMixin):
         ])
 
 class TestMTM(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestmomentumindicators(self):
         self.indicator = MTM(period=12, ma_period=6)
         self.expected_columns = ['mtm', 'mtmma']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 50}
         ])
 
-class TestROC(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestROC_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestmomentumindicators(self):
         self.indicator = ROC(period=12, ma_period=6)
         self.expected_columns = ['roc', 'rocma']
         self.data = TestDataGenerator.generate_price_sequence([
@@ -34,7 +34,7 @@ class TestROC(unittest.TestCase, IndicatorTestMixin):
         ])
 
 class TestRSIMA(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestmomentumindicators(self):
         self.indicator = RSIMA(rsi_period=14, ma_periods=[6])
         self.expected_columns = ['rsi', 'rsi_ma6']
         self.data = TestDataGenerator.generate_price_sequence([

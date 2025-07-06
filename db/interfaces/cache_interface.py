@@ -1,235 +1,310 @@
 """
-缓存管理接口定义
+缓存服务接口
 
-定义缓存管理的标准接口
+定义业务层使用的缓存操作接口，提供类型安全的缓存服务。
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Dict, List
-from datetime import datetime
+from typing import Any, Optional, List, Dict, Callable, Union
+from datetime import datetime, date
+
+from db.cache_layer import CacheLevel
 
 
-class ICacheManager(ABC):
-    """
-    缓存管理器接口
-    
-    定义缓存操作的标准接口
-    """
+class IcacheService(ABC):
+    """缓存服务接口"""
     
     @abstractmethod
-    def get(self, key: str) -> Optional[Any]:
-        """
-        获取缓存数据
-        
-        Args:
-            key: 缓存键
-            
-        Returns:
-            Optional[Any]: 缓存数据，不存在返回None
-        """
+    def get_stock_basic_Interface(self, code: str) -> Optional[Dict[str, Any]]:
+        """获取股票基础信息"""
         pass
     
     @abstractmethod
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
-        """
-        设置缓存数据
-        
-        Args:
-            key: 缓存键
-            value: 缓存值
-            ttl: 生存时间（秒）
-            
-        Returns:
-            bool: 设置成功返回True
-        """
+    def set_stock_basic_Interface(self, code: str, data: Dict[str, Any]) -> bool:
+        """设置股票基础信息"""
         pass
     
     @abstractmethod
-    def delete(self, key: str) -> bool:
-        """
-        删除缓存数据
-        
-        Args:
-            key: 缓存键
-            
-        Returns:
-            bool: 删除成功返回True
-        """
+    def get_stock_daily_Interface(self, code: str, start_date: Union[str, date], 
+                       end_date: Union[str, date]) -> Optional[List[Dict[str, Any]]]:
+        """获取股票日线数据"""
         pass
     
     @abstractmethod
-    def exists(self, key: str) -> bool:
-        """
-        检查缓存是否存在
-        
-        Args:
-            key: 缓存键
-            
-        Returns:
-            bool: 存在返回True
-        """
+    def set_stock_daily_Interface(self, code: str, start_date: Union[str, date], 
+                       end_date: Union[str, date], data: List[Dict[str, Any]]) -> bool:
+        """设置股票日线数据"""
         pass
     
     @abstractmethod
-    def clear(self) -> None:
-        """
-        清空所有缓存
-        """
+    def get_indicator_result_Interface(self, indicator_type: str, code: str, 
+                           period: str, params: Dict[str, Any]) -> Optional[Any]:
+        """获取指标计算结果"""
         pass
     
     @abstractmethod
-    def get_stats(self) -> Dict[str, Any]:
-        """
-        获取缓存统计信息
-        
-        Returns:
-            Dict[str, Any]: 统计信息
-        """
-        pass
-
-
-class IMultiLevelCache(ICacheManager):
-    """
-    多级缓存接口
-    """
-    
-    @abstractmethod
-    def get_from_level(self, key: str, level: int) -> Optional[Any]:
-        """
-        从指定级别获取缓存
-        
-        Args:
-            key: 缓存键
-            level: 缓存级别
-            
-        Returns:
-            Optional[Any]: 缓存数据
-        """
+    def set_indicator_result_Interface(self, indicator_type: str, code: str, 
+                           period: str, params: Dict[str, Any], result: Any) -> bool:
+        """设置指标计算结果"""
         pass
     
     @abstractmethod
-    def set_to_level(self, key: str, value: Any, level: int, ttl: Optional[int] = None) -> bool:
-        """
-        设置到指定级别缓存
-        
-        Args:
-            key: 缓存键
-            value: 缓存值
-            level: 缓存级别
-            ttl: 生存时间
-            
-        Returns:
-            bool: 设置成功返回True
-        """
+    def get_market_overview_Interface(self, date: Union[str, date, None] = None) -> Optional[Dict[str, Any]]:
+        """获取市场概览"""
         pass
     
     @abstractmethod
-    def promote_to_higher_level(self, key: str, from_level: int, to_level: int) -> bool:
-        """
-        提升缓存到更高级别
-        
-        Args:
-            key: 缓存键
-            from_level: 源级别
-            to_level: 目标级别
-            
-        Returns:
-            bool: 提升成功返回True
-        """
-        pass
-
-
-class ICacheStrategy(ABC):
-    """
-    缓存策略接口
-    """
-    
-    @abstractmethod
-    def should_cache(self, key: str, value: Any) -> bool:
-        """
-        判断是否应该缓存
-        
-        Args:
-            key: 缓存键
-            value: 缓存值
-            
-        Returns:
-            bool: 应该缓存返回True
-        """
+    def set_market_overview_Interface(self, data: Dict[str, Any], 
+                          date: Union[str, date, None] = None) -> bool:
+        """设置市场概览"""
         pass
     
     @abstractmethod
-    def get_ttl(self, key: str, value: Any) -> Optional[int]:
-        """
-        获取缓存生存时间
-        
-        Args:
-            key: 缓存键
-            value: 缓存值
-            
-        Returns:
-            Optional[int]: 生存时间（秒），None表示永不过期
-        """
+    def get_industry_list_Interface(self) -> Optional[List[Dict[str, Any]]]:
+        """获取行业列表"""
         pass
     
     @abstractmethod
-    def should_evict(self, key: str, last_access: datetime) -> bool:
-        """
-        判断是否应该驱逐缓存
-        
-        Args:
-            key: 缓存键
-            last_access: 最后访问时间
-            
-        Returns:
-            bool: 应该驱逐返回True
-        """
+    def set_industry_list_Interface(self, data: List[Dict[str, Any]]) -> bool:
+        """设置行业列表"""
+        pass
+    
+    @abstractmethod
+    def get_industry_stocks_Interface(self, industry_code: str) -> Optional[List[str]]:
+        """获取行业股票列表"""
+        pass
+    
+    @abstractmethod
+    def set_industry_stocks_Interface(self, industry_code: str, stocks: List[str]) -> bool:
+        """设置行业股票列表"""
+        pass
+    
+    @abstractmethod
+    def get_strategy_result_Interface(self, strategy_name: str, params: Dict[str, Any], 
+                          date: Union[str, date]) -> Optional[Dict[str, Any]]:
+        """获取策略执行结果"""
+        pass
+    
+    @abstractmethod
+    def set_strategy_result_Interface(self, strategy_name: str, params: Dict[str, Any], 
+                          date: Union[str, date], result: Dict[str, Any]) -> bool:
+        """设置策略执行结果"""
+        pass
+    
+    @abstractmethod
+    def invalidate_stock_data_Interface(self, code: str) -> bool:
+        """使股票相关缓存失效"""
+        pass
+    
+    @abstractmethod
+    def invalidate_market_data_Interface(self) -> bool:
+        """使市场数据缓存失效"""
+        pass
+    
+    @abstractmethod
+    def preload_essential_data_Interface(self) -> Dict[str, bool]:
+        """预热关键数据"""
+        pass
+    
+    @abstractmethod
+    def get_cache_stats_Interface(self) -> Dict[str, Any]:
+        """获取缓存统计信息"""
+        pass
+    
+    @abstractmethod
+    def clear_cache_Interface(self, levels: Optional[List[CacheLevel]] = None) -> None:
+        """清空缓存"""
+        pass
+    
+    @abstractmethod
+    def get_9(self, key: str) -> Optional[Any]:
+        """通用缓存获取方法"""
+        pass
+    
+    @abstractmethod
+    def set_9(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+        """通用缓存设置方法"""
+        pass
+    
+    @abstractmethod
+    def delete_Interface(self, key: str) -> bool:
+        """删除缓存"""
+        pass
+    
+    @abstractmethod
+    def exists_Interface(self, key: str) -> bool:
+        """检查缓存是否存在"""
         pass
 
 
-class ICacheEventListener(ABC):
-    """
-    缓存事件监听器接口
-    """
+class IasyncCacheService(ABC):
+    """异步缓存服务接口"""
     
     @abstractmethod
-    def on_cache_hit(self, key: str) -> None:
-        """
-        缓存命中事件
-        
-        Args:
-            key: 缓存键
-        """
+    async def batch_get_stock_basic(self, codes: List[str]) -> Dict[str, Optional[Dict[str, Any]]]:
+        """批量获取股票基础信息"""
         pass
     
     @abstractmethod
-    def on_cache_miss(self, key: str) -> None:
-        """
-        缓存未命中事件
-        
-        Args:
-            key: 缓存键
-        """
+    async def batch_set_stock_basic(self, data: Dict[str, Dict[str, Any]]) -> Dict[str, bool]:
+        """批量设置股票基础信息"""
         pass
     
     @abstractmethod
-    def on_cache_set(self, key: str, value: Any) -> None:
-        """
-        缓存设置事件
-        
-        Args:
-            key: 缓存键
-            value: 缓存值
-        """
+    async def batch_get_indicators(self, requests: List[Dict[str, Any]]) -> List[Optional[Any]]:
+        """批量获取指标结果"""
         pass
     
     @abstractmethod
-    def on_cache_evict(self, key: str, reason: str) -> None:
-        """
-        缓存驱逐事件
-        
-        Args:
-            key: 缓存键
-            reason: 驱逐原因
-        """
+    async def preload_data_async(self, keys: List[str], 
+                               data_loader: Callable[[str], Any]) -> Dict[str, bool]:
+        """异步预热数据"""
+        pass
+
+
+class IcacheKeyBuilder(ABC):
+    """缓存键构建器接口"""
+    
+    @abstractmethod
+    def build_stock_basic_key_Interface(self, code: str) -> str:
+        """构建股票基础信息缓存键"""
+        pass
+    
+    @abstractmethod
+    def build_stock_daily_key_Interface(self, code: str, start_date: Union[str, date], 
+                            end_date: Union[str, date]) -> str:
+        """构建股票日线数据缓存键"""
+        pass
+    
+    @abstractmethod
+    def build_indicator_key_Interface(self, indicator_type: str, code: str, 
+                          period: str, params: Dict[str, Any]) -> str:
+        """构建指标缓存键"""
+        pass
+    
+    @abstractmethod
+    def build_strategy_key_Interface(self, strategy_name: str, params: Dict[str, Any], 
+                         date: Union[str, date]) -> str:
+        """构建策略结果缓存键"""
+        pass
+    
+    @abstractmethod
+    def get_pattern_keys_Interface(self, pattern: str) -> List[str]:
+        """根据模式获取匹配的缓存键"""
+        pass
+
+
+class IcacheMetrics(ABC):
+    """缓存指标接口"""
+    
+    @abstractmethod
+    def record_hit_Interface(self, key: str, level: CacheLevel) -> None:
+        """记录缓存命中"""
+        pass
+    
+    @abstractmethod
+    def record_miss_Interface(self, key: str) -> None:
+        """记录缓存未命中"""
+        pass
+    
+    @abstractmethod
+    def record_set_Interface(self, key: str, level: CacheLevel, size_bytes: int) -> None:
+        """记录缓存设置"""
+        pass
+    
+    @abstractmethod
+    def record_eviction_Interface(self, key: str, level: CacheLevel, reason: str) -> None:
+        """记录缓存淘汰"""
+        pass
+    
+    @abstractmethod
+    def get_hit_rate_Interface(self, time_window_seconds: int = 3600) -> float:
+        """获取命中率"""
+        pass
+    
+    @abstractmethod
+    def get_memory_usage_Interface(self) -> Dict[str, int]:
+        """获取内存使用情况"""
+        pass
+    
+    @abstractmethod
+    def get_top_keys_Interface(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """获取访问最频繁的键"""
+        pass
+
+
+class ImultiLevelCache(ABC):
+    """多级缓存接口"""
+    
+    @abstractmethod
+    def get_from_level_Interface(self, key: str, level: int) -> Optional[Any]:
+        """从指定级别获取缓存"""
+        pass
+    
+    @abstractmethod
+    def set_to_level_Interface(self, key: str, value: Any, level: int, ttl: Optional[int] = None) -> bool:
+        """设置到指定级别缓存"""
+        pass
+    
+    @abstractmethod
+    def promote_to_higher_level_Interface(self, key: str, from_level: int, to_level: int) -> bool:
+        """提升缓存到更高级别"""
+        pass
+    
+    @abstractmethod
+    def get_level_stats(self, level: int) -> Dict[str, Any]:
+        """获取指定级别的统计信息"""
+        pass
+
+
+class IcacheStrategy(ABC):
+    """缓存策略接口"""
+    
+    @abstractmethod
+    def should_cache_Interface(self, key: str, value: Any, access_pattern: Dict[str, Any]) -> bool:
+        """判断是否应该缓存"""
+        pass
+    
+    @abstractmethod
+    def get_ttl_Interface(self, key: str, value: Any) -> int:
+        """获取TTL时间"""
+        pass
+    
+    @abstractmethod
+    def get_cache_level(self, key: str, value: Any) -> int:
+        """获取缓存级别"""
+        pass
+    
+    @abstractmethod
+    def should_evict_Interface(self, key: str, value: Any, cache_stats: Dict[str, Any]) -> bool:
+        """判断是否应该淘汰"""
+        pass
+
+
+class IcacheEventListener(ABC):
+    """缓存事件监听器接口"""
+    
+    @abstractmethod
+    def on_cache_hit_Interface(self, key: str, level: int) -> None:
+        """缓存命中事件"""
+        pass
+    
+    @abstractmethod
+    def on_cache_miss_Interface(self, key: str) -> None:
+        """缓存未命中事件"""
+        pass
+    
+    @abstractmethod
+    def on_cache_set_Interface(self, key: str, level: int, size_bytes: int) -> None:
+        """缓存设置事件"""
+        pass
+    
+    @abstractmethod
+    def on_cache_eviction(self, key: str, level: int, reason: str) -> None:
+        """缓存淘汰事件"""
+        pass
+    
+    @abstractmethod
+    def on_cache_error(self, key: str, error: Exception) -> None:
+        """缓存错误事件"""
         pass 

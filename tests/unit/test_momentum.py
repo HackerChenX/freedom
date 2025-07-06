@@ -15,10 +15,10 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class TestMomentum(unittest.TestCase):
+class Testmomentum_momentum(unittest.Test_case):
     """Momentum指标测试类"""
     
-    def setUp(self):
+    def set_up_Momentum(self):
         """设置测试环境"""
         self.momentum = Momentum(period=10, signal_period=6)
         
@@ -72,7 +72,7 @@ class TestMomentum(unittest.TestCase):
         })
         self.test_data.set_index('date', inplace=True)
     
-    def test_momentum_calculation(self):
+    def test_momentum_calculation_Momentum(self):
         """测试Momentum计算功能"""
         logger.info("测试Momentum计算功能")
         
@@ -80,19 +80,19 @@ class TestMomentum(unittest.TestCase):
         result = self.momentum.calculate(self.test_data)
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('mtm', result.columns)
         self.assertIn('signal', result.columns)
-        self.assertEqual(len(result), len(self.test_data))
+        self.assert_equal(len(result), len(self.test_data))
         
         # 验证前period个值为NaN（因为需要period个数据点才能计算）
         mtm_values = result['mtm'].dropna()
-        self.assertGreater(len(mtm_values), 0)
+        self.assert_greater(len(mtm_values), 0)
         
         logger.info(f"Momentum计算成功，数据长度: {len(result)}")
         logger.info(f"有效Momentum值数量: {len(mtm_values)}")
     
-    def test_momentum_patterns(self):
+    def test_momentum_patterns_Momentum(self):
         """测试Momentum形态识别"""
         logger.info("测试Momentum形态识别")
         
@@ -103,8 +103,8 @@ class TestMomentum(unittest.TestCase):
         patterns = self.momentum.get_patterns(self.test_data)
         
         # 验证形态结果
-        self.assertIsInstance(patterns, pd.DataFrame)
-        self.assertEqual(len(patterns), len(self.test_data))
+        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assert_equal(len(patterns), len(self.test_data))
         
         # 验证关键形态列存在
         expected_patterns = [
@@ -114,15 +114,15 @@ class TestMomentum(unittest.TestCase):
         ]
         
         for pattern in expected_patterns:
-            self.assertIn(pattern, patterns.columns)
+            self.assert_in(pattern, patterns.columns)
         
         # 验证形态值为布尔类型
         for pattern in expected_patterns:
-            self.assertTrue(patterns[pattern].dtype == bool)
+            self.assert_true(patterns[pattern].dtype == bool)
         
         logger.info(f"形态识别成功，识别出 {len(patterns.columns)} 种形态")
     
-    def test_momentum_scoring(self):
+    def test_momentum_scoring_Momentum(self):
         """测试Momentum评分功能"""
         logger.info("测试Momentum评分功能")
         
@@ -130,8 +130,8 @@ class TestMomentum(unittest.TestCase):
         score = self.momentum.calculate_raw_score(self.test_data)
         
         # 验证评分结果
-        self.assertIsInstance(score, pd.Series)
-        self.assertEqual(len(score), len(self.test_data))
+        self.assert_is_instance(score, pd.Series)
+        self.assert_equal(len(score), len(self.test_data))
         
         # 调试：打印评分统计信息
         valid_scores = score.dropna()
@@ -147,7 +147,7 @@ class TestMomentum(unittest.TestCase):
         logger.info(f"评分计算成功，评分范围: {valid_scores.min():.2f} - {valid_scores.max():.2f}")
         logger.info(f"平均评分: {valid_scores.mean():.2f}")
     
-    def test_momentum_confidence(self):
+    def test_momentum_confidence_Momentum(self):
         """测试Momentum置信度计算"""
         logger.info("测试Momentum置信度计算")
         
@@ -159,9 +159,9 @@ class TestMomentum(unittest.TestCase):
         confidence = self.momentum.calculate_confidence(score, patterns, {})
         
         # 验证置信度
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
         
         logger.info(f"置信度计算成功: {confidence:.3f}")
     
@@ -185,8 +185,8 @@ class TestMomentum(unittest.TestCase):
         empty_data = pd.DataFrame(columns=['open', 'high', 'low', 'close', 'volume'])
         try:
             result = self.momentum.calculate(empty_data)
-            self.assertTrue(result.empty)
-        except ValueError:
+            self.assert_true(result.empty)
+        except Value_error:
             # 如果抛出异常，说明正确处理了空数据情况
             logger.info("空数据正确抛出异常")
 
@@ -198,7 +198,7 @@ class TestMomentum(unittest.TestCase):
             if not result.empty and 'mtm' in result.columns:
                 # 验证所有Momentum值为NaN（因为数据不足）
                 self.assertTrue(result['mtm'].isna().all())
-        except ValueError:
+        except Value_error:
             # 如果抛出异常，说明正确处理了数据不足的情况
             logger.info("数据不足正确抛出异常")
 
@@ -226,7 +226,7 @@ class TestMomentum(unittest.TestCase):
         
         if len(diff_values) > 0 and len(ratio_values) > 0:
             # 比率法的值应该在100附近，差值法的值可能为负
-            self.assertNotEqual(diff_values.iloc[-1], ratio_values.iloc[-1])
+            self.assert_not_equal(diff_values.iloc[-1], ratio_values.iloc[-1])
         
         logger.info("不同计算方法测试完成")
 

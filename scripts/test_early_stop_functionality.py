@@ -19,10 +19,10 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from analysis.engines.indicator_validation_framework import (
-    IndicatorValidationFramework, 
-    IndicatorValidationConfig, 
-    ValidationMode,
-    ValidationResult
+    Indicator_validation_framework, 
+    Indicator_validation_config, 
+    Validation_mode,
+    Validation_result
 )
 from utils.logger import get_logger
 
@@ -35,8 +35,8 @@ def test_database_connection_error_early_stop():
     logger.info("=" * 60)
     
     # 创建配置，启用错误后早停
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=50,
         stop_on_success=False,
         stop_on_error=True,  # 🔑 启用错误后早停
@@ -49,7 +49,7 @@ def test_database_connection_error_early_stop():
     logger.info(f"  • 成功后早停: {config.stop_on_success}")
     logger.info(f"  • 验证模式: {config.mode.value}")
     
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     start_time = time.time()
     try:
@@ -98,8 +98,8 @@ def test_success_early_stop():
     logger.info("=" * 60)
     
     # 创建配置，启用成功后早停
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=50,
         stop_on_success=True,  # 🔑 启用成功后早停
         stop_on_error=False,
@@ -115,7 +115,7 @@ def test_success_early_stop():
     logger.info(f"  • 最小选股数: {config.min_selection_count}")
     logger.info(f"  • 最大选股比例: {config.max_selection_ratio}")
     
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     start_time = time.time()
     try:
@@ -160,8 +160,8 @@ def test_no_early_stop():
     logger.info("=" * 60)
     
     # 创建配置，禁用所有早停
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=50,
         stop_on_success=False,  # 🔑 禁用成功后早停
         stop_on_error=False,    # 🔑 禁用错误后早停
@@ -174,7 +174,7 @@ def test_no_early_stop():
     logger.info(f"  • 错误后早停: {config.stop_on_error}")
     logger.info("  • 预期: 即使遇到错误也会继续验证所有指标")
     
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     start_time = time.time()
     try:
@@ -207,7 +207,7 @@ def test_no_early_stop():
     return True
 
 
-def run_all_tests():
+def run_all_tests_Functionality():
     """运行所有早停功能测试"""
     logger.info("🚀 开始早停功能完整测试")
     logger.info("=" * 80)
@@ -250,7 +250,7 @@ def run_all_tests():
         return False
 
 
-def main():
+def main_testearlystopfunctionality():
     """主函数"""
     import argparse
     
@@ -270,11 +270,11 @@ def main():
         elif args.test == 'disabled':
             success = test_no_early_stop()
         else:  # all
-            success = run_all_tests()
+            success = run_all_tests_Functionality()
         
         return 0 if success else 1
         
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         logger.info("🛑 用户中断测试")
         return 1
     except Exception as e:
@@ -283,4 +283,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main()) 
+    exit(main_testearlystopfunctionality()) 

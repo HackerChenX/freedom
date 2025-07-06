@@ -44,7 +44,7 @@ class ZXMAbsorbVolumeStrategyExecutor:
             self.data_manager = None
             self.db_manager = None
 
-    def execute_strategy(self, progress_callback=None) -> pd.DataFrame:
+    def execute_strategy_Strategy(self, progress_callback=None) -> pd.DataFrame:
         """
         执行选股策略 - 直接查询数据库
 
@@ -58,18 +58,18 @@ class ZXMAbsorbVolumeStrategyExecutor:
             logger.info(f"开始执行ZXM吸筹+缩量选股策略，目标日期: {self.target_date}")
 
             if progress_callback:
-                progress_callback(0.1, "正在连接数据库")
+                progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(0.1, "正在连接数据库")
 
 
 
             if self.data_manager is None:
                 logger.info("数据管理器不可用，使用模拟数据")
                 if progress_callback:
-                    progress_callback(0.8, "正在生成模拟数据")
-                return self._generate_demo_data()
+                    progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(0.8, "正在生成模拟数据")
+                return self._generate_demo_data_Execute_Zxm_Absorb_Volume_Strategy()
 
             if progress_callback:
-                progress_callback(0.3, "正在获取日线数据")
+                progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(0.3, "正在获取日线数据")
 
             # 获取日线数据
             daily_data = self.data_manager.get_stock_info(
@@ -80,7 +80,7 @@ class ZXMAbsorbVolumeStrategyExecutor:
             )
 
             if progress_callback:
-                progress_callback(0.5, "正在获取15分钟数据")
+                progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(0.5, "正在获取15分钟数据")
 
             # 获取15分钟数据（模拟30分钟）
             min15_data = self.data_manager.get_stock_info(
@@ -91,13 +91,13 @@ class ZXMAbsorbVolumeStrategyExecutor:
             )
 
             if progress_callback:
-                progress_callback(0.7, "正在处理和分析数据")
+                progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(0.7, "正在处理和分析数据")
 
             # 处理数据并应用策略逻辑
             result = self._process_strategy_data(daily_data, min15_data)
 
             if progress_callback:
-                progress_callback(0.9, "正在生成结果")
+                progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(0.9, "正在生成结果")
 
             logger.info(f"策略执行完成，共找到 {len(result)} 只符合条件的股票")
             return result
@@ -107,8 +107,8 @@ class ZXMAbsorbVolumeStrategyExecutor:
             # 返回模拟数据用于演示
             logger.info("使用模拟数据进行演示")
             if progress_callback:
-                progress_callback(0.8, "正在生成模拟数据")
-            return self._generate_demo_data()
+                progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(0.8, "正在生成模拟数据")
+            return self._generate_demo_data_Execute_Zxm_Absorb_Volume_Strategy()
 
     def _process_strategy_data(self, daily_data, min15_data) -> pd.DataFrame:
         """
@@ -128,7 +128,7 @@ class ZXMAbsorbVolumeStrategyExecutor:
 
             if daily_df.empty:
                 logger.warning("日线数据为空，使用模拟数据")
-                return self._generate_demo_data()
+                return self._generate_demo_data_Execute_Zxm_Absorb_Volume_Strategy()
 
             # 按股票代码分组处理15分钟数据
             min15_grouped = min15_df.groupby('code')['volume'].mean().reset_index() if not min15_df.empty else pd.DataFrame()
@@ -180,9 +180,9 @@ class ZXMAbsorbVolumeStrategyExecutor:
 
         except Exception as e:
             logger.error(f"数据处理失败: {e}")
-            return self._generate_demo_data()
+            return self._generate_demo_data_Execute_Zxm_Absorb_Volume_Strategy()
 
-    def _generate_demo_data(self) -> pd.DataFrame:
+    def _generate_demo_data_Execute_Zxm_Absorb_Volume_Strategy(self) -> pd.DataFrame:
         """生成演示数据"""
         import numpy as np
 
@@ -203,7 +203,7 @@ class ZXMAbsorbVolumeStrategyExecutor:
 
         return pd.DataFrame(demo_stocks)
     
-    def analyze_results(self, results: pd.DataFrame) -> Dict[str, Any]:
+    def analyze_results_Strategy(self, results: pd.DataFrame) -> Dict[str, Any]:
         """
         分析选股结果
         
@@ -260,7 +260,7 @@ class ZXMAbsorbVolumeStrategyExecutor:
         
         return analysis
     
-    def generate_report(self, results: pd.DataFrame, analysis: Dict[str, Any], 
+    def generate_report_Strategy(self, results: pd.DataFrame, analysis: Dict[str, Any], 
                        execution_time: float) -> str:
         """
         生成执行报告
@@ -356,9 +356,9 @@ class ZXMAbsorbVolumeStrategyExecutor:
         return report
 
 
-def main():
+def main_executezxmabsorbvolumestrategy():
     """主函数"""
-    def progress_callback(progress: float, message: str):
+    def progress_callback_Strategy_Execute_Zxm_Absorb_Volume_Strategy(progress: float, message: str):
         """进度回调函数"""
         print(f"[{progress*100:.1f}%] {message}")
     
@@ -374,16 +374,16 @@ def main():
         start_time = time.time()
         
         # 执行策略
-        results = executor.execute_strategy(progress_callback)
+        results = executor.execute_strategy_Strategy(progress_callback)
         
         # 计算执行时间
         execution_time = time.time() - start_time
         
         # 分析结果
-        analysis = executor.analyze_results(results)
+        analysis = executor.analyze_results_Strategy(results)
         
         # 生成报告
-        report = executor.generate_report(results, analysis, execution_time)
+        report = executor.generate_report_Strategy(results, analysis, execution_time)
         
         # 输出报告
         print("\n" + report)
@@ -413,4 +413,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    mainExecutezxmabsorbvolumestrategy()

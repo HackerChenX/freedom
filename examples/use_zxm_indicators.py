@@ -18,7 +18,7 @@ sys.path.append(root_dir)
 from indicators.complete_indicator_registry import complete_registry
 
 
-def generate_sample_data(days=180):
+def generate_sample_data_Indicators(days=180):
     """
     生成示例数据
     
@@ -256,12 +256,12 @@ def demo_zxm_indicator_factory():
         print(f"- {selection_model.name}: {getattr(selection_model, 'description', '无描述')}")
 
 
-def main():
+def mainUsezxmindicators():
     """主函数"""
     print("==== ZXM体系指标使用示例 ====")
     
     # 生成示例数据
-    daily_data = generate_sample_data(days=180)
+    daily_data = generate_sample_data_Indicators(days=180)
     weekly_data = generate_weekly_data(daily_data)
     monthly_data = generate_monthly_data(daily_data)
     
@@ -279,4 +279,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    mainUsezxmindicators() 

@@ -17,7 +17,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 
-def run_tests(test_module=None, verbose=True):
+def run_tests_Tests(test_module=None, verbose=True):
     """
     运行单元测试
     
@@ -28,24 +28,24 @@ def run_tests(test_module=None, verbose=True):
     if test_module:
         # 运行指定模块的测试
         try:
-            suite = unittest.defaultTestLoader.loadTestsFromName(test_module)
+            suite = unittest.default_test_loader.load_tests_from_name(test_module)
         except Exception as e:
             print(f"无法加载测试模块 {test_module}: {e}")
             return False
     else:
         # 运行tests目录下的所有测试
         tests_dir = os.path.join(root_dir, 'tests')
-        suite = unittest.defaultTestLoader.discover(tests_dir)
+        suite = unittest.default_test_loader.discover(tests_dir)
     
     # 运行测试
     verbosity = 2 if verbose else 1
-    runner = unittest.TextTestRunner(verbosity=verbosity)
+    runner = unittest.Text_test_runner(verbosity=verbosity)
     result = runner.run(suite)
     
-    return result.wasSuccessful()
+    return result.was_successful()
 
 
-def main():
+def main_runtests():
     """主函数"""
     parser = argparse.ArgumentParser(description='运行单元测试')
     parser.add_argument('-m', '--module', type=str, help='要测试的特定模块')
@@ -53,7 +53,7 @@ def main():
     args = parser.parse_args()
     
     print("开始运行单元测试...")
-    success = run_tests(args.module, not args.quiet)
+    success = run_tests_Tests(args.module, not args.quiet)
     
     if success:
         print("\n所有测试通过！")
@@ -64,4 +64,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
+    main_runtests() 

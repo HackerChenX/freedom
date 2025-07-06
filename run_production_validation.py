@@ -13,7 +13,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
-from scripts.production_indicator_validator import ProductionIndicatorValidator
+from scripts.production_indicator_validator import Production_indicator_validator
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ def test_single_indicator():
     print("测试单个指标验证（ZXM成交量缩量）")
     print("=" * 60)
     
-    validator = ProductionIndicatorValidator(max_stocks=20)
+    validator = Production_indicator_validator(max_stocks=20)
     
     # 获取最新交易日期
     test_date = validator.get_latest_trading_date()
@@ -59,7 +59,7 @@ def test_multiple_indicators():
     print("测试多指标验证（ZXM系列指标）")
     print("=" * 60)
     
-    validator = ProductionIndicatorValidator(max_stocks=30)
+    validator = Production_indicator_validator(max_stocks=30)
     
     # 验证多个ZXM指标
     zxm_indicators = ['volume_shrink', 'bs_absorb', 'turnover']
@@ -92,14 +92,14 @@ def test_multiple_indicators():
         print("验证失败！")
 
 
-def test_database_connection():
+def test_database_connection_Validation():
     """测试数据库连接"""
     print("=" * 60)
     print("测试ClickHouse数据库连接")
     print("=" * 60)
     
     try:
-        validator = ProductionIndicatorValidator()
+        validator = Production_indicator_validator()
         
         # 测试获取最新交易日期
         latest_date = validator.get_latest_trading_date()
@@ -129,7 +129,7 @@ def list_available_indicators():
     print("可用指标列表")
     print("=" * 60)
     
-    validator = ProductionIndicatorValidator()
+    validator = Production_indicator_validator()
     
     print("ZXM系列指标:")
     zxm_indicators = ['volume_shrink', 'bs_absorb', 'turnover', 'price_volume_trend', 'breakthrough']
@@ -146,7 +146,7 @@ def list_available_indicators():
     print(f"\n总计: {len(validator.indicators)} 个指标")
 
 
-def main():
+def main_runproductionvalidation():
     """主函数"""
     parser = argparse.ArgumentParser(description='生产环境指标验证系统测试')
     parser.add_argument('--test', choices=['db', 'single', 'multiple', 'list'], 
@@ -162,7 +162,7 @@ def main():
     print()
     
     if args.test == 'db':
-        test_database_connection()
+        test_database_connection_Validation()
     elif args.test == 'single':
         test_single_indicator()
     elif args.test == 'multiple':
@@ -176,7 +176,7 @@ def main():
             print(f"自定义指标验证: {args.indicators}")
             print("=" * 60)
             
-            validator = ProductionIndicatorValidator(
+            validator = Production_indicator_validator(
                 test_date=args.date,
                 max_stocks=args.max_stocks
             )
@@ -191,4 +191,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
+    main_runproductionvalidation() 

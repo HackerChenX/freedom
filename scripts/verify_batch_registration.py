@@ -53,7 +53,7 @@ def test_individual_indicators():
                 print(f"❌ {indicator_name}: 类不存在")
                 failed += 1
                 
-        except ImportError as e:
+        except Import_error as e:
             print(f"❌ {indicator_name}: 导入失败 - {e}")
             failed += 1
         except Exception as e:
@@ -124,8 +124,8 @@ def check_system_stability():
         from indicators.base_indicator import BaseIndicator
         print("✅ BaseIndicator导入成功")
         
-from indicators.complete_indicator_registry import complete_registry
-        print("✅ MACD导入成功")
+        from indicators.complete_indicator_registry import complete_registry
+        print("✅ complete_registry导入成功")
         
         print("✅ 系统基础模块稳定")
         return True
@@ -189,7 +189,7 @@ def generate_batch_registration_report():
     
     return overall_success
 
-def main():
+def main_verifybatchregistration():
     """主函数"""
     print("🚀 开始验证批量注册效果...")
     
@@ -204,5 +204,5 @@ def main():
     return success
 
 if __name__ == "__main__":
-    success = main()
+    success = main_verifybatchregistration()
     sys.exit(0 if success else 1)

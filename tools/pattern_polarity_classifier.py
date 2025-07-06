@@ -21,22 +21,22 @@ logger = get_logger(__name__)
 
 
 @dataclass
-class PolarityClassification:
+class Polarity_classification:
     """极性分类结果"""
     pattern_id: str
     display_name: str
-    current_polarity: PatternPolarity
-    suggested_polarity: PatternPolarity
+    current_polarity: Pattern_polarity
+    suggested_polarity: Pattern_polarity
     confidence: float
     reasoning: str
     needs_review: bool = False
 
 
-class PolarityClassifier:
+class Polarity_classifier:
     """模式极性分类器"""
     
     def __init__(self):
-        self.registry = PatternRegistry()
+        self.registry = Pattern_registry()
         
         # 负面关键词（看跌/不适合买点）
         self.negative_keywords = {
@@ -74,7 +74,7 @@ class PolarityClassifier:
             'neutral', 'average', 'standard', 'baseline'
         }
     
-    def classify_pattern(self, pattern_id: str) -> PolarityClassification:
+    def classify_pattern(self, pattern_id: str) -> Polarity_classification:
         """
         分类单个模式的极性
         
@@ -82,15 +82,15 @@ class PolarityClassifier:
             pattern_id: 模式ID
             
         Returns:
-            PolarityClassification: 分类结果
+            Polarity_classification: 分类结果
         """
         pattern_info = self.registry.get_pattern(pattern_id)
         if not pattern_info:
-            return PolarityClassification(
+            return Polarity_classification(
                 pattern_id=pattern_id,
                 display_name="未知模式",
-                current_polarity=PatternPolarity.NEUTRAL,
-                suggested_polarity=PatternPolarity.NEUTRAL,
+                current_polarity=Pattern_polarity.NEUTRAL,
+                suggested_polarity=Pattern_polarity.NEUTRAL,
                 confidence=0.0,
                 reasoning="模式不存在",
                 needs_review=True
@@ -113,7 +113,7 @@ class PolarityClassifier:
             self._contains_conflicting_keywords(display_name)  # 包含冲突关键词
         )
         
-        return PolarityClassification(
+        return Polarity_classification(
             pattern_id=pattern_id,
             display_name=display_name,
             current_polarity=current_polarity,
@@ -123,13 +123,13 @@ class PolarityClassifier:
             needs_review=needs_review
         )
     
-    def _analyze_polarity(self, display_name: str, pattern_type: PatternType, 
-                         score_impact: float) -> Tuple[PatternPolarity, float, str]:
+    def _analyze_polarity(self, display_name: str, pattern_type: Pattern_type, 
+                         score_impact: float) -> Tuple[Pattern_polarity, float, str]:
         """
         分析模式极性
         
         Returns:
-            Tuple[PatternPolarity, float, str]: (建议极性, 置信度, 推理过程)
+            Tuple[Pattern_polarity, float, str]: (建议极性, 置信度, 推理过程)
         """
         reasoning_parts = []
         confidence_scores = []
@@ -166,7 +166,7 @@ class PolarityClassifier:
         
         return final_polarity, final_confidence, final_reasoning
     
-    def _analyze_keywords(self, display_name: str) -> Tuple[PatternPolarity, float, str]:
+    def _analyze_keywords(self, display_name: str) -> Tuple[Pattern_polarity, float, str]:
         """基于关键词分析极性"""
         if not display_name:
             return PatternPolarity.NEUTRAL, 0.0, ""
@@ -194,19 +194,19 @@ class PolarityClassifier:
             confidence = min(0.7, 0.3 + neutral_count * 0.2)
             return PatternPolarity.NEUTRAL, confidence, f"包含{neutral_count}个中性关键词"
     
-    def _analyze_pattern_type(self, pattern_type: PatternType) -> Tuple[PatternPolarity, float, str]:
+    def _analyze_pattern_type(self, pattern_type: Pattern_type) -> Tuple[Pattern_polarity, float, str]:
         """基于形态类型分析极性"""
         if not pattern_type:
             return PatternPolarity.NEUTRAL, 0.0, ""
         
-        if pattern_type == PatternType.BEARISH:
+        if pattern_type == Pattern_type.BEARISH:
             return PatternPolarity.NEGATIVE, 0.8, "形态类型为看跌"
-        elif pattern_type == PatternType.BULLISH:
+        elif pattern_type == Pattern_type.BULLISH:
             return PatternPolarity.POSITIVE, 0.8, "形态类型为看涨"
         else:
             return PatternPolarity.NEUTRAL, 0.5, f"形态类型为{pattern_type.value}"
     
-    def _analyze_score_impact(self, score_impact: float) -> Tuple[PatternPolarity, float, str]:
+    def _analyze_score_impact(self, score_impact: float) -> Tuple[Pattern_polarity, float, str]:
         """基于评分影响分析极性"""
         if score_impact < -10:
             return PatternPolarity.NEGATIVE, 0.7, f"评分影响为{score_impact}(强负面)"
@@ -231,23 +231,23 @@ class PolarityClassifier:
         
         return has_negative and has_positive
     
-    def classify_all_patterns(self) -> List[PolarityClassification]:
+    def classify_all_patterns(self) -> List[Polarity_classification]:
         """分类所有模式"""
         all_patterns = self.registry.get_all_pattern_ids()
         return [self.classify_pattern(pattern_id) for pattern_id in all_patterns]
     
-    def get_problematic_patterns(self) -> List[PolarityClassification]:
+    def get_problematic_patterns(self) -> List[Polarity_classification]:
         """获取有问题的模式（需要审查的）"""
         all_classifications = self.classify_all_patterns()
         return [c for c in all_classifications if c.needs_review]
 
 
-def main():
+def main_patternpolarityclassifier():
     """主函数"""
     print("🔍 模式极性分类工具")
     print("=" * 50)
     
-    classifier = PolarityClassifier()
+    classifier = Polarity_classifier()
     
     # 分类所有模式
     print("正在分析所有模式...")
@@ -256,9 +256,9 @@ def main():
     # 统计结果
     total = len(all_classifications)
     needs_review = len([c for c in all_classifications if c.needs_review])
-    positive = len([c for c in all_classifications if c.suggested_polarity == PatternPolarity.POSITIVE])
-    negative = len([c for c in all_classifications if c.suggested_polarity == PatternPolarity.NEGATIVE])
-    neutral = len([c for c in all_classifications if c.suggested_polarity == PatternPolarity.NEUTRAL])
+    positive = len([c for c in all_classifications if c.suggested_polarity == Pattern_polarity.POSITIVE])
+    negative = len([c for c in all_classifications if c.suggested_polarity == Pattern_polarity.NEGATIVE])
+    neutral = len([c for c in all_classifications if c.suggested_polarity == Pattern_polarity.NEUTRAL])
     
     print(f"\n📊 分析结果统计:")
     print(f"总模式数量: {total}")
@@ -282,4 +282,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_patternpolarityclassifier()

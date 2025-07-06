@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -16,7 +18,8 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from indicators.vortex import VORTEX
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,7 +27,7 @@ logger = get_logger(__name__)
 def get_test_data(code: str = "000001.SZ", limit: int = 100) -> pd.DataFrame:
     """获取测试数据"""
     try:
-        db = get_clickhouse_db()
+        data_access = get_container().resolve(IData_access)
         
         # 获取股票数据
         query = f"""
@@ -37,13 +40,13 @@ def get_test_data(code: str = "000001.SZ", limit: int = 100) -> pd.DataFrame:
             close,
             vol as volume,
             amount as turnover
-        FROM stock_info 
+        FROM stock_info WHERE 1=1
         WHERE ts_code = '{code}'
         ORDER BY trade_date DESC
         LIMIT {limit}
         """
         
-        df = db.query(query)
+        df = data_access.execute_query(query)
         if df.empty:
             logger.warning(f"未找到股票 {code} 的数据")
             return pd.DataFrame()
@@ -317,7 +320,7 @@ def test_multiple_stocks():
     
     return results
 
-def main():
+def main_testvortex():
     """主函数"""
     print("VORTEX指标测试")
     print("=" * 60)
@@ -347,4 +350,4 @@ def main():
         print(f"测试失败: {e}")
 
 if __name__ == "__main__":
-    main() 
+    main_testvortex() 

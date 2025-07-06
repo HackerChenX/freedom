@@ -9,10 +9,12 @@ K线周期枚举兼容模块
 """
 
 # 从统一周期模块导入
-from enums.period import Period as KlinePeriod
+from enums.period import Period as Kline_period
 
 # 为了保持完全兼容性，重新导出所有功能
-__all__ = ['KlinePeriod']
+KlinePeriod = Kline_period  # 兼容性别名
+
+__all__ = ['KlinePeriod', 'Kline_period']
 
 # 警告消息
 import warnings

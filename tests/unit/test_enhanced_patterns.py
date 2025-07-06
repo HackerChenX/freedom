@@ -16,21 +16,21 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
 # 测试用的指标工厂类
-class TestIndicatorFactory:
+class Test_indicator_factory:
     """测试用的指标工厂，用于创建测试指标实例"""
     
     def __init__(self):
         """初始化测试指标工厂"""
         self.indicators = {
-            'CANDLESTICKPATTERNS': TestCandlestickPatterns(),
-            'MACD': TestMACD(),
-            'RSI': TestRSI()
+            'CANDLESTICKPATTERNS': TestCandlestickPatterns_Patterns(),
+            'MACD': TestMACD_Patterns(),
+            'RSI': TestRSI_Patterns()
         }
     
     def get_indicator(self, indicator_name):
@@ -39,10 +39,10 @@ class TestIndicatorFactory:
 
 
 # 测试用的K线形态指标
-class TestCandlestickPatterns:
+class Testcandlestickpatterns_patterns:
     """测试用的K线形态指标"""
     
-    def calculate(self, data):
+    def calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self, data):
         """计算K线形态"""
         result = data.copy()
         result['hammer'] = False
@@ -58,10 +58,10 @@ class TestCandlestickPatterns:
 
 
 # 测试用的MACD指标
-class TestMACD:
+class Testmacd_patterns:
     """测试用的MACD指标"""
     
-    def calculate(self, data):
+    def calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self, data):
         """计算MACD"""
         result = data.copy()
         result['macd_line'] = 0.0
@@ -85,10 +85,10 @@ class TestMACD:
 
 
 # 测试用的RSI指标
-class TestRSI:
+class Testrsi_patterns:
     """测试用的RSI指标"""
     
-    def calculate(self, data):
+    def calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self, data):
         """计算RSI"""
         result = data.copy()
         result['rsi'] = 50.0
@@ -100,16 +100,16 @@ class TestRSI:
         return result
 
 
-class TestPatternCombination(unittest.TestCase, IndicatorTestMixin):
+class Test_pattern_combination(unittest.Test_case, Indicator_test_mixin):
     """形态组合识别测试"""
     
-    def setUp(self):
+    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """为所有测试准备数据和指标实例"""
-        self.indicator = PatternCombination()
+        self.indicator = Pattern_combination()
         self.expected_columns = ['combined_pattern', 'pattern_strength']
         
         # 生成适合形态组合分析的数据
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 40},   # 下跌
             {'type': 'trend', 'start_price': 80, 'end_price': 90, 'periods': 30},    # 反弹
             {'type': 'trend', 'start_price': 90, 'end_price': 85, 'periods': 20},    # 回调
@@ -134,13 +134,13 @@ class TestPatternCombination(unittest.TestCase, IndicatorTestMixin):
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tearDown(self):
+    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """清理测试环境"""
         self.teardown_log_capture()
     
     def test_pattern_combination_detection(self):
         """测试形态组合识别功能"""
-        result = self.indicator.calculate(self.data)
+        result = self.indicator.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 验证有形态组合被识别
         self.assertFalse(result.empty, "没有识别出形态组合")
@@ -152,7 +152,7 @@ class TestPatternCombination(unittest.TestCase, IndicatorTestMixin):
     
     def test_pattern_strength_assessment(self):
         """测试形态强度评估"""
-        result = self.indicator.calculate(self.data)
+        result = self.indicator.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 检查形态强度
         if 'pattern_strength' in result.columns:
@@ -160,20 +160,20 @@ class TestPatternCombination(unittest.TestCase, IndicatorTestMixin):
             self.assertFalse(strength_values.empty, "形态强度值全为NaN")
             
             # 验证强度值在合理范围内
-            self.assertTrue((strength_values >= 0).all() and (strength_values <= 100).all(),
+            self.assert_true((strength_values >= 0).all() and (strength_values <= 100).all(),
                           "形态强度值超出0-100范围")
 
 
-class TestPatternConfirmation(unittest.TestCase, IndicatorTestMixin):
+class Test_pattern_confirmation(unittest.Test_case, Indicator_test_mixin):
     """形态确认测试"""
     
-    def setUp(self):
+    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """为所有测试准备数据和指标实例"""
-        self.indicator = PatternConfirmation()
+        self.indicator = Pattern_confirmation()
         self.expected_columns = ['pattern_confirmed', 'confirmation_type', 'confirmation_strength']
         
         # 生成适合形态确认分析的数据
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 30},   # 下跌
             {'type': 'trend', 'start_price': 80, 'end_price': 85, 'periods': 20},    # 反弹
             {'type': 'trend', 'start_price': 85, 'end_price': 80, 'periods': 15},    # 回调
@@ -204,13 +204,13 @@ class TestPatternConfirmation(unittest.TestCase, IndicatorTestMixin):
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tearDown(self):
+    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """清理测试环境"""
         self.teardown_log_capture()
     
     def test_pattern_confirmation(self):
         """测试形态确认功能"""
-        result = self.indicator.calculate(self.data)
+        result = self.indicator.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 验证有形态确认被识别
         self.assertFalse(result.empty, "没有识别出形态确认")
@@ -222,7 +222,7 @@ class TestPatternConfirmation(unittest.TestCase, IndicatorTestMixin):
     
     def test_confirmation_strength(self):
         """测试确认强度评估"""
-        result = self.indicator.calculate(self.data)
+        result = self.indicator.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 检查确认强度
         if 'confirmation_strength' in result.columns:
@@ -230,20 +230,20 @@ class TestPatternConfirmation(unittest.TestCase, IndicatorTestMixin):
             self.assertFalse(strength_values.empty, "确认强度值全为NaN")
             
             # 验证强度值在合理范围内
-            self.assertTrue((strength_values >= 0).all() and (strength_values <= 100).all(),
+            self.assert_true((strength_values >= 0).all() and (strength_values <= 100).all(),
                           "确认强度值超出0-100范围")
 
 
-class TestPatternQualityEvaluator(unittest.TestCase, IndicatorTestMixin):
+class Testpatternqualityevaluator_patterns(unittest.Test_case, Indicator_test_mixin):
     """形态质量评估测试"""
     
-    def setUp(self):
+    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """为所有测试准备数据和指标实例"""
-        self.indicator = PatternQualityEvaluator()
+        self.indicator = Pattern_quality_evaluator()
         self.expected_columns = ['pattern_quality', 'reliability_score', 'profit_potential']
         
         # 生成适合形态质量评估的数据
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 35},   # 下跌
             {'type': 'trend', 'start_price': 80, 'end_price': 90, 'periods': 25},    # 反弹
             {'type': 'trend', 'start_price': 90, 'end_price': 85, 'periods': 15},    # 回调
@@ -274,13 +274,13 @@ class TestPatternQualityEvaluator(unittest.TestCase, IndicatorTestMixin):
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tearDown(self):
+    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """清理测试环境"""
         self.teardown_log_capture()
     
     def test_pattern_quality_evaluation(self):
         """测试形态质量评估功能"""
-        result = self.indicator.calculate(self.data)
+        result = self.indicator.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 验证有形态质量评估结果
         self.assertFalse(result.empty, "没有生成形态质量评估结果")
@@ -291,12 +291,12 @@ class TestPatternQualityEvaluator(unittest.TestCase, IndicatorTestMixin):
             self.assertFalse(quality_scores.empty, "形态质量评分全为NaN")
             
             # 验证质量评分在合理范围内
-            self.assertTrue((quality_scores >= 0).all() and (quality_scores <= 100).all(),
+            self.assert_true((quality_scores >= 0).all() and (quality_scores <= 100).all(),
                           "形态质量评分超出0-100范围")
     
     def test_reliability_assessment(self):
         """测试可靠性评估"""
-        result = self.indicator.calculate(self.data)
+        result = self.indicator.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 检查可靠性评分
         if 'reliability_score' in result.columns:
@@ -304,12 +304,12 @@ class TestPatternQualityEvaluator(unittest.TestCase, IndicatorTestMixin):
             self.assertFalse(reliability_scores.empty, "可靠性评分全为NaN")
             
             # 验证可靠性评分在合理范围内
-            self.assertTrue((reliability_scores >= 0).all() and (reliability_scores <= 100).all(),
+            self.assert_true((reliability_scores >= 0).all() and (reliability_scores <= 100).all(),
                           "可靠性评分超出0-100范围")
     
     def test_profit_potential_assessment(self):
         """测试盈利潜力评估"""
-        result = self.indicator.calculate(self.data)
+        result = self.indicator.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 检查盈利潜力评估
         if 'profit_potential' in result.columns:
@@ -320,13 +320,13 @@ class TestPatternQualityEvaluator(unittest.TestCase, IndicatorTestMixin):
             self.assertTrue((profit_potential >= 0).all(), "盈利潜力含有负值")
 
 
-class TestMultiIndicatorPatternAnalysis(unittest.TestCase, LogCaptureMixin):
+class Test_multi_indicator_pattern_analysis(unittest.Test_case, Log_capture_mixin):
     """多指标形态分析测试"""
     
-    def setUp(self):
+    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """为所有测试准备数据"""
         # 生成复杂的市场数据
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 40},    # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 85, 'periods': 20},     # 继续下跌
             {'type': 'trend', 'start_price': 85, 'end_price': 95, 'periods': 30},     # 反弹
@@ -356,12 +356,12 @@ class TestMultiIndicatorPatternAnalysis(unittest.TestCase, LogCaptureMixin):
         self.data['turnover_rate'] = self.data['volume'] / 10000
         
         # 创建测试用的IndicatorFactory，返回测试指标
-        self.factory = TestIndicatorFactory()
+        self.factory = Test_indicator_factory()
         
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tearDown(self):
+    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
         """清理测试环境"""
         self.teardown_log_capture()
     
@@ -375,9 +375,9 @@ class TestMultiIndicatorPatternAnalysis(unittest.TestCase, LogCaptureMixin):
         rsi = self.factory.get_indicator('RSI')
         
         # 计算各指标
-        pattern_result = candlestick.calculate(self.data)
-        macd_result = macd.calculate(self.data)
-        rsi_result = rsi.calculate(self.data)
+        pattern_result = candlestick.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
+        macd_result = macd.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
+        rsi_result = rsi.calculate_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self.data)
         
         # 检查是否有错误日志
         self.assert_no_errors("指标计算过程中出现错误")

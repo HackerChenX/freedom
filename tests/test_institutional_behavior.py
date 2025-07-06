@@ -16,20 +16,20 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from strategy.institutional_strategy import InstitutionalStrategy
+from strategy.institutional_strategy import Institutional_strategy
 
 
-class TestInstitutionalBehavior(unittest.TestCase):
+class Test_institutional_behavior(unittest.Test_case):
     """测试主力行为模式分析功能"""
     
-    def setUp(self):
+    def set_up_Behavior(self):
         """初始化测试环境"""
         # 创建模拟数据
         self.create_mock_data()
         
         # 初始化指标和策略
-        self.behavior = InstitutionalBehavior()
-        self.strategy = InstitutionalStrategy()
+        self.behavior = Institutional_behavior()
+        self.strategy = Institutional_strategy()
     
     def create_mock_data(self):
         """创建模拟数据"""
@@ -126,14 +126,14 @@ class TestInstitutionalBehavior(unittest.TestCase):
         classifications = self.behavior.classify_institutional_behavior(self.data)
         
         # 检查分类结果是否为列表且非空
-        self.assertIsInstance(classifications, list)
-        self.assertTrue(len(classifications) > 0)
+        self.assert_is_instance(classifications, list)
+        self.assert_true(len(classifications) > 0)
         
         # 检查是否包含主要分类类型
         classification_types = [item["type"] for item in classifications]
         expected_types = ["dominant_phase", "intensity_trend", "volume_price_relation"]
         for expected_type in expected_types:
-            self.assertIn(expected_type, classification_types)
+            self.assert_in(expected_type, classification_types)
     
     def test_absorption_prediction(self):
         """测试吸筹完成时间预测功能"""
@@ -147,7 +147,7 @@ class TestInstitutionalBehavior(unittest.TestCase):
         expected_keys = ["is_in_absorption", "completion_days_min", "completion_days_max", 
                          "confidence", "description"]
         for key in expected_keys:
-            self.assertIn(key, prediction)
+            self.assert_in(key, prediction)
     
     def test_strategy(self):
         """测试主力行为选股策略"""
@@ -163,7 +163,7 @@ class TestInstitutionalBehavior(unittest.TestCase):
         selected = self.strategy.select(data_dict)
         
         # 检查选股结果
-        self.assertIsInstance(selected, list)
+        self.assert_is_instance(selected, list)
         
         # 详细分析单只股票
         analysis = self.strategy.analyze_stock(self.data)
@@ -171,7 +171,7 @@ class TestInstitutionalBehavior(unittest.TestCase):
         # 检查分析结果是否包含必要的键
         expected_keys = ["score", "investment_suggestion", "risk_level", "behavior_classifications"]
         for key in expected_keys:
-            self.assertIn(key, analysis)
+            self.assert_in(key, analysis)
 
 
 if __name__ == "__main__":

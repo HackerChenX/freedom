@@ -7,7 +7,7 @@ from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 
 class TestZXMBSAbsorb(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestzxmindicators(self):
         self.indicator = ZXMBSAbsorb()
         self.expected_columns = ['XG']
         self.data = TestDataGenerator.generate_price_sequence([
@@ -15,7 +15,7 @@ class TestZXMBSAbsorb(unittest.TestCase, IndicatorTestMixin):
         ])
 
 class TestZXMDailyMACD(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestzxmindicators(self):
         self.indicator = ZXMDailyMACD()
         self.expected_columns = ['XG']
         self.data = TestDataGenerator.generate_price_sequence([

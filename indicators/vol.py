@@ -18,16 +18,16 @@ import warnings
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from utils.logger import getLogger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class VOL(BaseIndicator, PatternSignalMixin):
+class VolumeIndicator(BaseIndicator, PatternSignalMixin):
     """
     成交量(VOL) (VOL)
     
@@ -50,7 +50,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
         self.enable_cycles_analysis = enable_cycles_analysis
         self.enable_standardization = enable_standardization
     
-    def set_parameters(self, period: int = None, enable_cycles_analysis: bool = None, enable_standardization: bool = None):
+    def set_parameters_Vol_Vol_Vol_vol(self, period: int = None, enable_cycles_analysis: bool = None, enable_standardization: bool = None):
         """
         设置指标参数
         """
@@ -61,26 +61,26 @@ class VOL(BaseIndicator, PatternSignalMixin):
         if enable_standardization is not None:
             self.enable_standardization = enable_standardization
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Vol(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VOL指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含VOL指标的DataFrame
+            包含VOL指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_vol(data)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Vol(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算VOL指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -130,36 +130,36 @@ class VOL(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
     
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Vol(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算成交量指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 
         Returns:
-            包含VOL指标的DataFrame
+            包含VOL指标的Data_frame
         """
-        return self.calculate(df)
+        return self.calculate_Vol(df)
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_vol(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算成交量(VOL)指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 必须包含以下列：
                 - volume: 成交量
                 
         Returns:
-            添加了VOL指标列的DataFrame
+            添加了VOL指标列的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
 
         # 确保数据包含必要的列
         required_columns = ['volume']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_vol(df, required_columns)
         
         df_copy = df.copy()
         
@@ -214,17 +214,17 @@ class VOL(BaseIndicator, PatternSignalMixin):
 
         return df_copy
 
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Vol(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成成交量(VOL)指标交易信号
         
         Args:
-            df: 包含价格数据和VOL指标的DataFrame
+            df: 包含价格数据和VOL指标的Data_frame
             **kwargs: 额外参数
                 vol_ratio_threshold: 相对成交量阈值，默认为1.5
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - vol_signal: 1=放量信号, -1=缩量信号, 0=无信号
         """
         if df.empty:
@@ -232,7 +232,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
             
         # 检查必要的指标列是否存在
         required_columns = ['vol', 'vol_ma5']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_vol(df, required_columns)
         
         df_copy = df.copy()
         
@@ -255,9 +255,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
 
         return df_copy
     
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_vol(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
             df: 输入数据
@@ -270,12 +270,12 @@ class VOL(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
+    def plot_Vol(self, df: pd.DataFrame, ax=None, **kwargs):
         """
         绘制成交量(VOL)指标图表
         
         Args:
-            df: 包含VOL指标的DataFrame
+            df: 包含VOL指标的Data_frame
             ax: matplotlib轴对象，如果为None则创建新的
             **kwargs: 额外绘图参数
             
@@ -286,7 +286,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
         
         # 检查必要的指标列是否存在
         required_columns = ['vol', 'vol_ma5', 'vol_ma10']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_vol(df, required_columns)
         
         # 创建新的轴对象（如果未提供）
         if ax is None:
@@ -294,9 +294,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             
         # 绘制VOL指标线
         ax.bar(df.index, df['vol'], label='成交量', alpha=0.3, color='gray')
-        ax.plot(df.index, df['vol_ma5'], label='5日均量', color='red')
-        ax.plot(df.index, df['vol_ma10'], label='10日均量', color='blue')
-        ax.plot(df.index, df['vol_ma20'], label='20日均量', color='green')
+        ax.plot_Vol(df.index, df['vol_ma5'], label='5日均量', color='red')
+        ax.plot_Vol(df.index, df['vol_ma10'], label='10日均量', color='blue')
+        ax.plot_Vol(df.index, df['vol_ma20'], label='20日均量', color='green')
         
         ax.set_ylabel('成交量')
         ax.legend(loc='best')
@@ -304,18 +304,18 @@ class VOL(BaseIndicator, PatternSignalMixin):
         
         return ax
 
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score_Vol(self, data: pd.DataFrame) -> pd.Series:
         """
         计算成交量指标的原始评分
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             pd.Series: 包含原始评分的Series
         """
         # 计算指标值
-        indicator_data = self.calculate(data)
+        indicator_data = self.calculate_Vol(data)
         
         # 初始化评分
         score = pd.Series(50.0, index=data.index)  # 基础分50分
@@ -492,12 +492,12 @@ class VOL(BaseIndicator, PatternSignalMixin):
         
         return score.clip(-20, 20)
         
-    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+    def identify_patterns_Vol(self, data: pd.DataFrame) -> List[str]:
         """
         识别成交量(VOL)的常见形态
         
         Args:
-            data: 包含OHLCV和VOL指标的DataFrame
+            data: 包含OHLCV和VOL指标的Data_frame
                 
         Returns:
             List[str]: 识别出的形态列表
@@ -508,7 +508,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
         patterns = []
         
         # 计算指标
-        df = self.calculate(data)
+        df = self.calculate_Vol(data)
         
         # 检查最新数据点
         latest = df.iloc[-1]
@@ -582,10 +582,10 @@ class VOL(BaseIndicator, PatternSignalMixin):
 
         Args:
             data (pd.DataFrame): 原始OHLCV数据
-            indicator_data (pd.DataFrame): 包含成交量指标的DataFrame
+            indicator_data (pd.DataFrame): 包含成交量指标的Data_frame
 
         Returns:
-            pd.DataFrame: 添加了SRV列的DataFrame
+            pd.DataFrame: 添加了SRV列的Data_frame
         """
         df = indicator_data.copy()
 
@@ -625,11 +625,11 @@ class VOL(BaseIndicator, PatternSignalMixin):
         使用傅里叶变换分析成交量周期性
 
         Args:
-            indicator_data (pd.DataFrame): 包含成交量指标的DataFrame
+            indicator_data (pd.DataFrame): 包含成交量指标的Data_frame
             min_periods (int): 进行周期性分析所需的最少数据点
 
         Returns:
-            pd.DataFrame: 添加了周期性分析结果的DataFrame
+            pd.DataFrame: 添加了周期性分析结果的Data_frame
         """
         df = indicator_data.copy()
 
@@ -692,7 +692,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
         """
         注册成交量形态
         """
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 注册放量上涨
         registry.register(
@@ -700,9 +700,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="放量上涨",
             description="成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号。",
             indicator_id="VOL",
-            pattern_type=PatternType.CONTINUATION,
+            pattern_type=Pattern_type.CONTINUATION,
             score_impact=15.0,
-            strength=PatternStrength.STRONG
+            strength=Pattern_strength.STRONG
         )
         
         # 注册放量下跌
@@ -711,9 +711,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="放量下跌",
             description="成交量显著放大，同时价格下跌，通常是恐慌性抛售或趋势反转的信号。",
             indicator_id="VOL",
-            pattern_type=PatternType.REVERSAL,
+            pattern_type=Pattern_type.REVERSAL,
             score_impact=-15.0,
-            strength=PatternStrength.STRONG
+            strength=Pattern_strength.STRONG
         )
         
         # 注册缩量上涨
@@ -722,9 +722,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="缩量上涨",
             description="价格上涨但成交量萎缩，可能表示上涨动力不足。",
             indicator_id="VOL",
-            pattern_type=PatternType.DIVERGENCE,
+            pattern_type=Pattern_type.DIVERGENCE,
             score_impact=-10.0,
-            strength=PatternStrength.WEAK
+            strength=Pattern_strength.WEAK
         )
         
         # 注册缩量下跌
@@ -733,9 +733,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="缩量下跌",
             description="价格下跌且成交量萎缩，可能表示下跌动能衰竭。",
             indicator_id="VOL",
-            pattern_type=PatternType.REVERSAL,
+            pattern_type=Pattern_type.REVERSAL,
             score_impact=10.0,
-            strength=PatternStrength.MEDIUM
+            strength=Pattern_strength.MEDIUM
         )
         
         # 注册量价背离
@@ -744,9 +744,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="量价背离",
             description="价格与成交量趋势相反，例如价格新高而成交量萎缩。",
             indicator_id="VOL",
-            pattern_type=PatternType.DIVERGENCE,
+            pattern_type=Pattern_type.DIVERGENCE,
             score_impact=-12.0,
-            strength=PatternStrength.MEDIUM
+            strength=Pattern_strength.MEDIUM
         )
         
         # 注册天量
@@ -755,9 +755,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="天量",
             description="成交量达到近期（如半年内）的峰值，可能预示趋势即将反转。",
             indicator_id="VOL",
-            pattern_type=PatternType.EXHAUSTION,
+            pattern_type=Pattern_type.EXHAUSTION,
             score_impact=-8.0,
-            strength=PatternStrength.STRONG
+            strength=Pattern_strength.STRONG
         )
         
         # 注册地量
@@ -766,9 +766,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="地量",
             description="成交量达到近期（如半年内）的谷底，可能表示市场极度冷清或惜售。",
             indicator_id="VOL",
-            pattern_type=PatternType.REVERSAL,
+            pattern_type=Pattern_type.REVERSAL,
             score_impact=8.0,
-            strength=PatternStrength.MEDIUM
+            strength=Pattern_strength.MEDIUM
         )
         
         # 注册成交量突破
@@ -777,9 +777,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="成交量突破",
             description="成交量突破了前期的整理平台，通常伴随着价格的突破。",
             indicator_id="VOL",
-            pattern_type=PatternType.BREAKOUT,
+            pattern_type=Pattern_type.BREAKOUT,
             score_impact=18.0,
-            strength=PatternStrength.STRONG
+            strength=Pattern_strength.STRONG
         )
         
         # 注册成交量回踩
@@ -788,9 +788,9 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="成交量回踩",
             description="价格回调至前期支撑位，同时成交量显著萎缩，可能是买入机会。",
             indicator_id="VOL",
-            pattern_type=PatternType.CONTINUATION,
+            pattern_type=Pattern_type.CONTINUATION,
             score_impact=12.0,
-            strength=PatternStrength.MEDIUM
+            strength=Pattern_strength.MEDIUM
         )
         
         # 注册成交量平台
@@ -799,12 +799,12 @@ class VOL(BaseIndicator, PatternSignalMixin):
             display_name="成交量平台",
             description="成交量在一段时间内维持在相对稳定的水平，可能在酝酿新的趋势。",
             indicator_id="VOL",
-            pattern_type=PatternType.CONSOLIDATION,
+            pattern_type=Pattern_type.CONSOLIDATION,
             score_impact=5.0,
-            strength=PatternStrength.WEAK
+            strength=Pattern_strength.WEAK
         )
         
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Vol(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取VOL相关形态
 
@@ -813,11 +813,11 @@ class VOL(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Vol(data)
 
         if self._result is None or 'vol' not in self._result.columns:
             return pd.DataFrame(index=data.index)
@@ -868,7 +868,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
         
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Vol(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -881,7 +881,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Vol(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -898,10 +898,10 @@ class VOL(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Vol(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Vol(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -911,7 +911,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def register_patterns(self):
+    def register_patterns_Vol(self):
         """
         注册VOL指标的形态到全局形态注册表
         """
@@ -1036,7 +1036,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Vol(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
 
@@ -1049,7 +1049,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_vol(data, **kwargs)
 
         # 初始化信号
         signals = {}
@@ -1243,7 +1243,7 @@ class VOL(BaseIndicator, PatternSignalMixin):
         
         return is_stable
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Vol(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -1376,43 +1376,11 @@ class VOL(BaseIndicator, PatternSignalMixin):
             "strength": "WEAK",
             "score_impact": 0.0
         })
-    def __init__(self, **kwargs):
-        """
-        初始化VOL指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "VOL"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保VOL特有属性存在
-        if not hasattr(self, 'enable_standardization'):
-            self.enable_standardization = True
-        
-        # 确保VOL特有属性存在
-        if not hasattr(self, 'enable_standardization'):
-            self.enable_standardization = True
-        if not hasattr(self, 'enable_cycles_analysis'):
-            self.enable_cycles_analysis = False
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_vol(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'enable_standardization': True, 'enable_cycles_analysis': False}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Vol_Vol_Vol_vol_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -1421,8 +1389,8 @@ class VOL(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -1431,8 +1399,8 @@ class VOL(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('VOL', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"VOL参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

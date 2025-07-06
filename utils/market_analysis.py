@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 class MarketAnalyzer:
     """市场分析器"""
     
-    def __init__(self, db_connector=None):
+    def __init___60(self, db_connector=None):
         """
         初始化市场分析器
         
@@ -21,7 +21,7 @@ class MarketAnalyzer:
         self.db = db_connector
         self.cache = {}
         
-    def get_market_status(self, date: str) -> Dict[str, Any]:
+    def get_market_status_Analysis(self, date: str) -> Dict[str, Any]:
         """
         获取市场状态
         

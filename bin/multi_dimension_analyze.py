@@ -11,14 +11,14 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from analysis.multi_dimension_analyzer import MultiDimensionAnalyzer
+from analysis.multi_dimension_analyzer import Multi_dimension_analyzer
 from utils.logger import get_logger
 from utils.path_utils import get_result_dir
 
 # 获取日志记录器
 logger = get_logger(__name__)
 
-def main():
+def main_10():
     """命令行入口函数"""
     # 解析命令行参数
     parser = argparse.ArgumentParser(description="多维度分析工具")
@@ -58,7 +58,7 @@ def main():
     args = parser.parse_args()
     
     # 创建多维度分析器
-    analyzer = MultiDimensionAnalyzer()
+    analyzer = Multi_dimension_analyzer()
     
     # 处理日期参数，默认为当天
     if not hasattr(args, 'date') or not args.date:
@@ -160,4 +160,4 @@ def main():
         parser.print_help()
 
 if __name__ == "__main__":
-    main() 
+    main_10() 

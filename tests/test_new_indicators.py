@@ -37,10 +37,10 @@ logger = get_logger(__name__)
 class TestNewIndicators(unittest.TestCase):
     """测试新指标和增强功能"""
     
-    def setUp(self):
+    def setUp_Indicators(self):
         """初始化测试环境"""
         # 创建模拟数据
-        self.create_mock_data()
+        self.create_mock_data_Indicators()
         
         # 初始化指标
         self.stock_vix = StockVIX()
@@ -48,7 +48,7 @@ class TestNewIndicators(unittest.TestCase):
         self.sentiment = SentimentAnalysis()
         self.bias = BIAS()
     
-    def create_mock_data(self):
+    def create_mock_data_Indicators(self):
         """创建模拟数据"""
         # 设置随机种子以保证可重复性
         np.random.seed(42)

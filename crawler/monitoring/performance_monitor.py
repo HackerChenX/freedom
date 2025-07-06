@@ -14,7 +14,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class PerformanceMetrics:
+class Performance_metrics:
     """性能指标类"""
 
     def __init__(self, max_history=1000):
@@ -45,7 +45,7 @@ class PerformanceMetrics:
 
         self.start_time = datetime.now()
 
-    def record_request(self, success: bool, response_time: float, error_type: str = None):
+    def record_request_Monitor_Performance_Monitor_Performance_Monitor_performancemonitor(self, success: bool, response_time: float, error_type: str = None):
         """记录请求"""
         self.total_requests += 1
 
@@ -142,11 +142,11 @@ class PerformanceMetrics:
         }
 
 
-class PerformanceMonitor:
+class Performance_monitor:
     """性能监控器"""
 
     def __init__(self, update_interval=60):
-        self.metrics = PerformanceMetrics()
+        self.metrics = Performance_metrics()
         self.update_interval = update_interval
         self.running = False
         self.monitor_thread = None
@@ -163,17 +163,17 @@ class PerformanceMonitor:
         # 告警回调
         self.alert_callbacks = []
 
-    def start(self):
+    def start_Monitor(self):
         """启动监控"""
         if self.running:
             return
 
         self.running = True
         self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
-        self.monitor_thread.start()
+        self.monitor_thread.start_Monitor()
         logger.info("性能监控器启动")
 
-    def stop(self):
+    def stop_Monitor(self):
         """停止监控"""
         self.running = False
         if self.monitor_thread:
@@ -266,9 +266,9 @@ class PerformanceMonitor:
         """添加告警回调"""
         self.alert_callbacks.append(callback)
 
-    def record_request(self, success: bool, response_time: float, error_type: str = None):
+    def record_request_Monitor_Performance_Monitor_Performance_Monitor_performancemonitor(self, success: bool, response_time: float, error_type: str = None):
         """记录请求"""
-        self.metrics.record_request(success, response_time, error_type)
+        self.metrics.record_request_Monitor_Performance_Monitor_Performance_Monitor_performancemonitor(success, response_time, error_type)
 
     def get_metrics(self) -> Dict[str, Any]:
         """获取监控指标"""

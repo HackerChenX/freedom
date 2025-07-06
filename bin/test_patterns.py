@@ -21,10 +21,10 @@ from indicators.complete_indicator_registry import complete_registry
 # 导入日志模块
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
-def generate_test_data(days=100):
+def generate_test_data_Patterns(days=100):
     """生成测试数据"""
     dates = pd.date_range(end=datetime.now(), periods=days)
     
@@ -59,10 +59,10 @@ def generate_test_data(days=100):
 def test_patterns():
     """测试各指标的形态检测功能"""
     # 生成测试数据
-    data = generate_test_data(days=100)
+    data = generate_test_data_Patterns(days=100)
     
     # 清空PatternRegistry
-    PatternRegistry.clear_registry()
+    Pattern_registry.clear_registry()
     
     # 创建各指标实例
     indicators = {}
@@ -85,7 +85,7 @@ def test_patterns():
             indicator._register_kdj_patterns()
     
     # 获取PatternRegistry实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     # 检测最近的数据是否有形态
     latest_data = data.iloc[-30:].copy()  # 取最近的30条数据进行检测
@@ -122,7 +122,7 @@ def test_patterns():
             logger.info(f"\n{name} 指标未检测到任何形态")
     
     # 统计各类型形态的数量
-    pattern_types = {pt.name: 0 for pt in PatternType}
+    pattern_types = {pt.name: 0 for pt in Pattern_type}
     all_patterns = registry.get_all_patterns()
     
     for pattern_info in all_patterns.values():

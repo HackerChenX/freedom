@@ -21,16 +21,16 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from intelligent_p4_generator import IntelligentP4Generator
-from extended_technical_indicators import ExtendedTechnicalIndicators
+from intelligent_p4_generator import Intelligent_p4_generator
+from extended_technical_indicators import Extended_technical_indicators
 
 
-class ComprehensiveP4Validator:
+class Comprehensive_p4_validator:
     """全面的P4 ZXM系列指标验证器"""
     
     def __init__(self):
-        self.intelligent_generator = IntelligentP4Generator()
-        self.extended_indicators = ExtendedTechnicalIndicators()
+        self.intelligent_generator = Intelligent_p4_generator()
+        self.extended_indicators = Extended_technical_indicators()
     
     def validate_zxm_basic_indicators(self) -> dict:
         """验证ZXM基础指标（ZXM_DAILY_MACD、ZXM_TURNOVER、ZXM_VOLUME_SHRINK、ZXM_MA_CALLBACK）"""
@@ -422,7 +422,7 @@ class ComprehensiveP4Validator:
         return summary
 
 
-def main():
+def main_comprehensivep4validator():
     """主函数"""
     print("=" * 80)
     print("全面P4 ZXM系列指标验证测试")
@@ -431,7 +431,7 @@ def main():
     print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
 
-    validator = ComprehensiveP4Validator()
+    validator = Comprehensive_p4_validator()
 
     try:
         results = validator.validate_all_p4_comprehensive()
@@ -493,5 +493,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensivep4validator()
     sys.exit(exit_code)

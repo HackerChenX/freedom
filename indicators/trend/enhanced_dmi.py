@@ -7,7 +7,7 @@ from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 
 
-class EnhancedDMI(BaseIndicator, PatternSignalMixin):
+class EnhancedDmi(BaseIndicator, PatternSignalMixin):
     """
     增强型DMI指标
     
@@ -40,7 +40,7 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         self._result = None
         self.market_factors = {}  # 用于存储市场因子
         
-    def set_market_environment(self, environment: str) -> None:
+    def set_market_environment_Dmi(self, environment: str) -> None:
         """
         设置市场环境
         
@@ -53,20 +53,20 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         
         self.market_environment = environment
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Dmi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算EnhancedDMI指标
+        计算Enhanced_dMI指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含EnhancedDMI指标的DataFrame
+            包含Enhanced_dMI指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_enhanceddmi(data)
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Dmi_Enhanced_Dmi(self, **kwargs):
         """
         设置指标参数
 
@@ -120,15 +120,15 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
             
         return adjusted_period
     
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_enhanceddmi(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算DMI指标
         
         Args:
-            data (pd.DataFrame): 包含OHLC数据的DataFrame
+            data (pd.DataFrame): 包含OHLC数据的Data_frame
             
         Returns:
-            pd.DataFrame: 包含DMI指标值的DataFrame
+            pd.DataFrame: 包含DMI指标值的Data_frame
         """
         # 调整周期
         self.period = self.adjust_period_by_volatility(data)
@@ -319,7 +319,7 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         分析ADX、+DI和-DI三线协同关系
         
         Returns:
-            pd.DataFrame: 包含协同分析结果的DataFrame
+            pd.DataFrame: 包含协同分析结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -371,7 +371,7 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         
         return synergy
     
-    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+    def generate_signals_Dmi_Enhanced_Dmi(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         生成交易信号
         
@@ -379,10 +379,10 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
             data (pd.DataFrame): 价格数据
             
         Returns:
-            pd.DataFrame: 包含交易信号的DataFrame
+            pd.DataFrame: 包含交易信号的Data_frame
         """
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Dmi(data)
             
         if self._result is None:
             return pd.DataFrame()
@@ -410,7 +410,7 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         signals['strong_downtrend'] = synergy['strong_downtrend']
         signals['potential_reversal'] = synergy['potential_reversal']
         signals['trend_strength'] = adx
-        signals['score'] = self.calculate_score()
+        signals['score'] = self.calculate_score_Dmi()
         signals['signal_type'] = pd.Series('', index=signals.index)
         signals['signal_desc'] = pd.Series('', index=signals.index)
         signals['confidence'] = pd.Series(0, index=signals.index)
@@ -433,7 +433,7 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         
         return signals
     
-    def calculate_score(self) -> pd.Series:
+    def calculate_score_Dmi(self) -> pd.Series:
         """
         计算DMI指标的综合评分
         
@@ -477,12 +477,12 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         # 这里可以根据需要添加更多的分析逻辑
         return {}
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Dmi_Enhanced_Dmi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算DMI指标的原始评分，作为`calculate_score`的别名
 
         Args:
-            data: 输入数据，包含价格数据的DataFrame
+            data: 输入数据，包含价格数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
@@ -490,17 +490,17 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Dmi(data)
 
         # 如果已有评分计算方法，直接使用
-        return self.calculate_score()
+        return self.calculate_score_Dmi()
     
-    def identify_patterns(self) -> pd.DataFrame:
+    def identify_patterns_Dmi_Enhanced_Dmi(self) -> pd.DataFrame:
         """
         识别DMI形态
         
         Returns:
-            pd.DataFrame: 包含形态识别结果的DataFrame
+            pd.DataFrame: 包含形态识别结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -576,13 +576,13 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Dmi_Enhanced_Dmi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算EnhancedDMI指标的置信度
+        计算Enhanced_dMI指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -632,26 +632,26 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Dmi_Enhanced_Dmi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EnhancedDMI相关形态
+        获取Enhanced_dMI相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Dmi(data)
 
         if self._result is None:
             return pd.DataFrame(index=data.index)
 
         # 使用现有的identify_patterns方法
-        patterns = self.identify_patterns()
+        patterns = self.identify_patterns_Dmi_Enhanced_Dmi()
 
         # 如果patterns为空，创建基本的形态DataFrame
         if patterns.empty:
@@ -676,9 +676,9 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Dmi_Enhanced_Dmi(self):
         """
-        注册EnhancedDMI指标的形态到全局形态注册表
+        注册Enhanced_dMI指标的形态到全局形态注册表
         """
         # 注册DMI交叉形态
         self.register_pattern_to_registry(
@@ -743,9 +743,9 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Dmi(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成EnhancedDMI交易信号
+        生成Enhanced_dMI交易信号
 
         Args:
             data: 输入数据
@@ -756,7 +756,7 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Dmi(data)
 
         if self._result is None:
             return {
@@ -807,7 +807,7 @@ class EnhancedDMI(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Dmi_Enhanced_Dmi(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

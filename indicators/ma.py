@@ -5,14 +5,14 @@ from typing import List, Dict, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from indicators.pattern_registry import PatternType
-from utils.logger import get_logger
+from indicators.pattern_registry import Pattern_type
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
-class MA(BaseIndicator, PatternSignalMixin):
+class MaMa(BaseIndicator, PatternSignalMixin):
     """
-    移动平均线(MA)
+    移动平均线(MA_Ma)
     分类：趋势类指标
     描述：计算价格的简单移动平均。
     """
@@ -21,26 +21,26 @@ class MA(BaseIndicator, PatternSignalMixin):
 
     def __init__(self, **kwargs):
         """
-        初始化移动平均线(MA)指标
+        初始化移动平均线(MA_Ma)指标
         Args:
             **kwargs: 指标参数，支持period、price_field等
         """
-        super().__init__(name="MA", description="移动平均线")
+        super().__init__(name="MA_Ma", description="移动平均线")
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_ma()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Ma(**kwargs)
 
         self.ma_cols = [f'{self.ma_type}{self.period}']
-        self.register_patterns()
+        self.register_patterns_Ma()
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_ma(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 20, "price_field": "close"}
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Ma(self, **kwargs):
         """
         设置指标参数
 
@@ -50,15 +50,15 @@ class MA(BaseIndicator, PatternSignalMixin):
                 - price_field: 价格字段选择
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
 
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)
 
         # 验证参数
-        is_valid, errors = validator.validate_indicator_parameters('MA', params)
+        is_valid, errors = validator.validate_indicator_parameters('MA_Ma', params)
         if not is_valid:
             # 静默处理验证失败，避免过多警告
             pass
@@ -74,7 +74,7 @@ class MA(BaseIndicator, PatternSignalMixin):
         if hasattr(self, 'ma_cols'):
             self.ma_cols = [f'{self.ma_type}{self.period}']
 
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_ma(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算简单移动平均线(SMA)
         """
@@ -170,7 +170,7 @@ class MA(BaseIndicator, PatternSignalMixin):
 
         return result_df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Ma(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算MA原始评分。
         """
@@ -214,13 +214,13 @@ class MA(BaseIndicator, PatternSignalMixin):
 
         return score.clip(0, 100)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Ma(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算MA指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -286,7 +286,7 @@ class MA(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Ma(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         识别MA技术形态
         - 金叉/死叉：基于最短和次短周期均线。
@@ -311,7 +311,7 @@ class MA(BaseIndicator, PatternSignalMixin):
         
         return pd.DataFrame(patterns)
 
-    def register_patterns(self):
+    def register_patterns_Ma(self):
         """
         注册与该指标相关的技术形态。
         """
@@ -324,16 +324,16 @@ class MA(BaseIndicator, PatternSignalMixin):
         
         self.register_pattern_to_registry(
             pattern_id=f"MA_{p_short}_{p_medium}_GOLDEN_CROSS",
-            display_name=f"MA({p_short},{p_medium})金叉",
+            display_name=f"MA_Ma({p_short},{p_medium})金叉",
             description=f"当短期MA({p_short})上穿中期MA({p_medium})时，被视为看涨信号。",
-            pattern_type=PatternType.BULLISH,
+            pattern_type=Pattern_type.BULLISH,
             polarity="POSITIVE"
         )
         self.register_pattern_to_registry(
             pattern_id=f"MA_{p_short}_{p_medium}_DEATH_CROSS",
-            display_name=f"MA({p_short},{p_medium})死叉",
+            display_name=f"MA_Ma({p_short},{p_medium})死叉",
             description=f"当短期MA({p_short})下穿中期MA({p_medium})时，被视为看跌信号。",
-            pattern_type=PatternType.BEARISH,
+            pattern_type=Pattern_type.BEARISH,
             polarity="NEGATIVE"
         )
 
@@ -397,7 +397,7 @@ class MA(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Ma(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -424,7 +424,7 @@ class MA(BaseIndicator, PatternSignalMixin):
         pattern_info_map = {
             f"MA_{p_short}_{p_medium}_GOLDEN_CROSS": {
                 "id": f"MA_{p_short}_{p_medium}_GOLDEN_CROSS",
-                "name": f"MA({p_short},{p_medium})金叉",
+                "name": f"MA_Ma({p_short},{p_medium})金叉",
                 "description": f"短期MA({p_short})上穿中期MA({p_medium})，看涨信号",
                 "type": "BULLISH",
                 "strength": "STRONG",
@@ -432,7 +432,7 @@ class MA(BaseIndicator, PatternSignalMixin):
             },
             f"MA_{p_short}_{p_medium}_DEATH_CROSS": {
                 "id": f"MA_{p_short}_{p_medium}_DEATH_CROSS",
-                "name": f"MA({p_short},{p_medium})死叉",
+                "name": f"MA_Ma({p_short},{p_medium})死叉",
                 "description": f"短期MA({p_short})下穿中期MA({p_medium})，看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG",

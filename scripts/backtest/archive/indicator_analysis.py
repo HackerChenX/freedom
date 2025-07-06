@@ -10,6 +10,8 @@ import pandas as pd
 from typing import List, Dict, Any, Tuple, Optional, Union
 from collections import defaultdict
 import warnings
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 warnings.filterwarnings('ignore')
 
 # 添加项目根目录到Python路径
@@ -43,7 +45,7 @@ class IndicatorAnalyzer:
         self.stocks_data = []
         self.pattern_stats = defaultdict(int)
         
-    def analyze_stock(self, code: str, buy_date: str, pattern_type: str = "", 
+    def analyze_stock_Analysis_Indicator_Analysis(self, code: str, buy_date: str, pattern_type: str = "", 
                      days_before: int = 10, days_after: int = 5) -> Dict[str, Any]:
         """
         分析单个股票买点附近的技术指标
@@ -1131,11 +1133,11 @@ class IndicatorAnalyzer:
             raise ValueError("股票列表、买点日期列表和类型列表长度必须一致")
             
         for i, code in enumerate(stock_list):
-            self.analyze_stock(code, buy_dates[i], pattern_types[i])
+            self.analyze_stock_Analysis_Indicator_Analysis(code, buy_dates[i], pattern_types[i])
             
         return self.get_analysis_result()
     
-    def analyze_from_csv(self, csv_file):
+    def analyze_from_csv_Analysis(self, csv_file):
         """
         从CSV文件加载股票买点数据并分析
         
@@ -1162,7 +1164,7 @@ class IndicatorAnalyzer:
             logger.error(f"从CSV文件 {csv_file} 分析买点指标时出错: {e}")
             return {}
     
-    def get_common_patterns(self, threshold=0.5):
+    def get_common_patterns_Analysis(self, threshold=0.5):
         """
         获取共性的技术形态
         
@@ -1206,7 +1208,7 @@ class IndicatorAnalyzer:
             
         return {
             'stocks_count': len(self.stocks_data),
-            'common_patterns': self.get_common_patterns(),
+            'common_patterns': self.get_common_patterns_Analysis(),
             'stocks_data': self.stocks_data
         }
     
@@ -1252,7 +1254,7 @@ def analyze_buypoint_indicators(input_source, source_type="csv", output_file=Non
     analyzer = IndicatorAnalyzer()
     
     if source_type == "csv":
-        result = analyzer.analyze_from_csv(input_source)
+        result = analyzer.analyze_from_csv_Analysis(input_source)
     elif source_type == "list":
         # 输入格式: [{"code": "000001", "buy_date": "20240101", "pattern_type": "回踩反弹"}, ...]
         stock_list = [item["code"] for item in input_source]

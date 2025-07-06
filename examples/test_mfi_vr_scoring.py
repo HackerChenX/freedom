@@ -24,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def generate_test_data(length=100):
+def generate_test_data_Scoring_Test_Mfi_Vr_Scoring(length=100):
     """生成测试数据"""
     np.random.seed(42)  # 固定随机种子以确保结果可重现
     
@@ -83,13 +83,13 @@ def generate_test_data(length=100):
     return data
 
 
-def test_mfi_scoring():
+def test_mfi_scoring_Scoring():
     """测试MFI指标评分功能"""
     print("\n=== 测试MFI指标评分功能 ===")
     
     try:
         # 生成测试数据
-        data = generate_test_data(100)
+        data = generate_test_data_Scoring_Test_Mfi_Vr_Scoring(100)
         print(f"✓ 生成测试数据完成，数据长度: {len(data)}")
         
         # 创建MFI指标
@@ -175,7 +175,7 @@ def test_vr_scoring():
     
     try:
         # 生成测试数据
-        data = generate_test_data(100)
+        data = generate_test_data_Scoring_Test_Mfi_Vr_Scoring(100)
         print(f"✓ 生成测试数据完成，数据长度: {len(data)}")
         
         # 创建VR指标
@@ -261,7 +261,7 @@ def test_mfi_vr_patterns():
     
     try:
         # 生成测试数据
-        data = generate_test_data(100)
+        data = generate_test_data_Scoring_Test_Mfi_Vr_Scoring(100)
         print(f"✓ 生成测试数据完成，数据长度: {len(data)}")
         
         # 测试MFI形态识别
@@ -285,7 +285,7 @@ def test_mfi_vr_patterns():
         return False
 
 
-def main():
+def main_testmfivrscoring():
     """主函数"""
     print("开始测试MFI和VR指标评分功能...")
     
@@ -293,7 +293,7 @@ def main():
     test_results = []
     
     # 测试MFI评分
-    test_results.append(test_mfi_scoring())
+    test_results.append(test_mfi_scoring_Scoring())
     
     # 测试VR评分
     test_results.append(test_vr_scoring())
@@ -320,4 +320,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testmfivrscoring() 

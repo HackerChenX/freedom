@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 第二批测试：趋势指标扩展（10个）
 
@@ -24,20 +26,21 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class Phase2TrendIndicatorTester:
+class Phase2trendindicatortesterBatchTestPhase2TrendIndicators:
     """第二批趋势指标测试器"""
     
     def __init__(self):
-        self.db = get_clickhouse_db()
+        self.data_access = get_container().resolve(IDataAccess)
         self.stock_pool_size = 100
         self.test_stocks_per_indicator = 5
-        self.latest_date = self._get_latest_data_date()
+        self.latest_date = self._get_latest_data_date_Batch_Test_Phase2_Trend_Indicators()
         
         # 第二批测试指标配置
         self.indicators_config = {
@@ -117,10 +120,10 @@ class Phase2TrendIndicatorTester:
         logger.info(f"最新数据日期: {self.latest_date}")
         logger.info(f"测试指标数量: {len(self.indicators_config)}")
     
-    def _get_latest_data_date(self) -> str:
+    def _get_latest_data_date_Batch_Test_Phase2_Trend_Indicators(self) -> str:
         """获取数据库中的最新数据日期"""
         try:
-            result = self.db.query('SELECT MAX(date) as max_date FROM stock_info LIMIT 1')
+            result = self.data_access.execute_query('SELECT MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01' LIMIT 1')
             if not result.empty:
                 return str(result.iloc[0]['max_date'])
             return "2025-05-23"
@@ -128,7 +131,7 @@ class Phase2TrendIndicatorTester:
             logger.error(f"获取最新数据日期失败: {e}")
             return "2025-05-23"
     
-    def _get_stock_pool(self, period: str = '1d') -> List[str]:
+    def _get_stock_pool_Batch_Test_Phase2_Trend_Indicators(self, period: str = '1d') -> List[str]:
         """获取股票池"""
         try:
             table_name = 'stock_info'
@@ -143,7 +146,7 @@ class Phase2TrendIndicatorTester:
             LIMIT {self.stock_pool_size}
             """
             
-            result = self.db.query(query)
+            result = self.data_access.execute_query(query)
             if not result.empty:
                 return result['code'].tolist()
             return []
@@ -151,7 +154,7 @@ class Phase2TrendIndicatorTester:
             logger.error(f"获取股票池失败: {e}")
             return []
     
-    def _load_stock_data(self, stock_codes: List[str], period: str = '1d', 
+    def _load_stock_data_Batch_Test_Phase2_Trend_Indicators(self, stock_codes: List[str], period: str = '1d', 
                         days_back: int = 100) -> pd.DataFrame:
         """加载股票数据"""
         try:
@@ -168,7 +171,7 @@ class Phase2TrendIndicatorTester:
             LIMIT {len(stock_codes) * days_back}
             """
             
-            result = self.db.query(query)
+            result = self.data_access.execute_query(query)
             if not result.empty:
                 # 转换数据类型
                 result['date'] = pd.to_datetime(result['date'])
@@ -183,21 +186,21 @@ class Phase2TrendIndicatorTester:
             logger.error(f"加载股票数据失败: {e}")
             return pd.DataFrame()
     
-    def _calculate_ema(self, prices: pd.Series, period: int) -> pd.Series:
+    def _calculate_ema_Batch_Test_Phase2_Trend_Indicators(self, prices: pd.Series, period: int) -> pd.Series:
         """计算指数移动平均线"""
         return prices.ewm(span=period, adjust=False).mean()
     
-    def _calculate_wma(self, prices: pd.Series, period: int) -> pd.Series:
+    def _calculate_wma_Batch_Test_Phase2_Trend_Indicators(self, prices: pd.Series, period: int) -> pd.Series:
         """计算加权移动平均线"""
-        def wma_single(values):
+        def wma_single_Batch_Test_Phase2_Trend_Indicators(values):
             if len(values) < period:
                 return np.nan
             weights = np.arange(1, period + 1)
             return np.dot(values[-period:], weights) / weights.sum()
         
-        return prices.rolling(window=period).apply(wma_single, raw=True)
+        return prices.rolling(window=period).apply(wma_single_Batch_Test_Phase2_Trend_Indicators, raw=True)
     
-    def _calculate_trix(self, prices: pd.Series, period: int) -> pd.Series:
+    def _calculate_trix_Batch_Test_Phase2_Trend_Indicators(self, prices: pd.Series, period: int) -> pd.Series:
         """计算TRIX指标"""
         # 三重指数平滑
         ema1 = prices.ewm(span=period, adjust=False).mean()
@@ -208,7 +211,7 @@ class Phase2TrendIndicatorTester:
         trix = (ema3 - ema3.shift(1)) / ema3.shift(1) * 10000
         return trix
     
-    def _calculate_dmi_adx(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int):
+    def _calculate_dmi_adx_Batch_Test_Phase2_Trend_Indicators(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int):
         """计算DMI和ADX指标"""
         # 计算TR (True Range)
         high_low = high - low
@@ -234,7 +237,7 @@ class Phase2TrendIndicatorTester:
         
         return plus_di, minus_di, adx
     
-    def _calculate_sar(self, high: pd.Series, low: pd.Series, close: pd.Series, 
+    def _calculate_sar_Batch_Test_Phase2_Trend_Indicators(self, high: pd.Series, low: pd.Series, close: pd.Series, 
                       acceleration: float = 0.02, maximum: float = 0.2):
         """计算SAR指标"""
         sar = pd.Series(index=close.index, dtype=float)
@@ -272,31 +275,31 @@ class Phase2TrendIndicatorTester:
         
         return sar
     
-    def _calculate_aroon(self, high: pd.Series, low: pd.Series, period: int):
+    def _calculate_aroon_Batch_Test_Phase2_Trend_Indicators(self, high: pd.Series, low: pd.Series, period: int):
         """计算Aroon指标"""
-        def aroon_up_single(values):
+        def aroon_up_single_Batch_Test_Phase2_Trend_Indicators(values):
             if len(values) < period:
                 return np.nan
             return ((period - np.argmax(values[-period:])) / period) * 100
         
-        def aroon_down_single(values):
+        def aroon_down_single_Batch_Test_Phase2_Trend_Indicators(values):
             if len(values) < period:
                 return np.nan
             return ((period - np.argmin(values[-period:])) / period) * 100
         
-        aroon_up = high.rolling(window=period).apply(aroon_up_single, raw=True)
-        aroon_down = low.rolling(window=period).apply(aroon_down_single, raw=True)
+        aroon_up = high.rolling(window=period).apply(aroon_up_single_Batch_Test_Phase2_Trend_Indicators, raw=True)
+        aroon_down = low.rolling(window=period).apply(aroon_down_single_Batch_Test_Phase2_Trend_Indicators, raw=True)
         aroon_oscillator = aroon_up - aroon_down
         
         return aroon_up, aroon_down, aroon_oscillator
     
-    def _calculate_bias(self, close: pd.Series, period: int) -> pd.Series:
+    def _calculate_bias_Batch_Test_Phase2_Trend_Indicators(self, close: pd.Series, period: int) -> pd.Series:
         """计算乖离率"""
         ma = close.rolling(window=period).mean()
         bias = ((close - ma) / ma) * 100
         return bias
     
-    def _calculate_vortex(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int):
+    def _calculate_vortex_Batch_Test_Phase2_Trend_Indicators(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int):
         """计算涡流指标"""
         # 计算VM (Vortex Movement)
         vm_plus = np.abs(high - low.shift(1))
@@ -314,13 +317,13 @@ class Phase2TrendIndicatorTester:
         
         return vi_plus, vi_minus
     
-    def validate_indicator(self, indicator_name: str, period: str = '1d') -> Dict[str, Any]:
+    def validate_indicator_Batch_Test_Phase2_Trend_Indicators(self, indicator_name: str, period: str = '1d') -> Dict[str, Any]:
         """验证单个指标"""
         logger.info(f"开始验证指标: {indicator_name} (周期: {period})")
         
         try:
             # 获取股票池
-            stock_pool = self._get_stock_pool(period)
+            stock_pool = self._get_stock_pool_Batch_Test_Phase2_Trend_Indicators(period)
             if not stock_pool:
                 return {
                     'indicator': indicator_name,
@@ -335,7 +338,7 @@ class Phase2TrendIndicatorTester:
             test_stocks = stock_pool[:self.test_stocks_per_indicator]
             
             # 加载数据
-            stock_data = self._load_stock_data(test_stocks, period)
+            stock_data = self._load_stock_data_Batch_Test_Phase2_Trend_Indicators(test_stocks, period)
             if stock_data.empty:
                 return {
                     'indicator': indicator_name,
@@ -347,7 +350,7 @@ class Phase2TrendIndicatorTester:
                 }
             
             # 执行指标计算验证
-            return self._validate_trend_indicator(stock_data, period, indicator_name)
+            return self._validate_trend_indicator_Batch_Test_Phase2_Trend_Indicators(stock_data, period, indicator_name)
             
         except Exception as e:
             logger.error(f"验证指标 {indicator_name} 失败: {e}")
@@ -360,7 +363,7 @@ class Phase2TrendIndicatorTester:
                 'successful_stocks': 0
             }
     
-    def _validate_trend_indicator(self, stock_data: pd.DataFrame, period: str, 
+    def _validate_trend_indicator_Batch_Test_Phase2_Trend_Indicators(self, stock_data: pd.DataFrame, period: str, 
                                 indicator_name: str) -> Dict[str, Any]:
         """验证趋势指标"""
         config = self.indicators_config[indicator_name]
@@ -382,28 +385,28 @@ class Phase2TrendIndicatorTester:
                 # 根据指标类型计算
                 result = None
                 if indicator_name == 'EMA':
-                    ema = self._calculate_ema(stock_df['close'], config['params']['period'])
+                    ema = self._calculate_ema_Batch_Test_Phase2_Trend_Indicators(stock_df['close'], config['params']['period'])
                     result = {
                         'value': float(ema.iloc[-1]) if not pd.isna(ema.iloc[-1]) else None,
                         'signal': 'BUY' if latest_data['close'] > ema.iloc[-1] else 'SELL'
                     }
                 
                 elif indicator_name == 'WMA':
-                    wma = self._calculate_wma(stock_df['close'], config['params']['period'])
+                    wma = self._calculate_wma_Batch_Test_Phase2_Trend_Indicators(stock_df['close'], config['params']['period'])
                     result = {
                         'value': float(wma.iloc[-1]) if not pd.isna(wma.iloc[-1]) else None,
                         'signal': 'BUY' if latest_data['close'] > wma.iloc[-1] else 'SELL'
                     }
                 
                 elif indicator_name == 'TRIX':
-                    trix = self._calculate_trix(stock_df['close'], config['params']['period'])
+                    trix = self._calculate_trix_Batch_Test_Phase2_Trend_Indicators(stock_df['close'], config['params']['period'])
                     result = {
                         'value': float(trix.iloc[-1]) if not pd.isna(trix.iloc[-1]) else None,
                         'signal': 'BUY' if trix.iloc[-1] > 0 else 'SELL'
                     }
                 
                 elif indicator_name in ['DMI', 'ADX']:
-                    plus_di, minus_di, adx = self._calculate_dmi_adx(
+                    plus_di, minus_di, adx = self._calculate_dmi_adx_Batch_Test_Phase2_Trend_Indicators(
                         stock_df['high'], stock_df['low'], stock_df['close'], 
                         config['params']['period']
                     )
@@ -420,7 +423,7 @@ class Phase2TrendIndicatorTester:
                         }
                 
                 elif indicator_name == 'SAR':
-                    sar = self._calculate_sar(stock_df['high'], stock_df['low'], stock_df['close'],
+                    sar = self._calculate_sar_Batch_Test_Phase2_Trend_Indicators(stock_df['high'], stock_df['low'], stock_df['close'],
                                             config['params']['acceleration'], config['params']['maximum'])
                     result = {
                         'value': float(sar.iloc[-1]) if not pd.isna(sar.iloc[-1]) else None,
@@ -428,7 +431,7 @@ class Phase2TrendIndicatorTester:
                     }
                 
                 elif indicator_name == 'AROON':
-                    aroon_up, aroon_down, aroon_osc = self._calculate_aroon(
+                    aroon_up, aroon_down, aroon_osc = self._calculate_aroon_Batch_Test_Phase2_Trend_Indicators(
                         stock_df['high'], stock_df['low'], config['params']['period']
                     )
                     result = {
@@ -448,14 +451,14 @@ class Phase2TrendIndicatorTester:
                     }
                 
                 elif indicator_name == 'BIAS':
-                    bias = self._calculate_bias(stock_df['close'], config['params']['period'])
+                    bias = self._calculate_bias_Batch_Test_Phase2_Trend_Indicators(stock_df['close'], config['params']['period'])
                     result = {
                         'value': float(bias.iloc[-1]) if not pd.isna(bias.iloc[-1]) else None,
                         'signal': 'OVERBOUGHT' if bias.iloc[-1] > 6 else ('OVERSOLD' if bias.iloc[-1] < -6 else 'NORMAL')
                     }
                 
                 elif indicator_name == 'VORTEX':
-                    vi_plus, vi_minus = self._calculate_vortex(
+                    vi_plus, vi_minus = self._calculate_vortex_Batch_Test_Phase2_Trend_Indicators(
                         stock_df['high'], stock_df['low'], stock_df['close'], 
                         config['params']['period']
                     )
@@ -491,7 +494,7 @@ class Phase2TrendIndicatorTester:
             'sample_results': detailed_results[:3]  # 显示前3个结果作为样例
         }
     
-    def run_batch_test(self) -> Dict[str, Any]:
+    def run_batch_test_Batch_Test_Phase2_Trend_Indicators(self) -> Dict[str, Any]:
         """运行第二批批量测试"""
         logger.info("=" * 60)
         logger.info("开始第二批测试：趋势指标扩展")
@@ -516,7 +519,7 @@ class Phase2TrendIndicatorTester:
             logger.info(f"进度: {i}/{total_indicators} - 测试指标: {indicator_name}")
             
             for period in config['periods']:
-                result = self.validate_indicator(indicator_name, period)
+                result = self.validate_indicator_Batch_Test_Phase2_Trend_Indicators(indicator_name, period)
                 
                 key = f"{indicator_name}_{period}"
                 validation_results['results'][key] = result
@@ -542,10 +545,10 @@ class Phase2TrendIndicatorTester:
             'average_time_per_indicator': round(execution_time / total_tests, 2)
         }
         
-        self._print_batch_summary(validation_results)
+        self._print_batch_summary_Batch_Test_Phase2_Trend_Indicators(validation_results)
         return validation_results
     
-    def _print_batch_summary(self, results: Dict[str, Any]):
+    def _print_batch_summary_Batch_Test_Phase2_Trend_Indicators(self, results: Dict[str, Any]):
         """打印批量测试总结"""
         logger.info("\n" + "=" * 60)
         logger.info("第二批测试总结：趋势指标扩展")
@@ -583,8 +586,8 @@ class Phase2TrendIndicatorTester:
 def main():
     """主函数"""
     try:
-        tester = Phase2TrendIndicatorTester()
-        results = tester.run_batch_test()
+        tester = Phase2TrendIndicatorTester_Batch_Test_Phase2_Trend_Indicators()
+        results = tester.run_batch_test_Batch_Test_Phase2_Trend_Indicators()
         
         # 保存测试结果
         import json

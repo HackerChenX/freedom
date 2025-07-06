@@ -14,16 +14,16 @@ import os
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
-from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
+from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
+from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
 
-class TestSharedConditionEvaluator(unittest.TestCase):
+class Test_shared_condition_evaluator(unittest.Test_case):
     """共享条件评估器测试类"""
     
-    def setUp(self):
+    def set_up_Evaluator(self):
         """测试前准备"""
-        self.evaluator = SharedConditionEvaluator()
+        self.evaluator = Shared_condition_evaluator()
         
         # 准备测试数据
         self.test_data = {
@@ -68,7 +68,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'value': 11.0
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertTrue(result)  # 最新收盘价12.2 > 11.0
+        self.assert_true(result)  # 最新收盘价12.2 > 11.0
         
         # 测试成交量条件
         condition = {
@@ -78,7 +78,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'value': 1200
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertFalse(result)  # 最新成交量1600 < 1200 为False
+        self.assert_false(result)  # 最新成交量1600 < 1200 为False
         
         # 测试字段比较
         condition = {
@@ -88,7 +88,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'reference_field': 'ma5'
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertTrue(result)  # 12.2 > 11.7
+        self.assert_true(result)  # 12.2 > 11.7
     
     def test_indicator_condition_evaluation(self):
         """测试指标条件评估"""
@@ -102,7 +102,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'reference_field': '10'
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertTrue(result)  # 11.7 > 11.3
+        self.assert_true(result)  # 11.7 > 11.3
         
         # 测试RSI条件
         condition = {
@@ -113,7 +113,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'value': 70
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertTrue(result)  # 68 < 70
+        self.assert_true(result)  # 68 < 70
         
         # 测试MACD条件
         condition = {
@@ -124,7 +124,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'value': 0
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertTrue(result)  # 0.22 > 0
+        self.assert_true(result)  # 0.22 > 0
     
     def test_pattern_condition_evaluation(self):
         """测试形态条件评估"""
@@ -134,21 +134,21 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'pattern': 'touch_ma'
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data)
-        self.assertTrue(result)
+        self.assert_true(result)
         
         condition = {
             'type': 'pattern',
             'pattern': 'ma_up'
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data)
-        self.assertFalse(result)
+        self.assert_false(result)
         
         condition = {
             'type': 'pattern',
             'pattern': 'kpattern'
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data)
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_logical_condition_evaluation(self):
         """测试逻辑条件评估"""
@@ -170,7 +170,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             ]
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertTrue(result)  # 两个条件都为True
+        self.assert_true(result)  # 两个条件都为True
         
         # 测试OR逻辑
         condition = {
@@ -190,7 +190,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             ]
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data, date_idx=-1)
-        self.assertTrue(result)  # 第二个条件为True
+        self.assert_true(result)  # 第二个条件为True
         
         # 测试NOT逻辑
         condition = {
@@ -204,19 +204,19 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             ]
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data)
-        self.assertTrue(result)  # NOT False = True
+        self.assert_true(result)  # NOT false = True
     
     def test_expression_evaluation(self):
         """测试表达式评估"""
         # 简单表达式
         expression = "12.2 > 11.0"
         result = self.evaluator.evaluate_condition(expression, self.test_data)
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 复合表达式
         expression = "12.2 > 11.0 AND 68 < 70"
         result = self.evaluator.evaluate_condition(expression, self.test_data)
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 包含变量的表达式（需要实现变量替换）
         # 这个测试可能需要根据实际的变量替换逻辑调整
@@ -252,7 +252,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
         
         # 测试AND逻辑
         result = self.evaluator.evaluate_conditions(conditions, self.test_data, logic="AND", date_idx=-1)
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 测试OR逻辑
         conditions_with_false = [
@@ -268,38 +268,38 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             }
         ]
         result = self.evaluator.evaluate_conditions(conditions_with_false, self.test_data, logic="OR")
-        self.assertTrue(result)  # 第二个条件为True
+        self.assert_true(result)  # 第二个条件为True
     
     def test_field_value_retrieval(self):
         """测试字段值获取"""
         # 测试数组字段
         value = self.evaluator._get_field_value('close', self.test_data, date_idx=-1)
-        self.assertEqual(value, 12.2)
+        self.assert_equal(value, 12.2)
         
         value = self.evaluator._get_field_value('close', self.test_data, date_idx=0)
-        self.assertEqual(value, 10.0)
+        self.assert_equal(value, 10.0)
         
         # 测试标量字段
         value = self.evaluator._get_field_value('touch_ma', self.test_data)
-        self.assertEqual(value, 1.0)  # True转换为1.0
+        self.assert_equal(value, 1.0)  # True转换为1.0
         
         # 测试不存在的字段
         value = self.evaluator._get_field_value('nonexistent', self.test_data)
-        self.assertIsNone(value)
+        self.assert_is_none(value)
     
     def test_indicator_value_retrieval(self):
         """测试指标值获取"""
         # 测试MA指标
         value = self.evaluator._get_indicator_value('ma', '5', self.test_data, date_idx=-1)
-        self.assertEqual(value, 11.7)
+        self.assert_equal(value, 11.7)
         
         # 测试RSI指标
         value = self.evaluator._get_indicator_value('rsi', '', self.test_data, date_idx=-1)
-        self.assertEqual(value, 68)
+        self.assert_equal(value, 68)
         
         # 测试KDJ指标
         value = self.evaluator._get_indicator_value('kdj', 'k', self.test_data, date_idx=-1)
-        self.assertEqual(value, 65)
+        self.assert_equal(value, 65)
     
     def test_comparison_operators(self):
         """测试比较运算符"""
@@ -325,10 +325,10 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             result = self.evaluator.evaluate_condition(condition, test_data)
             self.assertEqual(result, expected, f"Failed for {value1} {op} {value2}")
     
-    def test_cache_functionality(self):
+    def test_cache_functionality_Evaluator(self):
         """测试缓存功能"""
         # 创建新的评估器实例以避免之前测试的影响
-        fresh_evaluator = SharedConditionEvaluator()
+        fresh_evaluator = Shared_condition_evaluator()
         fresh_evaluator.clear_cache()  # 清空缓存
         fresh_evaluator.reset_stats()  # 重置统计
         
@@ -348,7 +348,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
         stats2 = fresh_evaluator.get_stats()
         
         # 结果应该相同
-        self.assertEqual(result1, result2)
+        self.assert_equal(result1, result2)
         
         # 验证缓存工作正常（第二次应该有缓存命中）
         self.assertGreaterEqual(stats2['cache_hits'], 1)
@@ -378,7 +378,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
         self.assertGreaterEqual(stats['cache_hit_rate'], 0)
         self.assertLessEqual(stats['cache_hit_rate'], 1)
     
-    def test_error_handling(self):
+    def test_error_handling_Evaluator(self):
         """测试错误处理"""
         # 不支持的条件类型
         condition = {
@@ -386,7 +386,7 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'field': 'close'
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data)
-        self.assertFalse(result)  # 错误情况应返回False
+        self.assert_false(result)  # 错误情况应返回False
         
         # 不支持的运算符
         condition = {
@@ -397,8 +397,8 @@ class TestSharedConditionEvaluator(unittest.TestCase):
         }
         try:
             result = self.evaluator.evaluate_condition(condition, self.test_data)
-            self.assertFalse(result)
-        except ValueError:
+            self.assert_false(result)
+        except Value_error:
             pass  # 预期的错误
         
         # 不存在的字段
@@ -409,13 +409,13 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'value': 11.0
         }
         result = self.evaluator.evaluate_condition(condition, self.test_data)
-        self.assertFalse(result)
+        self.assert_false(result)
     
-    def test_edge_cases(self):
+    def test_edge_cases_Evaluator(self):
         """测试边界情况"""
         # 空条件列表
         result = self.evaluator.evaluate_conditions([], self.test_data)
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 空数据
         condition = {
@@ -425,16 +425,16 @@ class TestSharedConditionEvaluator(unittest.TestCase):
             'value': 11.0
         }
         result = self.evaluator.evaluate_condition(condition, {})
-        self.assertFalse(result)
+        self.assert_false(result)
         
         # 超出索引范围
         value = self.evaluator._get_field_value('close', self.test_data, date_idx=100)
-        self.assertEqual(value, 12.2)  # 应该返回最新值
+        self.assert_equal(value, 12.2)  # 应该返回最新值
     
     def test_integration_with_unified_indicator_engine(self):
         """测试与统一指标引擎的集成"""
         # 确保条件评估器正确使用统一指标引擎
-        self.assertIsInstance(self.evaluator.indicator_engine, UnifiedIndicatorEngine)
+        self.assert_is_instance(self.evaluator.indicator_engine, Unified_indicator_engine)
         
         # 测试指标引擎的使用
         # 这里可以添加更多集成测试

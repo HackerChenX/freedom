@@ -18,26 +18,26 @@ import json
 from collections import defaultdict
 import sys
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor, time_it
 from utils.path_utils import get_backtest_result_dir
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from strategy.base_strategy import BaseStrategy
+# # from strategy import  # 分层架构违规，已注释  # LAYER VIOLATION: utils should not import strategy BaseStrategy
 
-class StrategyValidator:
+class StrategyvalidatorValidator:
     """
     策略验证器类
     
     验证选股策略的有效性和稳定性
     """
     
-    def __init__(self):
+    def __init___64(self):
         """初始化策略验证器"""
         self.result_dir = get_backtest_result_dir()
         os.makedirs(self.result_dir, exist_ok=True)
@@ -467,8 +467,8 @@ class StrategyValidator:
         }
     
     @staticmethod
-    def get_instance() -> 'StrategyValidator':
+    def get_instance_Validator() -> 'StrategyValidator':
         """获取单例实例"""
         if not hasattr(StrategyValidator, '_instance'):
-            StrategyValidator._instance = StrategyValidator()
+            StrategyValidator._instance = StrategyValidator_Validator()
         return StrategyValidator._instance 

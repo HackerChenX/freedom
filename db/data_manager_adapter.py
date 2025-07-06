@@ -1,10 +1,12 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
 """
 数据管理器适配器
 
-提供向后兼容的API接口，将现有的DataManager调用适配到EnhancedDataManager
+提供向后兼容的API接口，将现有的Data_manager调用适配到Enhanced_data_manager
 """
 
 import time
@@ -17,19 +19,19 @@ from db.unified_data_manager import get_unified_data_manager
 from db.enhanced_connection_pool import initialize_connection_pool
 from monitoring.performance_monitor import get_performance_monitor
 from utils.stability_enhancer import get_stability_manager, retry
-from utils.logger import get_logger
-from utils.exceptions import DataAccessError, DataValidationError
+from utils.logger import getLogger
+from utils.exceptions import Data_access_error, Data_validation_error
 from enums.period import Period
-from models.stock_info import StockInfo
+from models.stock_info WHERE 1=1 import Stock_info
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class DataManagerAdapter:
+class DatamanageradapterAdapter:
     """
     数据管理器适配器
     
-    提供与原有DataManager兼容的API接口，内部使用增强的数据管理器
+    提供与原有Data_manager兼容的API接口，内部使用增强的数据管理器
     """
     
     def __init__(self, enable_monitoring: bool = True, enable_stability: bool = True):
@@ -76,11 +78,11 @@ class DataManagerAdapter:
         self.stability_manager = None
         if enable_stability:
             self.stability_manager = get_stability_manager()
-            self._setup_stability_features()
+            self._setup_stability_features_Data_Manager_Adapter()
         
         logger.info("数据管理器适配器初始化完成，已启用优化功能")
     
-    def _setup_stability_features(self):
+    def _setup_stability_features_Data_Manager_Adapter(self):
         """设置稳定性功能"""
         if not self.stability_manager:
             return
@@ -98,7 +100,7 @@ class DataManagerAdapter:
             logger.warning(f"使用降级服务获取股票数据: {stock_code}")
             # 返回空的StockInfo对象
             empty_df = pd.DataFrame()
-            return StockInfo(empty_df)
+            return Stock_info(empty_df)
         
         self.stability_manager.register_degradation(
             'get_stock_data',
@@ -108,7 +110,7 @@ class DataManagerAdapter:
         )
     
     @retry(max_attempts=3, delay=0.5)
-    def get_stock_data(self,
+    def get_stock_data_Adapter(self,
                       stock_code: str,
                       start_date: Optional[str] = None,
                       end_date: Optional[str] = None,
@@ -131,12 +133,12 @@ class DataManagerAdapter:
         """
         try:
             # 转换周期参数
-            level = self._convert_period_to_level(period)
+            level = self._convert_period_to_level_Data_Manager_Adapter(period)
 
             # 如果是30分钟数据且数据库中不存在，尝试从15分钟数据计算
-            if period in ['30min', 'min30'] and not self._has_30min_data(stock_code, start_date, end_date):
+            if period in ['30min', 'min30'] and not self._has_30min_data_Data_Manager_Adapter(stock_code, start_date, end_date):
                 logger.info(f"数据库中没有{stock_code}的30分钟数据，尝试从15分钟数据计算")
-                return self._generate_30min_from_15min(stock_code, start_date, end_date, lookback_days)
+                return self._generate_30min_from_15min_Data_Manager_Adapter(stock_code, start_date, end_date, lookback_days)
 
             # 优化历史数据查询：根据周期和指标需求调整查询范围
             optimized_start_date, optimized_limit = self._optimize_data_query(
@@ -144,7 +146,7 @@ class DataManagerAdapter:
             )
 
             # 使用增强数据管理器获取数据
-            stock_info = self.enhanced_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 level=level,
                 start_date=optimized_start_date,
@@ -159,7 +161,7 @@ class DataManagerAdapter:
             if not df.empty and len(df) < self._get_min_data_requirement(period):
                 logger.warning(f"数据不足({len(df)}条)，尝试扩大查询范围")
                 extended_start_date = self._extend_start_date(optimized_start_date, period)
-                stock_info = self.enhanced_manager.get_stock_info(
+                stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
                     stock_code=stock_code,
                     level=level,
                     start_date=extended_start_date,
@@ -175,7 +177,7 @@ class DataManagerAdapter:
             logger.error(f"获取股票数据失败: {stock_code}, 错误: {e}")
             raise DataAccessError(f"获取股票数据失败: {e}")
     
-    def get_stock_info(self, 
+    def get_stock_info_Adapter(self, 
                       stock_code: Union[str, List[str]] = None,
                       level: Union[str, Period] = None,
                       start_date: Optional[str] = None,
@@ -196,9 +198,9 @@ class DataManagerAdapter:
             order_by: 排序规则
             
         Returns:
-            StockInfo: 股票数据对象
+            Stock_info: 股票数据对象
         """
-        return self.enhanced_manager.get_stock_info(
+        return self.enhanced_manager.get_stock_info_Adapter(
             stock_code=stock_code,
             level=level,
             start_date=start_date,
@@ -208,7 +210,7 @@ class DataManagerAdapter:
             order_by=order_by
         )
     
-    def get_stock_list(self,
+    def get_stock_list_Adapter(self,
                       market: Optional[str] = None,
                       industry: Optional[str] = None,
                       limit: Optional[int] = None) -> List[str]:
@@ -238,8 +240,7 @@ class DataManagerAdapter:
 
                 # 查询不重复的股票代码
                 query = f"""
-                SELECT DISTINCT code
-                FROM stock_info
+                query_executor.get_stock_list() WHERE 1=1
                 WHERE {where_clause}
                 ORDER BY code
                 """
@@ -259,7 +260,7 @@ class DataManagerAdapter:
             logger.error(f"获取股票列表失败: {e}")
             return []
     
-    def get_stock_industry(self, stock_code: str) -> Optional[str]:
+    def get_stock_industry_Adapter(self, stock_code: str) -> Optional[str]:
         """
         获取股票行业（兼容原有API）
         
@@ -270,7 +271,7 @@ class DataManagerAdapter:
             Optional[str]: 行业名称
         """
         try:
-            stock_info = self.enhanced_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 limit=1
             )
@@ -285,7 +286,7 @@ class DataManagerAdapter:
             logger.debug(f"获取股票行业失败: {stock_code}, 错误: {e}")
             return None
 
-    def get_stock_name(self, stock_code: str) -> Optional[str]:
+    def get_stock_name_Adapter(self, stock_code: str) -> Optional[str]:
         """
         获取股票名称（兼容原有API）
 
@@ -296,7 +297,7 @@ class DataManagerAdapter:
             Optional[str]: 股票名称
         """
         try:
-            stock_info = self.enhanced_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 limit=1
             )
@@ -313,7 +314,7 @@ class DataManagerAdapter:
             # 返回股票代码作为默认值
             return stock_code
 
-    def get_previous_trade_date(self, date: str, days: int = 1) -> str:
+    def get_previous_trade_date_Adapter(self, date: str, days: int = 1) -> str:
         """
         获取前N个交易日（兼容原有API）
         
@@ -343,7 +344,7 @@ class DataManagerAdapter:
             previous_date = base_date - timedelta(days=days * 2)
             return previous_date.strftime('%Y-%m-%d')
     
-    def save_selection_result(self, 
+    def save_selection_result_Adapter(self, 
                             result: pd.DataFrame, 
                             strategy_id: str, 
                             selection_date: str = None) -> bool:
@@ -351,7 +352,7 @@ class DataManagerAdapter:
         保存选股结果（兼容原有API）
         
         Args:
-            result: 选股结果DataFrame
+            result: 选股结果Data_frame
             strategy_id: 策略ID
             selection_date: 选股日期
             
@@ -373,7 +374,7 @@ class DataManagerAdapter:
             logger.error(f"保存选股结果失败: {e}")
             return False
     
-    def _convert_period_to_level(self, period: str) -> str:
+    def _convert_period_to_level_Data_Manager_Adapter(self, period: str) -> str:
         """
         转换周期参数到level参数
         
@@ -400,7 +401,7 @@ class DataManagerAdapter:
         
         return period_mapping.get(period.lower(), 'DAILY')
 
-    def _has_30min_data(self, stock_code: str, start_date: Optional[str] = None,
+    def _has_30min_data_Data_Manager_Adapter(self, stock_code: str, start_date: Optional[str] = None,
                        end_date: Optional[str] = None) -> bool:
         """
         检查数据库中是否存在30分钟数据
@@ -414,7 +415,7 @@ class DataManagerAdapter:
             bool: 存在返回True，否则返回False
         """
         try:
-            stock_info = self.enhanced_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 level='30分钟',
                 start_date=start_date,
@@ -427,7 +428,7 @@ class DataManagerAdapter:
             logger.debug(f"检查30分钟数据存在性失败: {e}")
             return False
 
-    def _generate_30min_from_15min(self, stock_code: str, start_date: Optional[str] = None,
+    def _generate_30min_from_15min_Data_Manager_Adapter(self, stock_code: str, start_date: Optional[str] = None,
                                   end_date: Optional[str] = None, lookback_days: Optional[int] = None) -> pd.DataFrame:
         """
         从15分钟数据生成30分钟数据
@@ -455,7 +456,7 @@ class DataManagerAdapter:
                 extended_start_date = start_date
 
             # 获取15分钟数据
-            stock_info = self.enhanced_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 level='15分钟',
                 start_date=extended_start_date,
@@ -528,7 +529,7 @@ class DataManagerAdapter:
             logger.error(f"从15分钟数据生成30分钟数据失败: {e}")
             return pd.DataFrame()
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats_Adapter(self) -> Dict[str, Any]:
         """
         获取性能统计信息
         
@@ -555,7 +556,7 @@ class DataManagerAdapter:
         
         return stats
     
-    def clear_cache(self, pattern: Optional[str] = None):
+    def clear_cache_Adapter(self, pattern: Optional[str] = None):
         """
         清除缓存
         
@@ -563,10 +564,10 @@ class DataManagerAdapter:
             pattern: 缓存模式，None表示清除所有
         """
         if self.enhanced_manager:
-            self.enhanced_manager.clear_cache(pattern)
+            self.enhanced_manager.clear_cache_Adapter(pattern)
             logger.info(f"缓存已清除: {pattern or '全部'}")
     
-    def close(self):
+    def close_Adapter(self):
         """关闭适配器，清理资源"""
         try:
             # 停止性能监控
@@ -575,7 +576,7 @@ class DataManagerAdapter:
             
             # 关闭连接池
             if self.connection_pool:
-                self.connection_pool.close()
+                self.connection_pool.close_Adapter()
             
             logger.info("数据管理器适配器已关闭")
             
@@ -588,19 +589,19 @@ _data_manager_adapter = None
 _adapter_lock = threading.Lock()
 
 
-def get_data_manager_adapter() -> DataManagerAdapter:
+def get_data_manager_adapter_Adapter() -> Data_manager_adapter:
     """获取全局数据管理器适配器实例"""
     global _data_manager_adapter
     
     if _data_manager_adapter is None:
         with _adapter_lock:
             if _data_manager_adapter is None:
-                _data_manager_adapter = DataManagerAdapter()
+                _data_manager_adapter = Data_manager_adapter_Adapter()
     
     return _data_manager_adapter
 
 
 # 为了向后兼容，提供DataManager类的别名
-class DataManager(DataManagerAdapter):
+class DatamanagerAdapter(Data_manager_adapter):
     """向后兼容的DataManager类"""
     pass

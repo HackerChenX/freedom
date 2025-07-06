@@ -10,15 +10,15 @@ from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
 from indicators.complete_indicator_registry import complete_registry
 
-def setUpModule():
+def setUpModule_Indicators():
     """在模块所有测试开始前运行，用于注册所有指标"""
     # 统一注册系统已自动注册所有指标
     pass
 
 class TestAroon(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         """测试初始化，并为Mixin测试提供self.data"""
-        super().setUp()
+        super().setUp_IndicatorsTeststandardtechnicalindicators()
         self.indicator_params = {'period': 5}
         self.indicator = complete_registry.create_indicator('AROON', **self.indicator_params)
         self.data_generator = TestDataGenerator()
@@ -29,7 +29,7 @@ class TestAroon(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         self.expected_columns = ['aroon_up', 'aroon_down', 'aroon_oscillator']
 
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试Aroon指标计算结果与预定义参考值的一致性"""
         # Test with pure downtrend data
         data_downtrend = self.data_generator.generate_price_sequence(
@@ -69,7 +69,7 @@ class TestAroon(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         self.assertFalse(patterns.empty)
 
 class TestChaikin(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('CHAIKIN', short_period=3, long_period=10)
         except Exception as e:
@@ -79,14 +79,14 @@ class TestChaikin(unittest.TestCase, IndicatorTestMixin):
             {'type': 'v_shape', 'start_price': 110, 'bottom_price': 90, 'periods': 20}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试Chaikin振荡器计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         self.assertFalse(result['chaikin_oscillator'].dropna().empty, "Chaikin振荡器计算结果不应全为空")
         self.assertTrue(result['chaikin_oscillator'].dtype == 'float64')
 
-class TestCMO(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestCMO_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('CMO', period=14)
         except Exception as e:
@@ -96,14 +96,14 @@ class TestCMO(unittest.TestCase, IndicatorTestMixin):
             {'type': 'm_shape', 'start_price': 100, 'top_price': 120, 'periods': 20}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试CMO指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         if not result['cmo'].dropna().empty:
             self.assertTrue(((result['cmo'].dropna() >= -100) & (result['cmo'].dropna() <= 100)).all())
 
 class TestIchimoku(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('ICHIMOKU', conversion_period=9, base_period=26, leading_span_b_period=52)
         except Exception as e:
@@ -113,7 +113,7 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin):
             {'type': 'sideways', 'price': 100, 'periods': 60}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试Ichimoku指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         self.assertFalse(result['tenkan_sen'].dropna().empty)
@@ -122,7 +122,7 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin):
             pd_testing.assert_series_equal(result['chikou_span'].dropna(), self.data['close'].shift(-26).dropna(), check_names=False)
 
 class TestKC(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('KC', period=20, atr_period=10, multiplier=2)
         except Exception as e:
@@ -132,7 +132,7 @@ class TestKC(unittest.TestCase, IndicatorTestMixin):
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 30}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试KC指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         if not result.dropna().empty:
@@ -140,7 +140,7 @@ class TestKC(unittest.TestCase, IndicatorTestMixin):
             self.assertTrue((result['kc_middle'].dropna() >= result['kc_lower'].dropna()).all())
 
 class TestSAR(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('SAR', initial_af=0.02, max_af=0.2, af_increment=0.02)
         except Exception as e:
@@ -151,7 +151,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin):
             {'type': 'trend', 'start_price': 120, 'end_price': 110, 'periods': 20}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试SAR指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         if not result['sar'].dropna().empty:
@@ -160,7 +160,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin):
 
 
 class TestStochRSI(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('STOCHRSI', rsi_period=14, stochastic_period=14, k_period=3, d_period=3)
         except Exception as e:
@@ -170,7 +170,7 @@ class TestStochRSI(unittest.TestCase, IndicatorTestMixin):
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 40}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试StochRSI指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         if not result.dropna().empty:
@@ -178,7 +178,7 @@ class TestStochRSI(unittest.TestCase, IndicatorTestMixin):
             self.assertTrue(((result['stochrsi_d'].dropna() >= 0) & (result['stochrsi_d'].dropna() <= 100)).all())
 
 class TestTrix(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('TRIX', period=15, signal_period=9)
         except Exception as e:
@@ -188,14 +188,14 @@ class TestTrix(unittest.TestCase, IndicatorTestMixin):
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试Trix指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         self.assertFalse(result['trix'].dropna().empty, "Trix不应全为空")
         self.assertFalse(result['trix_signal'].dropna().empty, "Trix信号线不应全为空")
 
 class TestVortex(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('VORTEX', period=14)
         except Exception as e:
@@ -205,14 +205,14 @@ class TestVortex(unittest.TestCase, IndicatorTestMixin):
             {'type': 'm_shape', 'start_price': 100, 'top_price': 120, 'periods': 30}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试Vortex指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         self.assertFalse(result['vi_plus'].dropna().empty)
         self.assertFalse(result['vi_minus'].dropna().empty)
 
 class TestDMA(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('DMA', short_period=10, long_period=50, ama_period=10)
         except Exception as e:
@@ -222,7 +222,7 @@ class TestDMA(unittest.TestCase, IndicatorTestMixin):
             {'type': 'sideways', 'price': 100, 'periods': 60}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试DMA指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         if 'dma' in result.columns and not result['dma'].dropna().empty:
@@ -232,7 +232,7 @@ class TestDMA(unittest.TestCase, IndicatorTestMixin):
             pd_testing.assert_series_equal(result['dma'].dropna(), expected_dma.dropna(), check_exact=False, rtol=1e-5)
 
 class TestEMV(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('EMV', period=14, ma_period=9)
         except Exception as e:
@@ -242,14 +242,14 @@ class TestEMV(unittest.TestCase, IndicatorTestMixin):
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试EMV指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         self.assertFalse(result['emv'].dropna().empty)
         self.assertFalse(result['emv_ma'].dropna().empty, "EMV移动平均线不应全为空")
 
 class TestPSY(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTeststandardtechnicalindicators(self):
         try:
             self.indicator = complete_registry.create_indicator('PSY', period=12, ma_period=6)
         except Exception as e:
@@ -259,7 +259,7 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin):
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 90, 'periods': 30}
         ])
 
-    def test_calculation_against_reference(self):
+    def test_calculation_against_reference_IndicatorsTeststandardtechnicalindicators(self):
         """测试PSY指标计算结果与预定义参考值的一致性"""
         result = self.indicator.calculate(self.data)
         if not result['psy'].dropna().empty:

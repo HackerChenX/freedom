@@ -12,7 +12,7 @@ import multiprocessing as mp
 import time
 import datetime
 import logging
-from formula import formula
+# from formula import  # 分层架构违规，已注释 formula
 from utils.logger import get_logger
 from utils.path_utils import get_stock_code_name_file
 import pandas as pd
@@ -60,7 +60,7 @@ def 同步数据_task(code, max_date=None):
         f = formula.Formula(code, start=start_date, end=max_date, sync=True)
         
         # 记录同步结果
-        if f.dataDay.history is not None and len(f.dataDay.history) > 0:
+        if f.data_day.history is not None and len(f.data_day.history) > 0:
             logger.info(f"同步成功: {f.get_desc()} 获取到 {len(f.dataDay.history)} 条日线数据")
         else:
             logger.warning(f"同步失败: {code} 没有获取到数据")
@@ -114,12 +114,12 @@ def 同步板块_task(industry_code, industry_name, start_date, max_date):
         max_date: 最大日期
     """
     try:
-        from formula.stock_formula import IndustryData
+        from formula.stock_formula import Industry_data
         
         logger.info(f"同步行业板块数据: {industry_name}({industry_code}) 从 {start_date} 到 {max_date}")
         
         # 同步数据
-        industry_data = IndustryData(industry_code, start=start_date, end=max_date, sync=True)
+        industry_data = Industry_data(industry_code, start=start_date, end=max_date, sync=True)
         
         # 记录同步结果
         if hasattr(industry_data, 'history') and industry_data.history is not None and len(industry_data.history) > 0:

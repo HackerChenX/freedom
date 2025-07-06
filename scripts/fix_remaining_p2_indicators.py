@@ -100,7 +100,7 @@ def fix_syntax_error_fast(file_path):
         print(f"修复文件 {file_path} 时出错: {e}")
         return False
 
-def test_indicator_fix(indicator_file):
+def test_indicator_fix_Indicators(indicator_file):
     """测试指标修复效果"""
     try:
         # 从文件路径推断模块名和类名
@@ -140,7 +140,7 @@ def test_indicator_fix(indicator_file):
     except Exception as e:
         return False
 
-def main():
+def main_fixremainingp2indicators():
     """主函数"""
     print("=== 快速修复剩余P2语法错误指标 ===")
     print()
@@ -158,7 +158,7 @@ def main():
                 success_count += 1
                 
                 # 测试修复效果
-                if test_indicator_fix(file_path):
+                if test_indicator_fix_Indicators(file_path):
                     print("🎉 测试通过")
                     test_success_count += 1
                 else:
@@ -203,4 +203,4 @@ def main():
         print(f"❌ 测试修复效果时出错: {e}")
 
 if __name__ == "__main__":
-    main()
+    mainFixremainingp2indicators()

@@ -24,12 +24,12 @@ from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
 
 
-class TestElliottWave(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class TestElliottWave_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """艾略特波浪指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('ELLIOTTWAVE')
@@ -45,9 +45,9 @@ class TestElliottWave(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             {'type': 'trend', 'start_price': 100, 'end_price': 140, 'periods': 60},
         ])
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
     def test_wave_identification(self):
         """测试波浪识别"""
@@ -59,7 +59,7 @@ class TestElliottWave(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIn('wave_direction', result.columns)
         self.assertTrue(result['wave_direction'].dropna().isin([1, -1]).all())
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -119,12 +119,12 @@ class TestElliottWave(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             self.skipTest(f"信号生成测试失败: {e}")
 
 
-class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class TestFibonacciTools_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """斐波那契工具指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('FIBONACCITOOLS')
@@ -138,9 +138,9 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 100}
         ])
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
     def test_retracement_levels(self):
         """测试回撤水平计算"""
@@ -192,7 +192,7 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
                     # 验证目标价格是有效值
                     self.assertFalse(target_values.isnull().any(), f"{column}不应包含NaN值")
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试斐波那契评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -227,9 +227,9 @@ class TestFibonacciTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
 class TestTrendStrength(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """趋势强度指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('TRENDSTRENGTH')
@@ -242,11 +242,11 @@ class TestTrendStrength(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             {'type': 'sideways', 'start_price': 150, 'volatility': 0.01, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
-    def test_trend_strength_calculation(self):
+    def test_trend_strength_calculation_Indicators_Test_Advanced_Indicators_Test_Advanced_IndicatorsTestadvancedindicators(self):
         """测试趋势强度计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -294,7 +294,7 @@ class TestTrendStrength(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         if 'trend_category' in result.columns:
             self.assertTrue(result['trend_category'].isin(['strong_up', 'weak_up', 'strong_down', 'weak_down', 'sideways']).all())
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试趋势强度评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -332,9 +332,9 @@ class TestTrendStrength(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """趋势分类指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('TRENDCLASSIFICATION')
@@ -353,9 +353,9 @@ class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureM
             {'type': 'trend', 'start_price': 110, 'end_price': 95, 'periods': 40, 'noise': 0.01}  # 下降
         ])
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
     def test_trend_classification(self):
         """测试趋势分类"""
@@ -365,7 +365,7 @@ class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         self.assertIn('trend_type', result.columns)
         self.assertTrue(result['trend_type'].isin(['uptrend', 'downtrend', 'sideways']).all())
     
-    def test_trend_strength_calculation(self):
+    def test_trend_strength_calculation_Indicators_Test_Advanced_Indicators_Test_Advanced_IndicatorsTestadvancedindicators(self):
         """测试趋势强度计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -390,7 +390,7 @@ class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureM
                     "ma_alignment值应在-1到1范围内"
                 )
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试趋势分类评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -415,7 +415,7 @@ class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         # 验证能处理高波动数据
         self.assertIsInstance(result, pd.DataFrame, "应能处理高波动数据")
 
-    def test_patterns_return_dataframe(self):
+    def test_patterns_return_dataframe_Indicators(self):
         """覆盖基类测试，以处理当前实现返回None的情况。"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -430,12 +430,12 @@ class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureM
             self.fail(f"get_patterns 引发异常: {e}")
 
 
-class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class TestChipDistribution_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """筹码分布指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('CHIPDISTRIBUTION')
@@ -453,9 +453,9 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         if 'amount' not in self.data.columns:
             self.data['amount'] = self.data['close'] * self.data['volume']
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
     def test_cost_calculation(self):
         """测试成本计算"""
@@ -506,7 +506,7 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         self.assertFalse(concentration.empty, "筹码集中度结果不应为空")
         self.assertTrue((concentration >= 0).all() and (concentration <= 100).all(), "筹码集中度应在0到100之间")
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试综合评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -550,12 +550,12 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
             self.skipTest(f"套牢盘预测测试失败: {e}")
 
 
-class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class TestInstitutionalBehavior_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """机构行为指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('INSTITUTIONALBEHAVIOR')
@@ -574,9 +574,9 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
             {'type': 'sideways', 'start_price': 120, 'periods': 30, 'base_volume': 15000}
         ])
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
     def test_institution_activity_calculation(self):
         """测试机构活跃度计算"""
@@ -632,7 +632,7 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
             
             print(f"识别出的行为类型: {behavior_types}")
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试机构行为评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -686,9 +686,9 @@ class TestInstitutionalBehavior(unittest.TestCase, IndicatorTestMixin, LogCaptur
 class TestSentimentAnalysis(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """情绪分析指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             # 假设SENTIMENTANALYSIS指标不需要外部数据源
@@ -702,9 +702,9 @@ class TestSentimentAnalysis(unittest.TestCase, IndicatorTestMixin, LogCaptureMix
             {'type': 'trend', 'start_price': 90, 'end_price': 120, 'periods': 50},
         ])
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
     def test_sentiment_index_calculation(self):
         """测试情绪指数计算"""
@@ -781,7 +781,7 @@ class TestSentimentAnalysis(unittest.TestCase, IndicatorTestMixin, LogCaptureMix
                         f"情绪变化值应为-1、0或1，而不是{change}"
                     )
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试情绪分析评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")
@@ -812,12 +812,12 @@ class TestSentimentAnalysis(unittest.TestCase, IndicatorTestMixin, LogCaptureMix
                     )
 
 
-class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class TestGannTools_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """江恩工具指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestadvancedindicators(self):
         """为测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestadvancedindicators()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('GANNTOOLS')
@@ -831,9 +831,9 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             {'type': 'trend', 'start_price': 100, 'end_price': 130, 'periods': 100}
         ])
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestadvancedindicators()
     
     def test_gann_angle_calculation(self):
         """测试江恩角度线计算"""
@@ -881,7 +881,7 @@ class TestGannTools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         except Exception as e:
             self.skipTest(f"江恩方格计算测试失败: {e}")
     
-    def test_score_calculation(self):
+    def test_score_calculation_IndicatorsTestadvancedindicators(self):
         """测试江恩工具评分计算"""
         if self.indicator is None:
             self.skipTest("指标未创建")

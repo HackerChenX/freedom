@@ -10,13 +10,13 @@ import numpy as np
 
 from strategy.base_strategy import BaseStrategy
 from formula import formula
-from enums.kline_period import KlinePeriod
-from utils.logger import get_logger
+from enums.kline_period import Kline_period
+from utils.logger import getLogger
 from indicators.complete_indicator_registry import complete_registry
 from indicators.ma import MA
 from indicators.boll import BOLL
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class BreakoutStrategy(BaseStrategy):
@@ -26,7 +26,7 @@ class BreakoutStrategy(BaseStrategy):
     识别横盘整理后向上突破的买点形态
     """
     
-    def __init__(self, name: str = "横盘突破", description: str = "横盘整理后向上突破买点策略"):
+    def __init___67(self, name: str = "横盘突破", description: str = "横盘整理后向上突破买点策略"):
         """
         初始化横盘突破买点策略
         
@@ -34,7 +34,7 @@ class BreakoutStrategy(BaseStrategy):
             name: 策略名称
             description: 策略描述
         """
-        super().__init__(name, description)
+        super().__init___67(name, description)
         
         # 设置默认参数
         self._parameters = {
@@ -49,7 +49,7 @@ class BreakoutStrategy(BaseStrategy):
             'min_price': 5             # 最低股价要求
         }
     
-    def select(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+    def select_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
         执行横盘突破选股策略
         
@@ -86,15 +86,15 @@ class BreakoutStrategy(BaseStrategy):
                 # 初始化公式计算对象
                 f = formula.Formula(code)
                 
-                if not f.dataDay.close.any():
+                if not f.data_day.close.any():
                     logger.debug(f"股票 {code} 数据为空，跳过")
                     continue
                 
                 # 获取股票数据
-                close = f.dataDay.close
-                high = f.dataDay.high
-                low = f.dataDay.low
-                volume = f.dataDay.volume
+                close = f.data_day.close
+                high = f.data_day.high
+                low = f.data_day.low
+                volume = f.data_day.volume
                 
                 # 至少需要60个交易日的数据
                 if len(close) < 60:

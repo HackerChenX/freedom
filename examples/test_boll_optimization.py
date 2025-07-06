@@ -23,7 +23,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
+def load_test_data_Optimization_Test_Boll_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
     """
     加载测试数据
     
@@ -91,10 +91,10 @@ def test_boll_optimization(data):
         tuple: (原始评分, 优化后评分)
     """
     # 创建未优化的BOLL指标计算函数
-    class SimpleBOLL(BOLL):
+    class Simple_bOLL(BOLL):
         """简化版BOLL，用于对比优化前的效果"""
         
-        def calculate_raw_score(self, data):
+        def calculate_raw_score_Optimization_Test_Boll_Optimization(self, data):
             """
             计算BOLL原始评分（优化前）
             
@@ -170,7 +170,7 @@ def test_boll_optimization(data):
             return np.clip(score, 0, 100)
     
     # 创建两个实例
-    simple_boll = SimpleBOLL(periods=20, std_dev=2.0)
+    simple_boll = Simple_bOLL(periods=20, std_dev=2.0)
     enhanced_boll = BOLL(periods=20, std_dev=2.0)
     
     # 计算布林带
@@ -178,8 +178,8 @@ def test_boll_optimization(data):
     enhanced_result = enhanced_boll.calculate(data)
     
     # 计算评分
-    simple_score = simple_boll.calculate_raw_score(data)
-    enhanced_score = enhanced_boll.calculate_raw_score(data)
+    simple_score = simple_boll.calculate_raw_score_Optimization_Test_Boll_Optimization(data)
+    enhanced_score = enhanced_boll.calculate_raw_score_Optimization_Test_Boll_Optimization(data)
     
     # 计算评分差异
     score_diff = enhanced_score - simple_score
@@ -257,11 +257,11 @@ def find_best_boll_params(data):
     return best_params
 
 
-def main():
+def main_testbolloptimization():
     """主函数"""
     try:
         # 加载测试数据
-        data = load_test_data(start_date='2022-01-01', end_date='2022-12-31')
+        data = load_test_data_Optimization_Test_Boll_Optimization(start_date='2022-01-01', end_date='2022-12-31')
         
         # 测试BOLL指标优化效果
         old_score, new_score = test_boll_optimization(data)
@@ -286,4 +286,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testbolloptimization() 

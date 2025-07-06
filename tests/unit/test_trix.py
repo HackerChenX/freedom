@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testtrix_trix(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """TRIX指标测试类"""
     
-    def setUp(self):
+    def set_up_Trix_Test_Trix(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Trix_Test_Trix(self)
         
         self.indicator = TRIX(n=12, m=9)
         self.expected_columns = ['TR', 'TRIX', 'MATRIX']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tear_down_Trix_Test_Trix(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Trix_Test_Trix(self)
     
     def test_trix_calculation_accuracy(self):
         """测试TRIX计算准确性"""
@@ -41,7 +41,7 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         trix_values = result['TRIX'].dropna()
         if len(trix_values) > 0:
             # TRIX值应该是百分比形式，通常在-10到10之间
-            self.assertTrue(all(-50 <= v <= 50 for v in trix_values), 
+            self.assert_true(all(-50 <= v <= 50 for v in trix_values), 
                            "TRIX值应该在合理范围内")
     
     def test_trix_score_range(self):
@@ -60,9 +60,9 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_trix_parameter_update(self):
         """测试TRIX参数更新"""
@@ -71,8 +71,8 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(n=new_n, m=new_m)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.n, new_n)
-        self.assertEqual(self.indicator.m, new_m)
+        self.assert_equal(self.indicator.n, new_n)
+        self.assert_equal(self.indicator.m, new_m)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -84,13 +84,13 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_trix_comprehensive_score(self):
         """测试TRIX综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -98,20 +98,20 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertGreaterEqual(score_result['score'], 0.0)
         self.assertLessEqual(score_result['score'], 100.0)
     
-    def test_trix_patterns(self):
+    def test_trix_patterns_Trix(self):
         """测试TRIX形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
 
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
 
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
 
         # 验证返回的是DataFrame类型
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
 
         # 验证至少有基本的形态列
         if not patterns.empty and len(patterns.columns) > 0:
@@ -122,19 +122,19 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_trix_crossover_detection(self):
         """测试TRIX交叉检测"""
         # 创建包含交叉的数据
-        crossover_data = TestDataGenerator.generate_price_sequence([
+        crossover_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 25},
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 25}
         ])
         
         # 先计算指标
         result = self.indicator.calculate(crossover_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         patterns = self.indicator.get_patterns(crossover_data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 如果形态DataFrame不为空，验证金叉死叉形态存在
         if not patterns.empty:
@@ -144,7 +144,7 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_trix_zero_crossing(self):
         """测试TRIX零轴穿越"""
         # 创建包含零轴穿越的数据
-        zero_cross_data = TestDataGenerator.generate_price_sequence([
+        zero_cross_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 30},
             {'type': 'trend', 'start_price': 80, 'end_price': 120, 'periods': 30}
         ])
@@ -163,11 +163,11 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         ema_result = self.indicator._ema(test_series, 3)
         
         # 验证EMA结果
-        self.assertEqual(len(ema_result), len(test_series))
-        self.assertEqual(ema_result[0], test_series[0])  # 第一个值应该相等
+        self.assert_equal(len(ema_result), len(test_series))
+        self.assert_equal(ema_result[0], test_series[0])  # 第一个值应该相等
         
         # 验证EMA是递增的（对于递增序列）
-        self.assertTrue(all(ema_result[i] <= ema_result[i+1] for i in range(len(ema_result)-1)))
+        self.assert_true(all(ema_result[i] <= ema_result[i+1] for i in range(len(ema_result)-1)))
     
     def test_trix_sma_calculation(self):
         """测试TRIX的SMA计算"""
@@ -176,16 +176,16 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         sma_result = self.indicator.sma(test_series, 3)
         
         # 验证SMA结果
-        self.assertEqual(len(sma_result), len(test_series))
+        self.assert_equal(len(sma_result), len(test_series))
         
         # 验证SMA计算正确性（最后几个值）
         expected_last = np.mean(test_series[-3:])  # 最后3个值的平均
-        self.assertAlmostEqual(sma_result[-1], expected_last, places=5)
+        self.assert_almost_equal(sma_result[-1], expected_last, places=5)
     
     def test_trix_trend_detection(self):
         """测试TRIX趋势检测"""
         # 创建明显的上升趋势数据
-        uptrend_data = TestDataGenerator.generate_price_sequence([
+        uptrend_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 50}
         ])
         
@@ -196,7 +196,7 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             self.assertIn('TRIX_RISING', patterns.columns)
             self.assertIn('TRIX_FALLING', patterns.columns)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Trix_Test_Trix(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -207,11 +207,11 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('TRIX', result.columns)
         self.assertIn('MATRIX', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Trix_Test_Trix(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -222,7 +222,7 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_trix_register_patterns(self):
         """测试TRIX形态注册"""
@@ -244,7 +244,7 @@ class TestTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         trix_values = result['TRIX'].dropna()
         if len(trix_values) > 0:
             # 价格不变时TRIX应该接近0
-            self.assertTrue(all(abs(v) < 1.0 for v in trix_values), 
+            self.assert_true(all(abs(v) < 1.0 for v in trix_values), 
                            "价格不变时TRIX应该接近0")
     
     def test_trix_compute_method(self):

@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testvosc_vosc(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """VOSC指标测试类"""
     
-    def setUp(self):
+    def set_up_Vosc(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Vosc(self)
         
         self.indicator = VOSC(short_period=12, long_period=26)
         self.expected_columns = ['vosc', 'vosc_signal']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tear_down_Vosc(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Vosc(self)
     
     def test_vosc_calculation_accuracy(self):
         """测试VOSC计算准确性"""
@@ -40,7 +40,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         vosc_values = result['vosc'].dropna()
         if len(vosc_values) > 0:
             # VOSC值应该在合理范围内（通常-100到100之间）
-            self.assertTrue(all(-200 <= v <= 200 for v in vosc_values), 
+            self.assert_true(all(-200 <= v <= 200 for v in vosc_values), 
                            "VOSC值应该在合理范围内")
     
     def test_vosc_manual_calculation(self):
@@ -67,7 +67,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             calculated_vosc = result['vosc'].iloc[9]
             
             if not pd.isna(calculated_vosc):
-                self.assertAlmostEqual(calculated_vosc, expected_vosc, places=2, 
+                self.assert_almost_equal(calculated_vosc, expected_vosc, places=2, 
                                      msg="VOSC计算不正确")
     
     def test_vosc_score_range(self):
@@ -86,9 +86,9 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_vosc_parameter_update(self):
         """测试VOSC参数更新"""
@@ -97,8 +97,8 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(short_period=new_short_period, long_period=new_long_period)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.short_period, new_short_period)
-        self.assertEqual(self.indicator.long_period, new_long_period)
+        self.assert_equal(self.indicator.short_period, new_short_period)
+        self.assert_equal(self.indicator.long_period, new_long_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -110,13 +110,13 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_vosc_comprehensive_score(self):
         """测试VOSC综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -128,13 +128,13 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试VOSC形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -150,7 +150,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_vosc_zero_cross_detection(self):
         """测试VOSC零轴穿越检测"""
         # 创建包含零轴穿越的数据
-        cross_data = TestDataGenerator.generate_price_sequence([
+        cross_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 30}
         ])
         
@@ -164,7 +164,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_vosc_signal_cross_detection(self):
         """测试VOSC信号线交叉检测"""
         # 创建包含交叉的数据
-        cross_data = TestDataGenerator.generate_price_sequence([
+        cross_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 30}
         ])
         
@@ -178,7 +178,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_vosc_trend_detection(self):
         """测试VOSC趋势检测"""
         # 创建包含趋势的数据
-        trend_data = TestDataGenerator.generate_price_sequence([
+        trend_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30}
         ])
         
@@ -217,13 +217,13 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Vosc(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -234,11 +234,11 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('vosc', result.columns)
         self.assertIn('vosc_signal', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Vosc(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -249,7 +249,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_vosc_register_patterns(self):
         """测试VOSC形态注册"""
@@ -271,7 +271,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         vosc_values = result['vosc'].dropna()
         # 如果有值，应该是0或NaN
         if len(vosc_values) > 0:
-            self.assertTrue(all(abs(v) < 1e-10 or pd.isna(v) for v in vosc_values), 
+            self.assert_true(all(abs(v) < 1e-10 or pd.isna(v) for v in vosc_values), 
                            "成交量为0时VOSC应该为0或NaN")
     
     def test_vosc_compute_method(self):
@@ -285,7 +285,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 验证VOSC值的合理性
         vosc_values = result['vosc'].dropna()
         if len(vosc_values) > 0:
-            self.assertTrue(all(-200 <= v <= 200 for v in vosc_values), 
+            self.assert_true(all(-200 <= v <= 200 for v in vosc_values), 
                            "VOSC值应该在合理范围内")
     
     def test_vosc_validation(self):
@@ -293,7 +293,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少volume列的情况
         invalid_data = self.data.drop('volume', axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
     
     def test_vosc_signal_line_relationship(self):
@@ -308,7 +308,7 @@ class TestVOSC(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             vosc_volatility = vosc_values.std()
             signal_volatility = signal_values.std()
             
-            self.assertLessEqual(signal_volatility, vosc_volatility * 1.2, 
+            self.assert_less_equal(signal_volatility, vosc_volatility * 1.2, 
                                "信号线应该比VOSC更平滑")
 
 

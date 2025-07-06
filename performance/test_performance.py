@@ -10,19 +10,19 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-class PerformanceTest(unittest.TestCase):
+class Performance_test(unittest.Test_case):
     """性能测试基类"""
     
-    def setUp(self):
+    def set_up_Performance_Test_Performance(self):
         """测试前准备"""
         # 设置性能测试参数
         self.iterations = 10  # 重复执行次数
         self.warmup_iterations = 2  # 预热次数
         
         # 创建性能测试数据
-        self.prepare_test_data()
+        self.prepare_test_data_Performance()
         
-    def prepare_test_data(self):
+    def prepare_test_data_Performance(self):
         """准备测试数据"""
         # 创建测试用股票列表（100支股票）
         stock_codes = [f'{i:06d}' for i in range(100)]
@@ -86,13 +86,13 @@ class PerformanceTest(unittest.TestCase):
         return avg_time
 
 
-class StrategyPerformanceTest(PerformanceTest):
+class Strategy_performance_test(Performance_test):
     """策略性能测试类"""
     
     def test_strategy_execution_performance(self):
         """测试策略执行性能"""
         # 定义测试函数
-        def execute_strategy():
+        def execute_strategy_Performance():
             """模拟策略执行过程"""
             # 1. 过滤股票列表
             filtered_stocks = self.stock_list[
@@ -177,7 +177,7 @@ class StrategyPerformanceTest(PerformanceTest):
         # 验证性能满足要求
         self.assertLess(avg_time, 0.01, "数据过滤时间应小于0.01秒")
     
-    def test_indicator_calculation_performance(self):
+    def test_indicator_calculation_performance_Performance(self):
         """测试指标计算性能"""
         # 获取一支样本股票的K线数据
         sample_kline = self.kline_data['000000']

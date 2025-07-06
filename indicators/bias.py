@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-均线多空指标(BIAS)
+均线多空指标(BIAS_Bias)
 
 (收盘价-MA)/MA×100%
 """
@@ -14,53 +14,53 @@ from typing import List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class BIAS(BaseIndicator, PatternSignalMixin):
+class BiasBias(BaseIndicator, PatternSignalMixin):
     """
-    均线多空指标(BIAS) (BIAS)
+    均线多空指标(BIAS_Bias) (BIAS_Bias)
 
     分类：趋势类指标
     描述：(收盘价-MA)/MA×100%
     """
 
-    def __init__(self, name: str = "BIAS", description: str = "均线多空指标",
+    def __init__(self, name: str = "BIAS_Bias", description: str = "均线多空指标",
                  period: int = 14, periods: List[int] = None):
         """
-        初始化均线多空指标(BIAS)指标
+        初始化均线多空指标(BIAS_Bias)指标
         """
         super().__init__(name, description)
         self.periods = periods if periods is not None else [period]
-        self.indicator_type = "BIAS"
+        self.indicator_type = "BIAS_Bias"
         self.REQUIRED_COLUMNS = ['close']  # 添加必需列定义
         
-    def set_parameters(self, period: int = 14, **kwargs):
+    def set_parameters_Bias_Bias_Bias_bias(self, period: int = 14, **kwargs):
         """
         设置BIAS指标的参数
         """
         self.periods = kwargs.get('periods', [period])
 
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_bias(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         """
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             raise ValueError(f"DataFrame缺少必要的列: {', '.join(missing_columns)}")
     
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_bias(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        计算均线多空指标(BIAS)指标
+        计算均线多空指标(BIAS_Bias)指标
         """
         if data.empty:
 
             return pd.DataFrame()
 
             
-        self._validate_dataframe(data, ['close'])
+        self._validate_dataframeBias(data, ['close'])
         
         # 创建一个临时的DataFrame来存储新计算的列
         result_df = pd.DataFrame(index=data.index)
@@ -68,15 +68,15 @@ class BIAS(BaseIndicator, PatternSignalMixin):
         # 计算所有周期的BIAS
         for p in self.periods:
             ma = data['close'].rolling(window=p, min_periods=1).mean()
-            result_df[f'BIAS{p}'] = (data['close'] - ma) / ma * 100
+            result_df[f'BIAS_Bias{p}'] = (data['close'] - ma) / ma * 100
         
-        # 为主周期创建 'BIAS' 和 'BIAS_MA' 列，以供形态识别使用
+        # 为主周期创建 'BIAS_Bias' 和 'BIAS_MA' 列，以供形态识别使用
         if self.periods:
             main_period = self.periods[0]
-            main_bias_col = f'BIAS{main_period}'
+            main_bias_col = f'BIAS_Bias{main_period}'
             if main_bias_col in result_df:
-                result_df['BIAS'] = result_df[main_bias_col]
-                result_df['BIAS_MA'] = result_df['BIAS'].rolling(window=main_period, min_periods=1).mean()
+                result_df['BIAS_Bias'] = result_df[main_bias_col]
+                result_df['BIAS_MA'] = result_df['BIAS_Bias'].rolling(window=main_period, min_periods=1).mean()
 
         # 只返回计算出的指标列，不包含原始数据列
         
@@ -96,11 +96,11 @@ class BIAS(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 获取BIAS值
-            if 'BIAS' not in df.columns:
+            if 'BIAS_Bias' not in df.columns:
                 # 如果没有BIAS值，使用默认信号
                 return df
 
-            bias_value = df['BIAS']
+            bias_value = df['BIAS_Bias']
 
             # BIAS信号生成逻辑：
             # BUY: BIAS值为正且上升（价格高于均线且乖离增大）
@@ -132,22 +132,22 @@ class BIAS(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
+    def get_patterns_Bias(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         识别所有已注册的BIAS相关形态
         """
         # 首先，调用calculate来获取所有需要的列
-        calculated_data = self._calculate(data)
+        calculated_data = self._calculate_bias(data)
 
         # 验证必要的列是否存在
-        required_cols = ['BIAS', 'BIAS_MA']
+        required_cols = ['BIAS_Bias', 'BIAS_MA']
         if not all(col in calculated_data.columns for col in required_cols):
              logger.warning(f"BIAS指标在形态识别时缺少必要的计算列: {required_cols}")
              # 返回一个空的DataFrame，但保留索引
              return pd.DataFrame(index=data.index)
 
         # 实现BIAS形态识别逻辑
-        bias_values = calculated_data['BIAS']
+        bias_values = calculated_data['BIAS_Bias']
 
         # 创建形态识别结果DataFrame，只包含形态列
         patterns_df = pd.DataFrame(index=data.index)
@@ -188,7 +188,7 @@ class BIAS(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Bias(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算BIAS指标的原始评分 (0-100分)
 
@@ -198,12 +198,12 @@ class BIAS(BaseIndicator, PatternSignalMixin):
         - BIAS值为负且较大时，评分偏低（超卖）
         """
         # 首先计算指标值
-        calculated_data = self._calculate(data)
+        calculated_data = self._calculate_bias(data)
 
-        if 'BIAS' not in calculated_data.columns:
+        if 'BIAS_Bias' not in calculated_data.columns:
             return pd.Series(50.0, index=data.index)
 
-        bias_values = calculated_data['BIAS']
+        bias_values = calculated_data['BIAS_Bias']
 
         # 计算评分
         # BIAS在-10到+10之间为正常范围，对应40-60分
@@ -224,7 +224,7 @@ class BIAS(BaseIndicator, PatternSignalMixin):
 
         return scores
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: dict) -> float:
+    def calculate_confidence_Bias(self, score: pd.Series, patterns: List[str], signals: dict) -> float:
         """
         计算BIAS指标的置信度
 
@@ -282,7 +282,7 @@ class BIAS(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def register_patterns(self):
+    def register_patterns_Bias(self):
         """
         注册BIAS指标的技术形态
         """
@@ -360,7 +360,7 @@ class BIAS(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Bias(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -416,41 +416,11 @@ class BIAS(BaseIndicator, PatternSignalMixin):
             'type': 'neutral'
         })
 
-    def __init__(self, **kwargs):
-        """
-        初始化BIAS指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "BIAS"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保BIAS特有属性存在
-        if not hasattr(self, 'periods'):
-            self.periods = [6, 12, 24]
-        
-        # 确保BIAS特有属性存在
-        if not hasattr(self, 'periods'):
-            self.periods = [6, 12, 24]
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_bias(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'periods': [6, 12, 24]}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Bias_Bias_Bias_bias_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -459,18 +429,18 @@ class BIAS(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('BIAS', params)
+            is_valid, errors = validator.validate_indicator_parameters('BIAS_Bias', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"BIAS参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

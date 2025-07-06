@@ -12,7 +12,7 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from indicators.kdj import KDJ
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 
 def test_kdj_get_pattern():
     """测试KDJ指标中get_pattern方法的调用"""
@@ -52,7 +52,7 @@ def test_kdj_get_pattern():
     print(f"检测到的形态列: {list(patterns.columns)}")
     
     # 测试PatternRegistry的get_pattern方法
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     print("\n=== 测试PatternRegistry中的形态信息 ===")
     all_patterns = registry.get_all_pattern_ids()

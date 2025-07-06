@@ -15,7 +15,7 @@ from indicators.zxm.elasticity_indicators import (
 class TestZXMElasticityIndicators(unittest.TestCase):
     """ZXM弹性指标测试类"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestzxmelasticityindicators(self):
         """设置测试数据"""
         # 生成测试数据
         dates = pd.date_range(start='2023-01-01', periods=200, freq='D')

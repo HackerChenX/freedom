@@ -11,12 +11,12 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
+class EnhancedRsi(BaseIndicator, PatternSignalMixin):
     """
     增强型RSI指标
     
@@ -50,12 +50,12 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         self.adaptive_thresholds = adaptive_thresholds
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_enhancedrsi()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Rsi(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_enhancedrsi(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
             "period": 14,
@@ -63,7 +63,7 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
             "oversold": 30.0
         }
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Rsi(self, **kwargs):
         """
         设置指标参数
         
@@ -72,8 +72,8 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -98,29 +98,29 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
             self.overbought = 70.0
             self.oversold = 30.0
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算增强型RSI指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了增强型RSI指标的DataFrame
+            添加了增强型RSI指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_enhancedrsi(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_enhancedrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算增强型RSI指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了增强型RSI指标的DataFrame
+            添加了增强型RSI指标的Data_frame
         """
         if len(data) < max(self.multi_periods) + 1:
             # 数据不足，返回空结果
@@ -135,15 +135,15 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         df = data.copy()
         
         # 计算主要RSI
-        df['rsi'] = self._calculate_rsi(df['close'], self.period)
+        df['rsi'] = self._calculate_rsi_Enhanced_Rsi(df['close'], self.period)
         
         # 计算多周期RSI
         for period in self.multi_periods:
-            df[f'rsi_{period}'] = self._calculate_rsi(df['close'], period)
+            df[f'rsi_{period}'] = self._calculate_rsi_Enhanced_Rsi(df['close'], period)
         
         # 计算自适应阈值
         if self.adaptive_thresholds:
-            df['rsi_overbought'], df['rsi_oversold'] = self._calculate_adaptive_thresholds(df['rsi'])
+            df['rsi_overbought'], df['rsi_oversold'] = self._calculate_adaptive_thresholds_Enhanced_Rsi(df['rsi'])
         else:
             df['rsi_overbought'] = self.overbought
             df['rsi_oversold'] = self.oversold
@@ -155,7 +155,7 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         df['rsi_trend_strength'] = self._calculate_rsi_trend_strength(df['rsi'])
         
         # 计算多周期一致性
-        df['rsi_consistency'] = self._calculate_multi_period_consistency(df)
+        df['rsi_consistency'] = self._calculate_multi_period_consistency_Enhanced_Rsi(df)
         
         # 计算综合评分
         df['ENHANCED_RSI_VALUE'] = self._calculate_enhanced_rsi_score(df)
@@ -172,7 +172,7 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         
         return df
     
-    def _calculate_rsi(self, close: pd.Series, period: int) -> pd.Series:
+    def _calculate_rsi_Enhanced_Rsi(self, close: pd.Series, period: int) -> pd.Series:
         """
         计算RSI指标
         
@@ -200,7 +200,7 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         
         return rsi
     
-    def _calculate_adaptive_thresholds(self, rsi: pd.Series) -> Tuple[pd.Series, pd.Series]:
+    def _calculate_adaptive_thresholds_Enhanced_Rsi(self, rsi: pd.Series) -> Tuple[pd.Series, pd.Series]:
         """
         计算自适应超买超卖阈值
         
@@ -264,12 +264,12 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         
         return trend_strength
     
-    def _calculate_multi_period_consistency(self, df: pd.DataFrame) -> pd.Series:
+    def _calculate_multi_period_consistency_Enhanced_Rsi(self, df: pd.DataFrame) -> pd.Series:
         """
         计算多周期RSI一致性
         
         Args:
-            df: 包含多周期RSI的DataFrame
+            df: 包含多周期RSI的Data_frame
             
         Returns:
             一致性评分序列
@@ -295,7 +295,7 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         计算增强型RSI综合评分
         
         Args:
-            df: 包含RSI相关指标的DataFrame
+            df: 包含RSI相关指标的Data_frame
             
         Returns:
             综合评分序列 (0-100)
@@ -344,7 +344,7 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         生成RSI交易信号
         
         Args:
-            df: 包含RSI指标的DataFrame
+            df: 包含RSI指标的Data_frame
             
         Returns:
             信号序列 (1: 买入, -1: 卖出, 0: 持有)
@@ -382,17 +382,17 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         
         return signals
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Rsi(data, **kwargs)
         
         if 'ENHANCED_RSI_VALUE' in self._result.columns:
             return self._result['ENHANCED_RSI_VALUE']
         else:
             return pd.Series(50.0, index=data.index)
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Rsi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if score.empty:
             return 0.5
@@ -406,10 +406,10 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
         
         return max(0.3, confidence)
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Rsi(data, **kwargs)
         
         patterns = pd.DataFrame(index=data.index)
         
@@ -422,4 +422,4 @@ class ENHANCED_RSI(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-EnhancedRSI = ENHANCED_RSI
+enhanced_rsi = ENHANCED_RSI

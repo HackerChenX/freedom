@@ -61,13 +61,13 @@ class StrategyRunner:
         
         try:
             # 1. 加载策略
-            strategy = self._load_strategy(strategy_file)
+            strategy = self._load_strategy_Run_Strategy(strategy_file)
             
             # 2. 准备股票池
-            stock_pool = self._prepare_stock_pool(config.get("stock_pool", "all"))
+            stock_pool = self._prepare_stock_pool_Run_Strategy(config.get("stock_pool", "all"))
             
             # 3. 执行策略
-            selected_stocks = self._execute_strategy(strategy, config["execution_date"])
+            selected_stocks = self._execute_strategy_Run_Strategy(strategy, config["execution_date"])
             
             # 4. 过滤和排序结果
             filtered_results = self._filter_results(
@@ -104,7 +104,7 @@ class StrategyRunner:
                 "timestamp": datetime.now().isoformat()
             }
     
-    def _load_strategy(self, strategy_file: str) -> dict:
+    def _load_strategy_Run_Strategy(self, strategy_file: str) -> dict:
         """加载策略文件"""
         try:
             with open(strategy_file, 'r', encoding='utf-8') as f:
@@ -116,7 +116,7 @@ class StrategyRunner:
         except Exception as e:
             raise Exception(f"加载策略文件失败: {e}")
     
-    def _prepare_stock_pool(self, pool_type: str) -> list:
+    def _prepare_stock_pool_Run_Strategy(self, pool_type: str) -> list:
         """准备股票池"""
         try:
             if pool_type == "all":
@@ -155,7 +155,7 @@ class StrategyRunner:
             logger.info(f"使用备用股票池: {len(backup_stocks)} 只股票")
             return backup_stocks
     
-    def _execute_strategy(self, strategy: dict, execution_date: str) -> pd.DataFrame:
+    def _execute_strategy_Run_Strategy(self, strategy: dict, execution_date: str) -> pd.DataFrame:
         """执行策略"""
         try:
             # 保存策略到临时文件
@@ -163,7 +163,7 @@ class StrategyRunner:
             self.strategy_manager.save_strategy(temp_strategy_id, strategy)
             
             # 执行策略
-            def progress_callback(progress, message):
+            def progress_callback_Strategy_Run_Strategy(progress, message):
                 print(f"执行进度: {progress:.1%} - {message}")
             
             selected_stocks = self.strategy_executor.execute_strategy_by_id(
@@ -248,7 +248,7 @@ class StrategyRunner:
         print(f"执行报告已保存到: {report_file}")
 
 
-def main():
+def main_runstrategy():
     """主函数"""
     parser = argparse.ArgumentParser(description="策略执行工具")
     parser.add_argument("--strategy", required=True, help="策略文件路径")
@@ -318,4 +318,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    mainRunstrategy()

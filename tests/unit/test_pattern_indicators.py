@@ -18,12 +18,12 @@ from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
 
 
-class TestCandlestickPatterns(IndicatorTestMixin, unittest.TestCase):
+class TestCandlestickPatterns_Indicators(IndicatorTestMixin, unittest.TestCase):
     """K线形态测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestpatternindicators(self):
         """为所有测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestpatternindicators()
         self.indicator = complete_registry.create_indicator('CANDLESTICK_PATTERNS')
         self.expected_columns = ['doji', 'hammer', 'hanging_man']
         
@@ -50,9 +50,9 @@ class TestCandlestickPatterns(IndicatorTestMixin, unittest.TestCase):
 class TestAdvancedCandlestickPatterns(IndicatorTestMixin, unittest.TestCase):
     """高级K线形态测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestpatternindicators(self):
         """为所有测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestpatternindicators()
         self.indicator = complete_registry.create_indicator('ADVANCED_CANDLESTICK')
         self.expected_columns = ['三白兵', '三黑鸦', '头肩顶', '头肩底', '双顶', '双底']
         
@@ -95,7 +95,7 @@ class TestAdvancedCandlestickPatterns(IndicatorTestMixin, unittest.TestCase):
 
 class TestPatternQualityEvaluator(IndicatorTestMixin, unittest.TestCase):
     """形态质量评估器测试"""
-    def setUp(self):
+    def setUp_IndicatorsTestpatternindicators(self):
         """测试准备"""
         self.skipTest("Test for PatternQualityEvaluator is not yet implemented.")
 
@@ -103,9 +103,9 @@ class TestPatternQualityEvaluator(IndicatorTestMixin, unittest.TestCase):
 class TestZXMPatternIndicator(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
     """ZXM形态指标测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestpatternindicators(self):
         """为所有测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestpatternindicators()
         self.indicator = complete_registry.create_indicator('ZXM_PATTERNS')
         
         # 生成适合ZXM形态分析的数据
@@ -136,9 +136,9 @@ class TestZXMPatternIndicator(IndicatorTestMixin, LogCaptureMixin, unittest.Test
         self.close_prices = self.data['close'].values
         self.volumes = self.data['volume'].values
         
-    def tearDown(self):
+    def tearDown_IndicatorsTestpatternindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestpatternindicators()
     
     def test_zxm_pattern_identification(self):
         """测试ZXM形态识别功能"""
@@ -210,9 +210,9 @@ class TestZXMPatternIndicator(IndicatorTestMixin, LogCaptureMixin, unittest.Test
 class TestBuyPointDetector(IndicatorTestMixin, unittest.TestCase):
     """买点检测器测试"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestpatternindicators(self):
         """为所有测试准备数据和指标实例"""
-        super().setUp()
+        super().setUp_IndicatorsTestpatternindicators()
         # BuyPointDetector可能不在注册系统中，尝试创建
         try:
             self.indicator = complete_registry.create_indicator('BUY_POINT_DETECTOR')
@@ -242,9 +242,9 @@ class TestBuyPointDetector(IndicatorTestMixin, unittest.TestCase):
         # 添加换手率
         self.data['turnover_rate'] = self.data['volume'] / 10000
     
-    def tearDown(self):
+    def tearDown_IndicatorsTestpatternindicators(self):
         """清理测试环境"""
-        super().tearDown()
+        super().tearDown_IndicatorsTestpatternindicators()
     
     def test_buy_signal_detection(self):
         """测试买点信号检测功能"""

@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import os
 
-from indicators.adapter import (IndicatorAdapter, register_indicator,
+from indicators.adapter import (Indicator_adapter, register_indicator,
                             get_indicator, calculate_indicator, list_all_indicators)
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
@@ -21,19 +21,19 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class TestIndicatorAdapter(unittest.TestCase):
+class Test_indicator_adapter(unittest.Test_case):
     """测试指标适配器功能"""
     
-    def setUp(self):
+    def set_up_Test_Indicator_Adapter_Test_Indicator_Adapter(self):
         """初始化测试环境"""
         # 创建模拟数据
-        self.create_mock_data()
+        self.create_mock_data_Test_Indicator_Adapter_Test_Indicator_Adapter()
         
         # 初始化指标
         self.macd = MACD()
         self.rsi = RSI()
     
-    def create_mock_data(self):
+    def create_mock_data_Test_Indicator_Adapter_Test_Indicator_Adapter(self):
         """创建模拟数据"""
         # 创建基础数据
         np.random.seed(42)
@@ -68,7 +68,7 @@ class TestIndicatorAdapter(unittest.TestCase):
         adapter = get_indicator("MACD")
         
         # 断言
-        self.assertIsNotNone(adapter)
+        self.assert_is_not_none(adapter)
         self.assertEqual(adapter.name, "MACD")
     
     def test_adapter_calculation(self):
@@ -80,13 +80,13 @@ class TestIndicatorAdapter(unittest.TestCase):
         result = calculate_indicator("MACD", self.data)
         
         # 断言
-        self.assertIsInstance(result, pd.DataFrame)
-        self.assertTrue(len(result) > 0)
+        self.assert_is_instance(result, pd.DataFrame)
+        self.assert_true(len(result) > 0)
         
         # 检查输出列 - 修改为实际列名
         macd_columns = ['DIF', 'DEA', 'MACD']  # 实际输出的MACD列名
         for col in macd_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_adapter_column_mapping(self):
         """测试指标适配器列名映射功能"""
@@ -101,29 +101,29 @@ class TestIndicatorAdapter(unittest.TestCase):
         result = calculate_indicator("RSI", renamed_data)
         
         # 断言
-        self.assertIsInstance(result, pd.DataFrame)
-        self.assertTrue(len(result) > 0)
+        self.assert_is_instance(result, pd.DataFrame)
+        self.assert_true(len(result) > 0)
         
         # 修改为实际输出的RSI列名
         rsi_column = 'RSI14'  # 实际输出的RSI列名
-        self.assertIn(rsi_column, result.columns)
+        self.assert_in(rsi_column, result.columns)
 
 
-class TestCompositeIndicator(unittest.TestCase):
+class Test_composite_indicator(unittest.Test_case):
     """测试复合指标功能"""
     
-    def setUp(self):
+    def set_up_Test_Indicator_Adapter_Test_Indicator_Adapter(self):
         """初始化测试环境"""
         # 创建模拟数据
-        self.create_mock_data()
+        self.create_mock_data_Test_Indicator_Adapter_Test_Indicator_Adapter()
         
         # 初始化技术指标组合器
-        self.composite = TechnicalComposite()
+        self.composite = Technical_composite()
         
         # 预先注册指标
         self.register_indicators()
     
-    def create_mock_data(self):
+    def create_mock_data_Test_Indicator_Adapter_Test_Indicator_Adapter(self):
         """创建模拟数据"""
         # 创建基础数据
         np.random.seed(42)
@@ -161,8 +161,8 @@ from indicators.complete_indicator_registry import complete_registry
         from indicators.roc import ROC
         from indicators.vr import VR
         from indicators.adx import ADX
-        from indicators.intraday_volatility import IntradayVolatility
-        from indicators.trend.trend_strength import TrendStrength
+        from indicators.intraday_volatility import Intraday_volatility
+        from indicators.trend.trend_strength import Trend_strength
         
         # 注册所有测试需要的指标
         register_indicator(MACD())
@@ -175,8 +175,8 @@ from indicators.complete_indicator_registry import complete_registry
         register_indicator(ROC())
         register_indicator(VR())
         register_indicator(ADX())
-        register_indicator(IntradayVolatility())
-        register_indicator(TrendStrength())
+        register_indicator(Intraday_volatility())
+        register_indicator(Trend_strength())
     
     def test_trend_strength_composite(self):
         """测试趋势强度复合指标"""
@@ -188,13 +188,13 @@ from indicators.complete_indicator_registry import complete_registry
             result = trend_indicator.calculate(self.data)
             
             # 断言
-            self.assertIsInstance(result, pd.DataFrame)
-            self.assertTrue(len(result) > 0)
+            self.assert_is_instance(result, pd.DataFrame)
+            self.assert_true(len(result) > 0)
             
             # 检查输出列
             expected_columns = ['trend_strength_score', 'trend_category']
             for col in expected_columns:
-                self.assertIn(col, result.columns)
+                self.assert_in(col, result.columns)
         except Exception as e:
             logger.error(f"测试趋势强度复合指标失败: {str(e)}")
             raise
@@ -209,13 +209,13 @@ from indicators.complete_indicator_registry import complete_registry
             result = volatility_indicator.calculate(self.data)
             
             # 断言
-            self.assertIsInstance(result, pd.DataFrame)
-            self.assertTrue(len(result) > 0)
+            self.assert_is_instance(result, pd.DataFrame)
+            self.assert_true(len(result) > 0)
             
             # 检查输出列
             expected_columns = ['volatility_score', 'volatility_category']
             for col in expected_columns:
-                self.assertIn(col, result.columns)
+                self.assert_in(col, result.columns)
         except Exception as e:
             logger.error(f"测试波动性复合指标失败: {str(e)}")
             raise
@@ -230,13 +230,13 @@ from indicators.complete_indicator_registry import complete_registry
             result = momentum_indicator.calculate(self.data)
             
             # 断言
-            self.assertIsInstance(result, pd.DataFrame)
-            self.assertTrue(len(result) > 0)
+            self.assert_is_instance(result, pd.DataFrame)
+            self.assert_true(len(result) > 0)
             
             # 检查输出列
             expected_columns = ['momentum_score', 'momentum_category']
             for col in expected_columns:
-                self.assertIn(col, result.columns)
+                self.assert_in(col, result.columns)
         except Exception as e:
             logger.error(f"测试动量复合指标失败: {str(e)}")
             raise
@@ -251,13 +251,13 @@ from indicators.complete_indicator_registry import complete_registry
             result = health_indicator.calculate(self.data)
             
             # 断言
-            self.assertIsInstance(result, pd.DataFrame)
-            self.assertTrue(len(result) > 0)
+            self.assert_is_instance(result, pd.DataFrame)
+            self.assert_true(len(result) > 0)
             
             # 检查输出列
             expected_columns = ['market_health_score', 'market_health_category', 'market_state']
             for col in expected_columns:
-                self.assertIn(col, result.columns)
+                self.assert_in(col, result.columns)
         except Exception as e:
             logger.error(f"测试市场健康度复合指标失败: {str(e)}")
             raise

@@ -17,7 +17,7 @@ class TestEnhancedIndicators(unittest.TestCase):
     """增强型指标的单元测试"""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass_Indicators(cls):
         """为所有测试准备数据"""
         config = [
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 100},
@@ -109,7 +109,7 @@ class TestEnhancedIndicators(unittest.TestCase):
         self.assertIn('buy_signal', signals.columns)
         self.assertIn('sell_signal', signals.columns)
 
-    def test_enhanced_trix(self):
+    def test_enhanced_trix_Indicators(self):
         """测试增强型TRIX指标"""
         indicator = EnhancedTRIX()
         result = indicator.calculate(self.data)
@@ -130,7 +130,7 @@ class TestEnhancedIndicators(unittest.TestCase):
         self.assertIn('buy_signal', signals.columns)
         self.assertIn('sell_signal', signals.columns)
 
-    def test_enhanced_macd(self):
+    def test_enhanced_macd_Indicators(self):
         """测试增强型MACD指标"""
         indicator = EnhancedMACD()
         result = indicator.calculate(self.data)

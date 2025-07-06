@@ -101,7 +101,7 @@ class ComprehensiveIndicatorAnalyzer:
             'VOLUME_RATIO': ['VOLUME_RATIO放量', 'VOLUME_RATIO缩量', 'VOLUME_RATIO异常', 'VOLUME_RATIO趋势', 'VOLUME_RATIO背离']
         }
     
-    def analyze_all_indicators(self) -> Dict:
+    def analyze_all_indicators_Analysis(self) -> Dict:
         """分析所有指标"""
         print("开始分析系统中的所有技术指标...")
         
@@ -221,7 +221,7 @@ class ComprehensiveIndicatorAnalyzer:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-                return 'class ' in content and 'def calculate' in content
+                return 'class ' in content and 'def calculate_Comprehensive_Indicator_Analysis' in content
         except:
             return False
     
@@ -290,7 +290,7 @@ class ComprehensiveIndicatorAnalyzer:
         }
 
 
-def main():
+def mainComprehensiveindicatoranalysis():
     """主函数"""
     print("=" * 80)
     print("全面技术指标分析和分类")
@@ -299,7 +299,7 @@ def main():
     print()
     
     analyzer = ComprehensiveIndicatorAnalyzer()
-    analysis_result = analyzer.analyze_all_indicators()
+    analysis_result = analyzer.analyze_all_indicators_Analysis()
     
     # 显示分析结果
     print("=" * 80)
@@ -367,4 +367,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    mainComprehensiveindicatoranalysis()

@@ -14,7 +14,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class AlertRule:
+class Alert_rule:
     """告警规则"""
 
     def __init__(self, name: str, condition: Callable, message: str,
@@ -45,24 +45,24 @@ class AlertRule:
         self.last_triggered = datetime.now()
 
 
-class NotificationChannel:
+class Notification_channel:
     """通知渠道基类"""
 
     def __init__(self, name: str):
         self.name = name
 
-    def send(self, alert: Dict[str, Any]) -> bool:
+    def send_Manager_Alert_Manager_Alert_Manager_alertmanager(self, alert: Dict[str, Any]) -> bool:
         """发送通知"""
-        raise NotImplementedError
+        raise Not_implemented_error
 
 
-class LogNotification(NotificationChannel):
+class Log_notification(Notification_channel):
     """日志通知"""
 
     def __init__(self):
         super().__init__("log")
 
-    def send(self, alert: Dict[str, Any]) -> bool:
+    def send_Manager_Alert_Manager_Alert_Manager_alertmanager(self, alert: Dict[str, Any]) -> bool:
         """发送日志通知"""
         try:
             severity = alert['severity'].upper()
@@ -83,7 +83,7 @@ class LogNotification(NotificationChannel):
             return False
 
 
-class WebhookNotification(NotificationChannel):
+class Webhook_notification(Notification_channel):
     """Webhook通知"""
 
     def __init__(self, webhook_url: str, headers: Dict[str, str] = None):
@@ -91,7 +91,7 @@ class WebhookNotification(NotificationChannel):
         self.webhook_url = webhook_url
         self.headers = headers or {'Content-Type': 'application/json'}
 
-    def send(self, alert: Dict[str, Any]) -> bool:
+    def send_Manager_Alert_Manager_Alert_Manager_alertmanager(self, alert: Dict[str, Any]) -> bool:
         """发送Webhook通知"""
         try:
             payload = {
@@ -122,7 +122,7 @@ class WebhookNotification(NotificationChannel):
             return False
 
 
-class AlertManager:
+class Alert_manager:
     """告警管理器"""
 
     def __init__(self):
@@ -132,15 +132,15 @@ class AlertManager:
         self.max_history = 1000
 
         # 默认添加日志通知渠道
-        self.add_channel(LogNotification())
+        self.add_channel(Log_notification())
 
         # 添加默认告警规则
-        self._add_default_rules()
+        self._add_default_rules_Alert_Manager()
 
-    def _add_default_rules(self):
+    def _add_default_rules_Alert_Manager(self):
         """添加默认告警规则"""
         # 高错误率告警
-        self.add_rule(AlertRule(
+        self.add_rule_Manager(Alert_rule(
             name="high_error_rate",
             condition=lambda m: m.get('error_rate', 0) > 15.0,
             message="错误率过高，可能存在系统问题",
@@ -149,7 +149,7 @@ class AlertManager:
         ))
 
         # 低成功率告警
-        self.add_rule(AlertRule(
+        self.add_rule_Manager(Alert_rule(
             name="low_success_rate",
             condition=lambda m: m.get('success_rate', 100) < 85.0 and m.get('total_requests', 0) > 20,
             message="成功率过低，需要检查系统状态",
@@ -158,7 +158,7 @@ class AlertManager:
         ))
 
         # 响应时间过长告警
-        self.add_rule(AlertRule(
+        self.add_rule_Manager(Alert_rule(
             name="slow_response",
             condition=lambda m: m.get('avg_response_time', 0) > 30.0,
             message="平均响应时间过长，可能存在性能问题",
@@ -167,7 +167,7 @@ class AlertManager:
         ))
 
         # 系统资源告警
-        self.add_rule(AlertRule(
+        self.add_rule_Manager(Alert_rule(
             name="high_cpu_usage",
             condition=lambda m: m.get('cpu_usage', 0) > 85.0,
             message="CPU使用率过高",
@@ -175,7 +175,7 @@ class AlertManager:
             cooldown=600
         ))
 
-        self.add_rule(AlertRule(
+        self.add_rule_Manager(Alert_rule(
             name="high_memory_usage",
             condition=lambda m: m.get('memory_usage', 0) > 90.0,
             message="内存使用率过高",
@@ -184,7 +184,7 @@ class AlertManager:
         ))
 
         # 无请求告警
-        self.add_rule(AlertRule(
+        self.add_rule_Manager(Alert_rule(
             name="no_requests",
             condition=lambda m: m.get('requests_per_hour', 0) < 1.0 and m.get('runtime_hours', 0) > 1.0,
             message="系统长时间无请求，可能已停止工作",
@@ -192,18 +192,18 @@ class AlertManager:
             cooldown=1800  # 30分钟冷却
         ))
 
-    def add_rule(self, rule: AlertRule):
+    def add_rule_Manager(self, rule: Alert_rule):
         """添加告警规则"""
         self.rules[rule.name] = rule
         logger.info(f"添加告警规则: {rule.name}")
 
-    def remove_rule(self, rule_name: str):
+    def remove_rule_Manager(self, rule_name: str):
         """移除告警规则"""
         if rule_name in self.rules:
             del self.rules[rule_name]
             logger.info(f"移除告警规则: {rule_name}")
 
-    def add_channel(self, channel: NotificationChannel):
+    def add_channel(self, channel: Notification_channel):
         """添加通知渠道"""
         self.channels[channel.name] = channel
         logger.info(f"添加通知渠道: {channel.name}")
@@ -244,7 +244,7 @@ class AlertManager:
         """发送通知"""
         for channel_name, channel in self.channels.items():
             try:
-                success = channel.send(alert)
+                success = channel.send_Manager_Alert_Manager_Alert_Manager_alertmanager(alert)
                 if success:
                     logger.debug(f"通知发送成功: {channel_name}")
                 else:
@@ -307,7 +307,7 @@ class AlertManager:
         results = {}
         for channel_name, channel in self.channels.items():
             try:
-                success = channel.send(test_alert)
+                success = channel.send_Manager_Alert_Manager_Alert_Manager_alertmanager(test_alert)
                 results[channel_name] = 'success' if success else 'failed'
             except Exception as e:
                 results[channel_name] = f'error: {str(e)}'

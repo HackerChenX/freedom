@@ -1,7 +1,7 @@
 """
-指标计算器接口定义
+技术指标计算器接口模块
 
-定义技术指标计算的标准接口
+定义技术指标计算的标准接口和相关抽象类
 """
 
 from abc import ABC, abstractmethod
@@ -9,10 +9,10 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 import pandas as pd
 import numpy as np
 
-from enums.indicator_types import IndicatorType
+from enums.indicator_types import Indicatortype_indicator_types as IndicatorType
 
 
-class IIndicatorCalculator(ABC):
+class IindicatorCalculator(ABC):
     """
     指标计算器接口
     
@@ -20,7 +20,7 @@ class IIndicatorCalculator(ABC):
     """
     
     @abstractmethod
-    def calculate(self, 
+    def calculate_Indicator_Calculator_Interface(self, 
                   data: pd.DataFrame, 
                   params: Optional[Dict[str, Any]] = None) -> Union[pd.Series, pd.DataFrame]:
         """
@@ -36,7 +36,7 @@ class IIndicatorCalculator(ABC):
         pass
     
     @abstractmethod
-    def get_indicator_type(self) -> IndicatorType:
+    def get_indicator_type_Indicator_Calculator_Interface(self) -> IndicatorType:
         """
         获取指标类型
         
@@ -79,7 +79,7 @@ class IIndicatorCalculator(ABC):
         pass
 
 
-class ITrendIndicator(IIndicatorCalculator):
+class ItrendIndicator(IindicatorCalculator):
     """
     趋势指标接口
     """
@@ -98,7 +98,7 @@ class ITrendIndicator(IIndicatorCalculator):
         pass
 
 
-class IVolatilityIndicator(IIndicatorCalculator):
+class IvolatilityIndicator(IindicatorCalculator):
     """
     波动率指标接口
     """
@@ -117,7 +117,7 @@ class IVolatilityIndicator(IIndicatorCalculator):
         pass
 
 
-class IMomentumIndicator(IIndicatorCalculator):
+class ImomentumIndicator(IindicatorCalculator):
     """
     动量指标接口
     """
@@ -136,7 +136,7 @@ class IMomentumIndicator(IIndicatorCalculator):
         pass
 
 
-class IVolumeIndicator(IIndicatorCalculator):
+class IvolumeIndicator(IindicatorCalculator):
     """
     成交量指标接口
     """
@@ -155,13 +155,13 @@ class IVolumeIndicator(IIndicatorCalculator):
         pass
 
 
-class IPatternIndicator(IIndicatorCalculator):
+class IpatternIndicator(IindicatorCalculator):
     """
     形态指标接口
     """
     
     @abstractmethod
-    def detect_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
+    def detect_patterns_Indicator_Calculator_Interface(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         检测形态模式
         
@@ -174,23 +174,23 @@ class IPatternIndicator(IIndicatorCalculator):
         pass
 
 
-class ICompositeIndicator(IIndicatorCalculator):
+class IcompositeIndicator(IindicatorCalculator):
     """
     复合指标接口
     """
     
     @abstractmethod
-    def get_component_indicators(self) -> List[IIndicatorCalculator]:
+    def get_component_indicators(self) -> List[IindicatorCalculator]:
         """
         获取组成指标列表
         
         Returns:
-            List[IIndicatorCalculator]: 组成指标列表
+            List[IindicatorCalculator]: 组成指标列表
         """
         pass
     
     @abstractmethod
-    def combine_signals(self, signals: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    def combine_signals_Indicator_Calculator_Interface(self, signals: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """
         组合信号
         
@@ -203,29 +203,29 @@ class ICompositeIndicator(IIndicatorCalculator):
         pass
 
 
-class IIndicatorFactory(ABC):
+class IindicatorFactory(ABC):
     """
     指标工厂接口
     """
     
     @abstractmethod
-    def create_indicator(self, 
+    def create_indicator_Indicator_Calculator_Interface(self, 
                         indicator_type: Union[str, IndicatorType], 
-                        params: Optional[Dict[str, Any]] = None) -> IIndicatorCalculator:
+                        params: Optional[Dict[str, Any]] = None) -> IindicatorCalculator:
         """
         创建指标实例
         
         Args:
             indicator_type: 指标类型
-            params: 初始化参数
+            params: 创建参数
             
         Returns:
-            IIndicatorCalculator: 指标计算器实例
+            IindicatorCalculator: 指标计算器实例
         """
         pass
     
     @abstractmethod
-    def get_available_indicators(self) -> List[str]:
+    def get_available_indicators_Indicator_Calculator_Interface(self) -> List[str]:
         """
         获取可用指标列表
         
@@ -235,7 +235,7 @@ class IIndicatorFactory(ABC):
         pass
     
     @abstractmethod
-    def register_indicator(self, 
+    def register_indicator_Indicator_Calculator_Interface(self, 
                           name: str, 
                           indicator_class: type, 
                           category: IndicatorType) -> None:
@@ -245,6 +245,6 @@ class IIndicatorFactory(ABC):
         Args:
             name: 指标名称
             indicator_class: 指标类
-            category: 指标类别
+            category: 指标分类
         """
         pass 

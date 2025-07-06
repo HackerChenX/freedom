@@ -9,13 +9,13 @@ import json
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
-from .base_spider import BaseSpider
+from crawler.spiders.base_spider import Base_spider
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class TaogubaSpider(BaseSpider):
+class Taoguba_spider(Base_spider):
     """淘股吧爬虫"""
 
     def __init__(self, anti_crawler_module=None):

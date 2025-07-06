@@ -19,15 +19,15 @@ import numpy as np
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.unified_data_manager import UnifiedDataManager
-from strategy.strategy_executor import StrategyExecutor
-from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
+from db.unified_data_manager import Unified_data_manager
+from strategy.strategy_executor import Strategy_executor
+from analysis.buypoints.analyze_buypoints import Buy_point_analyzer
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def get_previous_trading_date(date_str: str, days: int) -> str:
+def get_previous_trading_date_Validator(date_str: str, days: int) -> str:
     """获取前N个交易日的日期"""
     date_obj = datetime.strptime(date_str, '%Y-%m-%d')
     previous_date = date_obj - timedelta(days=days)
@@ -39,10 +39,10 @@ class IndicatorMultiPatternValidator:
     
     def __init__(self, config_file: str = None):
         """初始化验证器"""
-        self.config = self._load_config(config_file)
-        self.data_manager = UnifiedDataManager()
-        self.strategy_executor = StrategyExecutor()
-        self.buypoint_analyzer = BuyPointAnalyzer()
+        self.config = self._load_config_Indicator_Multi_Pattern_Validator(config_file)
+        self.data_manager = Unified_data_manager()
+        self.strategy_executor = Strategy_executor()
+        self.buypoint_analyzer = Buy_point_analyzer()
         
         # 验证统计
         self.validation_stats = {
@@ -57,7 +57,7 @@ class IndicatorMultiPatternValidator:
         
         logger.info("🔄 指标多形态验证器初始化完成")
     
-    def _load_config(self, config_file: str = None) -> Dict[str, Any]:
+    def _load_config_Indicator_Multi_Pattern_Validator(self, config_file: str = None) -> Dict[str, Any]:
         """加载配置"""
         default_config = {
             'validation': {
@@ -180,26 +180,26 @@ class IndicatorMultiPatternValidator:
             try:
                 with open(config_file, 'r', encoding='utf-8') as f:
                     custom_config = json.load(f)
-                self._merge_config(default_config, custom_config)
+                self._merge_config_Indicator_Multi_Pattern_Validator(default_config, custom_config)
             except Exception as e:
                 logger.warning(f"加载配置文件失败，使用默认配置: {e}")
         
         return default_config
     
-    def _merge_config(self, default: Dict, custom: Dict):
+    def _merge_config_Indicator_Multi_Pattern_Validator(self, default: Dict, custom: Dict):
         """递归合并配置"""
         for key, value in custom.items():
             if key in default and isinstance(default[key], dict) and isinstance(value, dict):
-                self._merge_config(default[key], value)
+                self._merge_config_Indicator_Multi_Pattern_Validator(default[key], value)
             else:
                 default[key] = value
     
-    def validate_all_patterns(self) -> Dict[str, Any]:
+    def validate_all_patterns_Validator(self) -> Dict[str, Any]:
         """验证所有指标的所有形态"""
         logger.info("🚀 开始多形态验证")
         
         # 获取股票池
-        stock_pool = self._get_stock_pool()
+        stock_pool = self._get_stock_pool_Indicator_Multi_Pattern_Validator()
         
         all_results = {}
         
@@ -213,7 +213,7 @@ class IndicatorMultiPatternValidator:
                 
                 try:
                     # 验证单个形态
-                    result = self._validate_single_pattern(
+                    result = self._validate_single_pattern_Indicator_Multi_Pattern_Validator(
                         indicator_name, 
                         pattern_name, 
                         pattern_config, 
@@ -246,7 +246,7 @@ class IndicatorMultiPatternValidator:
             all_results[indicator_name] = indicator_results
         
         # 生成综合报告
-        report = self._generate_comprehensive_report(all_results)
+        report = self._generate_comprehensive_report_Indicator_Multi_Pattern_Validator(all_results)
         
         logger.info(f"✅ 多形态验证完成")
         logger.info(f"   总形态数: {self.validation_stats['total_patterns']}")
@@ -255,7 +255,7 @@ class IndicatorMultiPatternValidator:
         
         return report
     
-    def _validate_single_pattern(self, indicator_name: str, pattern_name: str, 
+    def _validate_single_pattern_Indicator_Multi_Pattern_Validator(self, indicator_name: str, pattern_name: str, 
                                pattern_config: Dict[str, Any], stock_pool: List[str]) -> Dict[str, Any]:
         """验证单个形态"""
         start_time = datetime.now()
@@ -267,10 +267,10 @@ class IndicatorMultiPatternValidator:
             )
             
             # 2. 执行选股
-            selected_stocks = self._execute_strategy_selection(strategy_config, stock_pool)
+            selected_stocks = self._execute_strategy_selection_Indicator_Multi_Pattern_Validator(strategy_config, stock_pool)
             
             # 3. 买点分析
-            buypoint_analysis = self._perform_buypoint_analysis(
+            buypoint_analysis = self._perform_buypoint_analysis_Indicator_Multi_Pattern_Validator(
                 selected_stocks, indicator_name, pattern_name
             )
             
@@ -332,7 +332,7 @@ class IndicatorMultiPatternValidator:
         
         return strategy_config
     
-    def _execute_strategy_selection(self, strategy_config: Dict[str, Any], stock_pool: List[str]) -> List[str]:
+    def _execute_strategy_selection_Indicator_Multi_Pattern_Validator(self, strategy_config: Dict[str, Any], stock_pool: List[str]) -> List[str]:
         """执行策略选股"""
         try:
             # 使用策略执行器进行选股
@@ -359,7 +359,7 @@ class IndicatorMultiPatternValidator:
             logger.error(f"策略选股失败: {e}")
             return []
     
-    def _perform_buypoint_analysis(self, selected_stocks: List[str], 
+    def _perform_buypoint_analysis_Indicator_Multi_Pattern_Validator(self, selected_stocks: List[str], 
                                  indicator_name: str, pattern_name: str) -> Dict[str, Any]:
         """对选出的股票进行买点分析"""
         if not selected_stocks:
@@ -441,7 +441,7 @@ class IndicatorMultiPatternValidator:
         try:
             # 获取股票数据
             end_date = analysis_date
-            start_date = get_previous_trading_date(end_date, 60)
+            start_date = get_previous_trading_date_Validator(end_date, 60)
             
             stock_data = self.data_manager.get_stock_data(
                 stock_code=stock_code,
@@ -862,11 +862,11 @@ class IndicatorMultiPatternValidator:
             logger.error(f"形态闭环验证过程出错: {e}")
             return False
     
-    def _get_stock_pool(self) -> List[str]:
+    def _get_stock_pool_Indicator_Multi_Pattern_Validator(self) -> List[str]:
         """获取股票池"""
         try:
             # 重新初始化数据管理器以确保连接正常
-            self.data_manager = UnifiedDataManager()
+            self.data_manager = Unified_data_manager()
             stock_list = self.data_manager.get_all_stock_codes()
             logger.info(f"获取股票池成功，大小: {len(stock_list)}")
             return stock_list
@@ -875,7 +875,7 @@ class IndicatorMultiPatternValidator:
             # 返回一个小的默认股票池用于测试
             return ['000001', '000002', '000858', '002415', '600000']
     
-    def _generate_comprehensive_report(self, all_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_comprehensive_report_Indicator_Multi_Pattern_Validator(self, all_results: Dict[str, Any]) -> Dict[str, Any]:
         """生成综合报告"""
         report = {
             'metadata': {
@@ -940,17 +940,17 @@ class IndicatorMultiPatternValidator:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         json_file = os.path.join(reports_dir, f'multi_pattern_validation_{timestamp}.json')
         
-        def convert_to_serializable(obj):
+        def convert_to_serializable_Validator(obj):
             if hasattr(obj, 'item'):
                 return obj.item()
             elif isinstance(obj, dict):
-                return {k: convert_to_serializable(v) for k, v in obj.items()}
+                return {k: convert_to_serializable_Validator(v) for k, v in obj.items()}
             elif isinstance(obj, list):
-                return [convert_to_serializable(v) for v in obj]
+                return [convert_to_serializable_Validator(v) for v in obj]
             else:
                 return obj
         
-        serializable_report = convert_to_serializable(report)
+        serializable_report = convert_to_serializable_Validator(report)
         
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(serializable_report, f, ensure_ascii=False, indent=2, default=str)
@@ -958,7 +958,7 @@ class IndicatorMultiPatternValidator:
         logger.info(f"综合报告已保存: {json_file}")
 
 
-def main():
+def main_indicatormultipatternvalidator():
     """主函数"""
     import argparse
     
@@ -969,7 +969,7 @@ def main():
     args = parser.parse_args()
     
     # 创建验证器
-    validator = IndicatorMultiPatternValidator(config_file=args.config)
+    validator = Indicator_multi_pattern_validator(config_file=args.config)
     
     if args.indicator:
         # 验证单个指标的所有形态
@@ -980,12 +980,12 @@ def main():
         
         print(f"🔍 开始验证指标 {args.indicator} 的所有形态")
         
-        stock_pool = validator._get_stock_pool()
+        stock_pool = validator._get_stock_pool_Indicator_Multi_Pattern_Validator()
         results = {}
         
         for pattern_name, pattern_config in patterns.items():
             print(f"\n验证形态: {args.indicator}.{pattern_name}")
-            result = validator._validate_single_pattern(
+            result = validator._validate_single_pattern_Indicator_Multi_Pattern_Validator(
                 args.indicator, pattern_name, pattern_config, stock_pool
             )
             results[pattern_name] = result
@@ -997,7 +997,7 @@ def main():
     
     else:
         # 验证所有指标的所有形态
-        report = validator.validate_all_patterns()
+        report = validator.validate_all_patterns_Validator()
         
         print(f"\n🎯 多形态验证完成")
         print(f"总形态数: {report['summary']['total_patterns']}")
@@ -1008,4 +1008,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_indicatormultipatternvalidator() 

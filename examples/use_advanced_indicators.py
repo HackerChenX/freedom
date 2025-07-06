@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 高级技术指标使用示例
 
@@ -15,7 +17,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from indicators.pattern.candlestick_patterns import CandlestickPatterns, PatternType
 from indicators.zxm_washplate import ZXMWashPlate, WashPlateType
 from indicators.chip_distribution import ChipDistribution
@@ -29,7 +31,7 @@ from indicators.market_env import MarketDetector
 logger = get_logger(__name__)
 
 
-def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+def get_stock_data_Indicators_Use_Advanced_Indicators(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     从数据库获取股票数据
     
@@ -43,7 +45,8 @@ def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFr
     """
     try:
         # 连接ClickHouse数据库
-        db = get_clickhouse_db()
+        container = get_container()
+        data_access = container.get_data_access()
         
         # 查询SQL
         sql = f"""
@@ -64,7 +67,7 @@ def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFr
         """
         
         # 执行查询
-        data = db.query(sql)
+        data = data_access.query_dataframe(sql)
         
         # 添加换手率估算
         if 'turnover_rate' not in data.columns:
@@ -406,7 +409,7 @@ def demo_gann_tools(data: pd.DataFrame):
         print(f"绘制江恩角度线时出错: {e}")
 
 
-def main():
+def mainUseadvancedindicators():
     """主函数"""
     # 获取样本数据
     stock_code = "000001.SZ"  # 平安银行
@@ -414,7 +417,7 @@ def main():
     end_date = "20230630"
     
     print(f"获取 {stock_code} 从 {start_date} 到 {end_date} 的数据...")
-    data = get_stock_data(stock_code, start_date, end_date)
+    data = get_stock_data_Indicators_Use_Advanced_Indicators(stock_code, start_date, end_date)
     print(f"获取到 {len(data)} 条数据记录")
     
     if data.empty:
@@ -455,4 +458,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    mainUseadvancedindicators() 

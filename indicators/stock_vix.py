@@ -12,12 +12,12 @@ from typing import Dict, Any, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class STOCK_VIX(BaseIndicator, PatternSignalMixin):
+class StockVix(BaseIndicator, PatternSignalMixin):
     """
     STOCK_VIX 指标 (股票波动率指标)
     
@@ -49,16 +49,16 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
         self.name = "STOCK_VIX"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_stockvix()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Vix_Stock_Vix(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_stockvix(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 20, "annualize_factor": 252}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Vix_Stock_Vix(self, **kwargs):
         """
         设置指标参数
         
@@ -67,8 +67,8 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -88,29 +88,29 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
         self.period = kwargs.get('period', 20)
         self.annualize_factor = kwargs.get('annualize_factor', 252)
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Vix_Stock_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算STOCK_VIX指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了STOCK_VIX指标的DataFrame
+            添加了STOCK_VIX指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_stockvix(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_stockvix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算STOCK_VIX指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了STOCK_VIX指标的DataFrame
+            添加了STOCK_VIX指标的Data_frame
         """
         df = data.copy()
         
@@ -209,7 +209,7 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
 
         return df
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Vix_Stock_Vix(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算股票VIX指标的原始评分
         
@@ -220,7 +220,7 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
         4. 波动率稳定性：波动率本身的波动程度
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Vix_Stock_Vix(data, **kwargs)
         
         if 'STOCK_VIX_VALUE' not in self._result.columns:
             return pd.Series(50.0, index=data.index)
@@ -342,7 +342,7 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
         
         return scores
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Vix_Stock_Vix(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if not self.has_result():
             return 0.5
@@ -367,10 +367,10 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
         confidence = (stability * 0.7 + signal_effectiveness * 0.3)
         return min(0.9, max(0.1, confidence))
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Vix_Stock_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Vix_Stock_Vix(data, **kwargs)
         
         patterns = pd.DataFrame(index=data.index)
         
@@ -393,4 +393,4 @@ class STOCK_VIX(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-StockVIX = STOCK_VIX
+stock_vix = STOCK_VIX

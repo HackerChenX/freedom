@@ -7,11 +7,11 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.technical_utils import find_peaks_and_troughs
 
-logger = logging.getLogger(__name__)
+logger = logging.get_Logger(__name__)
 from utils.indicator_utils import crossover, crossunder
 
 
-class EnhancedCCI(BaseIndicator, PatternSignalMixin):
+class EnhancedCci(BaseIndicator, PatternSignalMixin):
     """
     增强型CCI(商品通道指数)指标
     
@@ -25,10 +25,10 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
 
     # CCI标准区间定义
     EXTREME_OVERBOUGHT = 200  # 极度超买
-    OVERBOUGHT = 100  # 超买
+    overbought = 100  # 超买
     NEUTRAL_HIGH = 0  # 中性偏多
     NEUTRAL_LOW = 0  # 中性偏空
-    OVERSOLD = -100  # 超卖
+    oversold = -100  # 超卖
     EXTREME_OVERSOLD = -200  # 极度超卖
 
     def __init__(self, period: int = 20, factor: float = 0.015, 
@@ -64,7 +64,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         self._price_data = None
         self._multi_period_result = None
 
-    def set_market_environment(self, environment: str) -> None:
+    def set_market_environment_Cci(self, environment: str) -> None:
         """
         设置市场环境
         
@@ -77,20 +77,20 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         
         self.market_environment = environment
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Cci_Enhanced_Cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算EnhancedCCI指标
+        计算Enhanced_cCI指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含EnhancedCCI指标的DataFrame
+            包含Enhanced_cCI指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_enhancedcci(data)
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Cci_Enhanced_Cci(self, **kwargs):
         """
         设置指标参数
 
@@ -106,7 +106,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         if 'adaptive' in kwargs:
             self.adaptive = kwargs['adaptive']
 
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_enhancedcci(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算CCI指标
         
@@ -114,7 +114,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
             data (pd.DataFrame): 包含价格数据的DataFrame (必须包含'high', 'low', 'close'列)
             
         Returns:
-            pd.DataFrame: 包含CCI指标结果的DataFrame
+            pd.DataFrame: 包含CCI指标结果的Data_frame
         """
         # 检查数据是否有效
         required_columns = ['high', 'low', 'close']
@@ -298,7 +298,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         分析CCI的关键交叉点
         
         Returns:
-            pd.DataFrame: 包含交叉分析结果的DataFrame
+            pd.DataFrame: 包含交叉分析结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -405,12 +405,12 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         
         return strength
     
-    def analyze_multi_period_synergy(self) -> pd.DataFrame:
+    def analyze_multi_period_synergy_Cci(self) -> pd.DataFrame:
         """
         分析多周期CCI协同性
         
         Returns:
-            pd.DataFrame: 包含多周期协同分析结果的DataFrame
+            pd.DataFrame: 包含多周期协同分析结果的Data_frame
         """
         if self._multi_period_result is None:
             return pd.DataFrame()
@@ -481,7 +481,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         计算多周期CCI协同度评分
         
         Args:
-            synergy (pd.DataFrame): 包含协同分析的DataFrame
+            synergy (pd.DataFrame): 包含协同分析的Data_frame
             
         Returns:
             pd.Series: 协同度评分 (0-100)
@@ -507,12 +507,12 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def identify_patterns(self) -> pd.DataFrame:
+    def identify_patterns_Cci(self) -> pd.DataFrame:
         """
         识别CCI指标的特定形态
         
         Returns:
-            pd.DataFrame: 包含形态识别结果的DataFrame
+            pd.DataFrame: 包含形态识别结果的Data_frame
         """
         if self._result is None:
             return pd.DataFrame()
@@ -653,7 +653,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         
         return divergence
     
-    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+    def generate_signals_Cci(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         生成交易信号
         
@@ -661,10 +661,10 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
             data (pd.DataFrame): 价格数据
             
         Returns:
-            pd.DataFrame: 包含交易信号的DataFrame
+            pd.DataFrame: 包含交易信号的Data_frame
         """
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Cci_Enhanced_Cci(data)
             
         if self._result is None:
             return pd.DataFrame()
@@ -676,10 +676,10 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         crossovers = self.analyze_crossovers()
         
         # 识别形态
-        patterns = self.identify_patterns()
+        patterns = self.identify_patterns_Cci()
         
         # 分析多周期协同
-        synergy = self.analyze_multi_period_synergy()
+        synergy = self.analyze_multi_period_synergy_Cci()
         
         # 创建信号DataFrame
         signals = pd.DataFrame(index=data.index)
@@ -732,7 +732,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         )
         
         # 计算信号分数
-        signals['score'] = self.calculate_score(data)
+        signals['score'] = self.calculate_score_Cci(data)
         
         # 生成信号描述
         signals['signal_type'] = pd.Series('', index=signals.index)
@@ -805,7 +805,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         
         return signals
     
-    def calculate_score(self, data: pd.DataFrame = None) -> pd.Series:
+    def calculate_score_Cci(self, data: pd.data_frame = None) -> pd.Series:
         """
         计算CCI综合评分 (0-100)
         
@@ -816,7 +816,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
             pd.Series: 评分 (0-100，50为中性)
         """
         if self._result is None and data is not None:
-            self.calculate(data)
+            self.calculate_Cci_Enhanced_Cci(data)
             
         if self._result is None:
             return pd.Series()
@@ -829,10 +829,10 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         crossovers = self.analyze_crossovers()
         
         # 获取形态识别
-        patterns = self.identify_patterns()
+        patterns = self.identify_patterns_Cci()
         
         # 获取多周期协同分析
-        synergy = self.analyze_multi_period_synergy()
+        synergy = self.analyze_multi_period_synergy_Cci()
         
         # 基础分数为50（中性）
         score = pd.Series(50, index=self._result.index)
@@ -918,7 +918,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Cci_Enhanced_Cci(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算增强型CCI指标原始评分 (0-100分)
         
@@ -931,17 +931,17 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         """
         # 直接使用现有的calculate_score方法
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Cci_Enhanced_Cci(data)
         
-        return self.calculate_score()
+        return self.calculate_score_Cci()
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Cci_Enhanced_Cci(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算EnhancedCCI指标的置信度
+        计算Enhanced_cCI指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -991,26 +991,26 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Cci_Enhanced_Cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EnhancedCCI相关形态
+        获取Enhanced_cCI相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Cci_Enhanced_Cci(data)
 
         if self._result is None:
             return pd.DataFrame(index=data.index)
 
         # 使用现有的identify_patterns方法
-        patterns = self.identify_patterns()
+        patterns = self.identify_patterns_Cci()
 
         # 如果patterns为空，创建基本的形态DataFrame
         if patterns.empty:
@@ -1043,9 +1043,9 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Cci(self):
         """
-        注册EnhancedCCI指标的形态到全局形态注册表
+        注册Enhanced_cCI指标的形态到全局形态注册表
         """
         # 注册CCI零轴穿越形态
         self.register_pattern_to_registry(
@@ -1110,9 +1110,9 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Cci(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成EnhancedCCI交易信号
+        生成Enhanced_cCI交易信号
 
         Args:
             data: 输入数据
@@ -1123,7 +1123,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Cci_Enhanced_Cci(data)
 
         if self._result is None:
             return {
@@ -1172,7 +1172,7 @@ class EnhancedCCI(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Cci(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

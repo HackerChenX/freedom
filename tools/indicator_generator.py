@@ -19,7 +19,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class IndicatorGenerator:
+class Indicator_generator:
     """技术指标生成器"""
     
     def __init__(self):
@@ -115,8 +115,8 @@ class {indicator_name}(BaseIndicator):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator(silent_mode=True)
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator(silent_mode=True)
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -135,15 +135,15 @@ class {indicator_name}(BaseIndicator):
         # 设置参数
 {param_assignments_code}
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Indicator_Generator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算{indicator_name}指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了{indicator_name}指标的DataFrame
+            添加了{indicator_name}指标的Data_frame
         """
         result = self._calculate(data, **kwargs)
         self._result = result
@@ -154,10 +154,10 @@ class {indicator_name}(BaseIndicator):
         内部计算{indicator_name}指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了{indicator_name}指标的DataFrame
+            添加了{indicator_name}指标的Data_frame
         """
         df = data.copy()
         
@@ -175,7 +175,7 @@ class {indicator_name}(BaseIndicator):
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Indicator_Generator(data, **kwargs)
         
         score = pd.Series(50.0, index=data.index)
         
@@ -195,7 +195,7 @@ class {indicator_name}(BaseIndicator):
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Indicator_Generator(data, **kwargs)
         
         patterns_df = pd.DataFrame(index=data.index)
         
@@ -335,12 +335,12 @@ class {indicator_name}(BaseIndicator):
             return False
 
 
-def main():
+def main_indicatorgenerator():
     """主函数 - 交互式指标生成"""
     print("🚀 技术指标自动生成工具")
     print("=" * 50)
     
-    generator = IndicatorGenerator()
+    generator = Indicator_generator()
     
     # 获取用户输入
     print("\n请输入新指标的信息:")
@@ -441,4 +441,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_indicatorgenerator()

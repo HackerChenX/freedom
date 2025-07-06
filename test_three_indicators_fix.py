@@ -15,7 +15,7 @@ from indicators.cci import CCI
 from indicators.stochrsi import STOCHRSI
 from indicators.atr import ATR
 
-def create_test_data(length=100):
+def create_test_data_Fix_Test_Three_Indicators_Fix(length=100):
     """创建测试数据"""
     np.random.seed(42)
     dates = pd.date_range('2023-01-01', periods=length, freq='D')
@@ -120,12 +120,12 @@ def test_indicator_calculation(indicator_class, indicator_name, test_data):
         traceback.print_exc()
         return False
 
-def main():
+def mainTestthreeindicatorsfix():
     """主函数"""
     print("=== CCI、STOCHRSI、ATR 指标修复效果测试 ===")
     
     # 创建测试数据
-    test_data = create_test_data(100)
+    test_data = create_test_data_Fix_Test_Three_Indicators_Fix(100)
     print(f"测试数据形状: {test_data.shape}")
     print(f"测试数据列: {list(test_data.columns)}")
     
@@ -163,4 +163,4 @@ def main():
         print("⚠️  仍有指标需要进一步修复")
 
 if __name__ == "__main__":
-    main() 
+    mainTestthreeindicatorsfix() 

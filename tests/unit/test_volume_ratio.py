@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_volume_ratio(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """Volume Ratio指标测试类"""
     
-    def setUp(self):
+    def set_up_Ratio(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Ratio(self)
         
-        self.indicator = VolumeRatio(reference_period=5, ma_period=3)
+        self.indicator = Volume_ratio(reference_period=5, ma_period=3)
         self.expected_columns = ['volume_ratio', 'volume_ratio_ma']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tear_down_Ratio(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Ratio(self)
     
     def test_volume_ratio_calculation_accuracy(self):
         """测试Volume Ratio计算准确性"""
@@ -43,7 +43,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             self.assertTrue(all(v >= 0 for v in vr_values), "Volume Ratio值应该为正数")
             # 大部分Volume Ratio值应该在合理范围内
             reasonable_values = [v for v in vr_values if 0.1 <= v <= 10]
-            self.assertGreater(len(reasonable_values), len(vr_values) * 0.8, 
+            self.assert_greater(len(reasonable_values), len(vr_values) * 0.8, 
                              "大部分Volume Ratio值应该在合理范围内")
     
     def test_volume_ratio_manual_calculation(self):
@@ -66,7 +66,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             expected_vr = 1100 / ref_avg  # 约1.019
             calculated_vr = result['volume_ratio'].iloc[5]
             
-            self.assertAlmostEqual(calculated_vr, expected_vr, places=3, 
+            self.assert_almost_equal(calculated_vr, expected_vr, places=3, 
                                  msg="Volume Ratio计算不正确")
     
     def test_volume_ratio_score_range(self):
@@ -85,9 +85,9 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_volume_ratio_parameter_update(self):
         """测试Volume Ratio参数更新"""
@@ -96,8 +96,8 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(reference_period=new_ref_period, ma_period=new_ma_period)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.reference_period, new_ref_period)
-        self.assertEqual(self.indicator.ma_period, new_ma_period)
+        self.assert_equal(self.indicator.reference_period, new_ref_period)
+        self.assert_equal(self.indicator.ma_period, new_ma_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -109,13 +109,13 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_volume_ratio_comprehensive_score(self):
         """测试Volume Ratio综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -127,13 +127,13 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试Volume Ratio形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -173,7 +173,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             vr_volatility = vr_values.std()
             ma_volatility = vr_ma_values.std()
             
-            self.assertLessEqual(ma_volatility, vr_volatility * 1.2, 
+            self.assert_less_equal(ma_volatility, vr_volatility * 1.2, 
                                "均线应该比原始值更平滑")
     
     def test_volume_ratio_signals(self):
@@ -181,16 +181,16 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_volume_ratio_breakout_detection(self):
         """测试Volume Ratio突破检测"""
         # 创建包含突破的数据
-        breakout_data = TestDataGenerator.generate_price_sequence([
+        breakout_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 30}
         ])
         
@@ -209,7 +209,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_volume_ratio_cross_detection(self):
         """测试Volume Ratio交叉检测"""
         # 创建包含交叉的数据
-        cross_data = TestDataGenerator.generate_price_sequence([
+        cross_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 30}
         ])
         
@@ -223,7 +223,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_volume_ratio_peak_trough_detection(self):
         """测试Volume Ratio峰谷检测"""
         # 创建足够长的数据以计算峰谷
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 25}
         ])
         
@@ -234,7 +234,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             self.assertIn('VR_PEAK', patterns.columns)
             self.assertIn('VR_TROUGH', patterns.columns)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Ratio(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -245,11 +245,11 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('volume_ratio', result.columns)
         self.assertIn('volume_ratio_ma', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Ratio(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -260,7 +260,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_volume_ratio_register_patterns(self):
         """测试Volume Ratio形态注册"""
@@ -286,7 +286,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             # 我们只检查有效值是否为1
             valid_values = [v for v in vr_values if v > 0]
             if len(valid_values) > 0:
-                self.assertTrue(all(abs(v - 1.0) < 1e-10 for v in valid_values),
+                self.assert_true(all(abs(v - 1.0) < 1e-10 for v in valid_values),
                                "成交量为0时Volume Ratio应该为1")
     
     def test_volume_ratio_compute_method(self):
@@ -313,7 +313,7 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 验证活跃度评分在合理范围内
         activity_scores = activity_result['activity_score'].dropna()
         if len(activity_scores) > 0:
-            self.assertTrue(all(0 <= s <= 200 for s in activity_scores), 
+            self.assert_true(all(0 <= s <= 200 for s in activity_scores), 
                            "活跃度评分应该在合理范围内")
     
     def test_volume_ratio_validation(self):
@@ -321,14 +321,14 @@ class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少volume列的情况
         invalid_data = self.data.drop('volume', axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
         
         # 测试所有volume都是NaN的情况
         nan_vol_data = self.data.copy()
         nan_vol_data['volume'] = np.nan
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(nan_vol_data)
 
 

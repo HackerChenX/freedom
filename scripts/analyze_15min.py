@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Any, Optional
 
 from formula import formula
-from enums.kline_period import KlinePeriod
+from enums.kline_period import Kline_period
 from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
 
@@ -38,7 +38,7 @@ def analyze_15min_data(code="600585", date="20250408"):
         
         # 获取15分钟数据
         logger.info("获取15分钟数据...")
-        stock_data = formula.StockData(code, KlinePeriod.MIN_15, start=start_date, end=end_date)
+        stock_data = formula.Stock_data(code, Kline_period.MIN_15, start=start_date, end=end_date)
         
         if stock_data.history is None or len(stock_data.history) == 0:
             logger.error("未获取到15分钟数据")

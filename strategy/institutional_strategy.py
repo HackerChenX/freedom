@@ -13,13 +13,13 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 import warnings
 
 from strategy.base_strategy import BaseStrategy
-from indicators.institutional_behavior import InstitutionalBehavior
-from utils.logger import get_logger
+from indicators.institutional_behavior import Institutional_behavior
+from utils.logger import getLogger
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class InstitutionalStrategy(BaseStrategy):
@@ -28,7 +28,7 @@ class InstitutionalStrategy(BaseStrategy):
     基于主力行为模式分析，识别主力资金吸筹、控盘、拉升等行为，捕捉主力建仓完成和启动初期的机会
     """
     
-    def __init__(self, params: Dict[str, Any] = None):
+    def __init___83(self, params: Dict[str, Any] = None):
         """
         初始化主力行为选股策略
         
@@ -51,20 +51,20 @@ class InstitutionalStrategy(BaseStrategy):
         if params:
             default_params.update(params)
         
-        super().__init__(
+        super().__init___83(
             name="InstitutionalStrategy",
             description="主力行为模式选股策略",
             params=default_params
         )
         
-        self.institutional_behavior = InstitutionalBehavior()
+        self.institutional_behavior = Institutional_behavior()
     
-    def select(self, data_dict: Dict[str, pd.DataFrame]) -> List[str]:
+    def select_Strategy_Institutional_Strategy(self, data_dict: Dict[str, pd.DataFrame]) -> List[str]:
         """
         执行选股策略
         
         Args:
-            data_dict: 股票数据字典，键为股票代码，值为包含OHLCV数据的DataFrame
+            data_dict: 股票数据字典，键为股票代码，值为包含OHLCV数据的Data_frame
         
         Returns:
             List[str]: 选出的股票代码列表
@@ -260,7 +260,7 @@ class InstitutionalStrategy(BaseStrategy):
         
         return change_scores.get(change, 0.0)
     
-    def analyze_stock(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def analyze_stock_Strategy(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         详细分析单只股票的主力行为
         

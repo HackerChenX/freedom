@@ -23,7 +23,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
+def load_test_data_Optimization_Test_Kdj_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
     """
     加载测试数据
     
@@ -91,10 +91,10 @@ def test_kdj_optimization(data):
         tuple: (原始评分, 优化后评分)
     """
     # 创建未优化的KDJ指标计算函数
-    class SimpleKDJ(KDJ):
+    class Simple_kDJ(KDJ):
         """简化版KDJ，用于对比优化前的效果"""
         
-        def calculate_raw_score(self, data):
+        def calculate_raw_score_Optimization_Test_Kdj_Optimization(self, data):
             """
             计算KDJ原始评分（优化前）
             
@@ -158,7 +158,7 @@ def test_kdj_optimization(data):
             return np.clip(score, 0, 100)
     
     # 创建两个实例
-    simple_kdj = SimpleKDJ(n=9, m1=3, m2=3)
+    simple_kdj = Simple_kDJ(n=9, m1=3, m2=3)
     enhanced_kdj = KDJ(n=9, m1=3, m2=3)
     
     # 计算KDJ
@@ -172,8 +172,8 @@ def test_kdj_optimization(data):
     data_with_kdj['J'] = simple_result['J']
     
     # 计算评分
-    simple_score = simple_kdj.calculate_raw_score(data)
-    enhanced_score = enhanced_kdj.calculate_raw_score(data)
+    simple_score = simple_kdj.calculate_raw_score_Optimization_Test_Kdj_Optimization(data)
+    enhanced_score = enhanced_kdj.calculate_raw_score_Optimization_Test_Kdj_Optimization(data)
     
     # 计算评分差异
     score_diff = enhanced_score - simple_score
@@ -252,11 +252,11 @@ def find_best_kdj_params(data):
     return best_params
 
 
-def main():
+def main_testkdjoptimization():
     """主函数"""
     try:
         # 加载测试数据
-        data = load_test_data(start_date='2022-01-01', end_date='2022-12-31')
+        data = load_test_data_Optimization_Test_Kdj_Optimization(start_date='2022-01-01', end_date='2022-12-31')
         
         # 测试KDJ指标优化效果
         old_score, new_score, data_with_kdj = test_kdj_optimization(data)
@@ -281,4 +281,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testkdjoptimization() 

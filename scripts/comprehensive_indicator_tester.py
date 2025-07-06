@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 全面指标测试器 - 覆盖88个指标的所有形态
-基于ClickHouse真实数据，关注性能问题，遇到错误及时停止修复
+基于Click_house真实数据，关注性能问题，遇到错误及时停止修复
 """
 
 import sys
@@ -12,7 +12,7 @@ import json
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Thread_pool_executor, as_completed
 import threading
 from dataclasses import dataclass
 
@@ -20,13 +20,13 @@ from dataclasses import dataclass
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from scripts.production_indicator_validator import ProductionIndicatorValidator
+from scripts.production_indicator_validator import Production_indicator_validator
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 @dataclass
-class TestResult:
+class TestresultTester:
     """测试结果数据类"""
     indicator_name: str
     success: bool
@@ -44,7 +44,7 @@ class BatchResult:
     successful_indicators: int
     failed_indicators: int
     total_time: float
-    test_results: List[TestResult]
+    test_results: List[Test_result]
 
 class ComprehensiveIndicatorTester:
     """全面指标测试器 - 支持88个指标的分批测试"""
@@ -72,9 +72,9 @@ class ComprehensiveIndicatorTester:
             logger.error("🛑 严格数据库依赖模式：禁止使用模拟数据，数据库不可用时直接停止")
             raise RuntimeError(f"数据库连接失败，系统无法继续运行: {db_error}")
         
-        self.validator = ProductionIndicatorValidator()
-        self.test_results: List[TestResult] = []
-        self.batch_results: List[BatchResult] = []
+        self.validator = Production_indicator_validator()
+        self.test_results: List[Test_result] = []
+        self.batch_results: List[Batch_result] = []
         self.stop_on_error = True
         self.performance_threshold = 30.0  # 30秒性能阈值
         
@@ -171,7 +171,7 @@ class ComprehensiveIndicatorTester:
         
         return filtered_batches
     
-    def test_single_indicator(self, indicator_name: str, test_date: str = None) -> TestResult:
+    def test_single_indicator_Tester_Comprehensive_Indicator_Tester(self, indicator_name: str, test_date: str = None) -> Test_result:
         """测试单个指标"""
         start_time = time.time()
         
@@ -198,7 +198,7 @@ class ComprehensiveIndicatorTester:
             
             logger.info(f"✅ {indicator_name}: {selected_stocks}/{stock_count} 只股票被选中 ({selection_rate:.1f}%), 耗时 {execution_time:.2f}秒")
             
-            return TestResult(
+            return Test_result_Tester(
                 indicator_name=indicator_name,
                 success=True,
                 execution_time=execution_time,
@@ -220,7 +220,7 @@ class ComprehensiveIndicatorTester:
                 logger.error(f"🛑 遇到错误，停止测试进行修复")
                 raise
             
-            return TestResult(
+            return Test_result_Tester(
                 indicator_name=indicator_name,
                 success=False,
                 execution_time=execution_time,
@@ -230,7 +230,7 @@ class ComprehensiveIndicatorTester:
             )
     
     def test_batch(self, batch_name: str, indicators: List[str], 
-                   concurrent: bool = False, test_date: str = None) -> BatchResult:
+                   concurrent: bool = False, test_date: str = None) -> Batch_result:
         """测试一个批次的指标"""
         
         logger.info(f"\n{'='*80}")
@@ -247,7 +247,7 @@ class ComprehensiveIndicatorTester:
         
         if concurrent and len(indicators) > 1:
             # 并发测试
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            with Thread_pool_executor(max_workers=self.max_workers) as executor:
                 future_to_indicator = {
                     executor.submit(self.test_single_indicator, indicator, test_date): indicator 
                     for indicator in indicators
@@ -273,7 +273,7 @@ class ComprehensiveIndicatorTester:
             # 串行测试
             for indicator in indicators:
                 try:
-                    result = self.test_single_indicator(indicator, test_date)
+                    result = self.test_single_indicator_Tester_Comprehensive_Indicator_Tester(indicator, test_date)
                     test_results.append(result)
                     
                     if result.success:
@@ -290,7 +290,7 @@ class ComprehensiveIndicatorTester:
         batch_time = time.time() - batch_start_time
         
         # 创建批次结果
-        batch_result = BatchResult(
+        batch_result = Batch_result(
             batch_name=batch_name,
             total_indicators=len(indicators),
             successful_indicators=successful_count,
@@ -300,11 +300,11 @@ class ComprehensiveIndicatorTester:
         )
         
         # 显示批次总结
-        self._print_batch_summary(batch_result)
+        self._print_batch_summary_Comprehensive_Indicator_Tester(batch_result)
         
         return batch_result
     
-    def _print_batch_summary(self, batch_result: BatchResult):
+    def _print_batch_summary_Comprehensive_Indicator_Tester(self, batch_result: Batch_result):
         """打印批次测试总结"""
         success_rate = (batch_result.successful_indicators / batch_result.total_indicators * 100) if batch_result.total_indicators > 0 else 0
         
@@ -320,7 +320,7 @@ class ComprehensiveIndicatorTester:
             failed_indicators = [r.indicator_name for r in batch_result.test_results if not r.success]
             logger.warning(f"   失败指标: {', '.join(failed_indicators)}")
     
-    def run_comprehensive_test(self, selected_batches: List[str] = None, 
+    def run_comprehensive_test_Tester(self, selected_batches: List[str] = None, 
                              concurrent: bool = False, test_date: str = None) -> Dict[str, Any]:
         """运行全面测试"""
         
@@ -450,7 +450,7 @@ class ComprehensiveIndicatorTester:
             for tr in failed_indicators:
                 logger.error(f"   {tr.indicator_name}: {tr.error_message}")
     
-    def save_results(self, result: Dict[str, Any], output_dir: str = "results/comprehensive_test") -> str:
+    def save_results_Tester_Comprehensive_Indicator_Tester(self, result: Dict[str, Any], output_dir: str = "results/comprehensive_test") -> str:
         """保存测试结果"""
         os.makedirs(output_dir, exist_ok=True)
         
@@ -509,7 +509,7 @@ class ComprehensiveIndicatorTester:
                 f.write(f" - 错误: {tr['error_message']}")
             f.write("\n")
 
-def main():
+def main_comprehensiveindicatortester():
     """主函数"""
     parser = argparse.ArgumentParser(description='全面指标测试器 - 覆盖88个指标的所有形态')
     parser.add_argument('--batches', nargs='+', help='要测试的批次名称')
@@ -526,7 +526,7 @@ def main():
     
     try:
         # 初始化测试器
-        tester = ComprehensiveIndicatorTester(
+        tester = Comprehensive_indicator_tester(
             max_stocks=args.max_stocks,
             max_workers=args.max_workers
         )
@@ -542,14 +542,14 @@ def main():
             return 0
         
         # 运行全面测试
-        result = tester.run_comprehensive_test(
+        result = tester.run_comprehensive_test_Tester(
             selected_batches=args.batches,
             concurrent=args.concurrent,
             test_date=args.test_date
         )
         
         # 保存结果
-        output_file = tester.save_results(result, args.output_dir)
+        output_file = tester.save_results_Tester_Comprehensive_Indicator_Tester(result, args.output_dir)
         
         # 返回状态码
         summary = result['test_summary']
@@ -570,5 +570,5 @@ def main():
         return 1
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensiveindicatortester()
     sys.exit(exit_code) 

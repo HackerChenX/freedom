@@ -13,19 +13,22 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 from utils.logger import get_logger, init_logging
 
 # 初始化日志
 init_logging(level="INFO")
 logger = get_logger(__name__)
 
-def main():
+def main_debugstockcount():
     """主函数"""
     try:
         print("=== 调试股票数量问题 ===")
         
-        # 获取数据管理器
+        # 获取数据管理器和查询执行器
         data_manager = get_unified_data_manager()
+        query_executor = get_query_executor()
         
         print("\n1. 测试获取股票列表（无限制）")
         stock_list = data_manager.get_stock_list()
@@ -38,43 +41,80 @@ def main():
         print(f"   获取到股票数量: {len(stock_list_100)}")
         
         print("\n3. 测试获取股票信息（无限制）")
-        stock_info = data_manager.enhanced_manager.get_stock_info()
-        df = stock_info.to_dataframe()
-        print(f"   获取到股票信息数量: {len(df)}")
-        if not df.empty:
-            print(f"   数据列: {list(df.columns)}")
-            print(f"   前5行:")
-            print(df.head())
+        try:
+            stock_info_df = query_executor.execute_query(
+                QueryType.STOCK_INFO,
+                {'date_filter': '2020-01-01'}
+            )
+            print(f"   获取到股票信息数量: {len(stock_info_df)}")
+            if not stock_info_df.empty:
+                print(f"   数据列: {list(stock_info_df.columns)}")
+                print(f"   前5行:")
+                print(stock_info_df.head())
+        except Exception as e:
+            logger.error(f"获取股票信息失败: {e}")
         
         print("\n4. 测试获取股票信息（限制20）")
-        stock_info_20 = data_manager.enhanced_manager.get_stock_info(limit=20)
-        df_20 = stock_info_20.to_dataframe()
-        print(f"   获取到股票信息数量: {len(df_20)}")
+        try:
+            stock_info_20_df = query_executor.execute_query(
+                QueryType.STOCK_INFO,
+                {'date_filter': '2020-01-01', 'limit': 20}
+            )
+            print(f"   获取到股票信息数量: {len(stock_info_20_df)}")
+        except Exception as e:
+            logger.error(f"获取限制股票信息失败: {e}")
         
         print("\n5. 检查数据库连接和查询")
-        from db.enhanced_connection_pool import get_connection_pool
-        pool = get_connection_pool()
-        
-        with pool.get_connection() as conn:
-            # 直接查询股票信息表
-            result = conn.query_dataframe("SELECT COUNT(*) as total FROM stock_info")
-            print(f"   数据库中stock_info表总记录数: {result.iloc[0]['total']}")
+        try:
+            # 使用统一查询接口获取股票计数
+            total_count = query_executor.get_stock_count(date_filter='2020-01-01')
+            print(f"   数据库中stock_info表总记录数: {total_count}")
             
             # 查询不同股票代码数量
-            result2 = conn.query_dataframe("SELECT COUNT(DISTINCT code) as unique_stocks FROM stock_info")
-            print(f"   数据库中不同股票代码数量: {result2.iloc[0]['unique_stocks']}")
+            unique_stocks_df = query_executor.execute_query(
+                QueryType.COUNT_QUERIES,
+                {'query_type': 'distinct_stocks', 'date_filter': '2020-01-01'}
+            )
+            if not unique_stocks_df.empty:
+                print(f"   数据库中不同股票代码数量: {unique_stocks_df.iloc[0]['unique_stocks']}")
             
-            # 查询最新日期的股票数量
-            result3 = conn.query_dataframe("""
-                SELECT date, COUNT(DISTINCT code) as stocks_count 
-                FROM stock_info 
-                GROUP BY date 
-                ORDER BY date DESC 
-                LIMIT 5
-            """)
-            print(f"   最近5个交易日的股票数量:")
-            for _, row in result3.iterrows():
-                print(f"     {row['date']}: {row['stocks_count']}只股票")
+            # 查询最近日期的股票数量
+            recent_stats_df = query_executor.execute_query(
+                QueryType.STOCK_STATS,
+                {'date_filter': '2020-01-01', 'limit': 5}
+            )
+            if not recent_stats_df.empty:
+                print(f"   最近5个交易日的股票数量:")
+                for _, row in recent_stats_df.iterrows():
+                    print(f"     {row['date']}: {row['stocks_count']}只股票")
+        except Exception as e:
+            logger.error(f"使用统一查询接口检查数据失败: {e}")
+            
+            # 降级处理：使用原始连接方式（仅在统一接口失败时）
+            print("   降级到原始连接方式...")
+            try:
+                from db.enhanced_connection_pool import get_connection_pool
+                pool = get_connection_pool()
+                
+                with pool.get_connection() as conn:
+                    # 直接查询股票信息表
+                    # 使用统一查询接口替代直接SQL查询
+                    result = query_executor.get_stock_count(date_filter="2020-01-01")
+                    print(f"   数据库中stock_info表总记录数: {result.iloc[0]['total']}")
+                    
+                    # 查询不同股票代码数量
+                    # 使用统一查询接口替代直接SQL查询
+                    result2 = query_executor.get_distinct_stock_count(date_filter="2020-01-01")
+                    print(f"   数据库中不同股票代码数量: {result2.iloc[0]['unique_stocks']}")
+                    
+                    # 查询最新日期的股票数量
+                    # 使用统一查询接口替代直接SQL查询
+                    result3 = query_executor.get_recent_stock_stats(date_filter="2020-01-01", limit=5)
+                    print(f"   最近5个交易日的股票数量:")
+                    for _, row in result3.iterrows():
+                        print(f"     {row['date']}: {row['stocks_count']}只股票")
+            except Exception as e2:
+                logger.error(f"降级处理也失败: {e2}")
         
         print("\n=== 调试完成 ===")
         
@@ -84,4 +124,4 @@ def main():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    main()
+    main_debugstockcount()

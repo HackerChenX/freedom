@@ -21,16 +21,16 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from intelligent_p5_generator import IntelligentP5Generator
-from extended_technical_indicators import ExtendedTechnicalIndicators
+from intelligent_p5_generator import Intelligent_p5_generator
+from extended_technical_indicators import Extended_technical_indicators
 
 
-class ComprehensiveP5Validator:
+class Comprehensive_p5_validator:
     """全面的P5系统分析指标验证器"""
     
     def __init__(self):
-        self.intelligent_generator = IntelligentP5Generator()
-        self.extended_indicators = ExtendedTechnicalIndicators()
+        self.intelligent_generator = Intelligent_p5_generator()
+        self.extended_indicators = Extended_technical_indicators()
     
     def validate_performance_indicators(self) -> dict:
         """验证性能指标（SYSTEM_PERFORMANCE_SCORE、MARKET_SENTIMENT_INDEX、RISK_ASSESSMENT_SCORE）"""
@@ -410,7 +410,7 @@ class ComprehensiveP5Validator:
         return summary
 
 
-def main():
+def main_comprehensivep5validator():
     """主函数"""
     print("=" * 80)
     print("全面P5系统分析指标验证测试")
@@ -419,7 +419,7 @@ def main():
     print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
 
-    validator = ComprehensiveP5Validator()
+    validator = Comprehensive_p5_validator()
 
     try:
         results = validator.validate_all_p5_comprehensive()
@@ -484,5 +484,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensivep5validator()
     sys.exit(exit_code)

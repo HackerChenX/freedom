@@ -50,7 +50,7 @@ class BuyPointStrategyIntegrationExample:
             print(f"步骤1: 分析股票 {stock_code} 的买点...")
             
             # 创建模拟买点分析结果（实际使用中这里会调用真实的买点分析）
-            buypoint_result = self._create_sample_buypoint_result(stock_code, buypoint_date)
+            buypoint_result = self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example(stock_code, buypoint_date)
             print(f"✅ 买点分析完成，总体评分: {buypoint_result['summary']['overall_score']}")
             
             # 步骤2: 转换为选股策略格式
@@ -68,7 +68,7 @@ class BuyPointStrategyIntegrationExample:
                 
                 # 步骤3: 展示选股策略兼容性
                 print(f"步骤3: 验证选股策略兼容性...")
-                self._validate_strategy_compatibility(strategy_result)
+                self._validate_strategy_compatibility_Buypoint_Strategy_Integration_Example(strategy_result)
                 
             else:
                 print("❌ 格式转换失败")
@@ -90,7 +90,7 @@ class BuyPointStrategyIntegrationExample:
             buypoint_results = []
             
             for stock_code in stock_codes:
-                result = self._create_sample_buypoint_result(stock_code, '20240601')
+                result = self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example(stock_code, '20240601')
                 buypoint_results.append(result)
             
             print(f"✅ 准备了 {len(buypoint_results)} 个买点分析结果")
@@ -134,11 +134,11 @@ class BuyPointStrategyIntegrationExample:
             
             # 模拟从买点分析系统获取结果
             buypoint_results = [
-                self._create_sample_buypoint_result('000001', '20240601', score=85.0),
-                self._create_sample_buypoint_result('000002', '20240601', score=72.5),
-                self._create_sample_buypoint_result('600000', '20240601', score=68.0),
-                self._create_sample_buypoint_result('600036', '20240601', score=91.2),
-                self._create_sample_buypoint_result('000858', '20240601', score=45.5)
+                self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example('000001', '20240601', score=85.0),
+                self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example('000002', '20240601', score=72.5),
+                self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example('600000', '20240601', score=68.0),
+                self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example('600036', '20240601', score=91.2),
+                self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example('000858', '20240601', score=45.5)
             ]
             
             print(f"✅ 获取了 {len(buypoint_results)} 个买点分析结果")
@@ -209,7 +209,7 @@ class BuyPointStrategyIntegrationExample:
             print("✅ 自定义权重配置完成（更重视吸筹信号）")
             
             # 使用相同的买点分析结果进行对比
-            buypoint_result = self._create_sample_buypoint_result('000001', '20240601')
+            buypoint_result = self._create_sample_buypoint_result_Buypoint_Strategy_Integration_Example('000001', '20240601')
             
             # 标准权重转换
             standard_result = self.adapter.convert_buypoint_result(buypoint_result)
@@ -229,7 +229,7 @@ class BuyPointStrategyIntegrationExample:
         except Exception as e:
             print(f"❌ 示例执行失败: {e}")
     
-    def _create_sample_buypoint_result(self, stock_code: str, buypoint_date: str, score: float = None) -> Dict[str, Any]:
+    def _create_sample_buypoint_result_Buypoint_Strategy_Integration_Example(self, stock_code: str, buypoint_date: str, score: float = None) -> Dict[str, Any]:
         """创建模拟买点分析结果"""
         if score is None:
             import random
@@ -263,7 +263,7 @@ class BuyPointStrategyIntegrationExample:
             }
         }
     
-    def _validate_strategy_compatibility(self, strategy_result: Dict[str, Any]):
+    def _validate_strategy_compatibility_Buypoint_Strategy_Integration_Example(self, strategy_result: Dict[str, Any]):
         """验证选股策略兼容性"""
         required_fields = [
             'stock_code', 'stock_name', 'industry', 'price',
@@ -281,7 +281,7 @@ class BuyPointStrategyIntegrationExample:
             print(f"❌ 选股策略兼容性验证失败，缺少字段: {missing_fields}")
 
 
-def main():
+def mainBuypointstrategyintegrationexample():
     """主函数"""
     print("🚀 买点分析与选股策略集成使用示例")
     print("=" * 80)
@@ -320,4 +320,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    mainBuypointstrategyintegrationexample()

@@ -11,12 +11,12 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class PatternType(Enum):
+class PatterntypePatterns(Enum):
     """K线形态类型枚举"""
     # 单日K线形态
     DOJI = "十字星"                  # 开盘价与收盘价接近，上下影线明显
@@ -66,14 +66,14 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         """初始化K线形态识别指标"""
         super().__init__(name="CandlestickPatterns", description="K线形态识别指标，识别各种单日和组合K线形态")
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Patterns(self, **kwargs):
         """
         设置指标参数
         """
         # K线形态识别通常没有可变参数，但为了符合接口要求，提供此方法
         pass
     
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_candlestickpatterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         识别各种K线形态
         
@@ -102,7 +102,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         result = self._calculate_complex_patterns(data, result)
 
         # 确保所有形态列都存在（即使数据不足）
-        all_pattern_names = [pattern.name.lower() for pattern in PatternType]
+        all_pattern_names = [pattern.name.lower() for pattern in Pattern_type]
         for pattern_name in all_pattern_names:
             if pattern_name not in result.columns:
                 result[pattern_name] = False
@@ -139,35 +139,35 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 十字星：开盘价与收盘价接近，上下影线明显
         doji = body_to_range_ratio < 0.1
-        result[PatternType.DOJI.name.lower()] = doji
+        result[Pattern_type.DOJI.name.lower()] = doji
         
         # 锤头线：小实体，长下影线，几乎无上影线
         hammer = (body_to_range_ratio < 0.3) & \
                 (lower_shadow > 2 * body_size) & \
                 (upper_shadow < 0.1 * (high_prices - low_prices))
-        result[PatternType.HAMMER.name.lower()] = hammer
+        result[Pattern_type.HAMMER.name.lower()] = hammer
         
         # 吊颈线：小实体，长上影线，几乎无下影线
         hanging_man = (body_to_range_ratio < 0.3) & \
                       (upper_shadow > 2 * body_size) & \
                       (lower_shadow < 0.1 * (high_prices - low_prices))
-        result[PatternType.HANGING_MAN.name.lower()] = hanging_man
+        result[Pattern_type.HANGING_MAN.name.lower()] = hanging_man
         
         # 长腿十字：十字星带长下影线
         long_legged_doji = doji & (lower_shadow > 2 * upper_shadow) & \
                            (lower_shadow > 0.3 * (high_prices - low_prices))
-        result[PatternType.LONG_LEGGED_DOJI.name.lower()] = long_legged_doji
+        result[Pattern_type.LONG_LEGGED_DOJI.name.lower()] = long_legged_doji
         
         # 墓碑线：十字星带长上影线
         gravestone_doji = doji & (upper_shadow > 2 * lower_shadow) & \
                          (upper_shadow > 0.3 * (high_prices - low_prices))
-        result[PatternType.GRAVESTONE_DOJI.name.lower()] = gravestone_doji
+        result[Pattern_type.GRAVESTONE_DOJI.name.lower()] = gravestone_doji
         
         # 射击之星：小实体，长上影线，短下影线
         shooting_star = (body_to_range_ratio < 0.3) & \
                         (upper_shadow > 2 * body_size) & \
                         (upper_shadow > 2 * lower_shadow)
-        result[PatternType.SHOOTING_STAR.name.lower()] = shooting_star
+        result[Pattern_type.SHOOTING_STAR.name.lower()] = shooting_star
         
         return result
     
@@ -261,14 +261,14 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
                 single_needle_bottom[i] = True
         
         # 添加到结果
-        result[PatternType.ENGULFING_BULLISH.name.lower()] = engulfing_bullish
-        result[PatternType.ENGULFING_BEARISH.name.lower()] = engulfing_bearish
-        result[PatternType.DARK_CLOUD_COVER.name.lower()] = dark_cloud_cover
-        result[PatternType.PIERCING_LINE.name.lower()] = piercing_line
-        result[PatternType.MORNING_STAR.name.lower()] = morning_star
-        result[PatternType.EVENING_STAR.name.lower()] = evening_star
-        result[PatternType.HARAMI_BULLISH.name.lower()] = harami_bullish
-        result[PatternType.SINGLE_NEEDLE_BOTTOM.name.lower()] = single_needle_bottom
+        result[Pattern_type.ENGULFING_BULLISH.name.lower()] = engulfing_bullish
+        result[Pattern_type.ENGULFING_BEARISH.name.lower()] = engulfing_bearish
+        result[Pattern_type.DARK_CLOUD_COVER.name.lower()] = dark_cloud_cover
+        result[Pattern_type.PIERCING_LINE.name.lower()] = piercing_line
+        result[Pattern_type.MORNING_STAR.name.lower()] = morning_star
+        result[Pattern_type.EVENING_STAR.name.lower()] = evening_star
+        result[Pattern_type.HARAMI_BULLISH.name.lower()] = harami_bullish
+        result[Pattern_type.SINGLE_NEEDLE_BOTTOM.name.lower()] = single_needle_bottom
         
         return result
     
@@ -394,29 +394,29 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
                     v_reversal[i] = True
         
         # 添加到结果
-        result[PatternType.HEAD_SHOULDERS_TOP.name.lower()] = head_shoulders_top
-        result[PatternType.HEAD_SHOULDERS_BOTTOM.name.lower()] = head_shoulders_bottom
-        result[PatternType.DOUBLE_TOP.name.lower()] = double_top
-        result[PatternType.DOUBLE_BOTTOM.name.lower()] = double_bottom
-        result[PatternType.ISLAND_REVERSAL.name.lower()] = island_reversal
-        result[PatternType.V_REVERSAL.name.lower()] = v_reversal
+        result[Pattern_type.HEAD_SHOULDERS_TOP.name.lower()] = head_shoulders_top
+        result[Pattern_type.HEAD_SHOULDERS_BOTTOM.name.lower()] = head_shoulders_bottom
+        result[Pattern_type.DOUBLE_TOP.name.lower()] = double_top
+        result[Pattern_type.DOUBLE_BOTTOM.name.lower()] = double_bottom
+        result[Pattern_type.ISLAND_REVERSAL.name.lower()] = island_reversal
+        result[Pattern_type.V_REVERSAL.name.lower()] = v_reversal
         
         return result
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        识别所有已定义的形态，并以DataFrame形式返回
+        识别所有已定义的形态，并以Data_frame形式返回
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含所有形态信号的DataFrame
+            pd.DataFrame: 包含所有形态信号的Data_frame
         """
         return self.calculate(data, **kwargs)
 
-    def get_latest_patterns(self, data: pd.DataFrame, lookback: int = 5) -> Dict[str, bool]:
+    def get_latest_patterns_Patterns(self, data: pd.DataFrame, lookback: int = 5) -> Dict[str, bool]:
         """
         获取最近形成的K线形态
         
@@ -435,22 +435,22 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 获取最近形成的形态
         patterns = {}
-        for pattern_type in PatternType:
+        for pattern_type in Pattern_type:
             pattern_name = pattern_type.name.lower()
             if pattern_name in recent_result.columns:
                 patterns[pattern_name] = bool(recent_result[pattern_name].any())
         
         return patterns
     
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score_Patterns(self, data: pd.DataFrame) -> pd.Series:
         """
         计算K线形态识别指标的原始评分
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            pd.DataFrame: 包含原始评分的DataFrame
+            pd.DataFrame: 包含原始评分的Data_frame
         """
         # 计算指标值
         indicator_data = self.calculate(data)
@@ -460,87 +460,87 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 1. 看涨形态评分（+15到+40分）
         # 单日看涨形态
-        if PatternType.HAMMER.name.lower() in indicator_data.columns:
-            hammer_mask = indicator_data[PatternType.HAMMER.name.lower()]
+        if Pattern_type.HAMMER.name.lower() in indicator_data.columns:
+            hammer_mask = indicator_data[Pattern_type.HAMMER.name.lower()]
             score.loc[hammer_mask] += 20
         
-        if PatternType.LONG_LEGGED_DOJI.name.lower() in indicator_data.columns:
-            long_legged_doji_mask = indicator_data[PatternType.LONG_LEGGED_DOJI.name.lower()]
+        if Pattern_type.LONG_LEGGED_DOJI.name.lower() in indicator_data.columns:
+            long_legged_doji_mask = indicator_data[Pattern_type.LONG_LEGGED_DOJI.name.lower()]
             score.loc[long_legged_doji_mask] += 15
         
-        if PatternType.SINGLE_NEEDLE_BOTTOM.name.lower() in indicator_data.columns:
-            single_needle_mask = indicator_data[PatternType.SINGLE_NEEDLE_BOTTOM.name.lower()]
+        if Pattern_type.SINGLE_NEEDLE_BOTTOM.name.lower() in indicator_data.columns:
+            single_needle_mask = indicator_data[Pattern_type.SINGLE_NEEDLE_BOTTOM.name.lower()]
             score.loc[single_needle_mask] += 25
         
         # 组合看涨形态
-        if PatternType.ENGULFING_BULLISH.name.lower() in indicator_data.columns:
-            engulfing_bullish_mask = indicator_data[PatternType.ENGULFING_BULLISH.name.lower()]
+        if Pattern_type.ENGULFING_BULLISH.name.lower() in indicator_data.columns:
+            engulfing_bullish_mask = indicator_data[Pattern_type.ENGULFING_BULLISH.name.lower()]
             score.loc[engulfing_bullish_mask] += 30
         
-        if PatternType.PIERCING_LINE.name.lower() in indicator_data.columns:
-            piercing_line_mask = indicator_data[PatternType.PIERCING_LINE.name.lower()]
+        if Pattern_type.PIERCING_LINE.name.lower() in indicator_data.columns:
+            piercing_line_mask = indicator_data[Pattern_type.PIERCING_LINE.name.lower()]
             score.loc[piercing_line_mask] += 25
         
-        if PatternType.MORNING_STAR.name.lower() in indicator_data.columns:
-            morning_star_mask = indicator_data[PatternType.MORNING_STAR.name.lower()]
+        if Pattern_type.MORNING_STAR.name.lower() in indicator_data.columns:
+            morning_star_mask = indicator_data[Pattern_type.MORNING_STAR.name.lower()]
             score.loc[morning_star_mask] += 35
         
-        if PatternType.HARAMI_BULLISH.name.lower() in indicator_data.columns:
-            harami_bullish_mask = indicator_data[PatternType.HARAMI_BULLISH.name.lower()]
+        if Pattern_type.HARAMI_BULLISH.name.lower() in indicator_data.columns:
+            harami_bullish_mask = indicator_data[Pattern_type.HARAMI_BULLISH.name.lower()]
             score.loc[harami_bullish_mask] += 20
         
         # 复合看涨形态
-        if PatternType.HEAD_SHOULDERS_BOTTOM.name.lower() in indicator_data.columns:
-            head_shoulders_bottom_mask = indicator_data[PatternType.HEAD_SHOULDERS_BOTTOM.name.lower()]
+        if Pattern_type.HEAD_SHOULDERS_BOTTOM.name.lower() in indicator_data.columns:
+            head_shoulders_bottom_mask = indicator_data[Pattern_type.HEAD_SHOULDERS_BOTTOM.name.lower()]
             score.loc[head_shoulders_bottom_mask] += 40
         
-        if PatternType.DOUBLE_BOTTOM.name.lower() in indicator_data.columns:
-            double_bottom_mask = indicator_data[PatternType.DOUBLE_BOTTOM.name.lower()]
+        if Pattern_type.DOUBLE_BOTTOM.name.lower() in indicator_data.columns:
+            double_bottom_mask = indicator_data[Pattern_type.DOUBLE_BOTTOM.name.lower()]
             score.loc[double_bottom_mask] += 35
         
-        if PatternType.V_REVERSAL.name.lower() in indicator_data.columns:
-            v_reversal_mask = indicator_data[PatternType.V_REVERSAL.name.lower()]
+        if Pattern_type.V_REVERSAL.name.lower() in indicator_data.columns:
+            v_reversal_mask = indicator_data[Pattern_type.V_REVERSAL.name.lower()]
             score.loc[v_reversal_mask] += 30
         
         # 2. 看跌形态评分（-15到-40分）
         # 单日看跌形态
-        if PatternType.HANGING_MAN.name.lower() in indicator_data.columns:
-            hanging_man_mask = indicator_data[PatternType.HANGING_MAN.name.lower()]
+        if Pattern_type.HANGING_MAN.name.lower() in indicator_data.columns:
+            hanging_man_mask = indicator_data[Pattern_type.HANGING_MAN.name.lower()]
             score.loc[hanging_man_mask] -= 20
         
-        if PatternType.GRAVESTONE_DOJI.name.lower() in indicator_data.columns:
-            gravestone_doji_mask = indicator_data[PatternType.GRAVESTONE_DOJI.name.lower()]
+        if Pattern_type.GRAVESTONE_DOJI.name.lower() in indicator_data.columns:
+            gravestone_doji_mask = indicator_data[Pattern_type.GRAVESTONE_DOJI.name.lower()]
             score.loc[gravestone_doji_mask] -= 15
         
-        if PatternType.SHOOTING_STAR.name.lower() in indicator_data.columns:
-            shooting_star_mask = indicator_data[PatternType.SHOOTING_STAR.name.lower()]
+        if Pattern_type.SHOOTING_STAR.name.lower() in indicator_data.columns:
+            shooting_star_mask = indicator_data[Pattern_type.SHOOTING_STAR.name.lower()]
             score.loc[shooting_star_mask] -= 25
         
         # 组合看跌形态
-        if PatternType.ENGULFING_BEARISH.name.lower() in indicator_data.columns:
-            engulfing_bearish_mask = indicator_data[PatternType.ENGULFING_BEARISH.name.lower()]
+        if Pattern_type.ENGULFING_BEARISH.name.lower() in indicator_data.columns:
+            engulfing_bearish_mask = indicator_data[Pattern_type.ENGULFING_BEARISH.name.lower()]
             score.loc[engulfing_bearish_mask] -= 30
         
-        if PatternType.DARK_CLOUD_COVER.name.lower() in indicator_data.columns:
-            dark_cloud_mask = indicator_data[PatternType.DARK_CLOUD_COVER.name.lower()]
+        if Pattern_type.DARK_CLOUD_COVER.name.lower() in indicator_data.columns:
+            dark_cloud_mask = indicator_data[Pattern_type.DARK_CLOUD_COVER.name.lower()]
             score.loc[dark_cloud_mask] -= 25
         
-        if PatternType.EVENING_STAR.name.lower() in indicator_data.columns:
-            evening_star_mask = indicator_data[PatternType.EVENING_STAR.name.lower()]
+        if Pattern_type.EVENING_STAR.name.lower() in indicator_data.columns:
+            evening_star_mask = indicator_data[Pattern_type.EVENING_STAR.name.lower()]
             score.loc[evening_star_mask] -= 35
         
         # 复合看跌形态
-        if PatternType.HEAD_SHOULDERS_TOP.name.lower() in indicator_data.columns:
-            head_shoulders_top_mask = indicator_data[PatternType.HEAD_SHOULDERS_TOP.name.lower()]
+        if Pattern_type.HEAD_SHOULDERS_TOP.name.lower() in indicator_data.columns:
+            head_shoulders_top_mask = indicator_data[Pattern_type.HEAD_SHOULDERS_TOP.name.lower()]
             score.loc[head_shoulders_top_mask] -= 40
         
-        if PatternType.DOUBLE_TOP.name.lower() in indicator_data.columns:
-            double_top_mask = indicator_data[PatternType.DOUBLE_TOP.name.lower()]
+        if Pattern_type.DOUBLE_TOP.name.lower() in indicator_data.columns:
+            double_top_mask = indicator_data[Pattern_type.DOUBLE_TOP.name.lower()]
             score.loc[double_top_mask] -= 35
         
         # 3. 中性形态评分（-5到+5分）
-        if PatternType.DOJI.name.lower() in indicator_data.columns:
-            doji_mask = indicator_data[PatternType.DOJI.name.lower()]
+        if Pattern_type.DOJI.name.lower() in indicator_data.columns:
+            doji_mask = indicator_data[Pattern_type.DOJI.name.lower()]
             # 十字星在不同位置有不同含义
             if 'close' in data.columns and len(data) >= 20:
                 close_price = data['close']
@@ -555,8 +555,8 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
                 score.loc[downtrend_doji] += 5
         
         # 4. 岛型反转特殊评分（±30分）
-        if PatternType.ISLAND_REVERSAL.name.lower() in indicator_data.columns:
-            island_reversal_mask = indicator_data[PatternType.ISLAND_REVERSAL.name.lower()]
+        if Pattern_type.ISLAND_REVERSAL.name.lower() in indicator_data.columns:
+            island_reversal_mask = indicator_data[Pattern_type.ISLAND_REVERSAL.name.lower()]
             
             # 需要结合价格趋势判断岛型反转的方向
             if 'close' in data.columns and len(data) >= 5:
@@ -583,10 +583,10 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
             
             # 看涨形态+放量
             bullish_patterns = (
-                indicator_data.get(PatternType.HAMMER.name.lower(), False) |
-                indicator_data.get(PatternType.ENGULFING_BULLISH.name.lower(), False) |
-                indicator_data.get(PatternType.MORNING_STAR.name.lower(), False) |
-                indicator_data.get(PatternType.DOUBLE_BOTTOM.name.lower(), False)
+                indicator_data.get(Pattern_type.HAMMER.name.lower(), False) |
+                indicator_data.get(Pattern_type.ENGULFING_BULLISH.name.lower(), False) |
+                indicator_data.get(Pattern_type.MORNING_STAR.name.lower(), False) |
+                indicator_data.get(Pattern_type.DOUBLE_BOTTOM.name.lower(), False)
             )
             if isinstance(bullish_patterns, pd.Series):
                 bullish_volume_confirm = bullish_patterns & high_volume_mask
@@ -594,10 +594,10 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
             
             # 看跌形态+放量
             bearish_patterns = (
-                indicator_data.get(PatternType.HANGING_MAN.name.lower(), False) |
-                indicator_data.get(PatternType.ENGULFING_BEARISH.name.lower(), False) |
-                indicator_data.get(PatternType.EVENING_STAR.name.lower(), False) |
-                indicator_data.get(PatternType.DOUBLE_TOP.name.lower(), False)
+                indicator_data.get(Pattern_type.HANGING_MAN.name.lower(), False) |
+                indicator_data.get(Pattern_type.ENGULFING_BEARISH.name.lower(), False) |
+                indicator_data.get(Pattern_type.EVENING_STAR.name.lower(), False) |
+                indicator_data.get(Pattern_type.DOUBLE_TOP.name.lower(), False)
             )
             if isinstance(bearish_patterns, pd.Series):
                 bearish_volume_confirm = bearish_patterns & high_volume_mask
@@ -615,9 +615,9 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
             # 在阻力位附近的看跌形态
             near_resistance = close_price > high_60 * 0.95
             bearish_at_resistance = (
-                (indicator_data.get(PatternType.HANGING_MAN.name.lower(), False) |
-                 indicator_data.get(PatternType.EVENING_STAR.name.lower(), False) |
-                 indicator_data.get(PatternType.SHOOTING_STAR.name.lower(), False)) &
+                (indicator_data.get(Pattern_type.HANGING_MAN.name.lower(), False) |
+                 indicator_data.get(Pattern_type.EVENING_STAR.name.lower(), False) |
+                 indicator_data.get(Pattern_type.SHOOTING_STAR.name.lower(), False)) &
                 near_resistance
             )
             if isinstance(bearish_at_resistance, pd.Series):
@@ -626,9 +626,9 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
             # 在支撑位附近的看涨形态
             near_support = close_price < low_60 * 1.05
             bullish_at_support = (
-                (indicator_data.get(PatternType.HAMMER.name.lower(), False) |
-                 indicator_data.get(PatternType.MORNING_STAR.name.lower(), False) |
-                 indicator_data.get(PatternType.SINGLE_NEEDLE_BOTTOM.name.lower(), False)) &
+                (indicator_data.get(Pattern_type.HAMMER.name.lower(), False) |
+                 indicator_data.get(Pattern_type.MORNING_STAR.name.lower(), False) |
+                 indicator_data.get(Pattern_type.SINGLE_NEEDLE_BOTTOM.name.lower(), False)) &
                 near_support
             )
             if isinstance(bullish_at_support, pd.Series):
@@ -640,7 +640,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+    def identify_patterns_Patterns(self, data: pd.DataFrame) -> List[str]:
         """
         识别最新的K线形态
         
@@ -661,7 +661,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return list(latest_patterns.keys())
         
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Patterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         根据识别到的K线形态生成交易信号
         
@@ -670,7 +670,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
             *args, **kwargs: 附加参数
             
         Returns:
-            pd.DataFrame: 包含标准化信号的DataFrame
+            pd.DataFrame: 包含标准化信号的Data_frame
         """
         # 计算K线形态
         pattern_results = self.calculate(data)
@@ -693,48 +693,48 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 定义看涨形态
         bullish_patterns = [
-            PatternType.HAMMER.name.lower(),
-            PatternType.MORNING_STAR.name.lower(),
-            PatternType.PIERCING_LINE.name.lower(),
-            PatternType.ENGULFING_BULLISH.name.lower(),
-            PatternType.HARAMI_BULLISH.name.lower(),
-            PatternType.SINGLE_NEEDLE_BOTTOM.name.lower(),
-            PatternType.HEAD_SHOULDERS_BOTTOM.name.lower(),
-            PatternType.DOUBLE_BOTTOM.name.lower(),
-            PatternType.TRIANGLE_ASCENDING.name.lower(),
-            PatternType.WEDGE_FALLING.name.lower(),
-            PatternType.CUP_WITH_HANDLE.name.lower(),
-            PatternType.V_REVERSAL.name.lower()
+            Pattern_type.HAMMER.name.lower(),
+            Pattern_type.MORNING_STAR.name.lower(),
+            Pattern_type.PIERCING_LINE.name.lower(),
+            Pattern_type.ENGULFING_BULLISH.name.lower(),
+            Pattern_type.HARAMI_BULLISH.name.lower(),
+            Pattern_type.SINGLE_NEEDLE_BOTTOM.name.lower(),
+            Pattern_type.HEAD_SHOULDERS_BOTTOM.name.lower(),
+            Pattern_type.DOUBLE_BOTTOM.name.lower(),
+            Pattern_type.TRIANGLE_ASCENDING.name.lower(),
+            Pattern_type.WEDGE_FALLING.name.lower(),
+            Pattern_type.CUP_WITH_HANDLE.name.lower(),
+            Pattern_type.V_REVERSAL.name.lower()
         ]
         
         # 定义看跌形态
         bearish_patterns = [
-            PatternType.HANGING_MAN.name.lower(),
-            PatternType.EVENING_STAR.name.lower(),
-            PatternType.DARK_CLOUD_COVER.name.lower(),
-            PatternType.ENGULFING_BEARISH.name.lower(),
-            PatternType.SHOOTING_STAR.name.lower(),
-            PatternType.HEAD_SHOULDERS_TOP.name.lower(),
-            PatternType.DOUBLE_TOP.name.lower(),
-            PatternType.TRIANGLE_DESCENDING.name.lower(),
-            PatternType.WEDGE_RISING.name.lower()
+            Pattern_type.HANGING_MAN.name.lower(),
+            Pattern_type.EVENING_STAR.name.lower(),
+            Pattern_type.DARK_CLOUD_COVER.name.lower(),
+            Pattern_type.ENGULFING_BEARISH.name.lower(),
+            Pattern_type.SHOOTING_STAR.name.lower(),
+            Pattern_type.HEAD_SHOULDERS_TOP.name.lower(),
+            Pattern_type.DOUBLE_TOP.name.lower(),
+            Pattern_type.TRIANGLE_DESCENDING.name.lower(),
+            Pattern_type.WEDGE_RISING.name.lower()
         ]
         
         # 强看涨形态
         strong_bullish_patterns = [
-            PatternType.MORNING_STAR.name.lower(),
-            PatternType.ENGULFING_BULLISH.name.lower(),
-            PatternType.DOUBLE_BOTTOM.name.lower(),
-            PatternType.HEAD_SHOULDERS_BOTTOM.name.lower(),
-            PatternType.V_REVERSAL.name.lower()
+            Pattern_type.MORNING_STAR.name.lower(),
+            Pattern_type.ENGULFING_BULLISH.name.lower(),
+            Pattern_type.DOUBLE_BOTTOM.name.lower(),
+            Pattern_type.HEAD_SHOULDERS_BOTTOM.name.lower(),
+            Pattern_type.V_REVERSAL.name.lower()
         ]
         
         # 强看跌形态
         strong_bearish_patterns = [
-            PatternType.EVENING_STAR.name.lower(),
-            PatternType.ENGULFING_BEARISH.name.lower(),
-            PatternType.DOUBLE_TOP.name.lower(),
-            PatternType.HEAD_SHOULDERS_TOP.name.lower()
+            Pattern_type.EVENING_STAR.name.lower(),
+            Pattern_type.ENGULFING_BEARISH.name.lower(),
+            Pattern_type.DOUBLE_TOP.name.lower(),
+            Pattern_type.HEAD_SHOULDERS_TOP.name.lower()
         ]
         
         # 生成信号
@@ -832,13 +832,13 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return signals
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Patterns(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算CandlestickPatterns指标的置信度
+        计算Candlestick_patterns指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -866,10 +866,10 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         if hasattr(self, '_result') and self._result is not None:
             # 检查是否有形态数据
             pattern_columns = [col for col in self._result.columns
-                             if any(pattern.name.lower() in col for pattern in PatternType)]
+                             if any(pattern.name.lower() in col for pattern in Pattern_type)]
             if pattern_columns:
                 # 形态数据越完整，置信度越高
-                data_completeness = len(pattern_columns) / len(PatternType)
+                data_completeness = len(pattern_columns) / len(Pattern_type)
                 confidence += data_completeness * 0.1
 
         # 3. 基于形态的置信度
@@ -897,9 +897,9 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def register_patterns(self):
+    def register_patterns_Patterns(self):
         """
-        注册CandlestickPatterns指标的形态到全局形态注册表
+        注册Candlestick_patterns指标的形态到全局形态注册表
         """
         # 注册单日看涨形态
         self.register_pattern_to_registry(
@@ -1107,9 +1107,9 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+    def generate_trading_signals_Patterns(self, data: pd.DataFrame, **kwargs) -> dict:
         """
-        生成CandlestickPatterns交易信号
+        生成Candlestick_patterns交易信号
 
         Args:
             data: 输入数据
@@ -1120,7 +1120,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_candlestickpatterns(data, **kwargs)
 
         if self._result is None or self._result.empty:
             return {
@@ -1136,38 +1136,38 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
 
         # 定义看涨形态
         bullish_patterns = [
-            PatternType.HAMMER.name.lower(),
-            PatternType.MORNING_STAR.name.lower(),
-            PatternType.PIERCING_LINE.name.lower(),
-            PatternType.ENGULFING_BULLISH.name.lower(),
-            PatternType.HARAMI_BULLISH.name.lower(),
-            PatternType.SINGLE_NEEDLE_BOTTOM.name.lower(),
-            PatternType.HEAD_SHOULDERS_BOTTOM.name.lower(),
-            PatternType.DOUBLE_BOTTOM.name.lower(),
-            PatternType.V_REVERSAL.name.lower()
+            Pattern_type.HAMMER.name.lower(),
+            Pattern_type.MORNING_STAR.name.lower(),
+            Pattern_type.PIERCING_LINE.name.lower(),
+            Pattern_type.ENGULFING_BULLISH.name.lower(),
+            Pattern_type.HARAMI_BULLISH.name.lower(),
+            Pattern_type.SINGLE_NEEDLE_BOTTOM.name.lower(),
+            Pattern_type.HEAD_SHOULDERS_BOTTOM.name.lower(),
+            Pattern_type.DOUBLE_BOTTOM.name.lower(),
+            Pattern_type.V_REVERSAL.name.lower()
         ]
 
         # 定义看跌形态
         bearish_patterns = [
-            PatternType.HANGING_MAN.name.lower(),
-            PatternType.EVENING_STAR.name.lower(),
-            PatternType.DARK_CLOUD_COVER.name.lower(),
-            PatternType.ENGULFING_BEARISH.name.lower(),
-            PatternType.SHOOTING_STAR.name.lower(),
-            PatternType.HEAD_SHOULDERS_TOP.name.lower(),
-            PatternType.DOUBLE_TOP.name.lower()
+            Pattern_type.HANGING_MAN.name.lower(),
+            Pattern_type.EVENING_STAR.name.lower(),
+            Pattern_type.DARK_CLOUD_COVER.name.lower(),
+            Pattern_type.ENGULFING_BEARISH.name.lower(),
+            Pattern_type.SHOOTING_STAR.name.lower(),
+            Pattern_type.HEAD_SHOULDERS_TOP.name.lower(),
+            Pattern_type.DOUBLE_TOP.name.lower()
         ]
 
         # 强形态权重
         strong_patterns = {
-            PatternType.MORNING_STAR.name.lower(): 0.9,
-            PatternType.EVENING_STAR.name.lower(): -0.9,
-            PatternType.ENGULFING_BULLISH.name.lower(): 0.8,
-            PatternType.ENGULFING_BEARISH.name.lower(): -0.8,
-            PatternType.HEAD_SHOULDERS_BOTTOM.name.lower(): 0.9,
-            PatternType.HEAD_SHOULDERS_TOP.name.lower(): -0.9,
-            PatternType.DOUBLE_BOTTOM.name.lower(): 0.8,
-            PatternType.DOUBLE_TOP.name.lower(): -0.8
+            Pattern_type.MORNING_STAR.name.lower(): 0.9,
+            Pattern_type.EVENING_STAR.name.lower(): -0.9,
+            Pattern_type.ENGULFING_BULLISH.name.lower(): 0.8,
+            Pattern_type.ENGULFING_BEARISH.name.lower(): -0.8,
+            Pattern_type.HEAD_SHOULDERS_BOTTOM.name.lower(): 0.9,
+            Pattern_type.HEAD_SHOULDERS_TOP.name.lower(): -0.9,
+            Pattern_type.DOUBLE_BOTTOM.name.lower(): 0.8,
+            Pattern_type.DOUBLE_TOP.name.lower(): -0.8
         }
 
         # 生成信号
@@ -1194,8 +1194,8 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
                     signal_strength[pattern_mask] = -0.6
 
         # 处理岛型反转（需要结合趋势判断）
-        if PatternType.ISLAND_REVERSAL.name.lower() in self._result.columns:
-            island_mask = self._result[PatternType.ISLAND_REVERSAL.name.lower()]
+        if Pattern_type.ISLAND_REVERSAL.name.lower() in self._result.columns:
+            island_mask = self._result[Pattern_type.ISLAND_REVERSAL.name.lower()]
             if island_mask.any() and len(data) >= 5:
                 # 简单趋势判断
                 price_change_5d = data['close'].pct_change(5)
@@ -1219,7 +1219,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Patterns(self) -> str:
         """
         获取指标类型
 
@@ -1228,7 +1228,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         """
         return "CANDLESTICKPATTERNS"
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Patterns(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

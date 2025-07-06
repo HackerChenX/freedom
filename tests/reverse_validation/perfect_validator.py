@@ -21,21 +21,21 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from smart_pattern_generator import SmartPatternGenerator
-from enhanced_pattern_generator import EnhancedPatternGenerator
-from technical_indicators import TechnicalIndicators
-from extended_technical_indicators import ExtendedTechnicalIndicators
+from smart_pattern_generator import Smart_pattern_generator
+from enhanced_pattern_generator import Enhanced_pattern_generator
+from technical_indicators import Technical_indicators
+from extended_technical_indicators import Extended_technical_indicators
 
 
-class PerfectValidator:
+class Perfect_validator:
     """完美验证器"""
 
     def __init__(self):
         """初始化验证器"""
-        self.smart_generator = SmartPatternGenerator()
-        self.enhanced_generator = EnhancedPatternGenerator()
-        self.indicators = TechnicalIndicators()
-        self.extended_indicators = ExtendedTechnicalIndicators()
+        self.smart_generator = Smart_pattern_generator()
+        self.enhanced_generator = Enhanced_pattern_generator()
+        self.indicators = Technical_indicators()
+        self.extended_indicators = Extended_technical_indicators()
 
     def validate_rsi_patterns_perfect(self) -> dict:
         """完美验证所有RSI形态"""
@@ -235,7 +235,7 @@ class PerfectValidator:
             # 简化的背离检测：只要价格总体上涨但RSI没有过度上涨就认为是背离
             price_start = close_prices.iloc[0]
             price_end = close_prices.iloc[-1]
-            rsi_start = rsi.iloc[14]  # 跳过前14个NaN值
+            rsi_start = rsi.iloc[14]  # 跳过前14个Na_n值
             rsi_end = rsi.iloc[-1]
 
             # 价格上涨幅度
@@ -402,7 +402,7 @@ class PerfectValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Perfect_Validator(results['success_rate'])
         }
 
         return results
@@ -711,7 +711,7 @@ class PerfectValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Perfect_Validator(results['success_rate'])
         }
 
         return results
@@ -987,7 +987,7 @@ class PerfectValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Perfect_Validator(results['success_rate'])
         }
 
         return results
@@ -1125,7 +1125,7 @@ class PerfectValidator:
                 width_decreased = False
             else:
                 recent_width = (upper.iloc[-5:] - lower.iloc[-5:]).dropna()
-                early_width = (upper.iloc[20:25] - lower.iloc[20:25]).dropna()  # 跳过NaN
+                early_width = (upper.iloc[20:25] - lower.iloc[20:25]).dropna()  # 跳过Na_n
 
                 if len(recent_width) > 0 and len(early_width) > 0:
                     width_decreased = recent_width.mean() < early_width.mean()
@@ -1180,7 +1180,7 @@ class PerfectValidator:
                 width_increased = False
             else:
                 recent_width = (upper.iloc[-5:] - lower.iloc[-5:]).dropna()
-                early_width = (upper.iloc[20:25] - lower.iloc[20:25]).dropna()  # 跳过NaN
+                early_width = (upper.iloc[20:25] - lower.iloc[20:25]).dropna()  # 跳过Na_n
 
                 if len(recent_width) > 0 and len(early_width) > 0:
                     width_increased = recent_width.mean() > early_width.mean()
@@ -1290,7 +1290,7 @@ class PerfectValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Perfect_Validator(results['success_rate'])
         }
 
         return results
@@ -1557,7 +1557,7 @@ class PerfectValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Perfect_Validator(results['success_rate'])
         }
 
         return results
@@ -1839,12 +1839,12 @@ class PerfectValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Perfect_Validator(results['success_rate'])
         }
 
         return results
 
-    def _get_recommendation(self, success_rate: float) -> str:
+    def _get_recommendation_Perfect_Validator(self, success_rate: float) -> str:
         """根据成功率生成建议"""
         if success_rate >= 1.0:
             return "🎉 完美！达到100%成功率目标"
@@ -1856,7 +1856,7 @@ class PerfectValidator:
             return "❌ 需要重点改进形态识别算法"
 
 
-def main():
+def main_perfectvalidator():
     """主函数"""
     print("=" * 60)
     print("完美反向验证测试")
@@ -1866,7 +1866,7 @@ def main():
     print()
 
     # 创建完美验证器并运行测试
-    validator = PerfectValidator()
+    validator = Perfect_validator()
 
     try:
         results = validator.validate_rsi_patterns_perfect()
@@ -1910,5 +1910,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_perfectvalidator()
     sys.exit(exit_code)

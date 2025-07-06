@@ -1,35 +1,35 @@
 """
-EnhancedOBV指标单元测试
+Enhanced_oBV指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_enhanced_oBV(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """EnhancedOBV指标测试类"""
     
-    def setUp(self):
+    def set_up_Obv(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Obv(self)
         
-        self.indicator = EnhancedOBV(ma_period=30, multi_periods=[5, 10, 20, 60])
+        self.indicator = Enhanced_oBV(ma_period=30, multi_periods=[5, 10, 20, 60])
         self.expected_columns = [
             'obv', 'obv_smooth', 'obv_ma', 'obv_ma5', 'obv_ma10', 'obv_ma20', 'obv_ma60',
             'obv_momentum', 'obv_rate', 'volume_price_corr'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Obv(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Obv(self)
     
     def test_enhanced_obv_calculation_accuracy(self):
         """测试EnhancedOBV计算准确性"""
@@ -58,7 +58,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = EnhancedOBV(ma_period=5, multi_periods=[5])
+        test_indicator = Enhanced_oBV(ma_period=5, multi_periods=[5])
         result = test_indicator.calculate(simple_data)
         
         # 验证OBV计算逻辑
@@ -85,9 +85,9 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_enhanced_obv_parameter_update(self):
         """测试EnhancedOBV参数更新"""
@@ -96,8 +96,8 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(ma_period=new_ma_period, sensitivity=new_sensitivity)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.ma_period, new_ma_period)
-        self.assertEqual(self.indicator.sensitivity, new_sensitivity)
+        self.assert_equal(self.indicator.ma_period, new_ma_period)
+        self.assert_equal(self.indicator.sensitivity, new_sensitivity)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -108,7 +108,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_enhanced_obv_comprehensive_score(self):
         """测试EnhancedOBV综合评分"""
@@ -118,7 +118,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 然后计算评分
         raw_score = self.indicator.calculate_raw_score(self.data)
         
-        self.assertIsInstance(raw_score, pd.Series)
+        self.assert_is_instance(raw_score, pd.Series)
         
         # 验证评分范围
         valid_scores = raw_score.dropna()
@@ -129,13 +129,13 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试EnhancedOBV形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -169,7 +169,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         momentum_values = result['obv_momentum'].dropna()
         if len(momentum_values) > 0:
             # 动量应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in momentum_values), 
+            self.assert_true(all(np.isfinite(v) for v in momentum_values), 
                            "OBV动量应该是有限数值")
     
     def test_enhanced_obv_volume_price_correlation(self):
@@ -183,22 +183,22 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         corr_values = result['volume_price_corr'].dropna()
         if len(corr_values) > 0:
             # 相关性应该在-1到1之间
-            self.assertTrue(all(-1 <= v <= 1 for v in corr_values), 
+            self.assert_true(all(-1 <= v <= 1 for v in corr_values), 
                            "量价相关性应该在-1到1之间")
     
     def test_enhanced_obv_smoothing(self):
         """测试EnhancedOBV平滑功能"""
         # 测试启用平滑
-        smoothed_indicator = EnhancedOBV(use_smoothed_obv=True, smoothing_period=5)
+        smoothed_indicator = Enhanced_oBV(use_smoothed_obv=True, smoothing_period=5)
         result1 = smoothed_indicator.calculate(self.data)
         
         # 测试禁用平滑
-        unsmoothed_indicator = EnhancedOBV(use_smoothed_obv=False)
+        unsmoothed_indicator = Enhanced_oBV(use_smoothed_obv=False)
         result2 = unsmoothed_indicator.calculate(self.data)
         
         # 两种情况都应该能正常计算
-        self.assertIsInstance(result1, pd.DataFrame)
-        self.assertIsInstance(result2, pd.DataFrame)
+        self.assert_is_instance(result1, pd.DataFrame)
+        self.assert_is_instance(result2, pd.DataFrame)
         self.assertIn('obv_smooth', result1.columns)
         self.assertIn('obv_smooth', result2.columns)
     
@@ -209,10 +209,10 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         for env in environments:
             self.indicator.set_market_environment(env)
-            self.assertEqual(self.indicator.market_environment, env)
+            self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_obv_flow_gradient(self):
@@ -224,7 +224,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         flow_gradient = self.indicator.calculate_flow_gradient()
         
         # 验证梯度计算结果
-        self.assertIsInstance(flow_gradient, pd.DataFrame)
+        self.assert_is_instance(flow_gradient, pd.DataFrame)
         
         if not flow_gradient.empty:
             expected_gradient_columns = [
@@ -244,7 +244,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         divergence = self.indicator.detect_divergence()
         
         # 验证背离检测结果
-        self.assertIsInstance(divergence, pd.DataFrame)
+        self.assert_is_instance(divergence, pd.DataFrame)
         
         if not divergence.empty:
             expected_divergence_columns = [
@@ -265,7 +265,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         synergy = self.indicator.calculate_price_volume_synergy()
         
         # 验证协同分析结果
-        self.assertIsInstance(synergy, pd.DataFrame)
+        self.assert_is_instance(synergy, pd.DataFrame)
         
         if not synergy.empty:
             expected_synergy_columns = [
@@ -285,7 +285,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.identify_patterns()
         
         # 验证形态识别结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         if not patterns.empty:
             expected_pattern_columns = [
@@ -302,11 +302,11 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_enhanced_obv_generate_signals_method(self):
         """测试EnhancedOBV信号生成方法"""
@@ -317,7 +317,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_signals(self.data)
         
         # 验证信号生成结果
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         
         expected_signal_columns = [
             'obv', 'obv_ma', 'score', 'buy_signal', 'sell_signal',
@@ -327,7 +327,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         for col in expected_signal_columns:
             self.assertIn(col, signals.columns, f"缺少信号列: {col}")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Obv(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -338,11 +338,11 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Obv(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -353,7 +353,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_enhanced_obv_register_patterns(self):
         """测试EnhancedOBV形态注册"""
@@ -370,7 +370,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # EnhancedOBV应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('obv', result.columns)
     
     def test_enhanced_obv_validation(self):
@@ -378,7 +378,7 @@ class TestEnhancedOBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['volume'], axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_obv_indicator_type(self):

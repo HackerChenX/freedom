@@ -15,12 +15,12 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class VIX(BaseIndicator, PatternSignalMixin):
+class Vix(BaseIndicator, PatternSignalMixin):
     """
     VIX恐慌指数指标
     
@@ -41,7 +41,7 @@ class VIX(BaseIndicator, PatternSignalMixin):
         self.period = period
         self.smooth_period = smooth_period
     
-    def set_parameters(self, period: int = None, smooth_period: int = None):
+    def set_parameters_Vix_Vix_Vix_vix(self, period: int = None, smooth_period: int = None):
         """
         设置指标参数
         """
@@ -50,20 +50,20 @@ class VIX(BaseIndicator, PatternSignalMixin):
         if smooth_period is not None:
             self.smooth_period = smooth_period
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VIX指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含VIX指标的DataFrame
+            包含VIX指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_vix(data)
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取VIX相关形态
 
@@ -72,11 +72,11 @@ class VIX(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Vix(data)
 
         if self._result is None or 'vix' not in self._result.columns:
             return pd.DataFrame(index=data.index)
@@ -138,13 +138,13 @@ class VIX(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Vix(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算VIX指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -199,26 +199,26 @@ class VIX(BaseIndicator, PatternSignalMixin):
         计算VIX指标
 
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
 
         Returns:
-            包含VIX指标的DataFrame
+            包含VIX指标的Data_frame
         """
-        return self._calculate(df)
+        return self._calculate_vix(df)
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_vix(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算VIX恐慌指数指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 必须包含以下列：
                 - high: 最高价
                 - low: 最低价
                 - close: 收盘价
                 
         Returns:
-            添加了VIX指标列的DataFrame
+            添加了VIX指标列的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
@@ -247,18 +247,18 @@ class VIX(BaseIndicator, PatternSignalMixin):
 
         return df_copy
 
-    def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+    def generate_signals_Vix(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         生成交易信号
         
         Args:
-            df: 包含VIX指标的DataFrame
+            df: 包含VIX指标的Data_frame
         
         Returns:
-            添加了交易信号的DataFrame
+            添加了交易信号的Data_frame
         """
         # 先计算指标
-        result = self.calculate(df)
+        result = self.calculate_Vix(df)
         
         # 初始化信号列
         result['buy_signal'] = 0
@@ -298,7 +298,7 @@ class VIX(BaseIndicator, PatternSignalMixin):
     
     def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
             df: 输入数据
@@ -311,18 +311,18 @@ class VIX(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Vix(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算VIX恐慌指数的原始评分
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            pd.DataFrame: 包含原始评分的DataFrame
+            pd.DataFrame: 包含原始评分的Data_frame
         """
         # 计算指标值
-        indicator_data = self.calculate(data)
+        indicator_data = self.calculate_Vix(data)
         
         # 初始化评分
         score = pd.Series(50.0, index=data.index)  # 基础分50分
@@ -442,7 +442,7 @@ class VIX(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Vix(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -459,10 +459,10 @@ class VIX(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Vix(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Vix(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -564,12 +564,12 @@ class VIX(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+    def identify_patterns_Vix(self, data: pd.DataFrame) -> List[str]:
         """
         识别VIX恐慌指数相关的技术形态
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             List[str]: 识别出的形态列表
@@ -577,7 +577,7 @@ class VIX(BaseIndicator, PatternSignalMixin):
         patterns = []
         
         # 计算指标值
-        indicator_data = self.calculate(data)
+        indicator_data = self.calculate_Vix(data)
         
         if len(indicator_data) < 10:
             return patterns
@@ -719,43 +719,11 @@ class VIX(BaseIndicator, PatternSignalMixin):
 
 
 
-    def __init__(self, **kwargs):
-        """
-        初始化VIX指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "VIX"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保VIX特有属性存在
-        if not hasattr(self, 'period'):
-            self.period = 20
-        
-        # 确保VIX特有属性存在
-        if not hasattr(self, 'period'):
-            self.period = 20
-        if not hasattr(self, 'smooth_period'):
-            self.smooth_period = 10
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_vix(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'period': 20, 'smooth_period': 10}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Vix_Vix_Vix_vix_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -764,8 +732,8 @@ class VIX(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -774,8 +742,8 @@ class VIX(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('VIX', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"VIX参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

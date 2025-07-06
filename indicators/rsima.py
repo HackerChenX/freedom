@@ -21,12 +21,12 @@ except ImportError:
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class RSIMA(BaseIndicator, PatternSignalMixin):
+class Rsima(BaseIndicator, PatternSignalMixin):
     """
     RSI均线系统(RSIMA)
     
@@ -49,7 +49,7 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         self.ma_periods = ma_periods if ma_periods is not None else [3, 5, 10]
         self.name = "RSIMA"
     
-    def set_parameters(self, rsi_period: int = None, ma_periods: List[int] = None):
+    def set_parameters_Rsima_Rsima_Rsima_rsima(self, rsi_period: int = None, ma_periods: List[int] = None):
         """
         设置指标参数
         """
@@ -58,13 +58,13 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         if ma_periods is not None:
             self.ma_periods = ma_periods
     
-    def get_patterns(self):
+    def get_patterns_Rsima(self):
         patterns = {
             "description": "RSI线下穿其移动平均线，可能预示下跌趋势。",
         }
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Rsima(self):
         """
         注册RSIMA指标的形态到全局形态注册表
         """
@@ -173,16 +173,16 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_rsima(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
-            df: 包含价格数据的DataFrame
+            df: 包含价格数据的Data_frame
             required_columns: 所需的列名列表
         
         Raises:
-            ValueError: 如果DataFrame不包含所需的列，或者行数少于所需的最小行数
+            ValueError: 如果Data_frame不包含所需的列，或者行数少于所需的最小行数
         """
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
@@ -193,19 +193,19 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         if len(df) < min_rows:
             raise ValueError(f"DataFrame至少需要 {min_rows} 行数据才能计算RSI，但只有 {len(df)} 行")
     
-    def _calculate(self, df: pd.DataFrame, price_column: str = "close") -> pd.DataFrame:
+    def _calculateRsima(self, df: pd.DataFrame, price_column: str = "close") -> pd.DataFrame:
         """
         计算RSI均线系统
         
         Args:
-            df: 包含价格数据的DataFrame
+            df: 包含价格数据的Data_frame
             price_column: 用于计算的价格列名，默认为'close'
         
         Returns:
-            包含RSI均线系统结果的DataFrame
+            包含RSI均线系统结果的Data_frame
         """
         required_columns = [price_column]
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_rsima(df, required_columns)
         
         df_copy = df.copy()
         
@@ -253,34 +253,34 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
 
         return df_copy
     
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Rsima(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算RSI均线系统指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 
         Returns:
-            包含RSI均线系统指标的DataFrame
+            包含RSI均线系统指标的Data_frame
         """
         try:
             result = self.calculate(df)
-            result = self.get_signals(result)
+            result = self.get_signals_Rsima(result)
             return result
         except Exception as e:
             logger.error(f"计算指标 {self.name} 时出错: {str(e)}")
             raise
     
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Rsima(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成RSI均线系统指标交易信号
         
         Args:
-            df: 包含价格数据和RSIMA指标的DataFrame
+            df: 包含价格数据和RSIMA指标的Data_frame
             **kwargs: 额外参数
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - rsima_buy_signal: 1=买入信号, 0=无信号
             - rsima_sell_signal: 1=卖出信号, 0=无信号
         """
@@ -289,7 +289,7 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
             
         # 检查必要的指标列是否存在
         required_columns = ['rsi']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_rsima(df, required_columns)
         
         df_copy = df.copy()
         
@@ -329,7 +329,7 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         
         return df_copy
     
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score_Rsima(self, data: pd.DataFrame) -> pd.Series:
         """
         计算RSIMA原始评分
         """
@@ -340,12 +340,12 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         score = pd.Series(50.0, index=data.index)
         return score
 
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
+    def plot_Rsima(self, df: pd.DataFrame, ax=None, **kwargs):
         """
         绘制RSI均线系统指标图表
         
         Args:
-            df: 包含RSIMA指标的DataFrame
+            df: 包含RSIMA指标的Data_frame
             ax: matplotlib轴对象，如果为None则创建新的
             **kwargs: 额外绘图参数
             
@@ -356,20 +356,20 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         
         # 检查必要的指标列是否存在
         required_columns = ['rsi']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_rsima(df, required_columns)
         
         # 创建新的轴对象（如果未提供）
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 5))
             
         # 绘制RSI线
-        ax.plot(df.index, df['rsi'], label=f'RSI({self.rsi_period})')
+        ax.plot_Rsima(df.index, df['rsi'], label=f'RSI({self.rsi_period})')
         
         # 绘制RSI均线
         available_periods = getattr(self, '_available_periods', [])
         for period in available_periods:
             if f'rsi_ma{period}' in df.columns:
-                ax.plot(df.index, df[f'rsi_ma{period}'], label=f'RSI MA{period}', linestyle='--')
+                ax.plot_Rsima(df.index, df[f'rsi_ma{period}'], label=f'RSI MA{period}', linestyle='--')
         
         # 添加参考线
         ax.axhline(y=70, color='r', linestyle='--', alpha=0.3)
@@ -383,7 +383,7 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         
         return ax 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Rsima(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -416,33 +416,11 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         
         return pattern_info_map.get(pattern_id, default_pattern)
 
-    def __init__(self, **kwargs):
-        """
-        初始化RSIMA指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "RSIMA"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_rsima(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Rsima_Rsima_Rsima_rsima_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -451,8 +429,8 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -461,8 +439,8 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('RSIMA', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"RSIMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -476,6 +454,6 @@ class RSIMA(BaseIndicator, PatternSignalMixin):
             # 如果验证失败，静默处理
             pass
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Rsima(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.5

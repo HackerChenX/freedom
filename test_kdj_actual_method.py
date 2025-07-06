@@ -12,7 +12,7 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from indicators.kdj import KDJ
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 
 def debug_kdj_actual_method():
     """调试KDJ的实际calculate_raw_score方法"""
@@ -132,7 +132,7 @@ def debug_kdj_actual_method():
         patterns = kdj.get_patterns(data)
         pattern_adjustment = pd.Series(0.0, index=data.index)
         
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 遍历所有检测到的形态
         for pattern_col in patterns.columns:

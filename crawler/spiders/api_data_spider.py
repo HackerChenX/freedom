@@ -11,14 +11,14 @@ import time
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from urllib.parse import urljoin, urlparse
-from bs4 import BeautifulSoup
-from .base_spider import BaseSpider
+from bs4 import Beautiful_soup
+from crawler.spiders.base_spider import Base_spider
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class APIDataSpider(BaseSpider):
+class APIData_spider(Base_spider):
     """API数据爬虫"""
 
     def __init__(self, anti_crawler_module=None):
@@ -99,14 +99,14 @@ class APIDataSpider(BaseSpider):
 
         return None
 
-    def get_article_urls(self, page: int = 1) -> List[str]:
+    def get_article_urls_Spider(self, page: int = 1) -> List[str]:
         """获取文章URL列表（API模式不需要）"""
         return []
 
-    def parse_article_list(self, response) -> List[Dict[str, Any]]:
+    def parse_article_list_Spider(self, response) -> List[Dict[str, Any]]:
         """解析文章列表（API模式不需要）"""
         return []
 
-    def parse_article_detail(self, response) -> Dict[str, Any]:
+    def parse_article_detail_Spider(self, response) -> Dict[str, Any]:
         """解析文章详情（API模式不需要）"""
         return {}

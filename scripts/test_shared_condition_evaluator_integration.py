@@ -16,8 +16,8 @@ import time
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
-from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
+from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
+from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -74,7 +74,7 @@ def calculate_indicators_with_unified_engine(stock_data):
     Returns:
         Dict[str, np.ndarray]: 包含指标的数据字典
     """
-    engine = UnifiedIndicatorEngine()
+    engine = Unified_indicator_engine()
     
     # 计算各种技术指标
     indicators = {}
@@ -209,7 +209,7 @@ def test_basic_conditions():
     """测试基础条件评估"""
     print("\n=== 测试基础条件评估 ===")
     
-    evaluator = SharedConditionEvaluator()
+    evaluator = Shared_condition_evaluator()
     stock_data = create_sample_stock_data(50)
     data = calculate_indicators_with_unified_engine(stock_data)
     
@@ -244,7 +244,7 @@ def test_indicator_conditions():
     """测试指标条件评估"""
     print("\n=== 测试指标条件评估 ===")
     
-    evaluator = SharedConditionEvaluator()
+    evaluator = Shared_condition_evaluator()
     stock_data = create_sample_stock_data(50)
     data = calculate_indicators_with_unified_engine(stock_data)
     
@@ -289,7 +289,7 @@ def test_buypoint_pattern_conditions():
     """测试买点形态条件评估"""
     print("\n=== 测试买点形态条件评估 ===")
     
-    evaluator = SharedConditionEvaluator()
+    evaluator = Shared_condition_evaluator()
     stock_data = create_sample_stock_data(50)
     indicator_data = calculate_indicators_with_unified_engine(stock_data)
     buypoint_data = simulate_buypoint_analysis_data(indicator_data, -1)
@@ -331,7 +331,7 @@ def test_complex_logical_conditions():
     """测试复杂逻辑条件"""
     print("\n=== 测试复杂逻辑条件 ===")
     
-    evaluator = SharedConditionEvaluator()
+    evaluator = Shared_condition_evaluator()
     stock_data = create_sample_stock_data(50)
     indicator_data = calculate_indicators_with_unified_engine(stock_data)
     buypoint_data = simulate_buypoint_analysis_data(indicator_data, -1)
@@ -388,11 +388,11 @@ def test_complex_logical_conditions():
     return success
 
 
-def test_multiple_conditions_evaluation():
+def test_multiple_conditions_evaluation_Integration():
     """测试多条件组合评估"""
     print("\n=== 测试多条件组合评估 ===")
     
-    evaluator = SharedConditionEvaluator()
+    evaluator = Shared_condition_evaluator()
     stock_data = create_sample_stock_data(50)
     indicator_data = calculate_indicators_with_unified_engine(stock_data)
     buypoint_data = simulate_buypoint_analysis_data(indicator_data, -1)
@@ -449,7 +449,7 @@ def test_performance():
     """测试性能"""
     print("\n=== 性能测试 ===")
     
-    evaluator = SharedConditionEvaluator()
+    evaluator = Shared_condition_evaluator()
     stock_data = create_sample_stock_data(200)
     indicator_data = calculate_indicators_with_unified_engine(stock_data)
     buypoint_data = simulate_buypoint_analysis_data(indicator_data, -1)
@@ -506,7 +506,7 @@ def test_performance():
     return performance_ok
 
 
-def run_integration_tests():
+def run_integration_tests_Integration():
     """运行所有集成测试"""
     print("开始共享条件评估器集成测试")
     print("=" * 50)
@@ -555,5 +555,5 @@ def run_integration_tests():
 
 
 if __name__ == "__main__":
-    success = run_integration_tests()
+    success = run_integration_tests_Integration()
     sys.exit(0 if success else 1) 

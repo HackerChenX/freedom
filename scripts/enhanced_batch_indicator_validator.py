@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 增强版批量指标验证器
 
@@ -22,9 +24,9 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
-from strategy.enhanced_base_strategy import PeriodConfig
+from strategy.enhanced_base_strategy import Period_config
 
 logger = get_logger(__name__)
 
@@ -33,13 +35,14 @@ class EnhancedBatchIndicatorValidator:
     """增强版批量指标验证器"""
     
     def __init__(self):
-        self.db = get_clickhouse_db()
+        container = get_container()
+        self.data_access = container.get_data_access()
         self.stock_pool_size = 100  # 股票池大小
         self.test_stocks_per_indicator = 5  # 每个指标测试的股票数
         self.latest_date = self._get_latest_data_date()
         
         # 支持的周期配置
-        self.periods = PeriodConfig.get_all_periods()
+        self.periods = Period_config.get_all_periods()
         
         # 88个技术指标配置
         self.indicators_config = self._init_indicators_config()
@@ -52,7 +55,7 @@ class EnhancedBatchIndicatorValidator:
     def _get_latest_data_date(self) -> str:
         """获取数据库中的最新数据日期"""
         try:
-            result = self.db.query('SELECT MAX(date) as max_date FROM stock_info LIMIT 1')
+            result = self.data_access.query('SELECT MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01' LIMIT 1')
             if not result.empty:
                 return str(result.iloc[0]['max_date'])
             return "2025-05-23"
@@ -389,10 +392,10 @@ class EnhancedBatchIndicatorValidator:
             }
         }
     
-    def _get_stock_pool(self, period: str = '1d') -> List[str]:
+    def _get_stock_pool_Enhanced_Batch_Indicator_Validator(self, period: str = '1d') -> List[str]:
         """获取股票池"""
         try:
-            period_config = PeriodConfig.get_period_by_name(period)
+            period_config = Period_config.get_period_by_name(period)
             if not period_config:
                 period_config = PeriodConfig.get_period_by_name('1d')
             
@@ -411,7 +414,7 @@ class EnhancedBatchIndicatorValidator:
                 'limit': self.stock_pool_size
             }
             
-            result = self.db.query(sql, params)
+            result = self.data_access.query(sql, params)
             
             if result.empty:
                 logger.warning(f"未获取到{period}周期的股票数据，使用默认股票池")
@@ -430,7 +433,7 @@ class EnhancedBatchIndicatorValidator:
                         days_back: int = 100) -> pd.DataFrame:
         """加载股票数据"""
         try:
-            period_config = PeriodConfig.get_period_by_name(period)
+            period_config = Period_config.get_period_by_name(period)
             if not period_config:
                 period_config = PeriodConfig.get_period_by_name('1d')
             
@@ -442,7 +445,7 @@ class EnhancedBatchIndicatorValidator:
             # 构建SQL查询
             codes_str = "','".join(stock_codes)
             sql = f"""
-            SELECT *
+            SELECT code, name, date, level, open, close, high, low, volume
             FROM {period_config.table_name}
             WHERE code IN ('{codes_str}')
               AND date >= '{start_date_str}'
@@ -450,7 +453,7 @@ class EnhancedBatchIndicatorValidator:
             ORDER BY code, date
             """
             
-            data = self.db.query(sql)
+            data = self.data_access.query(sql)
             
             if data.empty:
                 logger.error(f"未获取到{period}周期的股票数据")
@@ -482,7 +485,7 @@ class EnhancedBatchIndicatorValidator:
         
         try:
             # 获取股票池和数据
-            stock_pool = self._get_stock_pool(period)
+            stock_pool = self._get_stock_pool_Enhanced_Batch_Indicator_Validator(period)
             stock_data = self._load_stock_data(stock_pool[:self.test_stocks_per_indicator], period)
             
             if stock_data.empty:
@@ -542,7 +545,7 @@ class EnhancedBatchIndicatorValidator:
         else:
             return {"success": False, "error": f"无法计算{indicator_name}指标"}
     
-    def validate_all_indicators(self, periods: Optional[List[str]] = None, 
+    def validate_all_indicators_Enhanced_Batch_Indicator_Validator(self, periods: Optional[List[str]] = None, 
                               indicators: Optional[List[str]] = None) -> Dict[str, Any]:
         """验证所有指标"""
         if periods is None:
@@ -660,18 +663,18 @@ def main():
     print("🚀 启动增强版批量指标验证器")
     
     # 创建验证器实例
-    validator = EnhancedBatchIndicatorValidator()
+    validator = Enhanced_batch_indicator_validator()
     
     # 执行验证
     # 1. 验证所有指标的日线数据
     print("\n📊 第一阶段：验证所有指标的日线数据")
-    results_daily = validator.validate_all_indicators(periods=['1d'])
+    results_daily = validator.validate_all_indicators_Enhanced_Batch_Indicator_Validator(periods=['1d'])
     validator._print_validation_summary(results_daily)
     
     # 2. 验证核心指标的多周期数据
     print("\n📊 第二阶段：验证核心指标的多周期数据")
     core_indicators = ['MA', 'RSI', 'MACD', 'BOLL', 'KDJ', 'VOL']
-    results_multi_period = validator.validate_all_indicators(
+    results_multi_period = validator.validate_all_indicators_Enhanced_Batch_Indicator_Validator(
         periods=['1d', '1w', '1h'], 
         indicators=core_indicators
     )
@@ -680,7 +683,7 @@ def main():
     # 3. 验证ZXM专业指标
     print("\n📊 第三阶段：验证ZXM专业指标")
     zxm_indicators = [k for k in validator.indicators_config.keys() if k.startswith('ZXM_')]
-    results_zxm = validator.validate_all_indicators(
+    results_zxm = validator.validate_all_indicators_Enhanced_Batch_Indicator_Validator(
         periods=['1d'], 
         indicators=zxm_indicators
     )

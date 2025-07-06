@@ -25,7 +25,7 @@ class IndicatorRegistrationVerifier:
             'categories': {}
         }
     
-    def get_all_available_indicators(self) -> Dict[str, List[Tuple[str, str, str]]]:
+    def get_all_available_indicators_Registration(self) -> Dict[str, List[Tuple[str, str, str]]]:
         """获取所有可用指标"""
         return {
             'core': [
@@ -118,7 +118,7 @@ class IndicatorRegistrationVerifier:
             pass
         return False
     
-    def get_currently_registered_indicators(self) -> set:
+    def get_currently_registered_indicators_Registration(self) -> set:
         """获取当前已注册的指标（模拟）"""
         # 基于之前的测试结果，这些是已注册的指标
         return {
@@ -132,8 +132,8 @@ class IndicatorRegistrationVerifier:
         """验证所有指标"""
         print("=== 开始验证指标注册状态 ===\n")
         
-        all_indicators = self.get_all_available_indicators()
-        self.registered_indicators = self.get_currently_registered_indicators()
+        all_indicators = self.get_all_available_indicators_Registration()
+        self.registered_indicators = self.get_currently_registered_indicators_Registration()
         
         total_available = 0
         total_missing = 0
@@ -186,9 +186,9 @@ class IndicatorRegistrationVerifier:
             'registration_rate': (len(self.registered_indicators) / total_available) * 100 if total_available > 0 else 0
         })
         
-        self.print_summary()
+        self.print_summary_Registration()
     
-    def print_summary(self):
+    def print_summary_Registration(self):
         """打印验证摘要"""
         results = self.verification_results
         
@@ -212,14 +212,14 @@ class IndicatorRegistrationVerifier:
         else:
             print(f"\n❌ 指标注册状态较差，注册率仅为 {results['registration_rate']:.1f}%")
 
-def main():
+def main_verifyindicatorregistration():
     """主函数"""
-    verifier = IndicatorRegistrationVerifier()
+    verifier = Indicator_registration_verifier()
     verifier.verify_all_indicators()
     
     # 返回是否达到目标
     return verifier.verification_results['registration_rate'] >= 80
 
 if __name__ == "__main__":
-    success = main()
+    success = main_verifyindicatorregistration()
     sys.exit(0 if success else 1)

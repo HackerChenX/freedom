@@ -86,7 +86,7 @@ def test_core_indicators():
                 print(f"❌ {class_name}: 类不存在")
                 failed += 1
                 
-        except ImportError as e:
+        except Import_error as e:
             print(f"❌ {class_name}: 导入失败 - {e}")
             failed += 1
         except Exception as e:
@@ -134,7 +134,7 @@ def test_enhanced_indicators():
                 print(f"❌ {class_name}: 类不存在")
                 failed += 1
                 
-        except ImportError as e:
+        except Import_error as e:
             print(f"❌ {class_name}: 导入失败 - {e}")
             failed += 1
         except Exception as e:
@@ -177,7 +177,7 @@ def test_composite_indicators():
                 print(f"❌ {class_name}: 类不存在")
                 failed += 1
                 
-        except ImportError as e:
+        except Import_error as e:
             print(f"❌ {class_name}: 导入失败 - {e}")
             failed += 1
         except Exception as e:

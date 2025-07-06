@@ -14,15 +14,16 @@ from typing import List, Dict, Any, Tuple, Optional
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
-from scripts.backtest.pattern_backtest import PatternBacktester
-from db.clickhouse_db import get_clickhouse_db
+from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
+from scripts.backtest.pattern_backtest import Pattern_backtester
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir
 
 logger = get_logger("advanced_backtest")
 
-class AdvancedBacktester(PatternBacktester):
+class AdvancedBacktester(Pattern_backtester):
     """
     高级形态回测器
     
@@ -58,7 +59,7 @@ class AdvancedBacktester(PatternBacktester):
             "config": self.config.copy()
         }
     
-    def set_config(self, config: Dict[str, Any]) -> None:
+    def set_config_Backtest(self, config: Dict[str, Any]) -> None:
         """
         设置回测配置
         
@@ -264,7 +265,7 @@ class AdvancedBacktester(PatternBacktester):
                 continue
                 
             # 找到不晚于目标日期的最后一个日期
-            if isinstance(data.index, pd.DatetimeIndex):
+            if isinstance(data.index, pd.Datetime_index):
                 mask = data.index <= target_date_dt
                 if not mask.any():
                     logger.warning(f"目标日期 {target_date} 在 {period} 周期数据中不存在")
@@ -381,7 +382,7 @@ class AdvancedBacktester(PatternBacktester):
             future_date_dt = pd.to_datetime(future_date)
             future_price = None
             
-            if isinstance(future_price_data.index, pd.DatetimeIndex):
+            if isinstance(future_price_data.index, pd.Datetime_index):
                 # 找到距离目标日期最近的行
                 closest_idx = (future_price_data.index - future_date_dt).abs().argmin()
                 future_price = future_price_data['close'].iloc[closest_idx]
@@ -745,7 +746,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return results
 
-    def generate_strategy_from_backtest(self, backtest_results: Dict[str, Any], 
+    def generate_strategy_from_backtest_Backtest(self, backtest_results: Dict[str, Any], 
                                        min_success_rate: float = 60.0,
                                        min_profit_factor: float = 2.0,
                                        max_combinations: int = 5) -> Dict[str, Any]:
@@ -869,7 +870,7 @@ class AdvancedBacktester(PatternBacktester):
         
         return strategy
 
-    def validate_strategy(self, strategy: Dict[str, Any], stock_codes: List[str], 
+    def validate_strategy_Backtest_Advanced_Backtest(self, strategy: Dict[str, Any], stock_codes: List[str], 
                          date: str) -> Dict[str, Any]:
         """
         验证策略在给定日期对给定股票的表现
@@ -937,8 +938,8 @@ class AdvancedBacktester(PatternBacktester):
                 )
                 
                 # 检查是否满足策略条件
-                from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-                evaluator = StrategyConditionEvaluator()
+                from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+                evaluator = Strategy_condition_evaluator()
                 
                 # 获取主时间周期的数据用于条件评估
                 main_period = "DAILY"  # 默认使用日线
@@ -1037,13 +1038,13 @@ class AdvancedBacktester(PatternBacktester):
 # 示例用法
 if __name__ == "__main__":
     # 初始化高级回测器
-    backtester = AdvancedBacktester(
+    backtester = Advanced_backtester(
         indicators=["MACD", "KDJ", "RSI"],
         periods=["DAILY", "WEEKLY"]
     )
     
     # 设置回测配置
-    backtester.set_config({
+    backtester.set_config_Backtest({
         "min_pattern_strength": 70,
         "profit_taking": 0.08,
         "stop_loss": -0.05

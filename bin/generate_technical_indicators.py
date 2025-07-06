@@ -22,7 +22,8 @@ sys.path.append(root_dir)
 from utils.logger import get_logger
 from utils.path_utils import get_indicators_dir, get_doc_dir, ensure_dir_exists
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 
 logger = get_logger(__name__)
 
@@ -30,7 +31,7 @@ logger = get_logger(__name__)
 class IndicatorTemplate:
     """技术指标模板生成器"""
     
-    def __init__(self, name, full_name, category, description):
+    def __init___2(self, name, full_name, category, description):
         self.name = name  # 短名称，如'cci'
         self.full_name = full_name  # 全名，如'顺势指标(CCI)'
         self.category = category  # 分类，如'震荡类指标'
@@ -69,18 +70,17 @@ class {class_name}(BaseIndicator):
     描述：{self.description}
     """
     
-    def __init__(self, period: int = 14):
         """
         初始化{self.full_name}指标
         
         Args:
             period: 计算周期，默认为14
         """
-        super().__init__()
+        super().__init___2()
         self.period = period
         self.name = "{self.name.upper()}"
         
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def calculate_Generate_Technical_Indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算{self.full_name}指标
         
@@ -193,7 +193,7 @@ class {class_name}(BaseIndicator):
         
     def generate_factory_entry(self):
         """生成工厂方法条目"""
-        return f'''        elif indicator_type == IndicatorType.{self.name.upper()}:
+        return f'''        elif indicator_type == IndicatorType_Generate_Technical_Indicators_Generate_Technical_Indicators.{self.name.upper()}:
             from indicators.{self.name.lower()} import {self.name.upper()}
             return {self.name.upper()}(**kwargs)'''
 
@@ -276,7 +276,7 @@ def update_enum_file(new_indicators):
             existing_content = f.read()
     
     # 如果文件不存在或不包含枚举类定义，创建新文件
-    if not existing_content or 'class IndicatorType' not in existing_content:
+    if not existing_content or 'class IndicatorType_Generate_Technical_Indicators_Generate_Technical_Indicators' not in existing_content:
         enum_code = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -289,7 +289,7 @@ def update_enum_file(new_indicators):
 from enum import Enum, auto
 
 
-class IndicatorType(str, Enum):
+class IndicatortypeGenerateTechnicalIndicatorsGenerateTechnicalIndicators(str, Enum):
     """技术指标类型枚举"""
     
     # 现有指标
@@ -319,7 +319,7 @@ class IndicatorType(str, Enum):
         logger.info(f"已创建枚举文件: {enum_file}")
     else:
         # 已存在枚举文件，追加新指标
-        enum_class_match = re.search(r'class IndicatorType.*?:(.*?)(?=\n\n|\Z)', existing_content, re.DOTALL)
+        enum_class_match = re.search(r'class IndicatorType_Generate_Technical_Indicators_Generate_Technical_Indicators.*?:(.*?)(?=\n\n|\Z)', existing_content, re.DOTALL)
         if enum_class_match:
             enum_class_content = enum_class_match.group(1)
             
@@ -340,13 +340,13 @@ class IndicatorType(str, Enum):
             if new_entries:
                 # 在枚举类的最后添加新条目
                 updated_content = existing_content.replace(
-                    'class IndicatorType', 
-                    'class IndicatorType', 
+                    'class IndicatorType_Generate_Technical_Indicators_Generate_Technical_Indicators', 
+                    'class IndicatorType_Generate_Technical_Indicators_Generate_Technical_Indicators', 
                     1
                 )
                 
                 # 找到类定义的结束位置
-                class_end = updated_content.find('\n\n', updated_content.find('class IndicatorType'))
+                class_end = updated_content.find('\n\n', updated_content.find('class IndicatorType_Generate_Technical_Indicators_Generate_Technical_Indicators'))
                 if class_end == -1:
                     class_end = len(updated_content)
                 
@@ -379,7 +379,7 @@ def update_factory_file(new_indicators):
         content = f.read()
     
     # 找到create_indicator方法
-    create_method_match = re.search(r'def create_indicator.*?:.*?return.*?$', content, re.DOTALL)
+    create_method_match = re.search(r'def create_indicator_Generate_Technical_Indicators.*?:.*?return.*?$', content, re.DOTALL)
     if not create_method_match:
         logger.error("无法在工厂文件中找到create_indicator方法")
         return
@@ -387,7 +387,7 @@ def update_factory_file(new_indicators):
     method_content = create_method_match.group(0)
     
     # 检查哪些指标尚未添加到工厂方法中
-    existing_indicators = re.findall(r'IndicatorType\.(\w+)', method_content)
+    existing_indicators = re.findall(r'IndicatorType_Generate_Technical_Indicators_Generate_Technical_Indicators\.(\w+)', method_content)
     
     new_entries = []
     for indicator in new_indicators:
@@ -454,7 +454,7 @@ def generate_indicator_modules(indicators):
         logger.info(f"已生成指标文件: {file_path}")
 
 
-def main():
+def main_3():
     """主函数"""
     logger.info("开始生成技术指标模块")
     
@@ -487,4 +487,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_3() 

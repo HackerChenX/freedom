@@ -8,7 +8,7 @@ import os
 from typing import Dict, List
 
 
-class CrawlerConfig:
+class Crawler_config:
     """爬虫配置类"""
 
     # Redis配置

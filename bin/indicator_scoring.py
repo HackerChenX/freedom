@@ -1,356 +1,352 @@
 #!/usr/bin/env python3
 """
-指标评分应用
+指标评分系统
 
-对指定股票进行综合技术分析评分，提供买卖建议
+本模块实现对技术指标的评分和排序功能，用于选股策略优化。
 """
 
-import sys
 import os
+import sys
 import argparse
 import pandas as pd
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
+import json
+import logging
 
-# 添加项目根目录到Python路径
+# 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from indicators.indicator_registry import indicator_registry
-from db.clickhouse_db import get_clickhouse_db
+# 使用依赖注入架构
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from utils.decorators import exception_handler, performance_monitor
 from utils.logger import get_logger
-from utils.date_utils import get_trading_day
+from indicators.base.indicator_factory import Indicator_factory
+from strategy.base_strategy import BaseStrategy
 
 logger = get_logger(__name__)
 
-
-class StockScoreAnalyzer:
-    """股票评分分析器"""
+class IndicatorScoringSystem:
+    """指标评分系统"""
     
-    def __init__(self):
-        """初始化分析器"""
-        self.db = get_clickhouse_db()
+    def __init___16(self):
+        """初始化指标评分系统"""
+        self.container = get_container()
+        self.data_access = self.get_service(Data_access_interface)
+        self.indicator_factory = Indicator_factory()
+        self.scoring_results = {}
         
-        # 默认指标配置
-        self.default_config = [
-            {'name': 'macd_score', 'weight': 1.5, 'fast_period': 12, 'slow_period': 26, 'signal_period': 9},
-            {'name': 'kdj_score', 'weight': 1.2, 'n': 9, 'm1': 3, 'm2': 3},
-            {'name': 'rsi_score', 'weight': 1.3, 'period': 14},
-            {'name': 'boll_score', 'weight': 1.0, 'period': 20, 'std_dev': 2.0}
-        ]
-    
-    def get_stock_data(self, stock_code: str, days: int = 100) -> pd.DataFrame:
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=5.0)
+    def load_stock_data_Scoring(self, code: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
-        获取股票数据
+        加载股票数据
         
         Args:
-            stock_code: 股票代码
-            days: 获取天数
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
             
         Returns:
             pd.DataFrame: 股票数据
         """
-        end_date_str = get_trading_day()
-        end_date = datetime.strptime(end_date_str, '%Y%m%d').strftime('%Y-%m-%d')
-        start_date = (datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=days*2)).strftime('%Y-%m-%d')
-        
-        sql = f"""
-        SELECT date, open, high, low, close, volume
-        FROM stock_info 
-        WHERE code = '{stock_code}'
-        AND level = '日线'
-        AND date >= '{start_date}'
-        AND date <= '{end_date}'
-        ORDER BY date
-        """
-        
-        data = self.db.query(sql)
-        if data.empty:
-            raise ValueError(f"未找到股票 {stock_code} 的数据")
-        
-        # 重新映射列名
-        data.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
-        return data
+        try:
+            logger.info(f"加载股票数据: {code}, {start_date} - {end_date}")
+            
+            # 使用数据访问接口获取数据
+            stock_data = self.data_access.get_stock_data(
+                code=code,
+                start_date=start_date,
+                end_date=end_date
+            )
+            
+            if stock_data.empty:
+                logger.warning(f"未找到股票 {code} 的数据")
+                return pd.DataFrame()
+                
+            logger.info(f"成功加载 {len(stock_data)} 条数据")
+            return stock_data
+            
+        except Exception as e:
+            logger.error(f"加载股票数据失败: {e}")
+            raise
     
-    def get_stock_info(self, stock_code: str) -> dict:
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=10.0)
+    def calculate_indicator_scores(self, data: pd.DataFrame, 
+                                 indicator_configs: Dict[str, Any]) -> Dict[str, float]:
         """
-        获取股票基本信息
+        计算指标评分
         
         Args:
-            stock_code: 股票代码
+            data: 股票数据
+            indicator_configs: 指标配置
             
         Returns:
-            dict: 股票信息
+            Dict[str, float]: 指标评分结果
         """
-        sql = f"""
-        SELECT code, name, industry
-        FROM stock_info 
-        WHERE code = '{stock_code}'
-        AND level = '日线'
-        LIMIT 1
-        """
+        scores = {}
         
-        result = self.db.query(sql)
-        if result.empty:
-            return {'code': stock_code, 'name': '未知', 'industry': '未知', 'market': '未知'}
-        
-        # 重新映射列名
-        result.columns = ['code', 'name', 'industry']
-        row = result.iloc[0]
-        return {
-            'code': row['code'],
-            'name': row['name'], 
-            'industry': row['industry'],
-            'market': '未知'  # 数据库中没有market字段
-        }
+        try:
+            for indicator_name, config in indicator_configs.items():
+                logger.info(f"计算指标评分: {indicator_name}")
+                
+                # 创建指标实例
+                indicator = self.indicator_factory.create_indicator(
+                    indicator_name, 
+                    **config.get('params', {})
+                )
+                
+                # 计算指标值
+                indicator_values = indicator.calculate(data)
+                
+                # 计算评分（这里使用简单的评分逻辑，实际可以更复杂）
+                score = self._calculate_score(indicator_values, config)
+                scores[indicator_name] = score
+                
+                logger.info(f"{indicator_name} 评分: {score:.4f}")
+                
+        except Exception as e:
+            logger.error(f"计算指标评分失败: {e}")
+            raise
+            
+        return scores
     
-    def analyze_stock(self, stock_code: str, config: list = None) -> dict:
+    def _calculate_score(self, indicator_values: pd.Series, config: Dict[str, Any]) -> float:
         """
-        分析股票
+        计算单个指标的评分
         
         Args:
-            stock_code: 股票代码
-            config: 指标配置，如果为None则使用默认配置
+            indicator_values: 指标值序列
+            config: 指标配置
             
         Returns:
-            dict: 分析结果
+            float: 评分
         """
-        if config is None:
-            config = self.default_config
+        if indicator_values.empty:
+            return 0.0
+            
+        # 获取最新值
+        latest_value = indicator_values.iloc[-1]
         
-        # 获取股票数据和信息
-        data = self.get_stock_data(stock_code)
-        stock_info = self.get_stock_info(stock_code)
+        # 根据配置的评分规则计算分数
+        scoring_rules = config.get('scoring_rules', {})
         
-        # 创建评分管理器
-        score_manager = indicator_registry.create_score_manager(config)
-        
-        # 计算综合评分
-        result = score_manager.calculate_comprehensive_score(data)
-        
-        # 获取最新评分和信号
-        latest_score = result['comprehensive_score'].iloc[-1]
-        latest_signals = {}
-        for signal_name, signal_series in result['comprehensive_signal'].items():
-            latest_signals[signal_name] = signal_series.iloc[-1]
-        
-        # 生成交易建议
-        recommendation = self._generate_recommendation(latest_score, latest_signals)
-        
-        # 分析趋势
-        trend_analysis = self._analyze_trend(result['comprehensive_score'])
-        
-        return {
-            'stock_info': stock_info,
-            'latest_data': data.iloc[-1].to_dict(),
-            'comprehensive_score': latest_score,
-            'signals': latest_signals,
-            'recommendation': recommendation,
-            'trend_analysis': trend_analysis,
-            'indicator_results': result['indicator_results'],
-            'patterns': result['patterns'],
-            'score_history': result['comprehensive_score'].tail(10).tolist()
-        }
+        if 'thresholds' in scoring_rules:
+            # 基于阈值的评分
+            thresholds = scoring_rules['thresholds']
+            if latest_value >= thresholds.get('excellent', 0.8):
+                return 1.0
+            elif latest_value >= thresholds.get('good', 0.6):
+                return 0.8
+            elif latest_value >= thresholds.get('fair', 0.4):
+                return 0.6
+            else:
+                return 0.4
+        else:
+            # 默认评分：归一化到0-1范围
+            return min(max(latest_value, 0.0), 1.0)
     
-    def _generate_recommendation(self, score: float, signals: dict) -> dict:
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=30.0)
+    def run_scoring_analysis(self, stock_codes: List[str], 
+                           start_date: str, end_date: str,
+                           indicator_configs: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
         """
-        生成交易建议
+        运行评分分析
         
         Args:
-            score: 综合评分
-            signals: 信号字典
+            stock_codes: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            indicator_configs: 指标配置
             
         Returns:
-            dict: 交易建议
+            Dict[str, Dict[str, float]]: 评分结果
         """
-        if signals.get('strong_buy', False):
-            action = "强烈买入"
-            confidence = "高"
-            reason = f"综合评分{score:.1f}分，多项指标发出强烈买入信号"
-        elif signals.get('buy', False):
-            action = "买入"
-            confidence = "中高" if score >= 70 else "中等"
-            reason = f"综合评分{score:.1f}分，技术指标偏向看涨"
-        elif signals.get('hold', False):
-            action = "持有"
-            confidence = "中等"
-            reason = f"综合评分{score:.1f}分，技术指标中性，建议观望"
-        elif signals.get('sell', False):
-            action = "卖出"
-            confidence = "中高" if score <= 30 else "中等"
-            reason = f"综合评分{score:.1f}分，技术指标偏向看跌"
-        elif signals.get('strong_sell', False):
-            action = "强烈卖出"
-            confidence = "高"
-            reason = f"综合评分{score:.1f}分，多项指标发出强烈卖出信号"
-        else:
-            action = "观望"
-            confidence = "低"
-            reason = f"综合评分{score:.1f}分，信号不明确，建议观望"
+        results = {}
         
-        return {
-            'action': action,
-            'confidence': confidence,
-            'reason': reason,
-            'score': score
-        }
+        logger.info(f"开始评分分析，股票数量: {len(stock_codes)}")
+        
+        for i, code in enumerate(stock_codes, 1):
+            try:
+                logger.info(f"处理股票 {i}/{len(stock_codes)}: {code}")
+                
+                # 加载股票数据
+                data = self.load_stock_data_Scoring(code, start_date, end_date)
+                
+                if data.empty:
+                    logger.warning(f"跳过股票 {code}，无数据")
+                    continue
+                
+                # 计算指标评分
+                scores = self.calculate_indicator_scores(data, indicator_configs)
+                results[code] = scores
+                
+            except Exception as e:
+                logger.error(f"处理股票 {code} 失败: {e}")
+                continue
+                
+        logger.info(f"评分分析完成，处理了 {len(results)} 只股票")
+        return results
     
-    def _analyze_trend(self, score_series: pd.Series) -> dict:
+    @exception_handler(reraise=True)
+    def save_results_Scoring(self, results: Dict[str, Dict[str, float]], 
+                    output_file: str) -> None:
         """
-        分析评分趋势
+        保存评分结果
         
         Args:
-            score_series: 评分序列
+            results: 评分结果
+            output_file: 输出文件路径
+        """
+        try:
+            # 确保输出目录存在
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
             
-        Returns:
-            dict: 趋势分析
-        """
-        recent_scores = score_series.tail(10)
-        
-        if len(recent_scores) < 3:
-            return {'trend': '数据不足', 'strength': '未知'}
-        
-        # 计算趋势
-        trend_slope = (recent_scores.iloc[-1] - recent_scores.iloc[0]) / len(recent_scores)
-        
-        if trend_slope > 2:
-            trend = "强烈上升"
-            strength = "强"
-        elif trend_slope > 1:
-            trend = "上升"
-            strength = "中"
-        elif trend_slope > 0.5:
-            trend = "轻微上升"
-            strength = "弱"
-        elif trend_slope < -2:
-            trend = "强烈下降"
-            strength = "强"
-        elif trend_slope < -1:
-            trend = "下降"
-            strength = "中"
-        elif trend_slope < -0.5:
-            trend = "轻微下降"
-            strength = "弱"
-        else:
-            trend = "横盘整理"
-            strength = "弱"
-        
-        # 计算波动性
-        volatility = recent_scores.std()
-        if volatility > 10:
-            volatility_desc = "高波动"
-        elif volatility > 5:
-            volatility_desc = "中等波动"
-        else:
-            volatility_desc = "低波动"
-        
-        return {
-            'trend': trend,
-            'strength': strength,
-            'volatility': volatility_desc,
-            'slope': trend_slope
-        }
+            # 保存为JSON格式
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(results, f, indent=2, ensure_ascii=False)
+                
+            logger.info(f"评分结果已保存到: {output_file}")
+            
+            # 生成汇总报告
+            summary_file = output_file.replace('.json', '_summary.txt')
+            self._generate_summary_report(results, summary_file)
+            
+        except Exception as e:
+            logger.error(f"保存结果失败: {e}")
+            raise
     
-    def print_analysis_report(self, analysis_result: dict):
-        """
-        打印分析报告
-        
-        Args:
-            analysis_result: 分析结果
-        """
-        stock_info = analysis_result['stock_info']
-        latest_data = analysis_result['latest_data']
-        recommendation = analysis_result['recommendation']
-        trend_analysis = analysis_result['trend_analysis']
-        
-        print("="*60)
-        print(f"股票技术分析报告")
-        print("="*60)
-        print(f"股票代码: {stock_info['code']}")
-        print(f"股票名称: {stock_info['name']}")
-        print(f"所属行业: {stock_info['industry']}")
-        print(f"交易市场: {stock_info['market']}")
-        print(f"分析日期: {latest_data['date']}")
-        print(f"最新价格: {latest_data['close']:.2f}")
-        print(f"成交量: {latest_data['volume']:,}")
-        
-        print("\n" + "-"*40)
-        print("综合技术评分")
-        print("-"*40)
-        print(f"综合评分: {analysis_result['comprehensive_score']:.1f}/100")
-        print(f"交易建议: {recommendation['action']}")
-        print(f"建议置信度: {recommendation['confidence']}")
-        print(f"建议理由: {recommendation['reason']}")
-        
-        print("\n" + "-"*40)
-        print("趋势分析")
-        print("-"*40)
-        print(f"评分趋势: {trend_analysis['trend']}")
-        print(f"趋势强度: {trend_analysis['strength']}")
-        print(f"波动特征: {trend_analysis['volatility']}")
-        
-        print("\n" + "-"*40)
-        print("各指标详细评分")
-        print("-"*40)
-        for indicator_name, result in analysis_result['indicator_results'].items():
-            latest_score = result['final_score'].iloc[-1]
-            patterns = ', '.join(result['patterns']) if result['patterns'] else '无特殊形态'
-            print(f"{indicator_name}: {latest_score:.1f}分 - {patterns}")
-        
-        print("\n" + "-"*40)
-        print("识别的技术形态")
-        print("-"*40)
-        if analysis_result['patterns']:
-            for pattern in analysis_result['patterns']:
-                print(f"- {pattern}")
-        else:
-            print("未识别到特殊技术形态")
-        
-        print("\n" + "-"*40)
-        print("最近10日评分走势")
-        print("-"*40)
-        score_history = analysis_result['score_history']
-        for i, score in enumerate(score_history):
-            print(f"第{i+1}日: {score:.1f}")
-        
-        print("="*60)
+    def _generate_summary_report(self, results: Dict[str, Dict[str, float]], 
+                               summary_file: str) -> None:
+        """生成汇总报告"""
+        try:
+            with open(summary_file, 'w', encoding='utf-8') as f:
+                f.write("指标评分汇总报告\n")
+                f.write("=" * 50 + "\n\n")
+                
+                f.write(f"分析时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"股票数量: {len(results)}\n\n")
+                
+                if results:
+                    # 计算各指标的平均分
+                    indicator_names = list(next(iter(results.values())).keys())
+                    f.write("指标平均分:\n")
+                    f.write("-" * 30 + "\n")
+                    
+                    for indicator in indicator_names:
+                        scores = [results[code].get(indicator, 0) for code in results]
+                        avg_score = sum(scores) / len(scores) if scores else 0
+                        f.write(f"{indicator}: {avg_score:.4f}\n")
+                    
+                    f.write("\n")
+                    
+                    # 前10名股票
+                    f.write("综合评分前10名:\n")
+                    f.write("-" * 30 + "\n")
+                    
+                    stock_total_scores = {}
+                    for code, scores in results.items():
+                        total_score = sum(scores.values())
+                        stock_total_scores[code] = total_score
+                    
+                    top_stocks = sorted(stock_total_scores.items(), 
+                                      key=lambda x: x[1], reverse=True)[:10]
+                    
+                    for i, (code, score) in enumerate(top_stocks, 1):
+                        f.write(f"{i:2d}. {code}: {score:.4f}\n")
+                
+            logger.info(f"汇总报告已生成: {summary_file}")
+            
+        except Exception as e:
+            logger.error(f"生成汇总报告失败: {e}")
 
+def load_default_indicator_configs() -> Dict[str, Any]:
+    """加载默认指标配置"""
+    return {
+        'RSI': {
+            'params': {'period': 14},
+            'scoring_rules': {
+                'thresholds': {'excellent': 0.8, 'good': 0.6, 'fair': 0.4}
+            }
+        },
+        'MACD': {
+            'params': {'fast_period': 12, 'slow_period': 26, 'signal_period': 9},
+            'scoring_rules': {
+                'thresholds': {'excellent': 0.7, 'good': 0.5, 'fair': 0.3}
+            }
+        },
+        'KDJ': {
+            'params': {'k_period': 9, 'd_period': 3, 'j_period': 3},
+            'scoring_rules': {
+                'thresholds': {'excellent': 0.75, 'good': 0.55, 'fair': 0.35}
+            }
+        }
+    }
 
-def main():
+@exception_handler(reraise=True)
+@performance_monitor(threshold_seconds=60.0)
+def main_30():
     """主函数"""
-    parser = argparse.ArgumentParser(description='股票技术指标评分分析')
-    parser.add_argument('stock_code', help='股票代码，如：000001.SZ')
-    parser.add_argument('--days', type=int, default=100, help='分析天数，默认100天')
-    parser.add_argument('--config', help='自定义指标配置文件路径（JSON格式）')
-    parser.add_argument('--quiet', action='store_true', help='静默模式，只输出关键信息')
+    parser = argparse.ArgumentParser(description='指标评分系统')
+    parser.add_argument('--codes', type=str, nargs='+', 
+                       help='股票代码列表')
+    parser.add_argument('--start-date', type=str, 
+                       default=(datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d'),
+                       help='开始日期 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, 
+                       default=datetime.now().strftime('%Y-%m-%d'),
+                       help='结束日期 (YYYY-MM-DD)')
+    parser.add_argument('--output', type=str, 
+                       default='data/result/indicator_scoring_results.json',
+                       help='输出文件路径')
+    parser.add_argument('--config', type=str, 
+                       help='指标配置文件路径')
     
     args = parser.parse_args()
     
     try:
-        analyzer = StockScoreAnalyzer()
+        # 初始化评分系统
+        scoring_system = Indicator_scoring_system()
         
-        # 加载自定义配置
-        config = None
-        if args.config:
-            import json
-            with open(args.config, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-        
-        # 分析股票
-        logger.info(f"开始分析股票: {args.stock_code}")
-        result = analyzer.analyze_stock(args.stock_code, config)
-        
-        if args.quiet:
-            # 静默模式，只输出关键信息
-            print(f"{args.stock_code},{result['stock_info']['name']},{result['comprehensive_score']:.1f},{result['recommendation']['action']}")
+        # 获取股票代码列表
+        if args.codes:
+            stock_codes = args.codes
         else:
-            # 完整报告
-            analyzer.print_analysis_report(result)
+            # 默认使用一些示例股票
+            stock_codes = ['000001.SZ', '000002.SZ', '600000.SH', '600036.SH']
+        
+        # 加载指标配置
+        if args.config and os.path.exists(args.config):
+            with open(args.config, 'r', encoding='utf-8') as f:
+                indicator_configs = json.load(f)
+        else:
+            indicator_configs = load_default_indicator_configs()
+        
+        logger.info(f"开始指标评分分析")
+        logger.info(f"股票代码: {stock_codes}")
+        logger.info(f"时间范围: {args.start_date} - {args.end_date}")
+        logger.info(f"指标配置: {list(indicator_configs.keys())}")
+        
+        # 运行评分分析
+        results = scoring_system.run_scoring_analysis(
+            stock_codes=stock_codes,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            indicator_configs=indicator_configs
+        )
+        
+        # 保存结果
+        scoring_system.save_results_Scoring(results, args.output)
+        
+        logger.info("指标评分分析完成")
         
     except Exception as e:
-        logger.error(f"分析失败: {e}")
-        print(f"错误: {e}")
+        logger.error(f"指标评分分析失败: {e}")
         sys.exit(1)
 
-
 if __name__ == "__main__":
-    main() 
+    main_30() 

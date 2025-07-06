@@ -6,12 +6,12 @@
 
 import pandas as pd
 import numpy as np
-from tests.helper.log_capture import LogCaptureMixin
+from tests.helper.log_capture import Log_capture_mixin
 from typing import List, Dict, Any, Union
 import pytest
 
 
-class IndicatorTestMixin:
+class Indicator_test_mixin:
     """
     指标测试混入类，提供指标测试的通用功能
     
@@ -23,7 +23,7 @@ class IndicatorTestMixin:
     
     def _ensure_stock_info_fields(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        确保数据包含所有必需的StockInfo字段
+        确保数据包含所有必需的Stock_info字段
         
         Args:
             data: 输入数据
@@ -32,7 +32,7 @@ class IndicatorTestMixin:
             包含所有必需字段的数据
         """
         # 检查索引是否为日期类型
-        if not isinstance(data.index, pd.DatetimeIndex):
+        if not isinstance(data.index, pd.Datetime_index):
             if 'date' in data.columns:
                 data = data.set_index('date')
             else:
@@ -216,26 +216,26 @@ class IndicatorTestMixin:
         
         return data
     
-    def test_calculation_runs_without_error(self):
+    def test_calculation_runs_without_error_Mixin(self):
         """测试指标的 calculate 方法是否能无错运行。"""
         try:
             self.indicator.calculate(self.data)
         except Exception as e:
             pytest.fail(f"指标 {self.indicator.__class__.__name__} 计算失败，错误: {e}")
     
-    def test_returns_dataframe(self):
+    def test_returns_dataframe_Mixin(self):
         """测试 calculate 方法是否返回一个 pandas DataFrame。"""
         result = self.indicator.calculate(self.data)
         assert isinstance(result, pd.DataFrame), "计算结果不是 DataFrame"
     
-    def test_output_has_expected_columns(self):
+    def test_output_has_expected_columns_Mixin(self):
         """测试计算结果是否包含所有预期的列。"""
         result = self.indicator.calculate(self.data)
         
         for col in self.expected_columns:
             assert col in result.columns, f"结果中缺少预期列: {col}"
     
-    def test_output_has_no_unexpected_all_nan_columns(self):
+    def test_output_has_no_unexpected_all_nan_columns_Mixin(self):
         """测试输出中不应有完全由NaN组成的意外列。"""
         result = self.indicator.calculate(self.data)
         
@@ -244,7 +244,7 @@ class IndicatorTestMixin:
             if col in result.columns:
                 assert not result[col].isna().all(), f"预期列 '{col}' 全是 NaN"
     
-    def test_calculate_with_missing_columns(self):
+    def test_calculate_with_missing_columns_Mixin(self):
         """测试当缺少必需列时的处理情况。"""
         if not hasattr(self.indicator, 'REQUIRED_COLUMNS'):
             pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 REQUIRED_COLUMNS 属性，跳过此测试")
@@ -274,7 +274,7 @@ class IndicatorTestMixin:
             result = self.indicator.calculate(minimal_data)
             # 如果没有异常，结果应该是有效的DataFrame
             assert isinstance(result, pd.DataFrame), "计算结果应为DataFrame"
-        except ValueError as e:
+        except Value_error as e:
             # 如果有异常，应该提到缺少的列
             assert col_to_remove in str(e), f"错误信息应包含缺少的列名: {col_to_remove}"
     
@@ -296,7 +296,7 @@ class IndicatorTestMixin:
         all_patterns = self.indicator.get_patterns(self.data)
         assert isinstance(all_patterns, pd.DataFrame), "get_patterns 的返回类型不是 DataFrame"
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Mixin(self):
         """测试在计算过程中是否记录了ERROR级别的日志。"""
         # 清除之前测试产生的日志
         if hasattr(self, 'clear_logs'):
@@ -304,7 +304,7 @@ class IndicatorTestMixin:
         self.indicator.calculate(self.data)
         self.assert_no_logs('ERROR')
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Mixin(self):
         """测试在形态检测过程中是否记录了ERROR级别的日志。"""
         if not hasattr(self.indicator, 'get_patterns'):
             pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")

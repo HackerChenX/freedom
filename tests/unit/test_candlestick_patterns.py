@@ -1,23 +1,23 @@
 """
-CandlestickPatterns指标单元测试
+Candlestick_patterns指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_candlestick_patterns(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """CandlestickPatterns指标测试类"""
     
-    def setUp(self):
+    def set_up_Patterns(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Patterns(self)
         
         self.indicator = complete_registry.create_indicator('CANDLESTICK_PATTERNS')
         self.expected_columns = [
@@ -27,13 +27,13 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
             'head_shoulders_top', 'head_shoulders_bottom', 'double_top', 'double_bottom',
             'island_reversal', 'v_reversal'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Patterns(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Patterns(self)
     
     def test_candlestick_patterns_initialization(self):
         """测试CandlestickPatterns初始化"""
@@ -78,9 +78,9 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_candlestick_patterns_parameter_update(self):
         """测试CandlestickPatterns参数更新"""
@@ -94,19 +94,19 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_candlestick_patterns_patterns(self):
         """测试CandlestickPatterns形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -118,11 +118,11 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_candlestick_patterns_single_patterns(self):
         """测试CandlestickPatterns单日形态"""
@@ -164,7 +164,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
     def test_candlestick_patterns_complex_patterns(self):
         """测试CandlestickPatterns复合形态"""
         # 需要足够的数据进行复合形态识别
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -189,7 +189,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         latest_patterns = self.indicator.get_latest_patterns(self.data, lookback=5)
         
         # 验证返回字典
-        self.assertIsInstance(latest_patterns, dict)
+        self.assert_is_instance(latest_patterns, dict)
         
         # 验证字典值为布尔值
         for pattern_name, pattern_found in latest_patterns.items():
@@ -200,7 +200,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         identified_patterns = self.indicator.identify_patterns(self.data)
         
         # 验证返回列表
-        self.assertIsInstance(identified_patterns, list)
+        self.assert_is_instance(identified_patterns, list)
         
         # 验证列表元素为字符串
         for pattern in identified_patterns:
@@ -211,7 +211,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         signals = self.indicator.generate_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         
         # 验证基本信号列存在
         expected_signal_columns = ['buy_signal', 'sell_signal', 'neutral_signal', 
@@ -238,7 +238,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         raw_score_df = self.indicator.calculate_raw_score(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         
         # 验证包含score列
         self.assertIn('score', raw_score_df.columns)
@@ -277,9 +277,9 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_no_errors_during_pattern_detection(self):
         """测试形态检测过程中无ERROR日志"""
@@ -292,7 +292,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_candlestick_patterns_register_patterns(self):
         """测试CandlestickPatterns形态注册"""
@@ -309,9 +309,9 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
         result = self.indicator.calculate(small_data)
         
         # CandlestickPatterns应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_candlestick_patterns_validation(self):
         """测试CandlestickPatterns数据验证"""
@@ -320,7 +320,7 @@ class TestCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureM
 
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_candlestick_patterns_indicator_type(self):
         """测试CandlestickPatterns指标类型"""

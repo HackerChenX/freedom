@@ -20,16 +20,16 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from smart_pattern_generator import SmartPatternGenerator
-from technical_indicators import TechnicalIndicators
+from smart_pattern_generator import Smart_pattern_generator
+from technical_indicators import Technical_indicators
 
 
 def debug_rsi_divergence():
     """调试RSI背离形态"""
     print("调试RSI背离形态生成...")
 
-    generator = SmartPatternGenerator()
-    indicators = TechnicalIndicators()
+    generator = Smart_pattern_generator()
+    indicators = Technical_indicators()
 
     # 生成背离数据
     data = generator.generate_rsi_divergence_data_v2()

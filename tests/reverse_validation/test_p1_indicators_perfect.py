@@ -262,7 +262,7 @@ class P1IndicatorValidator:
         return summary
 
 
-def main():
+def mainTestp1indicatorsperfect():
     """主函数"""
     print("=" * 80)
     print("P1重要指标完美验证测试")
@@ -321,5 +321,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = mainTestp1indicatorsperfect()
     sys.exit(exit_code)

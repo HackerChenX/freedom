@@ -368,7 +368,7 @@ class BuyPointStrategyIntegrationTest:
         
         return True
     
-    def run_comprehensive_integration_test(self) -> Dict[str, Any]:
+    def run_comprehensive_integration_test_Test(self) -> Dict[str, Any]:
         """运行综合集成测试"""
         logger.info("=" * 80)
         logger.info("开始买点分析与选股策略集成综合测试")
@@ -486,7 +486,7 @@ class BuyPointStrategyIntegrationTest:
         return assessment
 
 
-def main():
+def mainBuypointstrategyintegrationtest():
     """主函数"""
     print("=" * 80)
     print("买点分析与选股策略集成测试")
@@ -500,7 +500,7 @@ def main():
         test_framework = BuyPointStrategyIntegrationTest()
         
         # 运行综合测试
-        results = test_framework.run_comprehensive_integration_test()
+        results = test_framework.run_comprehensive_integration_test_Test()
         
         # 显示结果摘要
         print("=" * 80)
@@ -570,5 +570,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = mainBuypointstrategyintegrationtest()
     sys.exit(exit_code)

@@ -19,17 +19,17 @@ class PatternSignalMixin:
         添加形态识别功能
         
         Args:
-            result: 指标计算结果DataFrame
+            result: 指标计算结果Data_frame
             **kwargs: 额外参数
             
         Returns:
-            添加了形态识别列的DataFrame
+            添加了形态识别列的Data_frame
         """
         # 初始化形态识别列
         if result.empty:
             return result
 
-        result = result.copy()  # 避免SettingWithCopyWarning
+        result = result.copy()  # 避免Setting_with_copy_warning
         result.loc[:, 'pattern_bullish'] = False
         result.loc[:, 'pattern_bearish'] = False
         result.loc[:, 'pattern_neutral'] = True
@@ -66,17 +66,17 @@ class PatternSignalMixin:
         添加信号生成功能
         
         Args:
-            result: 指标计算结果DataFrame
+            result: 指标计算结果Data_frame
             **kwargs: 额外参数
             
         Returns:
-            添加了信号列的DataFrame
+            添加了信号列的Data_frame
         """
         # 初始化信号列
         if result.empty:
             return result
 
-        result = result.copy()  # 避免SettingWithCopyWarning
+        result = result.copy()  # 避免Setting_with_copy_warning
         result.loc[:, 'buy_signal'] = False
         result.loc[:, 'sell_signal'] = False
         result.loc[:, 'hold_signal'] = True

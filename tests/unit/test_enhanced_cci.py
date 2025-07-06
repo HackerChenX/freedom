@@ -1,32 +1,32 @@
 """
-EnhancedCCI指标单元测试
+Enhanced_cCI指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_enhanced_cCI(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """EnhancedCCI指标测试类"""
     
-    def setUp(self):
+    def set_up_Cci(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Cci(self)
         
         self.indicator = complete_registry.create_indicator('ENHANCED_CCI', period=20, factor=0.015, secondary_period=40)
         self.expected_columns = ['cci', 'cci_secondary', 'cci_ma5', 'cci_ma10', 'cci_ma20', 'cci_slope', 'cci_volatility', 'state']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Cci(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Cci(self)
     
     def test_enhanced_cci_calculation_accuracy(self):
         """测试EnhancedCCI计算准确性"""
@@ -80,9 +80,9 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_enhanced_cci_parameter_update(self):
         """测试EnhancedCCI参数更新"""
@@ -91,8 +91,8 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, factor=new_factor)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.base_period, new_period)
-        self.assertEqual(self.indicator.factor, new_factor)
+        self.assert_equal(self.indicator.base_period, new_period)
+        self.assert_equal(self.indicator.factor, new_factor)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -103,7 +103,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_enhanced_cci_comprehensive_score(self):
         """测试EnhancedCCI综合评分"""
@@ -113,7 +113,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 然后计算评分
         score = self.indicator.calculate_score()
         
-        self.assertIsInstance(score, pd.Series)
+        self.assert_is_instance(score, pd.Series)
         
         # 验证评分范围
         valid_scores = score.dropna()
@@ -124,13 +124,13 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试EnhancedCCI形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -152,7 +152,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         crossovers = self.indicator.analyze_crossovers()
         
         # 验证交叉分析结果
-        self.assertIsInstance(crossovers, pd.DataFrame)
+        self.assert_is_instance(crossovers, pd.DataFrame)
         
         if not crossovers.empty:
             expected_crossover_columns = [
@@ -173,7 +173,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         synergy = self.indicator.analyze_multi_period_synergy()
         
         # 验证协同分析结果
-        self.assertIsInstance(synergy, pd.DataFrame)
+        self.assert_is_instance(synergy, pd.DataFrame)
         
         if not synergy.empty:
             expected_synergy_columns = [
@@ -193,7 +193,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.identify_patterns()
         
         # 验证形态识别结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         if not patterns.empty:
             expected_pattern_columns = ['zero_cross_up', 'zero_cross_down']
@@ -206,11 +206,11 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_enhanced_cci_market_environment(self):
         """测试EnhancedCCI市场环境设置"""
@@ -219,10 +219,10 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         for env in environments:
             self.indicator.set_market_environment(env)
-            self.assertEqual(self.indicator.market_environment, env)
+            self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_cci_adaptive_period(self):
@@ -233,7 +233,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             result = adaptive_indicator.calculate(self.data)
 
             # 验证自适应周期功能
-            self.assertIsInstance(result, pd.DataFrame)
+            self.assert_is_instance(result, pd.DataFrame)
             self.assertIn('cci', result.columns)
 
         # 测试非自适应模式
@@ -241,10 +241,10 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         if non_adaptive_indicator:
             result2 = non_adaptive_indicator.calculate(self.data)
 
-            self.assertIsInstance(result2, pd.DataFrame)
+            self.assert_is_instance(result2, pd.DataFrame)
             self.assertIn('cci', result2.columns)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Cci(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -255,11 +255,11 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Cci(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -270,7 +270,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_enhanced_cci_register_patterns(self):
         """测试EnhancedCCI形态注册"""
@@ -287,7 +287,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # EnhancedCCI应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('cci', result.columns)
     
     def test_enhanced_cci_validation(self):
@@ -295,7 +295,7 @@ class TestEnhancedCCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['high', 'low'], axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_cci_state_classification(self):

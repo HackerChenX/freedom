@@ -10,20 +10,22 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Union, Set
 
 # 添加项目根目录到Python路径
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.path_utils import get_result_dir
 from utils.decorators import safe_run, performance_monitor
-from strategy.strategy_factory import StrategyFactory
-from strategy.strategy_manager import StrategyManager
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_factory import Strategy_factory
+from strategy.strategy_manager import Strategy_manager
+from strategy.strategy_executor import Strategy_executor
 from db.db_manager import DBManager
-from analysis.strategy_validator import StrategyValidator
+from analysis.strategy_validator import Strategy_validator
 
 # 获取日志记录器
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class StrategyComparison:
     """
@@ -37,7 +39,8 @@ class StrategyComparison:
     5. 策略可视化比较 - 可视化展示策略比较结果
     """
     
-    def __init__(self):
+    def __init___100(self):
+    query_executor = get_query_executor()
         """初始化策略比较器"""
         logger.info("初始化策略比较器")
         
@@ -46,13 +49,13 @@ class StrategyComparison:
         os.makedirs(self.result_dir, exist_ok=True)
         
         # 初始化策略管理器
-        self.strategy_manager = StrategyManager()
+        self.strategy_manager = Strategy_manager()
         
         # 初始化策略执行器
-        self.strategy_executor = StrategyExecutor()
+        self.strategy_executor = Strategy_executor()
         
         # 初始化策略验证器
-        self.strategy_validator = StrategyValidator()
+        self.strategy_validator = Strategy_validator()
         
         # 初始化数据库管理器
         self.db_manager = DBManager.get_instance()
@@ -145,7 +148,7 @@ class StrategyComparison:
             except AttributeError:
                 # 如果方法不存在，使用替代方法
                 try:
-                    sql = "SELECT DISTINCT stock_code FROM stock_info"
+                    sql = "SELECT DISTINCT stock_code FROM stock_info WHERE date >= '2020-01-01'"
                     result = self.db_manager.execute_query(sql)
                     stock_pool = [row['stock_code'] for row in result] if result else []
                 except Exception as e:
@@ -190,7 +193,7 @@ class StrategyComparison:
                 
                 # 添加行业分布分析
                 if "industry" in dimensions and isinstance(result, pd.DataFrame) and len(result) > 0:
-                    industry_distribution = self._analyze_industry_distribution(result['code'].tolist())
+                    industry_distribution = self._analyze_industry_distribution_Strategy_Comparison(result['code'].tolist())
                     strategy_result["industry_distribution"] = industry_distribution
                 
                 # 添加风格特征分析
@@ -202,7 +205,7 @@ class StrategyComparison:
                 
             # 计算策略之间的重叠度
             if "overlap" in dimensions and len(period_results) > 1:
-                overlap_matrix = self._calculate_overlap_matrix(period_results)
+                overlap_matrix = self._calculate_overlap_matrix_Strategy_Comparison(period_results)
                 
                 # 添加重叠度到各策略结果
                 for i, strategy_result in enumerate(period_results):
@@ -279,7 +282,7 @@ class StrategyComparison:
         
         return results
     
-    def _analyze_industry_distribution(self, stock_codes: List[str]) -> Dict[str, Any]:
+    def _analyze_industry_distribution_Strategy_Comparison(self, stock_codes: List[str]) -> Dict[str, Any]:
         """
         分析股票的行业分布
         
@@ -305,7 +308,7 @@ class StrategyComparison:
             
             sql = f"""
             SELECT industry, COUNT(*) as count
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE stock_code IN ({placeholders_str})
             GROUP BY industry
             ORDER BY count DESC
@@ -328,7 +331,7 @@ class StrategyComparison:
                 stock_codes_str = "', '".join(safe_codes)
                 sql = f"""
                 SELECT industry, COUNT(*) as count
-                FROM stock_info
+                FROM stock_info WHERE 1=1
                 WHERE stock_code IN ('{stock_codes_str}')
                 GROUP BY industry
                 ORDER BY count DESC
@@ -388,7 +391,7 @@ class StrategyComparison:
             
             sql = f"""
             SELECT stock_code, market_cap, pb_ratio, pe_ratio
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE stock_code IN ({placeholders_str})
             """
             
@@ -409,7 +412,7 @@ class StrategyComparison:
                 stock_codes_str = "', '".join(safe_codes)
                 sql = f"""
                 SELECT stock_code, market_cap, pb_ratio, pe_ratio
-                FROM stock_info
+                FROM stock_info WHERE 1=1
                 WHERE stock_code IN ('{stock_codes_str}')
                 """
                 result = self.db_manager.execute_query(sql)
@@ -482,7 +485,7 @@ class StrategyComparison:
             logger.error(f"分析风格特征时出错: {e}")
             return {}
     
-    def _calculate_overlap_matrix(self, strategy_results: List[Dict[str, Any]]) -> List[List[float]]:
+    def _calculate_overlap_matrix_Strategy_Comparison(self, strategy_results: List[Dict[str, Any]]) -> List[List[float]]:
         """
         计算策略之间的重叠度矩阵
         
@@ -1214,9 +1217,9 @@ class StrategyComparison:
                     df_period.to_excel(writer, sheet_name=f"周期_{period_name[:28]}", index=False)
 
 
-def main():
+def main_47():
     """命令行入口函数"""
     pass
 
 if __name__ == "__main__":
-    main() 
+    main_47() 

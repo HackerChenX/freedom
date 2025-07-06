@@ -20,13 +20,13 @@ from datetime import datetime, timedelta
 from db.enhanced_connection_pool import get_connection_pool, initialize_connection_pool
 from monitoring.performance_monitor import get_performance_monitor
 from utils.stability_enhancer import get_stability_manager, retry
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import singleton, performance_monitor
-from utils.exceptions import DataAccessError, DataValidationError, DataNotFoundError
+from utils.exceptions import Data_access_error, Data_validation_error, Data_not_found_error
 from enums.period import Period
-from models.stock_info import StockInfo
+from models.stock_info WHERE 1=1 import Stock_info
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class UnifiedDataManager:
@@ -152,7 +152,7 @@ class UnifiedDataManager:
         # 严格数据库依赖模式：禁用降级服务
         logger.info("严格数据库依赖模式：已禁用所有降级服务和模拟数据支持")
     
-    def test_connection(self) -> bool:
+    def test_connection_Manager(self) -> bool:
         """
         测试数据库连接
         
@@ -160,7 +160,7 @@ class UnifiedDataManager:
             bool: 连接成功返回True，否则抛出异常
             
         Raises:
-            DataAccessError: 数据库连接失败时抛出
+            Data_access_error: 数据库连接失败时抛出
         """
         try:
             with self.connection_pool.get_connection() as conn:
@@ -173,9 +173,9 @@ class UnifiedDataManager:
             logger.error("🛑 严格数据库依赖模式：数据库不可用，系统无法继续运行")
             raise DataAccessError(f"数据库连接失败: {e}")
     
-    def query(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_Manager_Unified_Data_Manager(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
-        执行SQL查询并返回DataFrame
+        执行SQL查询并返回Data_frame
         
         Args:
             sql: SQL查询语句
@@ -201,7 +201,7 @@ class UnifiedDataManager:
                        filters: Optional[Dict[str, Any]] = None,
                        limit: Optional[int] = None,
                        order_by: str = "date DESC",
-                       cache_ttl: Optional[int] = None) -> StockInfo:
+                       cache_ttl: Optional[int] = None) -> Stock_info:
         """
         获取股票数据（核心API，支持并发查询和优化）
         
@@ -216,7 +216,7 @@ class UnifiedDataManager:
             cache_ttl: 缓存有效期
             
         Returns:
-            StockInfo: 股票数据对象
+            Stock_info: 股票数据对象
         """
         query_start_time = time.time()
         
@@ -255,14 +255,12 @@ class UnifiedDataManager:
             result_df = self._execute_query_with_retry(query, params)
             
             # 创建StockInfo对象
-            stock_info = StockInfo(result_df)
+            stock_info WHERE 1=1 = Stock_info(result_df)
             
             # 缓存结果
             self._set_cache(cache_key, stock_info, ttl)
             
-            return stock_info
-            
-        except Exception as e:
+            return stock_info WHERE 1=1 except Exception as e:
             with self.stats_lock:
                 self.stats['query_errors'] += 1
             logger.error(f"获取股票数据失败: {e}")
@@ -277,7 +275,7 @@ class UnifiedDataManager:
                 )
 
     @retry(max_attempts=3, delay=0.5)
-    def get_stock_data(self,
+    def get_stock_data_Manager_Unified_Data_Manager(self,
                       stock_code: str,
                       start_date: Optional[str] = None,
                       end_date: Optional[str] = None,
@@ -313,7 +311,7 @@ class UnifiedDataManager:
             )
 
             # 使用核心API获取数据
-            stock_info = self.get_stock_info(
+            stock_info WHERE 1=1 = self.get_stock_info(
                 stock_code=stock_code,
                 level=level,
                 start_date=optimized_start_date,
@@ -328,7 +326,7 @@ class UnifiedDataManager:
             if not df.empty and len(df) < self._get_min_data_requirement(period):
                 logger.warning(f"数据不足({len(df)}条)，尝试扩大查询范围")
                 extended_start_date = self._extend_start_date(optimized_start_date, period)
-                stock_info = self.get_stock_info(
+                stock_info WHERE 1=1 = self.get_stock_info(
                     stock_code=stock_code,
                     level=level,
                     start_date=extended_start_date,
@@ -344,7 +342,7 @@ class UnifiedDataManager:
             logger.error(f"获取股票数据失败: {stock_code}, 错误: {e}")
             raise DataAccessError(f"获取股票数据失败: {e}")
 
-    def get_stock_list(self,
+    def get_stock_list_Manager_Unified_Data_Manager(self,
                       market: Optional[str] = None,
                       industry: Optional[str] = None,
                       limit: Optional[int] = None) -> List[str]:
@@ -375,7 +373,7 @@ class UnifiedDataManager:
                 # 查询不重复的股票代码
                 query = f"""
                 SELECT DISTINCT code
-                FROM stock_info
+                FROM stock_info WHERE 1=1
                 WHERE {where_clause}
                 ORDER BY code
                 """
@@ -411,7 +409,7 @@ class UnifiedDataManager:
             List[str]: 股票代码列表
         """
         # 直接调用get_stock_list方法
-        return self.get_stock_list(market=market, industry=industry, limit=limit)
+        return self.get_stock_list_Manager_Unified_Data_Manager(market=market, industry=industry, limit=limit)
 
     def get_stock_industry(self, stock_code: str) -> Optional[str]:
         """
@@ -424,7 +422,7 @@ class UnifiedDataManager:
             Optional[str]: 行业名称
         """
         try:
-            stock_info = self.get_stock_info(
+            stock_info WHERE 1=1 = self.get_stock_info(
                 stock_code=stock_code,
                 limit=1
             )
@@ -439,7 +437,7 @@ class UnifiedDataManager:
             logger.debug(f"获取股票行业失败: {stock_code}, 错误: {e}")
             return None
 
-    def get_stock_name(self, stock_code: str) -> Optional[str]:
+    def get_stock_name_Manager(self, stock_code: str) -> Optional[str]:
         """
         获取股票名称（兼容原有API）
 
@@ -450,7 +448,7 @@ class UnifiedDataManager:
             Optional[str]: 股票名称
         """
         try:
-            stock_info = self.get_stock_info(
+            stock_info WHERE 1=1 = self.get_stock_info(
                 stock_code=stock_code,
                 limit=1
             )
@@ -508,7 +506,7 @@ class UnifiedDataManager:
                        end_date: Optional[str] = None) -> bool:
         """检查数据库中是否存在30分钟数据"""
         try:
-            stock_info = self.get_stock_info(
+            stock_info WHERE 1=1 = self.get_stock_info(
                 stock_code=stock_code,
                 level='30分钟',
                 start_date=start_date,
@@ -537,7 +535,7 @@ class UnifiedDataManager:
                 extended_start_date = start_date
 
             # 获取15分钟数据
-            stock_info = self.get_stock_info(
+            stock_info WHERE 1=1 = self.get_stock_info(
                 stock_code=stock_code,
                 level='15分钟',
                 start_date=extended_start_date,
@@ -737,7 +735,7 @@ class UnifiedDataManager:
         """构建优化的查询语句"""
 
         # 获取字段列表
-        fields = StockInfo.get_fields()
+        fields = Stock_info.get_fields()
         field_str = ", ".join(fields)
 
         # 构建WHERE条件
@@ -792,7 +790,7 @@ class UnifiedDataManager:
         query = f"""
         {query_hints}
         SELECT {field_str}
-        FROM stock_info
+        FROM stock_info WHERE 1=1
         WHERE {where_clause}
         ORDER BY {order_by}
         """
@@ -891,7 +889,7 @@ class UnifiedDataManager:
         cache_str = json.dumps(params, sort_keys=True, default=str)
         return f"stock_info_{hashlib.md5(cache_str.encode()).hexdigest()}"
 
-    def _get_from_cache(self, key: str, ttl: int) -> Optional[StockInfo]:
+    def _get_from_cache(self, key: str, ttl: int) -> Optional[Stock_info]:
         """从缓存获取数据"""
         if not self.cache_enabled:
             return None
@@ -916,7 +914,7 @@ class UnifiedDataManager:
 
             return self.query_cache[key]
 
-    def _set_cache(self, key: str, value: StockInfo, ttl: int):
+    def _set_cache(self, key: str, value: Stock_info, ttl: int):
         """设置缓存"""
         if not self.cache_enabled:
             return
@@ -948,7 +946,7 @@ class UnifiedDataManager:
             self.stats['cache_evictions'] += 1
         logger.debug(f"缓存驱逐: {min_key}")
 
-    def clear_cache(self, pattern: Optional[str] = None):
+    def clear_cache_Manager_Unified_Data_Manager(self, pattern: Optional[str] = None):
         """清除缓存"""
         with self.cache_lock:
             if pattern is None:
@@ -972,7 +970,7 @@ class UnifiedDataManager:
         保存选股结果（兼容原有API）
 
         Args:
-            result: 选股结果DataFrame
+            result: 选股结果Data_frame
             strategy_id: 策略ID
             selection_date: 选股日期
 
@@ -999,12 +997,12 @@ class UnifiedDataManager:
             logger.error(f"保存选股结果失败: {e}")
             return False
 
-    def get_kline_data(self, stock_code: str, start_date: Optional[str] = None,
+    def get_kline_data_Manager(self, stock_code: str, start_date: Optional[str] = None,
                          end_date: Optional[str] = None, level: str = 'day',
-                         **kwargs) -> StockInfo:
+                         **kwargs) -> Stock_info:
         """
         获取K线数据的兼容性接口（别名）
-        内部直接调用 get_stock_info 并返回其结果
+        内部直接调用 get_stock_info WHERE 1=1 并返回其结果
         """
         logger.warning("方法 get_kline_data 已被弃用，请尽快切换到 get_stock_info")
 
@@ -1024,14 +1022,14 @@ class UnifiedDataManager:
             stock_codes: 股票代码列表
 
         Returns:
-            pd.DataFrame: 股票基本信息DataFrame
+            pd.DataFrame: 股票基本信息Data_frame
         """
         try:
             if not stock_codes:
                 return pd.DataFrame(columns=['stock_code', 'stock_name', 'industry'])
 
             # 使用核心API获取数据
-            stock_info = self.get_stock_info(
+            stock_info WHERE 1=1 = self.get_stock_info(
                 stock_code=stock_codes,
                 level='日线',
                 order_by="date DESC",
@@ -1074,7 +1072,7 @@ class UnifiedDataManager:
 
     # ==================== 统计和管理 ====================
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_Manager(self) -> Dict[str, Any]:
         """获取统计信息"""
         with self.stats_lock:
             stats = self.stats.copy()
@@ -1090,12 +1088,12 @@ class UnifiedDataManager:
             })
 
         # 添加连接池统计
-        pool_stats = self.connection_pool.get_stats()
+        pool_stats = self.connection_pool.get_stats_Manager()
         stats['connection_pool'] = pool_stats
 
         return stats
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats_Manager(self) -> Dict[str, Any]:
         """
         获取缓存统计信息（兼容原有API）
 
@@ -1121,18 +1119,18 @@ class UnifiedDataManager:
 
             return stats
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats_Manager_Unified_Data_Manager(self) -> Dict[str, Any]:
         """
         获取性能统计信息
 
         Returns:
             Dict[str, Any]: 性能统计
         """
-        stats = self.get_stats()
+        stats = self.get_stats_Manager()
 
         # 性能监控统计
         if self.performance_monitor:
-            stats['performance_monitor'] = self.performance_monitor.get_stats()
+            stats['performance_monitor'] = self.performance_monitor.get_stats_Manager()
 
         # 稳定性统计
         if self.stability_manager:
@@ -1150,7 +1148,7 @@ class UnifiedDataManager:
         # 简化实现：返回连接上下文
         return self.connection_pool.get_connection()
 
-    def close(self):
+    def close_Manager(self):
         """关闭数据管理器，清理资源"""
         try:
             # 停止性能监控
@@ -1159,7 +1157,7 @@ class UnifiedDataManager:
 
             # 关闭连接池
             if self.connection_pool:
-                self.connection_pool.close()
+                self.connection_pool.close_Manager()
 
             logger.info("统一数据管理器已关闭")
 
@@ -1174,14 +1172,14 @@ _unified_data_manager = None
 _manager_lock = threading.Lock()
 
 
-def get_unified_data_manager() -> UnifiedDataManager:
+def get_unified_data_manager() -> Unified_data_manager:
     """获取全局统一数据管理器实例"""
     global _unified_data_manager
 
     if _unified_data_manager is None:
         with _manager_lock:
             if _unified_data_manager is None:
-                _unified_data_manager = UnifiedDataManager()
+                _unified_data_manager = Unified_data_manager()
 
     return _unified_data_manager
 
@@ -1189,28 +1187,28 @@ def get_unified_data_manager() -> UnifiedDataManager:
 # ==================== 向后兼容别名 ====================
 
 # 为了向后兼容，提供所有现有类的别名
-class DataManager(UnifiedDataManager):
+class DataManager(Unified_data_manager):
     """向后兼容的DataManager类"""
     pass
 
-class EnhancedDataManager(UnifiedDataManager):
+class EnhancedDataManager(Unified_data_manager):
     """向后兼容的EnhancedDataManager类"""
     pass
 
-class DataManagerAdapter(UnifiedDataManager):
+class DataManagerAdapter(Unified_data_manager):
     """向后兼容的DataManagerAdapter类"""
     pass
 
 
 # 向后兼容的获取函数
-def get_data_manager() -> UnifiedDataManager:
+def get_data_manager() -> Unified_data_manager:
     """获取数据管理器（向后兼容）"""
     return get_unified_data_manager()
 
-def get_enhanced_data_manager() -> UnifiedDataManager:
+def get_enhanced_data_manager() -> Unified_data_manager:
     """获取增强数据管理器（向后兼容）"""
     return get_unified_data_manager()
 
-def get_data_manager_adapter() -> UnifiedDataManager:
+def get_data_manager_adapter() -> Unified_data_manager:
     """获取数据管理器适配器（向后兼容）"""
     return get_unified_data_manager()

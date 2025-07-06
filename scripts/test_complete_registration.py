@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import logging
 
 # 设置日志
-logging.basicConfig(
+logging.basic_config(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
 )
@@ -136,7 +136,7 @@ def test_indicator_categories():
         print(f"❌ 类别测试失败: {e}")
         return {}
 
-def main():
+def main_testcompleteregistration():
     """主函数"""
     print("开始完整指标注册测试...\n")
     
@@ -160,5 +160,5 @@ def main():
     return registration_success
 
 if __name__ == "__main__":
-    success = main()
+    success = main_testcompleteregistration()
     sys.exit(0 if success else 1)

@@ -15,13 +15,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class IntelligentP4Generator:
+class Intelligent_p4_generator:
     """智能P4 ZXM系列指标数据生成器"""
     
     def __init__(self):
         pass
     
-    def _generate_ohlc_from_close(self, dates: pd.DatetimeIndex, close_prices: List[float], 
+    def _generate_ohlc_from_close_Intelligent_P4_Generator(self, dates: pd.Datetime_index, close_prices: List[float], 
                                  volatility_factor: float = 1.0) -> pd.DataFrame:
         """从收盘价生成OHLC数据，支持可变波动率"""
         data = []
@@ -60,7 +60,7 @@ class IntelligentP4Generator:
         
         return pd.DataFrame(data)
     
-    def _standardize_data_format(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
+    def _standardize_data_format_Intelligent_P4_Generator(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
         """标准化数据格式"""
         column_order = ['date', 'open', 'high', 'low', 'close', 'volume', 'turnover_rate']
         return data[column_order]
@@ -83,8 +83,8 @@ class IntelligentP4Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ZXM_MACD_BUY_SIGNAL')
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P4_Generator(data, 'ZXM_MACD_BUY_SIGNAL')
     
     def generate_zxm_turnover_active_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成ZXM换手率活跃数据"""
@@ -104,14 +104,14 @@ class IntelligentP4Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices)
         
         # 特别处理换手率：后20天换手率明显提高
         for i in range(len(data)):
             if i >= 30:  # 后20天
                 data.loc[i, 'turnover_rate'] *= np.random.uniform(2.0, 4.0)
         
-        return self._standardize_data_format(data, 'ZXM_TURNOVER_ACTIVE')
+        return self._standardize_data_format_Intelligent_P4_Generator(data, 'ZXM_TURNOVER_ACTIVE')
     
     def generate_zxm_volume_shrink_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成ZXM缩量数据"""
@@ -131,7 +131,7 @@ class IntelligentP4Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices)
         
         # 特别处理成交量：后20天成交量明显缩小
         for i in range(len(data)):
@@ -139,7 +139,7 @@ class IntelligentP4Generator:
                 data.loc[i, 'volume'] *= np.random.uniform(0.3, 0.6)
                 data.loc[i, 'turnover_rate'] *= np.random.uniform(0.3, 0.6)
         
-        return self._standardize_data_format(data, 'ZXM_VOLUME_SHRINK')
+        return self._standardize_data_format_Intelligent_P4_Generator(data, 'ZXM_VOLUME_SHRINK')
     
     def generate_zxm_ma_callback_data(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """生成ZXM均线回调数据"""
@@ -163,8 +163,8 @@ class IntelligentP4Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ZXM_MA_CALLBACK')
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P4_Generator(data, 'ZXM_MA_CALLBACK')
     
     def generate_zxm_absorb_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成ZXM主力吸筹数据"""
@@ -184,7 +184,7 @@ class IntelligentP4Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices)
         
         # 特别处理成交量：后30天成交量放大但价格波动小
         for i in range(len(data)):
@@ -192,7 +192,7 @@ class IntelligentP4Generator:
                 data.loc[i, 'volume'] *= np.random.uniform(1.5, 2.5)
                 data.loc[i, 'turnover_rate'] *= np.random.uniform(1.5, 2.5)
         
-        return self._standardize_data_format(data, 'ZXM_ABSORB')
+        return self._standardize_data_format_Intelligent_P4_Generator(data, 'ZXM_ABSORB')
     
     def generate_zxm_elasticity_data(self, base_price: float = 100, periods: int = 80) -> pd.DataFrame:
         """生成ZXM弹性数据"""
@@ -219,8 +219,8 @@ class IntelligentP4Generator:
             prices.append(new_price)
         
         # 使用高波动率因子
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=2.0)
-        return self._standardize_data_format(data, 'ZXM_ELASTICITY')
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices, volatility_factor=2.0)
+        return self._standardize_data_format_Intelligent_P4_Generator(data, 'ZXM_ELASTICITY')
     
     def generate_zxm_trend_up_data(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """生成ZXM上升趋势数据"""
@@ -239,8 +239,8 @@ class IntelligentP4Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ZXM_TREND_UP')
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P4_Generator(data, 'ZXM_TREND_UP')
     
     def generate_generic_zxm_pattern_data(self, pattern_name: str, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成通用ZXM形态数据"""
@@ -284,13 +284,13 @@ class IntelligentP4Generator:
                 new_price = prices[-1] * (1 + daily_change)
                 prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, pattern_name)
+        data = self._generate_ohlc_from_close_Intelligent_P4_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P4_Generator(data, pattern_name)
 
 
 def test_intelligent_p4_generator():
     """测试智能P4生成器"""
-    generator = IntelligentP4Generator()
+    generator = Intelligent_p4_generator()
     
     print("测试智能P4数据生成器...")
     

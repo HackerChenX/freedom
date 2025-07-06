@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 
 
 @dataclass
-class TestResult:
+class Test_result:
     """测试结果数据类"""
     test_name: str
     test_type: str
@@ -33,7 +33,7 @@ class TestResult:
 
 
 @dataclass
-class LayerTestConfig:
+class Layer_test_config:
     """测试层配置"""
     layer_name: str
     required_coverage: float
@@ -41,17 +41,17 @@ class LayerTestConfig:
     success_criteria: Dict[str, Any]
 
 
-class BaseTestLayer(ABC):
+class Base_test_layer(ABC):
     """测试层基类"""
     
-    def __init__(self, config: LayerTestConfig):
+    def __init__(self, config: Layer_test_config):
         self.config = config
-        self.results: List[TestResult] = []
+        self.results: List[Test_result] = []
         self.start_time: Optional[float] = None
         self.end_time: Optional[float] = None
     
     @abstractmethod
-    def run_tests(self, target_indicators: List[str]) -> List[TestResult]:
+    def run_tests_Framework_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework(self, target_indicators: List[str]) -> List[Test_result]:
         """运行测试层的所有测试"""
         pass
     
@@ -72,11 +72,11 @@ class BaseTestLayer(ABC):
                 execution_time <= self.config.max_execution_time)
 
 
-class UnitTestLayer(BaseTestLayer):
+class Unit_test_layer(Base_test_layer):
     """单元测试层 - 验证计算逻辑"""
     
     def __init__(self):
-        config = LayerTestConfig(
+        config = Layer_test_config(
             layer_name="Unit Tests",
             required_coverage=95.0,
             max_execution_time=30.0,
@@ -88,7 +88,7 @@ class UnitTestLayer(BaseTestLayer):
         )
         super().__init__(config)
     
-    def run_tests(self, target_indicators: List[str]) -> List[TestResult]:
+    def run_tests_Framework_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework(self, target_indicators: List[str]) -> List[Test_result]:
         """运行单元测试"""
         self.start_time = time.time()
         self.results = []
@@ -115,7 +115,7 @@ class UnitTestLayer(BaseTestLayer):
         
         return self.results
     
-    def _test_calculation_accuracy(self, indicator_name: str) -> TestResult:
+    def _test_calculation_accuracy(self, indicator_name: str) -> Test_result:
         """测试计算准确性"""
         start_time = time.time()
         
@@ -124,7 +124,7 @@ class UnitTestLayer(BaseTestLayer):
             indicator = complete_registry.create_indicator(indicator_name)
             
             # 生成标准测试数据
-            test_data = self._generate_standard_test_data()
+            test_data = self._generate_standard_test_data_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework()
             
             # 执行计算
             result = indicator.calculate(test_data)
@@ -136,7 +136,7 @@ class UnitTestLayer(BaseTestLayer):
             
             execution_time = time.time() - start_time
             
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_calculation_accuracy",
                 test_type="unit",
                 success=success,
@@ -147,7 +147,7 @@ class UnitTestLayer(BaseTestLayer):
             
         except Exception as e:
             execution_time = time.time() - start_time
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_calculation_accuracy",
                 test_type="unit",
                 success=False,
@@ -156,7 +156,7 @@ class UnitTestLayer(BaseTestLayer):
                 error_message=str(e)
             )
     
-    def _test_boundary_handling(self, indicator_name: str) -> TestResult:
+    def _test_boundary_handling(self, indicator_name: str) -> Test_result:
         """测试边界条件处理"""
         start_time = time.time()
         
@@ -171,7 +171,7 @@ class UnitTestLayer(BaseTestLayer):
             success = isinstance(result, pd.DataFrame)
             execution_time = time.time() - start_time
             
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_boundary_handling",
                 test_type="unit",
                 success=success,
@@ -181,7 +181,7 @@ class UnitTestLayer(BaseTestLayer):
             
         except Exception as e:
             execution_time = time.time() - start_time
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_boundary_handling",
                 test_type="unit",
                 success=False,
@@ -190,7 +190,7 @@ class UnitTestLayer(BaseTestLayer):
                 error_message=str(e)
             )
     
-    def _test_error_handling(self, indicator_name: str) -> TestResult:
+    def _test_error_handling(self, indicator_name: str) -> Test_result:
         """测试异常处理"""
         start_time = time.time()
         
@@ -205,7 +205,7 @@ class UnitTestLayer(BaseTestLayer):
             success = isinstance(result, pd.DataFrame)
             execution_time = time.time() - start_time
             
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_error_handling",
                 test_type="unit",
                 success=success,
@@ -215,7 +215,7 @@ class UnitTestLayer(BaseTestLayer):
             
         except Exception as e:
             execution_time = time.time() - start_time
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_error_handling",
                 test_type="unit",
                 success=False,
@@ -224,7 +224,7 @@ class UnitTestLayer(BaseTestLayer):
                 error_message=str(e)
             )
     
-    def _generate_standard_test_data(self) -> pd.DataFrame:
+    def _generate_standard_test_data_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework(self) -> pd.DataFrame:
         """生成标准测试数据"""
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         np.random.seed(42)
@@ -260,17 +260,17 @@ class UnitTestLayer(BaseTestLayer):
     
     def _generate_nan_data(self) -> pd.DataFrame:
         """生成包含NaN的测试数据"""
-        data = self._generate_standard_test_data()
+        data = self._generate_standard_test_data_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework()
         data.loc[10:15, 'close'] = np.nan
         data.loc[20:25, 'volume'] = np.nan
         return data
 
 
-class SemanticTestLayer(BaseTestLayer):
+class Semantic_test_layer(Base_test_layer):
     """语义测试层 - 验证业务逻辑"""
     
     def __init__(self):
-        config = LayerTestConfig(
+        config = Layer_test_config(
             layer_name="Semantic Tests",
             required_coverage=90.0,
             max_execution_time=60.0,
@@ -282,7 +282,7 @@ class SemanticTestLayer(BaseTestLayer):
         )
         super().__init__(config)
     
-    def run_tests(self, target_indicators: List[str]) -> List[TestResult]:
+    def run_tests_Framework_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework(self, target_indicators: List[str]) -> List[Test_result]:
         """运行语义测试"""
         self.start_time = time.time()
         self.results = []
@@ -305,7 +305,7 @@ class SemanticTestLayer(BaseTestLayer):
         
         return self.results
     
-    def _test_signal_consistency(self, indicator_name: str) -> TestResult:
+    def _test_signal_consistency(self, indicator_name: str) -> Test_result:
         """测试信号一致性"""
         start_time = time.time()
         
@@ -322,7 +322,7 @@ class SemanticTestLayer(BaseTestLayer):
             
             execution_time = time.time() - start_time
             
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_signal_consistency",
                 test_type="semantic",
                 success=success,
@@ -332,7 +332,7 @@ class SemanticTestLayer(BaseTestLayer):
             
         except Exception as e:
             execution_time = time.time() - start_time
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_signal_consistency",
                 test_type="semantic",
                 success=False,
@@ -341,7 +341,7 @@ class SemanticTestLayer(BaseTestLayer):
                 error_message=str(e)
             )
     
-    def _test_business_logic(self, indicator_name: str) -> TestResult:
+    def _test_business_logic(self, indicator_name: str) -> Test_result:
         """测试业务逻辑"""
         start_time = time.time()
         
@@ -349,7 +349,7 @@ class SemanticTestLayer(BaseTestLayer):
             from indicators.complete_indicator_registry import complete_registry
             indicator = complete_registry.create_indicator(indicator_name)
             
-            test_data = self._generate_standard_test_data()
+            test_data = self._generate_standard_test_data_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework()
             result = indicator.calculate(test_data)
             
             # 验证业务逻辑
@@ -357,7 +357,7 @@ class SemanticTestLayer(BaseTestLayer):
             
             execution_time = time.time() - start_time
             
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_business_logic",
                 test_type="semantic",
                 success=success,
@@ -367,7 +367,7 @@ class SemanticTestLayer(BaseTestLayer):
             
         except Exception as e:
             execution_time = time.time() - start_time
-            return TestResult(
+            return Test_result(
                 test_name=f"{indicator_name}_business_logic",
                 test_type="semantic",
                 success=False,
@@ -379,9 +379,9 @@ class SemanticTestLayer(BaseTestLayer):
     def _generate_semantic_test_data(self, indicator_name: str) -> pd.DataFrame:
         """根据指标类型生成语义测试数据"""
         # 这里可以根据不同指标类型生成特定的测试数据
-        return self._generate_standard_test_data()
+        return self._generate_standard_test_data_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework()
     
-    def _generate_standard_test_data(self) -> pd.DataFrame:
+    def _generate_standard_test_data_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework(self) -> pd.DataFrame:
         """生成标准测试数据"""
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         return pd.DataFrame({
@@ -421,16 +421,16 @@ class SemanticTestLayer(BaseTestLayer):
         return True
 
 
-class LayeredTestingFramework:
+class Layered_testing_framework:
     """分层测试框架主类"""
     
     def __init__(self):
         self.layers = [
-            UnitTestLayer(),
-            SemanticTestLayer(),
+            Unit_test_layer(),
+            Semantic_test_layer(),
             # 可以继续添加IntegrationTestLayer, EndToEndTestLayer
         ]
-        self.overall_results: Dict[str, List[TestResult]] = {}
+        self.overall_results: Dict[str, List[Test_result]] = {}
     
     def run_all_layers(self, target_indicators: List[str]) -> Dict[str, Any]:
         """运行所有测试层"""
@@ -441,7 +441,7 @@ class LayeredTestingFramework:
         layer_summaries = {}
         
         for layer in self.layers:
-            layer_results = layer.run_tests(target_indicators)
+            layer_results = layer.run_tests_Framework_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework(target_indicators)
             self.overall_results[layer.config.layer_name] = layer_results
             
             layer_success = layer.validate_layer_success()
@@ -482,7 +482,7 @@ class LayeredTestingFramework:
         
         return (successful_tests / total_tests * 100) if total_tests > 0 else 0.0
     
-    def generate_detailed_report(self) -> str:
+    def generate_detailed_report_Framework(self) -> str:
         """生成详细的测试报告"""
         report = ["# 分层测试框架详细报告\n"]
         

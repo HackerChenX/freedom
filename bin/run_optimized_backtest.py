@@ -19,14 +19,14 @@ import json
 import datetime
 from typing import Dict, List, Any, Optional
 
-from scripts.backtest.optimized_backtest import OptimizedBacktest
+from scripts.backtest.optimized_backtest import Optimized_backtest
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_strategies_dir
 
 # 获取日志记录器
 logger = get_logger(__name__)
 
-def parse_args():
+def parse_args_Backtest_Run_Optimized_Backtest():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='运行优化版回测系统')
     
@@ -52,9 +52,9 @@ def parse_args():
     # 并行计算参数
     parser.add_argument('--cpu-cores', type=int, help='并行计算使用的CPU核心数')
     
-    return parser.parse_args()
+    return parser.parse_args_Backtest_Run_Optimized_Backtest()
 
-def load_config(config_path: Optional[str]) -> Dict[str, Any]:
+def load_config_Backtest(config_path: Optional[str]) -> Dict[str, Any]:
     """
     加载配置文件
     
@@ -144,10 +144,10 @@ def run_analyze_mode(args):
         args.output = os.path.join(output_dir, f"analysis_result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
     
     # 加载配置
-    config = load_config(args.config)
+    config = load_config_Backtest(args.config)
     
     # 创建回测实例
-    backtest = OptimizedBacktest(config=config, cpu_cores=args.cpu_cores)
+    backtest = Optimized_backtest(config=config, cpu_cores=args.cpu_cores)
     
     # 运行批量分析
     logger.info(f"开始分析，输入文件: {args.input}")
@@ -176,7 +176,7 @@ def run_generate_mode(args):
         return
     
     # 创建回测实例
-    backtest = OptimizedBacktest()
+    backtest = Optimized_backtest()
     
     # 生成策略
     logger.info(f"开始生成策略，基于分析结果: {args.analysis_result}")
@@ -218,10 +218,10 @@ def run_backtest_mode(args):
         return
     
     # 加载配置
-    config = load_config(args.config)
+    config = load_config_Backtest(args.config)
     
     # 创建回测实例
-    backtest = OptimizedBacktest(config=config)
+    backtest = Optimized_backtest(config=config)
     
     # 运行回测
     logger.info(f"开始回测，策略: {args.strategy}, 股票池: {args.stock_pool}")
@@ -260,10 +260,10 @@ def run_optimize_mode(args):
     backtest_output = os.path.join(output_dir, f"backtest_result_{timestamp}.json")
     
     # 加载配置
-    config = load_config(args.config)
+    config = load_config_Backtest(args.config)
     
     # 创建回测实例
-    backtest = OptimizedBacktest(config=config, cpu_cores=args.cpu_cores)
+    backtest = Optimized_backtest(config=config, cpu_cores=args.cpu_cores)
     
     # 第一步：分析
     logger.info("第1步: 运行分析")
@@ -293,9 +293,9 @@ def run_optimize_mode(args):
         'backtest_result': result
     }
 
-def main():
+def main_40():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Backtest_Run_Optimized_Backtest()
     
     # 运行对应模式
     if args.mode == 'analyze':
@@ -310,4 +310,4 @@ def main():
         logger.error(f"未知的运行模式: {args.mode}")
 
 if __name__ == '__main__':
-    main() 
+    main_40() 

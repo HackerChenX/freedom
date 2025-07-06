@@ -22,14 +22,14 @@ def _get_column_name(self, data: pd.DataFrame, column_type: str) -> str:
     获取指定类型的列名，支持多种格式
     
     Args:
-        data: 数据DataFrame
+        data: 数据Data_frame
         column_type: 列类型 ('open', 'high', 'low', 'close', 'volume')
         
     Returns:
         str: 实际的列名
         
     Raises:
-        ValueError: 如果找不到对应的列
+        Value_error: 如果找不到对应的列
     """
     column_mappings = {
         'open': ['open', 'Open', 'OPEN', 'o', 'O'],
@@ -82,7 +82,7 @@ def find_column_access_patterns(file_path: str) -> List[Tuple[int, str, str]]:
     
     return patterns
 
-def main():
+def main_fixcolumnmapping():
     """主函数"""
     print("🔧 开始修复技术指标数据列映射问题...")
     
@@ -130,4 +130,4 @@ def main():
         print(f"\n✅ 未发现数据列映射问题！")
 
 if __name__ == "__main__":
-    main()
+    main_fixcolumnmapping()

@@ -13,8 +13,8 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.unified_data_manager import UnifiedDataManager
-from indicators.complete_indicator_registry import CompleteIndicatorRegistry
+from db.unified_data_manager import Unified_data_manager
+from indicators.complete_indicator_registry import Complete_indicator_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ def test_basic_data_query():
     
     try:
         # 初始化数据管理器
-        data_manager = UnifiedDataManager()
+        data_manager = Unified_data_manager()
         
         # 获取股票列表
         stocks = data_manager.get_all_stock_codes()[:5]  # 只测试前5只股票
@@ -34,7 +34,7 @@ def test_basic_data_query():
         # 测试获取单只股票的基本信息
         for stock_code in stocks:
             try:
-                stock_info = data_manager.get_stock_info(stock_code)
+                stock_info WHERE 1=1 = data_manager.get_stock_info(stock_code)
                 print(f"股票 {stock_code}: {stock_info}")
                 
                 # 获取最新价格数据
@@ -59,16 +59,16 @@ def test_basic_data_query():
     except Exception as e:
         print(f"基本数据查询测试失败: {e}")
 
-def test_indicator_calculation():
+def test_indicator_calculation_Data():
     """测试指标计算"""
     print("\n=== 测试指标计算 ===")
     
     try:
         # 初始化指标注册器
-        registry = CompleteIndicatorRegistry()
+        registry = Complete_indicator_registry()
         
         # 初始化数据管理器
-        data_manager = UnifiedDataManager()
+        data_manager = Unified_data_manager()
         
         # 获取一只股票进行测试
         stocks = data_manager.get_all_stock_codes()[:1]
@@ -127,18 +127,18 @@ def test_indicator_calculation():
     except Exception as e:
         print(f"指标计算测试失败: {e}")
 
-def test_strategy_condition():
+def test_strategy_condition_Data():
     """测试策略条件评估"""
     print("\n=== 测试策略条件评估 ===")
     
     try:
-        from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+        from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
         
         # 初始化条件评估器
-        evaluator = StrategyConditionEvaluator()
+        evaluator = Strategy_condition_evaluator()
         
         # 初始化数据管理器
-        data_manager = UnifiedDataManager()
+        data_manager = Unified_data_manager()
         
         # 获取一只股票进行测试
         stocks = data_manager.get_all_stock_codes()[:1]
@@ -184,15 +184,15 @@ def test_strategy_condition():
     except Exception as e:
         print(f"策略条件测试失败: {e}")
 
-def main():
+def main_testindicatordata():
     """主函数"""
     print("开始指标数据测试")
     
     test_basic_data_query()
-    test_indicator_calculation()
-    test_strategy_condition()
+    test_indicator_calculation_Data()
+    test_strategy_condition_Data()
     
     print("\n指标数据测试完成")
 
 if __name__ == "__main__":
-    main() 
+    main_testindicatordata() 

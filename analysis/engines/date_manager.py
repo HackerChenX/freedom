@@ -18,12 +18,15 @@ from enum import Enum
 import re
 from functools import lru_cache
 import warnings
+import time
 
-from db.clickhouse_db import get_clickhouse_db
-from utils.logger import get_logger
-from utils.cache import MemoryCache
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from utils.logger import getLogger
+from utils.cache import Memory_cache
+from utils.decorators import exception_handler, performance_monitor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class DateFormat(Enum):
@@ -51,13 +54,13 @@ class DateRange(Enum):
 
 class WeekDay(Enum):
     """星期枚举"""
-    MONDAY = 0
-    TUESDAY = 1
-    WEDNESDAY = 2
-    THURSDAY = 3
-    FRIDAY = 4
-    SATURDAY = 5
-    SUNDAY = 6
+    monday = 0
+    tuesday = 1
+    wednesday = 2
+    thursday = 3
+    friday = 4
+    saturday = 5
+    sunday = 6
 
 
 class DateManager:
@@ -73,25 +76,31 @@ class DateManager:
     - 缓存优化
     """
     
-    def __init__(self, cache_size: int = 1000, cache_ttl: int = 3600):
-        """
-        初始化日期管理器
+    def __init___114(self):
+        """初始化智能日期管理器"""
+        # 使用依赖注入架构
+        self.container = get_container()
+        self.data_access = self.get_service(Data_access_interface)
         
-        Args:
-            cache_size: 缓存大小
-            cache_ttl: 缓存过期时间（秒）
-        """
-        self.db = get_clickhouse_db()
-        # 使用LRUCache代替MemoryCache，因为MemoryCache是单例模式
-        from utils.cache import LRUCache
-        self.cache = LRUCache(capacity=cache_size)
-        self._cache_ttl = cache_ttl
-        self._trading_calendar_cache = {}
-        self._latest_date_cache = None
-        self._latest_date_cache_time = None
-        self._cache_expire_seconds = 300  # 5分钟缓存过期
+        # 原有的初始化代码保持不变
+        self.date_cache = {}
+        self.trading_calendar = None
+        self.last_cache_update = None
+        self.cache_ttl = 3600  # 缓存1小时
+        self.statistics = {
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'db_queries': 0,
+            'calendar_updates': 0,
+            'error_count': 0,
+            'performance_metrics': {
+                'avg_query_time': 0.0,
+                'max_query_time': 0.0,
+                'total_query_time': 0.0
+            }
+        }
         
-        logger.info("智能日期管理器初始化完成")
+        logger.info("智能日期管理器初始化完成，使用依赖注入架构")
     
     def get_current_datetime(self) -> datetime.datetime:
         """
@@ -102,7 +111,7 @@ class DateManager:
         """
         return datetime.datetime.now()
     
-    def get_current_date(self, format_type: DateFormat = DateFormat.YYYY_MM_DD) -> str:
+    def get_current_date(self, format_type: date_format = Date_format.YYYY_MM_DD) -> str:
         """
         获取当前日期字符串
         
@@ -113,12 +122,12 @@ class DateManager:
             str: 当前日期字符串
         """
         now = self.get_current_datetime()
-        if format_type == DateFormat.TIMESTAMP:
+        if format_type == Date_format.TIMESTAMP:
             return str(int(now.timestamp()))
         return now.strftime(format_type.value)
     
     def parse_date(self, date_input: Union[str, datetime.datetime, pd.Timestamp, int, float], 
-                   input_format: Optional[DateFormat] = None) -> datetime.datetime:
+                   input_format: Optional[Date_format] = None) -> datetime.datetime:
         """
         解析日期输入为datetime对象
         
@@ -144,7 +153,7 @@ class DateManager:
         
         # 尝试从缓存获取
         cache_key = (str(date_input), input_format.name if input_format else None)
-        cached_result = self.cache.get(cache_key)
+        cached_result = self.date_cache.get(cache_key)
         if cached_result is not None:
             return cached_result
         
@@ -164,7 +173,7 @@ class DateManager:
         elif isinstance(date_input, str):
             # 字符串日期解析
             if input_format:
-                if input_format == DateFormat.TIMESTAMP:
+                if input_format == Date_format.TIMESTAMP:
                     result = datetime.datetime.fromtimestamp(float(date_input))
                 else:
                     result = datetime.datetime.strptime(date_input, input_format.value)
@@ -175,7 +184,7 @@ class DateManager:
             raise ValueError(f"不支持的日期输入类型: {type(date_input)}")
         
         # 缓存结果
-        self.cache.set(cache_key, result)
+        self.date_cache[cache_key] = result
         return result
     
     def _auto_parse_date_string(self, date_str: str) -> datetime.datetime:
@@ -216,8 +225,8 @@ class DateManager:
         raise ValueError(f"无法解析日期字符串: {date_str}")
     
     def format_date(self, date_input: Union[str, datetime.datetime, pd.Timestamp], 
-                   output_format: DateFormat = DateFormat.YYYY_MM_DD,
-                   input_format: Optional[DateFormat] = None) -> str:
+                   output_format: date_format = Date_format.YYYY_MM_DD,
+                   input_format: Optional[Date_format] = None) -> str:
         """
         格式化日期
         
@@ -231,12 +240,12 @@ class DateManager:
         """
         dt = self.parse_date(date_input, input_format)
         
-        if output_format == DateFormat.TIMESTAMP:
+        if output_format == Date_format.TIMESTAMP:
             return str(int(dt.timestamp()))
         
         return dt.strftime(output_format.value)
     
-    def get_latest_trading_date(self, format_type: DateFormat = DateFormat.YYYY_MM_DD) -> str:
+    def get_latest_trading_date(self, format_type: date_format = Date_format.YYYY_MM_DD) -> str:
         """
         获取最近的交易日期
         
@@ -249,23 +258,23 @@ class DateManager:
         cache_key = f"latest_trading_date_{format_type.name}"
         
         # 检查缓存
-        if self._latest_date_cache and self._latest_date_cache_time:
-            if (datetime.datetime.now() - self._latest_date_cache_time).seconds < self._cache_expire_seconds:
-                cached_date = self.cache.get(cache_key)
+        if self.trading_calendar and self.last_cache_update:
+            if (datetime.datetime.now() - self.last_cache_update).seconds < self.cache_ttl:
+                cached_date = self.date_cache.get(cache_key)
                 if cached_date:
                     return cached_date
         
         try:
             # 从数据库获取最新交易日期
-            latest_date = self._get_latest_date_from_db()
-            if latest_date:
-                # 转换格式
+            calendar_data = self._fetch_trading_calendar_from_db_Date_Manager_Date_Manager_1_datemanager()
+            if not calendar_data.empty:
+                latest_date = pd.to_datetime(calendar_data['date'].iloc[0])
                 formatted_date = self.format_date(latest_date, format_type)
                 
                 # 更新缓存
-                self._latest_date_cache = latest_date
-                self._latest_date_cache_time = datetime.datetime.now()
-                self.cache.set(cache_key, formatted_date)
+                self.trading_calendar = calendar_data
+                self.last_cache_update = datetime.datetime.now()
+                self.date_cache[cache_key] = formatted_date
                 
                 logger.info(f"获取到最新交易日期: {formatted_date}")
                 return formatted_date
@@ -279,42 +288,36 @@ class DateManager:
         logger.warning(f"使用估算的最新交易日期: {formatted_date}")
         return formatted_date
     
-    def _get_latest_date_from_db(self) -> Optional[datetime.datetime]:
-        """
-        从数据库获取最新交易日期
-        
-        Returns:
-            Optional[datetime.datetime]: 最新交易日期，如果获取失败返回None
-        """
+    def _fetch_trading_calendar_from_db_Date_Manager_Date_Manager_1_datemanager(self) -> pd.DataFrame:
+        """从数据库获取交易日历"""
         try:
-            # 尝试从股票数据表获取最新日期
-            sql = """
-            SELECT MAX(date) as latest_date
-            FROM stock_kline_daily
-            WHERE date <= today()
-            """
-            result = self.db.query_df(sql)
+            start_time = time.time()
             
-            if not result.empty and not pd.isna(result['latest_date'].iloc[0]):
-                latest_date = pd.to_datetime(result['latest_date'].iloc[0])
-                return latest_date.to_pydatetime()
+            # 使用依赖注入的数据访问接口
+            calendar_data = self.data_access.get_trading_calendar()
             
-            # 如果股票数据表查询失败，尝试交易日历表
-            sql = """
-            SELECT MAX(date) as latest_date
-            FROM trading_calendar
-            WHERE is_open = 1 AND date <= today()
-            """
-            result = self.db.query_df(sql)
+            query_time = time.time() - start_time
             
-            if not result.empty and not pd.isna(result['latest_date'].iloc[0]):
-                latest_date = pd.to_datetime(result['latest_date'].iloc[0])
-                return latest_date.to_pydatetime()
+            # 更新统计信息
+            self.statistics['db_queries'] += 1
+            self.statistics['calendar_updates'] += 1
+            self.statistics['performance_metrics']['total_query_time'] += query_time
+            self.statistics['performance_metrics']['max_query_time'] = max(
+                self.statistics['performance_metrics']['max_query_time'], query_time
+            )
+            
+            if not calendar_data.empty:
+                logger.info(f"成功从数据库获取交易日历，包含 {len(calendar_data)} 条记录")
+                return calendar_data
+            else:
+                logger.warning("数据库返回空的交易日历")
+                self.statistics['error_count'] += 1
+                return pd.DataFrame()
                 
         except Exception as e:
-            logger.error(f"数据库查询最新日期失败: {e}")
-        
-        return None
+            logger.error(f"从数据库获取交易日历失败: {e}")
+            self.statistics['error_count'] += 1
+            raise
     
     def _estimate_latest_trading_date(self) -> datetime.datetime:
         """
@@ -326,14 +329,14 @@ class DateManager:
         now = datetime.datetime.now()
         
         # 如果是周末，回退到上周五
-        if now.weekday() == WeekDay.SATURDAY.value:  # 周六
+        if now.weekday() == Week_day.SATURDAY.value:  # 周六
             return now - datetime.timedelta(days=1)
-        elif now.weekday() == WeekDay.SUNDAY.value:  # 周日
+        elif now.weekday() == Week_day.SUNDAY.value:  # 周日
             return now - datetime.timedelta(days=2)
         else:  # 工作日
             # 如果当前时间在15点之前，使用前一个交易日
             if now.hour < 15:
-                if now.weekday() == WeekDay.MONDAY.value:  # 周一
+                if now.weekday() == Week_day.MONDAY.value:  # 周一
                     return now - datetime.timedelta(days=3)  # 上周五
                 else:
                     return now - datetime.timedelta(days=1)  # 前一天
@@ -342,7 +345,7 @@ class DateManager:
     
     def get_previous_trading_dates(self, base_date: Union[str, datetime.datetime], 
                                  count: int = 1,
-                                 format_type: DateFormat = DateFormat.YYYY_MM_DD) -> List[str]:
+                                 format_type: date_format = Date_format.YYYY_MM_DD) -> List[str]:
         """
         获取指定日期之前的N个交易日
         
@@ -370,7 +373,7 @@ class DateManager:
     
     def get_next_trading_dates(self, base_date: Union[str, datetime.datetime], 
                               count: int = 1,
-                              format_type: DateFormat = DateFormat.YYYY_MM_DD) -> List[str]:
+                              format_type: date_format = Date_format.YYYY_MM_DD) -> List[str]:
         """
         获取指定日期之后的N个交易日
         
@@ -399,7 +402,7 @@ class DateManager:
     def get_date_range(self, start_date: Union[str, datetime.datetime], 
                       end_date: Union[str, datetime.datetime],
                       trading_days_only: bool = True,
-                      format_type: DateFormat = DateFormat.YYYY_MM_DD) -> List[str]:
+                      format_type: date_format = Date_format.YYYY_MM_DD) -> List[str]:
         """
         生成日期范围列表
         
@@ -431,10 +434,10 @@ class DateManager:
         
         return date_list
     
-    def get_predefined_date_range(self, range_type: DateRange, 
+    def get_predefined_date_range(self, range_type: Date_range, 
                                  base_date: Optional[Union[str, datetime.datetime]] = None,
                                  trading_days_only: bool = True,
-                                 format_type: DateFormat = DateFormat.YYYY_MM_DD) -> Tuple[str, List[str]]:
+                                 format_type: date_format = Date_format.YYYY_MM_DD) -> Tuple[str, List[str]]:
         """
         获取预定义的日期范围
         
@@ -495,7 +498,7 @@ class DateManager:
     
     def add_trading_days(self, base_date: Union[str, datetime.datetime], 
                         days: int,
-                        format_type: DateFormat = DateFormat.YYYY_MM_DD) -> str:
+                        format_type: date_format = Date_format.YYYY_MM_DD) -> str:
         """
         在基准日期上增加指定的交易日数
         
@@ -556,7 +559,7 @@ class DateManager:
     def get_time_series_dates(self, start_date: Union[str, datetime.datetime], 
                              end_date: Union[str, datetime.datetime],
                              frequency: str = 'D',
-                             trading_days_only: bool = True) -> pd.DatetimeIndex:
+                             trading_days_only: bool = True) -> pd.Datetime_index:
         """
         生成时间序列日期索引
         
@@ -567,7 +570,7 @@ class DateManager:
             trading_days_only: 是否只包含交易日
             
         Returns:
-            pd.DatetimeIndex: 时间序列日期索引
+            pd.Datetime_index: 时间序列日期索引
         """
         start_dt = self.parse_date(start_date)
         end_dt = self.parse_date(end_date)
@@ -581,41 +584,166 @@ class DateManager:
             # 使用pandas的日期范围生成
             return pd.date_range(start=start_dt, end=end_dt, freq=frequency)
     
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats_Manager(self) -> Dict[str, Any]:
         """
         获取性能统计信息
         
         Returns:
             Dict[str, Any]: 性能统计数据
         """
-        stats = self.cache.get_stats()
-        return {
-            'cache_size': stats.get('size', 0),
-            'cache_max_size': stats.get('capacity', 0),
-            'cache_hit_rate': stats.get('hit_rate', 0.0),
-            'cache_hits': stats.get('hits', 0),  # 添加缓存命中次数
-            'cache_misses': stats.get('misses', 0),  # 添加缓存未命中次数
-            'total_operations': stats.get('hits', 0) + stats.get('misses', 0),  # 总操作次数
-            'latest_date_cached': self._latest_date_cache is not None,
-            'cache_expire_seconds': self._cache_expire_seconds
-        }
+        stats = self.date_cache.copy()
+        stats['cache_size'] = len(self.date_cache)
+        stats['cache_hit_rate'] = (stats['cache_hits'] / (stats['cache_hits'] + stats['cache_misses']) * 100) if (stats['cache_hits'] + stats['cache_misses']) > 0 else 0
+        stats['total_operations'] = stats['cache_hits'] + stats['cache_misses']
+        stats['latest_date_cached'] = self.trading_calendar is not None
+        stats['cache_expire_seconds'] = self.cache_ttl
+        return stats
     
-    def clear_cache(self):
+    def clear_cache_Manager(self):
         """清除所有缓存"""
-        self.cache.clear()
-        self._latest_date_cache = None
-        self._latest_date_cache_time = None
-        self._trading_calendar_cache.clear()
+        self.date_cache.clear()
+        self.trading_calendar = None
+        self.last_cache_update = None
         logger.info("日期管理器缓存已清除")
     
     def __str__(self) -> str:
         """字符串表示"""
-        stats = self.cache.get_stats()
-        return f"DateManager(cache_size={stats.get('size', 0)}, latest_date={self._latest_date_cache})"
+        stats = self.date_cache.copy()
+        stats['cache_size'] = len(self.date_cache)
+        stats['cache_hit_rate'] = (stats['cache_hits'] / (stats['cache_hits'] + stats['cache_misses']) * 100) if (stats['cache_hits'] + stats['cache_misses']) > 0 else 0
+        stats['total_operations'] = stats['cache_hits'] + stats['cache_misses']
+        stats['latest_date_cached'] = self.trading_calendar is not None
+        stats['cache_expire_seconds'] = self.cache_ttl
+        return f"DateManager(cache_size={stats['cache_size']}, latest_date={self.trading_calendar['date'].iloc[0] if self.trading_calendar is not None else None})"
     
     def __repr__(self) -> str:
         """详细字符串表示"""
-        stats = self.cache.get_stats()
-        return (f"DateManager(cache_size={stats.get('size', 0)}, "
-                f"cache_hit_rate={stats.get('hit_rate', 0.0):.2%}, "
-                f"latest_date={self._latest_date_cache})") 
+        stats = self.date_cache.copy()
+        stats['cache_size'] = len(self.date_cache)
+        stats['cache_hit_rate'] = (stats['cache_hits'] / (stats['cache_hits'] + stats['cache_misses']) * 100) if (stats['cache_hits'] + stats['cache_misses']) > 0 else 0
+        stats['total_operations'] = stats['cache_hits'] + stats['cache_misses']
+        stats['latest_date_cached'] = self.trading_calendar is not None
+        stats['cache_expire_seconds'] = self.cache_ttl
+        return (f"DateManager(cache_size={stats['cache_size']}, "
+                f"cache_hit_rate={stats['cache_hit_rate']:.2%}, "
+                f"latest_date={self.trading_calendar['date'].iloc[0] if self.trading_calendar is not None else None})")
+    
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=2.0)
+    def get_detailed_statistics(self) -> Dict[str, Any]:
+        """
+        获取详细统计信息
+        
+        Returns:
+            Dict[str, Any]: 详细统计数据
+        """
+        try:
+            current_stats = self.statistics.copy()
+            
+            # 计算缓存命中率
+            total_requests = current_stats['cache_hits'] + current_stats['cache_misses']
+            cache_hit_rate = (current_stats['cache_hits'] / total_requests * 100) if total_requests > 0 else 0
+            
+            # 计算平均查询时间
+            if current_stats['db_queries'] > 0:
+                current_stats['performance_metrics']['avg_query_time'] = (
+                    current_stats['performance_metrics']['total_query_time'] / current_stats['db_queries']
+                )
+            
+            # 添加计算字段
+            current_stats['cache_hit_rate'] = cache_hit_rate
+            current_stats['total_requests'] = total_requests
+            current_stats['cache_size'] = len(self.date_cache)
+            current_stats['last_update'] = self.last_cache_update.isoformat() if self.last_cache_update else None
+            
+            # 系统健康状态
+            if current_stats['error_count'] == 0 and cache_hit_rate > 80:
+                current_stats['health_status'] = 'excellent'
+            elif current_stats['error_count'] < 5 and cache_hit_rate > 60:
+                current_stats['health_status'] = 'good'
+            elif current_stats['error_count'] < 10 and cache_hit_rate > 40:
+                current_stats['health_status'] = 'fair'
+            else:
+                current_stats['health_status'] = 'poor'
+            
+            return current_stats
+            
+        except Exception as e:
+            logger.error(f"获取详细统计信息失败: {e}")
+            return self.statistics.copy()
+    
+    @exception_handler(reraise=True)
+    def reset_statistics(self) -> None:
+        """重置统计信息"""
+        try:
+            self.statistics = {
+                'cache_hits': 0,
+                'cache_misses': 0,
+                'db_queries': 0,
+                'calendar_updates': 0,
+                'error_count': 0,
+                'performance_metrics': {
+                    'avg_query_time': 0.0,
+                    'max_query_time': 0.0,
+                    'total_query_time': 0.0
+                }
+            }
+            logger.info("统计信息已重置")
+            
+        except Exception as e:
+            logger.error(f"重置统计信息失败: {e}")
+    
+    @exception_handler(reraise=True)
+    def optimize_cache(self) -> Dict[str, Any]:
+        """
+        优化缓存性能
+        
+        Returns:
+            Dict[str, Any]: 优化结果
+        """
+        try:
+            logger.info("开始优化缓存")
+            
+            original_size = len(self.date_cache)
+            removed_count = 0
+            
+            # 移除过期的缓存项
+            current_time = datetime.now()
+            expired_keys = []
+            
+            for key, (value, timestamp) in self.date_cache.items():
+                if (current_time - timestamp).seconds > self.cache_ttl:
+                    expired_keys.append(key)
+            
+            for key in expired_keys:
+                del self.date_cache[key]
+                removed_count += 1
+            
+            # 如果缓存仍然很大，移除最老的项目
+            max_cache_size = 1000
+            if len(self.date_cache) > max_cache_size:
+                # 按时间戳排序，移除最老的项目
+                sorted_items = sorted(
+                    self.date_cache.items(),
+                    key=lambda x: x[1][1]  # 按时间戳排序
+                )
+                
+                items_to_remove = len(self.date_cache) - max_cache_size
+                for i in range(items_to_remove):
+                    key = sorted_items[i][0]
+                    del self.date_cache[key]
+                    removed_count += 1
+            
+            optimization_result = {
+                'original_size': original_size,
+                'final_size': len(self.date_cache),
+                'removed_count': removed_count,
+                'optimization_time': datetime.now().isoformat()
+            }
+            
+            logger.info(f"缓存优化完成，移除了 {removed_count} 个项目")
+            return optimization_result
+            
+        except Exception as e:
+            logger.error(f"优化缓存失败: {e}")
+            return {'error': str(e)} 

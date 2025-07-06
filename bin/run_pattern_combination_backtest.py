@@ -18,9 +18,10 @@ import pandas as pd
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from scripts.backtest.advanced_backtest import AdvancedBacktester
-from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
-from db.clickhouse_db import get_clickhouse_db
+from scripts.backtest.advanced_backtest import Advanced_backtester
+from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 from utils.logger import get_logger
 from utils.date_utils import get_previous_trade_date, get_next_trade_date
 from utils.file_utils import ensure_dir_exists
@@ -28,7 +29,7 @@ from utils.file_utils import ensure_dir_exists
 logger = get_logger(__name__)
 
 
-def parse_args():
+def parse_args_Backtest_Run_Pattern_Combination_Backtest():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="形态组合回测和策略生成")
     
@@ -74,7 +75,7 @@ def parse_args():
     parser.add_argument("--output_dir", type=str, default="data/result/pattern_combo",
                        help="输出目录，默认为data/result/pattern_combo")
     
-    args = parser.parse_args()
+    args = parser.parse_args_Backtest_Run_Pattern_Combination_Backtest()
     
     # 设置默认值
     if not args.start_date:
@@ -84,15 +85,17 @@ def parse_args():
         args.end_date = datetime.now().strftime("%Y-%m-%d")
     
     if not args.validation_date and args.mode == "validate":
-        db = get_clickhouse_db()
-        args.validation_date = db.get_last_trade_date()
+        container = get_container()
+        data_access = container.get_data_access()
+        args.validation_date = data_access.get_last_trade_date()
     
     return args
 
 
-def get_stock_list(args):
+def get_stock_list_Backtest_Run_Pattern_Combination_Backtest(args):
     """根据参数获取股票列表"""
-    db = get_clickhouse_db()
+    container = get_container()
+    data_access = container.get_data_access()
     
     if args.stock_list:
         # 从文件读取股票列表
@@ -107,7 +110,7 @@ def get_stock_list(args):
     elif args.industry:
         # 按行业获取股票
         try:
-            stocks = db.get_stocks_by_industry(args.industry)
+            stocks = data_access.get_stocks_by_industry(args.industry)
             return [row['stock_code'] for row in stocks]
         except Exception as e:
             logger.error(f"获取行业 {args.industry} 的股票列表失败: {e}")
@@ -116,7 +119,7 @@ def get_stock_list(args):
     elif args.index:
         # 按指数成分股获取股票
         try:
-            stocks = db.get_index_stocks(args.index)
+            stocks = data_access.get_index_stocks(args.index)
             return [row['stock_code'] for row in stocks]
         except Exception as e:
             logger.error(f"获取指数 {args.index} 的成分股列表失败: {e}")
@@ -125,19 +128,19 @@ def get_stock_list(args):
     else:
         # 默认使用沪深300成分股
         try:
-            stocks = db.get_index_stocks("000300.SH")
+            stocks = data_access.get_index_stocks("000300.SH")
             return [row['stock_code'] for row in stocks]
         except Exception as e:
             logger.error(f"获取沪深300成分股列表失败: {e}")
             return []
 
 
-def run_backtest(args, stock_codes):
+def run_backtest_Backtest_Run_Pattern_Combination_Backtest(args, stock_codes):
     """执行回测"""
     logger.info(f"开始执行形态组合回测，共 {len(stock_codes)} 只股票")
     
     # 创建回测器
-    backtester = AdvancedBacktester()
+    backtester = Advanced_backtester()
     
     # 执行形态组合回测
     results = backtester.backtest_with_pattern_combination(
@@ -194,7 +197,7 @@ def run_backtest(args, stock_codes):
     return strategy, strategy_file, results, backtest_file
 
 
-def validate_strategy(args, stock_codes):
+def validate_strategy_Backtest(args, stock_codes):
     """验证策略"""
     logger.info(f"开始验证策略，共 {len(stock_codes)} 只股票")
     
@@ -211,10 +214,10 @@ def validate_strategy(args, stock_codes):
         return None
     
     # 创建回测器
-    backtester = AdvancedBacktester()
+    backtester = Advanced_backtester()
     
     # 验证策略
-    validation_results = backtester.validate_strategy(
+    validation_results = backtester.validate_strategy_Backtest(
         strategy=strategy,
         stock_codes=stock_codes,
         date=args.validation_date
@@ -251,13 +254,13 @@ def validate_strategy(args, stock_codes):
     return validation_results, validation_file
 
 
-def main():
+def main_16():
     """主函数"""
     # 解析命令行参数
-    args = parse_args()
+    args = parse_args_Backtest_Run_Pattern_Combination_Backtest()
     
     # 获取股票列表
-    stock_codes = get_stock_list(args)
+    stock_codes = get_stock_list_Backtest_Run_Pattern_Combination_Backtest(args)
     
     if not stock_codes:
         logger.error("股票列表为空，无法执行回测或验证")
@@ -267,12 +270,12 @@ def main():
     
     # 根据模式执行相应操作
     if args.mode == "backtest":
-        run_backtest(args, stock_codes)
+        run_backtest_Backtest_Run_Pattern_Combination_Backtest(args, stock_codes)
     elif args.mode == "validate":
-        validate_strategy(args, stock_codes)
+        validate_strategy_Backtest(args, stock_codes)
     else:
         logger.error(f"不支持的模式: {args.mode}")
 
 
 if __name__ == "__main__":
-    main() 
+    main_16() 

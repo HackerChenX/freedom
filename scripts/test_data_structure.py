@@ -3,7 +3,7 @@
 
 """
 检查数据结构
-验证DataFrame的索引和日期列格式
+验证Data_frame的索引和日期列格式
 """
 
 import os

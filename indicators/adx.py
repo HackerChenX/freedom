@@ -22,15 +22,15 @@ except ImportError:
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
-from utils.logger import get_logger
+from utils.logger import getLogger
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class ADX(BaseIndicator, PatternSignalMixin):
+class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin):
     """
     平均方向指数(ADX)
     
@@ -71,10 +71,10 @@ class ADX(BaseIndicator, PatternSignalMixin):
         """
         注册ADX指标形态
         """
-        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
+        from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength, Pattern_polarity
 
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
 
         # 注册ADX强度趋势形态
         registry.register(
@@ -82,10 +82,10 @@ class ADX(BaseIndicator, PatternSignalMixin):
             display_name="ADX强度上升趋势",
             description="ADX值高于阈值且继续上升，表示强趋势增强",
             indicator_id="ADX",
-            pattern_type=PatternType.NEUTRAL,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.NEUTRAL,
+            default_strength=Pattern_strength.STRONG,
             score_impact=0.0,
-            polarity=PatternPolarity.NEUTRAL
+            polarity=Pattern_polarity.NEUTRAL
         )
 
         registry.register(
@@ -93,10 +93,10 @@ class ADX(BaseIndicator, PatternSignalMixin):
             display_name="ADX强度下降趋势",
             description="ADX值高于阈值但开始下降，表示强趋势可能减弱",
             indicator_id="ADX",
-            pattern_type=PatternType.NEUTRAL,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.NEUTRAL,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=0.0,
-            polarity=PatternPolarity.NEUTRAL
+            polarity=Pattern_polarity.NEUTRAL
         )
 
         registry.register(
@@ -104,10 +104,10 @@ class ADX(BaseIndicator, PatternSignalMixin):
             display_name="ADX弱趋势",
             description="ADX值低于阈值，表示趋势不明显，可能处于震荡市场",
             indicator_id="ADX",
-            pattern_type=PatternType.NEUTRAL,
-            default_strength=PatternStrength.WEAK,
+            pattern_type=Pattern_type.NEUTRAL,
+            default_strength=Pattern_strength.WEAK,
             score_impact=0.0,
-            polarity=PatternPolarity.NEUTRAL
+            polarity=Pattern_polarity.NEUTRAL
         )
 
         # 注册PDI和MDI交叉形态
@@ -116,10 +116,10 @@ class ADX(BaseIndicator, PatternSignalMixin):
             display_name="ADX看涨交叉",
             description="+DI上穿-DI，表示可能开始上升趋势",
             indicator_id="ADX",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=20.0,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         registry.register(
@@ -127,28 +127,28 @@ class ADX(BaseIndicator, PatternSignalMixin):
             display_name="ADX看跌交叉",
             description="-DI上穿+DI，表示可能开始下降趋势",
             indicator_id="ADX",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=-20.0,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Adx_Adx_Adx_adx(self, **kwargs):
         """设置指标参数，可设置 'period', 'strong_trend'"""
         for key, value in kwargs.items():
             if key in self.params:
                 self.params[key] = value
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_adx(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ADX指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 额外的参数
             
         Returns:
-            添加了ADX指标的DataFrame
+            添加了ADX指标的Data_frame
         """
         df = data.copy()
         
@@ -245,9 +245,9 @@ class ADX(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_adx(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
             df: 输入数据
@@ -260,16 +260,16 @@ class ADX(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Adx(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成ADX指标交易信号
         
         Args:
-            df: 包含价格数据和ADX指标的DataFrame
+            df: 包含价格数据和ADX指标的Data_frame
             **kwargs: 额外参数
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - adx_signal: 1=买入信号, -1=卖出信号, 0=无信号
         """
         if df.empty:
@@ -277,7 +277,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
             
         # 检查必要的指标列是否存在
         required_columns = ['PDI', 'MDI', 'ADX', 'ADXR']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_adx(df, required_columns)
         
         df_copy = df.copy()
         
@@ -296,7 +296,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
         
         return df_copy 
 
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Adx(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成ADX指标标准化交易信号
         
@@ -306,11 +306,11 @@ class ADX(BaseIndicator, PatternSignalMixin):
             **kwargs: 关键字参数
                 
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 确保已计算ADX指标
         if not self.has_result():
-            self._calculate(data)
+            self._calculate_adx(data)
         
         # 获取DMI相关值
         pdi = self._result['PDI']
@@ -558,7 +558,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
         
         return signals 
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Adx(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ADX指标的原始评分
         
@@ -571,7 +571,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算ADX
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_adx(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -659,7 +659,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
         # 确保评分在0-100范围内
         return score.clip(0, 100)
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Adx(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算ADX指标的置信度
 
@@ -734,7 +734,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Adx(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取ADX形态列表
 
@@ -743,11 +743,11 @@ class ADX(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 形态识别结果DataFrame
+            pd.DataFrame: 形态识别结果Data_frame
         """
         # 确保已计算ADX
         if not self.has_result():
-            self._calculate(data)
+            self._calculate_adx(data)
 
         # 如果没有结果或数据不足，返回空DataFrame
         if self._result is None or len(self._result) < 2:
@@ -830,7 +830,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
 
         return duration
 
-    def register_patterns(self):
+    def register_patterns_Adx(self):
         """
         注册ADX指标的形态到全局形态注册表
         """
@@ -951,7 +951,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
 
 
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Adx(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
@@ -964,7 +964,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_adx(data, **kwargs)
         
         # 初始化信号
         signals = {}
@@ -977,12 +977,12 @@ class ADX(BaseIndicator, PatternSignalMixin):
     
         return signals
         
-    def plot(self, df: pd.DataFrame, ax=None, **kwargs):
+    def plot_Adx(self, df: pd.DataFrame, ax=None, **kwargs):
         """
         绘制ADX指标图表
         
         Args:
-            df: 包含ADX指标的DataFrame
+            df: 包含ADX指标的Data_frame
             ax: matplotlib轴对象，如果为None则创建新的
             **kwargs: 额外绘图参数
             
@@ -993,17 +993,17 @@ class ADX(BaseIndicator, PatternSignalMixin):
         
         # 检查必要的指标列是否存在
         required_columns = ['PDI', 'MDI', 'ADX', 'ADXR']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_adx(df, required_columns)
         
         # 创建新的轴对象（如果未提供）
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 5))
             
         # 绘制指标线
-        ax.plot(df.index, df['PDI'], label='+DI', color='g')
-        ax.plot(df.index, df['MDI'], label='-DI', color='r')
-        ax.plot(df.index, df['ADX'], label='ADX', color='b')
-        ax.plot(df.index, df['ADXR'], label='ADXR', color='m', linestyle='--')
+        ax.plot_Adx(df.index, df['PDI'], label='+DI', color='g')
+        ax.plot_Adx(df.index, df['MDI'], label='-DI', color='r')
+        ax.plot_Adx(df.index, df['ADX'], label='ADX', color='b')
+        ax.plot_Adx(df.index, df['ADXR'], label='ADXR', color='m', linestyle='--')
         
         # 添加参考线
         ax.axhline(y=25, color='k', linestyle='--', alpha=0.3, label='趋势阈值')
@@ -1014,7 +1014,7 @@ class ADX(BaseIndicator, PatternSignalMixin):
         
         return ax 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Adx(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -1047,41 +1047,11 @@ class ADX(BaseIndicator, PatternSignalMixin):
         
         return pattern_info_map.get(pattern_id, default_pattern)
 
-    def __init__(self, **kwargs):
-        """
-        初始化ADX指标
-
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__(name="ADX", description="平均方向指数指标")
-            except:
-                pass
-
-        self.name = "ADX"
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-
-        # 确保params属性存在
-        if not hasattr(self, 'params'):
-            self.params = {
-                "period": 14,
-                "strong_trend": 25
-            }
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_adx(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14, "strong_trend": 25}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Adx_Adx_Adx_adx_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -1090,8 +1060,8 @@ class ADX(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -1100,8 +1070,8 @@ class ADX(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('ADX', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"ADX参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

@@ -21,17 +21,17 @@ import traceback
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from strategy.strategy_parser import StrategyParser
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+from strategy.strategy_parser import Strategy_parser
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
 from db.unified_data_manager import get_unified_data_manager
 from enums.period import Period
-from indicators.indicator_registry import indicator_registry, IndicatorEnum
+from indicators.indicator_registry import indicator_registry, Indicator_enum
 
 logger = get_logger(__name__)
 
-def get_stock_data(data_manager, stock_code, start_date, end_date, period=Period.DAILY):
+def get_stock_data_Integrated(data_manager, stock_code, start_date, end_date, period=Period.DAILY):
     """获取股票数据"""
     try:
         logger.info(f"获取股票 {stock_code} 的数据，周期: {period}，开始日期: {start_date}，结束日期: {end_date}")
@@ -95,7 +95,7 @@ def get_stock_data(data_manager, stock_code, start_date, end_date, period=Period
         logger.error(traceback.format_exc())
         return None 
 
-def evaluate_indicators(evaluator, stock_data, stock_code, indicator_configs):
+def evaluate_indicators_Integrated(evaluator, stock_data, stock_code, indicator_configs):
     """评估所有指标"""
     results = {}
     passing_indicators = []
@@ -142,13 +142,13 @@ def evaluate_indicators(evaluator, stock_data, stock_code, indicator_configs):
         "passing_indicators": passing_indicators
     } 
 
-def run_backtest(stock_list_file, start_date, end_date, indicator_list=None, output_file=None):
+def run_backtest_Integrated(stock_list_file, start_date, end_date, indicator_list=None, output_file=None):
     """运行回测"""
     try:
         # 初始化
         init_logging(level="INFO")
         data_manager = get_unified_data_manager()
-        evaluator = StrategyConditionEvaluator()
+        evaluator = Strategy_condition_evaluator()
         
         # 加载股票列表
         stocks = pd.read_csv(stock_list_file)
@@ -226,13 +226,13 @@ def run_backtest(stock_list_file, start_date, end_date, indicator_list=None, out
             logger.info(f"处理股票 {stock_code} - {stock_name}")
             
             # 获取股票数据
-            stock_data = get_stock_data(data_manager, stock_code, start_date, end_date)
+            stock_data = get_stock_data_Integrated(data_manager, stock_code, start_date, end_date)
             
             if stock_data is None or len(stock_data) == 0:
                 continue
                 
             # 评估所有指标
-            evaluation = evaluate_indicators(evaluator, stock_data, stock_code, indicator_configs)
+            evaluation = evaluate_indicators_Integrated(evaluator, stock_data, stock_code, indicator_configs)
             
             # 更新指标统计
             for indicator_id, result in evaluation["details"].items():
@@ -378,9 +378,9 @@ def generate_strategy_from_backtest(backtest_result, output_file=None):
         # 如果仍然没有指标，使用默认的ZXM指标
         if not selected_indicators:
             selected_indicators = [
-                IndicatorEnum.ZXM_TURNOVER,
-                IndicatorEnum.ZXM_DAILY_MACD,
-                IndicatorEnum.ZXM_BUYPOINT_SCORE
+                Indicator_enum.ZXM_TURNOVER,
+                Indicator_enum.ZXM_DAILY_MACD,
+                Indicator_enum.ZXM_BUYPOINT_SCORE
             ]
             
         logger.info(f"选择的指标: {selected_indicators}")
@@ -478,7 +478,7 @@ def generate_strategy_from_backtest(backtest_result, output_file=None):
         logger.error(traceback.format_exc())
         return None 
 
-def main():
+def main_20():
     """主函数"""
     parser = argparse.ArgumentParser(description="综合回测系统")
     
@@ -515,7 +515,7 @@ def main():
             indicator_list = [indicator.strip() for indicator in args.indicators.split(',')]
         
         # 运行回测
-        result = run_backtest(
+        result = run_backtest_Integrated(
             stock_list_file=args.stocks,
             start_date=args.begin,
             end_date=args.end,
@@ -611,7 +611,7 @@ def main():
         
         # 运行回测
         logger.info("开始执行回测...")
-        result = run_backtest(
+        result = run_backtest_Integrated(
             stock_list_file=args.stocks,
             start_date=args.begin,
             end_date=args.end,
@@ -662,4 +662,4 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main_20())

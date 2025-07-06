@@ -10,12 +10,12 @@ from typing import Dict, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class FORMULA_INDICATORS(BaseIndicator, PatternSignalMixin):
+class FormulaIndicators(BaseIndicator, PatternSignalMixin):
     """
     公式指标基类
     """
@@ -23,16 +23,16 @@ class FORMULA_INDICATORS(BaseIndicator, PatternSignalMixin):
     def __init__(self, **kwargs):
         super().__init__()
         self.name = "FORMULA_INDICATORS"
-        self._default_parameters = self._get_default_parameters()
-        self.set_parameters(**kwargs)
+        self._default_parameters = self._get_default_parameters_formulaindicators()
+        self.set_parameters_Indicators_formulaindicators(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_formulaindicators(self) -> Dict[str, Any]:
         return {"period": 14}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Indicators_formulaindicators(self, **kwargs):
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             params = self._default_parameters.copy()
             params.update(kwargs)
             is_valid, errors = validator.validate_indicator_parameters('FORMULA_INDICATORS', params)
@@ -42,12 +42,12 @@ class FORMULA_INDICATORS(BaseIndicator, PatternSignalMixin):
         except Exception:
             self.period = 14
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        result = self._calculate(data, **kwargs)
+    def calculate_Indicators_Formula_Indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        result = self._calculate_formulaindicators(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_formulaindicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         df = data.copy()
         df[f'FORMULA_VALUE'] = df['close'].rolling(window=self.period).mean()
         
@@ -57,15 +57,15 @@ class FORMULA_INDICATORS(BaseIndicator, PatternSignalMixin):
 
         return df
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicators_formulaindicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Indicators_Formula_Indicators(data, **kwargs)
         return pd.Series(50.0, index=data.index)
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Indicators_formulaindicators(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         return 0.5
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicators_formulaindicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         return pd.DataFrame(index=data.index)
 
 
@@ -92,66 +92,7 @@ class CrossOver(FORMULA_INDICATORS):
     - cross_type: 交叉类型（'ma', 'price', 'indicator'），默认为'ma'
     """
     
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = "CrossOver"
-        
-        # 交叉指标特定参数
-        self.fast_period = kwargs.get('fast_period', 5)
-        self.slow_period = kwargs.get('slow_period', 20)
-        self.confirm_period = kwargs.get('confirm_period', 3)
-        self.cross_type = kwargs.get('cross_type', 'ma')  # 'ma', 'price', 'indicator'
-    
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """计算交叉指标"""
-        df = data.copy()
-        
-        # 根据交叉类型计算快线和慢线
-        if self.cross_type == 'ma':
-            # 移动平均交叉
-            fast_line = df['close'].rolling(window=self.fast_period).mean()
-            slow_line = df['close'].rolling(window=self.slow_period).mean()
-        elif self.cross_type == 'price':
-            # 价格与移动平均交叉
-            fast_line = df['close']
-            slow_line = df['close'].rolling(window=self.slow_period).mean()
-        else:
-            # 默认使用移动平均
-            fast_line = df['close'].rolling(window=self.fast_period).mean()
-            slow_line = df['close'].rolling(window=self.slow_period).mean()
-        
-        # 保存快线和慢线
-        df['CROSS_FAST_LINE'] = fast_line
-        df['CROSS_SLOW_LINE'] = slow_line
-        
-        # 计算交叉信号
-        df['golden_cross'] = self._detect_golden_cross(fast_line, slow_line)
-        df['death_cross'] = self._detect_death_cross(fast_line, slow_line)
-        df['cross_strength'] = self._calculate_cross_strength(fast_line, slow_line)
-        df['cross_reliability'] = self._calculate_cross_reliability(fast_line, slow_line, df['volume'] if 'volume' in df.columns else None)
-        
-        # 计算综合交叉信号强度
-        cross_signal = pd.Series(0.0, index=df.index)
-        
-        # 金叉信号
-        cross_signal += df['golden_cross'] * df['cross_strength'] * df['cross_reliability']
-        
-        # 死叉信号（负值）
-        cross_signal -= df['death_cross'] * df['cross_strength'] * df['cross_reliability']
-        
-        # 趋势确认
-        trend_confirmation = self._calculate_trend_confirmation(fast_line, slow_line)
-        cross_signal += trend_confirmation
-        
-        df['CROSS_OVER_VALUE'] = cross_signal
-        
-        # 添加形态识别和信号生成
-        df = self.add_pattern_detection(df)
-        df = self.add_signal_generation(df)
-
-        return df
-    
-    def _detect_golden_cross(self, fast_line: pd.Series, slow_line: pd.Series) -> pd.Series:
+    def _detect_golden_cross_Formula_Indicators(self, fast_line: pd.Series, slow_line: pd.Series) -> pd.Series:
         """检测金叉信号"""
         golden_cross = pd.Series(0.0, index=fast_line.index)
         
@@ -175,7 +116,7 @@ class CrossOver(FORMULA_INDICATORS):
         
         return golden_cross
     
-    def _detect_death_cross(self, fast_line: pd.Series, slow_line: pd.Series) -> pd.Series:
+    def _detect_death_cross_Formula_Indicators(self, fast_line: pd.Series, slow_line: pd.Series) -> pd.Series:
         """检测死叉信号"""
         death_cross = pd.Series(0.0, index=fast_line.index)
         
@@ -209,7 +150,7 @@ class CrossOver(FORMULA_INDICATORS):
         
         return strength.fillna(1.0)
     
-    def _calculate_cross_reliability(self, fast_line: pd.Series, slow_line: pd.Series, volume: pd.Series = None) -> pd.Series:
+    def _calculate_cross_reliability(self, fast_line: pd.Series, slow_line: pd.Series, volume: pd.series = None) -> pd.Series:
         """计算交叉可靠性"""
         reliability = pd.Series(1.0, index=fast_line.index)
         
@@ -241,7 +182,7 @@ class CrossOver(FORMULA_INDICATORS):
         
         return confirmation
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicators_formulaindicators_duplicate(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算交叉指标的原始评分
         
@@ -252,7 +193,7 @@ class CrossOver(FORMULA_INDICATORS):
         4. 交叉位置：交叉发生的价格位置（高位/低位）
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Indicators_Formula_Indicators(data, **kwargs)
         
         if 'CROSS_OVER_VALUE' not in self._result.columns:
             return pd.Series(50.0, index=data.index)
@@ -350,52 +291,6 @@ class CrossOver(FORMULA_INDICATORS):
 class KDJCondition(FORMULA_INDICATORS):
     """KDJ条件指标 - 基于KDJ指标的条件判断"""
     
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = "KDJCondition"
-        # KDJ特定参数
-        self.k_period = kwargs.get('k_period', 9)
-        self.d_period = kwargs.get('d_period', 3)
-        self.j_period = kwargs.get('j_period', 3)
-    
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """计算KDJ条件指标"""
-        df = data.copy()
-        
-        # 计算KDJ指标
-        low_min = df['low'].rolling(window=self.k_period).min()
-        high_max = df['high'].rolling(window=self.k_period).max()
-        
-        # 计算RSV
-        rsv = (df['close'] - low_min) / (high_max - low_min) * 100
-        rsv = rsv.fillna(50)
-        
-        # 计算K值
-        k = rsv.ewm(alpha=1/self.d_period).mean()
-        
-        # 计算D值
-        d = k.ewm(alpha=1/self.d_period).mean()
-        
-        # 计算J值
-        j = 3 * k - 2 * d
-        
-        df['K'] = k
-        df['D'] = d
-        df['J'] = j
-        
-        # KDJ条件判断
-        df['kdj_oversold'] = self._calculate_oversold_condition(k, d, j)
-        df['kdj_overbought'] = self._calculate_overbought_condition(k, d, j)
-        df['kdj_golden_cross'] = self._calculate_golden_cross(k, d)
-        df['kdj_death_cross'] = self._calculate_death_cross(k, d)
-        df['kdj_divergence'] = self._calculate_divergence(df, j)
-        
-        # 添加形态识别和信号生成
-        df = self.add_pattern_detection(df)
-        df = self.add_signal_generation(df)
-
-        return df
-    
     def _calculate_oversold_condition(self, k: pd.Series, d: pd.Series, j: pd.Series) -> pd.Series:
         """计算超卖条件"""
         oversold = pd.Series(0.0, index=k.index)
@@ -489,96 +384,8 @@ class KDJCondition(FORMULA_INDICATORS):
         
         return divergence
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算KDJ条件评分
-        
-        基于KDJ条件判断的综合评分：
-        - 超卖条件（30%权重）
-        - 超买条件（20%权重）
-        - 金叉信号（25%权重）
-        - 死叉信号（15%权重）
-        - 背离信号（10%权重）
-        """
-        if not self.has_result():
-            self.calculate(data, **kwargs)
-        
-        result = self._result
-        score = pd.Series(50.0, index=data.index)
-        
-        # 1. 超卖条件评分（30%权重）
-        oversold = result.get('kdj_oversold', pd.Series(0.0, index=data.index))
-        score += oversold * 0.3
-        
-        # 2. 超买条件评分（20%权重）
-        overbought = result.get('kdj_overbought', pd.Series(0.0, index=data.index))
-        score += overbought * 0.2
-        
-        # 3. 金叉信号评分（25%权重）
-        golden_cross = result.get('kdj_golden_cross', pd.Series(0.0, index=data.index))
-        score += golden_cross * 0.25
-        
-        # 4. 死叉信号评分（15%权重）
-        death_cross = result.get('kdj_death_cross', pd.Series(0.0, index=data.index))
-        score += death_cross * 0.15
-        
-        # 5. 背离信号评分（10%权重）
-        divergence = result.get('kdj_divergence', pd.Series(0.0, index=data.index))
-        score += divergence * 0.1
-        
-        # 确保评分在0-100范围内
-        score = np.clip(score, 0, 100)
-        
-        return score
-
-
 class MACDCondition(FORMULA_INDICATORS):
     """MACD条件指标 - 基于MACD指标的条件判断"""
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = "MACDCondition"
-        # MACD特定参数
-        self.fast_period = kwargs.get('fast_period', 12)
-        self.slow_period = kwargs.get('slow_period', 26)
-        self.signal_period = kwargs.get('signal_period', 9)
-    
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """计算MACD条件指标"""
-        df = data.copy()
-        
-        # 计算MACD指标
-        close = df['close']
-        
-        # 计算快速和慢速EMA
-        ema_fast = close.ewm(span=self.fast_period).mean()
-        ema_slow = close.ewm(span=self.slow_period).mean()
-        
-        # 计算MACD线
-        macd_line = ema_fast - ema_slow
-        
-        # 计算信号线
-        signal_line = macd_line.ewm(span=self.signal_period).mean()
-        
-        # 计算柱状体
-        histogram = macd_line - signal_line
-        
-        df['MACD'] = macd_line
-        df['Signal'] = signal_line
-        df['Histogram'] = histogram
-        
-        # MACD条件判断
-        df['macd_golden_cross'] = self._calculate_macd_golden_cross(macd_line, signal_line)
-        df['macd_death_cross'] = self._calculate_macd_death_cross(macd_line, signal_line)
-        df['macd_zero_cross'] = self._calculate_zero_cross(macd_line)
-        df['macd_divergence'] = self._calculate_macd_divergence(df, macd_line)
-        df['macd_histogram_signal'] = self._calculate_histogram_signal(histogram)
-        
-        # 添加形态识别和信号生成
-        df = self.add_pattern_detection(df)
-        df = self.add_signal_generation(df)
-
-        return df
     
     def _calculate_macd_golden_cross(self, macd_line: pd.Series, signal_line: pd.Series) -> pd.Series:
         """计算MACD金叉"""
@@ -683,49 +490,6 @@ class MACDCondition(FORMULA_INDICATORS):
         
         return hist_signal
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算MACD条件评分
-        
-        基于MACD条件判断的综合评分：
-        - 金叉信号（25%权重）
-        - 死叉信号（20%权重）
-        - 零轴穿越（25%权重）
-        - 背离信号（15%权重）
-        - 柱状体信号（15%权重）
-        """
-        if not self.has_result():
-            self.calculate(data, **kwargs)
-        
-        result = self._result
-        score = pd.Series(50.0, index=data.index)
-        
-        # 1. 金叉信号评分（25%权重）
-        golden_cross = result.get('macd_golden_cross', pd.Series(0.0, index=data.index))
-        score += golden_cross * 0.25
-        
-        # 2. 死叉信号评分（20%权重）
-        death_cross = result.get('macd_death_cross', pd.Series(0.0, index=data.index))
-        score += death_cross * 0.2
-        
-        # 3. 零轴穿越评分（25%权重）
-        zero_cross = result.get('macd_zero_cross', pd.Series(0.0, index=data.index))
-        score += zero_cross * 0.25
-        
-        # 4. 背离信号评分（15%权重）
-        divergence = result.get('macd_divergence', pd.Series(0.0, index=data.index))
-        score += divergence * 0.15
-        
-        # 5. 柱状体信号评分（15%权重）
-        histogram_signal = result.get('macd_histogram_signal', pd.Series(0.0, index=data.index))
-        score += histogram_signal * 0.15
-        
-        # 确保评分在0-100范围内
-        score = np.clip(score, 0, 100)
-        
-        return score
-
-
 class MACondition(FORMULA_INDICATORS):
     """
     MA条件指标 - 基于移动平均线的条件判断
@@ -748,70 +512,6 @@ class MACondition(FORMULA_INDICATORS):
     - long_period: 长期均线周期，默认为20
     - trend_period: 趋势分析周期，默认为30
     """
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = "MACondition"
-        
-        # MA条件特定参数
-        self.short_period = kwargs.get('short_period', 5)
-        self.medium_period = kwargs.get('medium_period', 10)
-        self.long_period = kwargs.get('long_period', 20)
-        self.trend_period = kwargs.get('trend_period', 30)
-    
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """计算MA条件指标"""
-        df = data.copy()
-        
-        close = df['close']
-        
-        # 计算多个周期的移动平均线
-        ma_short = close.rolling(window=self.short_period).mean()
-        ma_medium = close.rolling(window=self.medium_period).mean()
-        ma_long = close.rolling(window=self.long_period).mean()
-        ma_trend = close.rolling(window=self.trend_period).mean()
-        
-        df['MA_SHORT'] = ma_short
-        df['MA_MEDIUM'] = ma_medium
-        df['MA_LONG'] = ma_long
-        df['MA_TREND'] = ma_trend
-        
-        # MA条件判断
-        df['ma_bullish_alignment'] = self._calculate_bullish_alignment(close, ma_short, ma_medium, ma_long)
-        df['ma_bearish_alignment'] = self._calculate_bearish_alignment(close, ma_short, ma_medium, ma_long)
-        df['ma_price_position'] = self._calculate_price_position(close, ma_short, ma_medium, ma_long)
-        df['ma_trend_strength'] = self._calculate_trend_strength(ma_short, ma_medium, ma_long, ma_trend)
-        df['ma_support_resistance'] = self._calculate_support_resistance(close, ma_short, ma_medium, ma_long)
-        df['ma_convergence_divergence'] = self._calculate_convergence_divergence(ma_short, ma_medium, ma_long)
-        
-        # 计算综合MA条件评分
-        ma_condition_score = pd.Series(0.0, index=df.index)
-        
-        # 多头排列加分
-        ma_condition_score += df['ma_bullish_alignment']
-        
-        # 空头排列减分
-        ma_condition_score -= df['ma_bearish_alignment']
-        
-        # 价格位置加权
-        ma_condition_score += df['ma_price_position']
-        
-        # 趋势强度加权
-        ma_condition_score += df['ma_trend_strength']
-        
-        # 支撑阻力加权
-        ma_condition_score += df['ma_support_resistance']
-        
-        # 收敛发散加权
-        ma_condition_score += df['ma_convergence_divergence']
-        
-        df['MA_CONDITION_VALUE'] = ma_condition_score
-        
-        # 添加形态识别和信号生成
-        df = self.add_pattern_detection(df)
-        df = self.add_signal_generation(df)
-
-        return df
     
     def _calculate_bullish_alignment(self, close: pd.Series, ma_short: pd.Series, ma_medium: pd.Series, ma_long: pd.Series) -> pd.Series:
         """计算多头排列"""
@@ -961,111 +661,6 @@ class MACondition(FORMULA_INDICATORS):
         
         return convergence_divergence
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算MA条件指标的原始评分
-        
-        基于移动平均线的多个条件进行综合评分：
-        1. 多头/空头排列（35%权重）
-        2. 价格位置（25%权重）
-        3. 趋势强度（25%权重）
-        4. 支撑阻力（15%权重）
-        """
-        if not self.has_result():
-            self.calculate(data, **kwargs)
-        
-        if 'MA_CONDITION_VALUE' not in self._result.columns:
-            return pd.Series(50.0, index=data.index)
-        
-        ma_condition = self._result['MA_CONDITION_VALUE'].fillna(0)
-        bullish_alignment = self._result['ma_bullish_alignment'].fillna(0)
-        bearish_alignment = self._result['ma_bearish_alignment'].fillna(0)
-        price_position = self._result['ma_price_position'].fillna(0)
-        trend_strength = self._result['ma_trend_strength'].fillna(0)
-        
-        scores = pd.Series(index=data.index, dtype=float)
-        
-        for i in range(len(ma_condition)):
-            if i < self.long_period:
-                scores.iloc[i] = 50.0
-                continue
-            
-            score = 50.0  # 基础分数
-            
-            # 获取当前数据
-            current_condition = ma_condition.iloc[i]
-            current_bullish = bullish_alignment.iloc[i]
-            current_bearish = bearish_alignment.iloc[i]
-            current_position = price_position.iloc[i]
-            current_strength = trend_strength.iloc[i]
-            
-            # 1. 多头/空头排列评分 (35分)
-            if current_bullish > 30:
-                alignment_score = 35.0  # 完美多头排列
-            elif current_bullish > 20:
-                alignment_score = 28.0  # 强多头排列
-            elif current_bullish > 10:
-                alignment_score = 22.0  # 部分多头排列
-            elif current_bearish > 25:
-                alignment_score = 5.0   # 完美空头排列
-            elif current_bearish > 15:
-                alignment_score = 12.0  # 强空头排列
-            elif current_bearish > 8:
-                alignment_score = 18.0  # 部分空头排列
-            else:
-                alignment_score = 20.0  # 中性排列
-            
-            score += alignment_score - 20.0  # 调整基准
-            
-            # 2. 价格位置评分 (25分)
-            if current_position > 15:
-                position_score = 25.0  # 价格在所有均线之上
-            elif current_position > 5:
-                position_score = 20.0  # 价格在部分均线之上
-            elif current_position > -5:
-                position_score = 15.0  # 价格接近均线
-            elif current_position > -10:
-                position_score = 10.0  # 价格略低于均线
-            else:
-                position_score = 5.0   # 价格远低于均线
-            
-            score += position_score - 15.0  # 调整基准
-            
-            # 3. 趋势强度评分 (25分)
-            if current_strength > 15:
-                strength_score = 25.0  # 强上升趋势
-            elif current_strength > 8:
-                strength_score = 20.0  # 中等上升趋势
-            elif current_strength > -5:
-                strength_score = 15.0  # 横盘或弱趋势
-            elif current_strength > -10:
-                strength_score = 10.0  # 中等下降趋势
-            else:
-                strength_score = 5.0   # 强下降趋势
-            
-            score += strength_score - 15.0  # 调整基准
-            
-            # 4. 综合条件评分 (15分)
-            if current_condition > 40:
-                condition_score = 15.0  # 非常强的MA条件
-            elif current_condition > 20:
-                condition_score = 12.0  # 强MA条件
-            elif current_condition > 0:
-                condition_score = 10.0  # 正面MA条件
-            elif current_condition > -20:
-                condition_score = 8.0   # 中性MA条件
-            else:
-                condition_score = 5.0   # 负面MA条件
-            
-            score += condition_score - 10.0  # 调整基准
-            
-            # 确保分数在合理范围内
-            score = max(0, min(100, score))
-            scores.iloc[i] = score
-        
-        return scores
-
-
 class GenericCondition(FORMULA_INDICATORS):
     """
     通用条件指标 - 基于多种技术指标的综合条件判断
@@ -1088,62 +683,6 @@ class GenericCondition(FORMULA_INDICATORS):
     - volume_period: 成交量周期，默认为10
     - trend_period: 趋势分析周期，默认为30
     """
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = "GenericCondition"
-        
-        # 通用条件特定参数
-        self.ma_period = kwargs.get('ma_period', 20)
-        self.rsi_period = kwargs.get('rsi_period', 14)
-        self.volume_period = kwargs.get('volume_period', 10)
-        self.trend_period = kwargs.get('trend_period', 30)
-    
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """计算通用条件指标"""
-        df = data.copy()
-        
-        close = df['close']
-        high = df['high']
-        low = df['low']
-        volume = df.get('volume', pd.Series(0, index=df.index))
-        
-        # 1. 价格条件
-        df['price_condition'] = self._calculate_price_condition(close, high, low)
-        
-        # 2. 趋势条件
-        df['trend_condition'] = self._calculate_trend_condition(close)
-        
-        # 3. 动量条件
-        df['momentum_condition'] = self._calculate_momentum_condition(close)
-        
-        # 4. 成交量条件
-        df['volume_condition'] = self._calculate_volume_condition(close, volume)
-        
-        # 5. 波动率条件
-        df['volatility_condition'] = self._calculate_volatility_condition(close)
-        
-        # 6. 支撑阻力条件
-        df['support_resistance_condition'] = self._calculate_support_resistance_condition(close, high, low)
-        
-        # 计算综合条件评分
-        generic_condition_score = pd.Series(0.0, index=df.index)
-        
-        # 各条件权重
-        generic_condition_score += df['price_condition'] * 0.25
-        generic_condition_score += df['trend_condition'] * 0.25
-        generic_condition_score += df['momentum_condition'] * 0.20
-        generic_condition_score += df['volume_condition'] * 0.15
-        generic_condition_score += df['volatility_condition'] * 0.10
-        generic_condition_score += df['support_resistance_condition'] * 0.05
-        
-        df['GENERIC_CONDITION_VALUE'] = generic_condition_score
-        
-        # 添加形态识别和信号生成
-        df = self.add_pattern_detection(df)
-        df = self.add_signal_generation(df)
-
-        return df
     
     def _calculate_price_condition(self, close: pd.Series, high: pd.Series, low: pd.Series) -> pd.Series:
         """计算价格条件"""
@@ -1320,136 +859,5 @@ class GenericCondition(FORMULA_INDICATORS):
         
         return support_resistance_condition
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """
-        计算通用条件指标的原始评分
-        
-        基于多个技术条件的综合评分：
-        1. 价格条件（25%权重）
-        2. 趋势条件（25%权重）
-        3. 动量条件（20%权重）
-        4. 成交量条件（15%权重）
-        5. 波动率条件（10%权重）
-        6. 支撑阻力条件（5%权重）
-        """
-        if not self.has_result():
-            self.calculate(data, **kwargs)
-        
-        if 'GENERIC_CONDITION_VALUE' not in self._result.columns:
-            return pd.Series(50.0, index=data.index)
-        
-        generic_condition = self._result['GENERIC_CONDITION_VALUE'].fillna(0)
-        price_condition = self._result['price_condition'].fillna(0)
-        trend_condition = self._result['trend_condition'].fillna(0)
-        momentum_condition = self._result['momentum_condition'].fillna(0)
-        volume_condition = self._result['volume_condition'].fillna(0)
-        volatility_condition = self._result['volatility_condition'].fillna(0)
-        
-        scores = pd.Series(index=data.index, dtype=float)
-        
-        for i in range(len(generic_condition)):
-            if i < max(self.ma_period, self.rsi_period):
-                scores.iloc[i] = 50.0
-                continue
-            
-            score = 50.0  # 基础分数
-            
-            # 获取当前数据
-            current_condition = generic_condition.iloc[i]
-            current_price = price_condition.iloc[i]
-            current_trend = trend_condition.iloc[i]
-            current_momentum = momentum_condition.iloc[i]
-            current_volume = volume_condition.iloc[i]
-            current_volatility = volatility_condition.iloc[i]
-            
-            # 1. 价格条件评分 (25分)
-            if current_price > 30:
-                price_score = 25.0  # 强烈看涨
-            elif current_price > 15:
-                price_score = 20.0  # 看涨
-            elif current_price > 0:
-                price_score = 15.0  # 轻微看涨
-            elif current_price > -15:
-                price_score = 10.0  # 中性偏弱
-            else:
-                price_score = 5.0   # 看跌
-            
-            score += price_score - 15.0  # 调整基准
-            
-            # 2. 趋势条件评分 (25分)
-            if current_trend > 30:
-                trend_score = 25.0  # 强上升趋势
-            elif current_trend > 15:
-                trend_score = 20.0  # 上升趋势
-            elif current_trend > 0:
-                trend_score = 15.0  # 轻微上升
-            elif current_trend > -15:
-                trend_score = 10.0  # 中性或横盘
-            else:
-                trend_score = 5.0   # 下降趋势
-            
-            score += trend_score - 15.0  # 调整基准
-            
-            # 3. 动量条件评分 (20分)
-            if current_momentum > 20:
-                momentum_score = 20.0  # 强动量
-            elif current_momentum > 10:
-                momentum_score = 16.0  # 正动量
-            elif current_momentum > 0:
-                momentum_score = 12.0  # 轻微正动量
-            elif current_momentum > -10:
-                momentum_score = 8.0   # 中性动量
-            else:
-                momentum_score = 4.0   # 负动量
-            
-            score += momentum_score - 12.0  # 调整基准
-            
-            # 4. 成交量条件评分 (15分)
-            if current_volume > 10:
-                volume_score = 15.0  # 量价配合良好
-            elif current_volume > 5:
-                volume_score = 12.0  # 量价配合一般
-            elif current_volume > 0:
-                volume_score = 10.0  # 轻微量价配合
-            elif current_volume > -5:
-                volume_score = 8.0   # 中性
-            else:
-                volume_score = 5.0   # 量价背离
-            
-            score += volume_score - 10.0  # 调整基准
-            
-            # 5. 波动率条件评分 (10分)
-            if current_volatility > 5:
-                volatility_score = 10.0  # 低波动率
-            elif current_volatility > 0:
-                volatility_score = 8.0   # 适中波动率
-            elif current_volatility > -5:
-                volatility_score = 6.0   # 中等波动率
-            else:
-                volatility_score = 3.0   # 高波动率
-            
-            score += volatility_score - 6.0  # 调整基准
-            
-            # 6. 综合条件评分 (5分)
-            if current_condition > 20:
-                condition_score = 5.0   # 非常强的综合条件
-            elif current_condition > 10:
-                condition_score = 4.0   # 强综合条件
-            elif current_condition > 0:
-                condition_score = 3.0   # 正面综合条件
-            elif current_condition > -10:
-                condition_score = 2.0   # 中性综合条件
-            else:
-                condition_score = 1.0   # 负面综合条件
-            
-            score += condition_score - 3.0  # 调整基准
-            
-            # 确保分数在合理范围内
-            score = max(0, min(100, score))
-            scores.iloc[i] = score
-        
-        return scores
-
-
 # 为了向后兼容，创建别名
-FormulaIndicators = FORMULA_INDICATORS
+formula_indicators = FORMULA_INDICATORS

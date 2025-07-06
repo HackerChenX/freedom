@@ -12,7 +12,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ConceptStockExtractor:
+class Concept_stock_extractor:
     """概念股提取器"""
 
     def __init__(self):

@@ -11,8 +11,8 @@ from datetime import datetime
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from crawler.integration.system_integrator import SystemIntegrator
-from crawler.integration.integration_tester import IntegrationTester
+from crawler.integration.system_integrator import System_integrator
+from crawler.integration.integration_tester import Integration_tester
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,7 +24,7 @@ def demo_system_integration():
 
     try:
         # 创建系统集成器
-        integrator = SystemIntegrator()
+        integrator = System_integrator()
 
         # 初始化集成系统
         print("初始化集成系统...")
@@ -84,7 +84,7 @@ def demo_integration_testing():
 
     try:
         # 创建集成测试器
-        tester = IntegrationTester()
+        tester = Integration_tester()
 
         # 运行所有测试
         print("运行集成测试...")
@@ -116,7 +116,7 @@ def demo_integration_testing():
         return False
 
 
-def main():
+def main_demo():
     """主函数"""
     print("=== 股市信息爬虫系统集成测试与部署演示 ===")
     print(f"演示时间: {datetime.now()}")
@@ -147,4 +147,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_demo()

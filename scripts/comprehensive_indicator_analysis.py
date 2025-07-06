@@ -4,21 +4,21 @@
 基于修复进度表中的101个已验证指标进行完整性检查
 """
 
-import sys
-import os
+import_Comprehensive_Indicator_Analysis sys
+import_Comprehensive_Indicator_Analysis os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import importlib
-from typing import Dict, List, Tuple, Set
-from dataclasses import dataclass
-import logging
+import_Comprehensive_Indicator_Analysis importlib
+from typing import_Comprehensive_Indicator_Analysis Dict, List, Tuple, Set
+from dataclasses import_Comprehensive_Indicator_Analysis dataclass
+import_Comprehensive_Indicator_Analysis logging
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 @dataclass
-class IndicatorInfo:
+class IndicatorinfoAnalysis:
     """指标信息数据类"""
     name: str
     module_path: str
@@ -30,7 +30,7 @@ class IndicatorInfo:
     availability_reason: str = ""
     registration_reason: str = ""
 
-class ComprehensiveIndicatorAnalyzer:
+class ComprehensiveindicatoranalyzerAnalysis:
     """全面的指标分析器"""
     
     def __init__(self):
@@ -92,7 +92,7 @@ class ComprehensiveIndicatorAnalyzer:
         ]
         
         for name, module_path, class_name, description in core_indicators:
-            indicators[name] = IndicatorInfo(
+            indicators[name] = IndicatorInfo_Analysis(
                 name=name,
                 module_path=module_path,
                 class_name=class_name,
@@ -117,7 +117,7 @@ class ComprehensiveIndicatorAnalyzer:
         ]
         
         for name, module_path, class_name, description in enhanced_indicators:
-            indicators[name] = IndicatorInfo(
+            indicators[name] = IndicatorInfo_Analysis(
                 name=name,
                 module_path=module_path,
                 class_name=class_name,
@@ -139,7 +139,7 @@ class ComprehensiveIndicatorAnalyzer:
         
         for name, module_path, class_name, description in special_indicators:
             category = 'pattern' if 'pattern' in module_path else 'tools'
-            indicators[name] = IndicatorInfo(
+            indicators[name] = IndicatorInfo_Analysis(
                 name=name,
                 module_path=module_path,
                 class_name=class_name,
@@ -182,7 +182,7 @@ class ComprehensiveIndicatorAnalyzer:
         ]
 
         for name, module_path, class_name, description in zxm_indicators:
-            indicators[name] = IndicatorInfo(
+            indicators[name] = IndicatorInfo_Analysis(
                 name=name,
                 module_path=module_path,
                 class_name=class_name,
@@ -200,7 +200,7 @@ class ComprehensiveIndicatorAnalyzer:
         ]
 
         for name, module_path, class_name, description in formula_indicators:
-            indicators[name] = IndicatorInfo(
+            indicators[name] = IndicatorInfo_Analysis(
                 name=name,
                 module_path=module_path,
                 class_name=class_name,
@@ -217,12 +217,12 @@ class ComprehensiveIndicatorAnalyzer:
             module = importlib.import_module(indicator.module_path)
             indicator_class = getattr(module, indicator.class_name, None)
             
-            if indicator_class is None:
+            if indicator_class is_Comprehensive_Indicator_Analysis None:
                 indicator.availability_reason = f"类 {indicator.class_name} 不存在"
                 return False
             
             # 检查是否为BaseIndicator子类
-            from indicators.base_indicator import BaseIndicator
+            from indicators.base_indicator import_Comprehensive_Indicator_Analysis BaseIndicator
             if not issubclass(indicator_class, BaseIndicator):
                 indicator.availability_reason = f"不是BaseIndicator子类"
                 return False
@@ -335,9 +335,9 @@ class ComprehensiveIndicatorAnalyzer:
         })
 
         # 生成报告
-        self.generate_detailed_report()
+        self.generate_detailed_report_Analysis()
 
-    def generate_detailed_report(self):
+    def generate_detailed_report_Analysis(self):
         """生成详细报告"""
         results = self.analysis_results
 
@@ -461,7 +461,7 @@ def main():
     """主函数"""
     print("开始技术指标系统全面注册状态检查...\n")
 
-    analyzer = ComprehensiveIndicatorAnalyzer()
+    analyzer = ComprehensiveIndicatorAnalyzer_Analysis()
     analyzer.perform_comprehensive_analysis()
 
     # 总结

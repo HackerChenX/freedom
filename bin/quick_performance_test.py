@@ -18,7 +18,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
 logger = get_logger(__name__)
 
@@ -37,7 +37,7 @@ def quick_performance_test(input_csv: str, sample_size: int = 3):
     
     # 加载买点数据
     print(f"1. 加载买点数据: {input_csv}")
-    analyzer = BuyPointBatchAnalyzer()
+    analyzer = Buy_point_batch_analyzer()
     buypoints_df = analyzer.load_buypoints_from_csv(input_csv)
     
     if buypoints_df.empty:

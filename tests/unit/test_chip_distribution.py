@@ -1,35 +1,35 @@
 """
-ChipDistribution指标单元测试
+Chip_distribution指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_chip_distribution(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """ChipDistribution指标测试类"""
     
-    def setUp(self):
+    def set_up_Distribution(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Distribution(self)
         
         self.indicator = complete_registry.create_indicator('CHIP_DISTRIBUTION', periods=[5, 10, 20, 60, 120])
         self.expected_columns = [
             'avg_cost', 'chip_concentration', 'profit_ratio', 'chip_width_90pct',
             'untrapped_difficulty', 'chip_looseness', 'profit_ratio_change', 'cost_deviation'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Distribution(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Distribution(self)
     
     def test_chip_distribution_initialization(self):
         """测试ChipDistribution初始化"""
@@ -39,12 +39,12 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
             self.assertEqual(default_indicator._parameters.get('half_life', 60), 60)
             self.assertEqual(default_indicator._parameters.get('price_precision', 0.01), 0.01)
         if default_indicator and hasattr(default_indicator, 'periods'):
-            self.assertEqual(default_indicator.periods, [5, 10, 20, 60, 120])
+            self.assert_equal(default_indicator.periods, [5, 10, 20, 60, 120])
 
         # 测试自定义初始化
         custom_indicator = complete_registry.create_indicator('CHIP_DISTRIBUTION', periods=[10, 20, 30])
         if custom_indicator and hasattr(custom_indicator, 'periods'):
-            self.assertEqual(custom_indicator.periods, [10, 20, 30])
+            self.assert_equal(custom_indicator.periods, [10, 20, 30])
     
     def test_chip_distribution_calculation_accuracy(self):
         """测试ChipDistribution计算准确性"""
@@ -79,9 +79,9 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_chip_distribution_parameter_update(self):
         """测试ChipDistribution参数更新"""
@@ -89,26 +89,26 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         self.indicator.set_parameters(periods=new_periods)
 
         # 验证参数更新
-        self.assertEqual(self.indicator.periods, new_periods)
+        self.assert_equal(self.indicator.periods, new_periods)
     
     def test_chip_distribution_required_columns(self):
         """测试ChipDistribution必需列"""
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_chip_distribution_patterns(self):
         """测试ChipDistribution形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -126,11 +126,11 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_chip_distribution_concentration_calculation(self):
         """测试ChipDistribution集中度计算"""
@@ -143,7 +143,7 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         concentration_values = result['chip_concentration'].dropna()
         if len(concentration_values) > 0:
             # 集中度应该在0-1范围内
-            self.assertTrue(all(0 <= v <= 1 for v in concentration_values), 
+            self.assert_true(all(0 <= v <= 1 for v in concentration_values), 
                            "筹码集中度应该在0-1范围内")
     
     def test_chip_distribution_profit_ratio_calculation(self):
@@ -157,7 +157,7 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         profit_values = result['profit_ratio'].dropna()
         if len(profit_values) > 0:
             # 获利盘比例应该在0-1范围内
-            self.assertTrue(all(0 <= v <= 1 for v in profit_values), 
+            self.assert_true(all(0 <= v <= 1 for v in profit_values), 
                            "获利盘比例应该在0-1范围内")
     
     def test_chip_distribution_avg_cost_calculation(self):
@@ -231,9 +231,9 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         result = self.indicator.calculate(data_with_turnover)
         
         # 验证计算结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_chip_distribution_market_environment(self):
         """测试ChipDistribution市场环境设置"""
@@ -242,10 +242,10 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         
         for env in environments:
             self.indicator.set_market_environment(env)
-            self.assertEqual(self.indicator.market_environment, env)
+            self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_chip_distribution_cost_deviation(self):
@@ -259,10 +259,10 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         deviation_values = result['cost_deviation'].dropna()
         if len(deviation_values) > 0:
             # 成本偏离度应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in deviation_values), 
+            self.assert_true(all(np.isfinite(v) for v in deviation_values), 
                            "成本偏离度应该是有限数值")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Distribution(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -273,11 +273,11 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Distribution(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -288,7 +288,7 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_chip_distribution_register_patterns(self):
         """测试ChipDistribution形态注册"""
@@ -305,9 +305,9 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         result = self.indicator.calculate(small_data)
         
         # ChipDistribution应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_chip_distribution_validation(self):
         """测试ChipDistribution数据验证"""
@@ -316,7 +316,7 @@ class TestChipDistribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixi
         
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_chip_distribution_indicator_type(self):
         """测试ChipDistribution指标类型"""

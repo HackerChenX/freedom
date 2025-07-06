@@ -22,12 +22,12 @@ from typing import Dict, List, Optional, Any
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from strategy.strategy_parser import StrategyParser
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
-from strategy.signal_watcher import SignalWatcher
+from strategy.strategy_parser import Strategy_parser
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_manager import Strategy_manager
+from strategy.signal_watcher import Signal_watcher
 from indicators.complete_indicator_registry import complete_registry  # 确保全局可用
-from strategy.result_filter import ResultFilter
+from strategy.result_filter import Result_filter
 
 # 设置全局变量，确保在所有模块中都可用
 import builtins
@@ -43,15 +43,15 @@ from utils.path_utils import get_result_dir
 #     create_html_report
 # )
 from utils.exceptions import (
-    StrategyExecutionError, 
-    StrategyValidationError, 
-    DataAccessError
+    Strategy_execution_error, 
+    Strategy_validation_error, 
+    Data_access_error
 )
 
 logger = get_logger(__name__)
 
 
-def parse_args():
+def parse_args_Select():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="选股工具")
     
@@ -80,7 +80,7 @@ def parse_args():
     filter_group.add_argument("--industry", help="行业名称 (逗号分隔)", default=None)
     filter_group.add_argument("--market", help="市场名称 (逗号分隔)", default=None)
     
-    args = parser.parse_args()
+    args = parser.parse_args_Select()
     return args
 
 
@@ -158,29 +158,29 @@ def execute_strategy(args):
 
         # 创建一个自定义的日志处理器来捕获ERROR
         class ErrorHandler(logging.Handler):
-            def __init__(self):
-                super().__init__()
+            def __init___17(self):
+                super().__init___17()
                 self.has_error = False
                 self.error_messages = []
 
             def emit(self, record):
                 if record.levelno >= logging.ERROR:
                     self.has_error = True
-                    self.error_messages.append(record.getMessage())
+                    self.error_messages.append(record.get_message())
 
-        error_handler = ErrorHandler()
-        error_handler.setLevel(logging.ERROR)
+        error_handler = Error_handler()
+        error_handler.set_level(logging.ERROR)
 
         # 添加到根日志记录器
-        root_logger = logging.getLogger()
-        root_logger.addHandler(error_handler)
+        root_logger = logging.get_logger()
+        root_logger.add_handler(error_handler)
 
         try:
             # 初始化组件
-            strategy_manager = StrategyManager()
-            strategy_executor = StrategyExecutor(max_workers=args.threads)
-            signal_watcher = SignalWatcher()
-            result_filter = ResultFilter()
+            strategy_manager = Strategy_manager()
+            strategy_executor = Strategy_executor(max_workers=args.threads)
+            signal_watcher = Signal_watcher()
+            result_filter = Result_filter()
 
             # 检查初始化过程中是否有ERROR
             if error_handler.has_error:
@@ -193,12 +193,12 @@ def execute_strategy(args):
             sys.exit(1)
         finally:
             # 移除错误处理器
-            root_logger.removeHandler(error_handler)
+            root_logger.remove_handler(error_handler)
         
         # 确定策略来源
         if is_strategy_file(args.strategy):
             # 从文件加载策略
-            parser = StrategyParser()
+            parser = Strategy_parser()
             logger.info(f"从文件加载策略: {args.strategy}")
             strategy_plan = parser.parse_from_file(args.strategy)
             
@@ -412,10 +412,10 @@ def generate_visualization(result_df: pd.DataFrame, args):
     #     print(f"生成可视化报告失败: {e}")
 
 
-def main():
+def main_38():
     """主函数"""
     # 解析命令行参数
-    args = parse_args()
+    args = parse_args_Select()
     
     # 设置日志级别
     init_logging(level=args.log_level)
@@ -433,4 +433,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_38() 

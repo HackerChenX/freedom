@@ -13,9 +13,9 @@ from datetime import datetime
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from crawler.monitoring.performance_monitor import PerformanceMonitor
-from crawler.monitoring.alert_manager import AlertManager
-from crawler.monitoring.data_quality_checker import DataQualityChecker
+from crawler.monitoring.performance_monitor import Performance_monitor
+from crawler.monitoring.alert_manager import Alert_manager
+from crawler.monitoring.data_quality_checker import Data_quality_checker
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +26,7 @@ def demo_performance_monitor():
     print("\n=== 性能监控演示 ===")
 
     # 创建性能监控器
-    monitor = PerformanceMonitor(update_interval=5)
+    monitor = Performance_monitor(update_interval=5)
 
     # 启动监控
     monitor.start()

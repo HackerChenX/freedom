@@ -12,9 +12,9 @@ import pickle
 from typing import Dict, List, Any, Union, Optional, Tuple, BinaryIO, TextIO
 import datetime
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def ensure_dir(directory: str) -> bool:
@@ -215,7 +215,7 @@ def save_json(data: Any, file_path: str, ensure_ascii: bool = False, indent: int
         return False
 
 
-def load_json(file_path: str, default: Any = None) -> Any:
+def load_json(file_path: str, default: any = None) -> Any:
     """
     从JSON文件加载数据
     
@@ -267,7 +267,7 @@ def save_csv(data: List[Dict[str, Any]], file_path: str, fieldnames: Optional[Li
             fieldnames = list(data[0].keys())
         
         with open(file_path, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer = csv.Dict_writer(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(data)
         
@@ -278,7 +278,7 @@ def save_csv(data: List[Dict[str, Any]], file_path: str, fieldnames: Optional[Li
         return False
 
 
-def load_csv(file_path: str, default: Any = None) -> List[Dict[str, str]]:
+def load_csv(file_path: str, default: any = None) -> List[Dict[str, str]]:
     """
     从CSV文件加载数据
     
@@ -295,7 +295,7 @@ def load_csv(file_path: str, default: Any = None) -> List[Dict[str, str]]:
     
     try:
         with open(file_path, 'r', encoding='utf-8', newline='') as f:
-            reader = csv.DictReader(f)
+            reader = csv.Dict_reader(f)
             data = [row for row in reader]
         
         logger.debug(f"加载CSV文件: {file_path}")
@@ -331,7 +331,7 @@ def save_pickle(data: Any, file_path: str) -> bool:
         return False
 
 
-def load_pickle(file_path: str, default: Any = None) -> Any:
+def load_pickle(file_path: str, default: any = None) -> Any:
     """
     从Pickle文件加载数据
     

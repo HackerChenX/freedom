@@ -85,7 +85,7 @@ def export_formulas(formulas, output_dir):
         logger.info(f"已导出公式: {filepath}")
 
 
-def main():
+def main_formulaexporter():
     """主函数"""
     parser = argparse.ArgumentParser(description='通达信公式导出工具')
     parser.add_argument('-f', '--file', help='回测分析报告文件路径')
@@ -121,4 +121,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    mainFormulaexporter() 

@@ -20,17 +20,17 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from utils.logger import getLogger
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class IndicatorPerformanceProfiler:
     """技术指标性能分析器"""
     
-    def __init__(self):
-        self.analyzer = BuyPointBatchAnalyzer()
+    def __init___97(self):
+        self.analyzer = Buy_point_batch_analyzer()
         self.performance_data = {}
         
     def profile_all_indicators(self, stock_data: Dict[str, pd.DataFrame], 
@@ -168,7 +168,7 @@ class IndicatorPerformanceProfiler:
         
         return complexity_classification
     
-    def generate_optimization_recommendations(self, performance_results: Dict[str, Dict[str, float]],
+    def generate_optimization_recommendations_Profiler(self, performance_results: Dict[str, Dict[str, float]],
                                             slowest_indicators: List[Tuple[str, float]]) -> List[Dict[str, Any]]:
         """
         生成优化建议
@@ -212,7 +212,7 @@ class IndicatorPerformanceProfiler:
         
         return recommendations
     
-    def run_comprehensive_analysis(self, buypoints_csv: str, sample_size: int = 3) -> Dict[str, Any]:
+    def run_comprehensive_analysis_Profiler(self, buypoints_csv: str, sample_size: int = 3) -> Dict[str, Any]:
         """
         运行综合性能分析
         
@@ -255,7 +255,7 @@ class IndicatorPerformanceProfiler:
         complexity_classification = self.analyze_indicator_complexity(performance_results)
         
         # 生成优化建议
-        recommendations = self.generate_optimization_recommendations(performance_results, slowest_indicators)
+        recommendations = self.generate_optimization_recommendations_Profiler(performance_results, slowest_indicators)
         
         # 统计信息
         total_indicators = len(performance_results)
@@ -282,7 +282,7 @@ class IndicatorPerformanceProfiler:
         }
 
 
-def main():
+def main_45():
     """主函数"""
     import sys
     
@@ -293,8 +293,8 @@ def main():
     buypoints_csv = sys.argv[1]
     sample_size = int(sys.argv[2]) if len(sys.argv) > 2 else 3
     
-    profiler = IndicatorPerformanceProfiler()
-    results = profiler.run_comprehensive_analysis(buypoints_csv, sample_size)
+    profiler = Indicator_performance_profiler()
+    results = profiler.run_comprehensive_analysis_Profiler(buypoints_csv, sample_size)
     
     if not results:
         print("❌ 分析失败")
@@ -345,4 +345,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_45()

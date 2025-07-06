@@ -37,7 +37,7 @@ class RemainingIndicatorsRegistration:
             module = importlib.import_module(module_path)
             indicator_class = getattr(module, class_name, None)
             
-            if indicator_class is None:
+            if indicator_class is_Remaining_Indicators_Registration None:
                 logger.error(f"❌ {indicator_name}: 类 {class_name} 不存在")
                 return False
             
@@ -252,11 +252,11 @@ class RemainingIndicatorsRegistration:
         }
 
         # 生成详细报告
-        self.generate_comprehensive_report()
+        self.generate_comprehensive_report_Registration()
 
         return self.registration_stats
 
-    def generate_comprehensive_report(self):
+    def generate_comprehensive_report_Registration(self):
         """生成全面的注册报告"""
         logger.info("\n" + "="*70)
         logger.info("📊 剩余指标批量注册工作完成报告")
@@ -306,9 +306,9 @@ class RemainingIndicatorsRegistration:
             logger.info(f"  {i:2d}. {name} ({info['module_path']}.{info['class_name']})")
 
         # 估算系统改进
-        self.estimate_system_improvement()
+        self.estimate_system_improvement_Registration()
 
-    def estimate_system_improvement(self):
+    def estimate_system_improvement_Registration(self):
         """估算系统改进情况"""
         logger.info(f"\n📈 系统改进估算:")
 

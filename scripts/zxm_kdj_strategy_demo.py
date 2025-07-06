@@ -27,7 +27,7 @@ class ZXMKDJDemoStrategy:
         self.found_stocks = []
         
         # 模拟股票基础信息
-        self.stock_info = {
+        self.stock_info WHERE 1=1 = {
             '000001': '平安银行',
             '000002': '万科A',
             '000858': '五粮液',
@@ -157,7 +157,7 @@ class ZXMKDJDemoStrategy:
             logger.error(f"生成模拟K线数据失败: {e}")
             return pd.DataFrame()
     
-    def calculate_kdj(self, df: pd.DataFrame, n: int = 9, m1: int = 3, m2: int = 3) -> pd.DataFrame:
+    def calculate_kdj_Demo(self, df: pd.DataFrame, n: int = 9, m1: int = 3, m2: int = 3) -> pd.DataFrame:
         """计算KDJ指标"""
         try:
             if df is None or len(df) < n:
@@ -275,7 +275,7 @@ class ZXMKDJDemoStrategy:
             logger.error(f"检查ZXM吸筹信号失败: {e}")
             return False
     
-    def analyze_stock(self, code: str) -> bool:
+    def analyze_stock_Demo_Zxm_Kdj_Strategy_Demo(self, code: str) -> bool:
         """分析单只股票"""
         try:
             logger.info(f"分析股票: {code}")
@@ -292,7 +292,7 @@ class ZXMKDJDemoStrategy:
                 return False
             
             # 计算日线KDJ
-            daily_data = self.calculate_kdj(daily_data)
+            daily_data = self.calculate_kdj_Demo(daily_data)
             
             # 检查日线KDJ金叉
             has_kdj_golden_cross = self.check_kdj_golden_cross(daily_data, self.target_date)
@@ -333,7 +333,7 @@ class ZXMKDJDemoStrategy:
             logger.error(f"分析股票{code}失败: {e}")
             return False
     
-    def run_strategy(self) -> Optional[Dict]:
+    def run_strategy_Demo(self) -> Optional[Dict]:
         """运行选股策略"""
         try:
             print(f"\n🚀 开始执行ZXM吸筹+KDJ金叉选股策略 (演示版本)")
@@ -353,7 +353,7 @@ class ZXMKDJDemoStrategy:
                 
                 try:
                     # 分析股票
-                    if self.analyze_stock(code):
+                    if self.analyze_stock_Demo_Zxm_Kdj_Strategy_Demo(code):
                         # 找到一个就停止
                         print(f"\n✅ 策略执行完成，找到符合条件的股票!")
                         return self.found_stocks[0]
@@ -371,7 +371,7 @@ class ZXMKDJDemoStrategy:
             return None
 
 
-def main():
+def main_zxmkdjstrategydemo():
     """主函数"""
     try:
         print("🎯 ZXM吸筹+KDJ金叉选股策略演示")
@@ -381,7 +381,7 @@ def main():
         strategy = ZXMKDJDemoStrategy()
         
         # 运行策略
-        result = strategy.run_strategy()
+        result = strategy.run_strategy_Demo()
         
         if result:
             print(f"\n🎉 策略执行成功!")
@@ -401,4 +401,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    mainZxmkdjstrategydemo() 

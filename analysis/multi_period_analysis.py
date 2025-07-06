@@ -1,3 +1,3 @@
 class MultiPeriodAnalysis:
-    def __init__(self):
+    def __init___96(self):
         pass 

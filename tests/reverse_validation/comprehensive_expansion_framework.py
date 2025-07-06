@@ -26,7 +26,7 @@ sys.path.append(current_dir)
 
 
 @dataclass
-class IndicatorTestResult:
+class Indicator_test_result:
     """指标测试结果"""
     indicator_name: str
     priority: str
@@ -39,7 +39,7 @@ class IndicatorTestResult:
     error_message: Optional[str] = None
 
 
-class ComprehensiveExpansionFramework:
+class Comprehensive_expansion_framework:
     """全面扩展框架"""
     
     def __init__(self):
@@ -310,7 +310,7 @@ class ComprehensiveExpansionFramework:
         return recommendations
 
 
-def main():
+def main_comprehensiveexpansionframework():
     """主函数"""
     print("=" * 80)
     print("反向验证框架全面扩展系统")
@@ -319,7 +319,7 @@ def main():
     print(f"分析时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    framework = ComprehensiveExpansionFramework()
+    framework = Comprehensive_expansion_framework()
     
     # 获取扩展路线图
     roadmap = framework.get_expansion_roadmap()
@@ -396,4 +396,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_comprehensiveexpansionframework()

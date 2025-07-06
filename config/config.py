@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 配置文件，集中管理项目的所有配置项
 提供配置加密和环境变量支持
@@ -40,7 +43,7 @@ DEFAULT_CONFIG = {
     'log': {
         'level': 'info',
         'max_size_mb': 10,
-        'backup_count': 5
+        'backupCount': 5
     },
     'security': {
         'encrypt_sensitive': True,
@@ -143,7 +146,7 @@ def decrypt_value(value: str) -> str:
     encrypted = base64.urlsafe_b64decode(value[4:])
     return fernet.decrypt(encrypted).decode()
 
-def get_env_value(key: str, default: Any = None) -> Any:
+def get_env_value(key: str, default: any = None) -> Any:
     """
     从环境变量获取配置值
     
@@ -333,7 +336,7 @@ def save_user_config(config: Dict[str, Any]) -> bool:
         logging.error(f"保存用户配置文件失败: {e}")
         return False
 
-def get_config(key: Optional[str] = None, default: Any = None) -> Any:
+def get_config(key: Optional[str] = None, default: any = None) -> Any:
     """
     获取配置项
     

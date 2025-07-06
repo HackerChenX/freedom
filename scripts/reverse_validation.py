@@ -23,18 +23,18 @@ sys.path.insert(0, str(project_root))
 
 # 导入策略执行相关模块
 try:
-    from strategy.strategy_executor import StrategyExecutor
-    from strategy.strategy_manager import StrategyManager
+    from strategy.strategy_executor import Strategy_executor
+    from strategy.strategy_manager import Strategy_manager
     from db.unified_data_manager import get_unified_data_manager
     from utils.logger import get_logger
     REAL_EXECUTION_AVAILABLE = True
-except ImportError as e:
+except Import_error as e:
     print(f"警告: 无法导入策略执行模块: {e}")
     print("将使用模拟模式进行验证")
     REAL_EXECUTION_AVAILABLE = False
 
 
-def convert_to_json_serializable(obj):
+def convert_to_json_serializable_Validation(obj):
     """转换对象为JSON可序列化格式"""
     if isinstance(obj, np.integer):
         return int(obj)
@@ -45,9 +45,9 @@ def convert_to_json_serializable(obj):
     elif isinstance(obj, set):
         return list(obj)
     elif isinstance(obj, dict):
-        return {k: convert_to_json_serializable(v) for k, v in obj.items()}
+        return {k: convert_to_json_serializable_Validation(v) for k, v in obj.items()}
     elif isinstance(obj, list):
-        return [convert_to_json_serializable(item) for item in obj]
+        return [convert_to_json_serializable_Validation(item) for item in obj]
     else:
         return obj
 
@@ -62,8 +62,8 @@ class ReverseValidator:
         if self.use_real_execution:
             try:
                 self.data_manager = get_unified_data_manager()
-                self.strategy_executor = StrategyExecutor()
-                self.strategy_manager = StrategyManager()
+                self.strategy_executor = Strategy_executor()
+                self.strategy_manager = Strategy_manager()
                 self.logger = get_logger(__name__)
                 print("✅ 成功初始化真实策略执行环境")
             except Exception as e:
@@ -100,13 +100,13 @@ class ReverseValidator:
         
         try:
             # 1. 加载原始买点数据
-            original_buypoints = self._load_buypoints(buypoints_file)
+            original_buypoints = self._load_buypoints_Reverse_Validation(buypoints_file)
             
             # 2. 加载策略
-            strategy = self._load_strategy(strategy_file)
+            strategy = self._load_strategy_Reverse_Validation(strategy_file)
             
             # 3. 提取原始买点股票列表
-            original_stocks = self._extract_original_stocks(original_buypoints)
+            original_stocks = self._extract_original_stocks_Reverse_Validation(original_buypoints)
             
             # 4. 执行策略选股（使用真实数据）
             if self.use_real_execution:
@@ -115,7 +115,7 @@ class ReverseValidator:
                 selected_stocks = self._simulate_strategy_selection(strategy, original_stocks, config)
             
             # 5. 计算匹配结果
-            match_analysis = self._analyze_matches(original_stocks, selected_stocks)
+            match_analysis = self._analyze_matches_Reverse_Validation(original_stocks, selected_stocks)
             
             # 6. 生成验证报告
             validation_results = {
@@ -144,7 +144,7 @@ class ReverseValidator:
             }
             
             # 7. 评估验证质量
-            quality_assessment = self._assess_validation_quality(validation_results, config)
+            quality_assessment = self._assess_validation_quality_Reverse_Validation(validation_results, config)
             validation_results["quality_assessment"] = quality_assessment
             
             print(f"反向验证完成，匹配率: {match_analysis['match_rate']:.1%}")
@@ -158,7 +158,7 @@ class ReverseValidator:
                 "timestamp": datetime.now().isoformat()
             }
     
-    def _load_buypoints(self, buypoints_file: str) -> pd.DataFrame:
+    def _load_buypoints_Reverse_Validation(self, buypoints_file: str) -> pd.DataFrame:
         """加载买点数据"""
         try:
             if buypoints_file.endswith('.csv'):
@@ -174,7 +174,7 @@ class ReverseValidator:
         except Exception as e:
             raise Exception(f"加载买点数据失败: {e}")
     
-    def _load_strategy(self, strategy_file: str) -> dict:
+    def _load_strategy_Reverse_Validation(self, strategy_file: str) -> dict:
         """加载策略文件"""
         try:
             with open(strategy_file, 'r', encoding='utf-8') as f:
@@ -186,7 +186,7 @@ class ReverseValidator:
         except Exception as e:
             raise Exception(f"加载策略文件失败: {e}")
     
-    def _extract_original_stocks(self, buypoints: pd.DataFrame) -> set:
+    def _extract_original_stocks_Reverse_Validation(self, buypoints: pd.DataFrame) -> set:
         """提取原始买点股票列表"""
         # 尝试不同的股票代码列名
         possible_columns = ['stock_code', 'code', 'symbol', 'stock_symbol', 'ts_code']
@@ -224,7 +224,7 @@ class ReverseValidator:
             validation_date = config.get("validation_date", "2024-12-01")
             print(f"📅 执行日期: {validation_date}")
 
-            def progress_callback(progress, message):
+            def progress_callback_Validation_Reverse_Validation(progress, message):
                 if progress % 0.2 < 0.01:  # 每20%打印一次
                     print(f"  进度: {progress:.1%} - {message}")
 
@@ -274,7 +274,7 @@ class ReverseValidator:
         模拟策略选股（备用方案）
 
         注意：这是备用方案，仅在无法使用真实数据时使用
-        真实验证应该使用ClickHouse数据和策略执行器
+        真实验证应该使用Click_house数据和策略执行器
         """
         print("⚠️ 使用模拟模式进行策略选股（备用方案）...")
         print("💡 建议：配置ClickHouse连接以使用真实数据验证")
@@ -357,7 +357,7 @@ class ReverseValidator:
         
         return selected_stocks
     
-    def _analyze_matches(self, original_stocks: set, selected_stocks: set) -> dict:
+    def _analyze_matches_Reverse_Validation(self, original_stocks: set, selected_stocks: set) -> dict:
         """分析匹配结果"""
         # 计算交集和差集
         matched_stocks = original_stocks.intersection(selected_stocks)
@@ -389,7 +389,7 @@ class ReverseValidator:
 
         return analysis
     
-    def _assess_validation_quality(self, results: dict, config: dict) -> dict:
+    def _assess_validation_quality_Reverse_Validation(self, results: dict, config: dict) -> dict:
         """评估验证质量"""
         match_analysis = results["match_analysis"]
         match_rate = match_analysis["match_rate"]
@@ -438,7 +438,7 @@ class ReverseValidator:
         return assessment
 
 
-def main():
+def main_reversevalidation():
     """主函数"""
     parser = argparse.ArgumentParser(description="买点策略反向验证工具")
     parser.add_argument("--buypoints", required=True, help="原始买点数据文件")
@@ -462,7 +462,7 @@ def main():
     }
     
     # 创建验证器并执行验证
-    validator = ReverseValidator()
+    validator = Reverse_validator()
     
     print(f"开始反向验证:")
     print(f"买点文件: {args.buypoints}")
@@ -477,7 +477,7 @@ def main():
     result_file = output_dir / f"reverse_validation_{timestamp}.json"
 
     # 转换为JSON可序列化格式
-    serializable_results = convert_to_json_serializable(results)
+    serializable_results = convert_to_json_serializable_Validation(results)
 
     with open(result_file, 'w', encoding='utf-8') as f:
         json.dump(serializable_results, f, ensure_ascii=False, indent=2)
@@ -567,4 +567,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_reversevalidation()

@@ -1,27 +1,28 @@
 """
 系统集成器
 
-与现有股票分析系统进行集成，包括ClickHouse数据库、技术指标系统等
+与现有股票分析系统进行集成，包括Click_house数据库、技术指标系统等
 """
 
 import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from utils.logger import get_logger
+from config.unified_config import get_config_value
 
 logger = get_logger(__name__)
 
 
-class ClickHouseIntegrator:
+class Click_house_integrator:
     """ClickHouse数据库集成器"""
 
-    def __init__(self, host='localhost', port=8123, database='stock_crawler',
-                 user='default', password=''):
-        self.host = host
-        self.port = port
-        self.database = database
-        self.user = user
-        self.password = password
+    def __init__(self, host=None, port=None, database=None,
+                 user=None, password=None):
+        self.host = host or get_config_value('database.host', 'localhost')
+        self.port = port or get_config_value('database.port', 8123)
+        self.database = database or get_config_value('database.database', 'stock_crawler')
+        self.user = user or get_config_value('database.username', 'default')
+        self.password = password or get_config_value('database.password', '')
         self.client = None
 
     def connect(self) -> bool:
@@ -51,9 +52,9 @@ class ClickHouseIntegrator:
                     title String,
                     content String,
                     author String,
-                    publish_time DateTime,
+                    publish_time Date_time,
                     url String,
-                    crawl_time DateTime DEFAULT now(),
+                    crawl_time Date_time DEFAULT now(),
                     article_type String,
                     view_count UInt32 DEFAULT 0,
                     like_count UInt32 DEFAULT 0,
@@ -61,7 +62,7 @@ class ClickHouseIntegrator:
                     stock_codes Array(String),
                     concepts Array(String),
                     sentiment_score Float32 DEFAULT 0.0
-                ) ENGINE = MergeTree()
+                ) engine = Merge_tree()
                 ORDER BY (source, publish_time)
                 """
             ]
@@ -114,7 +115,7 @@ class ClickHouseIntegrator:
         }
 
 
-class TechnicalIndicatorIntegrator:
+class Technical_indicator_integrator:
     """技术指标系统集成器"""
 
     def __init__(self):
@@ -166,13 +167,13 @@ class TechnicalIndicatorIntegrator:
         return formatted_data
 
 
-class SystemIntegrator:
+class System_integrator:
     """系统集成器主类"""
 
     def __init__(self, clickhouse_config: Dict[str, Any] = None):
         self.clickhouse_config = clickhouse_config or {}
-        self.clickhouse = ClickHouseIntegrator(**self.clickhouse_config)
-        self.technical_integrator = TechnicalIndicatorIntegrator()
+        self.clickhouse = Click_house_integrator(**self.clickhouse_config)
+        self.technical_integrator = Technical_indicator_integrator()
 
         # 集成状态
         self.integration_status = {
@@ -183,7 +184,7 @@ class SystemIntegrator:
             'sync_errors': 0
         }
 
-    def initialize(self) -> bool:
+    def initialize_Integrator(self) -> bool:
         """初始化集成系统"""
         try:
             logger.info("初始化系统集成...")

@@ -19,9 +19,9 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_parser import StrategyParser
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_parser import Strategy_parser
+from strategy.strategy_manager import Strategy_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -83,7 +83,7 @@ def test_strategy_executor_basic():
         }
         
         # 创建执行器
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         # 验证策略计划
         print("1. 验证策略计划...")
@@ -108,10 +108,10 @@ def test_strategy_condition_evaluator():
     print("\n=== 测试策略条件评估器 ===")
     
     try:
-        from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+        from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
         
         # 创建评估器
-        evaluator = StrategyConditionEvaluator()
+        evaluator = Strategy_condition_evaluator()
         
         # 创建测试数据
         dates = pd.date_range('2023-01-01', periods=30)
@@ -186,7 +186,7 @@ def test_end_to_end_selection():
         }
         
         # 创建执行器
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         print("1. 执行选股策略...")
         end_date = datetime.now().strftime("%Y-%m-%d")
@@ -209,7 +209,7 @@ def test_end_to_end_selection():
         return False
 
 
-def main():
+def main_teststockselectionsystem():
     """主测试函数"""
     print("开始测试可配置策略选股系统...")
     
@@ -247,5 +247,5 @@ def main():
 
 
 if __name__ == "__main__":
-    exit_code = main()
+    exit_code = main_teststockselectionsystem()
     sys.exit(exit_code)

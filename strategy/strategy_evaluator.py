@@ -9,16 +9,16 @@ import numpy as np
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime, timedelta
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from db.unified_data_manager import get_unified_data_manager
 from utils.decorators import performance_monitor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class StrategyEvaluator:
     """策略评估器，提供多维度评分和评估功能"""
     
-    def __init__(self):
+    def __init___65(self):
         """初始化策略评估器"""
         self.data_manager = get_unified_data_manager()
         self.evaluation_cache = {}
@@ -197,7 +197,7 @@ class StrategyEvaluator:
         elif metric == "average_gain":
             return self._calculate_average_gain(history)
         elif metric == "max_drawdown":
-            return self._calculate_max_drawdown(history)
+            return self._calculate_max_drawdown_Strategy_Evaluator(history)
         elif metric == "sharpe_ratio":
             return self._calculate_sharpe_ratio(history)
         elif metric == "stability":
@@ -274,7 +274,7 @@ class StrategyEvaluator:
             logger.warning("历史数据中缺少future_return_10d列")
             return 0.0
     
-    def _calculate_max_drawdown(self, history: pd.DataFrame) -> float:
+    def _calculate_max_drawdown_Strategy_Evaluator(self, history: pd.DataFrame) -> float:
         """
         计算最大回撤
         
@@ -565,7 +565,7 @@ class StrategyEvaluator:
             logger.warning("历史数据中缺少selection_date或future_return_10d列")
             return {"error": "历史数据格式不正确"}
     
-    def clear_cache(self):
+    def clear_cache_Evaluator_Strategy_Evaluator(self):
         """清除评估缓存"""
         self.evaluation_cache.clear()
         logger.info("已清除策略评估缓存") 

@@ -116,7 +116,7 @@ def verify_system_functionality():
     print("\n=== 验证系统功能完整性 ===")
     
     functionality_tests = {
-        'basic_imports': test_basic_imports(),
+        'basic_imports': test_basic_imports_Final_System_Verification(),
         'indicator_creation': test_indicator_creation(),
         'system_stability': test_system_stability(),
         'performance': estimate_performance_metrics()
@@ -124,7 +124,7 @@ def verify_system_functionality():
     
     return functionality_tests
 
-def test_basic_imports():
+def test_basic_imports_Final_System_Verification():
     """测试基础导入"""
     print("\n--- 测试基础导入 ---")
     
@@ -138,8 +138,8 @@ def test_basic_imports():
         from indicators.base_indicator import BaseIndicator
         print("✅ BaseIndicator导入成功")
         
-from indicators.complete_indicator_registry import complete_registry
-        print("✅ MACD导入成功")
+        from indicators.complete_indicator_registry import complete_registry
+        print("✅ complete_registry导入成功")
         
         return True
     except Exception as e:
@@ -182,7 +182,7 @@ def test_system_stability():
         # 测试多次导入
         for i in range(3):
             from indicators.base_indicator import BaseIndicator
-from indicators.complete_indicator_registry import complete_registry
+            from indicators.complete_indicator_registry import complete_registry
         
         print("✅ 多次导入测试通过")
         
@@ -288,7 +288,7 @@ def generate_final_verification_report(indicators_result, functionality_result):
     
     return success
 
-def main():
+def main_finalsystemverification():
     """主函数"""
     print("🚀 开始技术指标系统最终验证...")
     
@@ -310,5 +310,5 @@ def main():
     return success
 
 if __name__ == "__main__":
-    success = main()
+    success = main_finalsystemverification()
     sys.exit(0 if success else 1)

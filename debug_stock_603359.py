@@ -15,9 +15,11 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 from indicators.complete_indicator_registry import complete_registry
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-from strategy.strategy_parser import StrategyParser
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_parser import Strategy_parser
 from utils.logger import get_logger, init_logging
 
 # 初始化日志
@@ -32,27 +34,31 @@ def analyze_stock_603359():
     print(f"=== 诊断股票 {stock_code} 在 {target_date} 的ZXM选股策略条件 ===\n")
     
     try:
-        # 1. 获取数据管理器
+        # 1. 获取数据管理器和查询执行器
         data_manager = get_unified_data_manager()
+        query_executor = get_query_executor()
 
         # 2. 检查基础数据
         print("1. 检查基础数据存在性")
         print("-" * 50)
 
-        # 查询该股票的基本信息
-        stock_info = data_manager.get_stock_info(
-            stock_code=stock_code,
-            limit=1
-        )
-        df_info = stock_info.to_dataframe()
-        
-        if df_info.empty:
-            print(f"❌ 股票 {stock_code} 在数据库中不存在")
+        # 查询该股票的基本信息 - 使用统一查询接口
+        try:
+            stock_info_df = query_executor.execute_query(
+                QueryType.STOCK_INFO,
+                {'code': stock_code, 'level': '日线'}
+            )
+            
+            if stock_info_df.empty:
+                print(f"❌ 股票 {stock_code} 在数据库中不存在")
+                return
+            else:
+                print(f"✅ 股票基本信息: {stock_info_df.iloc[0]['name']} ({stock_code})")
+                if 'industry' in stock_info_df.columns:
+                    print(f"   行业: {stock_info_df.iloc[0]['industry']}")
+        except Exception as e:
+            logger.error(f"查询股票基本信息失败: {e}")
             return
-        else:
-            print(f"✅ 股票基本信息: {df_info.iloc[0]['name']} ({stock_code})")
-            if 'industry' in df_info.columns:
-                print(f"   行业: {df_info.iloc[0]['industry']}")
         
         # 3. 检查目标日期及前后的数据
         print(f"\n2. 检查 {target_date} 前后的数据")
@@ -62,19 +68,19 @@ def analyze_stock_603359():
         start_date = (datetime.strptime(target_date, '%Y-%m-%d') - timedelta(days=10)).strftime('%Y-%m-%d')
         end_date = (datetime.strptime(target_date, '%Y-%m-%d') + timedelta(days=5)).strftime('%Y-%m-%d')
 
-        # 直接查询数据库检查数据存在性
-        print("2.1 直接查询数据库检查数据")
-        with data_manager.connection_pool.get_connection() as conn:
+        # 使用统一查询接口检查数据存在性
+        print("2.1 使用统一查询接口检查数据")
+        try:
             # 查询日线数据
-            daily_query = f"""
-            SELECT date, open, high, low, close, volume, turnover_rate
-            FROM stock_info
-            WHERE code = '{stock_code}'
-            AND date BETWEEN '{start_date}' AND '{end_date}'
-            AND level = '日线'
-            ORDER BY date
-            """
-            daily_df = conn.query_dataframe(daily_query)
+            daily_df = query_executor.execute_query(
+                QueryType.STOCK_DATA,
+                {
+                    'code': stock_code,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'level': '日线'
+                }
+            )
 
             if daily_df.empty:
                 print(f"❌ 数据库中没有 {stock_code} 在 {start_date} 到 {end_date} 的日线数据")
@@ -94,15 +100,15 @@ def analyze_stock_603359():
                     print(f"   ❌ 数据库中没有 {target_date} 的日线数据")
 
             # 查询30分钟数据
-            min30_query = f"""
-            SELECT date, datetime, open, high, low, close, volume
-            FROM stock_info
-            WHERE code = '{stock_code}'
-            AND date BETWEEN '{start_date}' AND '{end_date}'
-            AND level = '30分钟'
-            ORDER BY date, datetime
-            """
-            min30_df = conn.query_dataframe(min30_query)
+            min30_df = query_executor.execute_query(
+                QueryType.STOCK_DATA,
+                {
+                    'code': stock_code,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'level': '30分钟'
+                }
+            )
 
             if min30_df.empty:
                 print(f"❌ 数据库中没有 {stock_code} 在 {start_date} 到 {end_date} 的30分钟数据")
@@ -116,7 +122,11 @@ def analyze_stock_603359():
                 if not target_30min_db.empty:
                     print("   前3条30分钟记录:")
                     for _, row in target_30min_db.head(3).iterrows():
-                        print(f"     {row['datetime']}: 开盘={row['open']}, 收盘={row['close']}, 成交量={row['volume']}")
+                        datetime_col = 'datetime' if 'datetime' in row else 'date'
+                        print(f"     {row[datetime_col]}: 开盘={row['open']}, 收盘={row['close']}, 成交量={row['volume']}")
+
+        except Exception as e:
+            logger.error(f"使用统一查询接口检查数据失败: {e}")
 
         # 使用数据管理器获取数据
         print("\n2.2 使用数据管理器获取数据")
@@ -198,7 +208,7 @@ def analyze_stock_603359():
             else:
                 print("   ❌ ZXM_BS_ABSORB指标创建失败或30分钟数据为空")
         except Exception as e:
-            print(f"   ❌ ZXM_BS_ABSORB计算出错: {e}")
+            logger.error(f"ZXM_BS_ABSORB指标计算失败: {e}")
         
         # 测试ZXM_VOLUME_SHRINK指标
         print("\n3.2 测试ZXM_VOLUME_SHRINK指标（日线）")
@@ -236,16 +246,16 @@ def analyze_stock_603359():
         print("-" * 50)
         
         # 加载策略配置
-        parser = StrategyParser()
+        parser = Strategy_parser()
         strategy_plan = parser.parse_from_file('config/strategies/zxm_absorb_volume_shrink_strategy.yaml')
         
         # 创建条件评估器
-        evaluator = StrategyConditionEvaluator()
+        evaluator = Strategy_condition_evaluator()
         
         # 准备股票数据
         stock_data = {
             'code': stock_code,
-            'name': df_info.iloc[0]['name'] if not df_info.empty else stock_code,
+            'name': stock_info_df.iloc[0]['name'] if not stock_info_df.empty else stock_code,
             'daily_data': daily_data,
             '30min_data': min30_data
         }
@@ -287,7 +297,7 @@ def analyze_stock_603359():
         print(f"\n=== 诊断完成 ===")
         
     except Exception as e:
-        logger.error(f"诊断过程中出错: {e}")
+        logger.error(f"分析过程中发生错误: {e}")
         import traceback
         traceback.print_exc()
 

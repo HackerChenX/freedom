@@ -15,13 +15,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class IntelligentP3Generator:
+class Intelligent_p3_generator:
     """智能P3专业指标数据生成器"""
     
     def __init__(self):
         pass
     
-    def _generate_ohlc_from_close(self, dates: pd.DatetimeIndex, close_prices: List[float], 
+    def _generate_ohlc_from_close_Intelligent_P3_Generator(self, dates: pd.Datetime_index, close_prices: List[float], 
                                  volatility_factor: float = 1.0) -> pd.DataFrame:
         """从收盘价生成OHLC数据，支持可变波动率"""
         data = []
@@ -56,7 +56,7 @@ class IntelligentP3Generator:
         
         return pd.DataFrame(data)
     
-    def _standardize_data_format(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
+    def _standardize_data_format_Intelligent_P3_Generator(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
         """标准化数据格式"""
         column_order = ['date', 'open', 'high', 'low', 'close', 'volume']
         return data[column_order]
@@ -75,8 +75,8 @@ class IntelligentP3Generator:
             prices.append(new_price)
         
         # 使用高波动率因子
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=2.0)
-        return self._standardize_data_format(data, 'ATR_HIGH_VOLATILITY')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices, volatility_factor=2.0)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'ATR_HIGH_VOLATILITY')
     
     def generate_atr_low_volatility_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成ATR低波动率数据"""
@@ -92,8 +92,8 @@ class IntelligentP3Generator:
             prices.append(new_price)
         
         # 使用低波动率因子
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=0.3)
-        return self._standardize_data_format(data, 'ATR_LOW_VOLATILITY')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices, volatility_factor=0.3)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'ATR_LOW_VOLATILITY')
     
     def generate_kc_breakout_data(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """生成KC突破数据"""
@@ -113,8 +113,8 @@ class IntelligentP3Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'KC_BREAKOUT')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'KC_BREAKOUT')
     
     def generate_vortex_bullish_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成Vortex多头数据"""
@@ -129,8 +129,8 @@ class IntelligentP3Generator:
             prices.append(new_price)
         
         # 增加波动率以突出Vortex特征
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=1.5)
-        return self._standardize_data_format(data, 'VORTEX_BULLISH')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices, volatility_factor=1.5)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'VORTEX_BULLISH')
     
     def generate_aroon_uptrend_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成Aroon上升趋势数据"""
@@ -149,8 +149,8 @@ class IntelligentP3Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'AROON_UPTREND')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'AROON_UPTREND')
     
     def generate_ichimoku_bullish_data(self, base_price: float = 100, periods: int = 80) -> pd.DataFrame:
         """生成Ichimoku多头数据"""
@@ -176,8 +176,8 @@ class IntelligentP3Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ICHIMOKU_BULLISH')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'ICHIMOKU_BULLISH')
     
     def generate_wma_golden_cross_data(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """生成WMA金叉数据"""
@@ -197,8 +197,8 @@ class IntelligentP3Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'WMA_GOLDEN_CROSS')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'WMA_GOLDEN_CROSS')
     
     def generate_vix_high_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成VIX高波动数据"""
@@ -214,8 +214,8 @@ class IntelligentP3Generator:
             prices.append(new_price)
         
         # 使用极高波动率因子
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=3.0)
-        return self._standardize_data_format(data, 'VIX_HIGH')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices, volatility_factor=3.0)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'VIX_HIGH')
     
     def generate_volume_ratio_surge_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成成交量比率放大数据"""
@@ -235,14 +235,14 @@ class IntelligentP3Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices)
         
         # 特别处理成交量：后20天成交量显著放大
         for i in range(len(data)):
             if i >= 30:  # 后20天
                 data.loc[i, 'volume'] *= np.random.uniform(3.0, 5.0)
         
-        return self._standardize_data_format(data, 'VOLUME_RATIO_SURGE')
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'VOLUME_RATIO_SURGE')
     
     def generate_enhanced_cci_overbought_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成增强版CCI超买数据"""
@@ -256,8 +256,8 @@ class IntelligentP3Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ENHANCED_CCI_OVERBOUGHT')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'ENHANCED_CCI_OVERBOUGHT')
     
     def generate_enhanced_dmi_bullish_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成增强版DMI多头数据"""
@@ -272,8 +272,8 @@ class IntelligentP3Generator:
             prices.append(new_price)
         
         # 增加波动率以突出DMI特征
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=1.3)
-        return self._standardize_data_format(data, 'ENHANCED_DMI_BULLISH')
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices, volatility_factor=1.3)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, 'ENHANCED_DMI_BULLISH')
     
     def generate_generic_pattern_data(self, pattern_name: str, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成通用形态数据（用于其他指标）"""
@@ -311,8 +311,8 @@ class IntelligentP3Generator:
                 new_price = prices[-1] * (1 + daily_change)
                 prices.append(new_price)
             # 使用低波动率
-            data = self._generate_ohlc_from_close(dates, prices, volatility_factor=0.5)
-            return self._standardize_data_format(data, pattern_name)
+            data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices, volatility_factor=0.5)
+            return self._standardize_data_format_Intelligent_P3_Generator(data, pattern_name)
         else:
             # 默认：温和上涨
             for i in range(1, periods):
@@ -320,13 +320,13 @@ class IntelligentP3Generator:
                 new_price = prices[-1] * (1 + daily_change)
                 prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, pattern_name)
+        data = self._generate_ohlc_from_close_Intelligent_P3_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P3_Generator(data, pattern_name)
 
 
 def test_intelligent_p3_generator():
     """测试智能P3生成器"""
-    generator = IntelligentP3Generator()
+    generator = Intelligent_p3_generator()
     
     print("测试智能P3数据生成器...")
     

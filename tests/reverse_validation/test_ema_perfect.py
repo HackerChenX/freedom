@@ -20,10 +20,10 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from perfect_validator import PerfectValidator
+from perfect_validator import Perfect_validator
 
 
-def main():
+def main_testemaperfect():
     """主函数"""
     print("=" * 60)
     print("EMA指标完美验证测试")
@@ -33,7 +33,7 @@ def main():
     print()
     
     # 创建完美验证器并运行EMA测试
-    validator = PerfectValidator()
+    validator = Perfect_validator()
     
     try:
         results = validator.validate_ema_patterns_perfect()
@@ -77,5 +77,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_testemaperfect()
     sys.exit(exit_code)

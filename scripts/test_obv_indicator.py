@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 测试OBV指标修复效果
 """
@@ -14,7 +16,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from indicators.obv import OBV
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +28,8 @@ def test_obv_indicator():
     print("=" * 60)
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    container = get_container()
+    data_access = container.get_data_access()
     
     # 查询股票数据
     sql = """
@@ -39,14 +42,14 @@ def test_obv_indicator():
         close,
         volume,
         turnover as amount
-    FROM stock_info 
+    FROM stock_info WHERE 1=1
     WHERE code = '000001'
     AND date >= '2025-03-25'
     AND date <= '2025-07-03'
     ORDER BY date
     """
     
-    df = db.query(sql)
+    df = data_access.query_dataframe(sql)
     if df.empty:
         print("未获取到测试数据")
         return False
@@ -188,7 +191,8 @@ def test_obv_multiple_stocks():
     print("=" * 60)
     
     # 获取测试数据
-    db = get_clickhouse_db()
+    container = get_container()
+    data_access = container.get_data_access()
     
     # 测试多只股票
     test_stocks = ['000001', '000002', '600000', '600036', '000858']
@@ -198,34 +202,28 @@ def test_obv_multiple_stocks():
     for stock_code in test_stocks:
         print(f"\n测试股票: {stock_code}")
         
-        sql = f"""
-        SELECT 
-            date as trade_date,
-            code as ts_code,
-            open,
-            high,
-            low,
-            close,
-            volume,
-            turnover as amount
-        FROM stock_info 
+        # 查询股票数据
+        query = f"""
+        SELECT date, open, high, low, close, volume
+        FROM stock_info WHERE 1=1
         WHERE code = '{stock_code}'
-        AND date >= '2025-03-25'
-        AND date <= '2025-07-03'
+          AND level = '日线'
+          AND date >= '2025-03-25'
+          AND date <= '2025-07-03'
         ORDER BY date
         """
         
-        df = db.query(sql)
-        if df.empty:
+        data = data_access.query_dataframe(query)
+        if data.empty:
             print(f"  未获取到{stock_code}的数据")
             continue
         
         try:
             # 计算指标
-            result = obv.calculate(df)
+            result = obv.calculate(data)
             
             # 计算评分
-            scores = obv.calculate_raw_score(df)
+            scores = obv.calculate_raw_score(data)
             
             if scores is not None and len(scores) > 0:
                 valid_scores = scores.dropna()

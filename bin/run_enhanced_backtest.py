@@ -19,13 +19,13 @@ import json
 from typing import Dict, Any, List
 
 from enums.period import Period
-from scripts.backtest.enhanced_backtest import EnhancedBacktest
+from scripts.backtest.enhanced_backtest import Enhanced_backtest
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def parse_args():
+def parse_args_Backtest_Run_Enhanced_Backtest():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='增强版回测系统')
     
@@ -51,7 +51,7 @@ def parse_args():
     # 高级配置
     parser.add_argument('--config', help='配置文件路径，JSON格式')
     
-    return parser.parse_args()
+    return parser.parse_args_Backtest_Run_Enhanced_Backtest()
 
 
 def build_config(args) -> Dict[str, Any]:
@@ -109,16 +109,16 @@ def build_config(args) -> Dict[str, Any]:
     return config
 
 
-def main():
+def main_25():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Backtest_Run_Enhanced_Backtest()
     
     try:
         # 构建配置
         config = build_config(args)
         
         # 初始化回测系统
-        backtest = EnhancedBacktest.get_instance()
+        backtest = Enhanced_backtest.get_instance()
         
         # 执行批量分析
         logger.info(f"开始批量分析，输入文件: {args.input}")
@@ -137,4 +137,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_25() 

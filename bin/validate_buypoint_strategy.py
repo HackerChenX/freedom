@@ -31,7 +31,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from strategy.strategy_executor import StrategyExecutor
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -39,9 +40,11 @@ logger = get_logger(__name__)
 class BuyPointStrategyValidator:
     """买点策略验证器"""
     
-    def __init__(self):
-        self.db_manager = get_clickhouse_db()
-        self.strategy_executor = StrategyExecutor(self.db_manager)
+    def __init___1(self):
+        # 使用依赖注入架构
+        self.container = get_container()
+        self.data_access = self.get_service(DataAccessInterface)
+        self.strategy_executor = StrategyExecutor(self.data_access)
         
     def validate_strategy(self, buypoints_file, strategy_file, output_file):
         """
@@ -69,7 +72,7 @@ class BuyPointStrategyValidator:
             report = self._generate_report(validation_results, buypoints_df, strategy_config)
             
             # 4. 保存结果
-            self._save_report(report, output_file)
+            self._save_report_Validate_Buypoint_Strategy(report, output_file)
             
             # 5. 输出摘要
             self._print_summary(report)
@@ -239,7 +242,7 @@ class BuyPointStrategyValidator:
             },
             'validation_results': validation_results,
             'strategy_analysis': self._analyze_strategy(strategy_config),
-            'recommendations': self._generate_recommendations(validation_results, strategy_config),
+            'recommendations': self._generate_recommendations_Validate_Buypoint_Strategy(validation_results, strategy_config),
             'next_steps': self._suggest_next_steps(validation_results)
         }
         
@@ -273,7 +276,7 @@ class BuyPointStrategyValidator:
             'condition_logic': strategy_config.get('condition_logic', 'unknown')
         }
     
-    def _generate_recommendations(self, validation_results, strategy_config):
+    def _generate_recommendations_Validate_Buypoint_Strategy(self, validation_results, strategy_config):
         """生成改进建议"""
         recommendations = []
         match_rate = validation_results['match_analysis']['overall_match_rate']
@@ -340,7 +343,7 @@ class BuyPointStrategyValidator:
                 "完成优化后重新进行验证"
             ]
     
-    def _save_report(self, report, output_file):
+    def _save_report_Validate_Buypoint_Strategy(self, report, output_file):
         """保存验证报告"""
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         
@@ -375,7 +378,7 @@ class BuyPointStrategyValidator:
         
         print("="*60)
 
-def main():
+def main_1():
     parser = argparse.ArgumentParser(description='买点策略闭环验证工具')
     parser.add_argument('--buypoints', required=True, help='买点数据文件路径')
     parser.add_argument('--strategy', required=True, help='策略配置文件路径')
@@ -391,4 +394,4 @@ def main():
     validator.validate_strategy(args.buypoints, args.strategy, args.output)
 
 if __name__ == '__main__':
-    main()
+    main_1()

@@ -14,13 +14,13 @@ from datetime import datetime
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.config import CrawlerConfig
-from crawler.anti_crawler import AntiCrawlerModule
-from crawler.spiders.taoguba_spider import TaogubaSpider
-from crawler.processors.concept_extractor import ConceptStockExtractor
-from crawler.monitoring.performance_monitor import PerformanceMonitor
-from crawler.monitoring.alert_manager import AlertManager
-from crawler.integration.system_integrator import SystemIntegrator
+from crawler.config import Crawler_config
+from crawler.anti_crawler import Anti_crawler_module
+from crawler.spiders.taoguba_spider import Taoguba_spider
+from crawler.processors.concept_extractor import Concept_stock_extractor
+from crawler.monitoring.performance_monitor import Performance_monitor
+from crawler.monitoring.alert_manager import Alert_manager
+from crawler.integration.system_integrator import System_integrator
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,12 +29,12 @@ logger = get_logger(__name__)
 class ProductionCrawler:
     """生产级爬虫系统"""
 
-    def __init__(self):
-        self.anti_crawler = AntiCrawlerModule()
-        self.concept_extractor = ConceptStockExtractor()
-        self.performance_monitor = PerformanceMonitor()
-        self.alert_manager = AlertManager()
-        self.system_integrator = SystemIntegrator()
+    def __init___12(self):
+        self.anti_crawler = Anti_crawler_module()
+        self.concept_extractor = Concept_stock_extractor()
+        self.performance_monitor = Performance_monitor()
+        self.alert_manager = Alert_manager()
+        self.system_integrator = System_integrator()
 
         # 爬虫实例
         self.spiders = {
@@ -157,7 +157,7 @@ class ProductionCrawler:
 
         return articles
 
-    def get_stats(self):
+    def get_stats_Crawler(self):
         """获取统计信息"""
         runtime = datetime.now() - self.stats['start_time']
 
@@ -178,7 +178,7 @@ class ProductionCrawler:
         logger.info("系统已关闭")
 
 
-def main():
+def main_19():
     """主函数"""
     parser = argparse.ArgumentParser(description='生产级股市信息爬虫系统')
     parser.add_argument('--source', default='taoguba', choices=['taoguba'],
@@ -202,7 +202,7 @@ def main():
     print("=" * 50)
 
     # 创建爬虫实例
-    crawler = ProductionCrawler()
+    crawler = Production_crawler()
 
     try:
         # 初始化系统
@@ -224,7 +224,7 @@ def main():
             print(f"\n数据已保存到: {args.output}")
 
         # 显示统计信息
-        stats = crawler.get_stats()
+        stats = crawler.get_stats_Crawler()
         print(f"\n=== 爬取统计 ===")
         print(f"运行时间: {stats['runtime_minutes']:.1f} 分钟")
         print(f"总文章数: {stats['total_articles']}")
@@ -263,7 +263,7 @@ def main():
         else:
             print("⚠️  未获取到任何文章数据")
 
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print("\n用户中断爬取...")
     except Exception as e:
         logger.error(f"爬取过程中发生错误: {e}")
@@ -275,4 +275,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_19()

@@ -10,11 +10,11 @@ import numpy as np
 
 from strategy.base_strategy import BaseStrategy
 from formula import formula
-from enums.kline_period import KlinePeriod
-from utils.logger import get_logger
+from enums.kline_period import Kline_period
+from utils.logger import getLogger
 from indicators.complete_indicator_registry import complete_registry
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class ReboundStrategy(BaseStrategy):
@@ -24,7 +24,7 @@ class ReboundStrategy(BaseStrategy):
     识别回踩均线然后反弹上行的买点形态
     """
     
-    def __init__(self, name: str = "回踩反弹", description: str = "回踩均线反弹买点策略"):
+    def __init___74(self, name: str = "回踩反弹", description: str = "回踩均线反弹买点策略"):
         """
         初始化回踩反弹买点策略
         
@@ -32,7 +32,7 @@ class ReboundStrategy(BaseStrategy):
             name: 策略名称
             description: 策略描述
         """
-        super().__init__(name, description)
+        super().__init___74(name, description)
         
         # 设置默认参数
         self._parameters = {
@@ -46,7 +46,7 @@ class ReboundStrategy(BaseStrategy):
             'min_distance': 0.05     # 股价距离均线最小距离要求
         }
     
-    def select(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+    def select_Strategy_Rebound_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
         执行回踩反弹选股策略
         
@@ -83,14 +83,14 @@ class ReboundStrategy(BaseStrategy):
                 # 初始化公式计算对象
                 f = formula.Formula(code)
                 
-                if not f.dataDay.close.any():
+                if not f.data_day.close.any():
                     logger.debug(f"股票 {code} 数据为空，跳过")
                     continue
                 
                 # 获取收盘价、最低价和成交量
-                close = f.dataDay.close
-                low = f.dataDay.low
-                volume = f.dataDay.volume
+                close = f.data_day.close
+                low = f.data_day.low
+                volume = f.data_day.volume
                 
                 # 至少需要60个交易日的数据
                 if len(close) < 60:

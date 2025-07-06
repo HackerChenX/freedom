@@ -168,7 +168,7 @@ def fix_zxm_volume_shrink():
     
     return True
 
-def main():
+def main_debugzxmvolumeshrink():
     """主函数"""
     print("🔧 调试ZXM_VOLUME_SHRINK指标问题\n")
     
@@ -186,4 +186,4 @@ def main():
     print(f"  修复尝试: {'✅ 成功' if fix_success else '❌ 失败'}")
 
 if __name__ == "__main__":
-    main()
+    main_debugzxmvolumeshrink()

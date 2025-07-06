@@ -14,12 +14,12 @@ import warnings
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class TrendStrength(BaseIndicator, PatternSignalMixin):
@@ -53,16 +53,16 @@ class TrendStrength(BaseIndicator, PatternSignalMixin):
         if params:
             self.params.update(params)
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_trendstrength(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算趋势强度指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 额外的参数
             
         Returns:
-            添加了趋势强度指标的DataFrame
+            添加了趋势强度指标的Data_frame
         """
         df = data.copy()
         
@@ -138,7 +138,7 @@ class TrendStrength(BaseIndicator, PatternSignalMixin):
         
         return df
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Strength(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算趋势强度指标原始评分 (0-100分)
         
@@ -189,7 +189,7 @@ class TrendStrength(BaseIndicator, PatternSignalMixin):
         
         return score 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Strength(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

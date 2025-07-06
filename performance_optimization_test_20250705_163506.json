@@ -1,0 +1,156 @@
+{
+  "timestamp": "2025-07-05T16:34:53.024338",
+  "test_summary": {
+    "total_tests": 4,
+    "passed_tests": 4,
+    "failed_tests": 0
+  },
+  "test_details": {
+    "basic_optimization": {
+      "success": true,
+      "stock_count": 100,
+      "processing_time": 0.27983617782592773,
+      "stocks_per_second": 357.3519363254206,
+      "result": {
+        "selection_results": {
+          "selected_stocks": [],
+          "selection_details": {},
+          "total_analyzed": 0,
+          "selection_rate": 0
+        },
+        "performance_report": {
+          "total_stocks": 100,
+          "processing_time_seconds": 0.27945399284362793,
+          "processing_time_minutes": 0.004657566547393799,
+          "stocks_per_second": 357.8406555670732,
+          "cache_hit_rate": 0.0,
+          "memory_usage_mb": 137.8515625,
+          "batch_count": 0,
+          "parallel_efficiency": 1.0,
+          "target_achieved": true,
+          "performance_improvement": "161.2x"
+        },
+        "stock_count": 100,
+        "indicator_count": 2,
+        "processing_time": 0.27945399284362793
+      }
+    },
+    "scalability": {
+      "50_stocks": {
+        "success": true,
+        "processing_time": 1.0988829135894775,
+        "stocks_per_second": 45.50075297528839,
+        "performance_report": {
+          "total_stocks": 50,
+          "processing_time_seconds": 1.098503828048706,
+          "processing_time_minutes": 0.018308397134145102,
+          "stocks_per_second": 45.51645494837827,
+          "cache_hit_rate": 0.0,
+          "memory_usage_mb": 137.9609375,
+          "batch_count": 0,
+          "parallel_efficiency": 0.9482594780912139,
+          "target_achieved": true,
+          "performance_improvement": "20.5x"
+        }
+      },
+      "100_stocks": {
+        "success": true,
+        "processing_time": 0.2634408473968506,
+        "stocks_per_second": 379.59185520443896,
+        "performance_report": {
+          "total_stocks": 100,
+          "processing_time_seconds": 0.2630770206451416,
+          "processing_time_minutes": 0.00438461701075236,
+          "stocks_per_second": 380.1168180891316,
+          "cache_hit_rate": 0.0,
+          "memory_usage_mb": 138.15234375,
+          "batch_count": 0,
+          "parallel_efficiency": 1.0,
+          "target_achieved": true,
+          "performance_improvement": "171.2x"
+        }
+      },
+      "200_stocks": {
+        "success": true,
+        "processing_time": 1.6559882164001465,
+        "stocks_per_second": 120.77380625012418,
+        "performance_report": {
+          "total_stocks": 200,
+          "processing_time_seconds": 1.65562105178833,
+          "processing_time_minutes": 0.02759368419647217,
+          "stocks_per_second": 120.80059007704007,
+          "cache_hit_rate": 0.0,
+          "memory_usage_mb": 138.3046875,
+          "batch_count": 0,
+          "parallel_efficiency": 1.0,
+          "target_achieved": true,
+          "performance_improvement": "54.4x"
+        }
+      },
+      "500_stocks": {
+        "success": true,
+        "processing_time": 2.4100399017333984,
+        "stocks_per_second": 207.46544471748362,
+        "performance_report": {
+          "total_stocks": 500,
+          "processing_time_seconds": 2.4096691608428955,
+          "processing_time_minutes": 0.04016115268071493,
+          "stocks_per_second": 207.49736442039264,
+          "cache_hit_rate": 0.0,
+          "memory_usage_mb": 138.5625,
+          "batch_count": 0,
+          "parallel_efficiency": 1.0,
+          "target_achieved": true,
+          "performance_improvement": "93.5x"
+        }
+      },
+      "scalability_analysis": {
+        "avg_stocks_per_second": 188.33296478683377,
+        "predicted_4000_stocks_time_seconds": 21.238979615318186,
+        "predicted_4000_stocks_time_minutes": 0.35398299358863644,
+        "target_achievable": true
+      }
+    },
+    "memory_optimization": {
+      "success": true,
+      "stock_count": 200,
+      "processing_time": 5.623368978500366,
+      "initial_memory_mb": 138.56640625,
+      "final_memory_mb": 138.625,
+      "memory_increase_mb": 0.05859375,
+      "memory_efficiency": 0.00029296875,
+      "result": {
+        "selection_results": {
+          "selected_stocks": [],
+          "selection_details": {},
+          "total_analyzed": 0,
+          "selection_rate": 0
+        },
+        "performance_report": {
+          "total_stocks": 200,
+          "processing_time_seconds": 5.436218023300171,
+          "processing_time_minutes": 0.09060363372166952,
+          "stocks_per_second": 36.79028308702486,
+          "cache_hit_rate": 0.0,
+          "memory_usage_mb": 138.625,
+          "batch_count": 0,
+          "parallel_efficiency": 1.0,
+          "target_achieved": true,
+          "performance_improvement": "16.6x"
+        },
+        "stock_count": 200,
+        "indicator_count": 3,
+        "processing_time": 5.436218023300171
+      }
+    },
+    "cache_performance": {
+      "success": true,
+      "stock_count": 100,
+      "time_no_cache": 2.0645029544830322,
+      "time_first_cache": 0.24540281295776367,
+      "time_second_cache": 0.2216651439666748,
+      "cache_speedup": 9.313611141287103,
+      "cache_hit_rate": 0.0
+    }
+  }
+}

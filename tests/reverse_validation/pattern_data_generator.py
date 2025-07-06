@@ -5,7 +5,7 @@
 技术指标形态模拟数据生成器
 
 专门为反向验证测试生成符合特定技术形态的模拟股票数据
-确保数据格式与stockInfo完全一致，支持各种技术指标的关键形态构造
+确保数据格式与stock_info完全一致，支持各种技术指标的关键形态构造
 """
 
 import pandas as pd
@@ -20,10 +20,10 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 try:
-    from tests.helper.data_generator import TestDataGenerator
-except ImportError:
+    from tests.helper.data_generator import Test_data_generator
+except Import_error:
     # 如果导入失败，创建一个简化的数据生成器
-    class TestDataGenerator:
+    class Test_data_generator:
         @staticmethod
         def generate_price_sequence(sequence_specs, base_date='2023-01-01', base_volume=10000, **kwargs):
             """简化的价格序列生成器"""
@@ -98,12 +98,12 @@ except ImportError:
             return data
 
 
-class PatternDataGenerator:
+class Pattern_data_generator:
     """技术指标形态数据生成器"""
 
     def __init__(self):
         """初始化生成器"""
-        self.base_generator = TestDataGenerator()
+        self.base_generator = Test_data_generator()
 
         # 核心指标列表（P0级别）
         self.core_indicators = ['KDJ', 'RSI', 'MACD', 'BOLL', 'MA', 'EMA']
@@ -292,7 +292,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'RSI_OVERBOUGHT')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'RSI_OVERBOUGHT')
 
     def _generate_rsi_oversold(self) -> pd.DataFrame:
         """生成RSI超卖形态数据"""
@@ -319,7 +319,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'RSI_OVERSOLD')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'RSI_OVERSOLD')
 
     def _generate_rsi_golden_cross(self) -> pd.DataFrame:
         """生成RSI金叉形态数据"""
@@ -346,7 +346,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'RSI_GOLDEN_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'RSI_GOLDEN_CROSS')
 
     def _generate_rsi_death_cross(self) -> pd.DataFrame:
         """生成RSI死叉形态数据"""
@@ -374,7 +374,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'RSI_DEATH_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'RSI_DEATH_CROSS')
 
     def _generate_rsi_divergence(self) -> pd.DataFrame:
         """生成RSI背离形态数据"""
@@ -408,7 +408,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'RSI_DIVERGENCE')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'RSI_DIVERGENCE')
 
     def _generate_macd_golden_cross(self) -> pd.DataFrame:
         """生成MACD金叉形态数据"""
@@ -436,7 +436,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'MACD_GOLDEN_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'MACD_GOLDEN_CROSS')
 
     def _generate_macd_death_cross(self) -> pd.DataFrame:
         """生成MACD死叉形态数据"""
@@ -464,7 +464,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'MACD_DEATH_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'MACD_DEATH_CROSS')
 
     def _generate_macd_above_zero_golden(self) -> pd.DataFrame:
         """生成MACD零轴上金叉形态数据"""
@@ -498,7 +498,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'MACD_ABOVE_ZERO_GOLDEN')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'MACD_ABOVE_ZERO_GOLDEN')
 
     def _generate_macd_below_zero_death(self) -> pd.DataFrame:
         """生成MACD零轴下死叉形态数据"""
@@ -532,7 +532,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'MACD_BELOW_ZERO_DEATH')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'MACD_BELOW_ZERO_DEATH')
 
     def _generate_macd_histogram_divergence(self) -> pd.DataFrame:
         """生成MACD柱状图背离形态数据"""
@@ -566,11 +566,11 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'MACD_HISTOGRAM_DIVERGENCE')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'MACD_HISTOGRAM_DIVERGENCE')
 
-    def _standardize_data_format(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
+    def _standardize_data_format_Pattern_Data_Generator(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
         """
-        标准化数据格式，确保与stockInfo格式完全一致
+        标准化数据格式，确保与stock_info格式完全一致
 
         Args:
             data: 原始数据
@@ -647,7 +647,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'KDJ_GOLDEN_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'KDJ_GOLDEN_CROSS')
 
     def _generate_kdj_death_cross(self) -> pd.DataFrame:
         """生成KDJ死叉形态数据"""
@@ -675,7 +675,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'KDJ_DEATH_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'KDJ_DEATH_CROSS')
 
     def _generate_kdj_overbought(self) -> pd.DataFrame:
         """生成KDJ超买形态数据"""
@@ -702,7 +702,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'KDJ_OVERBOUGHT')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'KDJ_OVERBOUGHT')
 
     def _generate_kdj_oversold(self) -> pd.DataFrame:
         """生成KDJ超卖形态数据"""
@@ -729,7 +729,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'KDJ_OVERSOLD')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'KDJ_OVERSOLD')
 
     def _generate_kdj_blunt(self) -> pd.DataFrame:
         """生成KDJ钝化形态数据"""
@@ -756,7 +756,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'KDJ_BLUNT')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'KDJ_BLUNT')
 
     # BOLL指标形态生成方法（简化实现）
     def _generate_boll_upper_breakout(self) -> pd.DataFrame:
@@ -783,7 +783,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'BOLL_UPPER_BREAKOUT')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'BOLL_UPPER_BREAKOUT')
 
     def _generate_boll_lower_breakout(self) -> pd.DataFrame:
         """生成BOLL下轨突破形态数据"""
@@ -809,7 +809,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'BOLL_LOWER_BREAKOUT')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'BOLL_LOWER_BREAKOUT')
 
     def _generate_boll_squeeze(self) -> pd.DataFrame:
         """生成BOLL收口形态数据"""
@@ -828,7 +828,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'BOLL_SQUEEZE')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'BOLL_SQUEEZE')
 
     def _generate_boll_expansion(self) -> pd.DataFrame:
         """生成BOLL开口形态数据"""
@@ -853,7 +853,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'BOLL_EXPANSION')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'BOLL_EXPANSION')
 
     def _generate_boll_middle_support(self) -> pd.DataFrame:
         """生成BOLL中轨支撑形态数据"""
@@ -880,7 +880,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'BOLL_MIDDLE_SUPPORT')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'BOLL_MIDDLE_SUPPORT')
 
     # MA指标形态生成方法（简化实现）
     def _generate_ma_golden_cross(self) -> pd.DataFrame:
@@ -908,7 +908,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'MA_GOLDEN_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'MA_GOLDEN_CROSS')
 
     def _generate_ma_death_cross(self) -> pd.DataFrame:
         """生成MA死叉形态数据"""
@@ -935,7 +935,7 @@ class PatternDataGenerator:
             base_volume=10000
         )
 
-        return self._standardize_data_format(data, 'MA_DEATH_CROSS')
+        return self._standardize_data_format_Pattern_Data_Generator(data, 'MA_DEATH_CROSS')
 
     # 为了保持文件大小合理，其他形态生成方法使用简化实现
     def _generate_ma_bullish_alignment(self) -> pd.DataFrame:

@@ -141,7 +141,7 @@ def quick_verification():
                 else:
                     print(f"❌ {indicator_name} (类不存在)")
                     failed.append(indicator_name)
-            except ImportError:
+            except Import_error:
                 print(f"❌ {indicator_name} (导入失败)")
                 failed.append(indicator_name)
             except Exception:
@@ -222,7 +222,7 @@ def quick_verification():
     
     return success, total_available, estimated_registered
 
-def main():
+def main_quickindicatorverification():
     """主函数"""
     success, available, estimated = quick_verification()
     
@@ -243,5 +243,5 @@ def main():
     return success
 
 if __name__ == "__main__":
-    success = main()
+    success = main_quickindicatorverification()
     sys.exit(0 if success else 1)

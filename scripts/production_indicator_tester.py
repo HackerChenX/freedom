@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 生产环境指标测试工具
 
-基于ClickHouse真实数据验证选股指标的可靠性
+基于Click_house真实数据验证选股指标的可靠性
 支持逐个指标验证和批量验证，以最新交易日期作为测试基准
 """
 
@@ -25,10 +27,10 @@ warnings.filterwarnings('ignore')
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from indicators.zxm.buy_point_indicators import (
-    ZXMVolumeShrink, ZXMBSAbsorb, ZXMTurnover, 
-    ZXMDailyMACD, ZXMMACallback
+    ZXMVolume_shrink, ZXMBSAbsorb, ZXMTurnover, 
+    ZXMDaily_mACD, ZXMMACallback
 )
 from utils.logger import get_logger
 
@@ -41,7 +43,8 @@ class ProductionIndicatorTester:
     def __init__(self):
         """初始化测试器"""
         try:
-            self.db = get_clickhouse_db()
+            container = get_container()
+            self.data_access = container.get_data_access()
             logger.info("✅ 成功连接到ClickHouse数据库")
             
             # 初始化可用指标
@@ -83,7 +86,7 @@ class ProductionIndicatorTester:
     def get_latest_trade_date(self) -> str:
         """获取ClickHouse中最新的交易日期"""
         try:
-            latest_date = self.db.get_stock_max_date()
+            latest_date = self.data_access.get_stock_max_date()
             if latest_date:
                 logger.info(f"📅 获取到最新交易日期: {latest_date}")
                 return latest_date
@@ -120,7 +123,7 @@ class ProductionIndicatorTester:
             # 获取指定日期的股票数据，过滤掉ST股票和价格异常的股票
             query = """
             SELECT DISTINCT code, name, close, volume
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE date = %(test_date)s
               AND level = '日线'
               AND close > 2.0
@@ -138,7 +141,7 @@ class ProductionIndicatorTester:
                 'max_stocks': max_stocks
             }
             
-            result = self.db.query(query, params)
+            result = self.data_access.query_dataframe(query, params)
             
             if result.empty:
                 logger.warning(f"⚠️ 未找到 {test_date} 的股票数据")
@@ -153,7 +156,7 @@ class ProductionIndicatorTester:
             logger.error(f"❌ 获取股票池失败: {e}")
             return []
     
-    def get_stock_data(self, stock_code: str, end_date: str, days: int = 100) -> pd.DataFrame:
+    def get_stock_data_Tester(self, stock_code: str, end_date: str, days: int = 100) -> pd.DataFrame:
         """
         获取股票历史数据
         
@@ -171,7 +174,7 @@ class ProductionIndicatorTester:
             
             query = """
             SELECT date, open, high, low, close, volume, turnover
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE code = %(stock_code)s
               AND level = '日线'
               AND date >= %(start_date)s
@@ -185,7 +188,7 @@ class ProductionIndicatorTester:
                 'end_date': end_date
             }
             
-            result = self.db.query(query, params)
+            result = self.data_access.query_dataframe(query, params)
             
             if result.empty:
                 return pd.DataFrame()
@@ -204,7 +207,7 @@ class ProductionIndicatorTester:
             logger.warning(f"⚠️ 获取股票 {stock_code} 数据失败: {e}")
             return pd.DataFrame()
     
-    def test_single_indicator(self, indicator_name: str, test_date: str = None, 
+    def test_single_indicator_Tester(self, indicator_name: str, test_date: str = None, 
                              max_stocks: int = 1000) -> Dict[str, Any]:
         """
         测试单个指标的选股效果
@@ -254,7 +257,7 @@ class ProductionIndicatorTester:
             
             try:
                 # 获取股票数据
-                stock_data = self.get_stock_data(stock_code, test_date)
+                stock_data = self.get_stock_data_Tester(stock_code, test_date)
                 if stock_data.empty or len(stock_data) < 30:
                     failed_stocks.append(stock_code)
                     continue
@@ -338,7 +341,7 @@ class ProductionIndicatorTester:
         
         return result
     
-    def test_multiple_indicators(self, indicator_names: List[str], test_date: str = None,
+    def test_multiple_indicators_Tester(self, indicator_names: List[str], test_date: str = None,
                                 max_stocks: int = 1000) -> Dict[str, Any]:
         """
         批量测试多个指标的选股效果
@@ -359,7 +362,7 @@ class ProductionIndicatorTester:
         # 逐个测试指标
         for indicator_name in indicator_names:
             try:
-                result = self.test_single_indicator(indicator_name, test_date, max_stocks)
+                result = self.test_single_indicator_Tester(indicator_name, test_date, max_stocks)
                 individual_results[indicator_name] = result
             except Exception as e:
                 logger.error(f"❌ 测试指标 {indicator_name} 时失败: {e}")
@@ -376,7 +379,7 @@ class ProductionIndicatorTester:
         overlap_analysis = self._analyze_indicator_overlap(individual_results)
         
         # 生成批量测试总结
-        batch_summary = self._generate_batch_summary(individual_results)
+        batch_summary = self._generate_batch_summary_Production_Indicator_Tester(individual_results)
         
         logger.info(f"✅ 批量测试完成，总耗时: {batch_execution_time:.2f}秒")
         
@@ -431,7 +434,7 @@ class ProductionIndicatorTester:
             'common_stock_count': len(common_stocks)
         }
     
-    def _generate_batch_summary(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
+    def _generate_batch_summary_Production_Indicator_Tester(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
         """生成批量测试总结"""
         successful_results = {k: v for k, v in individual_results.items() 
                             if v.get('success', False)}
@@ -480,7 +483,7 @@ class ProductionIndicatorTester:
             } if worst_indicator else None
         }
     
-    def save_results(self, results: Dict[str, Any], output_dir: str = "results/indicator_test") -> str:
+    def save_results_Tester(self, results: Dict[str, Any], output_dir: str = "results/indicator_test") -> str:
         """
         保存测试结果
         
@@ -686,18 +689,18 @@ class ProductionIndicatorTester:
         
         return str(csv_path)
     
-    def list_available_indicators(self) -> List[str]:
+    def list_available_indicators_Tester(self) -> List[str]:
         """列出所有可用的指标"""
         return list(self.available_indicators.keys())
     
-    def get_indicator_info(self, indicator_name: str) -> Dict[str, str]:
+    def get_indicator_info_Tester(self, indicator_name: str) -> Dict[str, str]:
         """获取指标信息"""
         if indicator_name not in self.available_indicators:
             return {}
         return self.available_indicators[indicator_name]
 
 
-def main():
+def main_productionindicatortester():
     """主函数"""
     parser = argparse.ArgumentParser(description="生产环境指标测试工具")
     parser.add_argument('--date', type=str, help='测试日期 (YYYY-MM-DD)，默认使用最新交易日期')
@@ -714,14 +717,14 @@ def main():
     
     try:
         # 初始化测试器
-        tester = ProductionIndicatorTester()
+        tester = Production_indicator_tester()
         
         # 如果只是列出指标
         if args.list_indicators:
             print("可用指标列表:")
             print("=" * 50)
-            for indicator_name in tester.list_available_indicators():
-                info = tester.get_indicator_info(indicator_name)
+            for indicator_name in tester.list_available_indicators_Tester():
+                info = tester.get_indicator_info_Tester(indicator_name)
                 print(f"{indicator_name:20s} - {info.get('name', indicator_name)}")
                 print(f"{'':20s}   {info.get('description', 'N/A')}")
                 print()
@@ -735,25 +738,25 @@ def main():
         # 测试指标
         if len(args.indicators) == 1:
             # 单个指标测试
-            results = tester.test_single_indicator(
+            results = tester.test_single_indicator_Tester(
                 args.indicators[0], 
                 args.date, 
                 args.max_stocks
             )
         else:
             # 批量指标测试
-            results = tester.test_multiple_indicators(
+            results = tester.test_multiple_indicators_Tester(
                 args.indicators, 
                 args.date, 
                 args.max_stocks
             )
         
         # 保存结果
-        output_path = tester.save_results(results, args.output_dir)
+        output_path = tester.save_results_Tester(results, args.output_dir)
         
         print(f"\n✅ 测试完成！结果已保存到: {output_path}")
         
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         logger.info("用户中断操作")
         sys.exit(1)
     except Exception as e:
@@ -762,4 +765,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_productionindicatortester() 

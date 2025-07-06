@@ -9,9 +9,9 @@ import sys
 root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
-from db.unified_data_manager import UnifiedDataManager
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-from indicators.complete_indicator_registry import CompleteIndicatorRegistry
+from db.unified_data_manager import Unified_data_manager
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from indicators.complete_indicator_registry import Complete_indicator_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -20,9 +20,9 @@ def debug_single_stock_condition():
     """调试单个股票的条件评估"""
     try:
         # 初始化组件
-        data_manager = UnifiedDataManager()
-        indicator_registry = CompleteIndicatorRegistry()
-        evaluator = StrategyConditionEvaluator(data_manager, indicator_registry)
+        data_manager = Unified_data_manager()
+        indicator_registry = Complete_indicator_registry()
+        evaluator = Strategy_condition_evaluator(data_manager, indicator_registry)
         
         # 测试股票
         test_stock = "000001"

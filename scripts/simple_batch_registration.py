@@ -26,7 +26,7 @@ class SimpleBatchRegistration:
             module = importlib.import_module(module_path)
             indicator_class = getattr(module, class_name, None)
             
-            if indicator_class is None:
+            if indicator_class is_Simple_Batch_Registration None:
                 print(f"❌ {indicator_name}: 类 {class_name} 不存在")
                 self.stats['failed'] += 1
                 self.stats['failed_list'].append(indicator_name)
@@ -67,7 +67,7 @@ class SimpleBatchRegistration:
                 self.stats['successful'] += 1
                 return True
                 
-        except ImportError as e:
+        except Import_error as e:
             print(f"❌ {indicator_name}: 导入失败 - {e}")
             self.stats['failed'] += 1
             self.stats['failed_list'].append(indicator_name)
@@ -219,7 +219,7 @@ def main():
     """主函数"""
     print("🚀 开始简化批量指标测试...")
     
-    registrar = SimpleBatchRegistration()
+    registrar = Simple_batch_registration()
     
     # 执行各批次测试
     registrar.test_batch_1_core_indicators()

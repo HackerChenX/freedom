@@ -6,19 +6,19 @@ import pandas as pd
 import numpy as np
 import pandas.testing as pd_testing
 from indicators.complete_indicator_registry import complete_registry
-from tests.helper.data_generator import TestDataGenerator
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.log_capture import LogCaptureMixin
+from tests.helper.data_generator import Test_data_generator
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
+class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.Test_case):
     """ADX指标测试类"""
 
-    def setUp(self):
+    def set_up_Adx(self):
         """准备测试数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        Log_capture_mixin.set_up_Adx(self)  # 显式调用Mixin的set_up
         self.adx_indicator = complete_registry.create_indicator('ADX', params={"period": 14, "strong_trend": 25})
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 50},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 50},
         ])
@@ -38,11 +38,11 @@ class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         # 确保指标实例不为None，以便后续测试使用
         self.assertIsNotNone(self.indicator, f"{self.indicator_name} indicator should not be None")
 
-    def tearDown(self):
+    def tear_down_Adx(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)  # 显式调用Mixin的tearDown
+        Log_capture_mixin.tear_down_Adx(self)  # 显式调用Mixin的tear_down
 
-    def test_pattern_detection(self):
+    def test_pattern_detection_Adx(self):
         """测试形态识别功能"""
         # 计算指标
         self.indicator.calculate(self.data)
@@ -51,15 +51,15 @@ class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         patterns = self.indicator.get_patterns(self.data)
         
         # 断言返回的是一个DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 断言DataFrame不为空
-        self.assertFalse(patterns.empty)
+        self.assert_false(patterns.empty)
         
         # 断言包含预期的列
         expected_pattern_columns = ['pattern_id', 'display_name', 'strength', 'duration', 'details']
         for col in expected_pattern_columns:
-            self.assertIn(col, patterns.columns)
+            self.assert_in(col, patterns.columns)
 
     def test_raw_score_calculation(self):
         """测试原始评分计算"""
@@ -67,20 +67,20 @@ class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         scores = self.indicator.calculate_raw_score(self.data)
         
         # 断言返回的是一个Series
-        self.assertIsInstance(scores, pd.Series)
+        self.assert_is_instance(scores, pd.Series)
         
         # 断言分数在0到100之间
         valid_scores = scores.dropna()
         if len(valid_scores) > 0:
-            self.assertTrue(((valid_scores >= 0) & (valid_scores <= 100)).all())
+            self.assert_true(((valid_scores >= 0) & (valid_scores <= 100)).all())
 
-    def test_signal_generation(self):
+    def test_signal_generation_Adx(self):
         """测试交易信号生成"""
         # 生成交易信号
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 断言返回的是一个字典
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         
         # 断言包含买入和卖出信号
         self.assertIn('buy_signal', signals)
@@ -90,7 +90,7 @@ class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         self.assertIsInstance(signals['buy_signal'], pd.Series)
         self.assertEqual(signals['buy_signal'].dtype, 'bool')
 
-    def test_edge_cases(self):
+    def test_edge_cases_Adx(self):
         """测试边界条件"""
         # 1. 测试数据不足的情况
         short_data = self.data.head(10)
@@ -102,7 +102,7 @@ class TestADX(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         data_with_nan = self.data.copy()
         data_with_nan.iloc[10:21, data_with_nan.columns.get_loc('close')] = np.nan
         result_nan = self.indicator.calculate(data_with_nan)
-        self.assertIsInstance(result_nan, pd.DataFrame)
+        self.assert_is_instance(result_nan, pd.DataFrame)
 
     def test_adx_calculation(self):
         """白盒测试：精确验证 ADX, PDI, MDI 的计算逻辑"""

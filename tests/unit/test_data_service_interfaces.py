@@ -13,20 +13,20 @@ import os
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.interfaces.data_access_interface import IDataAccess
-from db.interfaces.cache_interface import ICacheManager
-from db.interfaces.connection_interface import IConnectionManager
-from db.container import ServiceContainer, LifecycleType, get_container, reset_container
+from db.interfaces.data_access_interface import IData_access
+from db.interfaces.cache_interface import ICache_manager
+from db.interfaces.connection_interface import IConnection_manager
+from db.container import Service_container, Lifecycle_type, get_container, reset_container
 
 
-class TestServiceContainer(unittest.TestCase):
+class Test_service_container(unittest.Test_case):
     """测试服务容器"""
     
-    def setUp(self):
+    def set_up_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
         """测试前准备"""
-        self.container = ServiceContainer()
+        self.container = Service_container()
     
-    def tearDown(self):
+    def tear_down_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
         """测试后清理"""
         reset_container()
     
@@ -34,127 +34,127 @@ class TestServiceContainer(unittest.TestCase):
         """测试注册和解析瞬态服务"""
         
         # 创建模拟接口和实现
-        class ITestService:
+        class Itestservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces:
             pass
         
-        class TestService(ITestService):
+        class Testservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces(ITest_service):
             def __init__(self):
                 self.created_time = id(self)
         
         # 注册服务
-        self.container.register_transient(ITestService, TestService)
+        self.container.register_transient(ITest_service, Test_service)
         
         # 解析服务
-        service1 = self.container.resolve(ITestService)
-        service2 = self.container.resolve(ITestService)
+        service1 = self.get_service(Data_access_interface)
+        service2 = self.get_service(Data_access_interface)
         
         # 验证
-        self.assertIsInstance(service1, TestService)
-        self.assertIsInstance(service2, TestService)
-        self.assertNotEqual(service1.created_time, service2.created_time)  # 瞬态服务每次创建新实例
+        self.assert_is_instance(service1, Test_service)
+        self.assert_is_instance(service2, Test_service)
+        self.assert_not_equal(service1.created_time, service2.created_time)  # 瞬态服务每次创建新实例
     
     def test_register_and_resolve_singleton(self):
         """测试注册和解析单例服务"""
         
         # 创建模拟接口和实现
-        class ITestService:
+        class Itestservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces:
             pass
         
-        class TestService(ITestService):
+        class Testservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces(ITest_service):
             def __init__(self):
                 self.created_time = id(self)
         
         # 注册单例服务
-        self.container.register_singleton(ITestService, TestService)
+        self.container.register_singleton(ITest_service, Test_service)
         
         # 解析服务
-        service1 = self.container.resolve(ITestService)
-        service2 = self.container.resolve(ITestService)
+        service1 = self.get_service(Data_access_interface)
+        service2 = self.get_service(Data_access_interface)
         
         # 验证
-        self.assertIsInstance(service1, TestService)
-        self.assertIsInstance(service2, TestService)
-        self.assertEqual(service1.created_time, service2.created_time)  # 单例服务返回同一实例
+        self.assert_is_instance(service1, Test_service)
+        self.assert_is_instance(service2, Test_service)
+        self.assert_equal(service1.created_time, service2.created_time)  # 单例服务返回同一实例
     
     def test_register_with_factory(self):
         """测试使用工厂方法注册服务"""
         
-        class ITestService:
+        class Itestservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces:
             pass
         
-        class TestService(ITestService):
+        class Testservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces(ITest_service):
             def __init__(self, value):
                 self.value = value
         
         # 使用工厂方法注册
         def factory():
-            return TestService("factory_created")
+            return TestService_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_InterfacesTestdataserviceinterfaces("factory_created")
         
-        self.container.register(ITestService, factory=factory)
+        self.container.register(ITest_service, factory=factory)
         
         # 解析服务
-        service = self.container.resolve(ITestService)
+        service = self.get_service(Data_access_interface)
         
         # 验证
-        self.assertIsInstance(service, TestService)
+        self.assert_is_instance(service, Test_service)
         self.assertEqual(service.value, "factory_created")
     
     def test_register_with_instance(self):
         """测试使用实例注册服务"""
         
-        class ITestService:
+        class Itestservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces:
             pass
         
-        class TestService(ITestService):
+        class Testservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces(ITest_service):
             def __init__(self, value):
                 self.value = value
         
         # 创建实例
-        instance = TestService("instance_value")
+        instance = TestService_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_InterfacesTestdataserviceinterfaces("instance_value")
         
         # 使用实例注册
-        self.container.register(ITestService, instance=instance, lifecycle=LifecycleType.SINGLETON)
+        self.container.register(ITest_service, instance=instance, lifecycle=Lifecycle_type.SINGLETON)
         
         # 解析服务
-        service = self.container.resolve(ITestService)
+        service = self.get_service(Data_access_interface)
         
         # 验证
-        self.assertIs(service, instance)
+        self.assert_is(service, instance)
         self.assertEqual(service.value, "instance_value")
     
     def test_resolve_unregistered_service(self):
         """测试解析未注册的服务"""
         
-        class IUnregisteredService:
+        class IUnregistered_service:
             pass
         
         # 验证抛出异常
-        with self.assertRaises(ValueError) as context:
-            self.container.resolve(IUnregisteredService)
+        with self.assert_raises(Value_error) as context:
+            self.get_service(Data_access_interface)
         
         self.assertIn("服务未注册", str(context.exception))
     
     def test_is_registered(self):
         """测试检查服务是否已注册"""
         
-        class ITestService:
+        class Itestservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces:
             pass
         
-        class TestService(ITestService):
+        class Testservice_interfaces_test_data_service_interfaces_test_data_service_interfacestestdataserviceinterfaces(ITest_service):
             pass
         
         # 初始状态未注册
-        self.assertFalse(self.container.is_registered(ITestService))
+        self.assert_false(self.container.is_registered(ITest_service))
         
         # 注册后已注册
-        self.container.register_transient(ITestService, TestService)
-        self.assertTrue(self.container.is_registered(ITestService))
+        self.container.register_transient(ITest_service, Test_service)
+        self.assert_true(self.container.is_registered(ITest_service))
 
 
-class TestDataAccessInterface(unittest.TestCase):
+class Test_data_access_interface(unittest.Test_case):
     """测试数据访问接口"""
     
-    def test_interface_methods(self):
+    def test_interface_methods_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
         """测试接口方法定义"""
         
         # 验证接口有必要的方法
@@ -171,14 +171,14 @@ class TestDataAccessInterface(unittest.TestCase):
         ]
         
         for method_name in required_methods:
-            self.assertTrue(hasattr(IDataAccess, method_name), 
+            self.assert_true(hasattr(IData_access, method_name), 
                           f"IDataAccess接口缺少方法: {method_name}")
 
 
-class TestCacheInterface(unittest.TestCase):
+class Test_cache_interface(unittest.Test_case):
     """测试缓存接口"""
     
-    def test_interface_methods(self):
+    def test_interface_methods_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
         """测试接口方法定义"""
         
         # 验证接口有必要的方法
@@ -192,14 +192,14 @@ class TestCacheInterface(unittest.TestCase):
         ]
         
         for method_name in required_methods:
-            self.assertTrue(hasattr(ICacheManager, method_name), 
+            self.assert_true(hasattr(ICache_manager, method_name), 
                           f"ICacheManager接口缺少方法: {method_name}")
 
 
-class TestConnectionInterface(unittest.TestCase):
+class Test_connection_interface(unittest.Test_case):
     """测试连接接口"""
     
-    def test_interface_methods(self):
+    def test_interface_methods_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
         """测试接口方法定义"""
         
         # 验证接口有必要的方法
@@ -212,18 +212,18 @@ class TestConnectionInterface(unittest.TestCase):
         ]
         
         for method_name in required_methods:
-            self.assertTrue(hasattr(IConnectionManager, method_name), 
+            self.assert_true(hasattr(IConnection_manager, method_name), 
                           f"IConnectionManager接口缺少方法: {method_name}")
 
 
-class TestGlobalContainer(unittest.TestCase):
+class Test_global_container(unittest.Test_case):
     """测试全局容器"""
     
-    def setUp(self):
+    def set_up_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
         """测试前准备"""
         reset_container()
     
-    def tearDown(self):
+    def tear_down_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
         """测试后清理"""
         reset_container()
     
@@ -236,7 +236,7 @@ class TestGlobalContainer(unittest.TestCase):
         container2 = get_container()
         
         # 验证是同一个实例
-        self.assertIs(container1, container2)
+        self.assert_is(container1, container2)
         
         # 验证设置默认服务被调用
         mock_setup.assert_called_once()

@@ -19,28 +19,28 @@ import pandas as pd
 import numpy as np
 from collections import defaultdict
 import json
-import cProfile
+import c_profile
 import pstats
-from io import StringIO
+from io import String_iO
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-from analysis.buypoints.period_data_processor import PeriodDataProcessor
-from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
+from utils.logger import getLogger
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
+from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 from indicators.complete_indicator_registry import complete_registry
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class PerformanceProfiler:
     """性能分析器"""
     
-    def __init__(self):
-        self.profiler = cProfile.Profile()
+    def __init___87_performanceanalyzer(self):
+        self.profiler = c_profile.Profile()
         self.start_time = None
         self.end_time = None
         self.memory_usage = []
@@ -104,7 +104,7 @@ class PerformanceProfiler:
             return {}
             
         # 获取函数调用统计
-        s = StringIO()
+        s = String_iO()
         ps = pstats.Stats(self.profiler, stream=s)
         ps.sort_stats('cumulative')
         ps.print_stats(50)  # 显示前50个最耗时的函数
@@ -141,10 +141,6 @@ class PerformanceProfiler:
 class PerformanceAnalyzer:
     """股票分析系统性能分析器"""
     
-    def __init__(self):
-        self.profiler = PerformanceProfiler()
-        self.results = {}
-        
     def analyze_batch_processing_performance(self, 
                                            buypoints_csv: str,
                                            sample_size: int = 5) -> Dict[str, Any]:
@@ -161,7 +157,7 @@ class PerformanceAnalyzer:
         logger.info(f"开始分析批量处理性能，采样大小: {sample_size}")
         
         # 加载买点数据
-        analyzer = BuyPointBatchAnalyzer()
+        analyzer = Buy_point_batch_analyzer()
         buypoints_df = analyzer.load_buypoints_from_csv(buypoints_csv)
         
         if buypoints_df.empty:
@@ -221,7 +217,7 @@ class PerformanceAnalyzer:
         logger.info("开始分析指标计算性能")
 
         # 创建指标分析器
-        indicator_analyzer = AutoIndicatorAnalyzer()
+        indicator_analyzer = Auto_indicator_analyzer()
 
         # 获取所有指标
         all_indicators = indicator_analyzer.all_indicators
@@ -322,7 +318,7 @@ class PerformanceAnalyzer:
         logger.info(f"开始分析数据加载性能，股票数量: {len(stock_codes)}")
 
         # 创建数据处理器
-        data_processor = PeriodDataProcessor()
+        data_processor = Period_data_processor()
 
         loading_times = []
         cache_hits = 0
@@ -443,7 +439,7 @@ class PerformanceAnalyzer:
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB
 
         # 加载买点数据
-        analyzer = BuyPointBatchAnalyzer()
+        analyzer = Buy_point_batch_analyzer()
         buypoints_df = analyzer.load_buypoints_from_csv(buypoints_csv)
 
         if buypoints_df.empty:
@@ -575,7 +571,7 @@ class PerformanceAnalyzer:
             memory_perf = performance_results['memory_usage']
             avg_increase = memory_perf.get('avg_memory_increase_per_stock_mb', 0)
 
-            if avg_increase > 100:  # 每股超过100MB内存增长
+            if avg_increase > 100:  # 每股超过100_mB内存增长
                 recommendations.append({
                     'category': '内存优化',
                     'priority': 'HIGH',

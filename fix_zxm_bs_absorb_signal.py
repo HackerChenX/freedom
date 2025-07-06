@@ -190,7 +190,7 @@ def test_strategy_condition():
     print("\n=== 测试策略条件评估 ===\n")
     
     # 模拟策略条件评估器的逻辑
-    from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+    from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
     
     # 获取数据管理器
     data_manager = get_unified_data_manager()
@@ -219,7 +219,7 @@ def test_strategy_condition():
     print(f"日线数据: {len(daily_data)} 条")
     
     # 创建条件评估器
-    evaluator = StrategyConditionEvaluator()
+    evaluator = Strategy_condition_evaluator()
     
     # 模拟策略条件
     conditions = [
@@ -267,7 +267,7 @@ def test_strategy_condition():
         traceback.print_exc()
         return False
 
-def main():
+def main_fixzxmbsabsorbsignal():
     """主函数"""
     print("🔧 ZXM_BS_ABSORB指标BUY信号修复工具\n")
     
@@ -295,4 +295,4 @@ def main():
         print("\n❌ 修复失败")
 
 if __name__ == "__main__":
-    main()
+    main_fixzxmbsabsorbsignal()

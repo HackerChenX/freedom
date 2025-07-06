@@ -78,7 +78,7 @@ def weighted_moving_average(data: np.ndarray, window: int) -> np.ndarray:
     
     return wma
 
-def macd(data: np.ndarray, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def macd_Utils(data: np.ndarray, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     计算MACD指标
     
@@ -106,7 +106,7 @@ def macd(data: np.ndarray, fast_period: int = 12, slow_period: int = 26, signal_
     
     return macd_line, signal_line, histogram
 
-def rsi(data: np.ndarray, period: int = 14) -> np.ndarray:
+def rsi_Utils(data: np.ndarray, period: int = 14) -> np.ndarray:
     """
     计算相对强弱指标(RSI)
     
@@ -436,7 +436,7 @@ def relative_strength_index(data: np.ndarray, period: int = 14) -> np.ndarray:
     Returns:
         np.ndarray: RSI值
     """
-    return rsi(data, period)
+    return rsi_Utils(data, period)
 
 def standard_deviation(data: np.ndarray, window: int = 20) -> np.ndarray:
     """
@@ -533,14 +533,14 @@ def fibonacci_retracement(high: float, low: float) -> Dict[str, float]:
 
 def zigzag(data: np.ndarray, min_change: float = 0.05) -> Tuple[np.ndarray, List[int]]:
     """
-    计算ZigZag线
+    计算Zig_zag线
     
     Args:
         data: 数据序列
         min_change: 最小变化百分比
         
     Returns:
-        Tuple[np.ndarray, List[int]]: (ZigZag线, 转折点位置)
+        Tuple[np.ndarray, List[int]]: (Zig_zag线, 转折点位置)
     """
     if len(data) < 2:
         return np.full_like(data, np.nan, dtype=float), []
@@ -615,7 +615,7 @@ def find_peaks_and_troughs(data: np.ndarray, window: int = 5) -> Tuple[list, lis
     """
     return [], []
 
-def calculate_ma(data: pd.Series, period: int) -> pd.Series:
+def calculate_ma_Utils(data: pd.Series, period: int) -> pd.Series:
     """
     计算移动平均线
     
@@ -628,7 +628,7 @@ def calculate_ma(data: pd.Series, period: int) -> pd.Series:
     """
     return data.rolling(window=period).mean()
 
-def calculate_ema(data: pd.Series, period: int) -> pd.Series:
+def calculate_ema_Utils(data: pd.Series, period: int) -> pd.Series:
     """
     计算指数移动平均线
     
@@ -641,7 +641,7 @@ def calculate_ema(data: pd.Series, period: int) -> pd.Series:
     """
     return data.ewm(span=period, adjust=False).mean()
 
-def calculate_macd(data: pd.Series, fast_period: int = 12, slow_period: int = 26, 
+def calculate_macd_Utils(data: pd.Series, fast_period: int = 12, slow_period: int = 26, 
                   signal_period: int = 9) -> Tuple[pd.Series, pd.Series, pd.Series]:
     """
     计算MACD指标
@@ -656,21 +656,21 @@ def calculate_macd(data: pd.Series, fast_period: int = 12, slow_period: int = 26
         Tuple[pd.Series, pd.Series, pd.Series]: (DIF, DEA, MACD)
     """
     # 计算快线和慢线的EMA
-    ema_fast = calculate_ema(data, fast_period)
-    ema_slow = calculate_ema(data, slow_period)
+    ema_fast = calculate_ema_Utils(data, fast_period)
+    ema_slow = calculate_ema_Utils(data, slow_period)
     
     # 计算DIF
     dif = ema_fast - ema_slow
     
     # 计算DEA
-    dea = calculate_ema(dif, signal_period)
+    dea = calculate_ema_Utils(dif, signal_period)
     
     # 计算MACD
     macd = (dif - dea) * 2
     
     return dif, dea, macd
 
-def calculate_kdj(high: pd.Series, low: pd.Series, close: pd.Series,
+def calculate_kdj_Utils(high: pd.Series, low: pd.Series, close: pd.Series,
                  k_period: int = 9, d_period: int = 3, j_period: int = 3) -> Tuple[pd.Series, pd.Series, pd.Series]:
     """
     计算KDJ指标
@@ -712,7 +712,7 @@ def calculate_kdj(high: pd.Series, low: pd.Series, close: pd.Series,
     
     return k, d, j
 
-def calculate_rsi(data: pd.Series, period: int = 14) -> pd.Series:
+def calculate_rsi_Utils(data: pd.Series, period: int = 14) -> pd.Series:
     """
     计算RSI指标
     
@@ -736,7 +736,7 @@ def calculate_rsi(data: pd.Series, period: int = 14) -> pd.Series:
     
     return rsi
 
-def calculate_bollinger_bands(data: pd.Series, period: int = 20, 
+def calculate_bollinger_bands_Utils(data: pd.Series, period: int = 20, 
                             num_std: float = 2.0) -> Tuple[pd.Series, pd.Series, pd.Series]:
     """
     计算布林带
@@ -750,7 +750,7 @@ def calculate_bollinger_bands(data: pd.Series, period: int = 20,
         Tuple[pd.Series, pd.Series, pd.Series]: (中轨, 上轨, 下轨)
     """
     # 计算中轨
-    middle_band = calculate_ma(data, period)
+    middle_band = calculate_ma_Utils(data, period)
     
     # 计算标准差
     std = data.rolling(window=period).std()
@@ -816,49 +816,49 @@ def calculate_slope(points: List[Tuple[int, float]]) -> float:
 
 # === 从 BaseIndicator 迁移的通用函数 ===
 
-def crossover(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
+def crossover_Utils(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
     """
     判断series1上穿series2
     """
     return (series1 > series2) & (series1.shift(1) <= series2)
 
 
-def crossunder(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
+def crossunder_Utils(series1: pd.Series, series2: Union[pd.Series, float, int]) -> pd.Series:
     """
     判断series1下穿series2
     """
     return (series1 < series2) & (series1.shift(1) >= series2)
 
 
-def sma(series: pd.Series, periods: int) -> pd.Series:
+def sma_Utils(series: pd.Series, periods: int) -> pd.Series:
     """
     计算简单移动平均 (SMA)
     """
     return series.rolling(window=periods, min_periods=periods).mean()
 
 
-def ema(series: pd.Series, periods: int) -> pd.Series:
+def ema_Utils(series: pd.Series, periods: int) -> pd.Series:
     """
     计算指数移动平均 (EMA)
     """
     return series.ewm(span=periods, adjust=False).mean()
 
 
-def highest(series: pd.Series, periods: int) -> pd.Series:
+def highest_Utils(series: pd.Series, periods: int) -> pd.Series:
     """
     获取N周期内的最高价
     """
     return series.rolling(window=periods, min_periods=periods).max()
 
 
-def lowest(series: pd.Series, periods: int) -> pd.Series:
+def lowest_Utils(series: pd.Series, periods: int) -> pd.Series:
     """
     获取N周期内的最低价
     """
     return series.rolling(window=periods, min_periods=periods).min()
 
 
-def atr(high: pd.Series, low: pd.Series, close: pd.Series, periods: int) -> pd.Series:
+def atr_Utils(high: pd.Series, low: pd.Series, close: pd.Series, periods: int) -> pd.Series:
     """
     计算平均真实波幅 (ATR)
     """
@@ -866,10 +866,10 @@ def atr(high: pd.Series, low: pd.Series, close: pd.Series, periods: int) -> pd.S
     tr2 = abs(high - close.shift(1))
     tr3 = abs(low - close.shift(1))
     tr = pd.DataFrame({'tr1': tr1, 'tr2': tr2, 'tr3': tr3}).max(axis=1)
-    return ema(tr, periods)
+    return ema_Utils(tr, periods)
 
 
-def ensure_columns(data: pd.DataFrame, required_columns: List[str]) -> None:
+def ensure_columns_Utils(data: pd.DataFrame, required_columns: List[str]) -> None:
     """
     确保DataFrame中存在所需的列
     

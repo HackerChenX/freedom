@@ -18,11 +18,11 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from utils.logger import get_logger
-from utils.period_manager import PeriodManager
-from enums.kline_period import KlinePeriod
+from utils.logger import getLogger
+from utils.period_manager import Period_manager
+from enums.kline_period import Kline_period
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class PeriodDataProcessor:
     """多周期数据处理器"""
@@ -30,7 +30,7 @@ class PeriodDataProcessor:
     def __init__(self):
         """初始化数据处理器"""
         self.db = get_unified_data_manager()
-        self.period_manager = PeriodManager()
+        self.period_manager = Period_manager()
         self.data_cache = {}
     
     def get_multi_period_data(self, 
@@ -65,7 +65,7 @@ class PeriodDataProcessor:
                 min15_data = self._get_kline_data(
                     stock_code=stock_code,
                     end_date=end_date,
-                    period=KlinePeriod.MIN_15
+                    period=Kline_period.MIN_15
                 )
                 result['15min'] = min15_data
             
@@ -87,16 +87,16 @@ class PeriodDataProcessor:
             if '30min' in periods and '15min' in result and not result['15min'].empty:
                 min30_data = self._convert_period_data(
                     result['15min'], 
-                    KlinePeriod.MIN_15, 
-                    KlinePeriod.MIN_30
+                    Kline_period.MIN_15, 
+                    Kline_period.MIN_30
                 )
                 result['30min'] = min30_data
             
             if '60min' in periods and '15min' in result and not result['15min'].empty:
                 min60_data = self._convert_period_data(
                     result['15min'], 
-                    KlinePeriod.MIN_15, 
-                    KlinePeriod.MIN_60
+                    Kline_period.MIN_15, 
+                    Kline_period.MIN_60
                 )
                 result['60min'] = min60_data
             
@@ -112,7 +112,7 @@ class PeriodDataProcessor:
     def _get_kline_data(self, 
                       stock_code: str, 
                       end_date: str, 
-                      period: KlinePeriod) -> pd.DataFrame:
+                      period: Kline_period) -> pd.DataFrame:
         """
         获取K线数据
         
@@ -126,7 +126,7 @@ class PeriodDataProcessor:
         """
         try:
             # 使用增强数据管理器获取股票数据
-            stock_info = self.db.get_stock_info(
+            stock_info WHERE 1=1 = self.db.get_stock_info(
                 stock_code=stock_code,
                 level=period,
                 end_date=end_date,
@@ -159,10 +159,10 @@ class PeriodDataProcessor:
         标准化列名，确保使用英文列名
 
         Args:
-            df: 原始DataFrame
+            df: 原始Data_frame
 
         Returns:
-            pd.DataFrame: 标准化列名后的DataFrame
+            pd.DataFrame: 标准化列名后的Data_frame
         """
         if df.empty:
             return df
@@ -210,10 +210,10 @@ class PeriodDataProcessor:
         添加衍生数据列，确保指标计算所需的列存在
 
         Args:
-            df: 标准化后的DataFrame
+            df: 标准化后的Data_frame
 
         Returns:
-            pd.DataFrame: 添加衍生列后的DataFrame
+            pd.DataFrame: 添加衍生列后的Data_frame
         """
         if df.empty:
             return df
@@ -247,7 +247,7 @@ class PeriodDataProcessor:
                 low_min = df_copy['low'].rolling(window=9, min_periods=1).min()
                 high_max = df_copy['high'].rolling(window=9, min_periods=1).max()
                 rsv = (df_copy['close'] - low_min) / (high_max - low_min) * 100
-                rsv = rsv.fillna(50)  # 填充NaN值
+                rsv = rsv.fillna(50)  # 填充Na_n值
 
                 # 计算K值（使用简化的移动平均）
                 df_copy['k'] = rsv.rolling(window=3, min_periods=1).mean()
@@ -268,7 +268,7 @@ class PeriodDataProcessor:
 
         return df_copy
 
-    def _get_stock_min_date(self, stock_code: str, period: KlinePeriod) -> str:
+    def _get_stock_min_date(self, stock_code: str, period: Kline_period) -> str:
         """
         获取股票在特定周期下的最早日期
         
@@ -282,7 +282,7 @@ class PeriodDataProcessor:
         try:
             # 使用增强数据管理器获取最早日期
             try:
-                stock_info = self.db.get_stock_info(
+                stock_info WHERE 1=1 = self.db.get_stock_info(
                     stock_code=stock_code,
                     level=period,
                     limit=1,
@@ -303,8 +303,8 @@ class PeriodDataProcessor:
     
     def _convert_period_data(self, 
                           data: pd.DataFrame, 
-                          from_period: KlinePeriod, 
-                          to_period: KlinePeriod) -> pd.DataFrame:
+                          from_period: Kline_period, 
+                          to_period: Kline_period) -> pd.DataFrame:
         """
         转换K线周期
         
@@ -358,7 +358,7 @@ class PeriodDataProcessor:
             
             # 转换周期格式为枚举
             if isinstance(period, str):
-                period_enum = KlinePeriod.from_string(period)
+                period_enum = Kline_period.from_string(period)
             else:
                 period_enum = period
             
@@ -395,7 +395,7 @@ class PeriodDataProcessor:
         try:
             # 使用增强数据管理器获取最早日期
             try:
-                stock_info = self.db.get_stock_info(
+                stock_info WHERE 1=1 = self.db.get_stock_info(
                     stock_code=stock_code,
                     limit=1,
                     order_by="date ASC"

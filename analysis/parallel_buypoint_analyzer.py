@@ -22,12 +22,12 @@ import json
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-from analysis.buypoints.period_data_processor import PeriodDataProcessor
-from analysis.buypoints.auto_indicator_analyzer import AutoIndicatorAnalyzer
+from utils.logger import getLogger
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
+from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def analyze_single_buypoint_worker(args):
@@ -44,7 +44,7 @@ def analyze_single_buypoint_worker(args):
     
     try:
         # 在每个进程中创建独立的分析器实例
-        analyzer = BuyPointBatchAnalyzer()
+        analyzer = Buy_point_batch_analyzer()
         
         # 分析单个买点
         result = analyzer.analyze_single_buypoint(stock_code, buypoint_date)
@@ -70,7 +70,7 @@ def analyze_single_buypoint_worker(args):
 class ParallelBuyPointAnalyzer:
     """并行买点分析器"""
     
-    def __init__(self, max_workers: Optional[int] = None):
+    def __init___85(self, max_workers: Optional[int] = None):
         self.max_workers = max_workers or min(multiprocessing.cpu_count(), 8)
         logger.info(f"并行分析器初始化，最大工作进程: {self.max_workers}")
         
@@ -81,7 +81,7 @@ class ParallelBuyPointAnalyzer:
         并行批量分析买点
         
         Args:
-            buypoints_df: 买点数据DataFrame
+            buypoints_df: 买点数据Data_frame
             chunk_size: 分块大小，默认为进程数
             
         Returns:
@@ -126,7 +126,7 @@ class ParallelBuyPointAnalyzer:
         使用concurrent.futures的并行分析
         
         Args:
-            buypoints_df: 买点数据DataFrame
+            buypoints_df: 买点数据Data_frame
             
         Returns:
             List[Dict[str, Any]]: 分析结果列表
@@ -136,7 +136,7 @@ class ParallelBuyPointAnalyzer:
         results = []
         start_time = time.time()
         
-        with concurrent.futures.ProcessPoolExecutor(max_workers=self.max_workers) as executor:
+        with concurrent.futures.Process_pool_executor(max_workers=self.max_workers) as executor:
             # 提交所有任务
             future_to_buypoint = {}
             
@@ -181,7 +181,7 @@ def compare_performance(buypoints_csv: str, sample_size: int = 5):
     print("="*60)
     
     # 加载测试数据
-    base_analyzer = BuyPointBatchAnalyzer()
+    base_analyzer = Buy_point_batch_analyzer()
     buypoints_df = base_analyzer.load_buypoints_from_csv(buypoints_csv)
     
     if buypoints_df.empty:
@@ -210,7 +210,7 @@ def compare_performance(buypoints_csv: str, sample_size: int = 5):
     
     # 2. 多进程并行测试
     print("\n2. 多进程并行测试...")
-    parallel_analyzer = ParallelBuyPointAnalyzer()
+    parallel_analyzer = Parallel_buy_point_analyzer()
     start_time = time.time()
     parallel_results = parallel_analyzer.analyze_batch_buypoints_parallel(test_df)
     parallel_time = time.time() - start_time

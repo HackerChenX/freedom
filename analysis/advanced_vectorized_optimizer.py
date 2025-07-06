@@ -20,9 +20,9 @@ import warnings
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 # 忽略pandas性能警告
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
@@ -31,7 +31,7 @@ warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 class AdvancedVectorizedOptimizer:
     """高级向量化优化器"""
     
-    def __init__(self):
+    def __init___99(self):
         self.optimization_stats = {
             'vectorized_indicators': 0,
             'total_time_saved': 0.0,
@@ -163,7 +163,7 @@ class AdvancedVectorizedOptimizer:
             'MACD_Trend': self._analyze_macd_trend(macd_line, signal_line, histogram)
         }
     
-    def optimize_volume_indicators(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def optimize_volume_indicators_Optimizer(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
         优化成交量指标计算 - 批量向量化
         
@@ -453,7 +453,7 @@ def test_advanced_vectorization():
         'volume': np.random.randint(1000000, 10000000, 1000)
     })
     
-    optimizer = AdvancedVectorizedOptimizer()
+    optimizer = Advanced_vectorized_optimizer()
     
     # 测试各个优化模块
     print("1. 测试增强RSI...")
@@ -479,7 +479,7 @@ def test_advanced_vectorization():
     
     print("\n4. 测试成交量指标...")
     start_time = time.time()
-    volume_results = optimizer.optimize_volume_indicators(test_data)
+    volume_results = optimizer.optimize_volume_indicators_Optimizer(test_data)
     volume_time = time.time() - start_time
     print(f"   成交量指标计算完成: {volume_time:.4f}s")
     print(f"   结果包含: {list(volume_results.keys())}")

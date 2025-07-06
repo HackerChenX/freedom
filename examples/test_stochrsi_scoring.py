@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-测试StochRSI指标评分功能
+测试Stoch_rSI指标评分功能
 
-验证StochRSI（随机相对强弱指标）的评分机制是否正常工作
+验证Stoch_rSI（随机相对强弱指标）的评分机制是否正常工作
 """
 
 import os
@@ -23,7 +23,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def generate_test_data(length=100):
+def generate_test_data_Scoring(length=100):
     """生成测试数据"""
     np.random.seed(42)  # 固定随机种子以确保结果可重现
     
@@ -88,7 +88,7 @@ def test_stochrsi_scoring():
     
     try:
         # 生成测试数据
-        data = generate_test_data(100)
+        data = generate_test_data_Scoring(100)
         print(f"✓ 生成测试数据完成，数据长度: {len(data)}")
         
         # 创建StochRSI指标
@@ -168,13 +168,13 @@ def test_stochrsi_scoring():
         return False
 
 
-def test_stochrsi_patterns():
+def test_stochrsi_patterns_Scoring():
     """测试StochRSI指标形态识别"""
     print("\n=== 测试StochRSI指标形态识别 ===")
     
     try:
         # 生成测试数据
-        data = generate_test_data(100)
+        data = generate_test_data_Scoring(100)
         print(f"✓ 生成测试数据完成，数据长度: {len(data)}")
         
         # 测试StochRSI形态识别
@@ -198,7 +198,7 @@ def test_stochrsi_detailed():
     
     try:
         # 生成测试数据
-        data = generate_test_data(100)
+        data = generate_test_data_Scoring(100)
         
         # 创建StochRSI指标
         stochrsi = complete_registry.create_indicator('STOCHRSI', period=14, k_period=3, d_period=3)
@@ -253,7 +253,7 @@ def test_stochrsi_detailed():
         return False
 
 
-def main():
+def main_teststochrsiscoring():
     """主函数"""
     print("开始测试StochRSI指标评分功能...")
     
@@ -264,7 +264,7 @@ def main():
     test_results.append(test_stochrsi_scoring())
     
     # 测试形态识别
-    test_results.append(test_stochrsi_patterns())
+    test_results.append(test_stochrsi_patterns_Scoring())
     
     # 测试详细功能
     test_results.append(test_stochrsi_detailed())
@@ -288,4 +288,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_teststochrsiscoring() 

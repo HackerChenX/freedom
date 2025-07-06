@@ -3,34 +3,34 @@ import pandas as pd
 import numpy as np
 
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testrsi_rsi(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """RSI指标单元测试类"""
 
-    def setUp(self):
+    def set_up_Rsi(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        Log_capture_mixin.set_up_Rsi(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('RSI', period=14, ma_periods=[5, 10], overbought=70.0, oversold=30.0)
         self.expected_columns = [f'rsi_{self.indicator.period}']
         # 使用一个包含多种走势的数据进行通用测试
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30},
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tearDown(self):
+    def tear_down_Rsi(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)  # 显式调用Mixin的tearDown
+        Log_capture_mixin.tear_down_Rsi(self)  # 显式调用Mixin的tear_down
 
     def clear_logs_before_test(self):
         """在测试前清除日志"""
         self.clear_logs()
 
-    def test_basic_calculation(self):
+    def test_basic_calculation_Rsi(self):
         """测试RSI基础计算功能"""
         result = self.indicator.calculate(self.data)
 
@@ -55,7 +55,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_rsi_overbought_detection(self):
         """测试RSI超买检测"""
         # 生成强劲上涨趋势数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 15},  # 快速上涨
         ])
@@ -71,7 +71,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_rsi_oversold_detection(self):
         """测试RSI超卖检测"""
         # 生成强劲下跌趋势数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 15},   # 快速下跌
         ])
@@ -87,7 +87,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_rsi_neutral_zone(self):
         """测试RSI在中性区域"""
         # 生成横盘数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'sideways', 'start_price': 100, 'periods': 50, 'volatility': 0.01}
         ])
         result = self.indicator.calculate(data)
@@ -98,9 +98,9 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         neutral_values = rsi_values[(rsi_values >= 30) & (rsi_values <= 70)]
         self.assertGreater(len(neutral_values), len(rsi_values) * 0.7, "大部分RSI值应在中性区域")
 
-    def test_golden_cross(self):
+    def test_golden_cross_Rsi(self):
         """测试RSI均线金叉"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 10},   # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 105, 'periods': 15},   # 反弹
@@ -112,9 +112,9 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 在反弹过程中应该检测到金叉
         self.assertGreater(patterns['RSI_GOLDEN_CROSS'].sum(), 0, "未检测到RSI金叉")
 
-    def test_death_cross(self):
+    def test_death_cross_Rsi(self):
         """测试RSI均线死叉"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 10},  # 上涨
             {'type': 'trend', 'start_price': 110, 'end_price': 95, 'periods': 15},   # 回调
@@ -126,10 +126,10 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 在回调过程中应该检测到死叉
         self.assertGreater(patterns['RSI_DEATH_CROSS'].sum(), 0, "未检测到RSI死叉")
 
-    def test_overbought_oversold_patterns(self):
+    def test_overbought_oversold_patterns_Rsi(self):
         """测试超买超卖形态检测"""
         # 生成超买数据
-        overbought_data = TestDataGenerator.generate_price_sequence([
+        overbought_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 15},  # 快速上涨
         ])
@@ -141,7 +141,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(overbought_patterns['RSI_OVERBOUGHT'].iloc[-5:].any(), "未检测到超买形态")
 
         # 生成超卖数据
-        oversold_data = TestDataGenerator.generate_price_sequence([
+        oversold_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 15},   # 快速下跌
         ])
@@ -152,10 +152,10 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIn('RSI_OVERSOLD', oversold_patterns.columns, "模式结果中缺少 RSI_OVERSOLD 列")
         self.assertTrue(oversold_patterns['RSI_OVERSOLD'].iloc[-5:].any(), "未检测到超卖形态")
 
-    def test_signal_generation(self):
+    def test_signal_generation_Rsi(self):
         """测试RSI信号生成"""
         # 生成包含多种走势的数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 10},   # 下跌到超卖
             {'type': 'trend', 'start_price': 70, 'end_price': 120, 'periods': 15},   # 反弹到超买
@@ -174,10 +174,10 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 在超买区域应该有卖出信号
         self.assertTrue(signals['sell_signal'].any(), "应该检测到卖出信号")
 
-    def test_score_calculation(self):
+    def test_score_calculation_Rsi(self):
         """测试RSI评分计算功能"""
         # 生成测试数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 10},   # 快速下跌
             {'type': 'trend', 'start_price': 70, 'end_price': 120, 'periods': 15},   # 快速上涨
@@ -211,7 +211,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(raw_score, pd.Series, "原始评分应为Series")
         self.assertTrue(all(0 <= s <= 100 for s in raw_score if not pd.isna(s)), "原始评分应在0-100范围内")
 
-    def test_parameter_setting(self):
+    def test_parameter_setting_Rsi(self):
         """测试RSI参数设置"""
         # 测试参数设置方法
         new_period = 21
@@ -237,10 +237,10 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         rsi_col = f'rsi_{new_period}'
         self.assertIn(rsi_col, result.columns, f"结果应包含{rsi_col}列")
 
-    def test_edge_cases(self):
+    def test_edge_cases_Rsi(self):
         """测试边界条件"""
         # 测试数据长度不足的情况
-        short_data = TestDataGenerator.generate_price_sequence([
+        short_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 5}
         ])
 
@@ -248,7 +248,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(result, pd.DataFrame, "短数据计算结果应为DataFrame")
 
         # 测试价格无变化的情况
-        flat_data = TestDataGenerator.generate_price_sequence([
+        flat_data = Test_data_generator.generate_price_sequence([
             {'type': 'flat', 'start_price': 100, 'periods': 30}
         ])
 
@@ -260,14 +260,14 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         try:
             result = self.indicator.calculate(empty_data)
             self.assertIsInstance(result, pd.DataFrame, "空数据计算结果应为DataFrame")
-        except ValueError:
+        except Value_error:
             # 空数据抛出异常是可以接受的
             pass
 
-    def test_robustness(self):
+    def test_robustness_Rsi(self):
         """测试RSI指标的鲁棒性"""
         # 测试包含异常值的数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 20}
         ])
 

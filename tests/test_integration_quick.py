@@ -14,7 +14,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_executor import Strategy_executor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -48,12 +48,12 @@ def test_data_layer():
         return False
 
 
-def test_strategy_execution():
+def test_strategy_execution_Quick():
     """测试策略执行核心功能"""
     print("\n=== 测试2: 策略执行集成 ===")
     
     try:
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         # 简单策略
         simple_strategy = {
@@ -113,7 +113,7 @@ def test_performance_benchmark():
     print("\n=== 测试3: 性能基准测试 ===")
     
     try:
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         # 性能测试策略
         perf_strategy = {
@@ -166,12 +166,12 @@ def test_performance_benchmark():
         return False
 
 
-def test_error_handling():
+def test_error_handling_Quick():
     """测试错误处理"""
     print("\n=== 测试4: 错误处理测试 ===")
     
     try:
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         # 无效策略测试
         invalid_strategy = {

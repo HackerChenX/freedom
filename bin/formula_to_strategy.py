@@ -26,7 +26,7 @@ from utils.path_utils import get_strategy_dir, get_result_dir
 logger = get_logger(__name__)
 
 
-def parse_args():
+def parse_args_Strategy():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='通达信公式转换为选股策略')
     
@@ -52,7 +52,7 @@ def parse_args():
     output_group.add_argument('-o', '--output', help='输出文件路径，支持.json和.yaml格式')
     output_group.add_argument('--pretty', action='store_true', help='美化输出')
     
-    return parser.parse_args()
+    return parser.parse_args_Strategy()
 
 
 def load_formula(file_path=None, formula_text=None):
@@ -230,9 +230,9 @@ def save_to_file(strategy_config, output_file, pretty=False):
         print(f"保存策略配置到文件失败: {e}")
 
 
-def main():
+def main_26():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Strategy()
     
     # 加载公式
     formula_text = load_formula(args.file, args.text)
@@ -273,4 +273,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
+    main_26() 

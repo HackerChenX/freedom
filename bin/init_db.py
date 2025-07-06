@@ -9,9 +9,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from config.config import get_config
-from db.container import get_container
-from db.interfaces.data_access_interface import IDataAccess
-from db.interfaces.connection_interface import IConnectionManager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from db.interfaces.connection_interface import IConnection_manager
 from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
 
@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 @performance_monitor(threshold_seconds=5.0)
 def init_database():
     """
-    初始化ClickHouse数据库和表
+    初始化Click_house数据库和表
     
     Returns:
         bool: 初始化是否成功
@@ -35,7 +35,7 @@ def init_database():
         
         # 使用依赖注入获取连接管理器
         container = get_container()
-        connection_manager = container.resolve(IConnectionManager)
+        connection_manager = get_service(Data_access_interface)
         
         # 检查连接健康状态
         if not connection_manager.is_healthy():
@@ -45,7 +45,7 @@ def init_database():
         logger.info(f"连接到ClickHouse数据库: {db_config.get('host')}:{db_config.get('port')}")
         
         # 获取数据访问接口
-        data_access = container.resolve(IDataAccess)
+        data_access = get_service(Data_access_interface)
         
         # 初始化数据库
         database_name = db_config.get('database', 'stock_data')
@@ -57,7 +57,7 @@ def init_database():
         
         # 创建股票信息表（如果不存在）
         create_table_sql = f"""
-        CREATE TABLE IF NOT EXISTS {database_name}.stock_info (
+        CREATE TABLE IF NOT EXISTS {database_name}.stock_info WHERE 1=1 (
             code String,
             name String,
             date Date,
@@ -71,9 +71,9 @@ def init_database():
             price_change Float64,
             price_range Float64,
             industry String,
-            datetime DateTime,
+            datetime Date_time,
             seq UInt64
-        ) ENGINE = MergeTree()
+        ) engine = Merge_tree()
         ORDER BY (code, date, level)
         """
         data_access.query(create_table_sql)

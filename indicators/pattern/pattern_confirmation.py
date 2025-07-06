@@ -22,15 +22,15 @@ class PatternConfirmation(BaseIndicator, PatternSignalMixin):
         """初始化形态确认指标"""
         super().__init__(name="PatternConfirmation", description="形态确认指标，验证形态的有效性和可靠性")
     
-    def _calculate(self, data):
+    def _calculate_patternconfirmation(self, data):
         """
         计算形态确认
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
-            DataFrame: 包含形态确认结果的DataFrame
+            Data_frame: 包含形态确认结果的Data_frame
         """
         # 创建结果DataFrame
         result = data.copy()
@@ -58,15 +58,15 @@ class PatternConfirmation(BaseIndicator, PatternSignalMixin):
 
         return result
     
-    def get_patterns(self, data):
+    def get_patterns_Confirmation(self, data):
         """
         获取已确认形态列表
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
-            DataFrame: 包含已确认形态列表的DataFrame
+            Data_frame: 包含已确认形态列表的Data_frame
         """
         # 返回已确认形态列表
         patterns = pd.DataFrame({
@@ -79,12 +79,12 @@ class PatternConfirmation(BaseIndicator, PatternSignalMixin):
         
         return patterns
     
-    def calculate_raw_score(self, data):
+    def calculate_raw_score_Confirmation(self, data):
         """
         计算原始评分
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
             float: 介于0-100之间的评分值
@@ -92,7 +92,7 @@ class PatternConfirmation(BaseIndicator, PatternSignalMixin):
         # 简单实现，返回固定评分
         return 80.0 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Confirmation(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

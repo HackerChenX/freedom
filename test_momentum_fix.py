@@ -20,7 +20,7 @@ sys.path.insert(0, root_dir)
 
 from indicators.momentum import MOMENTUM
 
-def create_test_data():
+def create_test_data_Fix_Test_Momentum_Fix():
     """创建测试数据"""
     dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
     
@@ -72,7 +72,7 @@ def test_momentum_calculation():
     print("=== MOMENTUM计算功能测试 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix_Test_Momentum_Fix()
     
     # 创建MOMENTUM指标实例
     momentum = MOMENTUM(period=14)
@@ -138,7 +138,7 @@ def test_momentum_scoring():
     print("\n=== MOMENTUM评分功能测试 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix_Test_Momentum_Fix()
     
     # 创建MOMENTUM指标实例
     momentum = MOMENTUM(period=14)
@@ -183,7 +183,7 @@ def test_momentum_patterns():
     print("\n=== MOMENTUM形态识别测试 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix_Test_Momentum_Fix()
     
     # 创建MOMENTUM指标实例
     momentum = MOMENTUM(period=14)
@@ -208,7 +208,7 @@ def test_momentum_confidence():
     print("\n=== MOMENTUM置信度测试 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix_Test_Momentum_Fix()
     
     # 创建MOMENTUM指标实例
     momentum = MOMENTUM(period=14)
@@ -236,7 +236,7 @@ def demonstrate_momentum_behavior():
     print("\n=== MOMENTUM行为演示 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix_Test_Momentum_Fix()
     
     # 创建MOMENTUM指标实例
     momentum = MOMENTUM(period=14)
@@ -271,7 +271,7 @@ def demonstrate_momentum_behavior():
             print(f"    MOMENTUM范围: {momentum_range}")
             print(f"    平均评分: {avg_score:.2f}")
 
-def main():
+def main_testmomentumfix():
     """主函数"""
     print("MOMENTUM指标修复验证测试")
     print("=" * 50)
@@ -295,4 +295,4 @@ def main():
     print("测试完成")
 
 if __name__ == "__main__":
-    main() 
+    main_testmomentumfix() 

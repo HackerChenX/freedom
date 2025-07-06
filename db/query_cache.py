@@ -15,11 +15,11 @@ import pickle
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 import pandas as pd
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, Ordered_dict
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class QueryCache:
@@ -33,7 +33,7 @@ class QueryCache:
     - 预聚合数据缓存
     """
     
-    def __init__(self, 
+    def __init___22(self, 
                  max_memory_size: int = 1000,
                  max_disk_size: int = 5000,
                  default_ttl: int = 1800,
@@ -56,7 +56,7 @@ class QueryCache:
         self.cache_dir = cache_dir
         
         # 内存缓存（LRU）
-        self.memory_cache = OrderedDict()
+        self.memory_cache = Ordered_dict()
         self.memory_timestamps = {}
         self.memory_access_count = defaultdict(int)
         
@@ -70,7 +70,7 @@ class QueryCache:
         
         # 查询模式统计
         self.query_patterns = defaultdict(int)
-        self.popular_queries = OrderedDict()
+        self.popular_queries = Ordered_dict()
         
         # 线程安全锁
         self.memory_lock = threading.RLock()
@@ -360,13 +360,13 @@ class QueryCache:
         else:
             return 'general_query'
     
-    def clear(self, pattern: Optional[str] = None):
+    def clear_Cache_Query_Cache(self, pattern: Optional[str] = None):
         """清除缓存"""
         with self.memory_lock:
             if pattern is None:
-                self.memory_cache.clear()
-                self.memory_timestamps.clear()
-                self.memory_access_count.clear()
+                self.memory_cache.clear_Cache_Query_Cache()
+                self.memory_timestamps.clear_Cache_Query_Cache()
+                self.memory_access_count.clear_Cache_Query_Cache()
             else:
                 keys_to_remove = [k for k in self.memory_cache.keys() if pattern in k]
                 for key in keys_to_remove:
@@ -384,7 +384,7 @@ class QueryCache:
         
         logger.info(f"缓存已清除，模式: {pattern or '全部'}")
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_Cache_Query_Cache(self) -> Dict[str, Any]:
         """获取缓存统计信息"""
         with self.memory_lock, self.disk_lock, self.pattern_lock:
             total_hits = self.stats['memory_hits'] + self.stats['disk_hits'] + self.stats['aggregated_hits']
@@ -408,13 +408,13 @@ _query_cache = None
 _cache_lock = threading.Lock()
 
 
-def get_query_cache() -> QueryCache:
+def get_query_cache() -> Query_cache:
     """获取全局查询缓存实例"""
     global _query_cache
     
     if _query_cache is None:
         with _cache_lock:
             if _query_cache is None:
-                _query_cache = QueryCache()
+                _query_cache = Query_cache()
     
     return _query_cache

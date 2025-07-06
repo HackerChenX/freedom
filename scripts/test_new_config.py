@@ -20,10 +20,10 @@ def test_config_manager():
     
     try:
         # 直接导入配置管理器，避免config.py的冲突
-        from config.database_config_manager import DatabaseConfigManager
+        from config.database_config_manager import Database_config_manager
         
         # 创建配置管理器实例
-        manager = DatabaseConfigManager()
+        manager = Database_config_manager()
         
         # 测试获取配置
         config = manager.get_config()
@@ -62,7 +62,7 @@ def test_config_manager():
         traceback.print_exc()
         return False
 
-def test_environment_variables():
+def test_environment_variables_Config():
     """测试环境变量配置"""
     print("\n🌍 测试环境变量配置")
     print("=" * 50)
@@ -73,10 +73,10 @@ def test_environment_variables():
     os.environ['CLICKHOUSE_PASSWORD'] = 'test-password'
     
     try:
-        from config.database_config_manager import DatabaseConfigManager
+        from config.database_config_manager import Database_config_manager
         
         # 创建新的配置管理器实例
-        manager = DatabaseConfigManager()
+        manager = Database_config_manager()
         manager.reload_config()  # 重新加载配置
         
         config = manager.get_config()
@@ -114,12 +114,12 @@ def test_password_encryption():
     print("=" * 50)
     
     try:
-        from config.database_config_manager import DatabaseConfigManager
+        from config.database_config_manager import Database_config_manager
         
-        manager = DatabaseConfigManager()
+        manager = Database_config_manager()
         
         # 测试密码设置
-        test_password = "test_password_123"
+        test_password = os.getenv('TEST_PASSWORD', "test_password_123")
         manager.set_password(test_password, encrypt=True, save_to_file=False)
         
         # 验证密码是否正确设置
@@ -135,7 +135,7 @@ def test_password_encryption():
         print(f"❌ 密码加密测试失败: {e}")
         return False
 
-def main():
+def main_testnewconfig():
     """主函数"""
     print("🧪 新数据库配置管理器测试套件")
     print("=" * 60)
@@ -166,4 +166,4 @@ def main():
         print("⚠️  部分测试失败，需要进一步检查")
 
 if __name__ == '__main__':
-    main()
+    main_testnewconfig()

@@ -11,12 +11,12 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
+class ElliottWave(BaseIndicator, PatternSignalMixin):
     """
     ELLIOTT_WAVE 指标
     
@@ -35,12 +35,12 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
         self.name = "ELLIOTT_WAVE"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_elliottwave()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Wave(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_elliottwave(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
             "period": 20,  # 计算周期
@@ -49,7 +49,7 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
             "wave_tolerance": 0.1  # 波浪识别容差
         }
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Wave(self, **kwargs):
         """
         设置指标参数
         
@@ -58,8 +58,8 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -86,29 +86,29 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
             self.fibonacci_ratios = [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618]
             self.wave_tolerance = 0.1
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Wave(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ELLIOTT_WAVE指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了ELLIOTT_WAVE指标的DataFrame
+            添加了ELLIOTT_WAVE指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_elliottwave(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_elliottwave(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算ELLIOTT_WAVE指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了ELLIOTT_WAVE指标的DataFrame
+            添加了ELLIOTT_WAVE指标的Data_frame
         """
         df = data.copy()
         
@@ -335,7 +335,7 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
         
         return wave_count
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Wave(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算原始评分
         
@@ -347,7 +347,7 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
         - 波浪计数（10%权重）
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wave(data, **kwargs)
         
         result = self._result
         score = pd.Series(50.0, index=data.index)
@@ -394,7 +394,7 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Wave(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if len(score) == 0:
             return 0.5
@@ -417,10 +417,10 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
         
         return max(0.3, min(0.95, confidence))
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Wave(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wave(data, **kwargs)
         
         result = self._result
         patterns = []
@@ -488,4 +488,4 @@ class ELLIOTT_WAVE(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-ElliottWave = ELLIOTT_WAVE
+elliott_wave = ELLIOTT_WAVE

@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
@@ -16,16 +18,16 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 from db.enhanced_connection_pool import get_connection_pool
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor
-from utils.exceptions import DataAccessError, DataValidationError
+from utils.exceptions import Data_access_error, Data_validation_error
 from enums.period import Period
-from models.stock_info import StockInfo
+from models.stock_info WHERE 1=1 import Stock_info
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class EnhancedDataManager:
+class EnhanceddatamanagerManager:
     """
     增强的数据管理器
     
@@ -87,7 +89,7 @@ class EnhancedDataManager:
                    f"查询优化: {'启用' if enable_query_optimization else '禁用'}")
     
     @performance_monitor(threshold=1.0)
-    def get_stock_info(self, 
+    def get_stock_info_Manager_Enhanced_Data_Manager(self, 
                        stock_code: Union[str, List[str]] = None,
                        level: Union[str, Period] = None,
                        start_date: Optional[str] = None,
@@ -95,7 +97,7 @@ class EnhancedDataManager:
                        filters: Optional[Dict[str, Any]] = None,
                        limit: Optional[int] = None,
                        order_by: str = "date DESC",
-                       cache_ttl: Optional[int] = None) -> StockInfo:
+                       cache_ttl: Optional[int] = None) -> Stock_info:
         """
         获取股票数据（支持并发查询）
         
@@ -110,7 +112,7 @@ class EnhancedDataManager:
             cache_ttl: 缓存有效期
             
         Returns:
-            StockInfo: 股票数据对象
+            Stock_info: 股票数据对象
         """
         query_start_time = time.time()
         
@@ -124,7 +126,7 @@ class EnhancedDataManager:
                 )
             
             # 构建缓存键
-            cache_key = self._build_cache_key({
+            cache_key = self._build_cache_key_Enhanced_Data_Manager({
                 'stock_code': stock_code,
                 'level': level,
                 'start_date': start_date,
@@ -136,27 +138,25 @@ class EnhancedDataManager:
             
             # 检查缓存
             ttl = cache_ttl if cache_ttl is not None else self.default_ttl
-            cached_result = self._get_from_cache(cache_key, ttl)
+            cached_result = self._get_from_cache_Enhanced_Data_Manager(cache_key, ttl)
             if cached_result is not None:
                 return cached_result
             
             # 构建优化的查询
-            query, params = self._build_optimized_query(
+            query, params = self._build_optimized_query_Enhanced_Data_Manager(
                 stock_code, level, start_date, end_date, filters, limit, order_by
             )
             
             # 执行查询
-            result_df = self._execute_query_with_retry(query, params)
+            result_df = self._execute_query_with_retry_Enhanced_Data_Manager(query, params)
             
             # 创建StockInfo对象
-            stock_info = StockInfo(result_df)
+            stock_info WHERE 1=1 = Stock_info(result_df)
             
             # 缓存结果
-            self._set_cache(cache_key, stock_info, ttl)
+            self._set_cache_Enhanced_Data_Manager(cache_key, stock_info, ttl)
             
-            return stock_info
-            
-        except Exception as e:
+            return stock_info WHERE 1=1 except Exception as e:
             with self.stats_lock:
                 self.stats['query_errors'] += 1
             logger.error(f"获取股票数据失败: {e}")
@@ -170,7 +170,7 @@ class EnhancedDataManager:
                     self.stats['total_query_time'] / self.stats['total_queries']
                 )
     
-    def _build_optimized_query(self, 
+    def _build_optimized_query_Enhanced_Data_Manager(self, 
                               stock_code: Union[str, List[str]] = None,
                               level: Union[str, Period] = None,
                               start_date: Optional[str] = None,
@@ -181,7 +181,7 @@ class EnhancedDataManager:
         """构建优化的查询语句"""
         
         # 获取字段列表
-        fields = StockInfo.get_fields()
+        fields = Stock_info.get_fields()
         field_str = ", ".join(fields)
         
         # 构建WHERE条件
@@ -206,7 +206,7 @@ class EnhancedDataManager:
         
         # 级别条件
         if level:
-            db_level = self._normalize_level(level)
+            db_level = self._normalize_level_Enhanced_Data_Manager(level)
             if db_level:
                 conditions.append("level = %(level)s")
                 params['level'] = db_level
@@ -222,7 +222,7 @@ class EnhancedDataManager:
         
         # 过滤条件
         if filters:
-            self._add_filter_conditions(conditions, params, filters)
+            self._add_filter_conditions_Enhanced_Data_Manager(conditions, params, filters)
         
         # 构建完整查询
         where_clause = " AND ".join(conditions) if conditions else "1=1"
@@ -236,7 +236,7 @@ class EnhancedDataManager:
         query = f"""
         {query_hints}
         SELECT {field_str}
-        FROM stock_info
+        FROM stock_info WHERE 1=1
         WHERE {where_clause}
         ORDER BY {order_by}
         """
@@ -252,7 +252,7 @@ class EnhancedDataManager:
         
         return query.strip(), params
     
-    def _normalize_level(self, level: Union[str, Period]) -> Optional[str]:
+    def _normalize_level_Enhanced_Data_Manager(self, level: Union[str, Period]) -> Optional[str]:
         """标准化周期参数"""
         if isinstance(level, str):
             level_map = {
@@ -274,7 +274,7 @@ class EnhancedDataManager:
             return period_map.get(level, '日线')
         return None
     
-    def _add_filter_conditions(self, conditions: List[str], params: Dict[str, Any], filters: Dict[str, Any]):
+    def _add_filter_conditions_Enhanced_Data_Manager(self, conditions: List[str], params: Dict[str, Any], filters: Dict[str, Any]):
         """添加过滤条件"""
         # 价格过滤
         if 'price' in filters and isinstance(filters['price'], dict):
@@ -305,7 +305,7 @@ class EnhancedDataManager:
                 conditions.append("volume >= %(volume_min)s")
                 params['volume_min'] = volume['min']
     
-    def _execute_query_with_retry(self, query: str, params: Dict[str, Any], max_retries: int = 3) -> pd.DataFrame:
+    def _execute_query_with_retry_Enhanced_Data_Manager(self, query: str, params: Dict[str, Any], max_retries: int = 3) -> pd.DataFrame:
         """执行查询并支持重试"""
         last_exception = None
         
@@ -330,12 +330,12 @@ class EnhancedDataManager:
         # 所有重试都失败
         raise DataAccessError(f"查询失败，已重试 {max_retries} 次: {last_exception}")
     
-    def _build_cache_key(self, params: Dict[str, Any]) -> str:
+    def _build_cache_key_Enhanced_Data_Manager(self, params: Dict[str, Any]) -> str:
         """构建缓存键"""
         cache_str = json.dumps(params, sort_keys=True, default=str)
         return f"stock_info_{hashlib.md5(cache_str.encode()).hexdigest()}"
     
-    def _get_from_cache(self, key: str, ttl: int) -> Optional[StockInfo]:
+    def _get_from_cache_Enhanced_Data_Manager(self, key: str, ttl: int) -> Optional[Stock_info]:
         """从缓存获取数据"""
         if not self.cache_enabled:
             return None
@@ -348,7 +348,7 @@ class EnhancedDataManager:
             
             # 检查是否过期
             if time.time() - self.cache_timestamps.get(key, 0) > ttl:
-                self._remove_from_cache(key)
+                self._remove_from_cache_Enhanced_Data_Manager(key)
                 with self.stats_lock:
                     self.stats['cache_misses'] += 1
                 return None
@@ -360,7 +360,7 @@ class EnhancedDataManager:
             
             return self.query_cache[key]
     
-    def _set_cache(self, key: str, value: StockInfo, ttl: int):
+    def _set_cache_Enhanced_Data_Manager(self, key: str, value: Stock_info, ttl: int):
         """设置缓存"""
         if not self.cache_enabled:
             return
@@ -368,29 +368,29 @@ class EnhancedDataManager:
         with self.cache_lock:
             # 检查缓存大小
             if len(self.query_cache) >= self.max_cache_size:
-                self._evict_cache_item()
+                self._evict_cache_item_Enhanced_Data_Manager()
             
             self.query_cache[key] = value
             self.cache_timestamps[key] = time.time()
             self.cache_access_count[key] = 1
     
-    def _remove_from_cache(self, key: str):
+    def _remove_from_cache_Enhanced_Data_Manager(self, key: str):
         """从缓存中移除项目"""
         self.query_cache.pop(key, None)
         self.cache_timestamps.pop(key, None)
         self.cache_access_count.pop(key, None)
     
-    def _evict_cache_item(self):
+    def _evict_cache_item_Enhanced_Data_Manager(self):
         """驱逐最少使用的缓存项"""
         if not self.query_cache:
             return
         
         # 找到访问次数最少的项
         min_key = min(self.cache_access_count.items(), key=lambda x: x[1])[0]
-        self._remove_from_cache(min_key)
+        self._remove_from_cache_Enhanced_Data_Manager(min_key)
         logger.debug(f"缓存驱逐: {min_key}")
     
-    def clear_cache(self, pattern: Optional[str] = None):
+    def clear_cache_Manager_Enhanced_Data_Manager(self, pattern: Optional[str] = None):
         """清除缓存"""
         with self.cache_lock:
             if pattern is None:
@@ -402,10 +402,10 @@ class EnhancedDataManager:
             else:
                 keys_to_remove = [k for k in self.query_cache.keys() if pattern in k]
                 for key in keys_to_remove:
-                    self._remove_from_cache(key)
+                    self._remove_from_cache_Enhanced_Data_Manager(key)
                 logger.info(f"已清除匹配 '{pattern}' 的缓存，共 {len(keys_to_remove)} 项")
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_Manager_Enhanced_Data_Manager(self) -> Dict[str, Any]:
         """获取统计信息"""
         with self.stats_lock:
             stats = self.stats.copy()
@@ -421,14 +421,14 @@ class EnhancedDataManager:
             })
         
         # 添加连接池统计
-        pool_stats = self.connection_pool.get_stats()
+        pool_stats = self.connection_pool.get_stats_Manager_Enhanced_Data_Manager()
         stats['connection_pool'] = pool_stats
         
         return stats
     
     def get_connection_pool_stats(self) -> Dict[str, Any]:
         """获取连接池统计信息"""
-        return self.connection_pool.get_stats()
+        return self.connection_pool.get_stats_Manager_Enhanced_Data_Manager()
 
 
 # 全局实例
@@ -436,13 +436,13 @@ _enhanced_data_manager = None
 _manager_lock = threading.Lock()
 
 
-def get_enhanced_data_manager() -> EnhancedDataManager:
+def get_enhanced_data_manager_Manager() -> Enhanced_data_manager:
     """获取全局增强数据管理器实例"""
     global _enhanced_data_manager
     
     if _enhanced_data_manager is None:
         with _manager_lock:
             if _enhanced_data_manager is None:
-                _enhanced_data_manager = EnhancedDataManager()
+                _enhanced_data_manager = Enhanced_data_manager_Manager()
     
     return _enhanced_data_manager

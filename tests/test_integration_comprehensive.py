@@ -22,29 +22,29 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_parser import StrategyParser
-from strategy.strategy_manager import StrategyManager
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_parser import Strategy_parser
+from strategy.strategy_manager import Strategy_manager
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
 from indicators.complete_indicator_registry import complete_registry
-from indicators.indicator_manager import IndicatorManager
+from indicators.indicator_manager import Indicator_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class IntegrationTestSuite(unittest.TestCase):
+class Integration_test_suite(unittest.Test_case):
     """全面集成测试套件"""
     
     @classmethod
-    def setUpClass(cls):
+    def set_up_class(cls):
         """测试类初始化"""
         cls.data_manager = get_unified_data_manager()
-        cls.strategy_executor = StrategyExecutor()
-        cls.strategy_parser = StrategyParser()
-        cls.strategy_manager = StrategyManager()
-        cls.condition_evaluator = StrategyConditionEvaluator()
-        cls.indicator_manager = IndicatorManager()
+        cls.strategy_executor = Strategy_executor()
+        cls.strategy_parser = Strategy_parser()
+        cls.strategy_manager = Strategy_manager()
+        cls.condition_evaluator = Strategy_condition_evaluator()
+        cls.indicator_manager = Indicator_manager()
         
         # 测试数据
         cls.test_end_date = datetime.now().strftime("%Y-%m-%d")
@@ -368,14 +368,14 @@ def run_integration_tests():
     print("开始运行全面集成测试套件...")
     
     # 创建测试套件
-    suite = unittest.TestLoader().loadTestsFromTestCase(IntegrationTestSuite)
+    suite = unittest.Test_loader().load_tests_from_test_case(Integration_test_suite)
     
     # 运行测试
-    runner = unittest.TextTestRunner(verbosity=2, stream=sys.stdout)
+    runner = unittest.Text_test_runner(verbosity=2, stream=sys.stdout)
     result = runner.run(suite)
     
     # 生成测试报告
-    total_tests = result.testsRun
+    total_tests = result.tests_run
     failures = len(result.failures)
     errors = len(result.errors)
     passed = total_tests - failures - errors

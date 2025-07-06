@@ -16,10 +16,10 @@ from typing import Dict, Any, List
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from scripts.production_indicator_validator import ProductionIndicatorValidator
+from scripts.production_indicator_validator import Production_indicator_validator
 from utils.logger import get_logger
 
-class HistoricalSignalValidator(ProductionIndicatorValidator):
+class HistoricalSignalValidator(Production_indicator_validator):
     """历史信号验证器，继承自ProductionIndicatorValidator"""
     
     def __init__(self):
@@ -383,5 +383,5 @@ class HistoricalSignalValidator(ProductionIndicatorValidator):
         }
 
 if __name__ == "__main__":
-    validator = HistoricalSignalValidator()
+    validator = Historical_signal_validator()
     validator.test_no_selection_indicators(history_days=30) 

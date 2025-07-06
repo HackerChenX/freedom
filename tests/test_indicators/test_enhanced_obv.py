@@ -4,10 +4,10 @@ import numpy as np
 from indicators.volume.enhanced_obv import EnhancedOBV
 
 
-class TestEnhancedOBV(unittest.TestCase):
+class TestEnhancedOBV_Obv(unittest.TestCase):
     """测试增强型OBV指标"""
 
-    def setUp(self):
+    def setUp_Obv_Test_Enhanced_Obv(self):
         """准备测试数据"""
         # 创建模拟价格数据
         np.random.seed(42)  # 确保结果可重现
@@ -38,7 +38,7 @@ class TestEnhancedOBV(unittest.TestCase):
         # 创建OBV实例
         self.obv = EnhancedOBV(smooth_period=5, adaptive=True)
 
-    def test_calculation(self):
+    def test_calculation_Obv(self):
         """测试OBV基础计算功能"""
         result = self.obv.calculate(self.test_data)
         
@@ -117,7 +117,7 @@ class TestEnhancedOBV(unittest.TestCase):
         # 每个时间点只能有一种状态为True
         self.assertTrue(((flow_states.sum(axis=1) <= 1) | (flow_states.sum(axis=1) == 0)).all())
 
-    def test_divergence_detection(self):
+    def test_divergence_detection_Obv(self):
         """测试背离检测功能"""
         self.obv.calculate(self.test_data)
         divergence = self.obv.detect_divergence()
@@ -164,7 +164,7 @@ class TestEnhancedOBV(unittest.TestCase):
         self.assertFalse(((synergy['ideal_up'] & synergy['poor_up']).any() or 
                           (synergy['ideal_down'] & synergy['poor_down']).any()))
 
-    def test_score_calculation(self):
+    def test_score_calculation_Obv(self):
         """测试评分计算功能"""
         self.obv.calculate(self.test_data)
         score = self.obv.calculate_score()
@@ -193,7 +193,7 @@ class TestEnhancedOBV(unittest.TestCase):
         # 确保市场环境确实影响了评分
         self.assertTrue(not (bull_score.equals(bear_score) and bear_score.equals(volatile_score)))
 
-    def test_pattern_identification(self):
+    def test_pattern_identification_Obv(self):
         """测试形态识别功能"""
         self.obv.calculate(self.test_data)
         patterns = self.obv.identify_patterns()
@@ -215,7 +215,7 @@ class TestEnhancedOBV(unittest.TestCase):
         for col in patterns.columns:
             self.assertTrue(patterns[col].dtype == bool)
 
-    def test_signal_generation(self):
+    def test_signal_generation_Obv(self):
         """测试信号生成功能"""
         signals = self.obv.generate_signals(self.test_data)
         

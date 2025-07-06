@@ -10,10 +10,10 @@ import re
 import json
 from datetime import datetime
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class ResultFilter:
@@ -23,7 +23,7 @@ class ResultFilter:
     提供选股结果的多维度排序和筛选功能
     """
     
-    def __init__(self):
+    def __init___66(self):
         """
         初始化结果筛选与排序类
         """
@@ -59,11 +59,11 @@ class ResultFilter:
         根据配置筛选结果
         
         Args:
-            results: 选股结果DataFrame
+            results: 选股结果Data_frame
             filter_configs: 筛选配置列表，每个配置是一个字典，包含type, field, value等字段
             
         Returns:
-            筛选后的DataFrame
+            筛选后的Data_frame
         """
         if results.empty or not filter_configs:
             return results
@@ -93,11 +93,11 @@ class ResultFilter:
         根据配置排序结果
         
         Args:
-            results: 选股结果DataFrame
+            results: 选股结果Data_frame
             sort_configs: 排序配置列表，每个配置是一个字典，包含field, direction等字段
             
         Returns:
-            排序后的DataFrame
+            排序后的Data_frame
         """
         if results.empty or not sort_configs:
             return results
@@ -144,13 +144,13 @@ class ResultFilter:
         将结果按照指定字段分组
         
         Args:
-            results: 选股结果DataFrame
+            results: 选股结果Data_frame
             group_by: 分组字段
             sort_field: 排序字段，默认为None
             top_n: 每组保留的最大记录数，默认为None表示保留所有
             
         Returns:
-            分组后的结果字典，键为分组值，值为对应的DataFrame
+            分组后的结果字典，键为分组值，值为对应的Data_frame
         """
         if results.empty or group_by not in results.columns:
             return {}
@@ -179,11 +179,11 @@ class ResultFilter:
         增强结果，添加更多信息
         
         Args:
-            results: 选股结果DataFrame
+            results: 选股结果Data_frame
             enrich_configs: 增强配置列表
             
         Returns:
-            增强后的DataFrame
+            增强后的Data_frame
         """
         if results.empty or not enrich_configs:
             return results
@@ -230,7 +230,7 @@ class ResultFilter:
                 conditions_field = config.get("conditions_field", "satisfied_conditions")
                 
                 if conditions_field in enriched_results.columns:
-                    enriched_results = self._analyze_conditions(
+                    enriched_results = self._analyze_conditions_Result_Filter(
                         enriched_results, conditions_field
                     )
                     
@@ -451,7 +451,7 @@ class ResultFilter:
             logger.error(f"合并字段时出错: {e}")
             return df
     
-    def _analyze_conditions(self, df: pd.DataFrame, 
+    def _analyze_conditions_Result_Filter(self, df: pd.DataFrame, 
                           conditions_field: str) -> pd.DataFrame:
         """分析条件满足情况"""
         if conditions_field not in df.columns:

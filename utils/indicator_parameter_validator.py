@@ -8,15 +8,15 @@
 import yaml
 import os
 from typing import Dict, List, Tuple, Any, Optional
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class IndicatorParameterValidator:
     """指标参数验证器"""
     
-    def __init__(self, schema_file: str = "config/indicator_parameter_schemas.yaml", silent_mode: bool = True):
+    def __init___53(self, schema_file: str = "config/indicator_parameter_schemas.yaml", silent_mode: bool = True):
         """
         初始化验证器
 

@@ -1,32 +1,32 @@
 """
-EnhancedDMI指标单元测试
+Enhanced_dMI指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_enhanced_dMI(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """EnhancedDMI指标测试类"""
     
-    def setUp(self):
+    def set_up_Dmi(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Dmi(self)
         
-        self.indicator = EnhancedDMI(period=14, adx_period=14, adaptive=True)
+        self.indicator = Enhanced_dMI(period=14, adx_period=14, adaptive=True)
         self.expected_columns = ['plus_di', 'minus_di', 'adx', 'adxr', 'dx', 'tr']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Dmi(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Dmi(self)
     
     def test_enhanced_dmi_calculation_accuracy(self):
         """测试EnhancedDMI计算准确性"""
@@ -59,7 +59,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = EnhancedDMI(period=10, adx_period=10, adaptive=False)
+        test_indicator = Enhanced_dMI(period=10, adx_period=10, adaptive=False)
         result = test_indicator.calculate(simple_data)
         
         # 验证DMI计算逻辑
@@ -90,9 +90,9 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_enhanced_dmi_parameter_update(self):
         """测试EnhancedDMI参数更新"""
@@ -101,8 +101,8 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, adx_period=new_adx_period)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.base_period, new_period)
-        self.assertEqual(self.indicator.adx_period, new_adx_period)
+        self.assert_equal(self.indicator.base_period, new_period)
+        self.assert_equal(self.indicator.adx_period, new_adx_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -115,7 +115,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_enhanced_dmi_comprehensive_score(self):
         """测试EnhancedDMI综合评分"""
@@ -125,7 +125,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 然后计算评分
         score = self.indicator.calculate_score()
         
-        self.assertIsInstance(score, pd.Series)
+        self.assert_is_instance(score, pd.Series)
         
         # 验证评分范围
         valid_scores = score.dropna()
@@ -136,13 +136,13 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试EnhancedDMI形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -164,13 +164,13 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         crossover_quality = self.indicator.evaluate_di_crossover_quality()
         
         # 验证交叉质量评估结果
-        self.assertIsInstance(crossover_quality, pd.Series)
+        self.assert_is_instance(crossover_quality, pd.Series)
         
         if not crossover_quality.empty:
             # 交叉质量分数应该在合理范围内
             quality_values = crossover_quality.dropna()
             if len(quality_values) > 0:
-                self.assertTrue(all(-100 <= v <= 100 for v in quality_values), 
+                self.assert_true(all(-100 <= v <= 100 for v in quality_values), 
                                "交叉质量分数应该在合理范围内")
     
     def test_enhanced_dmi_three_line_synergy(self):
@@ -182,7 +182,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         synergy = self.indicator.analyze_three_line_synergy()
         
         # 验证协同分析结果
-        self.assertIsInstance(synergy, pd.DataFrame)
+        self.assert_is_instance(synergy, pd.DataFrame)
         
         if not synergy.empty:
             expected_synergy_columns = [
@@ -203,7 +203,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.identify_patterns()
         
         # 验证形态识别结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         if not patterns.empty:
             expected_pattern_columns = [
@@ -219,11 +219,11 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_enhanced_dmi_market_environment(self):
         """测试EnhancedDMI市场环境设置"""
@@ -232,27 +232,27 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         for env in environments:
             self.indicator.set_market_environment(env)
-            self.assertEqual(self.indicator.market_environment, env)
+            self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_dmi_adaptive_period(self):
         """测试EnhancedDMI自适应周期"""
         # 测试自适应模式
-        adaptive_indicator = EnhancedDMI(period=14, adaptive=True)
+        adaptive_indicator = Enhanced_dMI(period=14, adaptive=True)
         result = adaptive_indicator.calculate(self.data)
         
         # 验证自适应周期功能
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('plus_di', result.columns)
         
         # 测试非自适应模式
-        non_adaptive_indicator = EnhancedDMI(period=14, adaptive=False)
+        non_adaptive_indicator = Enhanced_dMI(period=14, adaptive=False)
         result2 = non_adaptive_indicator.calculate(self.data)
         
-        self.assertIsInstance(result2, pd.DataFrame)
+        self.assert_is_instance(result2, pd.DataFrame)
         self.assertIn('plus_di', result2.columns)
     
     def test_enhanced_dmi_adx_strength_classification(self):
@@ -265,7 +265,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             classification = self.indicator.classify_adx_strength(value)
             self.assertEqual(classification, expected, f"ADX值{value}的分类不正确")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Dmi(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -276,11 +276,11 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Dmi(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -291,7 +291,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_enhanced_dmi_register_patterns(self):
         """测试EnhancedDMI形态注册"""
@@ -308,7 +308,7 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # EnhancedDMI应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_enhanced_dmi_validation(self):
         """测试EnhancedDMI数据验证"""
@@ -319,8 +319,8 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         try:
             result = self.indicator.calculate(invalid_data)
             # 如果没有抛出异常，验证结果是否为空或合理
-            self.assertIsInstance(result, pd.DataFrame)
-        except (KeyError, ValueError):
+            self.assert_is_instance(result, pd.DataFrame)
+        except (Key_error, Value_error):
             # 如果抛出异常，这是预期的行为
             pass
     
@@ -333,14 +333,14 @@ class TestEnhancedDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         smoothed = self.indicator._calculate_smoothed_values(test_series, 5)
         
         # 验证平滑值计算结果
-        self.assertIsInstance(smoothed, pd.Series)
-        self.assertEqual(len(smoothed), len(test_series))
+        self.assert_is_instance(smoothed, pd.Series)
+        self.assert_equal(len(smoothed), len(test_series))
         
         # 验证第一个平滑值
         first_smoothed = smoothed.iloc[4]  # 第5个值（索引4）
         if not pd.isna(first_smoothed):
             expected_first = test_series.iloc[:5].mean()
-            self.assertAlmostEqual(first_smoothed, expected_first, places=6)
+            self.assert_almost_equal(first_smoothed, expected_first, places=6)
 
 
 if __name__ == '__main__':

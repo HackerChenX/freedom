@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -17,13 +19,13 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+def get_stock_data_Indicators(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     从ClickHouse获取股票数据
     
@@ -36,7 +38,8 @@ def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFr
         pd.DataFrame: 股票数据
     """
     try:
-        db = get_clickhouse_db()
+        container = get_container()
+        db = container.get_data_access()
         
         query = f"""
         SELECT 
@@ -80,7 +83,7 @@ def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFr
         return pd.DataFrame()
 
 
-def main():
+def mainUsenewindicators():
     """主函数"""
     # 设置测试参数
     stock_code = "000001.SZ"  # 平安银行
@@ -89,7 +92,7 @@ def main():
     
     try:
         print(f"获取股票 {stock_code} 从 {start_date} 到 {end_date} 的数据...")
-        data = get_stock_data(stock_code, start_date, end_date)
+        data = get_stock_data_Indicators(stock_code, start_date, end_date)
         
         if data.empty:
             print("未找到股票数据，请检查股票代码或日期范围！")
@@ -361,7 +364,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        mainUsenewindicators()
     except KeyboardInterrupt:
         print("\n程序被用户中断")
     except Exception as e:

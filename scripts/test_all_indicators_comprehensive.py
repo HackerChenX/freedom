@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 88个指标全面测试脚本
 检查所有指标的评分状态，识别需要修复的指标
@@ -18,46 +20,47 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-def get_test_data(code: str = "000001", limit: int = 100) -> pd.DataFrame:
+def get_test_data_Comprehensive(code: str = "000001", limit: int = 100) -> pd.DataFrame:
     """获取测试数据"""
     try:
-        db = get_clickhouse_db()
+        container = get_container()
+        data_access = container.get_data_access()
         
         query = f"""
-        SELECT 
-            date,
-            code,
-            open,
-            high,
-            low,
-            close,
-            volume,
-            turnover
-        FROM stock_info 
+        SELECT date, open, high, low, close, volume, turnover
+        FROM stock_info WHERE 1=1
         WHERE code = '{code}'
+          AND level = '日线'
         ORDER BY date DESC
         LIMIT {limit}
         """
         
-        df = db.query(query)
+        df = data_access.query_dataframe(query)
         if df.empty:
             logger.warning(f"未找到股票 {code} 的数据")
             return pd.DataFrame()
         
-        # 数据按日期升序排列
+        # 按日期升序排列
         df = df.sort_values('date').reset_index(drop=True)
+        
+        # 确保数据类型正确
+        df['date'] = pd.to_datetime(df['date'])
+        for col in ['open', 'high', 'low', 'close', 'volume', 'turnover']:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
         return df
         
     except Exception as e:
         logger.error(f"获取测试数据失败: {e}")
         return pd.DataFrame()
 
-def test_single_indicator(indicator_name: str, test_data: pd.DataFrame) -> Dict:
+def test_single_indicator_Comprehensive(indicator_name: str, test_data: pd.DataFrame) -> Dict:
     """测试单个指标"""
     result = {
         'name': indicator_name,
@@ -140,14 +143,14 @@ def test_single_indicator(indicator_name: str, test_data: pd.DataFrame) -> Dict:
     
     return result
 
-def test_all_indicators() -> Dict:
+def test_all_indicators_Comprehensive() -> Dict:
     """测试所有88个指标"""
     print("=" * 80)
     print("88个指标全面测试")
     print("=" * 80)
     
     # 获取测试数据
-    test_data = get_test_data("000001", 100)
+    test_data = get_test_data_Comprehensive("000001", 100)
     if test_data.empty:
         print("❌ 无法获取测试数据")
         return {}
@@ -187,7 +190,7 @@ def test_all_indicators() -> Dict:
     for i, indicator_name in enumerate(indicator_names, 1):
         print(f"\n[{i:2d}/{len(indicator_names)}] 测试指标: {indicator_name}")
         
-        result = test_single_indicator(indicator_name, test_data)
+        result = test_single_indicator_Comprehensive(indicator_name, test_data)
         results['indicators'][indicator_name] = result
         
         # 更新统计
@@ -218,7 +221,7 @@ def test_all_indicators() -> Dict:
     
     return results
 
-def print_summary(results: Dict):
+def print_summary_Comprehensive(results: Dict):
     """打印测试摘要"""
     print("\n" + "=" * 80)
     print("测试摘要")
@@ -299,7 +302,7 @@ def print_detailed_issues(results: Dict):
                 else:
                     print(f"  • {indicator_name}: {result['status']}")
 
-def save_results(results: Dict):
+def save_results_Comprehensive(results: Dict):
     """保存测试结果"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"results/validation/all_indicators_test_{timestamp}.json"
@@ -314,21 +317,21 @@ def save_results(results: Dict):
     except Exception as e:
         print(f"\n❌ 保存结果失败: {e}")
 
-def main():
+def main_testallindicatorscomprehensive():
     """主函数"""
     try:
         # 运行全面测试
-        results = test_all_indicators()
+        results = test_all_indicators_Comprehensive()
         
         if results:
             # 打印摘要
-            print_summary(results)
+            print_summary_Comprehensive(results)
             
             # 打印详细问题
             print_detailed_issues(results)
             
             # 保存结果
-            save_results(results)
+            save_results_Comprehensive(results)
             
             print("\n" + "=" * 80)
             print("测试完成")
@@ -341,4 +344,4 @@ def main():
         print(f"❌ 测试失败: {e}")
 
 if __name__ == "__main__":
-    main() 
+    mainTestallindicatorscomprehensive() 

@@ -28,7 +28,7 @@ def check_python_syntax(file_path: str) -> Tuple[bool, str]:
         ast.parse(content)
         return False, ""
         
-    except SyntaxError as e:
+    except Syntax_error as e:
         return True, f"语法错误在第{e.lineno}行: {e.msg}"
     except Exception as e:
         return True, f"其他错误: {e}"
@@ -78,7 +78,7 @@ def find_incomplete_methods(file_path: str) -> List[str]:
     
     return issues
 
-def main():
+def main_checksyntaxerrors():
     """主函数"""
     print("🔍 开始检查技术指标文件语法错误...")
     
@@ -143,5 +143,5 @@ def main():
     return len(syntax_errors) == 0
 
 if __name__ == "__main__":
-    success = main()
+    success = main_checksyntaxerrors()
     sys.exit(0 if success else 1)

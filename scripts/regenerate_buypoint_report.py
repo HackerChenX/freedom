@@ -15,7 +15,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
 logger = get_logger(__name__)
 
@@ -52,7 +52,7 @@ def regenerate_report():
         logger.info(f"加载了 {len(analysis_results)} 个买点分析结果")
         
         # 创建批量分析器
-        analyzer = BuyPointBatchAnalyzer()
+        analyzer = Buy_point_batch_analyzer()
         
         # 提取共性指标
         logger.info("提取共性指标...")
@@ -99,7 +99,7 @@ def regenerate_report():
     except Exception as e:
         logger.error(f"重新生成报告时出错: {e}")
 
-def main():
+def main_regeneratebuypointreport():
     """主函数"""
     print("🚀 开始重新生成买点分析报告...")
     print("📋 优化目标:")
@@ -112,4 +112,4 @@ def main():
     regenerate_report()
 
 if __name__ == "__main__":
-    main()
+    main_regeneratebuypointreport()

@@ -22,15 +22,15 @@ class PatternCombination(BaseIndicator, PatternSignalMixin):
         """初始化形态组合指标"""
         super().__init__(name="PatternCombination", description="形态组合分析指标，分析多种技术形态的组合关系")
     
-    def _calculate(self, data):
+    def _calculate_patterncombination(self, data):
         """
         计算形态组合
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
-            DataFrame: 包含形态组合分析结果的DataFrame
+            Data_frame: 包含形态组合分析结果的Data_frame
         """
         # 创建结果DataFrame
         result = data.copy()
@@ -54,15 +54,15 @@ class PatternCombination(BaseIndicator, PatternSignalMixin):
 
         return result
     
-    def get_patterns(self, data):
+    def get_patterns_Combination(self, data):
         """
         获取形态组合列表
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
-            DataFrame: 包含形态组合列表的DataFrame
+            Data_frame: 包含形态组合列表的Data_frame
         """
         # 返回形态组合列表
         patterns = pd.DataFrame({
@@ -74,12 +74,12 @@ class PatternCombination(BaseIndicator, PatternSignalMixin):
         
         return patterns
     
-    def calculate_raw_score(self, data):
+    def calculate_raw_score_Combination(self, data):
         """
         计算原始评分
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
             float: 介于0-100之间的评分值
@@ -87,7 +87,7 @@ class PatternCombination(BaseIndicator, PatternSignalMixin):
         # 简单实现，返回固定评分
         return 75.0 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Combination(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

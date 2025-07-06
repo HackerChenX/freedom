@@ -10,7 +10,7 @@ import sys
 import unittest
 import json
 import tempfile
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, Magic_mock
 import pandas as pd
 
 # 添加项目根目录到路径
@@ -18,20 +18,20 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from analysis.engines.indicator_validation_framework import (
-    IndicatorValidationFramework,
-    IndicatorValidationConfig,
-    ValidationMode,
-    ValidationResult
+    Indicator_validation_framework,
+    Indicator_validation_config,
+    Validation_mode,
+    Validation_result
 )
 
 
-class TestIndicatorValidationFramework(unittest.TestCase):
+class Test_indicator_validation_framework(unittest.Test_case):
     """指标验证框架测试类"""
     
-    def setUp(self):
+    def set_up_Framework(self):
         """测试前准备"""
-        self.config = IndicatorValidationConfig(
-            mode=ValidationMode.QUICK,
+        self.config = Indicator_validation_config(
+            mode=Validation_mode.QUICK,
             stock_pool_size=100,
             max_selection_ratio=0.1,
             parallel_workers=1,
@@ -47,16 +47,16 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         with patch('analysis.engines.indicator_validation_framework.get_unified_data_manager'), \
              patch('analysis.engines.indicator_validation_framework.StrategyExecutor'), \
              patch('analysis.engines.indicator_validation_framework.StrategyManager'):
-            self.framework = IndicatorValidationFramework(self.config)
+            self.framework = Indicator_validation_framework(self.config)
             self.framework.data_manager = self.mock_data_manager
             self.framework.strategy_executor = self.mock_strategy_executor
             self.framework.strategy_manager = self.mock_strategy_manager
     
     def test_init(self):
         """测试初始化"""
-        self.assertEqual(self.framework.config.mode, ValidationMode.QUICK)
-        self.assertEqual(self.framework.config.stock_pool_size, 100)
-        self.assertIsNotNone(self.framework.config.validation_date)
+        self.assert_equal(self.framework.config.mode, Validation_mode.QUICK)
+        self.assert_equal(self.framework.config.stock_pool_size, 100)
+        self.assert_is_not_none(self.framework.config.validation_date)
     
     def test_get_indicators_by_mode_quick(self):
         """测试快速模式指标获取"""
@@ -69,12 +69,12 @@ class TestIndicatorValidationFramework(unittest.TestCase):
             
             # 快速模式应该只返回核心指标
             expected_core = ['MA', 'EMA', 'MACD', 'RSI', 'KDJ', 'BOLL', 'CCI']
-            self.assertTrue(all(ind in expected_core for ind in indicators))
+            self.assert_true(all(ind in expected_core for ind in indicators))
             self.assertNotIn('OTHER_INDICATOR', indicators)
     
     def test_get_indicators_by_mode_full(self):
         """测试完整模式指标获取"""
-        self.framework.config.mode = ValidationMode.FULL
+        self.framework.config.mode = Validation_mode.FULL
         
         with patch('analysis.engines.indicator_validation_framework.complete_registry') as mock_registry:
             all_indicators = ['MA', 'EMA', 'MACD', 'RSI', 'OTHER1', 'OTHER2']
@@ -83,7 +83,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
             indicators = self.framework._get_indicators_by_mode()
             
             # 完整模式应该返回所有指标
-            self.assertEqual(set(indicators), set(all_indicators))
+            self.assert_equal(set(indicators), set(all_indicators))
     
     def test_categorize_indicators(self):
         """测试指标分类"""
@@ -99,8 +99,8 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         enhanced_indices = [i for i, ind in enumerate(categorized) if ind.startswith('ENHANCED_')]
         zxm_indices = [i for i, ind in enumerate(categorized) if ind.startswith('ZXM_')]
         
-        self.assertTrue(all(b < e for b in basic_indices for e in enhanced_indices))
-        self.assertTrue(all(e < z for e in enhanced_indices for z in zxm_indices))
+        self.assert_true(all(b < e for b in basic_indices for e in enhanced_indices))
+        self.assert_true(all(e < z for e in enhanced_indices for z in zxm_indices))
     
     def test_prepare_stock_pool(self):
         """测试股票池准备"""
@@ -112,7 +112,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         
         stock_pool = self.framework._prepare_stock_pool()
         
-        self.assertEqual(len(stock_pool), 5)
+        self.assert_equal(len(stock_pool), 5)
         self.assertIn('000001', stock_pool)
         self.mock_data_manager.execute_query.assert_called_once()
     
@@ -124,14 +124,14 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         stock_pool = self.framework._prepare_stock_pool()
         
         # 应该返回默认股票池
-        self.assertGreater(len(stock_pool), 0)
+        self.assert_greater(len(stock_pool), 0)
         self.assertIn('000001', stock_pool)
     
     def test_generate_indicator_strategy_ma(self):
         """测试MA指标策略生成"""
         strategy = self.framework._generate_indicator_strategy('MA')
         
-        self.assertIsInstance(strategy, dict)
+        self.assert_is_instance(strategy, dict)
         self.assertEqual(strategy['strategy_id'], 'validate_ma')
         self.assertIn('conditions', strategy)
         self.assertGreater(len(strategy['conditions']), 0)
@@ -144,7 +144,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         """测试MACD指标策略生成"""
         strategy = self.framework._generate_indicator_strategy('MACD')
         
-        self.assertIsInstance(strategy, dict)
+        self.assert_is_instance(strategy, dict)
         self.assertIn('conditions', strategy)
         
         # 验证MACD特定条件
@@ -156,7 +156,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         """测试通用指标策略生成"""
         strategy = self.framework._generate_indicator_strategy('UNKNOWN_INDICATOR')
         
-        self.assertIsInstance(strategy, dict)
+        self.assert_is_instance(strategy, dict)
         self.assertIn('conditions', strategy)
         
         # 验证通用条件
@@ -179,7 +179,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         
         selected_stocks = self.framework._execute_strategy_selection(strategy_config, stock_pool)
         
-        self.assertEqual(len(selected_stocks), 3)
+        self.assert_equal(len(selected_stocks), 3)
         self.assertEqual(selected_stocks, ['000001', '000002', '600000'])
     
     def test_execute_strategy_selection_empty_result(self):
@@ -191,7 +191,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         
         selected_stocks = self.framework._execute_strategy_selection(strategy_config, stock_pool)
         
-        self.assertEqual(len(selected_stocks), 0)
+        self.assert_equal(len(selected_stocks), 0)
     
     def test_execute_strategy_selection_error(self):
         """测试策略选股执行出错"""
@@ -202,7 +202,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         
         selected_stocks = self.framework._execute_strategy_selection(strategy_config, stock_pool)
         
-        self.assertEqual(len(selected_stocks), 0)
+        self.assert_equal(len(selected_stocks), 0)
     
     def test_validate_indicator_success(self):
         """测试指标验证成功"""
@@ -340,7 +340,7 @@ class TestIndicatorValidationFramework(unittest.TestCase):
         test_summary = {'total_indicators': 1}
         
         with patch('analysis.engines.indicator_validation_framework.get_result_dir') as mock_get_dir:
-            with tempfile.TemporaryDirectory() as temp_dir:
+            with tempfile.Temporary_directory() as temp_dir:
                 mock_get_dir.return_value = temp_dir
                 
                 # 不应该抛出异常
@@ -363,47 +363,47 @@ class TestIndicatorValidationFramework(unittest.TestCase):
             
             results = self.framework._validate_sequential(indicators, stock_pool)
             
-            self.assertEqual(len(results), 3)
-            self.assertEqual(mock_validate.call_count, 3)
+            self.assert_equal(len(results), 3)
+            self.assert_equal(mock_validate.call_count, 3)
             self.assertEqual(self.framework.validation_stats['validated_indicators'], 3)
             self.assertEqual(self.framework.validation_stats['successful_validations'], 1)
             self.assertEqual(self.framework.validation_stats['failed_validations'], 2)
 
 
-class TestValidationConfig(unittest.TestCase):
+class Test_validation_config(unittest.Test_case):
     """验证配置测试类"""
     
     def test_default_config(self):
         """测试默认配置"""
-        config = IndicatorValidationConfig()
+        config = Indicator_validation_config()
         
-        self.assertEqual(config.mode, ValidationMode.FULL)
-        self.assertEqual(config.stock_pool_size, 1000)
-        self.assertEqual(config.max_selection_ratio, 0.1)
-        self.assertEqual(config.min_selection_count, 1)
-        self.assertEqual(config.timeout_seconds, 300)
-        self.assertEqual(config.parallel_workers, 4)
+        self.assert_equal(config.mode, Validation_mode.FULL)
+        self.assert_equal(config.stock_pool_size, 1000)
+        self.assert_equal(config.max_selection_ratio, 0.1)
+        self.assert_equal(config.min_selection_count, 1)
+        self.assert_equal(config.timeout_seconds, 300)
+        self.assert_equal(config.parallel_workers, 4)
         self.assertEqual(config.output_format, "json")
-        self.assertTrue(config.save_details)
+        self.assert_true(config.save_details)
     
     def test_custom_config(self):
         """测试自定义配置"""
-        config = IndicatorValidationConfig(
-            mode=ValidationMode.QUICK,
+        config = Indicator_validation_config(
+            mode=Validation_mode.QUICK,
             stock_pool_size=500,
             max_selection_ratio=0.05,
             parallel_workers=2,
             output_format="csv"
         )
         
-        self.assertEqual(config.mode, ValidationMode.QUICK)
-        self.assertEqual(config.stock_pool_size, 500)
-        self.assertEqual(config.max_selection_ratio, 0.05)
-        self.assertEqual(config.parallel_workers, 2)
+        self.assert_equal(config.mode, Validation_mode.QUICK)
+        self.assert_equal(config.stock_pool_size, 500)
+        self.assert_equal(config.max_selection_ratio, 0.05)
+        self.assert_equal(config.parallel_workers, 2)
         self.assertEqual(config.output_format, "csv")
 
 
-class TestValidationEnums(unittest.TestCase):
+class Test_validation_enums(unittest.Test_case):
     """验证枚举测试类"""
     
     def test_validation_mode_enum(self):

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 批处理性能优化器
 
@@ -7,20 +9,21 @@
 
 import time
 from typing import Dict, List, Any, Optional, Set, Tuple
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Thread_pool_executor, as_completed
 import pandas as pd
 
 from db.unified_data_manager import get_unified_data_manager
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class BatchOptimizer:
     """批处理性能优化器"""
     
-    def __init__(self, data_manager: DataManager):
+    def __init___81(self, data_manager: Data_manager):
+    query_executor = get_query_executor()
         """
         初始化批处理优化器
         
@@ -100,7 +103,7 @@ class BatchOptimizer:
             codes_str = "', '".join(stock_codes)
             query = f"""
             SELECT code, trade_date, open, high, low, close, volume, amount, pct_chg
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE code IN ('{codes_str}')
             AND level = '日线'
             AND trade_date >= '{start_date}'
@@ -147,7 +150,7 @@ class BatchOptimizer:
             codes_str = "', '".join(stock_codes)
             query = f"""
             SELECT DISTINCT code, industry
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE code IN ('{codes_str}')
             AND level = '日线'
             """
@@ -281,7 +284,7 @@ class BatchOptimizer:
                 where_clause = " OR ".join(conditions)
                 return f"""
                 SELECT DISTINCT code
-                FROM stock_info
+                FROM stock_info WHERE 1=1
                 WHERE level = '日线' AND ({where_clause})
                 """
             
@@ -316,7 +319,7 @@ class BatchOptimizer:
                 base_batch_size = 30
             
             # 根据可用内存调整
-            memory_factor = min(2.0, available_memory_mb / 512)  # 512MB为基准
+            memory_factor = min(2.0, available_memory_mb / 512)  # 512_mB为基准
             optimized_size = int(base_batch_size * memory_factor)
             
             # 确保在合理范围内
@@ -342,6 +345,6 @@ class BatchOptimizer:
             logger.error(f"清理批处理缓存失败: {e}")
 
 
-def create_batch_optimizer(data_manager: DataManager) -> BatchOptimizer:
+def create_batch_optimizer(data_manager: Data_manager) -> Batch_optimizer:
     """创建批处理优化器实例"""
-    return BatchOptimizer(data_manager)
+    return Batch_optimizer(data_manager)

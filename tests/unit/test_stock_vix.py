@@ -1,22 +1,22 @@
 """
-StockVIX指标单元测试
+Stock_vIX指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_stock_vIX(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """StockVIX指标测试类"""
     
-    def setUp(self):
+    def set_up_Vix(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Vix(self)
         
         self.indicator = complete_registry.create_indicator('STOCK_VIX')
         self.expected_columns = [
@@ -24,13 +24,13 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             'ewma_volatility', 'garch_volatility', 'atr_volatility', 'stock_vix',
             'volatility_zone', 'volatility_trend', 'predicted_volatility', 'volatility_anomaly'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Vix(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Vix(self)
     
     def test_stock_vix_initialization(self):
         """测试StockVIX初始化"""
@@ -81,9 +81,9 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_stock_vix_parameter_update(self):
         """测试StockVIX参数更新"""
@@ -104,19 +104,19 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_stock_vix_patterns(self):
         """测试StockVIX形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -133,11 +133,11 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_stock_vix_volatility_calculations(self):
         """测试StockVIX各种波动率计算"""
@@ -154,10 +154,10 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
                 vol_values = result[vol_indicator].dropna()
                 if len(vol_values) > 0:
                     # 波动率应该是正数
-                    self.assertTrue(all(v >= 0 for v in vol_values), 
+                    self.assert_true(all(v >= 0 for v in vol_values), 
                                    f"{vol_indicator}应该是非负数")
                     # 波动率应该是有限数值
-                    self.assertTrue(all(np.isfinite(v) for v in vol_values), 
+                    self.assert_true(all(np.isfinite(v) for v in vol_values), 
                                    f"{vol_indicator}应该是有限数值")
     
     def test_stock_vix_zone_classification(self):
@@ -213,13 +213,13 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         prediction_values = result['predicted_volatility'].dropna()
         if len(prediction_values) > 0:
             # 预测值应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in prediction_values), 
+            self.assert_true(all(np.isfinite(v) for v in prediction_values), 
                            "预测波动率应该是有限数值")
     
     def test_stock_vix_percentile_calculation(self):
         """测试StockVIX百分位计算"""
         # 需要足够的数据进行百分位计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 300}
         ])
         
@@ -230,13 +230,13 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             percentile_values = result['vix_percentile'].dropna()
             if len(percentile_values) > 0:
                 # 百分位应该在0-100范围内
-                self.assertTrue(all(0 <= v <= 100 for v in percentile_values), 
+                self.assert_true(all(0 <= v <= 100 for v in percentile_values), 
                                "VIX百分位应该在0-100范围内")
     
     def test_stock_vix_strength_calculation(self):
         """测试StockVIX强度计算"""
         # 需要足够的数据进行强度计算
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 300}
         ])
         
@@ -247,7 +247,7 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             strength_values = result['volatility_strength'].dropna()
             if len(strength_values) > 0:
                 # 强度应该在0-100范围内
-                self.assertTrue(all(0 <= v <= 100 for v in strength_values), 
+                self.assert_true(all(0 <= v <= 100 for v in strength_values), 
                                "波动率强度应该在0-100范围内")
     
     def test_stock_vix_atr_volatility(self):
@@ -259,7 +259,7 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             atr_vol_values = result['atr_volatility'].dropna()
             if len(atr_vol_values) > 0:
                 # ATR波动率应该是正数
-                self.assertTrue(all(v >= 0 for v in atr_vol_values), 
+                self.assert_true(all(v >= 0 for v in atr_vol_values), 
                                "ATR波动率应该是非负数")
     
     def test_stock_vix_comprehensive_patterns(self):
@@ -286,7 +286,7 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
                         for val in unique_values:
                             self.assertIsInstance(val, (bool, np.bool_), f"{pattern}应该是布尔值")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Vix(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -297,11 +297,11 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Vix(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -312,7 +312,7 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_stock_vix_register_patterns(self):
         """测试StockVIX形态注册"""
@@ -329,9 +329,9 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # StockVIX应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_stock_vix_validation(self):
         """测试StockVIX数据验证"""
@@ -340,7 +340,7 @@ class TestStockVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_stock_vix_indicator_type(self):
         """测试StockVIX指标类型"""

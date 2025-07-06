@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testpsy_psy(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """PSY指标测试类"""
     
-    def setUp(self):
+    def set_up_Psy_Test_Psy(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Psy_Test_Psy(self)
         
         self.indicator = PSY(period=12)
         self.expected_columns = ['psy', 'psyma']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tear_down_Psy(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Psy(self)
     
     def test_psy_calculation_accuracy(self):
         """测试PSY计算准确性"""
@@ -66,9 +66,9 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_psy_parameter_update(self):
         """测试PSY参数更新"""
@@ -77,8 +77,8 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, secondary_period=new_secondary_period)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.period, new_period)
-        self.assertEqual(self.indicator.secondary_period, new_secondary_period)
+        self.assert_equal(self.indicator.period, new_period)
+        self.assert_equal(self.indicator.secondary_period, new_secondary_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -90,13 +90,13 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_psy_comprehensive_score(self):
         """测试PSY综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -109,7 +109,7 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证预期的形态列存在
         expected_patterns = [
@@ -145,12 +145,12 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'neutral_signal', 'trend', 'score']
         for key in expected_signal_keys:
             self.assertIn(key, signals.columns, f"缺少信号列: {key}")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Psy(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -161,11 +161,11 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('psy', result.columns)
         self.assertIn('psyma', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Psy(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -176,7 +176,7 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_psy_register_patterns(self):
         """测试PSY形态注册"""
@@ -193,7 +193,7 @@ class TestPSY(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertEqual(self.indicator.market_environment, 'bull_market')
         
         # 测试无效市场环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_market')
 
 

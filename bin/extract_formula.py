@@ -21,7 +21,7 @@ from utils.path_utils import get_doc_dir, ensure_dir_exists
 logger = get_logger(__name__)
 
 
-def main():
+def main_33():
     """主函数：从命令行运行公式提取工具"""
     # 初始化日志
     logger.info("启动通达信公式提取工具")
@@ -106,4 +106,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_33() 

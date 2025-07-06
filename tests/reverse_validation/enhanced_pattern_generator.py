@@ -23,15 +23,15 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from technical_indicators import TechnicalIndicators
+from technical_indicators import Technical_indicators
 
 
-class EnhancedPatternGenerator:
+class Enhanced_pattern_generator:
     """增强版形态数据生成器"""
 
     def __init__(self):
         """初始化生成器"""
-        self.indicators = TechnicalIndicators()
+        self.indicators = Technical_indicators()
 
     def generate_rsi_overbought_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """
@@ -59,7 +59,7 @@ class EnhancedPatternGenerator:
             prices.append(current_price)
 
         # 生成OHLC数据
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Enhanced_Pattern_Generator(dates, prices)
 
         # 验证RSI是否超买
         rsi = self.indicators.calculate_rsi(data)
@@ -71,9 +71,9 @@ class EnhancedPatternGenerator:
                 data.loc[data.index[i], 'high'] = max(data.loc[data.index[i], 'high'],
                                                      data.loc[data.index[i], 'close'])
 
-        return self._standardize_data_format(data, 'RSI_OVERBOUGHT')
+        return self._standardize_data_format_Enhanced_Pattern_Generator(data, 'RSI_OVERBOUGHT')
 
-    def _generate_ohlc_from_close(self, dates: pd.DatetimeIndex, close_prices: List[float]) -> pd.DataFrame:
+    def _generate_ohlc_from_close_Enhanced_Pattern_Generator(self, dates: pd.Datetime_index, close_prices: List[float]) -> pd.DataFrame:
         """
         从收盘价生成OHLC数据
 
@@ -82,7 +82,7 @@ class EnhancedPatternGenerator:
             close_prices: 收盘价列表
 
         Returns:
-            包含OHLC的DataFrame
+            包含OHLC的Data_frame
         """
         data = pd.DataFrame({
             'date': dates,
@@ -134,9 +134,9 @@ class EnhancedPatternGenerator:
 
         return data
 
-    def _standardize_data_format(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
+    def _standardize_data_format_Enhanced_Pattern_Generator(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
         """
-        标准化数据格式，确保与stockInfo格式完全一致
+        标准化数据格式，确保与stock_info格式完全一致
 
         Args:
             data: 原始数据
@@ -200,7 +200,7 @@ class EnhancedPatternGenerator:
             current_price *= (1 + daily_change)
             prices.append(current_price)
 
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Enhanced_Pattern_Generator(dates, prices)
 
         # 验证并调整RSI
         rsi = self.indicators.calculate_rsi(data)
@@ -211,7 +211,7 @@ class EnhancedPatternGenerator:
                 data.loc[data.index[i], 'low'] = min(data.loc[data.index[i], 'low'],
                                                     data.loc[data.index[i], 'close'])
 
-        return self._standardize_data_format(data, 'RSI_OVERSOLD')
+        return self._standardize_data_format_Enhanced_Pattern_Generator(data, 'RSI_OVERSOLD')
 
     def generate_rsi_golden_cross_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成RSI金叉形态数据"""
@@ -238,7 +238,7 @@ class EnhancedPatternGenerator:
             current_price *= (1 + daily_change)
             prices.append(current_price)
 
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Enhanced_Pattern_Generator(dates, prices)
 
         # 验证RSI是否在合理范围内
         rsi = self.indicators.calculate_rsi(data)
@@ -250,7 +250,7 @@ class EnhancedPatternGenerator:
             for i in range(-3, 0):
                 data.loc[data.index[i], 'close'] *= adjustment_factor
 
-        return self._standardize_data_format(data, 'RSI_GOLDEN_CROSS')
+        return self._standardize_data_format_Enhanced_Pattern_Generator(data, 'RSI_GOLDEN_CROSS')
 
     def generate_rsi_death_cross_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成RSI死叉形态数据"""
@@ -277,7 +277,7 @@ class EnhancedPatternGenerator:
             current_price *= (1 + daily_change)
             prices.append(current_price)
 
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Enhanced_Pattern_Generator(dates, prices)
 
         # 验证RSI是否在合理范围内
         rsi = self.indicators.calculate_rsi(data)
@@ -289,7 +289,7 @@ class EnhancedPatternGenerator:
             for i in range(-3, 0):
                 data.loc[data.index[i], 'close'] *= adjustment_factor
 
-        return self._standardize_data_format(data, 'RSI_DEATH_CROSS')
+        return self._standardize_data_format_Enhanced_Pattern_Generator(data, 'RSI_DEATH_CROSS')
 
     def generate_rsi_divergence_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成RSI背离形态数据"""
@@ -322,5 +322,5 @@ class EnhancedPatternGenerator:
         if current_price <= first_peak:
             prices[-5:] = [p * 1.02 for p in prices[-5:]]
 
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'RSI_DIVERGENCE')
+        data = self._generate_ohlc_from_close_Enhanced_Pattern_Generator(dates, prices)
+        return self._standardize_data_format_Enhanced_Pattern_Generator(data, 'RSI_DIVERGENCE')

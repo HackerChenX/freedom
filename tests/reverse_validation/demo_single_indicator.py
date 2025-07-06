@@ -22,15 +22,15 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from pattern_data_generator import PatternDataGenerator
+from pattern_data_generator import Pattern_data_generator
 
 
-class SimplifiedIndicatorValidator:
+class Simplified_indicator_validator:
     """简化的指标验证器"""
 
     def __init__(self):
         """初始化验证器"""
-        self.pattern_generator = PatternDataGenerator()
+        self.pattern_generator = Pattern_data_generator()
 
         # 简化的预期形态映射
         self.expected_patterns = {
@@ -116,7 +116,7 @@ class SimplifiedIndicatorValidator:
 
         return min(matches / len(expected_patterns), 1.0)
 
-    def validate_single_indicator(self, indicator: str) -> dict:
+    def validate_single_indicator_Indicator(self, indicator: str) -> dict:
         """
         验证单个指标的所有形态
 
@@ -208,7 +208,7 @@ class SimplifiedIndicatorValidator:
         else:
             return "指标形态识别表现较差，需要重点优化"
 
-    def save_results(self, results: dict, output_file: str = None):
+    def save_results_Indicator(self, results: dict, output_file: str = None):
         """保存结果到文件"""
         if output_file is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -221,7 +221,7 @@ class SimplifiedIndicatorValidator:
         return output_file
 
 
-def main():
+def main_demosingleindicator():
     """主函数"""
     parser = argparse.ArgumentParser(description='单个指标反向验证演示')
     parser.add_argument('indicator', choices=['RSI', 'MACD', 'KDJ', 'BOLL', 'MA', 'EMA'],
@@ -240,10 +240,10 @@ def main():
     print()
 
     # 创建验证器并运行测试
-    validator = SimplifiedIndicatorValidator()
+    validator = Simplified_indicator_validator()
 
     try:
-        results = validator.validate_single_indicator(args.indicator)
+        results = validator.validate_single_indicator_Indicator(args.indicator)
 
         # 显示总结
         print("=" * 60)
@@ -259,7 +259,7 @@ def main():
 
         # 保存结果
         if args.save_results:
-            output_file = validator.save_results(results, args.output)
+            output_file = validator.save_results_Indicator(results, args.output)
             print(f"\n详细结果已保存到: {output_file}")
 
         # 返回退出码
@@ -276,5 +276,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_demosingleindicator()
     sys.exit(exit_code)

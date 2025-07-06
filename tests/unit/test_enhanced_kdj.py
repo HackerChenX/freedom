@@ -1,36 +1,36 @@
 """
-EnhancedKDJ指标单元测试
+Enhanced_kDJ指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_enhanced_kDJ(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """EnhancedKDJ指标测试类"""
     
-    def setUp(self):
+    def set_up_Kdj(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Kdj(self)
         
-        self.indicator = EnhancedKDJ(n=9, m1=3, m2=3, multi_periods=[5, 9, 14])
+        self.indicator = Enhanced_kDJ(n=9, m1=3, m2=3, multi_periods=[5, 9, 14])
         self.expected_columns = [
             'K', 'D', 'J', 'K_5', 'D_5', 'J_5', 'rsv_5',
             'K_14', 'D_14', 'J_14', 'rsv_14', 'j_acceleration',
             'kd_cross_angle', 'kd_distance', 'j_normalized'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Kdj(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Kdj(self)
     
     def test_enhanced_kdj_calculation_accuracy(self):
         """测试EnhancedKDJ计算准确性"""
@@ -64,7 +64,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = EnhancedKDJ(n=5, m1=3, m2=3, multi_periods=[5])
+        test_indicator = Enhanced_kDJ(n=5, m1=3, m2=3, multi_periods=[5])
         result = test_indicator.calculate(simple_data)
         
         # 验证KDJ计算逻辑
@@ -76,7 +76,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             if not pd.isna(k_value) and not pd.isna(d_value) and not pd.isna(j_value):
                 # 验证J = 3K - 2D
                 expected_j = 3 * k_value - 2 * d_value
-                self.assertAlmostEqual(j_value, expected_j, places=6,
+                self.assert_almost_equal(j_value, expected_j, places=6,
                                      msg="J值应该等于3K-2D")
     
     def test_enhanced_kdj_score_range(self):
@@ -95,9 +95,9 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_enhanced_kdj_parameter_update(self):
         """测试EnhancedKDJ参数更新"""
@@ -107,9 +107,9 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(n=new_n, m1=new_m1, m2=new_m2)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.n, new_n)
-        self.assertEqual(self.indicator.m1, new_m1)
-        self.assertEqual(self.indicator.m2, new_m2)
+        self.assert_equal(self.indicator.n, new_n)
+        self.assert_equal(self.indicator.m1, new_m1)
+        self.assert_equal(self.indicator.m2, new_m2)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -122,7 +122,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['high', 'low', 'close']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_enhanced_kdj_comprehensive_score(self):
         """测试EnhancedKDJ综合评分"""
@@ -132,7 +132,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 然后计算评分
         raw_score = self.indicator.calculate_raw_score(self.data)
         
-        self.assertIsInstance(raw_score, pd.Series)
+        self.assert_is_instance(raw_score, pd.Series)
         
         # 验证评分范围
         valid_scores = raw_score.dropna()
@@ -143,13 +143,13 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试EnhancedKDJ形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -183,7 +183,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         j_accel = result['j_acceleration'].dropna()
         if len(j_accel) > 0:
             # 加速度应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in j_accel), 
+            self.assert_true(all(np.isfinite(v) for v in j_accel), 
                            "J线加速度应该是有限数值")
     
     def test_enhanced_kdj_kd_cross_angle(self):
@@ -197,7 +197,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         kd_angle = result['kd_cross_angle'].dropna()
         if len(kd_angle) > 0:
             # 角度应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in kd_angle), 
+            self.assert_true(all(np.isfinite(v) for v in kd_angle), 
                            "KD交叉角度应该是有限数值")
     
     def test_enhanced_kdj_j_normalized(self):
@@ -211,7 +211,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         j_norm = result['j_normalized'].dropna()
         if len(j_norm) > 0:
             # 归一化值应该在0-100范围内
-            self.assertTrue(all(0 <= v <= 100 for v in j_norm), 
+            self.assert_true(all(0 <= v <= 100 for v in j_norm), 
                            "J线归一化值应该在0-100范围内")
     
     def test_enhanced_kdj_sensitivity_adjustment(self):
@@ -220,11 +220,11 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         sensitivities = [0.5, 1.0, 1.5, 2.0]
         
         for sensitivity in sensitivities:
-            test_indicator = EnhancedKDJ(n=9, m1=3, m2=3, sensitivity=sensitivity)
+            test_indicator = Enhanced_kDJ(n=9, m1=3, m2=3, sensitivity=sensitivity)
             result = test_indicator.calculate(self.data)
             
             # 验证灵敏度调整功能
-            self.assertIsInstance(result, pd.DataFrame)
+            self.assert_is_instance(result, pd.DataFrame)
             self.assertIn('K', result.columns)
             self.assertIn('D', result.columns)
             self.assertIn('J', result.columns)
@@ -234,11 +234,11 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_enhanced_kdj_pattern_identification(self):
         """测试EnhancedKDJ形态识别方法"""
@@ -249,7 +249,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.identify_patterns(self.data)
         
         # 验证形态识别结果
-        self.assertIsInstance(patterns, list)
+        self.assert_is_instance(patterns, list)
         
         # 验证形态类型
         valid_patterns = [
@@ -270,13 +270,13 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         consistency = self.indicator._calculate_multi_period_consistency()
         
         # 验证一致性计算结果
-        self.assertIsInstance(consistency, pd.Series)
+        self.assert_is_instance(consistency, pd.Series)
         
         # 验证一致性值的合理性
         consistency_values = consistency.dropna()
         if len(consistency_values) > 0:
             # 一致性分数应该在合理范围内
-            self.assertTrue(all(-20 <= v <= 20 for v in consistency_values), 
+            self.assert_true(all(-20 <= v <= 20 for v in consistency_values), 
                            "多周期一致性分数应该在-20到20范围内")
     
     def test_enhanced_kdj_generate_signals_method(self):
@@ -288,7 +288,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_signals(self.data)
         
         # 验证信号生成结果
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         
         expected_signal_columns = [
             'K', 'D', 'J', 'score', 'buy_signal', 'sell_signal',
@@ -298,7 +298,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         for col in expected_signal_columns:
             self.assertIn(col, signals.columns, f"缺少信号列: {col}")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Kdj(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -309,11 +309,11 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Kdj(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -324,7 +324,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_enhanced_kdj_register_patterns(self):
         """测试EnhancedKDJ形态注册"""
@@ -341,7 +341,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # EnhancedKDJ应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('K', result.columns)
         self.assertIn('D', result.columns)
         self.assertIn('J', result.columns)
@@ -351,7 +351,7 @@ class TestEnhancedKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['high', 'low'], axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_kdj_indicator_type(self):

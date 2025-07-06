@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -22,18 +24,18 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from indicators.intraday_volatility import IntradayVolatility
-from indicators.v_shaped_reversal import VShapedReversal
-from indicators.island_reversal import IslandReversal
-from db.clickhouse_db import get_clickhouse_db
+from indicators.intraday_volatility import Intraday_volatility
+from indicators.v_shaped_reversal import VShaped_reversal
+from indicators.island_reversal import Island_reversal
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+def get_stock_data_Optimization(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    从ClickHouse获取股票数据
+    从Click_house获取股票数据
     
     Args:
         stock_code: 股票代码
@@ -44,7 +46,8 @@ def get_stock_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFr
         pd.DataFrame: 股票数据
     """
     try:
-        db = get_clickhouse_db()
+        container = get_container()
+        db = container.get_data_access()
         
         query = f"""
         SELECT 
@@ -239,7 +242,7 @@ def optimize_emv_parameters(data: pd.DataFrame,
     print(f"开始EMV参数优化，共 {len(param_combinations)} 种组合...")
     
     # 并行处理参数组合
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.Thread_pool_executor(max_workers=8) as executor:
         future_to_params = {
             executor.submit(
                 _test_emv_parameters, data, period, ma_period
@@ -362,7 +365,7 @@ def optimize_v_shaped_parameters(data: pd.DataFrame,
     print(f"开始V形反转参数优化，共 {len(param_combinations)} 种组合...")
     
     # 并行处理参数组合
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.Thread_pool_executor(max_workers=8) as executor:
         future_to_params = {
             executor.submit(
                 _test_v_shaped_parameters, data, dp, rp, dt, rt
@@ -403,7 +406,7 @@ def _test_v_shaped_parameters(data: pd.DataFrame, decline_period: int, rebound_p
     """
     try:
         # 创建V形反转实例并计算指标
-        vr = VShapedReversal(
+        vr = VShaped_reversal(
             decline_period=decline_period, 
             rebound_period=rebound_period,
             decline_threshold=decline_threshold,
@@ -497,7 +500,7 @@ def optimize_island_reversal_parameters(data: pd.DataFrame,
     print(f"开始岛型反转参数优化，共 {len(param_combinations)} 种组合...")
     
     # 并行处理参数组合
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.Thread_pool_executor(max_workers=8) as executor:
         future_to_params = {
             executor.submit(
                 _test_island_reversal_parameters, data, gap_threshold, island_max_days
@@ -536,7 +539,7 @@ def _test_island_reversal_parameters(data: pd.DataFrame, gap_threshold: float,
     """
     try:
         # 创建岛型反转实例并计算指标
-        ir = IslandReversal(gap_threshold=gap_threshold, island_max_days=island_max_days)
+        ir = Island_reversal(gap_threshold=gap_threshold, island_max_days=island_max_days)
         result = ir.get_signals(data)
         
         # 使用信号进行回测
@@ -576,7 +579,7 @@ def _test_island_reversal_parameters(data: pd.DataFrame, gap_threshold: float,
         }
 
 
-def main():
+def main_parameteroptimization():
     """主函数"""
     # 设置测试参数
     stock_code = "000001.SZ"  # 平安银行
@@ -586,7 +589,7 @@ def main():
     print(f"使用股票 {stock_code} 从 {start_date} 到 {end_date} 的数据进行参数优化...")
     
     # 获取股票数据
-    data = get_stock_data(stock_code, start_date, end_date)
+    data = get_stock_data_Optimization(stock_code, start_date, end_date)
     
     if data.empty:
         print(f"无法获取股票 {stock_code} 的数据，退出程序")
@@ -662,8 +665,8 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
-    except KeyboardInterrupt:
+        main_parameteroptimization()
+    except Keyboard_interrupt:
         print("\n程序被用户中断")
     except Exception as e:
         print(f"程序发生未处理的异常: {e}") 

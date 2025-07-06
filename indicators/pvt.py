@@ -15,12 +15,12 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class PVT(BaseIndicator, PatternSignalMixin):
+class Pvt(BaseIndicator, PatternSignalMixin):
     """
     价格成交量趋势指标(PVT) (PVT)
     
@@ -39,20 +39,20 @@ class PVT(BaseIndicator, PatternSignalMixin):
         super().__init__(name="PVT", description="价格成交量趋势指标，通过价格变化与成交量相结合，反映价格趋势的强度和持续性")
         self.ma_period = ma_period
         
-    def set_parameters(self, ma_period: int = None):
+    def set_parameters_Pvt_Pvt_Pvt_pvt(self, ma_period: int = None):
         """
         设置指标参数
         """
         if ma_period is not None:
             self.ma_period = ma_period
             
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Pvt(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算PVT指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -102,7 +102,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Pvt(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取PVT相关形态
 
@@ -111,10 +111,10 @@ class PVT(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 直接计算PVT指标
-        result = self._calculate(data)
+        result = self._calculate_pvt(data)
 
         if 'pvt' not in result.columns or 'pvt_signal' not in result.columns:
             return pd.DataFrame(index=data.index)
@@ -172,7 +172,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Pvt(self):
         """
         注册PVT指标的形态到全局形态注册表
         """
@@ -242,9 +242,9 @@ class PVT(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_pvt(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
             df: 输入数据
@@ -257,50 +257,50 @@ class PVT(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Pvt(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算PVT指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含PVT指标的DataFrame
+            包含PVT指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_pvt(data)
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Pvt(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算PVT指标
 
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
 
         Returns:
-            包含PVT指标的DataFrame
+            包含PVT指标的Data_frame
         """
-        return self.calculate(df)
+        return self.calculate_Pvt(df)
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_pvt(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算价格成交量趋势指标(PVT)指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 必须包含以下列：
                 - close: 收盘价
                 - volume: 成交量
                 
         Returns:
-            添加了PVT指标列的DataFrame
+            添加了PVT指标列的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
 
         # 确保数据包含必要的列
         required_columns = ['close', 'volume']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_pvt(df, required_columns)
         
         df_copy = df.copy()
         
@@ -324,16 +324,16 @@ class PVT(BaseIndicator, PatternSignalMixin):
 
         return df_copy
 
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Pvt(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成价格成交量趋势指标(PVT)指标交易信号
         
         Args:
-            df: 包含价格数据和PVT指标的DataFrame
+            df: 包含价格数据和PVT指标的Data_frame
             **kwargs: 额外参数
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - pvt_buy_signal: 1=买入信号, 0=无信号
             - pvt_sell_signal: 1=卖出信号, 0=无信号
         """
@@ -342,7 +342,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
             
         # 检查必要的指标列是否存在
         required_columns = ['pvt', 'pvt_signal']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_pvt(df, required_columns)
         
         df_copy = df.copy()
         
@@ -368,7 +368,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
 
         return df_copy
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Pvt(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算PVT原始评分
         
@@ -381,7 +381,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算PVT
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Pvt(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -410,7 +410,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Pvt(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -423,7 +423,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Pvt(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -440,10 +440,10 @@ class PVT(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Pvt(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Pvt(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -453,7 +453,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Pvt(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别PVT技术形态
         
@@ -468,7 +468,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算PVT
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Pvt(data, **kwargs)
         
         if self._result is None:
             return patterns
@@ -883,7 +883,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Pvt(data, **kwargs)
         
         # 初始化信号
         signals = {}
@@ -898,7 +898,7 @@ class PVT(BaseIndicator, PatternSignalMixin):
         
 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Pvt(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -933,41 +933,11 @@ class PVT(BaseIndicator, PatternSignalMixin):
 
 
 
-    def __init__(self, **kwargs):
-        """
-        初始化PVT指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "PVT"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保PVT特有属性存在
-        if not hasattr(self, 'ma_period'):
-            self.ma_period = 10
-        
-        # 确保PVT特有属性存在
-        if not hasattr(self, 'ma_period'):
-            self.ma_period = 10
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_pvt(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'ma_period': 10}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Pvt_Pvt_Pvt_pvt_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -976,8 +946,8 @@ class PVT(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -986,8 +956,8 @@ class PVT(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('PVT', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"PVT参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

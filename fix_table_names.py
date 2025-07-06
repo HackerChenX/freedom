@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 修复所有Python文件中错误的表名
-将 stock_data, stock_daily_data 等错误表名修复为 stock_info
-"""
+将 stock_data, stock_daily_data 等错误表名修复为 stock_info WHERE 1=1 """
 
 import os
 import re

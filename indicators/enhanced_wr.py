@@ -4,12 +4,12 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
+class EnhancedWr(BaseIndicator, PatternSignalMixin):
     """
     增强型Williams %R指标
 
@@ -46,12 +46,12 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         self.smooth_period = smooth_period
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_enhancedwr()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Wr(**kwargs)
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_enhancedwr(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
             "period": 14,
@@ -60,7 +60,7 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
             "smooth_period": 3
         }
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Wr(self, **kwargs):
         """
         设置指标参数
 
@@ -69,8 +69,8 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
 
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -92,29 +92,29 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         self.oversold = kwargs.get('oversold', -80.0)
         self.smooth_period = kwargs.get('smooth_period', 3)
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算增强型Williams %R指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            添加了增强型Williams %R指标的DataFrame
+            添加了增强型Williams %R指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_enhancedwr(data, **kwargs)
         self._result = result
         return result
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_enhancedwr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算增强型Williams %R指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            添加了增强型Williams %R指标的DataFrame
+            添加了增强型Williams %R指标的Data_frame
         """
         min_length = max(self.multi_periods) + self.smooth_period + 10
         if len(data) < min_length:
@@ -178,7 +178,7 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         计算Williams %R指标
         
         Args:
-            df: 数据DataFrame
+            df: 数据Data_frame
             period: 计算周期
             
         Returns:
@@ -262,7 +262,7 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         计算多周期Williams %R一致性
         
         Args:
-            df: 包含多周期Williams %R的DataFrame
+            df: 包含多周期Williams %R的Data_frame
             
         Returns:
             一致性评分序列
@@ -306,7 +306,7 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         计算增强型Williams %R综合评分
         
         Args:
-            df: 包含Williams %R相关指标的DataFrame
+            df: 包含Williams %R相关指标的Data_frame
             
         Returns:
             综合评分序列 (0-100)
@@ -361,7 +361,7 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         生成Williams %R交易信号
         
         Args:
-            df: 包含Williams %R指标的DataFrame
+            df: 包含Williams %R指标的Data_frame
             
         Returns:
             信号序列 (1: 买入, -1: 卖出, 0: 持有)
@@ -420,17 +420,17 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         
         return signals
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Wr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wr(data, **kwargs)
         
         if 'ENHANCED_WR_VALUE' in self._result.columns:
             return self._result['ENHANCED_WR_VALUE']
         else:
             return pd.Series(50.0, index=data.index)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Wr(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if score.empty:
             return 0.5
@@ -444,10 +444,10 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
         
         return max(0.3, confidence)
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wr(data, **kwargs)
         
         patterns = pd.DataFrame(index=data.index)
         
@@ -461,4 +461,4 @@ class ENHANCED_WR(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-EnhancedWR = ENHANCED_WR
+enhanced_wr = ENHANCED_WR

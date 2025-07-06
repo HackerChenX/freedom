@@ -15,7 +15,7 @@ sys.path.append(root_dir)
 
 from strategy.strategy_factory import StrategyFactory
 from utils.strategy_validator import StrategyValidator
-from db.container import get_container
+from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import IDataAccess
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_strategies_dir
@@ -185,7 +185,7 @@ def create_visualization(result, output_prefix):
     except Exception as e:
         logger.error(f"创建可视化图表时出错: {e}")
 
-def main():
+def main_36():
     """命令行入口函数"""
     # 解析命令行参数
     parser = argparse.ArgumentParser(description="策略验证工具")
@@ -273,4 +273,4 @@ def main():
         logger.error(f"策略 '{args.strategy}' 验证失败。")
 
 if __name__ == "__main__":
-    main() 
+    main_36() 

@@ -1,24 +1,24 @@
 """
-AdvancedCandlestickPatterns指标单元测试
+Advanced_candlestick_patterns指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testadvancedcandlestickpatterns_patterns(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """AdvancedCandlestickPatterns指标测试类"""
     
-    def setUp(self):
+    def set_up_Patterns_Test_Advanced_Candlestick_Patterns(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Patterns_Test_Advanced_Candlestick_Patterns(self)
         
-        self.indicator = AdvancedCandlestickPatterns()
+        self.indicator = Advanced_candlestick_patterns()
         self.expected_columns = [
             '三白兵', '三黑鸦', '三内涨', '三内跌', '三外涨', '三外跌',
             '上升三法', '下降三法', '铺垫形态', '棍心三明治',
@@ -27,18 +27,18 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
             '上升三角形', '下降三角形', '对称三角形', '矩形整理',
             '钻石顶', '钻石底', '杯柄形态'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Patterns_Test_Advanced_Candlestick_Patterns(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Patterns_Test_Advanced_Candlestick_Patterns(self)
     
     def test_advanced_candlestick_patterns_initialization(self):
         """测试AdvancedCandlestickPatterns初始化"""
         # 测试默认初始化
-        default_indicator = AdvancedCandlestickPatterns()
+        default_indicator = Advanced_candlestick_patterns()
         self.assertEqual(default_indicator.name, "AdvancedCandlestickPatterns")
         self.assertIn("高级K线形态识别指标", default_indicator.description)
     
@@ -78,9 +78,9 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_advanced_candlestick_patterns_parameter_update(self):
         """测试AdvancedCandlestickPatterns参数更新"""
@@ -94,19 +94,19 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_advanced_candlestick_patterns_patterns(self):
         """测试AdvancedCandlestickPatterns形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -118,11 +118,11 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_advanced_candlestick_patterns_three_star_patterns(self):
         """测试AdvancedCandlestickPatterns三星形态"""
@@ -162,7 +162,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
     def test_advanced_candlestick_patterns_complex_patterns(self):
         """测试AdvancedCandlestickPatterns复杂形态"""
         # 需要足够的数据进行复杂形态识别
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -188,7 +188,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         identified_patterns = self.indicator.identify_patterns(self.data)
         
         # 验证返回列表
-        self.assertIsInstance(identified_patterns, list)
+        self.assert_is_instance(identified_patterns, list)
         
         # 验证列表元素为字符串
         for pattern in identified_patterns:
@@ -199,7 +199,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         signals = self.indicator.generate_signals(self.indicator.calculate(self.data))
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         
         # 验证基本信号列存在
         expected_signal_columns = ['buy_signal', 'sell_signal', 'watch_signal', 
@@ -226,7 +226,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         raw_score_df = self.indicator.calculate_raw_score(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         
         # 验证包含score列
         self.assertIn('score', raw_score_df.columns)
@@ -247,7 +247,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         # 验证信号强度值的合理性
         strength_values = signals['signal_strength'].dropna()
         if len(strength_values) > 0:
-            self.assertTrue(all(0 <= s <= 100 for s in strength_values), 
+            self.assert_true(all(0 <= s <= 100 for s in strength_values), 
                            "信号强度应在0-100范围内")
     
     def test_advanced_candlestick_patterns_trend_confirmation(self):
@@ -276,7 +276,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         # 验证复合信号值的合理性
         compound_values = signals['compound_signal'].dropna()
         if len(compound_values) > 0:
-            self.assertTrue(all(0 <= v <= 10 for v in compound_values), 
+            self.assert_true(all(0 <= v <= 10 for v in compound_values), 
                            "复合信号应在0-10范围内")
     
     def test_advanced_candlestick_patterns_volume_confirmation(self):
@@ -288,10 +288,10 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         raw_score_df = self.indicator.calculate_raw_score(data_with_volume)
         
         # 验证成交量确认在评分中的影响
-        self.assertIsInstance(raw_score_df, pd.DataFrame)
+        self.assert_is_instance(raw_score_df, pd.DataFrame)
         self.assertIn('score', raw_score_df.columns)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Patterns_Test_Advanced_Candlestick_Patterns(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -302,11 +302,11 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Patterns_Test_Advanced_Candlestick_Patterns(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -317,7 +317,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_advanced_candlestick_patterns_register_patterns(self):
         """测试AdvancedCandlestickPatterns形态注册"""
@@ -334,9 +334,9 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         result = self.indicator.calculate(small_data)
         
         # AdvancedCandlestickPatterns应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_advanced_candlestick_patterns_validation(self):
         """测试AdvancedCandlestickPatterns数据验证"""
@@ -345,7 +345,7 @@ class TestAdvancedCandlestickPatterns(unittest.TestCase, IndicatorTestMixin, Log
         
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_advanced_candlestick_patterns_indicator_type(self):
         """测试AdvancedCandlestickPatterns指标类型"""

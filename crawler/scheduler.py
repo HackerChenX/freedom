@@ -8,13 +8,13 @@ import time
 import threading
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Thread_pool_executor, as_completed
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class CrawlerTask:
+class Crawler_task:
     """爬虫任务"""
 
     def __init__(self, task_id: str, spider_name: str, url: str,
@@ -34,34 +34,34 @@ class CrawlerTask:
         return self.priority > other.priority
 
 
-class TaskQueue:
+class Task_queue:
     """任务队列"""
 
     def __init__(self):
         import queue
-        self.queue = queue.PriorityQueue()
+        self.queue = queue.Priority_queue()
         self.completed_tasks = []
         self.failed_tasks = []
 
-    def add_task(self, task: CrawlerTask):
+    def add_task_Scheduler_Scheduler_Scheduler_scheduler(self, task: Crawler_task):
         """添加任务"""
         self.queue.put(task)
         logger.info(f"添加任务: {task.task_id} - {task.spider_name}")
 
-    def get_task(self) -> Optional[CrawlerTask]:
+    def get_task(self) -> Optional[Crawler_task]:
         """获取任务"""
         try:
             return self.queue.get_nowait()
         except:
             return None
 
-    def mark_completed(self, task: CrawlerTask):
+    def mark_completed(self, task: Crawler_task):
         """标记任务完成"""
         task.status = 'completed'
         self.completed_tasks.append(task)
         logger.info(f"任务完成: {task.task_id}")
 
-    def mark_failed(self, task: CrawlerTask):
+    def mark_failed_Scheduler(self, task: Crawler_task):
         """标记任务失败"""
         task.status = 'failed'
         task.retry_count += 1
@@ -75,7 +75,7 @@ class TaskQueue:
             self.failed_tasks.append(task)
             logger.error(f"任务失败: {task.task_id}")
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats_Scheduler_Scheduler_Scheduler_scheduler(self) -> Dict[str, int]:
         """获取队列统计"""
         return {
             'pending': self.queue.qsize(),
@@ -84,15 +84,15 @@ class TaskQueue:
         }
 
 
-class CrawlerPool:
+class Crawler_pool:
     """爬虫池"""
 
     def __init__(self, max_workers: int = 5):
         self.max_workers = max_workers
-        self.executor = ThreadPoolExecutor(max_workers=max_workers)
+        self.executor = Thread_pool_executor(max_workers=max_workers)
         self.running_tasks = {}
 
-    def submit_task(self, task: CrawlerTask, spider_func):
+    def submit_task(self, task: Crawler_task, spider_func):
         """提交任务"""
         future = self.executor.submit(spider_func, task)
         self.running_tasks[task.task_id] = future
@@ -113,7 +113,7 @@ class CrawlerPool:
             del self.running_tasks[task_id]
 
 
-class CrawlerMonitor:
+class Crawler_monitor:
     """爬虫监控器"""
 
     def __init__(self):
@@ -127,18 +127,18 @@ class CrawlerMonitor:
         }
         self.response_times = []
 
-    def record_task_start(self, task: CrawlerTask):
+    def record_task_start(self, task: Crawler_task):
         """记录任务开始"""
         self.stats['total_tasks'] += 1
         task.start_time = datetime.now()
 
-    def record_task_complete(self, task: CrawlerTask, response_time: float):
+    def record_task_complete(self, task: Crawler_task, response_time: float):
         """记录任务完成"""
         self.stats['completed_tasks'] += 1
         self.response_times.append(response_time)
         self._update_stats()
 
-    def record_task_failed(self, task: CrawlerTask):
+    def record_task_failed(self, task: Crawler_task):
         """记录任务失败"""
         self.stats['failed_tasks'] += 1
         self._update_stats()
@@ -152,7 +152,7 @@ class CrawlerMonitor:
         if self.response_times:
             self.stats['avg_response_time'] = sum(self.response_times) / len(self.response_times)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_Scheduler_Scheduler_Scheduler_scheduler(self) -> Dict[str, Any]:
         """获取监控统计"""
         runtime = datetime.now() - self.stats['start_time']
         stats = self.stats.copy()
@@ -160,13 +160,13 @@ class CrawlerMonitor:
         return stats
 
 
-class CrawlerScheduler:
+class Crawler_scheduler:
     """爬虫任务调度器"""
 
     def __init__(self, max_workers: int = 5):
-        self.task_queue = TaskQueue()
-        self.crawler_pool = CrawlerPool(max_workers)
-        self.monitor = CrawlerMonitor()
+        self.task_queue = Task_queue()
+        self.crawler_pool = Crawler_pool(max_workers)
+        self.monitor = Crawler_monitor()
         self.running = False
         self.scheduler_thread = None
 
@@ -178,13 +178,13 @@ class CrawlerScheduler:
         self.spiders[name] = spider_class
         logger.info(f"注册爬虫: {name}")
 
-    def add_task(self, spider_name: str, url: str, priority: int = 1,
+    def add_task_Scheduler_Scheduler_Scheduler_scheduler(self, spider_name: str, url: str, priority: int = 1,
                  params: Dict[str, Any] = None) -> str:
         """添加爬虫任务"""
         import time
         task_id = f"{spider_name}_{int(time.time())}"
-        task = CrawlerTask(task_id, spider_name, url, priority, params)
-        self.task_queue.add_task(task)
+        task = Crawler_task(task_id, spider_name, url, priority, params)
+        self.task_queue.add_task_Scheduler_Scheduler_Scheduler_scheduler(task)
         return task_id
 
     def start(self):
@@ -197,13 +197,13 @@ class CrawlerScheduler:
         self.running = False
         logger.info("爬虫调度器停止")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_Scheduler_Scheduler_Scheduler_scheduler(self) -> Dict[str, Any]:
         """获取统计信息"""
         return {
-            'queue_stats': self.task_queue.get_stats(),
+            'queue_stats': self.task_queue.get_stats_Scheduler_Scheduler_SchedulerScheduler(),
             'pool_stats': {
                 'running_tasks': self.crawler_pool.get_running_count(),
                 'max_workers': self.crawler_pool.max_workers
             },
-            'monitor_stats': self.monitor.get_stats()
+            'monitor_stats': self.monitor.get_stats_Scheduler_Scheduler_SchedulerScheduler()
         }

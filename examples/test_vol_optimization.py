@@ -22,7 +22,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
+def load_test_data_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
     """
     加载测试数据
     
@@ -105,18 +105,18 @@ def plot_vol_score_comparison(data, old_score, new_score, title="VOL评分对比
     pass
 
 
-class SimpleVOL:
+class Simple_vOL:
     """简化版VOL，用于对比优化前的效果"""
     
-    def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def calculate_Optimization(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算成交量(VOL)指标（优化前版本）
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 
         Returns:
-            添加了VOL指标列的DataFrame
+            添加了VOL指标列的Data_frame
         """
         if df.empty:
             return df
@@ -140,18 +140,18 @@ class SimpleVOL:
         
         return df_copy
     
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score_Optimization(self, data: pd.DataFrame) -> pd.Series:
         """
         计算成交量指标的原始评分（优化前版本）
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             pd.Series: 包含原始评分的Series
         """
         # 计算指标值
-        indicator_data = self.calculate(data)
+        indicator_data = self.calculate_Optimization(data)
         
         # 初始化评分
         score = pd.Series(50.0, index=data.index)  # 基础分50分
@@ -241,16 +241,16 @@ def test_vol_optimization(data):
         tuple: (原始评分, 优化后评分)
     """
     # 创建未优化和优化后的VOL实例
-    simple_vol = SimpleVOL()
+    simple_vol = Simple_vOL()
     enhanced_vol = complete_registry.create_indicator('VOL')
     
     # 计算VOL指标
-    simple_result = simple_vol.calculate(data)
-    enhanced_result = enhanced_vol.calculate(data)
+    simple_result = simple_vol.calculate_Optimization(data)
+    enhanced_result = enhanced_vol.calculate_Optimization(data)
     
     # 计算评分
-    simple_score = simple_vol.calculate_raw_score(data)
-    enhanced_score = enhanced_vol.calculate_raw_score(data)
+    simple_score = simple_vol.calculate_raw_score_Optimization(data)
+    enhanced_score = enhanced_vol.calculate_raw_score_Optimization(data)
     
     # 计算评分差异
     score_diff = enhanced_score - simple_score
@@ -349,11 +349,11 @@ def find_best_vol_params(data):
     return best_params
 
 
-def main():
+def main_testvoloptimization():
     """主函数"""
     try:
         # 加载测试数据
-        data = load_test_data(start_date='2022-01-01', end_date='2022-12-31')
+        data = load_test_data_Optimization(start_date='2022-01-01', end_date='2022-12-31')
         
         # 测试VOL指标优化效果
         old_score, new_score, plot_data = test_vol_optimization(data)
@@ -370,7 +370,7 @@ def main():
 
         # 使用最佳参数重新计算并验证
         vol = complete_registry.create_indicator('VOL', periods=[best_params[0], best_params[1]])
-        final_result = vol.calculate(data)
+        final_result = vol.calculate_Optimization(data)
         final_signals = vol.generate_signals(final_result)
         
         logger.info("使用最佳参数计算的最终买入信号数量: %d", final_signals['buy_signal'].sum())
@@ -383,4 +383,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testvoloptimization() 

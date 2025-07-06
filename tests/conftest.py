@@ -62,7 +62,9 @@ def test_result_dir(temp_test_dir):
 @pytest.fixture(scope="session")
 def db_connection():
     """模拟数据库连接"""
-    with patch('db.clickhouse_db.get_clickhouse_db') as mock_get_db:
-        mock_db_instance = MagicMock()
-        mock_get_db.return_value = mock_db_instance
-        yield mock_db_instance 
+    with patch('db.container.get_container') as mock_get_container:
+        mock_container = Magic_mock()
+        mock_data_access = Magic_mock()
+        mock_container.get_data_access.return_value = mock_data_access
+        mock_get_container.return_value = mock_container
+        yield mock_data_access 

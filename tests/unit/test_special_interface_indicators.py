@@ -15,7 +15,7 @@ from tests.unit.indicator_test_mixin import IndicatorTestMixin
 class TestSpecialInterfaceIndicators(unittest.TestCase, IndicatorTestMixin):
     """特殊接口指标测试类"""
 
-    def setUp(self):
+    def setUp_IndicatorsTestspecialinterfaceindicators(self):
         """准备测试数据和环境"""
         # 生成测试数据
         self.data = TestDataGenerator.generate_price_sequence([
@@ -214,31 +214,31 @@ class TestSpecialInterfaceIndicators(unittest.TestCase, IndicatorTestMixin):
 
     # --- Override Mixin Tests that are not applicable for this test class ---
 
-    def test_calculation_runs_without_error(self):
+    def test_calculation_runs_without_error_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
-    def test_returns_dataframe(self):
+    def test_returns_dataframe_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
-    def test_output_has_expected_columns(self):
+    def test_output_has_expected_columns_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
-    def test_output_has_no_unexpected_all_nan_columns(self):
+    def test_output_has_no_unexpected_all_nan_columns_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
-    def test_calculate_with_missing_columns(self):
+    def test_calculate_with_missing_columns_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
-    def test_patterns_run_without_error(self):
+    def test_patterns_run_without_error_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
-    def test_patterns_return_valid_type(self):
+    def test_patterns_return_valid_type_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
         
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Indicators(self):
         self.skipTest("Mixin test not applicable for TestSpecialInterfaceIndicators.")
 
 

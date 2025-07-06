@@ -201,5 +201,5 @@ class IndicatorOptimizationPlan:
         return steps
 
 if __name__ == "__main__":
-    planner = IndicatorOptimizationPlan()
+    planner = Indicator_optimization_plan()
     planner.generate_optimization_plan() 

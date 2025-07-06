@@ -16,7 +16,7 @@ from typing import List, Dict, Any, Optional
 from formula import formula
 from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
-from scripts.backtest.unified_backtest import UnifiedBacktest
+from scripts.backtest.unified_backtest import Unified_backtest
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -50,7 +50,7 @@ class IndicatorChecker:
         })
         
         # 获取所有支持的指标
-        self.all_indicators = IndicatorFactory.get_supported_indicators()
+        self.all_indicators = Indicator_factory.get_supported_indicators()
         logger.info(f"系统支持的指标数量: {len(self.all_indicators)}")
         
     def check_all_indicators(self):
@@ -337,7 +337,7 @@ class IndicatorChecker:
             data = self._get_test_data()
             
             # 创建回测系统
-            backtest = UnifiedBacktest()
+            backtest = Unified_backtest()
             
             # 定义结果字典
             result = {'indicators': {}, 'patterns': []}
@@ -368,7 +368,7 @@ class IndicatorChecker:
             data = self._get_test_data()
             
             # 创建回测系统
-            backtest = UnifiedBacktest()
+            backtest = Unified_backtest()
             
             # 定义结果字典
             result = {'indicators': {}, 'patterns': []}
@@ -398,7 +398,7 @@ class IndicatorChecker:
             data = self._get_test_data()
             
             # 创建回测系统
-            backtest = UnifiedBacktest()
+            backtest = Unified_backtest()
             
             # 定义结果字典
             result = {'indicators': {}, 'patterns': []}
@@ -428,7 +428,7 @@ class IndicatorChecker:
             data = self._get_test_data()
             
             # 创建回测系统
-            backtest = UnifiedBacktest()
+            backtest = Unified_backtest()
             
             # 定义结果字典
             result = {'indicators': {}, 'patterns': []}
@@ -465,7 +465,7 @@ class IndicatorChecker:
                 
                 # 如果使用回测系统，测试在回测中的计算
                 try:
-                    backtest = UnifiedBacktest()
+                    backtest = Unified_backtest()
                     test_result = {}
                     backtest._calculate_momentum_indicators(self.test_df, 10, test_result)
                     if 'indicators' in test_result and 'momentum' in test_result['indicators']:
@@ -498,7 +498,7 @@ class IndicatorChecker:
                 
                 # 如果使用回测系统，测试在回测中的计算
                 try:
-                    backtest = UnifiedBacktest()
+                    backtest = Unified_backtest()
                     result_dict = {'indicators': {}, 'patterns': []}
                     backtest._calculate_rsima_indicators(self.test_df, 20, result_dict)
                     logger.info(f"回测系统中RSIMA指标计算结果: {result_dict['indicators']['rsima']}")
@@ -524,7 +524,7 @@ class IndicatorChecker:
                 
                 # 如果使用回测系统，测试在回测中的计算
                 try:
-                    backtest = UnifiedBacktest()
+                    backtest = Unified_backtest()
                     result_dict = {'indicators': {}, 'patterns': []}
                     backtest._calculate_intraday_volatility_indicators(self.test_df, 20, result_dict)
                     logger.info(f"回测系统中INTRADAY_VOLATILITY指标计算结果: {result_dict['indicators']['intraday_volatility']}")
@@ -550,7 +550,7 @@ class IndicatorChecker:
                 
                 # 如果使用回测系统，测试在回测中的计算
                 try:
-                    backtest = UnifiedBacktest()
+                    backtest = Unified_backtest()
                     result_dict = {'indicators': {}, 'patterns': []}
                     backtest._calculate_atr_indicators(self.test_df, 20, result_dict)
                     
@@ -585,7 +585,7 @@ class IndicatorChecker:
                 
                 # 如果使用回测系统，测试在回测中的计算
                 try:
-                    backtest = UnifiedBacktest()
+                    backtest = Unified_backtest()
                     result_dict = {'indicators': {}, 'patterns': []}
                     backtest._calculate_emv_indicators(self.test_df, 20, result_dict)
                     
@@ -620,7 +620,7 @@ class IndicatorChecker:
                 
                 # 如果使用回测系统，测试在回测中的计算
                 try:
-                    backtest = UnifiedBacktest()
+                    backtest = Unified_backtest()
                     result_dict = {'indicators': {}, 'patterns': []}
                     backtest._calculate_volume_ratio_indicators(self.test_df, 20, result_dict)
                     
@@ -646,7 +646,7 @@ class IndicatorChecker:
         获取测试数据
         
         Returns:
-            pd.DataFrame: 包含测试数据的DataFrame
+            pd.DataFrame: 包含测试数据的Data_frame
         """
         # 使用已经初始化的测试数据
         return self.test_df.copy()
@@ -706,14 +706,14 @@ class IndicatorChecker:
         
         return all_passed
 
-def main():
+def main_indicatorcheck():
     """主程序入口"""
     import sys
     
     # 获取命令行参数
     args = sys.argv[1:]
     
-    checker = IndicatorChecker()
+    checker = Indicator_checker()
     
     if not args:
         # 如果没有参数，运行所有检查
@@ -743,4 +743,4 @@ def main():
         return all(result for _, result in results)
     
 if __name__ == "__main__":
-    main() 
+    main_indicatorcheck() 

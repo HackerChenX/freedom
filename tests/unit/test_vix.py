@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_vIX(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """VIX指标测试类"""
     
-    def setUp(self):
+    def set_up_Vix_Test_Vix(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Vix_Test_Vix(self)
         
         self.indicator = complete_registry.create_indicator('VIX', period=10, smooth_period=5)
         self.expected_columns = ['vix', 'vix_smooth']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tear_down_Vix_Test_Vix(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Vix_Test_Vix(self)
     
     def test_vix_calculation_accuracy(self):
         """测试VIX计算准确性"""
@@ -73,9 +73,9 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_vix_parameter_update(self):
         """测试VIX参数更新"""
@@ -84,8 +84,8 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, smooth_period=new_smooth_period)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.period, new_period)
-        self.assertEqual(self.indicator.smooth_period, new_smooth_period)
+        self.assert_equal(self.indicator.period, new_period)
+        self.assert_equal(self.indicator.smooth_period, new_smooth_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -97,13 +97,13 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_vix_comprehensive_score(self):
         """测试VIX综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -115,13 +115,13 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试VIX形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -162,7 +162,7 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             vix_volatility = vix_values.std()
             smooth_volatility = vix_smooth_values.std()
             
-            self.assertLessEqual(smooth_volatility, vix_volatility * 1.2, 
+            self.assert_less_equal(smooth_volatility, vix_volatility * 1.2, 
                                "平滑线应该比原始VIX更平滑")
     
     def test_vix_signals(self):
@@ -170,7 +170,7 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'vix_buy_signal', 'vix_sell_signal']
         for key in expected_signal_keys:
             self.assertIn(key, signals.columns, f"缺少信号列: {key}")
@@ -178,7 +178,7 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_vix_reversal_detection(self):
         """测试VIX反转检测"""
         # 创建包含反转的数据
-        reversal_data = TestDataGenerator.generate_price_sequence([
+        reversal_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 15},  # 下跌增加波动
             {'type': 'trend', 'start_price': 80, 'end_price': 120, 'periods': 15}   # 上涨减少波动
         ])
@@ -193,7 +193,7 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_vix_historical_position(self):
         """测试VIX历史位置检测"""
         # 创建足够长的数据以计算历史位置
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 70}
         ])
         
@@ -209,7 +209,7 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             for pattern in historical_patterns:
                 self.assertIn(pattern, patterns.columns, f"缺少历史位置形态: {pattern}")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Vix_Test_Vix(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -220,11 +220,11 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('vix', result.columns)
         self.assertIn('vix_smooth', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Vix_Test_Vix(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -235,7 +235,7 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_vix_register_patterns(self):
         """测试VIX形态注册"""
@@ -257,7 +257,7 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # VIX应该为0（因为没有波动）
         vix_values = result['vix'].dropna()
         if len(vix_values) > 0:
-            self.assertTrue(all(abs(v) < 1e-10 for v in vix_values), 
+            self.assert_true(all(abs(v) < 1e-10 for v in vix_values), 
                            "价格不变时VIX应该为0")
     
     def test_vix_compute_method(self):

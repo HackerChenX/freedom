@@ -7,23 +7,23 @@ from tests.helper.data_generator import TestDataGenerator
 from indicators.complete_indicator_registry import complete_registry
 
 class TestIntradayVolatility(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestvolatilityandotherindicators(self):
         self.indicator = IndicatorFactory.create_indicator('INTRADAYVOLATILITY')
         self.expected_columns = ['volatility', 'volatility_ma', 'relative_volatility']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'sideways', 'price': 100, 'periods': 100}
         ])
 
-class TestStockVIX(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestStockVIX_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestvolatilityandotherindicators(self):
         self.indicator = IndicatorFactory.create_indicator('STOCKVIX')
         self.expected_columns = ['stock_vix']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 100}
         ])
 
-class TestVIX(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestVIX_Indicators_Test_Volatility_And_Other_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestvolatilityandotherindicators(self):
         self.indicator = IndicatorFactory.create_indicator('VIX')
         self.expected_columns = ['vix']
         # VIX usually requires options data, here we test if it can run with stock data
@@ -31,16 +31,16 @@ class TestVIX(unittest.TestCase, IndicatorTestMixin):
             {'type': 'm_shape', 'start_price': 100, 'top_price': 120, 'periods': 100}
         ])
 
-class TestVolumeRatio(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestVolumeRatio_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestvolatilityandotherindicators(self):
         self.indicator = IndicatorFactory.create_indicator('VOLUMERATIO')
         self.expected_columns = ['volume_ratio']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 100}
         ])
 
-class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestUnifiedMA_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestvolatilityandotherindicators(self):
         self.indicator = IndicatorFactory.create_indicator('UNIFIEDMA')
         self.expected_columns = ['MA5', 'MA10', 'MA20', 'MA30', 'MA60']
         self.data = TestDataGenerator.generate_price_sequence([

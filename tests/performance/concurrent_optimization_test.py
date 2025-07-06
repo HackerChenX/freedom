@@ -28,16 +28,16 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ConcurrentOptimizationTest:
+class Concurrent_optimization_test:
     """并发优化性能测试器"""
     
     def __init__(self):
         """初始化测试器"""
         # 初始化连接池
         self.connection_pool = initialize_connection_pool(
-            host='localhost',
-            port=9000,
-            database='stock',
+            host=os.getenv('DB_HOST', 'localhost'),
+            port=int(os.getenv('DB_PORT', '9000')),
+            database=os.getenv('DB_DATABASE', 'stock'),
             max_connections=20,
             min_connections=5
         )
@@ -105,7 +105,7 @@ class ConcurrentOptimizationTest:
             return thread_results
         
         # 使用线程池执行并发查询
-        with concurrent.futures.ThreadPoolExecutor(max_workers=concurrent_count) as executor:
+        with concurrent.futures.Thread_pool_executor(max_workers=concurrent_count) as executor:
             futures = [executor.submit(execute_queries, i) for i in range(concurrent_count)]
             
             for future in concurrent.futures.as_completed(futures):
@@ -338,7 +338,7 @@ class ConcurrentOptimizationTest:
         
         return metrics
     
-    def run_comprehensive_test(self) -> Dict[str, Any]:
+    def run_comprehensive_test_Test_Concurrent_Optimization_Test(self) -> Dict[str, Any]:
         """运行全面的优化测试"""
         logger.info("=" * 80)
         logger.info("开始并发优化全面性能测试")
@@ -368,7 +368,7 @@ class ConcurrentOptimizationTest:
             test_results['optimization_comparison'] = self.test_optimization_comparison()
             
             # 4. 整体评估
-            test_results['overall_assessment'] = self._generate_overall_assessment(test_results)
+            test_results['overall_assessment'] = self._generate_overall_assessment_Concurrent_Optimization_Test(test_results)
             
             logger.info("并发优化全面性能测试完成")
             
@@ -378,7 +378,7 @@ class ConcurrentOptimizationTest:
         
         return test_results
     
-    def _generate_overall_assessment(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_overall_assessment_Concurrent_Optimization_Test(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
         """生成整体评估"""
         concurrent_test = test_results.get('concurrent_test', {})
         cache_test = test_results.get('cache_test', {})
@@ -408,12 +408,12 @@ class ConcurrentOptimizationTest:
             'cache_hit_rate': cache_hit_rate,
             'connection_reuse_rate': connection_reuse_rate,
             'optimization_successful': overall_grade in ['A', 'B'],
-            'recommendations': self._generate_recommendations(concurrent_grade, cache_grade, metrics)
+            'recommendations': self._generate_recommendations_Concurrent_Optimization_Test(concurrent_grade, cache_grade, metrics)
         }
         
         return assessment
     
-    def _generate_recommendations(self, concurrent_grade: str, cache_grade: str, 
+    def _generate_recommendations_Concurrent_Optimization_Test(self, concurrent_grade: str, cache_grade: str, 
                                 metrics: Dict[str, Any]) -> List[str]:
         """生成优化建议"""
         recommendations = []
@@ -436,7 +436,7 @@ class ConcurrentOptimizationTest:
         return recommendations
 
 
-def main():
+def main_concurrentoptimizationtest():
     """主函数"""
     print("=" * 80)
     print("并发优化性能测试")
@@ -447,10 +447,10 @@ def main():
     
     try:
         # 创建测试实例
-        test_framework = ConcurrentOptimizationTest()
+        test_framework = Concurrent_optimization_test()
         
         # 运行全面测试
-        results = test_framework.run_comprehensive_test()
+        results = test_framework.run_comprehensive_test_Test_Concurrent_Optimization_Test()
         
         # 显示结果摘要
         print("=" * 80)
@@ -510,5 +510,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_concurrentoptimizationtest()
     sys.exit(exit_code)

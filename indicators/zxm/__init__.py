@@ -5,30 +5,41 @@ ZXM体系指标模块
 """
 
 from indicators.zxm.trend_indicators import (
-    ZXMDailyTrendUp, ZXMWeeklyTrendUp, ZXMMonthlyKDJTrendUp,
-    ZXMWeeklyKDJDOrDEATrendUp, ZXMWeeklyKDJDTrendUp,
-    ZXMMonthlyMACD, ZXMWeeklyMACD, TrendDetector,
-    TrendDuration
+    ZxmdailyTrendUp as ZXMDailyTrendUp, 
+    ZxmweeklyTrendUp as ZXMWeeklyTrendUp, 
+    ZxmmonthlyKdjtrendUp as ZXMMonthlyKDJTrendUp,
+    ZxmweeklyKdjdorDeatrendUp as ZXMWeeklyKDJDOrDEATrendUp, 
+    ZxmweeklyKdjdtrendUp as ZXMWeeklyKDJDTrendUp,
+    # ZXMMonthlyMACD, ZXMWeeklyMACD, TrendDetector,
+    # TrendDuration
 )
 
 from indicators.zxm.elasticity_indicators import (
-    AmplitudeElasticity, ZXMRiseElasticity,
-    Elasticity, BounceDetector
+    AmplitudeElasticity, 
+    ZxmriseElasticity as ZXMRiseElasticity,
+    Elasticity, 
+    # BounceDetector
 )
 
 from indicators.zxm.buy_point_indicators import (
-    ZXMDailyMACD, ZXMTurnover, ZXMVolumeShrink,
-    ZXMMACallback, ZXMBSAbsorb, BuyPointDetector
+    ZXMDailyMACD, 
+    ZXMTurnover, 
+    ZXMVolumeShrink,
+    ZXMMACallback, 
+    ZXMBSAbsorb, 
+    # BuyPointDetector
 )
 
 from indicators.zxm.score_indicators import (
-    ZXMElasticityScore, ZXMBuyPointScore, StockScoreCalculator
+    ZxmelasticityScore as ZXMElasticityScore, 
+    ZxmbuyPointScore as ZXMBuyPointScore, 
+    StockScoreCalculator
 )
 
 from indicators.zxm.selection_model import SelectionModel
 
 from indicators.zxm.diagnostics import ZXMDiagnostics
-from indicators.zxm.market_breadth import ZXMMarketBreadth
+from indicators.zxm.market_breadth import ZxmmarketBreadth as ZXMMarketBreadth
 
 # from indicators.zxm.market_indicators import (
 #     MarketSentiment, MarketVolatility, SectorRotation, MarketBreadth

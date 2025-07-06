@@ -20,7 +20,7 @@ def get_pattern_info_template(indicator_name: str) -> str:
         str: 方法代码模板
     """
     return f'''
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Add_Get_Pattern_Info_Methods_Add_Get_Pattern_Info_Methods(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -122,7 +122,7 @@ def add_get_pattern_info_to_file(file_path: str, indicator_name: str) -> bool:
             content = f.read()
         
         # 检查是否已经有get_pattern_info方法
-        if 'def get_pattern_info(' in content:
+        if 'def get_pattern_info_Add_Get_Pattern_Info_Methods_Add_Get_Pattern_Info_Methods(' in content:
             print(f"  ℹ️  {file_path} 已经有get_pattern_info方法")
             return False
         
@@ -156,7 +156,7 @@ def add_get_pattern_info_to_file(file_path: str, indicator_name: str) -> bool:
         print(f"  ❌ 处理文件 {file_path} 时出错: {e}")
         return False
 
-def main():
+def main_addgetpatterninfomethods():
     """主函数"""
     print("🔧 开始批量添加get_pattern_info方法...")
     
@@ -225,4 +225,4 @@ def main():
     print(f"\n✅ get_pattern_info方法批量添加完成！")
 
 if __name__ == "__main__":
-    main()
+    main_addgetpatterninfomethods()

@@ -18,17 +18,17 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class RiskLevel(Enum):
+class Risklevel_system(Enum):
     """风险级别枚举"""
-    SAFE = 0         # 安全
-    ATTENTION = 1    # 需要关注
-    CAUTION = 2      # 警惕
-    WARNING = 3      # 警告
-    DANGER = 4       # 危险
-    EXTREME = 5      # 极端风险
+    safe = 0         # 安全
+    attention = 1    # 需要关注
+    caution = 2      # 警惕
+    warning = 3      # 警告
+    danger = 4       # 危险
+    extreme = 5      # 极端风险
 
 
-class RiskWarningSystem:
+class Risk_warning_system:
     """
     风险预警系统
     
@@ -46,9 +46,9 @@ class RiskWarningSystem:
                 - indicator_weights: 各指标权重，默认为均等权重
         """
         self._params = params or {}
-        self._initialize_params()
+        self._initialize_params_Warning_System()
         
-    def _initialize_params(self):
+    def _initialize_params_Warning_System(self):
         """初始化参数，设置默认值"""
         # 基础参数
         self.warning_lookback = self._params.get('warning_lookback', 20)
@@ -73,10 +73,10 @@ class RiskWarningSystem:
         对股票进行风险分级
         
         Args:
-            df: 输入DataFrame，需包含OHLC数据和成交量
+            df: 输入Data_frame，需包含OHLC数据和成交量
             
         Returns:
-            添加了风险评估结果的DataFrame
+            添加了风险评估结果的Data_frame
         """
         result_df = df.copy()
         
@@ -91,10 +91,10 @@ class RiskWarningSystem:
         
         # 计算风险维度指标
         result_df = self._calculate_price_action_risk(result_df)
-        result_df = self._calculate_volatility_risk(result_df)
+        result_df = self._calculate_volatility_risk_Warning_System(result_df)
         result_df = self._calculate_volume_risk(result_df)
         result_df = self._calculate_momentum_risk(result_df)
-        result_df = self._calculate_liquidity_risk(result_df)
+        result_df = self._calculate_liquidity_risk_Warning_System(result_df)
         result_df = self._calculate_divergence_risk(result_df)
         
         # 计算综合风险评分 (0-100)
@@ -109,7 +109,7 @@ class RiskWarningSystem:
         
         # 根据风险评分分级
         risk_bins = [0, 20, 40, 60, 75, 90, 100]
-        risk_labels = [level.name for level in RiskLevel]
+        risk_labels = [level.name for level in Risk_level]
         
         result_df['risk_level'] = pd.cut(
             result_df['risk_score'], 
@@ -131,10 +131,10 @@ class RiskWarningSystem:
         计算风险趋势
         
         Args:
-            df: 输入DataFrame，包含风险评分
+            df: 输入Data_frame，包含风险评分
             
         Returns:
-            添加了风险趋势评估的DataFrame
+            添加了风险趋势评估的Data_frame
         """
         result_df = df.copy()
         
@@ -172,7 +172,7 @@ class RiskWarningSystem:
         result_df['adjusted_risk_level'] = result_df['risk_level']
         
         # 如果风险快速上升，风险级别上调一级
-        risk_levels = [level.name for level in RiskLevel]
+        risk_levels = [level.name for level in Risk_level]
         
         for i in range(len(result_df)):
             current_level = result_df.iloc[i]['risk_level']
@@ -195,10 +195,10 @@ class RiskWarningSystem:
         生成风险详细信息
         
         Args:
-            df: 输入DataFrame，包含风险评分和各维度评分
+            df: 输入Data_frame，包含风险评分和各维度评分
             
         Returns:
-            添加了风险详情的DataFrame
+            添加了风险详情的Data_frame
         """
         result_df = df.copy()
         
@@ -251,10 +251,10 @@ class RiskWarningSystem:
         计算价格行为风险
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了价格行为风险评分的DataFrame
+            添加了价格行为风险评分的Data_frame
         """
         result_df = df.copy()
         
@@ -348,15 +348,15 @@ class RiskWarningSystem:
         
         return result_df
     
-    def _calculate_volatility_risk(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_volatility_risk_Warning_System(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算波动率风险
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了波动率风险评分的DataFrame
+            添加了波动率风险评分的Data_frame
         """
         result_df = df.copy()
         
@@ -442,10 +442,10 @@ class RiskWarningSystem:
         计算成交量风险
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了成交量风险评分的DataFrame
+            添加了成交量风险评分的Data_frame
         """
         result_df = df.copy()
         
@@ -538,10 +538,10 @@ class RiskWarningSystem:
         计算动量风险
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了动量风险评分的DataFrame
+            添加了动量风险评分的Data_frame
         """
         result_df = df.copy()
         
@@ -653,15 +653,15 @@ class RiskWarningSystem:
         
         return result_df
     
-    def _calculate_liquidity_risk(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_liquidity_risk_Warning_System(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算流动性风险
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了流动性风险评分的DataFrame
+            添加了流动性风险评分的Data_frame
         """
         result_df = df.copy()
         
@@ -705,10 +705,10 @@ class RiskWarningSystem:
         计算背离风险
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             
         Returns:
-            添加了背离风险评分的DataFrame
+            添加了背离风险评分的Data_frame
         """
         result_df = df.copy()
         
@@ -768,11 +768,11 @@ class RiskWarningSystem:
         生成风险预警信号
         
         Args:
-            df: 包含风险评估结果的DataFrame
+            df: 包含风险评估结果的Data_frame
             alert_threshold: 触发预警的最小风险级别，默认为'CAUTION'
             
         Returns:
-            预警信号DataFrame
+            预警信号Data_frame
         """
         # 确保已经进行风险分级
         if 'adjusted_risk_level' not in df.columns:
@@ -789,7 +789,7 @@ class RiskWarningSystem:
         alerts['persistent_warning'] = False
         
         # 确定预警阈值
-        threshold_level = RiskLevel[alert_threshold].value
+        threshold_level = Risk_level[alert_threshold].value
         
         for i, date in enumerate(alerts.index):
             if i < 10:  # 确保有足够的历史数据
@@ -800,7 +800,7 @@ class RiskWarningSystem:
             if pd.isna(current_level_name):
                 continue
                 
-            current_level = RiskLevel[current_level_name].value
+            current_level = Risk_level[current_level_name].value
             current_trend = df.loc[date, 'risk_trend']
             current_score = df.loc[date, 'risk_score']
             
@@ -811,30 +811,30 @@ class RiskWarningSystem:
                 alerts.loc[date, 'alert_score'] = current_score
                 
                 # 根据不同风险级别生成预警消息和建议操作
-                if current_level == RiskLevel.EXTREME.value:
+                if current_level == Risk_level.EXTREME.value:
                     alerts.loc[date, 'alert_message'] = "极端风险警报！市场可能处于崩溃边缘"
                     alerts.loc[date, 'suggested_action'] = "立即平仓，暂停交易，全面保护资金安全"
                 
-                elif current_level == RiskLevel.DANGER.value:
+                elif current_level == Risk_level.DANGER.value:
                     alerts.loc[date, 'alert_message'] = "危险风险警报！市场出现严重恶化"
                     alerts.loc[date, 'suggested_action'] = "大幅减仓，保持高度防御，避免新的交易"
                 
-                elif current_level == RiskLevel.WARNING.value:
+                elif current_level == Risk_level.WARNING.value:
                     alerts.loc[date, 'alert_message'] = "警告风险警报！市场走势恶化明显"
                     alerts.loc[date, 'suggested_action'] = "减轻持仓，收紧止损，暂停新的多头交易"
                 
-                elif current_level == RiskLevel.CAUTION.value:
+                elif current_level == Risk_level.CAUTION.value:
                     alerts.loc[date, 'alert_message'] = "警惕风险提示！市场出现不利趋势"
                     alerts.loc[date, 'suggested_action'] = "谨慎操作，提高选股标准，缩小仓位"
                 
-                elif current_level == RiskLevel.ATTENTION.value:
+                elif current_level == Risk_level.ATTENTION.value:
                     alerts.loc[date, 'alert_message'] = "需要关注！市场表现不佳"
                     alerts.loc[date, 'suggested_action'] = "保持警惕，准备好应对风险，审视持仓"
             
             # 生成早期预警信号 (趋势变化但尚未达到阈值)
             elif current_trend == 'Fast Rising' and current_level == threshold_level - 1:
                 alerts.loc[date, 'early_warning'] = True
-                alerts.loc[date, 'alert_message'] = f"早期风险预警！风险评分正在快速上升，接近{RiskLevel(threshold_level).name}级别"
+                alerts.loc[date, 'alert_message'] = f"早期风险预警！风险评分正在快速上升，接近{RiskLevel_System(threshold_level).name}级别"
                 alerts.loc[date, 'suggested_action'] = "密切关注市场变化，准备调整策略"
                 alerts.loc[date, 'alert_score'] = current_score
             
@@ -849,7 +849,7 @@ class RiskWarningSystem:
                     if pd.isna(prev_level_name):
                         persistent_high_risk = False
                         break
-                    prev_level = RiskLevel[prev_level_name].value
+                    prev_level = Risk_level[prev_level_name].value
                     if prev_level < threshold_level:
                         persistent_high_risk = False
                         break
@@ -872,11 +872,11 @@ class RiskWarningSystem:
         向预警信号添加风险因素分析
         
         Args:
-            risk_df: 风险评估DataFrame
-            alert_df: 预警信号DataFrame
+            risk_df: 风险评估Data_frame
+            alert_df: 预警信号Data_frame
             
         Returns:
-            添加了风险因素分析的预警DataFrame
+            添加了风险因素分析的预警Data_frame
         """
         result_df = alert_df.copy()
         result_df['top_risk_factors'] = None

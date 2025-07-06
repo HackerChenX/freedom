@@ -5,7 +5,7 @@
 统一周期枚举模块
 
 提供统一的周期定义，用于K线数据查询和策略配置
-合并了原有的 KlinePeriod 和 PeriodType 的功能
+合并了原有的 Kline_period 和 Period_type 的功能
 """
 
 from enum import Enum, unique
@@ -32,7 +32,7 @@ class Period(Enum):
     MONTHLY = "月线"    # 月线
     
     @classmethod
-    def get_description(cls, period) -> str:
+    def get_description_Period(cls, period) -> str:
         """
         获取周期类型的人类可读描述
         
@@ -115,7 +115,7 @@ class Period(Enum):
         # 直接匹配枚举名称
         try:
             return cls[period_str]
-        except (KeyError, ValueError):
+        except (Key_error, Value_error):
             pass
         
         # 匹配值
@@ -224,18 +224,18 @@ class Period(Enum):
         Returns:
             list: 所有周期描述列表
         """
-        return [Period.get_description(p) for p in Period]
+        return [Period.get_description_Period(p) for p in Period]
     
-    def __str__(self) -> str:
+    def __str___Period(self) -> str:
         """
         返回周期的字符串表示
         
         Returns:
             str: 周期的描述
         """
-        return self.get_description(self)
+        return self.get_description_Period(self)
     
-    def __repr__(self) -> str:
+    def __repr___Period(self) -> str:
         """
         返回周期的程序表示
         
@@ -246,5 +246,5 @@ class Period(Enum):
 
 
 # 为了向后兼容，提供别名
-KlinePeriod = Period
-PeriodType = Period 
+kline_period = Period
+period_type = Period 

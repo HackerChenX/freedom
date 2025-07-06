@@ -28,7 +28,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class SimplifiedIntegrationTest:
+class Simplified_integration_test:
     """简化的系统集成测试器"""
     
     def __init__(self):
@@ -62,7 +62,7 @@ class SimplifiedIntegrationTest:
         # 1. 单个查询测试
         try:
             start_time = time.time()
-            stock_info = self.data_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
                 stock_code='000001',
                 level='DAILY',
                 limit=100
@@ -84,7 +84,7 @@ class SimplifiedIntegrationTest:
         # 2. 多股票查询测试
         try:
             start_time = time.time()
-            stock_info = self.data_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
                 stock_code=['000001', '000002', '600000'],
                 level='DAILY',
                 limit=300
@@ -133,7 +133,7 @@ class SimplifiedIntegrationTest:
         
         # 4. 并发查询测试
         try:
-            def concurrent_query(thread_id):
+            def concurrent_query_Test(thread_id):
                 """并发查询函数"""
                 try:
                     start_time = time.time()
@@ -159,7 +159,7 @@ class SimplifiedIntegrationTest:
             
             # 执行并发测试
             start_time = time.time()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            with concurrent.futures.Thread_pool_executor(max_workers=10) as executor:
                 futures = [executor.submit(concurrent_query, i) for i in range(20)]
                 concurrent_results = [future.result() for future in concurrent.futures.as_completed(futures)]
             
@@ -183,7 +183,7 @@ class SimplifiedIntegrationTest:
         
         return test_results
     
-    def test_backward_compatibility(self) -> Dict[str, Any]:
+    def test_backward_compatibility_Test(self) -> Dict[str, Any]:
         """测试向后兼容性"""
         logger.info("开始测试向后兼容性...")
         
@@ -307,7 +307,7 @@ class SimplifiedIntegrationTest:
         
         return performance_results
     
-    def run_comprehensive_test(self) -> Dict[str, Any]:
+    def run_comprehensive_test_Test_Simplified_Integration_Test(self) -> Dict[str, Any]:
         """运行综合测试"""
         logger.info("=" * 80)
         logger.info("开始简化系统集成综合测试")
@@ -328,14 +328,14 @@ class SimplifiedIntegrationTest:
             
             # 2. 向后兼容性测试
             logger.info("步骤 2: 向后兼容性测试")
-            test_results['compatibility_tests'] = self.test_backward_compatibility()
+            test_results['compatibility_tests'] = self.test_backward_compatibility_Test()
             
             # 3. 性能改进测试
             logger.info("步骤 3: 性能改进测试")
             test_results['performance_tests'] = self.test_performance_improvements()
             
             # 4. 整体评估
-            test_results['overall_assessment'] = self._generate_overall_assessment(test_results)
+            test_results['overall_assessment'] = self._generate_overall_assessment_Simplified_Integration_Test(test_results)
             
             logger.info("简化系统集成综合测试完成")
             
@@ -345,7 +345,7 @@ class SimplifiedIntegrationTest:
         
         return test_results
     
-    def _generate_overall_assessment(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_overall_assessment_Simplified_Integration_Test(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
         """生成整体评估"""
         assessment = {
             'integration_success': True,
@@ -429,7 +429,7 @@ class SimplifiedIntegrationTest:
         return assessment
 
 
-def main():
+def main_simplifiedintegrationtest():
     """主函数"""
     print("=" * 80)
     print("简化系统集成测试")
@@ -440,10 +440,10 @@ def main():
     
     try:
         # 创建测试实例
-        test_framework = SimplifiedIntegrationTest()
+        test_framework = Simplified_integration_test()
         
         # 运行综合测试
-        results = test_framework.run_comprehensive_test()
+        results = test_framework.run_comprehensive_test_Test_Simplified_Integration_Test()
         
         # 显示结果摘要
         print("=" * 80)
@@ -515,5 +515,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_simplifiedintegrationtest()
     sys.exit(exit_code)

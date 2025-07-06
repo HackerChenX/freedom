@@ -19,8 +19,8 @@ from typing import Dict, List, Any, Optional
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from scripts.comprehensive_unified_engine_test import UnifiedEngineComprehensiveTest
-from scripts.indicator_logic_validator import IndicatorLogicValidator
+from scripts.comprehensive_unified_engine_test import Unified_engine_comprehensive_test
+from scripts.indicator_logic_validator import Indicator_logic_validator
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 class UnifiedEngineTestRunner:
     """统一分析引擎测试运行器"""
     
-    def __init__(self, config_file: str = None):
+    def __init___15(self, config_file: str = None):
         """
         初始化测试运行器
         
@@ -68,7 +68,7 @@ class UnifiedEngineTestRunner:
         test_config = self.config.get('test_configuration', {})
         
         # 创建测试实例
-        tester = UnifiedEngineComprehensiveTest(
+        tester = Unified_engine_comprehensive_test(
             test_stock_count=test_config.get('test_stock_count', 100),
             enable_early_stop=test_config.get('enable_early_stop', True),
             max_concurrent_tests=test_config.get('max_concurrent_tests', 3)
@@ -103,7 +103,7 @@ class UnifiedEngineTestRunner:
         sample_stocks = sample_stocks or test_config.get('sample_stocks_per_indicator', 2)
         
         # 创建验证器
-        validator = IndicatorLogicValidator(
+        validator = Indicator_logic_validator(
             debug_mode=test_config.get('debug_mode', True)
         )
         
@@ -124,7 +124,7 @@ class UnifiedEngineTestRunner:
             logger.error(f"逻辑验证失败: {e}")
             raise
     
-    def _run_grouped_test(self, tester: UnifiedEngineComprehensiveTest, 
+    def _run_grouped_test(self, tester: Unified_engine_comprehensive_test, 
                          test_groups: List[str]) -> Dict[str, Any]:
         """运行分组测试"""
         logger.info(f"运行分组测试: {test_groups}")
@@ -374,7 +374,7 @@ class UnifiedEngineTestRunner:
         return assessment
 
 
-def main():
+def main_29():
     """主函数"""
     parser = argparse.ArgumentParser(description='统一分析引擎测试运行器')
     parser.add_argument('--config', '-c', help='配置文件路径')
@@ -390,7 +390,7 @@ def main():
     
     try:
         # 创建测试运行器
-        runner = UnifiedEngineTestRunner(config_file=args.config)
+        runner = Unified_engine_test_runner(config_file=args.config)
         
         # 根据参数运行不同类型的测试
         if args.test_type == 'comprehensive':
@@ -440,4 +440,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit(main())
+    exit(main_29())

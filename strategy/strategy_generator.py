@@ -16,18 +16,18 @@ from typing import Dict, List, Any, Optional
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class StrategyGenerator:
     """策略生成器"""
     
-    def __init__(self):
+    def __init___73(self):
         """初始化策略生成器"""
         pass
     
-    def generate_strategy(self, 
+    def generate_strategy_Generator_Strategy_Generator(self, 
                        strategy_name: str, 
                        conditions: List[Dict[str, Any]],
                        condition_logic: str = "OR") -> Dict[str, Any]:
@@ -93,7 +93,7 @@ class StrategyGenerator:
                 "parameters": {}
             }
     
-    def save_strategy(self, 
+    def save_strategy_Generator(self, 
                    strategy: Dict[str, Any], 
                    file_path: str) -> bool:
         """
@@ -121,7 +121,7 @@ class StrategyGenerator:
             logger.error(f"保存策略时出错: {e}")
             return False
     
-    def load_strategy(self, file_path: str) -> Optional[Dict[str, Any]]:
+    def load_strategy_Generator(self, file_path: str) -> Optional[Dict[str, Any]]:
         """
         从文件加载策略
         

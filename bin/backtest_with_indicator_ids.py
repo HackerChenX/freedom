@@ -20,17 +20,17 @@ import traceback
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from strategy.strategy_parser import StrategyParser
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+from strategy.strategy_parser import Strategy_parser
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
 from db.unified_data_manager import get_unified_data_manager
 from enums.period import Period
-from indicators.indicator_registry import indicator_registry, IndicatorEnum
+from indicators.indicator_registry import indicator_registry, Indicator_enum
 
 logger = get_logger(__name__)
 
-def get_stock_data(data_manager, stock_code, start_date, end_date, period=Period.DAILY):
+def get_stock_data_Ids(data_manager, stock_code, start_date, end_date, period=Period.DAILY):
     """获取股票数据"""
     try:
         logger.info(f"获取股票 {stock_code} 的数据，周期: {period}，开始日期: {start_date}，结束日期: {end_date}")
@@ -147,7 +147,7 @@ def run_backtest(stock_list_file, start_date, end_date, output_file=None):
         # 初始化
         init_logging(level="INFO")
         data_manager = get_unified_data_manager()
-        evaluator = StrategyConditionEvaluator()
+        evaluator = Strategy_condition_evaluator()
         
         # 加载股票列表
         stocks = pd.read_csv(stock_list_file)
@@ -195,7 +195,7 @@ def run_backtest(stock_list_file, start_date, end_date, output_file=None):
             logger.info(f"处理股票 {stock_code} - {stock_name}")
             
             # 获取股票数据
-            stock_data = get_stock_data(data_manager, stock_code, start_date, end_date)
+            stock_data = get_stock_data_Ids(data_manager, stock_code, start_date, end_date)
             
             if stock_data is None or len(stock_data) == 0:
                 continue
@@ -310,7 +310,7 @@ def run_backtest(stock_list_file, start_date, end_date, output_file=None):
         logger.error(traceback.format_exc())
         return None
 
-def main():
+def main_5():
     parser = argparse.ArgumentParser(description="使用指标ID进行回测")
     parser.add_argument("-s", "--stocks", required=True, help="股票列表文件路径")
     parser.add_argument("-b", "--begin", required=True, help="开始日期，格式: YYYY-MM-DD")
@@ -327,4 +327,4 @@ def main():
     )
 
 if __name__ == "__main__":
-    main() 
+    main_5() 

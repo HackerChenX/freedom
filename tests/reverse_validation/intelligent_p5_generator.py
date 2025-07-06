@@ -15,13 +15,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class IntelligentP5Generator:
+class Intelligent_p5_generator:
     """智能P5系统分析指标数据生成器"""
     
     def __init__(self):
         pass
     
-    def _generate_ohlc_from_close(self, dates: pd.DatetimeIndex, close_prices: List[float], 
+    def _generate_ohlc_from_close_Intelligent_P5_Generator(self, dates: pd.Datetime_index, close_prices: List[float], 
                                  volatility_factor: float = 1.0) -> pd.DataFrame:
         """从收盘价生成OHLC数据，支持可变波动率"""
         data = []
@@ -56,7 +56,7 @@ class IntelligentP5Generator:
         
         return pd.DataFrame(data)
     
-    def _standardize_data_format(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
+    def _standardize_data_format_Intelligent_P5_Generator(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
         """标准化数据格式"""
         column_order = ['date', 'open', 'high', 'low', 'close', 'volume']
         return data[column_order]
@@ -85,14 +85,14 @@ class IntelligentP5Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices)
         
         # 特别处理成交量：高性能期间成交量放大
         for i in range(len(data)):
             if i >= 20:  # 后40天
                 data.loc[i, 'volume'] *= np.random.uniform(1.5, 2.5)
         
-        return self._standardize_data_format(data, 'HIGH_PERFORMANCE')
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'HIGH_PERFORMANCE')
     
     def generate_positive_sentiment_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成积极情绪数据"""
@@ -110,14 +110,14 @@ class IntelligentP5Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices)
         
         # 积极情绪期间成交量活跃
         for i in range(len(data)):
             if i % 7 != 0:  # 非回调日成交量放大
                 data.loc[i, 'volume'] *= np.random.uniform(1.2, 2.0)
         
-        return self._standardize_data_format(data, 'POSITIVE_SENTIMENT')
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'POSITIVE_SENTIMENT')
     
     def generate_low_risk_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成低风险数据"""
@@ -132,8 +132,8 @@ class IntelligentP5Generator:
             prices.append(new_price)
         
         # 使用低波动率因子
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=0.5)
-        return self._standardize_data_format(data, 'LOW_RISK')
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices, volatility_factor=0.5)
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'LOW_RISK')
     
     def generate_strong_trend_data(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """生成强趋势数据"""
@@ -152,8 +152,8 @@ class IntelligentP5Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'STRONG_TREND')
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'STRONG_TREND')
     
     def generate_high_momentum_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成高动量数据"""
@@ -171,14 +171,14 @@ class IntelligentP5Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices)
         
         # 高动量期间成交量递增
         for i in range(len(data)):
             volume_multiplier = 1 + i * 0.02  # 成交量逐渐放大
             data.loc[i, 'volume'] *= volume_multiplier
         
-        return self._standardize_data_format(data, 'HIGH_MOMENTUM')
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'HIGH_MOMENTUM')
     
     def generate_low_volatility_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成低波动率数据"""
@@ -193,8 +193,8 @@ class IntelligentP5Generator:
             prices.append(new_price)
         
         # 使用极低波动率因子
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=0.3)
-        return self._standardize_data_format(data, 'LOW_VOLATILITY')
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices, volatility_factor=0.3)
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'LOW_VOLATILITY')
     
     def generate_high_liquidity_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成高流动性数据"""
@@ -208,7 +208,7 @@ class IntelligentP5Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices)
         
         # 高流动性：成交量持续放大，振幅相对较小
         for i in range(len(data)):
@@ -218,7 +218,7 @@ class IntelligentP5Generator:
         data['high'] = data['close'] * (1 + np.random.uniform(0, 0.01, len(data)))
         data['low'] = data['close'] * (1 - np.random.uniform(0, 0.01, len(data)))
         
-        return self._standardize_data_format(data, 'HIGH_LIQUIDITY')
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'HIGH_LIQUIDITY')
     
     def generate_high_efficiency_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成高效率数据"""
@@ -234,8 +234,8 @@ class IntelligentP5Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'HIGH_EFFICIENCY')
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'HIGH_EFFICIENCY')
     
     def generate_stable_system_data(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """生成稳定系统数据"""
@@ -249,14 +249,14 @@ class IntelligentP5Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices, volatility_factor=0.4)
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices, volatility_factor=0.4)
         
         # 成交量也保持稳定
         base_volume = data['volume'].mean()
         for i in range(len(data)):
             data.loc[i, 'volume'] = base_volume * np.random.uniform(0.8, 1.2)
         
-        return self._standardize_data_format(data, 'STABLE_SYSTEM')
+        return self._standardize_data_format_Intelligent_P5_Generator(data, 'STABLE_SYSTEM')
     
     def generate_generic_system_pattern_data(self, pattern_name: str, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成通用系统形态数据"""
@@ -290,13 +290,13 @@ class IntelligentP5Generator:
                 new_price = prices[-1] * (1 + daily_change)
                 prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, pattern_name)
+        data = self._generate_ohlc_from_close_Intelligent_P5_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P5_Generator(data, pattern_name)
 
 
 def test_intelligent_p5_generator():
     """测试智能P5生成器"""
-    generator = IntelligentP5Generator()
+    generator = Intelligent_p5_generator()
     
     print("测试智能P5数据生成器...")
     

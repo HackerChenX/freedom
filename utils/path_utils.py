@@ -9,10 +9,10 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 from config import get_config
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.file_utils import ensure_dir
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 def get_project_root() -> str:
@@ -241,6 +241,18 @@ def get_file_path(rel_path: str, base_dir: Optional[str] = None) -> str:
         return rel_path
     
     return os.path.join(base_dir, rel_path)
+
+
+def get_reports_dir() -> str:
+    """
+    获取报告目录路径
+    
+    Returns:
+        str: 报告目录路径
+    """
+    reports_dir = os.path.join(get_project_root(), 'reports')
+    os.makedirs(reports_dir, exist_ok=True)
+    return reports_dir
 
 
 def get_analysis_report_dir() -> str:

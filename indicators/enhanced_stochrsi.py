@@ -4,16 +4,16 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
+class EnhancedStochrsi(BaseIndicator, PatternSignalMixin):
     """
-    增强型StochRSI指标
+    增强型Stoch_rSI指标
 
-    在标准StochRSI基础上增加了多周期分析、自适应阈值、背离检测等功能
+    在标准Stoch_rSI基础上增加了多周期分析、自适应阈值、背离检测等功能
     """
 
     def __init__(self, 
@@ -27,7 +27,7 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
                  adaptive_thresholds: bool = True,
                  **kwargs):
         """
-        初始化增强型StochRSI指标
+        初始化增强型Stoch_rSI指标
 
         Args:
             rsi_period: RSI计算周期，默认14
@@ -52,12 +52,12 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         self.adaptive_thresholds = adaptive_thresholds
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_enhancedstochrsi()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_enhancedstochrsi(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
             "rsi_period": 14,
@@ -68,7 +68,7 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
             "oversold": 20.0
         }
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Stochrsi_Enhanced_Stochrsi(self, **kwargs):
         """
         设置指标参数
 
@@ -77,8 +77,8 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
 
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -102,29 +102,29 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         self.overbought = kwargs.get('overbought', 80.0)
         self.oversold = kwargs.get('oversold', 20.0)
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Stochrsi_Enhanced_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算增强型StochRSI指标
+        计算增强型Stoch_rSI指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            添加了增强型StochRSI指标的DataFrame
+            添加了增强型Stoch_rSI指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_enhancedstochrsi(data, **kwargs)
         self._result = result
         return result
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_enhancedstochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        内部计算增强型StochRSI指标
+        内部计算增强型Stoch_rSI指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            添加了增强型StochRSI指标的DataFrame
+            添加了增强型Stoch_rSI指标的Data_frame
         """
         min_length = max(self.rsi_period, self.stoch_period) + max(self.k_period, self.d_period) + 10
         if len(data) < min_length:
@@ -148,7 +148,7 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         
         # 计算自适应阈值
         if self.adaptive_thresholds:
-            df['stochrsi_overbought'], df['stochrsi_oversold'] = self._calculate_adaptive_thresholds(df['stochrsi_k'])
+            df['stochrsi_overbought'], df['stochrsi_oversold'] = self._calculate_adaptive_thresholds_Enhanced_Stochrsi(df['stochrsi_k'])
         else:
             df['stochrsi_overbought'] = self.overbought
             df['stochrsi_oversold'] = self.oversold
@@ -160,7 +160,7 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         df['stochrsi_trend_strength'] = self._calculate_stochrsi_trend_strength(df['stochrsi_k'], df['stochrsi_d'])
         
         # 计算多周期一致性
-        df['stochrsi_consistency'] = self._calculate_multi_period_consistency(df)
+        df['stochrsi_consistency'] = self._calculate_multi_period_consistency_Enhanced_Stochrsi(df)
         
         # 计算综合评分
         df['ENHANCED_STOCHRSI_VALUE'] = self._calculate_enhanced_stochrsi_score(df)
@@ -207,17 +207,17 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
     
     def _calculate_stochrsi(self, df: pd.DataFrame, rsi_period: int, stoch_period: int, k_period: int, d_period: int) -> pd.DataFrame:
         """
-        计算StochRSI指标
+        计算Stoch_rSI指标
         
         Args:
-            df: 数据DataFrame
+            df: 数据Data_frame
             rsi_period: RSI周期
             stoch_period: Stochastic周期
             k_period: %K平滑周期
             d_period: %D平滑周期
             
         Returns:
-            添加了StochRSI指标的DataFrame
+            添加了Stoch_rSI指标的Data_frame
         """
         # 计算RSI
         rsi = self._calculate_rsi(df['close'], rsi_period)
@@ -243,17 +243,17 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
     
     def _calculate_multi_period_stochrsi(self, df: pd.DataFrame, rsi_period: int, stoch_period: int, k_period: int, d_period: int) -> pd.DataFrame:
         """
-        计算多周期StochRSI指标
+        计算多周期Stoch_rSI指标
         
         Args:
-            df: 数据DataFrame
+            df: 数据Data_frame
             rsi_period: RSI周期
             stoch_period: Stochastic周期
             k_period: %K平滑周期
             d_period: %D平滑周期
             
         Returns:
-            添加了多周期StochRSI指标的DataFrame
+            添加了多周期Stoch_rSI指标的Data_frame
         """
         # 计算RSI
         rsi = self._calculate_rsi(df['close'], rsi_period)
@@ -275,12 +275,12 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         
         return df
     
-    def _calculate_adaptive_thresholds(self, stochrsi_k: pd.Series) -> Tuple[pd.Series, pd.Series]:
+    def _calculate_adaptive_thresholds_Enhanced_Stochrsi(self, stochrsi_k: pd.Series) -> Tuple[pd.Series, pd.Series]:
         """
         计算自适应超买超卖阈值
         
         Args:
-            stochrsi_k: StochRSI %K值序列
+            stochrsi_k: Stoch_rSI %K值序列
             
         Returns:
             (超买阈值序列, 超卖阈值序列)
@@ -302,11 +302,11 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
     
     def _calculate_stochrsi_divergence(self, close: pd.Series, stochrsi_k: pd.Series) -> pd.Series:
         """
-        计算StochRSI背离信号
+        计算Stoch_rSI背离信号
         
         Args:
             close: 收盘价序列
-            stochrsi_k: StochRSI %K值序列
+            stochrsi_k: Stoch_rSI %K值序列
             
         Returns:
             背离信号序列
@@ -322,11 +322,11 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
     
     def _calculate_stochrsi_trend_strength(self, stochrsi_k: pd.Series, stochrsi_d: pd.Series) -> pd.Series:
         """
-        计算StochRSI趋势强度
+        计算Stoch_rSI趋势强度
         
         Args:
-            stochrsi_k: StochRSI %K值序列
-            stochrsi_d: StochRSI %D值序列
+            stochrsi_k: Stoch_rSI %K值序列
+            stochrsi_d: Stoch_rSI %D值序列
             
         Returns:
             趋势强度序列
@@ -345,12 +345,12 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         
         return trend_strength
     
-    def _calculate_multi_period_consistency(self, df: pd.DataFrame) -> pd.Series:
+    def _calculate_multi_period_consistency_Enhanced_Stochrsi(self, df: pd.DataFrame) -> pd.Series:
         """
-        计算多周期StochRSI一致性
+        计算多周期Stoch_rSI一致性
         
         Args:
-            df: 包含多周期StochRSI的DataFrame
+            df: 包含多周期Stoch_rSI的Data_frame
             
         Returns:
             一致性评分序列
@@ -373,10 +373,10 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
     
     def _calculate_enhanced_stochrsi_score(self, df: pd.DataFrame) -> pd.Series:
         """
-        计算增强型StochRSI综合评分
+        计算增强型Stoch_rSI综合评分
         
         Args:
-            df: 包含StochRSI相关指标的DataFrame
+            df: 包含Stoch_rSI相关指标的Data_frame
             
         Returns:
             综合评分序列 (0-100)
@@ -426,10 +426,10 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
     
     def _generate_stochrsi_signals(self, df: pd.DataFrame) -> pd.Series:
         """
-        生成StochRSI交易信号
+        生成Stoch_rSI交易信号
         
         Args:
-            df: 包含StochRSI指标的DataFrame
+            df: 包含Stoch_rSI指标的Data_frame
             
         Returns:
             信号序列 (1: 买入, -1: 卖出, 0: 持有)
@@ -481,17 +481,17 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         
         return signals
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Stochrsi_Enhanced_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Stochrsi_Enhanced_Stochrsi(data, **kwargs)
         
         if 'ENHANCED_STOCHRSI_VALUE' in self._result.columns:
             return self._result['ENHANCED_STOCHRSI_VALUE']
         else:
             return pd.Series(50.0, index=data.index)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Stochrsi_Enhanced_Stochrsi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if score.empty:
             return 0.5
@@ -505,10 +505,10 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
         
         return max(0.3, confidence)
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Stochrsi_Enhanced_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Stochrsi_Enhanced_Stochrsi(data, **kwargs)
         
         patterns = pd.DataFrame(index=data.index)
         
@@ -522,4 +522,4 @@ class ENHANCED_STOCHRSI(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-EnhancedStochasticRSI = ENHANCED_STOCHRSI
+enhanced_stochastic_rsi = ENHANCED_STOCHRSI

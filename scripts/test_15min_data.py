@@ -9,7 +9,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from formula import formula
-from enums.kline_period import KlinePeriod
+from enums.kline_period import Kline_period
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -34,13 +34,13 @@ def test_15min_data(code="600585", date="20250408"):
         f_daily = formula.Formula(code, start=start_date, end=end_date)
         
         logger.info("获取15分钟数据...")
-        f_15min = formula.StockData(code, KlinePeriod.MIN_15, start=start_date, end=end_date)
+        f_15min = formula.Stock_data(code, Kline_period.MIN_15, start=start_date, end=end_date)
         
         logger.info("获取30分钟数据...")
-        f_30min = formula.StockData(code, KlinePeriod.MIN_30, start=start_date, end=end_date)
+        f_30min = formula.Stock_data(code, Kline_period.MIN_30, start=start_date, end=end_date)
         
         logger.info("获取60分钟数据...")
-        f_60min = formula.StockData(code, KlinePeriod.MIN_60, start=start_date, end=end_date)
+        f_60min = formula.Stock_data(code, Kline_period.MIN_60, start=start_date, end=end_date)
         
         # 打印结果
         logger.info(f"日线数据条数: {len(f_daily.dataDay.close)}")
@@ -49,7 +49,7 @@ def test_15min_data(code="600585", date="20250408"):
         logger.info(f"60分钟数据条数: {len(f_60min.close)}")
         
         # 打印第一条记录的日期
-        if len(f_daily.dataDay.history) > 0:
+        if len(f_daily.data_day.history) > 0:
             logger.info(f"日线第一条记录日期: {f_daily.dataDay.history['date'][0]}")
         else:
             logger.info("日线数据为空")

@@ -68,7 +68,7 @@ def _create_file_handler(log_file: str) -> logging.Handler:
         return _handlers_cache[log_file]
     
     max_size = get_config('log.max_size_mb', 10) * 1024 * 1024  # 默认10MB
-    backup_count = get_config('log.backup_count', 5)  # 默认5个备份
+    backupCount = get_config('log.backupCount', 5)  # 默认5个备份
     
     # 确保日志文件目录存在
     log_dir = os.path.dirname(log_file)
@@ -78,7 +78,7 @@ def _create_file_handler(log_file: str) -> logging.Handler:
     handler = RotatingFileHandler(
         log_file,
         maxBytes=max_size,
-        backupCount=backup_count,
+        backupCount=backupCount,
         encoding='utf-8'
     )
     
@@ -200,110 +200,101 @@ def get_logger(name: str, level: Optional[Union[str, int]] = None,
     if log_file is not None:
         log_dir = _ensure_log_dir()
         full_log_file = os.path.join(log_dir, log_file)
-        file_handler = _create_file_handler(full_log_file)
         
-        # 避免重复添加相同的处理器
-        if not any(getattr(h, 'baseFilename', None) == full_log_file for h in logger.handlers):
-            logger.addHandler(file_handler)
+        file_handler = _create_file_handler(full_log_file)
+        logger.addHandler(file_handler)
+    
+    # 防止重复记录到父日志器
+    logger.propagate = False
     
     return logger
 
 
-# 初始化日志系统
-init_logging()
+def get_module_logger(module_name: str) -> logging.Logger:
+    """
+    获取模块日志记录器
+    
+    Args:
+        module_name: 模块名称（通常是 __name__）
+        
+    Returns:
+        logging.Logger: 日志记录器
+    """
+    return getLogger(module_name)
 
 
 def setup_logger(log_file: Optional[str] = None, log_level: Optional[Union[str, int]] = None) -> None:
     """
-    设置特定的日志配置
+    设置日志记录器（兼容性方法）
     
     Args:
-        log_file: 日志文件路径，如果为None则使用默认日志文件
-        log_level: 日志级别，可以是字符串或整数
+        log_file: 日志文件路径
+        log_level: 日志级别
     """
-    if log_level is not None:
-        if isinstance(log_level, str):
-            log_level = _LOG_LEVELS.get(log_level.upper(), logging.INFO)
-    else:
-        log_level = get_config('log.level', 'info')
-        if isinstance(log_level, str):
-            log_level = _LOG_LEVELS.get(log_level.lower(), logging.INFO)
+    level = log_level or get_config('log.level', 'info')
     
-    # 重新初始化日志系统
-    init_logging(level=log_level, to_console=True, to_file=True)
+    if isinstance(level, str):
+        level = _LOG_LEVELS.get(level.lower(), logging.INFO)
     
-    # 如果指定了日志文件，添加专用文件处理器
-    if log_file is not None:
-        log_dir = _ensure_log_dir()
-        full_log_file = os.path.join(log_dir, log_file)
-        file_handler = _create_file_handler(full_log_file)
-        file_handler.setLevel(log_level)
-        
-        # 添加到根日志器
-        root_logger = logging.getLogger()
-        # 检查是否已经有这个文件的处理器
-        if not any(getattr(h, 'baseFilename', None) == full_log_file for h in root_logger.handlers):
-            root_logger.addHandler(file_handler)
+    # 配置根日志记录器
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    
+    # 清除现有处理器
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    # 添加控制台处理器
+    console_handler = _create_console_handler()
+    console_handler.setLevel(level)
+    root_logger.addHandler(console_handler)
+    
+    # 添加文件处理器
+    if log_file:
+        file_handler = _create_file_handler(log_file)
+        file_handler.setLevel(level)
+        root_logger.addHandler(file_handler)
 
 
 def setup_app_logger() -> logging.Logger:
-    """
-    设置应用程序级别的日志器
-    
-    Returns:
-        logging.Logger: 应用程序日志器
-    """
-    log_level = get_config('log.level', 'info')
-    return get_logger(name='app', log_file='app.log', console=True)
+    """设置应用日志记录器"""
+    return getLogger('app', log_file='app.log')
 
 
 def setup_sync_logger() -> logging.Logger:
-    """
-    设置数据同步日志器
-    
-    Returns:
-        logging.Logger: 同步日志器
-    """
-    return get_logger(name='sync', log_file='sync.log', console=True)
+    """设置同步日志记录器"""
+    return getLogger('sync', log_file='sync.log')
 
 
 def setup_stock_logger() -> logging.Logger:
-    """
-    设置股票操作日志器
-    
-    Returns:
-        logging.Logger: 股票操作日志器
-    """
-    return get_logger(name='stock', log_file='stock.log', console=True)
+    """设置股票数据日志记录器"""
+    return getLogger('stock', log_file='stock.log')
 
 
-# 预先创建常用日志器
-app_logger = setup_app_logger()
-sync_logger = setup_sync_logger()
-stock_logger = setup_stock_logger()
-
-
-# 便捷的日志记录方法
+# 全局日志方法（兼容性）
 def debug(msg: Any, *args: Any, **kwargs: Any) -> None:
-    """记录调试级别日志"""
-    app_logger.debug(msg, *args, **kwargs)
+    """记录调试信息"""
+    logging.debug(msg, *args, **kwargs)
 
 
 def info(msg: Any, *args: Any, **kwargs: Any) -> None:
-    """记录信息级别日志"""
-    app_logger.info(msg, *args, **kwargs)
+    """记录信息"""
+    logging.info(msg, *args, **kwargs)
 
 
 def warning(msg: Any, *args: Any, **kwargs: Any) -> None:
-    """记录警告级别日志"""
-    app_logger.warning(msg, *args, **kwargs)
+    """记录警告"""
+    logging.warning(msg, *args, **kwargs)
 
 
 def error(msg: Any, *args: Any, **kwargs: Any) -> None:
-    """记录错误级别日志"""
-    app_logger.error(msg, *args, **kwargs)
+    """记录错误"""
+    logging.error(msg, *args, **kwargs)
 
 
 def critical(msg: Any, *args: Any, **kwargs: Any) -> None:
-    """记录严重错误级别日志"""
-    app_logger.critical(msg, *args, **kwargs) 
+    """记录严重错误信息"""
+    logging.critical(msg, *args, **kwargs)
+
+# 添加向后兼容的别名
+getLogger = get_logger 

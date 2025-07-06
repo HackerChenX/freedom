@@ -11,10 +11,10 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.pattern.candlestick_patterns import PatternType, CandlestickPatterns
-from utils.logger import get_logger
+from indicators.pattern.candlestick_patterns import Pattern_type, Candlestick_patterns
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class AdvancedPatternType(Enum):
@@ -68,9 +68,9 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化高级K线形态识别指标"""
         super().__init__(name="AdvancedCandlestickPatterns", description="高级K线形态识别指标，识别更复杂的组合K线形态和复合形态")
-        self.basic_patterns = CandlestickPatterns()
+        self.basic_patterns = Candlestick_patterns()
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Patterns_Advanced_Candlestick_Patterns(self, **kwargs):
         """
         设置指标参数
         """
@@ -92,7 +92,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_advancedcandlestickpatterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         识别高级K线形态
         
@@ -142,10 +142,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 计算复杂形态（需要更多数据，至少20根K线）
         if len(data) >= 20:
-            result = self._calculate_complex_patterns(data, result)
+            result = self._calculate_complex_patterns_Advanced_Candlestick_Patterns(data, result)
 
         # 确保所有高级形态列都存在（即使数据不足）
-        all_advanced_pattern_names = [pattern.value for pattern in AdvancedPatternType]
+        all_advanced_pattern_names = [pattern.value for pattern in Advanced_pattern_type]
         for pattern_name in all_advanced_pattern_names:
             if pattern_name not in result.columns:
                 result[pattern_name] = False
@@ -156,7 +156,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return result
     
-    def generate_signals(self, indicator_values: pd.DataFrame, **params) -> pd.DataFrame:
+    def generate_signals_Patterns_Advanced_Candlestick_Patterns(self, indicator_values: pd.DataFrame, **params) -> pd.DataFrame:
         """
         根据识别到的形态生成交易信号
         
@@ -165,7 +165,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             **params: 信号生成的参数
             
         Returns:
-            pd.DataFrame: 信号DataFrame
+            pd.DataFrame: 信号Data_frame
             
         Raises:
             ValueError: 如果输入数据无效
@@ -180,40 +180,40 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 分类定义各种形态的交易信号
         bullish_patterns = [
-            AdvancedPatternType.THREE_WHITE_SOLDIERS.value,
-            AdvancedPatternType.THREE_INSIDE_UP.value,
-            AdvancedPatternType.THREE_OUTSIDE_UP.value,
-            AdvancedPatternType.RISING_THREE_METHODS.value,
-            AdvancedPatternType.MAT_HOLD.value,
-            AdvancedPatternType.LADDER_BOTTOM.value,
-            AdvancedPatternType.BREAKAWAY.value,
-            AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
-            AdvancedPatternType.DOUBLE_BOTTOM.value,
-            AdvancedPatternType.TRIPLE_BOTTOM.value,
-            AdvancedPatternType.DIAMOND_BOTTOM.value,
-            AdvancedPatternType.CUP_WITH_HANDLE.value
+            Advanced_pattern_type.THREE_WHITE_SOLDIERS.value,
+            Advanced_pattern_type.THREE_INSIDE_UP.value,
+            Advanced_pattern_type.THREE_OUTSIDE_UP.value,
+            Advanced_pattern_type.RISING_THREE_METHODS.value,
+            Advanced_pattern_type.MAT_HOLD.value,
+            Advanced_pattern_type.LADDER_BOTTOM.value,
+            Advanced_pattern_type.BREAKAWAY.value,
+            Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value,
+            Advanced_pattern_type.DOUBLE_BOTTOM.value,
+            Advanced_pattern_type.TRIPLE_BOTTOM.value,
+            Advanced_pattern_type.DIAMOND_BOTTOM.value,
+            Advanced_pattern_type.CUP_WITH_HANDLE.value
         ]
         
         bearish_patterns = [
-            AdvancedPatternType.THREE_BLACK_CROWS.value,
-            AdvancedPatternType.THREE_INSIDE_DOWN.value,
-            AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
-            AdvancedPatternType.FALLING_THREE_METHODS.value,
-            AdvancedPatternType.TOWER_TOP.value,
-            AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
-            AdvancedPatternType.DOUBLE_TOP.value,
-            AdvancedPatternType.TRIPLE_TOP.value,
-            AdvancedPatternType.DIAMOND_TOP.value
+            Advanced_pattern_type.THREE_BLACK_CROWS.value,
+            Advanced_pattern_type.THREE_INSIDE_DOWN.value,
+            Advanced_pattern_type.THREE_OUTSIDE_DOWN.value,
+            Advanced_pattern_type.FALLING_THREE_METHODS.value,
+            Advanced_pattern_type.TOWER_TOP.value,
+            Advanced_pattern_type.HEAD_SHOULDERS_TOP.value,
+            Advanced_pattern_type.DOUBLE_TOP.value,
+            Advanced_pattern_type.TRIPLE_TOP.value,
+            Advanced_pattern_type.DIAMOND_TOP.value
         ]
         
         neutral_patterns = [
-            AdvancedPatternType.STICK_SANDWICH.value,
-            AdvancedPatternType.KICKING.value,
-            AdvancedPatternType.UNIQUE_THREE_RIVER.value,
-            AdvancedPatternType.TRIANGLE_ASCENDING.value,
-            AdvancedPatternType.TRIANGLE_DESCENDING.value,
-            AdvancedPatternType.TRIANGLE_SYMMETRICAL.value,
-            AdvancedPatternType.RECTANGLE.value
+            Advanced_pattern_type.STICK_SANDWICH.value,
+            Advanced_pattern_type.KICKING.value,
+            Advanced_pattern_type.UNIQUE_THREE_RIVER.value,
+            Advanced_pattern_type.TRIANGLE_ASCENDING.value,
+            Advanced_pattern_type.TRIANGLE_DESCENDING.value,
+            Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value,
+            Advanced_pattern_type.RECTANGLE.value
         ]
         
         # 创建买入信号
@@ -235,10 +235,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
                 signals['watch_signal'] |= indicator_values[pattern]
         
         # 添加信号强度
-        signals['signal_strength'] = self._calculate_signal_strength(indicator_values)
+        signals['signal_strength'] = self._calculate_signal_strength_Advanced_Candlestick_Patterns(indicator_values)
         
         # 添加趋势确认信号
-        signals['trend_confirmed'] = self._calculate_trend_confirmation(indicator_values)
+        signals['trend_confirmed'] = self._calculate_trend_confirmation_Advanced_Candlestick_Patterns(indicator_values)
         
         # 添加复合信号（多种形态同时出现）
         signals['compound_signal'] = self._calculate_compound_signal(indicator_values)
@@ -344,12 +344,12 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
                 three_outside_down[i] = True
         
         # 添加到结果
-        result[AdvancedPatternType.THREE_WHITE_SOLDIERS.value] = three_white_soldiers
-        result[AdvancedPatternType.THREE_BLACK_CROWS.value] = three_black_crows
-        result[AdvancedPatternType.THREE_INSIDE_UP.value] = three_inside_up
-        result[AdvancedPatternType.THREE_INSIDE_DOWN.value] = three_inside_down
-        result[AdvancedPatternType.THREE_OUTSIDE_UP.value] = three_outside_up
-        result[AdvancedPatternType.THREE_OUTSIDE_DOWN.value] = three_outside_down
+        result[Advanced_pattern_type.THREE_WHITE_SOLDIERS.value] = three_white_soldiers
+        result[Advanced_pattern_type.THREE_BLACK_CROWS.value] = three_black_crows
+        result[Advanced_pattern_type.THREE_INSIDE_UP.value] = three_inside_up
+        result[Advanced_pattern_type.THREE_INSIDE_DOWN.value] = three_inside_down
+        result[Advanced_pattern_type.THREE_OUTSIDE_UP.value] = three_outside_up
+        result[Advanced_pattern_type.THREE_OUTSIDE_DOWN.value] = three_outside_down
         
         return result
     
@@ -446,10 +446,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
                 logger.debug(f"计算棍心三明治时出错: {e}")
         
         # 添加到结果
-        result[AdvancedPatternType.RISING_THREE_METHODS.value] = rising_three_methods
-        result[AdvancedPatternType.FALLING_THREE_METHODS.value] = falling_three_methods
-        result[AdvancedPatternType.MAT_HOLD.value] = mat_hold
-        result[AdvancedPatternType.STICK_SANDWICH.value] = stick_sandwich
+        result[Advanced_pattern_type.RISING_THREE_METHODS.value] = rising_three_methods
+        result[Advanced_pattern_type.FALLING_THREE_METHODS.value] = falling_three_methods
+        result[Advanced_pattern_type.MAT_HOLD.value] = mat_hold
+        result[Advanced_pattern_type.STICK_SANDWICH.value] = stick_sandwich
         
         return result
     
@@ -604,15 +604,15 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
                     logger.debug(f"计算奇特三河时出错: {e}")
         
         # 添加到结果
-        result[AdvancedPatternType.LADDER_BOTTOM.value] = ladder_bottom
-        result[AdvancedPatternType.TOWER_TOP.value] = tower_top
-        result[AdvancedPatternType.BREAKAWAY.value] = breakaway
-        result[AdvancedPatternType.KICKING.value] = kicking
-        result[AdvancedPatternType.UNIQUE_THREE_RIVER.value] = unique_three_river
+        result[Advanced_pattern_type.LADDER_BOTTOM.value] = ladder_bottom
+        result[Advanced_pattern_type.TOWER_TOP.value] = tower_top
+        result[Advanced_pattern_type.BREAKAWAY.value] = breakaway
+        result[Advanced_pattern_type.KICKING.value] = kicking
+        result[Advanced_pattern_type.UNIQUE_THREE_RIVER.value] = unique_three_river
         
         return result
     
-    def _calculate_complex_patterns(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_complex_patterns_Advanced_Candlestick_Patterns(self, data: pd.DataFrame, result: pd.DataFrame) -> pd.DataFrame:
         """
         计算复杂形态（头肩顶/底、双顶/底、三角形等）
         
@@ -781,23 +781,23 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
                     triangle_symmetrical[i+19] = True
         
         # 将识别结果添加到结果数据框
-        result[AdvancedPatternType.HEAD_SHOULDERS_TOP.value] = head_shoulders_top
-        result[AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value] = head_shoulders_bottom
-        result[AdvancedPatternType.DOUBLE_TOP.value] = double_top
-        result[AdvancedPatternType.DOUBLE_BOTTOM.value] = double_bottom
-        result[AdvancedPatternType.TRIPLE_TOP.value] = triple_top
-        result[AdvancedPatternType.TRIPLE_BOTTOM.value] = triple_bottom
-        result[AdvancedPatternType.TRIANGLE_ASCENDING.value] = triangle_ascending
-        result[AdvancedPatternType.TRIANGLE_DESCENDING.value] = triangle_descending
-        result[AdvancedPatternType.TRIANGLE_SYMMETRICAL.value] = triangle_symmetrical
-        result[AdvancedPatternType.RECTANGLE.value] = rectangle
-        result[AdvancedPatternType.DIAMOND_TOP.value] = diamond_top
-        result[AdvancedPatternType.DIAMOND_BOTTOM.value] = diamond_bottom
-        result[AdvancedPatternType.CUP_WITH_HANDLE.value] = cup_with_handle
+        result[Advanced_pattern_type.HEAD_SHOULDERS_TOP.value] = head_shoulders_top
+        result[Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value] = head_shoulders_bottom
+        result[Advanced_pattern_type.DOUBLE_TOP.value] = double_top
+        result[Advanced_pattern_type.DOUBLE_BOTTOM.value] = double_bottom
+        result[Advanced_pattern_type.TRIPLE_TOP.value] = triple_top
+        result[Advanced_pattern_type.TRIPLE_BOTTOM.value] = triple_bottom
+        result[Advanced_pattern_type.TRIANGLE_ASCENDING.value] = triangle_ascending
+        result[Advanced_pattern_type.TRIANGLE_DESCENDING.value] = triangle_descending
+        result[Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value] = triangle_symmetrical
+        result[Advanced_pattern_type.RECTANGLE.value] = rectangle
+        result[Advanced_pattern_type.DIAMOND_TOP.value] = diamond_top
+        result[Advanced_pattern_type.DIAMOND_BOTTOM.value] = diamond_bottom
+        result[Advanced_pattern_type.CUP_WITH_HANDLE.value] = cup_with_handle
         
         return result
     
-    def _calculate_signal_strength(self, indicator_values: pd.DataFrame) -> pd.Series:
+    def _calculate_signal_strength_Advanced_Candlestick_Patterns(self, indicator_values: pd.DataFrame) -> pd.Series:
         """
         计算信号强度
         
@@ -818,65 +818,65 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             # 形态权重定义
             pattern_weights = {
                 # 三星形态
-                AdvancedPatternType.THREE_WHITE_SOLDIERS.value: 80,   # 三白兵
-                AdvancedPatternType.THREE_BLACK_CROWS.value: 80,     # 三黑鸦
-                AdvancedPatternType.THREE_INSIDE_UP.value: 70,       # 三内涨
-                AdvancedPatternType.THREE_INSIDE_DOWN.value: 70,     # 三内跌
-                AdvancedPatternType.THREE_OUTSIDE_UP.value: 75,      # 三外涨
-                AdvancedPatternType.THREE_OUTSIDE_DOWN.value: 75,    # 三外跌
+                Advanced_pattern_type.THREE_WHITE_SOLDIERS.value: 80,   # 三白兵
+                Advanced_pattern_type.THREE_BLACK_CROWS.value: 80,     # 三黑鸦
+                Advanced_pattern_type.THREE_INSIDE_UP.value: 70,       # 三内涨
+                Advanced_pattern_type.THREE_INSIDE_DOWN.value: 70,     # 三内跌
+                Advanced_pattern_type.THREE_OUTSIDE_UP.value: 75,      # 三外涨
+                Advanced_pattern_type.THREE_OUTSIDE_DOWN.value: 75,    # 三外跌
                 
                 # 高级复合形态
-                AdvancedPatternType.RISING_THREE_METHODS.value: 85,  # 上升三法
-                AdvancedPatternType.FALLING_THREE_METHODS.value: 85, # 下降三法
-                AdvancedPatternType.MAT_HOLD.value: 82,             # 铺垫形态
-                AdvancedPatternType.STICK_SANDWICH.value: 60,       # 棍心三明治
+                Advanced_pattern_type.RISING_THREE_METHODS.value: 85,  # 上升三法
+                Advanced_pattern_type.FALLING_THREE_METHODS.value: 85, # 下降三法
+                Advanced_pattern_type.MAT_HOLD.value: 82,             # 铺垫形态
+                Advanced_pattern_type.STICK_SANDWICH.value: 60,       # 棍心三明治
                 
                 # 其他复合形态
-                AdvancedPatternType.LADDER_BOTTOM.value: 75,        # 梯底形态
-                AdvancedPatternType.TOWER_TOP.value: 75,            # 塔顶形态
-                AdvancedPatternType.BREAKAWAY.value: 78,            # 脱离形态
-                AdvancedPatternType.KICKING.value: 83,              # 反冲形态
-                AdvancedPatternType.UNIQUE_THREE_RIVER.value: 72,    # 奇特三河
+                Advanced_pattern_type.LADDER_BOTTOM.value: 75,        # 梯底形态
+                Advanced_pattern_type.TOWER_TOP.value: 75,            # 塔顶形态
+                Advanced_pattern_type.BREAKAWAY.value: 78,            # 脱离形态
+                Advanced_pattern_type.KICKING.value: 83,              # 反冲形态
+                Advanced_pattern_type.UNIQUE_THREE_RIVER.value: 72,    # 奇特三河
                 
                 # 复杂形态
-                AdvancedPatternType.HEAD_SHOULDERS_TOP.value: 80,    # 头肩顶
-                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value: 80,   # 头肩底
-                AdvancedPatternType.DOUBLE_TOP.value: 75,                # 双顶
-                AdvancedPatternType.DOUBLE_BOTTOM.value: 75,               # 双底
-                AdvancedPatternType.TRIPLE_TOP.value: 70,                  # 三重顶
-                AdvancedPatternType.TRIPLE_BOTTOM.value: 70,               # 三重底
-                AdvancedPatternType.TRIANGLE_ASCENDING.value: 65,          # 上升三角形
-                AdvancedPatternType.TRIANGLE_DESCENDING.value: 65,         # 下降三角形
-                AdvancedPatternType.TRIANGLE_SYMMETRICAL.value: 60,         # 对称三角形
-                AdvancedPatternType.RECTANGLE.value: 55,                    # 矩形整理
-                AdvancedPatternType.DIAMOND_TOP.value: 50,                   # 钻石顶
-                AdvancedPatternType.DIAMOND_BOTTOM.value: 50,                # 钻石底
-                AdvancedPatternType.CUP_WITH_HANDLE.value: 45                 # 杯柄形态
+                Advanced_pattern_type.HEAD_SHOULDERS_TOP.value: 80,    # 头肩顶
+                Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value: 80,   # 头肩底
+                Advanced_pattern_type.DOUBLE_TOP.value: 75,                # 双顶
+                Advanced_pattern_type.DOUBLE_BOTTOM.value: 75,               # 双底
+                Advanced_pattern_type.TRIPLE_TOP.value: 70,                  # 三重顶
+                Advanced_pattern_type.TRIPLE_BOTTOM.value: 70,               # 三重底
+                Advanced_pattern_type.TRIANGLE_ASCENDING.value: 65,          # 上升三角形
+                Advanced_pattern_type.TRIANGLE_DESCENDING.value: 65,         # 下降三角形
+                Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value: 60,         # 对称三角形
+                Advanced_pattern_type.RECTANGLE.value: 55,                    # 矩形整理
+                Advanced_pattern_type.DIAMOND_TOP.value: 50,                   # 钻石顶
+                Advanced_pattern_type.DIAMOND_BOTTOM.value: 50,                # 钻石底
+                Advanced_pattern_type.CUP_WITH_HANDLE.value: 45                 # 杯柄形态
             }
             
             # 添加基础K线形态的权重
             basic_pattern_weights = {
-                PatternType.HAMMER.value: 65,                     # 锤子
-                PatternType.HANGING_MAN.value: 65,                # 上吊线
-                PatternType.SHOOTING_STAR.value: 65,              # 流星
-                PatternType.INVERTED_HAMMER.value: 65,            # 倒锤子
-                PatternType.DOJI.value: 50,                       # 十字星
-                PatternType.DRAGONFLY_DOJI.value: 60,             # 蜻蜓十字星
-                PatternType.GRAVESTONE_DOJI.value: 60,            # 墓碑十字星
-                PatternType.BULLISH_ENGULFING.value: 70,          # 看涨吞没
-                PatternType.BEARISH_ENGULFING.value: 70,          # 看跌吞没
-                PatternType.DARK_CLOUD_COVER.value: 65,           # 乌云盖顶
-                PatternType.PIERCING_LINE.value: 65,              # 刺透形态
-                PatternType.BULLISH_HARAMI.value: 60,             # 看涨母子线
-                PatternType.BEARISH_HARAMI.value: 60,             # 看跌母子线
-                PatternType.BULLISH_HARAMI_CROSS.value: 62,       # 看涨母子十字线
-                PatternType.BEARISH_HARAMI_CROSS.value: 62,       # 看跌母子十字线
-                PatternType.MORNING_STAR.value: 75,               # 晨星
-                PatternType.EVENING_STAR.value: 75,               # 暮星
-                PatternType.MORNING_DOJI_STAR.value: 78,          # 晨星十字星
-                PatternType.EVENING_DOJI_STAR.value: 78,          # 暮星十字星
-                PatternType.BULLISH_MARUBOZU.value: 68,           # 看涨光头光脚
-                PatternType.BEARISH_MARUBOZU.value: 68            # 看跌光头光脚
+                Pattern_type.HAMMER.value: 65,                     # 锤子
+                Pattern_type.HANGING_MAN.value: 65,                # 上吊线
+                Pattern_type.SHOOTING_STAR.value: 65,              # 流星
+                Pattern_type.INVERTED_HAMMER.value: 65,            # 倒锤子
+                Pattern_type.DOJI.value: 50,                       # 十字星
+                Pattern_type.DRAGONFLY_DOJI.value: 60,             # 蜻蜓十字星
+                Pattern_type.GRAVESTONE_DOJI.value: 60,            # 墓碑十字星
+                Pattern_type.BULLISH_ENGULFING.value: 70,          # 看涨吞没
+                Pattern_type.BEARISH_ENGULFING.value: 70,          # 看跌吞没
+                Pattern_type.DARK_CLOUD_COVER.value: 65,           # 乌云盖顶
+                Pattern_type.PIERCING_LINE.value: 65,              # 刺透形态
+                Pattern_type.BULLISH_HARAMI.value: 60,             # 看涨母子线
+                Pattern_type.BEARISH_HARAMI.value: 60,             # 看跌母子线
+                Pattern_type.BULLISH_HARAMI_CROSS.value: 62,       # 看涨母子十字线
+                Pattern_type.BEARISH_HARAMI_CROSS.value: 62,       # 看跌母子十字线
+                Pattern_type.MORNING_STAR.value: 75,               # 晨星
+                Pattern_type.EVENING_STAR.value: 75,               # 暮星
+                Pattern_type.MORNING_DOJI_STAR.value: 78,          # 晨星十字星
+                Pattern_type.EVENING_DOJI_STAR.value: 78,          # 暮星十字星
+                Pattern_type.BULLISH_MARUBOZU.value: 68,           # 看涨光头光脚
+                Pattern_type.BEARISH_MARUBOZU.value: 68            # 看跌光头光脚
             }
             
             # 合并权重字典
@@ -925,7 +925,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return signal_strength
     
-    def _calculate_trend_confirmation(self, indicator_values: pd.DataFrame) -> pd.Series:
+    def _calculate_trend_confirmation_Advanced_Candlestick_Patterns(self, indicator_values: pd.DataFrame) -> pd.Series:
         """
         计算趋势确认信号
         
@@ -945,30 +945,30 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         try:
             # 定义看涨形态和看跌形态
             bullish_patterns = [
-                AdvancedPatternType.THREE_WHITE_SOLDIERS.value,
-                AdvancedPatternType.THREE_INSIDE_UP.value,
-                AdvancedPatternType.THREE_OUTSIDE_UP.value,
-                AdvancedPatternType.RISING_THREE_METHODS.value,
-                AdvancedPatternType.MAT_HOLD.value,
-                AdvancedPatternType.LADDER_BOTTOM.value,
-                AdvancedPatternType.BREAKAWAY.value,
-                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
-                AdvancedPatternType.DOUBLE_BOTTOM.value,
-                AdvancedPatternType.TRIPLE_BOTTOM.value,
-                AdvancedPatternType.DIAMOND_BOTTOM.value,
-                AdvancedPatternType.CUP_WITH_HANDLE.value
+                Advanced_pattern_type.THREE_WHITE_SOLDIERS.value,
+                Advanced_pattern_type.THREE_INSIDE_UP.value,
+                Advanced_pattern_type.THREE_OUTSIDE_UP.value,
+                Advanced_pattern_type.RISING_THREE_METHODS.value,
+                Advanced_pattern_type.MAT_HOLD.value,
+                Advanced_pattern_type.LADDER_BOTTOM.value,
+                Advanced_pattern_type.BREAKAWAY.value,
+                Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value,
+                Advanced_pattern_type.DOUBLE_BOTTOM.value,
+                Advanced_pattern_type.TRIPLE_BOTTOM.value,
+                Advanced_pattern_type.DIAMOND_BOTTOM.value,
+                Advanced_pattern_type.CUP_WITH_HANDLE.value
             ]
             
             bearish_patterns = [
-                AdvancedPatternType.THREE_BLACK_CROWS.value,
-                AdvancedPatternType.THREE_INSIDE_DOWN.value,
-                AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
-                AdvancedPatternType.FALLING_THREE_METHODS.value,
-                AdvancedPatternType.TOWER_TOP.value,
-                AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
-                AdvancedPatternType.DOUBLE_TOP.value,
-                AdvancedPatternType.TRIPLE_TOP.value,
-                AdvancedPatternType.DIAMOND_TOP.value
+                Advanced_pattern_type.THREE_BLACK_CROWS.value,
+                Advanced_pattern_type.THREE_INSIDE_DOWN.value,
+                Advanced_pattern_type.THREE_OUTSIDE_DOWN.value,
+                Advanced_pattern_type.FALLING_THREE_METHODS.value,
+                Advanced_pattern_type.TOWER_TOP.value,
+                Advanced_pattern_type.HEAD_SHOULDERS_TOP.value,
+                Advanced_pattern_type.DOUBLE_TOP.value,
+                Advanced_pattern_type.TRIPLE_TOP.value,
+                Advanced_pattern_type.DIAMOND_TOP.value
             ]
             
             # 创建看涨和看跌信号序列
@@ -1029,36 +1029,36 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             # 定义所有形态列表
             all_patterns = [
                 # 高级形态
-                AdvancedPatternType.THREE_WHITE_SOLDIERS.value,
-                AdvancedPatternType.THREE_BLACK_CROWS.value,
-                AdvancedPatternType.THREE_INSIDE_UP.value,
-                AdvancedPatternType.THREE_INSIDE_DOWN.value,
-                AdvancedPatternType.THREE_OUTSIDE_UP.value,
-                AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
-                AdvancedPatternType.RISING_THREE_METHODS.value,
-                AdvancedPatternType.FALLING_THREE_METHODS.value,
-                AdvancedPatternType.MAT_HOLD.value,
-                AdvancedPatternType.STICK_SANDWICH.value,
-                AdvancedPatternType.LADDER_BOTTOM.value,
-                AdvancedPatternType.TOWER_TOP.value,
-                AdvancedPatternType.BREAKAWAY.value,
-                AdvancedPatternType.KICKING.value,
-                AdvancedPatternType.UNIQUE_THREE_RIVER.value,
+                Advanced_pattern_type.THREE_WHITE_SOLDIERS.value,
+                Advanced_pattern_type.THREE_BLACK_CROWS.value,
+                Advanced_pattern_type.THREE_INSIDE_UP.value,
+                Advanced_pattern_type.THREE_INSIDE_DOWN.value,
+                Advanced_pattern_type.THREE_OUTSIDE_UP.value,
+                Advanced_pattern_type.THREE_OUTSIDE_DOWN.value,
+                Advanced_pattern_type.RISING_THREE_METHODS.value,
+                Advanced_pattern_type.FALLING_THREE_METHODS.value,
+                Advanced_pattern_type.MAT_HOLD.value,
+                Advanced_pattern_type.STICK_SANDWICH.value,
+                Advanced_pattern_type.LADDER_BOTTOM.value,
+                Advanced_pattern_type.TOWER_TOP.value,
+                Advanced_pattern_type.BREAKAWAY.value,
+                Advanced_pattern_type.KICKING.value,
+                Advanced_pattern_type.UNIQUE_THREE_RIVER.value,
                 
                 # 复杂形态
-                AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
-                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
-                AdvancedPatternType.DOUBLE_TOP.value,
-                AdvancedPatternType.DOUBLE_BOTTOM.value,
-                AdvancedPatternType.TRIPLE_TOP.value,
-                AdvancedPatternType.TRIPLE_BOTTOM.value,
-                AdvancedPatternType.TRIANGLE_ASCENDING.value,
-                AdvancedPatternType.TRIANGLE_DESCENDING.value,
-                AdvancedPatternType.TRIANGLE_SYMMETRICAL.value,
-                AdvancedPatternType.RECTANGLE.value,
-                AdvancedPatternType.DIAMOND_TOP.value,
-                AdvancedPatternType.DIAMOND_BOTTOM.value,
-                AdvancedPatternType.CUP_WITH_HANDLE.value
+                Advanced_pattern_type.HEAD_SHOULDERS_TOP.value,
+                Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value,
+                Advanced_pattern_type.DOUBLE_TOP.value,
+                Advanced_pattern_type.DOUBLE_BOTTOM.value,
+                Advanced_pattern_type.TRIPLE_TOP.value,
+                Advanced_pattern_type.TRIPLE_BOTTOM.value,
+                Advanced_pattern_type.TRIANGLE_ASCENDING.value,
+                Advanced_pattern_type.TRIANGLE_DESCENDING.value,
+                Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value,
+                Advanced_pattern_type.RECTANGLE.value,
+                Advanced_pattern_type.DIAMOND_TOP.value,
+                Advanced_pattern_type.DIAMOND_BOTTOM.value,
+                Advanced_pattern_type.CUP_WITH_HANDLE.value
             ]
             
             # 计算每行有多少个形态同时出现
@@ -1079,30 +1079,30 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             
             # 查看是否有冲突信号（同时出现看涨和看跌形态）
             bullish_patterns = [
-                AdvancedPatternType.THREE_WHITE_SOLDIERS.value,
-                AdvancedPatternType.THREE_INSIDE_UP.value,
-                AdvancedPatternType.THREE_OUTSIDE_UP.value,
-                AdvancedPatternType.RISING_THREE_METHODS.value,
-                AdvancedPatternType.MAT_HOLD.value,
-                AdvancedPatternType.LADDER_BOTTOM.value,
-                AdvancedPatternType.BREAKAWAY.value,
-                AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
-                AdvancedPatternType.DOUBLE_BOTTOM.value,
-                AdvancedPatternType.TRIPLE_BOTTOM.value,
-                AdvancedPatternType.DIAMOND_BOTTOM.value,
-                AdvancedPatternType.CUP_WITH_HANDLE.value
+                Advanced_pattern_type.THREE_WHITE_SOLDIERS.value,
+                Advanced_pattern_type.THREE_INSIDE_UP.value,
+                Advanced_pattern_type.THREE_OUTSIDE_UP.value,
+                Advanced_pattern_type.RISING_THREE_METHODS.value,
+                Advanced_pattern_type.MAT_HOLD.value,
+                Advanced_pattern_type.LADDER_BOTTOM.value,
+                Advanced_pattern_type.BREAKAWAY.value,
+                Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value,
+                Advanced_pattern_type.DOUBLE_BOTTOM.value,
+                Advanced_pattern_type.TRIPLE_BOTTOM.value,
+                Advanced_pattern_type.DIAMOND_BOTTOM.value,
+                Advanced_pattern_type.CUP_WITH_HANDLE.value
             ]
             
             bearish_patterns = [
-                AdvancedPatternType.THREE_BLACK_CROWS.value,
-                AdvancedPatternType.THREE_INSIDE_DOWN.value,
-                AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
-                AdvancedPatternType.FALLING_THREE_METHODS.value,
-                AdvancedPatternType.TOWER_TOP.value,
-                AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
-                AdvancedPatternType.DOUBLE_TOP.value,
-                AdvancedPatternType.TRIPLE_TOP.value,
-                AdvancedPatternType.DIAMOND_TOP.value
+                Advanced_pattern_type.THREE_BLACK_CROWS.value,
+                Advanced_pattern_type.THREE_INSIDE_DOWN.value,
+                Advanced_pattern_type.THREE_OUTSIDE_DOWN.value,
+                Advanced_pattern_type.FALLING_THREE_METHODS.value,
+                Advanced_pattern_type.TOWER_TOP.value,
+                Advanced_pattern_type.HEAD_SHOULDERS_TOP.value,
+                Advanced_pattern_type.DOUBLE_TOP.value,
+                Advanced_pattern_type.TRIPLE_TOP.value,
+                Advanced_pattern_type.DIAMOND_TOP.value
             ]
             
             # 统计看涨形态数量
@@ -1137,15 +1137,15 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return compound_signal
     
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score_Patterns_Advanced_Candlestick_Patterns(self, data: pd.DataFrame) -> pd.Series:
         """
         计算高级K线形态识别指标的原始评分
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            pd.DataFrame: 包含原始评分的DataFrame
+            pd.DataFrame: 包含原始评分的Data_frame
         """
         # 计算指标值
         indicator_data = self.calculate(data)
@@ -1155,126 +1155,126 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 1. 强烈看涨形态评分（+25到+40分）
         # 三星看涨形态
-        if AdvancedPatternType.THREE_WHITE_SOLDIERS.value in indicator_data.columns:
-            three_white_soldiers_mask = indicator_data[AdvancedPatternType.THREE_WHITE_SOLDIERS.value]
+        if Advanced_pattern_type.THREE_WHITE_SOLDIERS.value in indicator_data.columns:
+            three_white_soldiers_mask = indicator_data[Advanced_pattern_type.THREE_WHITE_SOLDIERS.value]
             score.loc[three_white_soldiers_mask] += 35
         
-        if AdvancedPatternType.THREE_INSIDE_UP.value in indicator_data.columns:
-            three_inside_up_mask = indicator_data[AdvancedPatternType.THREE_INSIDE_UP.value]
+        if Advanced_pattern_type.THREE_INSIDE_UP.value in indicator_data.columns:
+            three_inside_up_mask = indicator_data[Advanced_pattern_type.THREE_INSIDE_UP.value]
             score.loc[three_inside_up_mask] += 30
         
-        if AdvancedPatternType.THREE_OUTSIDE_UP.value in indicator_data.columns:
-            three_outside_up_mask = indicator_data[AdvancedPatternType.THREE_OUTSIDE_UP.value]
+        if Advanced_pattern_type.THREE_OUTSIDE_UP.value in indicator_data.columns:
+            three_outside_up_mask = indicator_data[Advanced_pattern_type.THREE_OUTSIDE_UP.value]
             score.loc[three_outside_up_mask] += 32
         
         # 高级复合看涨形态
-        if AdvancedPatternType.RISING_THREE_METHODS.value in indicator_data.columns:
-            rising_three_methods_mask = indicator_data[AdvancedPatternType.RISING_THREE_METHODS.value]
+        if Advanced_pattern_type.RISING_THREE_METHODS.value in indicator_data.columns:
+            rising_three_methods_mask = indicator_data[Advanced_pattern_type.RISING_THREE_METHODS.value]
             score.loc[rising_three_methods_mask] += 28
         
-        if AdvancedPatternType.MAT_HOLD.value in indicator_data.columns:
-            mat_hold_mask = indicator_data[AdvancedPatternType.MAT_HOLD.value]
+        if Advanced_pattern_type.MAT_HOLD.value in indicator_data.columns:
+            mat_hold_mask = indicator_data[Advanced_pattern_type.MAT_HOLD.value]
             score.loc[mat_hold_mask] += 25
         
-        if AdvancedPatternType.LADDER_BOTTOM.value in indicator_data.columns:
-            ladder_bottom_mask = indicator_data[AdvancedPatternType.LADDER_BOTTOM.value]
+        if Advanced_pattern_type.LADDER_BOTTOM.value in indicator_data.columns:
+            ladder_bottom_mask = indicator_data[Advanced_pattern_type.LADDER_BOTTOM.value]
             score.loc[ladder_bottom_mask] += 30
         
-        if AdvancedPatternType.BREAKAWAY.value in indicator_data.columns:
-            breakaway_mask = indicator_data[AdvancedPatternType.BREAKAWAY.value]
+        if Advanced_pattern_type.BREAKAWAY.value in indicator_data.columns:
+            breakaway_mask = indicator_data[Advanced_pattern_type.BREAKAWAY.value]
             # 需要判断突破方向，这里假设是看涨突破
             score.loc[breakaway_mask] += 25
         
         # 复杂看涨形态
-        if AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value in indicator_data.columns:
-            head_shoulders_bottom_mask = indicator_data[AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value]
+        if Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value in indicator_data.columns:
+            head_shoulders_bottom_mask = indicator_data[Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value]
             score.loc[head_shoulders_bottom_mask] += 40
         
-        if AdvancedPatternType.DOUBLE_BOTTOM.value in indicator_data.columns:
-            double_bottom_mask = indicator_data[AdvancedPatternType.DOUBLE_BOTTOM.value]
+        if Advanced_pattern_type.DOUBLE_BOTTOM.value in indicator_data.columns:
+            double_bottom_mask = indicator_data[Advanced_pattern_type.DOUBLE_BOTTOM.value]
             score.loc[double_bottom_mask] += 35
         
-        if AdvancedPatternType.TRIPLE_BOTTOM.value in indicator_data.columns:
-            triple_bottom_mask = indicator_data[AdvancedPatternType.TRIPLE_BOTTOM.value]
+        if Advanced_pattern_type.TRIPLE_BOTTOM.value in indicator_data.columns:
+            triple_bottom_mask = indicator_data[Advanced_pattern_type.TRIPLE_BOTTOM.value]
             score.loc[triple_bottom_mask] += 38
         
-        if AdvancedPatternType.DIAMOND_BOTTOM.value in indicator_data.columns:
-            diamond_bottom_mask = indicator_data[AdvancedPatternType.DIAMOND_BOTTOM.value]
+        if Advanced_pattern_type.DIAMOND_BOTTOM.value in indicator_data.columns:
+            diamond_bottom_mask = indicator_data[Advanced_pattern_type.DIAMOND_BOTTOM.value]
             score.loc[diamond_bottom_mask] += 35
         
-        if AdvancedPatternType.CUP_WITH_HANDLE.value in indicator_data.columns:
-            cup_handle_mask = indicator_data[AdvancedPatternType.CUP_WITH_HANDLE.value]
+        if Advanced_pattern_type.CUP_WITH_HANDLE.value in indicator_data.columns:
+            cup_handle_mask = indicator_data[Advanced_pattern_type.CUP_WITH_HANDLE.value]
             score.loc[cup_handle_mask] += 32
         
         # 2. 强烈看跌形态评分（-25到-40分）
         # 三星看跌形态
-        if AdvancedPatternType.THREE_BLACK_CROWS.value in indicator_data.columns:
-            three_black_crows_mask = indicator_data[AdvancedPatternType.THREE_BLACK_CROWS.value]
+        if Advanced_pattern_type.THREE_BLACK_CROWS.value in indicator_data.columns:
+            three_black_crows_mask = indicator_data[Advanced_pattern_type.THREE_BLACK_CROWS.value]
             score.loc[three_black_crows_mask] -= 35
         
-        if AdvancedPatternType.THREE_INSIDE_DOWN.value in indicator_data.columns:
-            three_inside_down_mask = indicator_data[AdvancedPatternType.THREE_INSIDE_DOWN.value]
+        if Advanced_pattern_type.THREE_INSIDE_DOWN.value in indicator_data.columns:
+            three_inside_down_mask = indicator_data[Advanced_pattern_type.THREE_INSIDE_DOWN.value]
             score.loc[three_inside_down_mask] -= 30
         
-        if AdvancedPatternType.THREE_OUTSIDE_DOWN.value in indicator_data.columns:
-            three_outside_down_mask = indicator_data[AdvancedPatternType.THREE_OUTSIDE_DOWN.value]
+        if Advanced_pattern_type.THREE_OUTSIDE_DOWN.value in indicator_data.columns:
+            three_outside_down_mask = indicator_data[Advanced_pattern_type.THREE_OUTSIDE_DOWN.value]
             score.loc[three_outside_down_mask] -= 32
         
         # 高级复合看跌形态
-        if AdvancedPatternType.FALLING_THREE_METHODS.value in indicator_data.columns:
-            falling_three_methods_mask = indicator_data[AdvancedPatternType.FALLING_THREE_METHODS.value]
+        if Advanced_pattern_type.FALLING_THREE_METHODS.value in indicator_data.columns:
+            falling_three_methods_mask = indicator_data[Advanced_pattern_type.FALLING_THREE_METHODS.value]
             score.loc[falling_three_methods_mask] -= 28
         
-        if AdvancedPatternType.TOWER_TOP.value in indicator_data.columns:
-            tower_top_mask = indicator_data[AdvancedPatternType.TOWER_TOP.value]
+        if Advanced_pattern_type.TOWER_TOP.value in indicator_data.columns:
+            tower_top_mask = indicator_data[Advanced_pattern_type.TOWER_TOP.value]
             score.loc[tower_top_mask] -= 30
         
         # 复杂看跌形态
-        if AdvancedPatternType.HEAD_SHOULDERS_TOP.value in indicator_data.columns:
-            head_shoulders_top_mask = indicator_data[AdvancedPatternType.HEAD_SHOULDERS_TOP.value]
+        if Advanced_pattern_type.HEAD_SHOULDERS_TOP.value in indicator_data.columns:
+            head_shoulders_top_mask = indicator_data[Advanced_pattern_type.HEAD_SHOULDERS_TOP.value]
             score.loc[head_shoulders_top_mask] -= 40
         
-        if AdvancedPatternType.DOUBLE_TOP.value in indicator_data.columns:
-            double_top_mask = indicator_data[AdvancedPatternType.DOUBLE_TOP.value]
+        if Advanced_pattern_type.DOUBLE_TOP.value in indicator_data.columns:
+            double_top_mask = indicator_data[Advanced_pattern_type.DOUBLE_TOP.value]
             score.loc[double_top_mask] -= 35
         
-        if AdvancedPatternType.TRIPLE_TOP.value in indicator_data.columns:
-            triple_top_mask = indicator_data[AdvancedPatternType.TRIPLE_TOP.value]
+        if Advanced_pattern_type.TRIPLE_TOP.value in indicator_data.columns:
+            triple_top_mask = indicator_data[Advanced_pattern_type.TRIPLE_TOP.value]
             score.loc[triple_top_mask] -= 38
         
-        if AdvancedPatternType.DIAMOND_TOP.value in indicator_data.columns:
-            diamond_top_mask = indicator_data[AdvancedPatternType.DIAMOND_TOP.value]
+        if Advanced_pattern_type.DIAMOND_TOP.value in indicator_data.columns:
+            diamond_top_mask = indicator_data[Advanced_pattern_type.DIAMOND_TOP.value]
             score.loc[diamond_top_mask] -= 35
         
         # 3. 中性/整理形态评分（-10到+10分）
-        if AdvancedPatternType.STICK_SANDWICH.value in indicator_data.columns:
-            stick_sandwich_mask = indicator_data[AdvancedPatternType.STICK_SANDWICH.value]
+        if Advanced_pattern_type.STICK_SANDWICH.value in indicator_data.columns:
+            stick_sandwich_mask = indicator_data[Advanced_pattern_type.STICK_SANDWICH.value]
             score.loc[stick_sandwich_mask] += 5  # 轻微看涨倾向
         
-        if AdvancedPatternType.KICKING.value in indicator_data.columns:
-            kicking_mask = indicator_data[AdvancedPatternType.KICKING.value]
+        if Advanced_pattern_type.KICKING.value in indicator_data.columns:
+            kicking_mask = indicator_data[Advanced_pattern_type.KICKING.value]
             # 反冲形态需要判断方向，这里给中性评分
             score.loc[kicking_mask] += 0
         
-        if AdvancedPatternType.UNIQUE_THREE_RIVER.value in indicator_data.columns:
-            unique_three_river_mask = indicator_data[AdvancedPatternType.UNIQUE_THREE_RIVER.value]
+        if Advanced_pattern_type.UNIQUE_THREE_RIVER.value in indicator_data.columns:
+            unique_three_river_mask = indicator_data[Advanced_pattern_type.UNIQUE_THREE_RIVER.value]
             score.loc[unique_three_river_mask] += 15  # 底部反转形态
         
         # 三角形整理形态
-        if AdvancedPatternType.TRIANGLE_ASCENDING.value in indicator_data.columns:
-            triangle_ascending_mask = indicator_data[AdvancedPatternType.TRIANGLE_ASCENDING.value]
+        if Advanced_pattern_type.TRIANGLE_ASCENDING.value in indicator_data.columns:
+            triangle_ascending_mask = indicator_data[Advanced_pattern_type.TRIANGLE_ASCENDING.value]
             score.loc[triangle_ascending_mask] += 8  # 轻微看涨倾向
         
-        if AdvancedPatternType.TRIANGLE_DESCENDING.value in indicator_data.columns:
-            triangle_descending_mask = indicator_data[AdvancedPatternType.TRIANGLE_DESCENDING.value]
+        if Advanced_pattern_type.TRIANGLE_DESCENDING.value in indicator_data.columns:
+            triangle_descending_mask = indicator_data[Advanced_pattern_type.TRIANGLE_DESCENDING.value]
             score.loc[triangle_descending_mask] -= 8  # 轻微看跌倾向
         
-        if AdvancedPatternType.TRIANGLE_SYMMETRICAL.value in indicator_data.columns:
-            triangle_symmetrical_mask = indicator_data[AdvancedPatternType.TRIANGLE_SYMMETRICAL.value]
+        if Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value in indicator_data.columns:
+            triangle_symmetrical_mask = indicator_data[Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value]
             score.loc[triangle_symmetrical_mask] += 0  # 中性
         
-        if AdvancedPatternType.RECTANGLE.value in indicator_data.columns:
-            rectangle_mask = indicator_data[AdvancedPatternType.RECTANGLE.value]
+        if Advanced_pattern_type.RECTANGLE.value in indicator_data.columns:
+            rectangle_mask = indicator_data[Advanced_pattern_type.RECTANGLE.value]
             score.loc[rectangle_mask] += 0  # 中性整理
         
         # 4. 形态强度调整（±15分）
@@ -1289,10 +1289,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             
             # 看涨形态+放量
             bullish_patterns = (
-                indicator_data.get(AdvancedPatternType.THREE_WHITE_SOLDIERS.value, False) |
-                indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value, False) |
-                indicator_data.get(AdvancedPatternType.DOUBLE_BOTTOM.value, False) |
-                indicator_data.get(AdvancedPatternType.CUP_WITH_HANDLE.value, False)
+                indicator_data.get(Advanced_pattern_type.THREE_WHITE_SOLDIERS.value, False) |
+                indicator_data.get(Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value, False) |
+                indicator_data.get(Advanced_pattern_type.DOUBLE_BOTTOM.value, False) |
+                indicator_data.get(Advanced_pattern_type.CUP_WITH_HANDLE.value, False)
             )
             if isinstance(bullish_patterns, pd.Series):
                 bullish_volume_confirm = bullish_patterns & high_volume_mask
@@ -1300,10 +1300,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             
             # 看跌形态+放量
             bearish_patterns = (
-                indicator_data.get(AdvancedPatternType.THREE_BLACK_CROWS.value, False) |
-                indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_TOP.value, False) |
-                indicator_data.get(AdvancedPatternType.DOUBLE_TOP.value, False) |
-                indicator_data.get(AdvancedPatternType.TOWER_TOP.value, False)
+                indicator_data.get(Advanced_pattern_type.THREE_BLACK_CROWS.value, False) |
+                indicator_data.get(Advanced_pattern_type.HEAD_SHOULDERS_TOP.value, False) |
+                indicator_data.get(Advanced_pattern_type.DOUBLE_TOP.value, False) |
+                indicator_data.get(Advanced_pattern_type.TOWER_TOP.value, False)
             )
             if isinstance(bearish_patterns, pd.Series):
                 bearish_volume_confirm = bearish_patterns & high_volume_mask
@@ -1321,7 +1321,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         neutral_count = 0  # 添加neutral_count初始化
         
         # 统计当前时点的形态数量
-        for pattern_type in AdvancedPatternType:
+        for pattern_type in Advanced_pattern_type:
             pattern_name = pattern_type.value
             if pattern_name in indicator_data.columns:
                 current_pattern = indicator_data[pattern_name]
@@ -1329,28 +1329,28 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
                     pattern_count += current_pattern.astype(int)
                     
                     # 分类统计
-                    if pattern_type in [AdvancedPatternType.THREE_WHITE_SOLDIERS, 
-                                      AdvancedPatternType.THREE_INSIDE_UP,
-                                      AdvancedPatternType.THREE_OUTSIDE_UP,
-                                      AdvancedPatternType.RISING_THREE_METHODS,
-                                      AdvancedPatternType.MAT_HOLD,
-                                      AdvancedPatternType.LADDER_BOTTOM,
-                                      AdvancedPatternType.HEAD_SHOULDERS_BOTTOM,
-                                      AdvancedPatternType.DOUBLE_BOTTOM,
-                                      AdvancedPatternType.TRIPLE_BOTTOM,
-                                      AdvancedPatternType.DIAMOND_BOTTOM,
-                                      AdvancedPatternType.CUP_WITH_HANDLE,
-                                      AdvancedPatternType.UNIQUE_THREE_RIVER]:
+                    if pattern_type in [Advanced_pattern_type.THREE_WHITE_SOLDIERS, 
+                                      Advanced_pattern_type.THREE_INSIDE_UP,
+                                      Advanced_pattern_type.THREE_OUTSIDE_UP,
+                                      Advanced_pattern_type.RISING_THREE_METHODS,
+                                      Advanced_pattern_type.MAT_HOLD,
+                                      Advanced_pattern_type.LADDER_BOTTOM,
+                                      Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM,
+                                      Advanced_pattern_type.DOUBLE_BOTTOM,
+                                      Advanced_pattern_type.TRIPLE_BOTTOM,
+                                      Advanced_pattern_type.DIAMOND_BOTTOM,
+                                      Advanced_pattern_type.CUP_WITH_HANDLE,
+                                      Advanced_pattern_type.UNIQUE_THREE_RIVER]:
                         bullish_count += 1
-                    elif pattern_type in [AdvancedPatternType.THREE_BLACK_CROWS,
-                                        AdvancedPatternType.THREE_INSIDE_DOWN,
-                                        AdvancedPatternType.THREE_OUTSIDE_DOWN,
-                                        AdvancedPatternType.FALLING_THREE_METHODS,
-                                        AdvancedPatternType.TOWER_TOP,
-                                        AdvancedPatternType.HEAD_SHOULDERS_TOP,
-                                        AdvancedPatternType.DOUBLE_TOP,
-                                        AdvancedPatternType.TRIPLE_TOP,
-                                        AdvancedPatternType.DIAMOND_TOP]:
+                    elif pattern_type in [Advanced_pattern_type.THREE_BLACK_CROWS,
+                                        Advanced_pattern_type.THREE_INSIDE_DOWN,
+                                        Advanced_pattern_type.THREE_OUTSIDE_DOWN,
+                                        Advanced_pattern_type.FALLING_THREE_METHODS,
+                                        Advanced_pattern_type.TOWER_TOP,
+                                        Advanced_pattern_type.HEAD_SHOULDERS_TOP,
+                                        Advanced_pattern_type.DOUBLE_TOP,
+                                        Advanced_pattern_type.TRIPLE_TOP,
+                                        Advanced_pattern_type.DIAMOND_TOP]:
                         bearish_count += 1
                     else:
                         neutral_count += 1
@@ -1382,9 +1382,9 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             # 在阻力位附近的看跌形态
             near_resistance = close_price > high_60 * 0.95
             bearish_at_resistance = (
-                (indicator_data.get(AdvancedPatternType.THREE_BLACK_CROWS.value, False) |
-                 indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_TOP.value, False) |
-                 indicator_data.get(AdvancedPatternType.DOUBLE_TOP.value, False)) &
+                (indicator_data.get(Advanced_pattern_type.THREE_BLACK_CROWS.value, False) |
+                 indicator_data.get(Advanced_pattern_type.HEAD_SHOULDERS_TOP.value, False) |
+                 indicator_data.get(Advanced_pattern_type.DOUBLE_TOP.value, False)) &
                 near_resistance
             )
             if isinstance(bearish_at_resistance, pd.Series):
@@ -1393,9 +1393,9 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             # 在支撑位附近的看涨形态
             near_support = close_price < low_60 * 1.05
             bullish_at_support = (
-                (indicator_data.get(AdvancedPatternType.THREE_WHITE_SOLDIERS.value, False) |
-                 indicator_data.get(AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value, False) |
-                 indicator_data.get(AdvancedPatternType.DOUBLE_BOTTOM.value, False)) &
+                (indicator_data.get(Advanced_pattern_type.THREE_WHITE_SOLDIERS.value, False) |
+                 indicator_data.get(Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value, False) |
+                 indicator_data.get(Advanced_pattern_type.DOUBLE_BOTTOM.value, False)) &
                 near_support
             )
             if isinstance(bullish_at_support, pd.Series):
@@ -1407,12 +1407,12 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def identify_patterns(self, data: pd.DataFrame) -> List[str]:
+    def identify_patterns_Patterns_Advanced_Candlestick_Patterns(self, data: pd.DataFrame) -> List[str]:
         """
         识别高级K线形态相关的技术形态
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             List[str]: 识别出的形态列表
@@ -1430,12 +1430,12 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 1. 三星形态
         three_star_patterns = [
-            AdvancedPatternType.THREE_WHITE_SOLDIERS,
-            AdvancedPatternType.THREE_BLACK_CROWS,
-            AdvancedPatternType.THREE_INSIDE_UP,
-            AdvancedPatternType.THREE_INSIDE_DOWN,
-            AdvancedPatternType.THREE_OUTSIDE_UP,
-            AdvancedPatternType.THREE_OUTSIDE_DOWN
+            Advanced_pattern_type.THREE_WHITE_SOLDIERS,
+            Advanced_pattern_type.THREE_BLACK_CROWS,
+            Advanced_pattern_type.THREE_INSIDE_UP,
+            Advanced_pattern_type.THREE_INSIDE_DOWN,
+            Advanced_pattern_type.THREE_OUTSIDE_UP,
+            Advanced_pattern_type.THREE_OUTSIDE_DOWN
         ]
         
         for pattern_type in three_star_patterns:
@@ -1445,10 +1445,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 2. 高级复合形态
         advanced_compound_patterns = [
-            AdvancedPatternType.RISING_THREE_METHODS,
-            AdvancedPatternType.FALLING_THREE_METHODS,
-            AdvancedPatternType.MAT_HOLD,
-            AdvancedPatternType.STICK_SANDWICH
+            Advanced_pattern_type.RISING_THREE_METHODS,
+            Advanced_pattern_type.FALLING_THREE_METHODS,
+            Advanced_pattern_type.MAT_HOLD,
+            Advanced_pattern_type.STICK_SANDWICH
         ]
         
         for pattern_type in advanced_compound_patterns:
@@ -1458,11 +1458,11 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 3. 其他复合形态
         other_compound_patterns = [
-            AdvancedPatternType.LADDER_BOTTOM,
-            AdvancedPatternType.TOWER_TOP,
-            AdvancedPatternType.BREAKAWAY,
-            AdvancedPatternType.KICKING,
-            AdvancedPatternType.UNIQUE_THREE_RIVER
+            Advanced_pattern_type.LADDER_BOTTOM,
+            Advanced_pattern_type.TOWER_TOP,
+            Advanced_pattern_type.BREAKAWAY,
+            Advanced_pattern_type.KICKING,
+            Advanced_pattern_type.UNIQUE_THREE_RIVER
         ]
         
         for pattern_type in other_compound_patterns:
@@ -1472,19 +1472,19 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 4. 复杂形态
         complex_patterns = [
-            AdvancedPatternType.HEAD_SHOULDERS_TOP,
-            AdvancedPatternType.HEAD_SHOULDERS_BOTTOM,
-            AdvancedPatternType.DOUBLE_TOP,
-            AdvancedPatternType.DOUBLE_BOTTOM,
-            AdvancedPatternType.TRIPLE_TOP,
-            AdvancedPatternType.TRIPLE_BOTTOM,
-            AdvancedPatternType.TRIANGLE_ASCENDING,
-            AdvancedPatternType.TRIANGLE_DESCENDING,
-            AdvancedPatternType.TRIANGLE_SYMMETRICAL,
-            AdvancedPatternType.RECTANGLE,
-            AdvancedPatternType.DIAMOND_TOP,
-            AdvancedPatternType.DIAMOND_BOTTOM,
-            AdvancedPatternType.CUP_WITH_HANDLE
+            Advanced_pattern_type.HEAD_SHOULDERS_TOP,
+            Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM,
+            Advanced_pattern_type.DOUBLE_TOP,
+            Advanced_pattern_type.DOUBLE_BOTTOM,
+            Advanced_pattern_type.TRIPLE_TOP,
+            Advanced_pattern_type.TRIPLE_BOTTOM,
+            Advanced_pattern_type.TRIANGLE_ASCENDING,
+            Advanced_pattern_type.TRIANGLE_DESCENDING,
+            Advanced_pattern_type.TRIANGLE_SYMMETRICAL,
+            Advanced_pattern_type.RECTANGLE,
+            Advanced_pattern_type.DIAMOND_TOP,
+            Advanced_pattern_type.DIAMOND_BOTTOM,
+            Advanced_pattern_type.CUP_WITH_HANDLE
         ]
         
         for pattern_type in complex_patterns:
@@ -1513,34 +1513,34 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         neutral_count = 0
         total_patterns = 0
         
-        for pattern_type in AdvancedPatternType:
+        for pattern_type in Advanced_pattern_type:
             pattern_name = pattern_type.value
             if pattern_name in recent_data.columns and recent_data[pattern_name].any():
                 total_patterns += 1
                 
                 # 分类统计
-                if pattern_type in [AdvancedPatternType.THREE_WHITE_SOLDIERS, 
-                                  AdvancedPatternType.THREE_INSIDE_UP,
-                                  AdvancedPatternType.THREE_OUTSIDE_UP,
-                                  AdvancedPatternType.RISING_THREE_METHODS,
-                                  AdvancedPatternType.MAT_HOLD,
-                                  AdvancedPatternType.LADDER_BOTTOM,
-                                  AdvancedPatternType.HEAD_SHOULDERS_BOTTOM,
-                                  AdvancedPatternType.DOUBLE_BOTTOM,
-                                  AdvancedPatternType.TRIPLE_BOTTOM,
-                                  AdvancedPatternType.DIAMOND_BOTTOM,
-                                  AdvancedPatternType.CUP_WITH_HANDLE,
-                                  AdvancedPatternType.UNIQUE_THREE_RIVER]:
+                if pattern_type in [Advanced_pattern_type.THREE_WHITE_SOLDIERS, 
+                                  Advanced_pattern_type.THREE_INSIDE_UP,
+                                  Advanced_pattern_type.THREE_OUTSIDE_UP,
+                                  Advanced_pattern_type.RISING_THREE_METHODS,
+                                  Advanced_pattern_type.MAT_HOLD,
+                                  Advanced_pattern_type.LADDER_BOTTOM,
+                                  Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM,
+                                  Advanced_pattern_type.DOUBLE_BOTTOM,
+                                  Advanced_pattern_type.TRIPLE_BOTTOM,
+                                  Advanced_pattern_type.DIAMOND_BOTTOM,
+                                  Advanced_pattern_type.CUP_WITH_HANDLE,
+                                  Advanced_pattern_type.UNIQUE_THREE_RIVER]:
                     bullish_count += 1
-                elif pattern_type in [AdvancedPatternType.THREE_BLACK_CROWS,
-                                    AdvancedPatternType.THREE_INSIDE_DOWN,
-                                    AdvancedPatternType.THREE_OUTSIDE_DOWN,
-                                    AdvancedPatternType.FALLING_THREE_METHODS,
-                                    AdvancedPatternType.TOWER_TOP,
-                                    AdvancedPatternType.HEAD_SHOULDERS_TOP,
-                                    AdvancedPatternType.DOUBLE_TOP,
-                                    AdvancedPatternType.TRIPLE_TOP,
-                                    AdvancedPatternType.DIAMOND_TOP]:
+                elif pattern_type in [Advanced_pattern_type.THREE_BLACK_CROWS,
+                                    Advanced_pattern_type.THREE_INSIDE_DOWN,
+                                    Advanced_pattern_type.THREE_OUTSIDE_DOWN,
+                                    Advanced_pattern_type.FALLING_THREE_METHODS,
+                                    Advanced_pattern_type.TOWER_TOP,
+                                    Advanced_pattern_type.HEAD_SHOULDERS_TOP,
+                                    Advanced_pattern_type.DOUBLE_TOP,
+                                    Advanced_pattern_type.TRIPLE_TOP,
+                                    Advanced_pattern_type.DIAMOND_TOP]:
                     bearish_count += 1
                 else:
                     neutral_count += 1
@@ -1569,7 +1569,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         very_recent_data = indicator_data.tail(2)
         recent_pattern_count = 0
         
-        for pattern_type in AdvancedPatternType:
+        for pattern_type in Advanced_pattern_type:
             pattern_name = pattern_type.value
             if pattern_name in very_recent_data.columns and very_recent_data[pattern_name].any():
                 recent_pattern_count += 1
@@ -1600,20 +1600,20 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Patterns_Advanced_Candlestick_Patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取AdvancedCandlestickPatterns相关形态
+        获取Advanced_candlestick_patterns相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_advancedcandlestickpatterns(data, **kwargs)
 
         # 如果没有计算结果，返回空DataFrame
         if self._result is None or self._result.empty:
@@ -1622,13 +1622,13 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         # 返回计算结果，因为_calculate现在只包含形态列
         return self._result
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Patterns_Advanced_Candlestick_Patterns(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算AdvancedCandlestickPatterns指标的置信度
+        计算Advanced_candlestick_patterns指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -1655,11 +1655,11 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         # 2. 基于数据质量的置信度
         if hasattr(self, '_result') and self._result is not None:
             # 检查是否有高级形态数据
-            advanced_pattern_columns = [pattern.value for pattern in AdvancedPatternType]
+            advanced_pattern_columns = [pattern.value for pattern in Advanced_pattern_type]
             available_patterns = [col for col in advanced_pattern_columns if col in self._result.columns]
             if available_patterns:
                 # 高级形态数据越完整，置信度越高
-                data_completeness = len(available_patterns) / len(AdvancedPatternType)
+                data_completeness = len(available_patterns) / len(Advanced_pattern_type)
                 confidence += data_completeness * 0.1
 
         # 3. 基于形态的置信度
@@ -1687,9 +1687,9 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def register_patterns(self):
+    def register_patterns_Patterns_Advanced_Candlestick_Patterns(self):
         """
-        注册AdvancedCandlestickPatterns指标的形态到全局形态注册表
+        注册Advanced_candlestick_patterns指标的形态到全局形态注册表
         """
         # 注册三星形态
         self.register_pattern_to_registry(
@@ -1855,9 +1855,9 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             polarity="POSITIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+    def generate_trading_signals_Patterns_Advanced_Candlestick_Patterns(self, data: pd.DataFrame, **kwargs) -> dict:
         """
-        生成AdvancedCandlestickPatterns交易信号
+        生成Advanced_candlestick_patterns交易信号
 
         Args:
             data: 输入数据
@@ -1868,7 +1868,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_advancedcandlestickpatterns(data, **kwargs)
 
         if self._result is None or self._result.empty:
             return {
@@ -1884,44 +1884,44 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
 
         # 定义看涨形态
         bullish_patterns = [
-            AdvancedPatternType.THREE_WHITE_SOLDIERS.value,
-            AdvancedPatternType.THREE_INSIDE_UP.value,
-            AdvancedPatternType.THREE_OUTSIDE_UP.value,
-            AdvancedPatternType.RISING_THREE_METHODS.value,
-            AdvancedPatternType.MAT_HOLD.value,
-            AdvancedPatternType.LADDER_BOTTOM.value,
-            AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
-            AdvancedPatternType.DOUBLE_BOTTOM.value,
-            AdvancedPatternType.TRIPLE_BOTTOM.value,
-            AdvancedPatternType.DIAMOND_BOTTOM.value,
-            AdvancedPatternType.CUP_WITH_HANDLE.value,
-            AdvancedPatternType.UNIQUE_THREE_RIVER.value
+            Advanced_pattern_type.THREE_WHITE_SOLDIERS.value,
+            Advanced_pattern_type.THREE_INSIDE_UP.value,
+            Advanced_pattern_type.THREE_OUTSIDE_UP.value,
+            Advanced_pattern_type.RISING_THREE_METHODS.value,
+            Advanced_pattern_type.MAT_HOLD.value,
+            Advanced_pattern_type.LADDER_BOTTOM.value,
+            Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value,
+            Advanced_pattern_type.DOUBLE_BOTTOM.value,
+            Advanced_pattern_type.TRIPLE_BOTTOM.value,
+            Advanced_pattern_type.DIAMOND_BOTTOM.value,
+            Advanced_pattern_type.CUP_WITH_HANDLE.value,
+            Advanced_pattern_type.UNIQUE_THREE_RIVER.value
         ]
 
         # 定义看跌形态
         bearish_patterns = [
-            AdvancedPatternType.THREE_BLACK_CROWS.value,
-            AdvancedPatternType.THREE_INSIDE_DOWN.value,
-            AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
-            AdvancedPatternType.FALLING_THREE_METHODS.value,
-            AdvancedPatternType.TOWER_TOP.value,
-            AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
-            AdvancedPatternType.DOUBLE_TOP.value,
-            AdvancedPatternType.TRIPLE_TOP.value,
-            AdvancedPatternType.DIAMOND_TOP.value
+            Advanced_pattern_type.THREE_BLACK_CROWS.value,
+            Advanced_pattern_type.THREE_INSIDE_DOWN.value,
+            Advanced_pattern_type.THREE_OUTSIDE_DOWN.value,
+            Advanced_pattern_type.FALLING_THREE_METHODS.value,
+            Advanced_pattern_type.TOWER_TOP.value,
+            Advanced_pattern_type.HEAD_SHOULDERS_TOP.value,
+            Advanced_pattern_type.DOUBLE_TOP.value,
+            Advanced_pattern_type.TRIPLE_TOP.value,
+            Advanced_pattern_type.DIAMOND_TOP.value
         ]
 
         # 强形态权重
         strong_patterns = {
-            AdvancedPatternType.THREE_WHITE_SOLDIERS.value: 0.9,
-            AdvancedPatternType.THREE_BLACK_CROWS.value: -0.9,
-            AdvancedPatternType.RISING_THREE_METHODS.value: 0.85,
-            AdvancedPatternType.FALLING_THREE_METHODS.value: -0.85,
-            AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value: 0.9,
-            AdvancedPatternType.HEAD_SHOULDERS_TOP.value: -0.9,
-            AdvancedPatternType.DOUBLE_BOTTOM.value: 0.8,
-            AdvancedPatternType.DOUBLE_TOP.value: -0.8,
-            AdvancedPatternType.KICKING.value: 0.85
+            Advanced_pattern_type.THREE_WHITE_SOLDIERS.value: 0.9,
+            Advanced_pattern_type.THREE_BLACK_CROWS.value: -0.9,
+            Advanced_pattern_type.RISING_THREE_METHODS.value: 0.85,
+            Advanced_pattern_type.FALLING_THREE_METHODS.value: -0.85,
+            Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value: 0.9,
+            Advanced_pattern_type.HEAD_SHOULDERS_TOP.value: -0.9,
+            Advanced_pattern_type.DOUBLE_BOTTOM.value: 0.8,
+            Advanced_pattern_type.DOUBLE_TOP.value: -0.8,
+            Advanced_pattern_type.KICKING.value: 0.85
         }
 
         # 生成买入信号
@@ -1949,8 +1949,8 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
                     signal_strength[pattern_mask] = -0.7
 
         # 处理特殊形态
-        if AdvancedPatternType.BREAKAWAY.value in self._result.columns:
-            breakaway_mask = self._result[AdvancedPatternType.BREAKAWAY.value]
+        if Advanced_pattern_type.BREAKAWAY.value in self._result.columns:
+            breakaway_mask = self._result[Advanced_pattern_type.BREAKAWAY.value]
             if breakaway_mask.any() and len(data) >= 5:
                 # 简单趋势判断
                 price_change_5d = data['close'].pct_change(5)
@@ -1974,7 +1974,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Patterns_Advanced_Candlestick_Patterns(self) -> str:
         """
         获取指标类型
 
@@ -1983,7 +1983,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         """
         return "ADVANCEDCANDLESTICKPATTERNS"
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Patterns_Advanced_Candlestick_Patterns(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

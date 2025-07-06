@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
@@ -14,12 +16,12 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from enum import Enum
 import datetime
 
-from db.db_manager import DBManager
 from utils.cache import LRUCache
-from utils.logger import get_logger
+from utils.logger import getLogger
 from enums.period import Period
+from utils.dependency_injection import get_service
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class PeriodManager:
@@ -28,31 +30,31 @@ class PeriodManager:
     
     负责管理不同周期的数据需求、获取、转换和缓存
     确保各个周期的数据隔离，并优化数据获取性能
+    重构为普通类，支持依赖注入
     """
 
-    # 单例实例
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        """确保单例模式"""
-        if cls._instance is None:
-            cls._instance = super(PeriodManager, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self, cache_size: int = 100):
+    def __init__(self, cache_size: int = 100, data_access=None):
         """
         初始化周期管理器
         
         Args:
             cache_size: 每个周期的缓存大小，默认为100
+            data_access: 数据访问接口，支持依赖注入
         """
-        # 单例模式下只初始化一次
-        if self._initialized:
-            return
-
-        self.db_manager = DBManager.get_instance()
-        self._initialized = True
+        # 初始化数据访问接口
+        if data_access is not None:
+            self.data_access = data_access
+        else:
+            # 向后兼容，使用动态导入避免分层违规
+            try:
+                import importlib
+                db_manager_module = importlib.import_module('db.db_manager')
+                DBManager = db_manager_module.DBManager
+                self.db_manager = DBManager.get_instance()
+                self.data_access = self.db_manager
+            except ImportError:
+                logger.warning("无法导入DBManager，数据访问功能将不可用")
+                self.data_access = None
 
         # 针对每个周期的数据缓存
         self.data_cache = {
@@ -101,7 +103,7 @@ class PeriodManager:
             lookback_days: 向前获取的天数，如果不指定则使用最小数据量
             
         Returns:
-            pd.DataFrame: 包含OHLCV数据的DataFrame
+            pd.DataFrame: 包含OHLCV数据的Data_frame
         """
         # 转换周期类型
         if isinstance(period, str):
@@ -170,7 +172,12 @@ class PeriodManager:
         """
 
         try:
-            data = self.db_manager.execute_query(query)
+            # 使用数据访问接口执行查询
+            if hasattr(self, 'data_access'):
+                data = self.data_access.execute_query(query)
+            else:
+                data = self.db_manager.execute_query(query)
+            
             if data is not None and not data.empty:
                 # 按日期升序排序
                 data = data.sort_values(by='date').reset_index(drop=True)
@@ -330,7 +337,7 @@ class PeriodManager:
             traceback.print_exc()
             return pd.DataFrame()
 
-    def clear_cache(self, period: Optional[Period] = None):
+    def clear_cache_Manager_Period_Manager(self, period: Optional[Period] = None):
         """
         清除缓存
         
@@ -400,14 +407,48 @@ class PeriodManager:
         self.min_data_requirements[period] = min_data
         logger.debug(f"已设置周期 {period.value} 的最小数据量为 {min_data}")
 
-    @staticmethod
-    def get_instance() -> 'PeriodManager':
-        """
-        获取PeriodManager实例
-        
-        Returns:
-            PeriodManager: 周期管理器实例
-        """
-        if PeriodManager._instance is None:
-            PeriodManager()
-        return PeriodManager._instance
+# 向后兼容的单例接口
+_legacy_period_manager = None
+_legacy_lock = threading.Lock()
+
+
+def get_period_manager(cache_size: int = 100) -> PeriodManager:
+    """获取周期管理器实例（向后兼容）"""
+    global _legacy_period_manager
+    if _legacy_period_manager is None:
+        with _legacy_lock:
+            if _legacy_period_manager is None:
+                try:
+                    # 尝试从容器获取实例
+                    from utils.dependency_injection import get_container
+                    container = get_container()
+                    if container.is_registered(PeriodManager):
+                        _legacy_period_manager = container.resolve(PeriodManager)
+                    else:
+                        # 如果未注册，创建默认实例
+                        _legacy_period_manager = PeriodManager(cache_size)
+                except Exception:
+                    # 如果容器不可用，创建默认实例
+                    _legacy_period_manager = PeriodManager(cache_size)
+    return _legacy_period_manager
+
+
+# 现代化的依赖注入接口
+def get_period_service() -> PeriodManager:
+    """通过依赖注入获取周期管理器服务"""
+    from utils.dependency_injection import get_service
+    return get_service(PeriodManager)
+
+
+# 兼容性别名
+def get_instance() -> PeriodManager:
+    """向后兼容的获取实例方法"""
+    return get_period_manager()
+
+
+# 为PeriodManager类添加静态方法（向后兼容）
+PeriodManager.get_instance = staticmethod(get_instance)
+
+# 注意：PeriodManager现在通过依赖注入容器管理
+# 可以在应用启动时预注册：
+# container.register_singleton(PeriodManager, PeriodManager)

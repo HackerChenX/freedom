@@ -21,17 +21,17 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from enhanced_pattern_generator import EnhancedPatternGenerator
-from technical_indicators import TechnicalIndicators
+from enhanced_pattern_generator import Enhanced_pattern_generator
+from technical_indicators import Technical_indicators
 
 
-class UltimateEnhancedValidator:
+class Ultimate_enhanced_validator:
     """终极增强版验证器"""
 
     def __init__(self):
         """初始化验证器"""
-        self.pattern_generator = EnhancedPatternGenerator()
-        self.indicators = TechnicalIndicators()
+        self.pattern_generator = Enhanced_pattern_generator()
+        self.indicators = Technical_indicators()
 
         # 精确的形态验证规则
         self.validation_rules = {
@@ -266,12 +266,12 @@ class UltimateEnhancedValidator:
         results['summary'] = {
             'success_rate': f"{results['success_rate']:.2%}",
             'average_score': f"{results['average_score']:.3f}",
-            'recommendation': self._get_recommendation(results['success_rate'])
+            'recommendation': self._get_recommendation_Ultimate_Enhanced_Validator(results['success_rate'])
         }
 
         return results
 
-    def _get_recommendation(self, success_rate: float) -> str:
+    def _get_recommendation_Ultimate_Enhanced_Validator(self, success_rate: float) -> str:
         """根据成功率生成建议"""
         if success_rate >= 1.0:
             return "🎉 完美！所有形态识别准确率达到100%"
@@ -283,7 +283,7 @@ class UltimateEnhancedValidator:
             return "❌ 需要重点改进形态识别算法"
 
 
-def main():
+def main_ultimateenhancedvalidator():
     """主函数"""
     print("=" * 60)
     print("终极增强版反向验证测试")
@@ -293,7 +293,7 @@ def main():
     print()
 
     # 创建终极验证器并运行测试
-    validator = UltimateEnhancedValidator()
+    validator = Ultimate_enhanced_validator()
 
     try:
         results = validator.validate_rsi_patterns()
@@ -337,5 +337,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_ultimateenhancedvalidator()
     sys.exit(exit_code)

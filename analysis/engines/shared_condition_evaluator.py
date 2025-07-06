@@ -12,11 +12,11 @@ import re
 import ast
 from datetime import datetime
 
-from utils.logger import get_logger
-from utils.cache import MemoryCache
-from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
+from utils.logger import getLogger
+from utils.cache import Memory_cache
+from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class SharedConditionEvaluator:
@@ -31,15 +31,15 @@ class SharedConditionEvaluator:
     5. 复合逻辑表达式
     """
     
-    def __init__(self, indicator_engine: Optional[UnifiedIndicatorEngine] = None):
+    def __init___116(self, indicator_engine: Optional[Unified_indicator_engine] = None):
         """
         初始化共享条件评估器
         
         Args:
             indicator_engine: 统一指标计算引擎实例
         """
-        self.indicator_engine = indicator_engine or UnifiedIndicatorEngine()
-        self.cache = MemoryCache.get_instance()
+        self.indicator_engine = indicator_engine or Unified_indicator_engine()
+        self.cache = Memory_cache.get_instance()
         
         # 性能统计
         self.stats = {
@@ -110,7 +110,7 @@ class SharedConditionEvaluator:
         
         try:
             # 生成缓存键
-            cache_key = self._generate_cache_key(condition, date_idx)
+            cache_key = self._generate_cache_key_Shared_Condition_Evaluator(condition, date_idx)
             
             # 检查缓存
             cached_result = self.cache.get(cache_key)
@@ -441,7 +441,7 @@ class SharedConditionEvaluator:
             logger.error(f"表达式评估失败: {expression}, 错误: {e}")
             return False
     
-    def _generate_cache_key(self, 
+    def _generate_cache_key_Shared_Condition_Evaluator(self, 
                           condition: Union[str, Dict[str, Any]],
                           date_idx: Optional[int] = None) -> str:
         """
@@ -549,7 +549,7 @@ class SharedConditionEvaluator:
         """移动平均"""
         return self.indicator_engine.calculate_ma(series, periods)
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_Evaluator(self) -> Dict[str, Any]:
         """获取性能统计"""
         if self.stats['evaluations'] > 0:
             avg_time = self.stats['total_time'] / self.stats['evaluations']
@@ -567,12 +567,12 @@ class SharedConditionEvaluator:
             'avg_time_per_evaluation': avg_time
         }
     
-    def clear_cache(self):
+    def clear_cache_Evaluator(self):
         """清空缓存"""
         self.cache.clear()
         logger.info("条件评估器缓存已清空")
     
-    def reset_stats(self):
+    def reset_stats_Evaluator(self):
         """重置统计"""
         self.stats = {
             'evaluations': 0,

@@ -21,15 +21,15 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_executor import Strategy_executor
 from utils.logger import get_logger, setup_logger
 from utils.path_utils import get_log_dir, get_cache_dir
-from utils.exceptions import DataAccessError
+from utils.exceptions import Data_access_error
 
 logger = get_logger(__name__)
 
 
-def parse_args():
+def parse_args_Performance():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="性能优化工具")
     
@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument("--archive-logs", "-a", action="store_true", help="归档旧日志文件")
     parser.add_argument("--days", type=int, default=30, help="清理多少天前的数据")
     
-    args = parser.parse_args()
+    args = parser.parse_args_Performance()
     
     # 如果没有指定任何操作，显示帮助信息
     if not (args.clear_cache or args.optimize_db or args.monitor or args.archive_logs):
@@ -52,7 +52,7 @@ def parse_args():
     return args
 
 
-def clear_cache(days=30):
+def clear_cache_Performance(days=30):
     """
     清理系统缓存
     
@@ -64,11 +64,11 @@ def clear_cache(days=30):
         
         # 1. 清理数据管理器缓存
         data_manager = get_unified_data_manager()
-        data_manager.clear_cache()
+        data_manager.clear_cache_Performance()
         
         # 2. 清理策略执行器缓存
-        strategy_executor = StrategyExecutor()
-        strategy_executor.clear_cache()
+        strategy_executor = Strategy_executor()
+        strategy_executor.clear_cache_Performance()
         
         # 3. 清理文件缓存
         cache_dir = get_cache_dir()
@@ -117,7 +117,7 @@ def optimize_database():
         
         # 执行优化操作
         optimize_queries = [
-            "OPTIMIZE TABLE stock_info FINAL",
+            "OPTIMIZE TABLE stock_info WHERE 1=1 FINAL",
             "OPTIMIZE TABLE stock_daily FINAL",
             "OPTIMIZE TABLE stock_selection_result FINAL"
         ]
@@ -294,17 +294,17 @@ def archive_logs(days=30):
         return False
 
 
-def main():
+def main_optimizeperformance():
     """主函数"""
     # 解析命令行参数
-    args = parse_args()
+    args = parse_args_Performance()
     
     # 设置日志级别
     setup_logger(level=args.log_level)
     
     # 执行操作
     if args.clear_cache:
-        clear_cache(args.days)
+        clear_cache_Performance(args.days)
     
     if args.optimize_db:
         optimize_database()
@@ -319,4 +319,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_optimizeperformance() 

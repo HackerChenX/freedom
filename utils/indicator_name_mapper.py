@@ -4,19 +4,19 @@
 """
 指标名称映射器
 
-用于解决买点分析生成的策略中的指标名称与CompleteIndicatorRegistry中注册的指标名称不匹配的问题
+用于解决买点分析生成的策略中的指标名称与Complete_indicator_registry中注册的指标名称不匹配的问题
 """
 
 from typing import Dict, Optional
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class IndicatorNameMapper:
     """指标名称映射器"""
     
-    def __init__(self):
+    def __init___48(self):
         """初始化映射器"""
         # 策略中的指标名称 -> 注册表中的指标名称
         self.name_mapping = {
@@ -238,4 +238,4 @@ class IndicatorNameMapper:
 
 
 # 创建全局实例
-indicator_name_mapper = IndicatorNameMapper()
+indicator_name_mapper = Indicator_name_mapper()

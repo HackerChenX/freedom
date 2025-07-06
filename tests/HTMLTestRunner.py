@@ -1,7 +1,7 @@
 """
-HTMLTestRunner for Python unittest framework
+HTMLTest_runner for Python unittest framework
 
-A TestRunner for use with the Python unit testing framework.
+A Test_runner for use with the Python unit testing framework.
 It generates a HTML report to show the result at a glance.
 """
 
@@ -24,7 +24,7 @@ from xml.sax import saxutils
 #   >>> logging.basicConfig(stream=HTMLTestRunner.stdout_redirector)
 #   >>>
 
-class OutputRedirector(object):
+class Output_redirector(object):
     """ Wrapper to redirect stdout or stderr """
     def __init__(self, fp):
         self.fp = fp
@@ -38,8 +38,8 @@ class OutputRedirector(object):
     def flush(self):
         self.fp.flush()
 
-stdout_redirector = OutputRedirector(sys.stdout)
-stderr_redirector = OutputRedirector(sys.stderr)
+stdout_redirector = Output_redirector(sys.stdout)
+stderr_redirector = Output_redirector(sys.stderr)
 
 
 # ----------------------------------------------------------------------
@@ -85,7 +85,7 @@ class Template_mixin(object):
     +------------------------+
     """
 
-    STATUS = {
+    status = {
     0: '通过',
     1: '失败',
     2: '错误',
@@ -139,7 +139,7 @@ class Template_mixin(object):
             border: 1px solid #ddd;
         }
         th {
-            background-color: #4CAF50;
+            background-color: #4_cAF50;
             color: white;
         }
         tr:nth-child(even) {
@@ -161,37 +161,37 @@ class Template_mixin(object):
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        .resultTable {
+        .result_table {
             border-radius: 5px;
             overflow: hidden;
         }
-        .passClass {
+        .pass_class {
             background-color: #dff0d8;
         }
-        .failClass {
+        .fail_class {
             background-color: #f2dede;
         }
-        .errorClass {
+        .error_class {
             background-color: #fcf8e3;
         }
-        .passCase {
+        .pass_case {
             color: #3c763d;
         }
-        .failCase {
+        .fail_case {
             color: #a94442;
             font-weight: bold;
         }
-        .errorCase {
+        .error_case {
             color: #8a6d3b;
             font-weight: bold;
         }
-        .hiddenRow {
+        .hidden_row {
             display: none;
         }
         .testcase {
             margin-left: 2em;
         }
-        .testDescription {
+        .test_description {
             padding: 10px;
             background-color: #f5f5f5;
             border: 1px solid #ddd;
@@ -199,7 +199,7 @@ class Template_mixin(object):
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        .testOutput {
+        .test_output {
             padding: 10px;
             background-color: #f9f9f9;
             border: 1px solid #ddd;
@@ -230,8 +230,8 @@ class Template_mixin(object):
         }
     </style>
     <script type="text/javascript">
-        function showDetail(element) {
-            var detailDiv = document.getElementById(element);
+        function show_detail(element) {
+            var detail_div = document.get_element_by_id(element);
             if (detailDiv.style.display === "block") {
                 detailDiv.style.display = "none";
             } else {
@@ -243,7 +243,7 @@ class Template_mixin(object):
 <body>
 <h1>%(title)s</h1>
 <div class="summary">
-<p><strong>开始时间:</strong> %(startTime)s</p>
+<p><strong>开始时间:</strong> %(start_time)s</p>
 <p><strong>运行时长:</strong> %(duration)s</p>
 <p><strong>状态:</strong> %(status)s</p>
 </div>
@@ -310,12 +310,12 @@ class Template_mixin(object):
 # -------------------- The end of the Template class -------------------
 
 
-class _TestResult(unittest.TestResult):
+class Testresult(unittest.Test_result):
     # note: _TestResult is a pure representation of results.
     # It lacks the output and reporting ability compares to unittest._TextTestResult.
 
     def __init__(self, verbosity=1):
-        super(_TestResult, self).__init__()
+        super(_Test_result, self).__init__()
         self.stdout0 = None
         self.stderr0 = None
         self.success_count = 0
@@ -332,12 +332,12 @@ class _TestResult(unittest.TestResult):
         # )
         self.result = []
 
-    def startTest(self, test):
-        super(_TestResult, self).startTest(test)
+    def start_test(self, test):
+        super(_Test_result, self).start_test(test)
         # just one buffer for both stdout and stderr
-        self.outputBuffer = io.StringIO()
-        stdout_redirector.fp = self.outputBuffer
-        stderr_redirector.fp = self.outputBuffer
+        self.output_buffer = io.String_iO()
+        stdout_redirector.fp = self.output_buffer
+        stderr_redirector.fp = self.output_buffer
         self.stdout0 = sys.stdout
         self.stderr0 = sys.stderr
         sys.stdout = stdout_redirector
@@ -353,17 +353,17 @@ class _TestResult(unittest.TestResult):
             sys.stderr = self.stderr0
             self.stdout0 = None
             self.stderr0 = None
-        return self.outputBuffer.getvalue()
+        return self.output_buffer.getvalue()
 
-    def stopTest(self, test):
+    def stop_test(self, test):
         # Usually one of addSuccess, addError or addFailure would have been called.
         # But there are some path in unittest that would bypass this.
         # We must disconnect stdout in stopTest(), which is guaranteed to be called.
         self.complete_output()
 
-    def addSuccess(self, test):
+    def add_success(self, test):
         self.success_count += 1
-        super(_TestResult, self).addSuccess(test)
+        super(_Test_result, self).add_success(test)
         output = self.complete_output()
         self.result.append((0, test, output, ''))
         if self.verbosity > 1:
@@ -373,9 +373,9 @@ class _TestResult(unittest.TestResult):
         else:
             sys.stderr.write('.')
 
-    def addError(self, test, err):
+    def add_error(self, test, err):
         self.error_count += 1
-        super(_TestResult, self).addError(test, err)
+        super(_Test_result, self).add_error(test, err)
         _, _exc_str = self.errors[-1]
         output = self.complete_output()
         self.result.append((2, test, output, _exc_str))
@@ -386,9 +386,9 @@ class _TestResult(unittest.TestResult):
         else:
             sys.stderr.write('E')
 
-    def addFailure(self, test, err):
+    def add_failure(self, test, err):
         self.failure_count += 1
-        super(_TestResult, self).addFailure(test, err)
+        super(_Test_result, self).add_failure(test, err)
         _, _exc_str = self.failures[-1]
         output = self.complete_output()
         self.result.append((1, test, output, _exc_str))
@@ -400,7 +400,7 @@ class _TestResult(unittest.TestResult):
             sys.stderr.write('F')
 
 
-class HTMLTestRunner(Template_mixin):
+class HTMLTest_runner(Template_mixin):
     """
     """
     def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None):
@@ -415,16 +415,16 @@ class HTMLTestRunner(Template_mixin):
         else:
             self.description = description
 
-    def run(self, test):
+    def run_Htmltestrunner(self, test):
         "Run the given test case or test suite."
-        result = _TestResult(self.verbosity)
+        result = Testresult(self.verbosity)
         test(result)
-        self.stopTime = datetime.datetime.now()
-        self.generateReport(test, result)
+        self.stop_time = datetime.datetime.now()
+        self.generate_report_htmltestrunner(test, result)
         return result
 
-    def sortResult(self, result_list):
-        # unittest does not seems to run in any particular order.
+    def sort_result(self, result_list):
+        # unittest does not seems to run_Htmltestrunner in any particular order.
         # Here at least we want to group them together by class.
         rmap = {}
         classes = []
@@ -437,13 +437,13 @@ class HTMLTestRunner(Template_mixin):
         r = [(cls, rmap[cls]) for cls in classes]
         return r
 
-    def getReportAttributes(self, result):
+    def get_report_attributes(self, result):
         """
         Return report attributes as a list of (name, value).
         Override this to add custom attributes.
         """
-        startTime = str(self.startTime)[:19]
-        duration = str(self.stopTime - self.startTime)
+        start_time = str(self.start_time)[:19]
+        duration = str(self.stop_time - self.start_time)
         status = []
         if result.success_count: status.append('通过 %s' % result.success_count)
         if result.failure_count: status.append('失败 %s' % result.failure_count)
@@ -458,13 +458,13 @@ class HTMLTestRunner(Template_mixin):
             ('状态', status),
         ]
 
-    def generateReport(self, test, result):
-        self.startTime = datetime.datetime.now()
-        report_attrs = self.getReportAttributes(result)
+    def generate_report_htmltestrunner(self, test, result):
+        self.start_time = datetime.datetime.now()
+        report_attrs = self.get_report_attributes(result)
         generator = 'HTMLTestRunner %s' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stylesheet = self._generate_stylesheet()
         heading = self._generate_heading(report_attrs)
-        report = self._generate_report(result)
+        report = self._generate_report_Htmltestrunner(result)
         ending = self._generate_ending()
         output = self.HTML_TMPL % dict(
             title = saxutils.escape(self.title),
@@ -473,12 +473,12 @@ class HTMLTestRunner(Template_mixin):
             heading = heading,
             report = report,
             ending = ending,
-            startTime = report_attrs[0][1],
+            start_time = report_attrs[0][1],
             duration = report_attrs[1][1],
             status = report_attrs[2][1],
             description = saxutils.escape(self.description),
             count = str(result.success_count + result.failure_count + result.error_count),
-            Pass = str(result.success_count),
+            pass = str(result.success_count),
             fail = str(result.failure_count),
             error = str(result.error_count),
         )
@@ -502,18 +502,17 @@ class HTMLTestRunner(Template_mixin):
         )
         return heading
 
-    def _generate_report(self, result):
+    def _generate_report_Htmltestrunner(self, result):
         rows = []
-        sortedResult = self.sortResult(result.result)
-        for cid, (cls, cls_results) in enumerate(sortedResult):
-            # subtotal for a class
-            np = nf = ne = 0
+        sorted_result = self.sort_result(result.result)
+        for cid, (cls, cls_results) in enumerate(sorted_result):
+            # subtotal for a class Np = nf = ne = 0
             for n,t,o,e in cls_results:
                 if n == 0: np += 1
                 elif n == 1: nf += 1
                 else: ne += 1
 
-            # format class description
+            # format class Description
             if cls.__module__ == "__main__":
                 name = cls.__name__
             else:
@@ -525,7 +524,7 @@ class HTMLTestRunner(Template_mixin):
                 style = ne > 0 and 'errorClass' or nf > 0 and 'failClass' or 'passClass',
                 desc = desc,
                 count = np+nf+ne,
-                Pass = np,
+                pass = np,
                 fail = nf,
                 error = ne,
                 cid = 'c%s' % (cid+1),

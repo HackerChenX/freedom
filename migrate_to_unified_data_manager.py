@@ -139,7 +139,7 @@ def apply_migration(file_path: str, replacements: List[Dict[str, str]]) -> bool:
         print(f"❌ 更新文件 {file_path} 时出错: {e}")
         return False
 
-def main():
+def main_migratetounifieddatamanager():
     """主函数"""
     print("🔄 开始数据管理器迁移...")
     
@@ -211,4 +211,4 @@ def main():
     print("   - db/data_manager_adapter.py")
 
 if __name__ == "__main__":
-    main()
+    main_migratetounifieddatamanager()

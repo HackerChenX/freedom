@@ -13,7 +13,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class TestCase:
+class Test_case:
     """测试用例基类"""
 
     def __init__(self, name: str, description: str):
@@ -25,14 +25,14 @@ class TestCase:
         self.error_message = None
         self.test_data = {}
 
-    def run(self) -> bool:
+    def run_Integration_Tester(self) -> bool:
         """运行测试用例"""
         self.start_time = datetime.now()
         self.status = 'running'
 
         try:
             logger.info(f"开始测试: {self.name}")
-            result = self.execute()
+            result = self.execute_integrationtester()
 
             if result:
                 self.status = 'passed'
@@ -52,9 +52,9 @@ class TestCase:
         finally:
             self.end_time = datetime.now()
 
-    def execute(self) -> bool:
+    def execute_integrationtester(self) -> bool:
         """执行测试逻辑，子类需要实现"""
-        raise NotImplementedError
+        raise Not_implemented_error
 
     def get_duration(self) -> float:
         """获取测试执行时间"""
@@ -74,7 +74,7 @@ class TestCase:
         }
 
 
-class CrawlerSystemTest(TestCase):
+class Crawler_system_test(Test_case):
     """爬虫系统基础测试"""
 
     def __init__(self):
@@ -83,13 +83,13 @@ class CrawlerSystemTest(TestCase):
             description="测试爬虫系统基础功能"
         )
 
-    def execute(self) -> bool:
+    def execute_integrationtester(self) -> bool:
         """执行爬虫系统测试"""
         try:
             # 测试概念股提取器
-            from crawler.processors.concept_extractor import ConceptStockExtractor
+            from crawler.processors.concept_extractor import Concept_stock_extractor
 
-            extractor = ConceptStockExtractor()
+            extractor = Concept_stock_extractor()
             test_text = "赛轮轮胎(601058)、森麒麟(002984)等新能源概念股值得关注"
             result = extractor.extract_stocks(test_text)
 
@@ -110,7 +110,7 @@ class CrawlerSystemTest(TestCase):
             return False
 
 
-class MonitoringSystemTest(TestCase):
+class Monitoring_system_test(Test_case):
     """监控系统集成测试"""
 
     def __init__(self):
@@ -119,15 +119,15 @@ class MonitoringSystemTest(TestCase):
             description="测试监控系统与爬虫系统的集成"
         )
 
-    def execute(self) -> bool:
+    def execute_integrationtester(self) -> bool:
         """执行监控系统测试"""
         try:
-            from crawler.monitoring.performance_monitor import PerformanceMonitor
-            from crawler.monitoring.alert_manager import AlertManager
-            from crawler.monitoring.data_quality_checker import DataQualityChecker
+            from crawler.monitoring.performance_monitor import Performance_monitor
+            from crawler.monitoring.alert_manager import Alert_manager
+            from crawler.monitoring.data_quality_checker import Data_quality_checker
 
             # 测试性能监控
-            monitor = PerformanceMonitor()
+            monitor = Performance_monitor()
             monitor.record_request(True, 2.5)
             monitor.record_request(False, 0.0, 'timeout')
 
@@ -137,7 +137,7 @@ class MonitoringSystemTest(TestCase):
                 return False
 
             # 测试告警管理
-            alert_manager = AlertManager()
+            alert_manager = Alert_manager()
             test_metrics = {
                 'error_rate': 20.0,  # 触发告警
                 'total_requests': 100
@@ -149,7 +149,7 @@ class MonitoringSystemTest(TestCase):
                 return False
 
             # 测试数据质量检查
-            checker = DataQualityChecker()
+            checker = Data_quality_checker()
             test_data = {
                 'id': 'test_001',
                 'title': '测试标题',
@@ -176,7 +176,7 @@ class MonitoringSystemTest(TestCase):
             return False
 
 
-class DatabaseIntegrationTest(TestCase):
+class Database_integration_test(Test_case):
     """数据库集成测试"""
 
     def __init__(self):
@@ -185,13 +185,13 @@ class DatabaseIntegrationTest(TestCase):
             description="测试与ClickHouse数据库的集成"
         )
 
-    def execute(self) -> bool:
+    def execute_integrationtester(self) -> bool:
         """执行数据库集成测试"""
         try:
-            from crawler.integration.system_integrator import SystemIntegrator
+            from crawler.integration.system_integrator import System_integrator
 
             # 创建系统集成器
-            integrator = SystemIntegrator()
+            integrator = System_integrator()
 
             # 初始化集成系统
             if not integrator.initialize():
@@ -238,7 +238,7 @@ class DatabaseIntegrationTest(TestCase):
             return False
 
 
-class IntegrationTester:
+class Integration_tester:
     """集成测试器主类"""
 
     def __init__(self):
@@ -251,9 +251,9 @@ class IntegrationTester:
     def _add_test_cases(self):
         """添加测试用例"""
         self.test_cases = [
-            CrawlerSystemTest(),
-            MonitoringSystemTest(),
-            DatabaseIntegrationTest()
+            Crawler_system_test(),
+            Monitoring_system_test(),
+            Database_integration_test()
         ]
 
     def run_all_tests(self) -> Dict[str, Any]:
@@ -266,7 +266,7 @@ class IntegrationTester:
         failed_count = 0
 
         for test_case in self.test_cases:
-            result = test_case.run()
+            result = test_case.run_Integration_Tester()
             test_result = test_case.get_result()
             self.test_results.append(test_result)
 
@@ -301,7 +301,7 @@ class IntegrationTester:
         """运行特定测试用例"""
         for test_case in self.test_cases:
             if test_case.name == test_name:
-                result = test_case.run()
+                result = test_case.run_Integration_Tester()
                 return test_case.get_result()
 
         logger.warning(f"未找到测试用例: {test_name}")

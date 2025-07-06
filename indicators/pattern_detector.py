@@ -4,12 +4,12 @@ from typing import Dict, Any, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class PATTERN_DETECTOR(BaseIndicator, PatternSignalMixin):
+class PatternDetector(BaseIndicator, PatternSignalMixin):
     """
     PATTERN_DETECTOR 指标
     
@@ -27,16 +27,16 @@ class PATTERN_DETECTOR(BaseIndicator, PatternSignalMixin):
         self.name = "PATTERN_DETECTOR"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_patterndetector()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Detector(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_patterndetector(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Detector(self, **kwargs):
         """
         设置指标参数
         
@@ -45,8 +45,8 @@ class PATTERN_DETECTOR(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -65,29 +65,29 @@ class PATTERN_DETECTOR(BaseIndicator, PatternSignalMixin):
         # 设置参数
         self.period = kwargs.get('period', 14)
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Detector(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算PATTERN_DETECTOR指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了PATTERN_DETECTOR指标的DataFrame
+            添加了PATTERN_DETECTOR指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_patterndetector(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_patterndetector(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算PATTERN_DETECTOR指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了PATTERN_DETECTOR指标的DataFrame
+            添加了PATTERN_DETECTOR指标的Data_frame
         """
         df = data.copy()
         
@@ -101,16 +101,16 @@ class PATTERN_DETECTOR(BaseIndicator, PatternSignalMixin):
 
         return df
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Detector(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Detector(data, **kwargs)
         return pd.Series(50.0, index=data.index)
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Detector(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.5
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Detector(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)

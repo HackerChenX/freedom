@@ -14,8 +14,8 @@ from datetime import datetime
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.config import CrawlerConfig
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.config import Crawler_config
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -28,16 +28,16 @@ def test_concept_extraction():
     # 测试文本（基于您提供的示例）
     test_text = """
     【中金油气化工】原材料成本下行叠加关税影响消化，轮胎迎来向上拐点
-    天胶价格从高点下降幅度超3,000元/吨，2H25轮胎企业或明显受益。
+    天胶价格从高点下降幅度超3,000元/吨，2_h25轮胎企业或明显受益。
     4-5月份国内外天然橡胶主产区先后进入开割季，橡胶供应释放，价格从2月21日的高点17,220元/吨
     逐步跌至目前的13,760元/吨，跌幅达3,460元/吨，合成橡胶价格同步下行。
-    考虑原材料的库存周期，我们预计2H25轮胎企业或明显受益。
+    考虑原材料的库存周期，我们预计2_h25轮胎企业或明显受益。
     轮胎企业逐步消化关税冲击，盈利能力有望逐步修复。
     相关企业包括中策橡胶（未覆盖）、赛轮轮胎(601058)、森麒麟(002984)、玲珑轮胎(601966)等。
     """
 
     # 初始化概念股提取器
-    extractor = ConceptStockExtractor()
+    extractor = Concept_stock_extractor()
 
     # 提取信息
     result = extractor.extract_stocks(test_text)
@@ -60,12 +60,12 @@ def show_config():
     print(f"使用代理: {CrawlerConfig.USE_PROXY}")
 
     print("\n=== 数据源配置 ===")
-    for name, config in CrawlerConfig.DATA_SOURCES.items():
+    for name, config in Crawler_config.DATA_SOURCES.items():
         status = "启用" if config['enabled'] else "禁用"
         print(f"{config['name']} ({name}): {status} - 优先级: {config['priority']}")
 
 
-def main():
+def main_42():
     """主函数"""
     import argparse
     parser = argparse.ArgumentParser(description='股市信息爬虫系统')
@@ -91,4 +91,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_42()

@@ -17,8 +17,8 @@ from collections import defaultdict
 
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_multi_period_dir, get_strategies_dir
-from scripts.backtest.indicator_analysis import IndicatorAnalyzer
-from scripts.backtest.multi_period_analyzer import MultiPeriodAnalyzer
+from scripts.backtest.indicator_analysis import Indicator_analyzer
+from scripts.backtest.multi_period_analyzer import Multi_period_analyzer
 from scripts.backtest.report_to_strategy import convert_report_to_strategy
 
 logger = get_logger(__name__)
@@ -31,8 +31,8 @@ class ComprehensiveBacktest:
     
     def __init__(self):
         """初始化综合回测"""
-        self.indicator_analyzer = IndicatorAnalyzer()
-        self.multi_period_analyzer = MultiPeriodAnalyzer()
+        self.indicator_analyzer = Indicator_analyzer()
+        self.multi_period_analyzer = Multi_period_analyzer()
         self.result_dir = get_backtest_result_dir()
         self.multi_period_dir = get_multi_period_dir()
         self.strategies_dir = get_strategies_dir()
@@ -46,7 +46,7 @@ class ComprehensiveBacktest:
         self.analysis_results = []
         self.common_patterns = {}
         
-    def analyze_from_csv(self, csv_file: str, days_before: int = 20, days_after: int = 10) -> None:
+    def analyze_from_csv_Backtest(self, csv_file: str, days_before: int = 20, days_after: int = 10) -> None:
         """
         从CSV文件中批量分析股票买点
         
@@ -256,7 +256,7 @@ class ComprehensiveBacktest:
         
         logger.info("共性特征提取完成")
     
-    def generate_report(self, output_file: Optional[str] = None) -> str:
+    def generate_report_Backtest(self, output_file: Optional[str] = None) -> str:
         """
         生成分析报告
         
@@ -473,7 +473,7 @@ class ComprehensiveBacktest:
         logger.info(f"综合分析报告已保存到 {output_file}")
         return output_file
     
-    def generate_strategy(self, report_file: str, output_file: Optional[str] = None) -> str:
+    def generate_strategy_Backtest(self, report_file: str, output_file: Optional[str] = None) -> str:
         """
         根据分析报告生成选股策略
         
@@ -498,7 +498,7 @@ class ComprehensiveBacktest:
             
         return strategy_file
     
-    def run(self, csv_file: str, days_before: int = 20, days_after: int = 10) -> Tuple[str, str]:
+    def run_Comprehensive_Backtest(self, csv_file: str, days_before: int = 20, days_after: int = 10) -> Tuple[str, str]:
         """
         运行综合回测
         
@@ -511,7 +511,7 @@ class ComprehensiveBacktest:
             Tuple[str, str]: (报告文件路径, 策略文件路径)
         """
         # 1. 分析股票
-        self.analyze_from_csv(csv_file, days_before, days_after)
+        self.analyze_from_csv_Backtest(csv_file, days_before, days_after)
         
         if not self.analysis_results:
             logger.error("没有有效的分析结果")
@@ -520,19 +520,19 @@ class ComprehensiveBacktest:
         # 2. 生成报告
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         report_file = f"{self.result_dir}/综合回测分析_{timestamp}.md"
-        report_file = self.generate_report(report_file)
+        report_file = self.generate_report_Backtest(report_file)
         
         if not report_file:
             logger.error("生成报告失败")
             return "", ""
         
         # 3. 生成策略
-        strategy_file = self.generate_strategy(report_file)
+        strategy_file = self.generate_strategy_Backtest(report_file)
         
         return report_file, strategy_file
 
 
-def main():
+def main_comprehensivebacktest():
     """主函数"""
     parser = argparse.ArgumentParser(description="综合回测分析工具")
     
@@ -553,8 +553,8 @@ def main():
         os.makedirs(f"{result_dir}/multi_period", exist_ok=True)
     
     # 运行综合回测
-    backtest = ComprehensiveBacktest()
-    report_file, strategy_file = backtest.run(args.csv, args.days_before, args.days_after)
+    backtest = Comprehensive_backtest()
+    report_file, strategy_file = backtest.run_Comprehensive_Backtest(args.csv, args.days_before, args.days_after)
     
     if report_file and strategy_file:
         logger.info("综合回测分析完成")
@@ -571,4 +571,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_comprehensivebacktest() 

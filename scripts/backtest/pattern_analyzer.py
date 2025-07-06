@@ -138,7 +138,7 @@ class PatternAnalyzer:
         
         return patterns
     
-    def analyze_patterns(self, data: pd.DataFrame, pattern_ids: List[str], 
+    def analyze_patterns_Analyzer(self, data: pd.DataFrame, pattern_ids: List[str], 
                         min_strength: float = 0.6) -> List[Dict[str, Any]]:
         """
         分析指定形态
@@ -270,7 +270,7 @@ class PatternAnalyzer:
 # 测试代码
 if __name__ == "__main__":
     # 初始化形态分析器
-    analyzer = PatternAnalyzer()
+    analyzer = Pattern_analyzer()
     
     # 获取形态列表
     patterns = analyzer.list_patterns()
@@ -295,5 +295,5 @@ if __name__ == "__main__":
     print(f"形态分析结果: {results}")
     
     # 分析指定形态
-    results = analyzer.analyze_patterns(data, ["macd_golden_cross", "kdj_golden_cross"])
+    results = analyzer.analyze_patterns_Analyzer(data, ["macd_golden_cross", "kdj_golden_cross"])
     print(f"指定形态分析结果: {results}") 

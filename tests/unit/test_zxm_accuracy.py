@@ -7,28 +7,28 @@ import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
+class Test_zXMAccuracy(unittest.Test_case, Log_capture_mixin):
     """ZXM体系指标准确性测试类"""
     
-    def setUp(self):
+    def set_up_Accuracy(self):
         """设置测试环境"""
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Accuracy(self)
         
         self.zxm_absorb = ZXMAbsorb()
-        self.zxm_washplate = ZXMWashPlate()
+        self.zxm_washplate = ZXMWash_plate()
         
         # 生成足够长的测试数据用于验证计算准确性
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 150}
         ])
     
-    def tearDown(self):
+    def tear_down_Accuracy(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Accuracy(self)
     
     def test_zxm_absorb_v11_formula_accuracy(self):
         """测试ZXM吸筹V11公式计算准确性"""
@@ -45,7 +45,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
         
         if len(v11_values) > 0:
             # V11值应该在合理范围内（基于KDJ衍生）
-            self.assertTrue(all(-50 <= v <= 150 for v in v11_values), 
+            self.assert_true(all(-50 <= v <= 150 for v in v11_values), 
                           f"V11值应在-50到150范围内，实际范围: {v11_values.min():.2f} - {v11_values.max():.2f}")
     
     def test_zxm_absorb_v12_momentum_accuracy(self):
@@ -87,7 +87,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
                 aa_condition = result['AA'].iloc[i]
                 expected_aa = ema_v11 <= 13
                 
-                self.assertEqual(aa_condition, expected_aa, 
+                self.assert_equal(aa_condition, expected_aa, 
                                f"第{i}行AA条件不正确: EMA_V11_3={ema_v11:.2f}, AA={aa_condition}, 期望={expected_aa}")
         
         # 验证BB条件：EMA_V11_3 <= 13 AND V12 > 13
@@ -98,7 +98,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
                 bb_condition = result['BB'].iloc[i]
                 expected_bb = (ema_v11 <= 13) and (v12 > 13)
                 
-                self.assertEqual(bb_condition, expected_bb,
+                self.assert_equal(bb_condition, expected_bb,
                                f"第{i}行BB条件不正确: EMA_V11_3={ema_v11:.2f}, V12={v12:.2f}, BB={bb_condition}, 期望={expected_bb}")
     
     def test_zxm_absorb_xg_calculation_accuracy(self):
@@ -123,7 +123,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
                         aa_bb_count += 1
                 
                 actual_xg = result['XG'].iloc[i]
-                self.assertEqual(actual_xg, aa_bb_count,
+                self.assert_equal(actual_xg, aa_bb_count,
                                f"第{i}行XG计算不正确: 实际={actual_xg}, 期望={aa_bb_count}")
     
     def test_zxm_absorb_buy_signal_accuracy(self):
@@ -145,7 +145,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
                 buy_signal = result['BUY'].iloc[i]
                 expected_buy = xg_value >= 3
                 
-                self.assertEqual(buy_signal, expected_buy,
+                self.assert_equal(buy_signal, expected_buy,
                                f"第{i}行BUY信号不正确: XG={xg_value}, BUY={buy_signal}, 期望={expected_buy}")
     
     def test_zxm_absorb_buy_point_four_elements(self):
@@ -179,7 +179,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
         
         # 验证横盘震荡洗盘
         shock_wash_col = "横盘震荡洗盘"
-        self.assertIn(shock_wash_col, result.columns)
+        self.assert_in(shock_wash_col, result.columns)
         
         # 手动验证横盘震荡洗盘逻辑
         window = 10
@@ -196,7 +196,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
             expected_shock = (price_range_ratio < 0.07) and (vol_range_ratio > 2)
             actual_shock = result[shock_wash_col].iloc[i]
             
-            self.assertEqual(actual_shock, expected_shock,
+            self.assert_equal(actual_shock, expected_shock,
                            f"第{i}行横盘震荡洗盘不正确: 价格波动={price_range_ratio:.4f}, 成交量比例={vol_range_ratio:.2f}")
     
     def test_zxm_washplate_score_calculation_accuracy(self):
@@ -210,7 +210,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
         
         # 验证评分范围
         valid_scores = score.dropna()
-        self.assertTrue(all(0 <= s <= 100 for s in valid_scores), 
+        self.assert_true(all(0 <= s <= 100 for s in valid_scores), 
                        f"评分应在0-100范围内，实际范围: {valid_scores.min():.2f} - {valid_scores.max():.2f}")
         
         # 验证基础分数为50
@@ -228,7 +228,7 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
         # 没有洗盘形态的位置评分应该接近50
         if no_wash_indices:
             base_scores = score.iloc[no_wash_indices]
-            self.assertTrue(all(45 <= s <= 55 for s in base_scores), 
+            self.assert_true(all(45 <= s <= 55 for s in base_scores), 
                            "没有洗盘形态时评分应该接近50分")
     
     def test_no_errors_in_comprehensive_calculation(self):
@@ -251,15 +251,15 @@ class TestZXMAccuracy(unittest.TestCase, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证所有结果都不为空
-        self.assertIsInstance(absorb_result, pd.DataFrame)
-        self.assertIsInstance(absorb_score, pd.Series)
-        self.assertIsInstance(absorb_patterns, pd.DataFrame)
-        self.assertIsInstance(absorb_signals, dict)
+        self.assert_is_instance(absorb_result, pd.DataFrame)
+        self.assert_is_instance(absorb_score, pd.Series)
+        self.assert_is_instance(absorb_patterns, pd.DataFrame)
+        self.assert_is_instance(absorb_signals, dict)
         
-        self.assertIsInstance(washplate_result, pd.DataFrame)
-        self.assertIsInstance(washplate_score, pd.Series)
-        self.assertIsInstance(washplate_patterns, pd.DataFrame)
-        self.assertIsInstance(washplate_signals, dict)
+        self.assert_is_instance(washplate_result, pd.DataFrame)
+        self.assert_is_instance(washplate_score, pd.Series)
+        self.assert_is_instance(washplate_patterns, pd.DataFrame)
+        self.assert_is_instance(washplate_signals, dict)
 
 
 if __name__ == '__main__':

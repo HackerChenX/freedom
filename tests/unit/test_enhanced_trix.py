@@ -1,35 +1,35 @@
 """
-EnhancedTRIX指标单元测试
+Enhanced_tRIX指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_enhanced_tRIX(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """EnhancedTRIX指标测试类"""
     
-    def setUp(self):
+    def set_up_Trix(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Trix(self)
         
-        self.indicator = EnhancedTRIX(n=12, m=9, secondary_n=24)
+        self.indicator = Enhanced_tRIX(n=12, m=9, secondary_n=24)
         self.expected_columns = [
             'TRIX', 'MATRIX', 'trix_secondary', 'matrix_secondary',
             'trix_momentum', 'trix_slope', 'trix_accel', 'trix_volatility'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Trix(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Trix(self)
     
     def test_enhanced_trix_calculation_accuracy(self):
         """测试EnhancedTRIX计算准确性"""
@@ -60,7 +60,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = EnhancedTRIX(n=6, m=3, secondary_n=12)
+        test_indicator = Enhanced_tRIX(n=6, m=3, secondary_n=12)
         result = test_indicator.calculate(simple_data)
         
         # 验证TRIX计算逻辑
@@ -89,9 +89,9 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_enhanced_trix_parameter_update(self):
         """测试EnhancedTRIX参数更新"""
@@ -101,9 +101,9 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(n=new_n, m=new_m, secondary_n=new_secondary_n)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.n, new_n)
-        self.assertEqual(self.indicator.m, new_m)
-        self.assertEqual(self.indicator.secondary_n, new_secondary_n)
+        self.assert_equal(self.indicator.n, new_n)
+        self.assert_equal(self.indicator.m, new_m)
+        self.assert_equal(self.indicator.secondary_n, new_secondary_n)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -115,7 +115,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_enhanced_trix_comprehensive_score(self):
         """测试EnhancedTRIX综合评分"""
@@ -125,7 +125,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 然后计算评分
         score = self.indicator.calculate_score()
         
-        self.assertIsInstance(score, pd.Series)
+        self.assert_is_instance(score, pd.Series)
         
         # 验证评分范围
         valid_scores = score.dropna()
@@ -136,13 +136,13 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试EnhancedTRIX形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -163,7 +163,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         divergence = self.indicator.detect_divergence()
         
         # 验证背离检测结果
-        self.assertIsInstance(divergence, pd.DataFrame)
+        self.assert_is_instance(divergence, pd.DataFrame)
         
         if not divergence.empty:
             expected_divergence_columns = [
@@ -184,7 +184,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         synergy = self.indicator.analyze_multi_period_synergy()
         
         # 验证协同分析结果
-        self.assertIsInstance(synergy, pd.DataFrame)
+        self.assert_is_instance(synergy, pd.DataFrame)
         
         if not synergy.empty:
             expected_synergy_columns = [
@@ -205,7 +205,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         quality = self.indicator.evaluate_zero_cross_quality()
         
         # 验证质量评估结果
-        self.assertIsInstance(quality, pd.DataFrame)
+        self.assert_is_instance(quality, pd.DataFrame)
         
         if not quality.empty:
             expected_quality_columns = [
@@ -221,11 +221,11 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_enhanced_trix_market_environment(self):
         """测试EnhancedTRIX市场环境设置"""
@@ -234,33 +234,33 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         for env in environments:
             self.indicator.set_market_environment(env)
-            self.assertEqual(self.indicator.market_environment, env)
+            self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_trix_adaptive_period(self):
         """测试EnhancedTRIX自适应周期"""
         # 测试自适应模式
-        adaptive_indicator = EnhancedTRIX(n=12, m=9, adaptive_period=True)
+        adaptive_indicator = Enhanced_tRIX(n=12, m=9, adaptive_period=True)
         result = adaptive_indicator.calculate(self.data)
         
         # 验证自适应周期功能
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('TRIX', result.columns)
         
         # 测试非自适应模式
-        non_adaptive_indicator = EnhancedTRIX(n=12, m=9, adaptive_period=False)
+        non_adaptive_indicator = Enhanced_tRIX(n=12, m=9, adaptive_period=False)
         result2 = non_adaptive_indicator.calculate(self.data)
         
-        self.assertIsInstance(result2, pd.DataFrame)
+        self.assert_is_instance(result2, pd.DataFrame)
         self.assertIn('TRIX', result2.columns)
     
     def test_enhanced_trix_multi_periods(self):
         """测试EnhancedTRIX多周期计算"""
         # 使用多周期参数
-        multi_indicator = EnhancedTRIX(
+        multi_indicator = Enhanced_tRIX(
             n=12, m=9, secondary_n=24,
             multi_periods=[6, 12, 24, 48]
         )
@@ -285,7 +285,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         slope_values = result['trix_slope'].dropna()
         if len(slope_values) > 0:
             # 斜率应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in slope_values), 
+            self.assert_true(all(np.isfinite(v) for v in slope_values), 
                            "TRIX斜率应该是有限数值")
     
     def test_enhanced_trix_momentum_calculation(self):
@@ -299,10 +299,10 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         momentum_values = result['trix_momentum'].dropna()
         if len(momentum_values) > 0:
             # 动量应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in momentum_values), 
+            self.assert_true(all(np.isfinite(v) for v in momentum_values), 
                            "TRIX动量应该是有限数值")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Trix(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -313,11 +313,11 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Trix(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -328,7 +328,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_enhanced_trix_register_patterns(self):
         """测试EnhancedTRIX形态注册"""
@@ -345,7 +345,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # EnhancedTRIX应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('TRIX', result.columns)
     
     def test_enhanced_trix_validation(self):
@@ -353,7 +353,7 @@ class TestEnhancedTRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['close'], axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_trix_indicator_type(self):

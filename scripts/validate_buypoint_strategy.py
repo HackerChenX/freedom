@@ -27,7 +27,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class BuyPointStrategyValidator:
+class BuypointstrategyvalidatorStrategy:
     """买点策略验证器"""
     
     def __init__(self):
@@ -36,7 +36,7 @@ class BuyPointStrategyValidator:
         self.strategy_executor = StrategyExecutor()
         self.strategy_manager = StrategyManager()
         
-    def validate_strategy(self, strategy_file: str, validation_config: dict = None) -> dict:
+    def validate_strategy_Strategy(self, strategy_file: str, validation_config: dict = None) -> dict:
         """
         验证买点策略
         
@@ -61,10 +61,10 @@ class BuyPointStrategyValidator:
         
         try:
             # 1. 加载策略
-            strategy = self._load_strategy(strategy_file)
+            strategy = self._load_strategy_Validate_Buypoint_Strategy(strategy_file)
             
             # 2. 准备验证股票池
-            stock_pool = self._prepare_stock_pool(validation_config["stock_pool_size"])
+            stock_pool = self._prepare_stock_pool_Validate_Buypoint_Strategy(validation_config["stock_pool_size"])
             
             # 3. 执行策略选股
             selected_stocks = self._execute_strategy(strategy, stock_pool, validation_config["validation_date"])
@@ -116,7 +116,7 @@ class BuyPointStrategyValidator:
                 "timestamp": datetime.now().isoformat()
             }
     
-    def _load_strategy(self, strategy_file: str) -> dict:
+    def _load_strategy_Validate_Buypoint_Strategy(self, strategy_file: str) -> dict:
         """加载策略文件"""
         try:
             with open(strategy_file, 'r', encoding='utf-8') as f:
@@ -128,7 +128,7 @@ class BuyPointStrategyValidator:
         except Exception as e:
             raise Exception(f"加载策略文件失败: {e}")
     
-    def _prepare_stock_pool(self, pool_size: int) -> list:
+    def _prepare_stock_pool_Validate_Buypoint_Strategy(self, pool_size: int) -> list:
         """准备验证股票池"""
         try:
             # 获取活跃股票列表
@@ -171,7 +171,7 @@ class BuyPointStrategyValidator:
             stock_codes = [stock['stock_code'] for stock in stock_pool]
             
             # 执行策略
-            def progress_callback(progress, message):
+            def progress_callback_Strategy(progress, message):
                 if progress % 0.1 < 0.01:  # 每10%打印一次
                     logger.info(f"策略执行进度: {progress:.1%} - {message}")
             
@@ -347,7 +347,7 @@ class BuyPointStrategyValidator:
         return assessment
 
 
-def main():
+def main_validatebuypointstrategy():
     """主函数"""
     parser = argparse.ArgumentParser(description="买点策略验证工具")
     parser.add_argument("--strategy", required=True, help="策略文件路径")
@@ -374,7 +374,7 @@ def main():
     }
     
     # 创建验证器并执行验证
-    validator = BuyPointStrategyValidator()
+    validator = BuyPointStrategyValidator_Strategy()
     
     print(f"开始验证策略: {args.strategy}")
     print(f"验证日期: {validation_date}")
@@ -382,7 +382,7 @@ def main():
     print(f"回测天数: {args.backtest_days}")
     print("-" * 50)
     
-    results = validator.validate_strategy(args.strategy, validation_config)
+    results = validator.validate_strategy_Strategy(args.strategy, validation_config)
     
     # 保存结果
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -424,4 +424,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    mainValidatebuypointstrategy()

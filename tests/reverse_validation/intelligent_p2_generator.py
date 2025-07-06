@@ -15,13 +15,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class IntelligentP2Generator:
+class Intelligent_p2_generator:
     """智能P2指标数据生成器"""
     
     def __init__(self):
         pass
     
-    def _generate_ohlc_from_close(self, dates: pd.DatetimeIndex, close_prices: List[float]) -> pd.DataFrame:
+    def _generate_ohlc_from_close_Intelligent_P2_Generator(self, dates: pd.Datetime_index, close_prices: List[float]) -> pd.DataFrame:
         """从收盘价生成OHLC数据"""
         data = []
         for i, (date, close) in enumerate(zip(dates, close_prices)):
@@ -52,7 +52,7 @@ class IntelligentP2Generator:
         
         return pd.DataFrame(data)
     
-    def _standardize_data_format(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
+    def _standardize_data_format_Intelligent_P2_Generator(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
         """标准化数据格式"""
         # 确保列顺序正确
         column_order = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -76,8 +76,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'STOCHRSI_OVERBOUGHT')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'STOCHRSI_OVERBOUGHT')
     
     def generate_stochrsi_oversold_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成StochRSI超卖数据"""
@@ -97,8 +97,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'STOCHRSI_OVERSOLD')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'STOCHRSI_OVERSOLD')
     
     def generate_psy_bullish_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成PSY多头数据"""
@@ -116,8 +116,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'PSY_BULLISH')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'PSY_BULLISH')
     
     def generate_psy_bearish_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成PSY空头数据"""
@@ -135,8 +135,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'PSY_BEARISH')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'PSY_BEARISH')
     
     def generate_wr_overbought_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成WR超买数据"""
@@ -150,8 +150,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'WR_OVERBOUGHT')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'WR_OVERBOUGHT')
     
     def generate_wr_oversold_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成WR超卖数据"""
@@ -165,8 +165,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'WR_OVERSOLD')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'WR_OVERSOLD')
     
     def generate_bias_positive_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成BIAS正乖离数据"""
@@ -186,8 +186,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'BIAS_POSITIVE')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'BIAS_POSITIVE')
     
     def generate_bias_negative_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成BIAS负乖离数据"""
@@ -207,8 +207,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'BIAS_NEGATIVE')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'BIAS_NEGATIVE')
     
     def generate_vol_surge_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成成交量放大数据"""
@@ -228,14 +228,14 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
         
         # 特别处理成交量：后20天成交量明显放大
         for i in range(len(data)):
             if i >= 30:  # 后20天
                 data.loc[i, 'volume'] *= np.random.uniform(2.0, 4.0)
         
-        return self._standardize_data_format(data, 'VOL_SURGE')
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'VOL_SURGE')
     
     def generate_obv_uptrend_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成OBV上升趋势数据"""
@@ -254,8 +254,8 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'OBV_UPTREND')
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'OBV_UPTREND')
     
     def generate_mfi_overbought_data(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成MFI超买数据"""
@@ -269,16 +269,16 @@ class IntelligentP2Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
         
         # 上涨时成交量放大
         for i in range(len(data)):
             if i > 0 and data.loc[i, 'close'] > data.loc[i-1, 'close']:
                 data.loc[i, 'volume'] *= np.random.uniform(1.5, 3.0)
         
-        return self._standardize_data_format(data, 'MFI_OVERBOUGHT')
+        return self._standardize_data_format_Intelligent_P2_Generator(data, 'MFI_OVERBOUGHT')
     
-    def generate_generic_pattern_data(self, pattern_name: str, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
+    def generate_generic_pattern_data_Generator(self, pattern_name: str, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """生成通用形态数据（用于其他指标）"""
         dates = pd.date_range(start='2023-01-01', periods=periods, freq='D')
         
@@ -314,13 +314,13 @@ class IntelligentP2Generator:
                 new_price = prices[-1] * (1 + daily_change)
                 prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, pattern_name)
+        data = self._generate_ohlc_from_close_Intelligent_P2_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P2_Generator(data, pattern_name)
 
 
 def test_intelligent_p2_generator():
     """测试智能P2生成器"""
-    generator = IntelligentP2Generator()
+    generator = Intelligent_p2_generator()
     
     print("测试智能P2数据生成器...")
     

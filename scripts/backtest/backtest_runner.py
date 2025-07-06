@@ -21,9 +21,9 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, time_it
-from scripts.backtest.data_manager import BacktestDataManager
-from scripts.backtest.strategy_manager import PatternManager
-from scripts.backtest.pattern_analyzer import PatternAnalyzer
+from scripts.backtest.data_manager import Backtest_data_manager
+from scripts.backtest.strategy_manager import Pattern_manager
+from scripts.backtest.pattern_analyzer import Pattern_analyzer
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -38,9 +38,9 @@ class PatternScanner:
 
     def __init__(self):
         """初始化形态扫描器"""
-        self.data_manager = BacktestDataManager()
-        self.pattern_manager = PatternManager()
-        self.pattern_analyzer = PatternAnalyzer()
+        self.data_manager = Backtest_data_manager()
+        self.pattern_manager = Pattern_manager()
+        self.pattern_analyzer = Pattern_analyzer()
         
         # 分析结果
         self.results = {}
@@ -424,7 +424,7 @@ class PatternScanner:
         else:
             logger.warning("没有可导出的分析结果")
     
-    def clear_results(self):
+    def clear_results_Runner(self):
         """清除所有分析结果"""
         self.results.clear()
         logger.info("所有分析结果已清除")
@@ -498,11 +498,10 @@ class PatternScanner:
 
 
 class BacktestRunner:
-    def __init__(self):
         pass
 
 
-def parse_args():
+def parse_args_Runner():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="技术形态分析系统")
     
@@ -543,15 +542,15 @@ def parse_args():
     stats_parser.add_argument("--input", "-i", type=str, help="输入文件路径")
     stats_parser.add_argument("--output", "-o", type=str, default="stats.json", help="输出文件路径")
     
-    return parser.parse_args()
+    return parser.parse_args_Runner()
 
 
-def main():
+def main_backtestrunner():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Runner()
     
     # 初始化形态扫描器
-    scanner = PatternScanner()
+    scanner = Pattern_scanner()
     
     if args.command == "pattern":
         # 运行形态识别分析
@@ -641,4 +640,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_backtestrunner() 

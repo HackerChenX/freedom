@@ -10,12 +10,12 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 
 from indicators.base_indicator import BaseIndicator
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class BaseZXMIndicator(BaseIndicator, ABC):
+class BaseZxmindicator(BaseIndicator, ABC):
     """张新民指标基类"""
     
     def __init__(self, name: str, **kwargs):
@@ -30,7 +30,7 @@ class BaseZXMIndicator(BaseIndicator, ABC):
         super().__init__(name, **kwargs)
         self._score_range = (0, 100)  # ZXM指标的得分范围，默认0-100
         
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> float:
+    def calculate_raw_score_Indicator_Base_Zxm_Indicator(self, data: pd.DataFrame, **kwargs) -> float:
         """
         计算原始评分
         
@@ -74,7 +74,7 @@ class BaseZXMIndicator(BaseIndicator, ABC):
         """
         try:
             # 计算原始得分
-            raw_score = self.calculate_raw_score(data, **kwargs)
+            raw_score = self.calculate_raw_score_Indicator_Base_Zxm_Indicator(data, **kwargs)
             
             # 标准化得分
             normalized_score = self.normalize_score(raw_score)
@@ -84,7 +84,7 @@ class BaseZXMIndicator(BaseIndicator, ABC):
             logger.error(f"计算指标 {self.name} 得分时出错: {e}")
             return 0.0  # 错误情况下返回0分 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Indicator_Base_Zxm_Indicator(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

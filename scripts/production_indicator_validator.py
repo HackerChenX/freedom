@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 生产环境指标验证器 - 支持88个完整指标
-基于ClickHouse真实数据验证指标选股效果
+基于Click_house真实数据验证指标选股效果
 """
 
 import sys
@@ -22,25 +24,25 @@ import logging
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
 
 # 导入完整指标注册表
 try:
     from indicators.complete_indicator_registry import complete_registry
     REGISTRY_AVAILABLE = True
-except ImportError as e:
+except Import_error as e:
     print(f"⚠️ 无法导入完整指标注册表: {e}")
     REGISTRY_AVAILABLE = False
 
 # 导入现有的ZXM和增强指标作为后备
 try:
-    from indicators.zxm.buy_point_indicators import ZXMVolumeShrink, ZXMBSAbsorb, ZXMTurnover, ZXMDailyMACD, ZXMMACallback
-    from indicators.enhanced_macd import EnhancedMACD
-    from indicators.enhanced_rsi import EnhancedRSI
-    from indicators.unified_ma import UnifiedMA
+    from indicators.zxm.buy_point_indicators import ZXMVolume_shrink, ZXMBSAbsorb, ZXMTurnover, ZXMDaily_mACD, ZXMMACallback
+    from indicators.enhanced_macd import Enhanced_mACD
+    from indicators.enhanced_rsi import Enhanced_rSI
+    from indicators.unified_ma import Unified_mA
     ZXM_AVAILABLE = True
-except ImportError as e:
+except Import_error as e:
     print(f"⚠️ 无法导入ZXM指标: {e}")
     ZXM_AVAILABLE = False
 
@@ -54,12 +56,13 @@ class ProductionIndicatorValidator:
         """初始化验证器"""
         try:
             # 初始化数据库连接
-            self.db = get_clickhouse_db()
+            container = get_container()
+            self.data_access = container.get_data_access()
             logger.info("✅ 成功连接到ClickHouse数据库")
             
             # 初始化指标注册表
             self.available_indicators = {}
-            self._initialize_indicators()
+            self._initialize_indicators_Production_Indicator_Validator()
             
             if not self.available_indicators:
                 raise Exception("没有可用的指标")
@@ -70,7 +73,7 @@ class ProductionIndicatorValidator:
             logger.error(f"❌ 初始化失败: {e}")
             raise
     
-    def _initialize_indicators(self):
+    def _initialize_indicators_Production_Indicator_Validator(self):
         """初始化所有可用指标"""
         success_count = 0
         failed_count = 0
@@ -176,10 +179,10 @@ class ProductionIndicatorValidator:
         
         return name_mappings.get(name, name)
     
-    def get_latest_trade_date(self) -> str:
+    def get_latest_trade_date_Validator(self) -> str:
         """获取ClickHouse中最新的交易日期"""
         try:
-            latest_date = self.db.get_stock_max_date()
+            latest_date = self.data_access.get_stock_max_date()
             if latest_date:
                 logger.info(f"📅 获取到最新交易日期: {latest_date}")
                 return latest_date
@@ -200,7 +203,7 @@ class ProductionIndicatorValidator:
             # 返回一个合理的默认日期
             return (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    def get_stock_pool(self, test_date: str, max_stocks: int = 500) -> List[str]:
+    def get_stock_pool_Validator(self, test_date: str, max_stocks: int = 500) -> List[str]:
         """
         获取测试股票池
         
@@ -217,7 +220,7 @@ class ProductionIndicatorValidator:
             # 获取指定日期的股票数据，过滤掉ST股票和价格异常的股票
             query = f"""
             SELECT DISTINCT code, name, close, volume
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE date = '{test_date}'
               AND level = '日线'
               AND close > 2.0
@@ -229,7 +232,7 @@ class ProductionIndicatorValidator:
             LIMIT {max_stocks}
             """
             
-            result = self.db.query(query)
+            result = self.data_access.query(query)
             
             if result.empty:
                 logger.warning(f"⚠️ 未找到 {test_date} 的股票数据")
@@ -251,7 +254,7 @@ class ProductionIndicatorValidator:
             logger.error(f"❌ 获取股票池失败: {e}")
             return []
     
-    def get_stock_data(self, stock_code: str, end_date: str, days: int = 100) -> pd.DataFrame:
+    def get_stock_data_Validator(self, stock_code: str, end_date: str, days: int = 100) -> pd.DataFrame:
         """
         获取股票历史数据
         
@@ -269,7 +272,7 @@ class ProductionIndicatorValidator:
             
             query = f"""
             SELECT date, open, high, low, close, volume, turnover
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE code = '{stock_code}'
               AND level = '日线'
               AND date >= '{start_date}'
@@ -277,7 +280,7 @@ class ProductionIndicatorValidator:
             ORDER BY date ASC
             """
             
-            result = self.db.query(query)
+            result = self.data_access.query(query)
             
             if result.empty:
                 return pd.DataFrame()
@@ -313,7 +316,7 @@ class ProductionIndicatorValidator:
             logger.warning(f"⚠️ 获取股票 {stock_code} 数据失败: {e}")
             return pd.DataFrame()
     
-    def validate_single_indicator(self, indicator_name: str, test_date: str = None, 
+    def validate_single_indicator_Validator_Production_Indicator_Validator(self, indicator_name: str, test_date: str = None, 
                                  max_stocks: int = 500) -> Dict[str, Any]:
         """
         验证单个指标的选股效果
@@ -330,7 +333,7 @@ class ProductionIndicatorValidator:
             raise ValueError(f"未知指标: {indicator_name}，可用指标: {list(self.available_indicators.keys())}")
         
         if test_date is None:
-            test_date = self.get_latest_trade_date()
+            test_date = self.get_latest_trade_date_Validator()
         
         logger.info(f"🚀 开始验证指标: {indicator_name}")
         logger.info(f"📅 测试日期: {test_date}")
@@ -339,7 +342,7 @@ class ProductionIndicatorValidator:
         start_time = time.time()
         
         # 获取股票池
-        stock_pool = self.get_stock_pool(test_date, max_stocks)
+        stock_pool = self.get_stock_pool_Validator(test_date, max_stocks)
         if not stock_pool:
             return {
                 'indicator_name': indicator_name,
@@ -364,7 +367,7 @@ class ProductionIndicatorValidator:
                     logger.info(f"📈 进度: {i+1}/{len(stock_pool)} ({(i+1)/len(stock_pool)*100:.1f}%)")
                 
                 # 获取股票数据
-                stock_data = self.get_stock_data(stock_code, test_date)
+                stock_data = self.get_stock_data_Validator(stock_code, test_date)
                 
                 if stock_data.empty or len(stock_data) < 20:
                     failed_stocks.append(stock_code)
@@ -466,7 +469,7 @@ class ProductionIndicatorValidator:
             Dict[str, Any]: 批量验证结果
         """
         if test_date is None:
-            test_date = self.get_latest_trade_date()
+            test_date = self.get_latest_trade_date_Validator()
         
         logger.info(f"🚀 开始批量验证 {len(indicator_names)} 个指标")
         logger.info(f"📋 指标列表: {indicator_names}")
@@ -478,7 +481,7 @@ class ProductionIndicatorValidator:
         for indicator_name in indicator_names:
             try:
                 logger.info(f"🔄 验证指标: {indicator_name}")
-                result = self.validate_single_indicator(indicator_name, test_date, max_stocks)
+                result = self.validate_single_indicator_Validator_Production_Indicator_Validator(indicator_name, test_date, max_stocks)
                 individual_results[indicator_name] = result
             except Exception as e:
                 logger.error(f"❌ 验证指标 {indicator_name} 失败: {e}")
@@ -489,7 +492,7 @@ class ProductionIndicatorValidator:
                 }
         
         # 分析指标间的重叠度
-        overlap_analysis = self._analyze_indicator_overlap(individual_results)
+        overlap_analysis = self._analyze_indicator_overlap_Production_Indicator_Validator(individual_results)
         
         end_time = time.time()
         total_time = end_time - start_time
@@ -502,7 +505,7 @@ class ProductionIndicatorValidator:
             'total_processing_time_seconds': round(total_time, 2),
             'individual_results': individual_results,
             'overlap_analysis': overlap_analysis,
-            'summary': self._generate_batch_summary(individual_results)
+            'summary': self._generate_batch_summary_Production_Indicator_Validator(individual_results)
         }
         
         logger.info(f"✅ 批量验证完成，总耗时: {total_time:.1f}秒")
@@ -537,7 +540,7 @@ class ProductionIndicatorValidator:
             for code, data in signal_stocks[:top_n]
         ]
     
-    def _analyze_indicator_overlap(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
+    def _analyze_indicator_overlap_Production_Indicator_Validator(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
         """分析指标间的重叠度"""
         # 收集所有成功的指标的选股结果
         successful_indicators = {}
@@ -586,7 +589,7 @@ class ProductionIndicatorValidator:
             'common_stocks_count': len(common_stocks)
         }
     
-    def _generate_batch_summary(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
+    def _generate_batch_summary_Production_Indicator_Validator(self, individual_results: Dict[str, Dict]) -> Dict[str, Any]:
         """生成批量验证摘要"""
         successful_results = [r for r in individual_results.values() if r.get('status') == 'success']
         failed_results = [r for r in individual_results.values() if r.get('status') == 'failed']
@@ -614,7 +617,7 @@ class ProductionIndicatorValidator:
             'fastest_indicator': min(successful_results, key=lambda x: x['processing_time_seconds'])['indicator_name']
         }
     
-    def save_results(self, results: Dict[str, Any], output_dir: str = "results/validation") -> str:
+    def save_results_Validator_Production_Indicator_Validator(self, results: Dict[str, Any], output_dir: str = "results/validation") -> str:
         """
         保存验证结果
         
@@ -645,10 +648,10 @@ class ProductionIndicatorValidator:
             
             # 生成文本报告
             report_path = filepath.replace('.json', '.txt')
-            self._generate_text_report(results, report_path)
+            self._generate_text_report_Production_Indicator_Validator(results, report_path)
             
             # 如果有选股结果，保存CSV
-            csv_path = self._save_selection_csv(results, output_dir, timestamp)
+            csv_path = self._save_selection_csv_Production_Indicator_Validator(results, output_dir, timestamp)
             
             logger.info(f"✅ 验证结果已保存:")
             logger.info(f"  📄 JSON结果: {filepath}")
@@ -662,7 +665,7 @@ class ProductionIndicatorValidator:
             logger.error(f"❌ 保存验证结果失败: {e}")
             return ""
     
-    def _generate_text_report(self, results: Dict[str, Any], report_path: str):
+    def _generate_text_report_Production_Indicator_Validator(self, results: Dict[str, Any], report_path: str):
         """生成文本格式的验证报告"""
         try:
             with open(report_path, 'w', encoding='utf-8') as f:
@@ -737,7 +740,7 @@ class ProductionIndicatorValidator:
         except Exception as e:
             logger.error(f"❌ 生成文本报告失败: {e}")
     
-    def _save_selection_csv(self, results: Dict[str, Any], output_dir: str, timestamp: str) -> Optional[str]:
+    def _save_selection_csv_Production_Indicator_Validator(self, results: Dict[str, Any], output_dir: str, timestamp: str) -> Optional[str]:
         """保存选股结果为CSV文件"""
         try:
             selected_stocks = []
@@ -775,7 +778,7 @@ class ProductionIndicatorValidator:
             logger.error(f"❌ 保存选股CSV失败: {e}")
             return None
     
-    def list_available_indicators(self) -> List[str]:
+    def list_available_indicators_Validator(self) -> List[str]:
         """返回所有可用指标的列表"""
         return sorted(list(self.available_indicators.keys()))
     
@@ -797,7 +800,7 @@ class ProductionIndicatorValidator:
         }
 
 
-def main():
+def main_productionindicatorvalidator():
     """主函数"""
     parser = argparse.ArgumentParser(description='生产环境指标验证器 - 支持88个完整指标')
     parser.add_argument('--indicators', nargs='+', help='要验证的指标名称列表')
@@ -810,11 +813,11 @@ def main():
     args = parser.parse_args()
     
     try:
-        validator = ProductionIndicatorValidator()
+        validator = Production_indicator_validator()
         
         if args.list_indicators:
             print("可用指标:")
-            indicators = validator.list_available_indicators()
+            indicators = validator.list_available_indicators_Validator()
             for i, indicator in enumerate(indicators, 1):
                 print(f"   {i:2d}. {indicator}")
             print(f"\n总计: {len(indicators)} 个指标")
@@ -836,7 +839,7 @@ def main():
         # 验证指定指标
         if len(args.indicators) == 1:
             # 单指标验证
-            results = validator.validate_single_indicator(
+            results = validator.validate_single_indicator_Validator_Production_Indicator_Validator(
                 args.indicators[0], 
                 args.test_date, 
                 args.max_stocks
@@ -850,7 +853,7 @@ def main():
             )
         
         # 保存结果
-        output_file = validator.save_results(results, args.output_dir)
+        output_file = validator.save_results_Validator_Production_Indicator_Validator(results, args.output_dir)
         print(f"📄 验证结果已保存到: {output_file}")
         
         return 0
@@ -863,5 +866,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_productionindicatorvalidator()
     sys.exit(exit_code) 

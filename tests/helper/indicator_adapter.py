@@ -9,7 +9,7 @@ import numpy as np
 from typing import Dict, Any, List, Union
 
 
-class DataFrameToZXMAdapter:
+class Data_frame_to_zXMAdapter:
     """DataFrame到ZXM接口的适配器"""
     
     def __init__(self, zxm_indicator):
@@ -21,15 +21,15 @@ class DataFrameToZXMAdapter:
         """
         self.zxm_indicator = zxm_indicator
         
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_Adapter_Indicator_Adapter_Indicator_Adapter_indicatoradapter(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        使用DataFrame计算ZXM形态指标
+        使用Data_frame计算ZXM形态指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            包含形态识别结果的DataFrame
+            包含形态识别结果的Data_frame
         """
         # 提取需要的数据
         open_prices = data['open'].values
@@ -39,7 +39,7 @@ class DataFrameToZXMAdapter:
         volumes = data['volume'].values
         
         # 调用ZXM指标计算
-        result_dict = self.zxm_indicator.calculate(
+        result_dict = self.zxm_indicator.calculate_Adapter_Indicator_Adapter_Indicator_Adapter_indicatoradapter(
             open_prices, high_prices, low_prices, close_prices, volumes
         )
         
@@ -51,7 +51,7 @@ class DataFrameToZXMAdapter:
         return result_df
 
 
-class IndicatorToSelectorAdapter:
+class Indicator_to_selector_adapter:
     """将指标适配为选股器的适配器"""
     
     def __init__(self, indicator, threshold: float = 70.0, signal_field: str = None):
@@ -72,17 +72,17 @@ class IndicatorToSelectorAdapter:
         使用指标选择股票
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             选中的股票列表
         """
         # 计算指标
-        result = self.indicator.calculate(data)
+        result = self.indicator.calculate_Adapter_Indicator_Adapter_Indicator_Adapter_indicatoradapter(data)
         
         # 获取原始评分
         if hasattr(self.indicator, 'calculate_raw_score'):
-            scores = self.indicator.calculate_raw_score(result)
+            scores = self.indicator.calculate_raw_score_Adapter_Indicator_Adapter(result)
         else:
             scores = pd.Series(50, index=data.index)  # 默认中性评分
         
@@ -118,7 +118,7 @@ class IndicatorToSelectorAdapter:
         return selected
 
 
-class MultiIndicatorAdapter:
+class Multi_indicator_adapter:
     """多指标组合适配器"""
     
     def __init__(self, indicators: List, weights: List[float] = None):
@@ -143,21 +143,21 @@ class MultiIndicatorAdapter:
         self.name = "CombinedIndicator"
         self.description = "多指标组合"
         
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_Adapter_Indicator_Adapter_Indicator_Adapter_indicatoradapter(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算组合指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            包含组合指标结果的DataFrame
+            包含组合指标结果的Data_frame
         """
         result = data.copy()
         
         # 计算每个指标
         for indicator in self.indicators:
-            indicator_result = indicator.calculate(data)
+            indicator_result = indicator.calculate_Adapter_Indicator_Adapter_Indicator_Adapter_indicatoradapter(data)
             
             # 如果返回的是DataFrame，合并结果
             if isinstance(indicator_result, pd.DataFrame):
@@ -167,12 +167,12 @@ class MultiIndicatorAdapter:
         
         return result
     
-    def calculate_raw_score(self, data: pd.DataFrame) -> pd.Series:
+    def calculate_raw_score_Adapter_Indicator_Adapter(self, data: pd.DataFrame) -> pd.Series:
         """
         计算组合指标的原始评分
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             组合评分Series
@@ -183,14 +183,14 @@ class MultiIndicatorAdapter:
         # 累加每个指标的加权评分
         for indicator, weight in zip(self.indicators, self.weights):
             if hasattr(indicator, 'calculate_raw_score'):
-                indicator_result = indicator.calculate(data)
-                score = indicator.calculate_raw_score(indicator_result)
+                indicator_result = indicator.calculate_Adapter_Indicator_Adapter_Indicator_Adapter_indicatoradapter(data)
+                score = indicator.calculate_raw_score_Adapter_Indicator_Adapter(indicator_result)
                 weighted_sum += score * weight
         
         return weighted_sum.clip(0, 100)  # 确保评分在0-100范围内
 
 
-class PatternDetectionAdapter:
+class Pattern_detection_adapter:
     """形态检测适配器"""
     
     def __init__(self, pattern_indicator, pattern_names: List[str] = None):
@@ -209,13 +209,13 @@ class PatternDetectionAdapter:
         检测形态
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             形态检测结果字典，键为形态名称，值为形态出现的位置列表
         """
         # 计算指标
-        result = self.pattern_indicator.calculate(data)
+        result = self.pattern_indicator.calculate_Adapter_Indicator_Adapter_Indicator_Adapter_indicatoradapter(data)
         
         # 如果指标返回的是字典(如ZXM形态指标)
         if isinstance(result, dict):

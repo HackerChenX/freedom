@@ -11,10 +11,10 @@ from typing import Dict, List, Union, Optional, Any, Tuple, Callable
 from enum import Enum
 import inspect
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from indicators.pattern_registry import PatternRegistry
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 # 定义基础数据列
 BASE_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
@@ -32,11 +32,11 @@ class MarketEnvironment(Enum):
 class SignalStrength(Enum):
     """信号强度枚举"""
     VERY_STRONG = 5
-    STRONG = 4
-    MODERATE = 3
-    WEAK = 2
+    strong = 4
+    moderate = 3
+    weak = 2
     VERY_WEAK = 1
-    NEUTRAL = 0
+    neutral = 0
     VERY_WEAK_NEGATIVE = -1
     WEAK_NEGATIVE = -2
     MODERATE_NEGATIVE = -3
@@ -69,7 +69,7 @@ class PatternResult:
         self.duration = duration
         self.details = details or {}
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_Indicator_Base_Indicator_Base_Indicator_baseindicator(self) -> Dict[str, Any]:
         """
         转换为字典表示
         
@@ -92,43 +92,21 @@ class BaseIndicator(abc.ABC):
     所有技术指标类应继承此类，并实现必要的抽象方法
     """
     
-    def __init__(self, name: str = "", description: str = "", weight: float = 1.0):
-        """
-        初始化基础技术指标
-        
-        Args:
-            name: 指标名称，如果不提供则尝试使用类属性
-            description: 指标描述
-            weight: 指标权重
-        """
-        if not name and hasattr(self, 'name'):
-            pass  # 已经有name属性，不需要重新赋值
-        else:
-            self.name = name
-            
-        self.description = description
-        self.weight = weight
-        self.is_available = False # 默认指标为不可用
-        self._result = None
-        self._error = None
-        self._score_cache = {}
-        self._market_environment = MarketEnvironment.SIDEWAYS_MARKET  # 默认市场环境
-        
-    def initialize(self):
+    def initialize_Indicator(self):
         """
         在所有子类参数都设置完毕后执行初始化
         """
         # 自动注册形态
-        self.register_patterns()
+        self.register_patterns_Indicator()
     
-    def register_patterns(self):
+    def register_patterns_Indicator(self):
         """
         注册指标形态
         
         自动查找并调用形态注册方法，标准化形态注册流程
         """
         # 获取指标类型（大写）
-        indicator_type = self.get_indicator_type()
+        indicator_type = self.get_indicator_type_Indicator()
         
         # 查找所有可能的形态注册方法
         possible_methods = [
@@ -167,33 +145,33 @@ class BaseIndicator(abc.ABC):
             detection_function: 形态检测函数
             polarity: 模式极性（POSITIVE, NEGATIVE, NEUTRAL），用于买点分析过滤
         """
-        from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
+        from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
 
         # 获取指标类型
-        indicator_id = self.get_indicator_type()
+        indicator_id = self.get_indicator_type_Indicator()
 
         # 获取PatternRegistry实例
         registry = PatternRegistry()
         
         # 获取PatternType枚举值
         try:
-            if isinstance(pattern_type, PatternType):
+            if isinstance(pattern_type, PatternTypePatternRegistry):
                 pattern_type_enum = pattern_type
             else:
-                pattern_type_enum = getattr(PatternType, pattern_type.upper())
+                pattern_type_enum = getattr(PatternTypePatternRegistry, pattern_type.upper())
         except (AttributeError, KeyError):
             logger.warning(f"未知的形态类型: {pattern_type}，使用默认NEUTRAL")
-            pattern_type_enum = PatternType.NEUTRAL
+            pattern_type_enum = PatternTypePatternRegistry.NEUTRAL
         
         # 获取PatternStrength枚举值
         try:
-            if isinstance(default_strength, PatternStrength):
+            if isinstance(default_strength, PatternStrengthPatternRegistry):
                 strength_enum = default_strength
             else:
-                strength_enum = getattr(PatternStrength, default_strength.upper())
+                strength_enum = getattr(PatternStrengthPatternRegistry, default_strength.upper())
         except (AttributeError, KeyError):
             logger.warning(f"未知的强度类型: {default_strength}，使用默认MEDIUM")
-            strength_enum = PatternStrength.MEDIUM
+            strength_enum = PatternStrengthPatternRegistry.MEDIUM
         
         # 转换极性字符串为枚举
         polarity_enum = None
@@ -234,7 +212,7 @@ class BaseIndicator(abc.ABC):
         """获取指标计算错误"""
         return self._error
     
-    def has_result(self) -> bool:
+    def has_result_Indicator(self) -> bool:
         """检查指标是否已经计算过"""
         return self._result is not None
     
@@ -247,11 +225,11 @@ class BaseIndicator(abc.ABC):
         在计算结果中保留基础数据列，确保链式计算能够正常进行
 
         Args:
-            source_df: 源数据DataFrame
-            result_df: 计算结果DataFrame
+            source_df: 源数据Data_frame
+            result_df: 计算结果Data_frame
 
         Returns:
-            pd.DataFrame: 包含原始基础列的结果DataFrame
+            pd.DataFrame: 包含原始基础列的结果Data_frame
         """
         # 检查源数据中有哪些基础列
         available_columns = [col for col in BASE_COLUMNS if col in source_df.columns]
@@ -287,7 +265,7 @@ class BaseIndicator(abc.ABC):
 
         return result_df
     
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate_Indicator_Base_Indicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算指标，并处理异常和结果保存
         
@@ -295,7 +273,7 @@ class BaseIndicator(abc.ABC):
             data: 输入数据
             
         Returns:
-            pd.DataFrame: 包含指标计算结果的DataFrame
+            pd.DataFrame: 包含指标计算结果的Data_frame
         """
         try:
             # 确保必需的列存在
@@ -305,7 +283,7 @@ class BaseIndicator(abc.ABC):
                     raise ValueError(f"指标 {self.name} 计算缺少必需列: {missing_cols}")
 
             # 调用核心计算逻辑
-            result_df = self._calculate(data, *args, **kwargs)
+            result_df = self._calculate_baseindicator(data, *args, **kwargs)
             
             # 检查结果是否为DataFrame
             if not isinstance(result_df, pd.DataFrame):
@@ -327,7 +305,7 @@ class BaseIndicator(abc.ABC):
             return pd.DataFrame(index=data.index)
 
     @abc.abstractmethod
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         核心计算逻辑，必须由子类实现
         
@@ -335,9 +313,9 @@ class BaseIndicator(abc.ABC):
             data: 输入数据
             
         Returns:
-            pd.DataFrame: 包含指标计算结果的DataFrame
+            pd.DataFrame: 包含指标计算结果的Data_frame
         """
-        raise NotImplementedError("子类必须实现 _calculate 方法")
+        raise NotImplementedError("子类必须实现 _calculateBaseindicator 方法")
 
     def get_registered_patterns(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -349,7 +327,7 @@ class BaseIndicator(abc.ABC):
         from indicators.pattern_registry import PatternRegistry
         
         # 获取指标类型
-        indicator_id = self.get_indicator_type()
+        indicator_id = self.get_indicator_type_Indicator()
         
         # 获取PatternRegistry实例
         registry = PatternRegistry()
@@ -371,7 +349,7 @@ class BaseIndicator(abc.ABC):
         
         return patterns
     
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Indicator(self) -> str:
         """
         获取指标类型名称，默认为类名的大写形式
         
@@ -380,7 +358,7 @@ class BaseIndicator(abc.ABC):
         """
         return self.__class__.__name__.upper()
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Indicator(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算指标的综合评分
         
@@ -392,7 +370,7 @@ class BaseIndicator(abc.ABC):
         """
         try:
             # 1. 计算原始得分
-            raw_score = self.calculate_raw_score(data, **kwargs)
+            raw_score = self.calculate_raw_score_Indicator_Base_Indicator(data, **kwargs)
             
             # 如果原始得分计算失败，返回中性分
             if raw_score.empty:
@@ -401,10 +379,10 @@ class BaseIndicator(abc.ABC):
             last_raw_score = raw_score.iloc[-1]
             
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Indicator_Base_Indicator(data, **kwargs)
             
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_score, patterns, {})
+            confidence = self.calculate_confidence_Indicator_Base_Indicator(raw_score, patterns, {})
             
             # 4. 最终得分
             final_score = last_raw_score * confidence
@@ -421,7 +399,7 @@ class BaseIndicator(abc.ABC):
             return {'score': 50.0, 'confidence': 0.0}
 
     @abc.abstractmethod
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算指标的原始评分，范围0-100
         必须由子类实现
@@ -429,14 +407,14 @@ class BaseIndicator(abc.ABC):
         raise NotImplementedError("子类必须实现 calculate_raw_score 方法")
 
     @abc.abstractmethod
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
         """
         获取指标的所有技术形态
         必须由子类实现
         """
         raise NotImplementedError("子类必须实现 get_patterns 方法")
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> Optional[Union[pd.DataFrame, List[str], List[Dict]]]:
+    def identify_patterns_Indicator(self, data: pd.DataFrame, **kwargs) -> Optional[Union[pd.DataFrame, List[str], List[Dict]]]:
         """
         识别指标的特定形态（由子类实现）。
 
@@ -450,7 +428,7 @@ class BaseIndicator(abc.ABC):
                                   此格式仅为向后兼容保留。
 
         Args:
-            data (pd.DataFrame): 包含指标计算值的DataFrame。
+            data (pd.DataFrame): 包含指标计算值的Data_frame。
             **kwargs: 其他可能的参数。
 
         Returns:
@@ -458,15 +436,15 @@ class BaseIndicator(abc.ABC):
                 识别出的形态。如果未实现，应返回None。
         """
         # 首先确保指标已计算
-        if not self.has_result():
-            self.calculate(data, **kwargs)
+        if not self.has_result_Indicator():
+            self.calculate_Indicator_Base_Indicator(data, **kwargs)
 
         # 如果计算后仍无结果，返回None
-        if not self.has_result():
+        if not self.has_result_Indicator():
             return None
             
         # 调用子类实现的get_patterns方法
-        return self.get_patterns(self.result, **kwargs)
+        return self.get_patterns_Indicator_Base_Indicator(self.result, **kwargs)
     
     def _detect_patterns_from_registry(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -476,10 +454,10 @@ class BaseIndicator(abc.ABC):
             data: 输入数据
             
         Returns:
-            pd.DataFrame: 包含形态信号的DataFrame
+            pd.DataFrame: 包含形态信号的Data_frame
         """
         registry = PatternRegistry()
-        indicator_patterns = registry.get_patterns_by_indicator(self.get_indicator_type())
+        indicator_patterns = registry.get_patterns_by_indicator(self.get_indicator_type_Indicator())
         
         patterns_df = pd.DataFrame(index=data.index)
         
@@ -510,7 +488,7 @@ class BaseIndicator(abc.ABC):
         return patterns_df
     
     @abc.abstractmethod
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算当前信号或评分的置信度
         
@@ -518,7 +496,7 @@ class BaseIndicator(abc.ABC):
         """
         raise NotImplementedError("子类必须实现 calculate_confidence 方法")
 
-    def get_column_name(self, suffix: str = "") -> str:
+    def get_column_name_Indicator(self, suffix: str = "") -> str:
         """
         获取指标列名
         
@@ -528,12 +506,12 @@ class BaseIndicator(abc.ABC):
         Returns:
             str: 指标列名
         """
-        base_name = self.get_indicator_type()
+        base_name = self.get_indicator_type_Indicator()
         if suffix:
             return f"{base_name}_{suffix}"
         return base_name
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_Indicator_Base_Indicator_Base_Indicator_baseindicator_duplicate(self) -> Dict[str, Any]:
         """
         将指标实例的主要属性序列化为字典
         
@@ -552,25 +530,25 @@ class BaseIndicator(abc.ABC):
             'name': self.name,
             'description': self.description,
             'parameters': params,
-            'has_result': self.has_result(),
+            'has_result': self.has_result_Indicator(),
             'has_error': self.has_error()
         }
 
     @abc.abstractmethod
-    def set_parameters(self, **kwargs):
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
         设置指标参数
         必须由子类实现
         """
         raise NotImplementedError("子类必须实现 set_parameters 方法")
     
-    def __str__(self) -> str:
+    def __str___Base_Indicator(self) -> str:
         return f"{self.name} Indicator"
         
-    def __repr__(self) -> str:
+    def __repr___Base_Indicator(self) -> str:
         return f"<{self.__class__.__name__}(name='{self.name}')>"
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Indicator(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

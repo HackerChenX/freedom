@@ -1886,7 +1886,7 @@ class ExtendedTechnicalIndicators:
 
         return pd.DataFrame({'COMPREHENSIVE_SCORE': comprehensive_score})
 
-    def get_supported_indicators(self) -> List[str]:
+    def get_supported_indicators_Indicators(self) -> List[str]:
         """获取支持的指标列表"""
         return [
             # P1重要指标

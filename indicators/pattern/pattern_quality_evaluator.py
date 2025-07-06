@@ -22,15 +22,15 @@ class PatternQualityEvaluator(BaseIndicator, PatternSignalMixin):
         """初始化形态质量评估指标"""
         super().__init__(name="PatternQualityEvaluator", description="形态质量评估指标，评估技术形态的质量和可靠性")
     
-    def _calculate(self, data):
+    def _calculate_patternqualityevaluator(self, data):
         """
         计算形态质量评估
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
-            DataFrame: 包含形态质量评估结果的DataFrame
+            Data_frame: 包含形态质量评估结果的Data_frame
         """
         # 创建结果DataFrame
         result = data.copy()
@@ -58,15 +58,15 @@ class PatternQualityEvaluator(BaseIndicator, PatternSignalMixin):
 
         return result
     
-    def get_patterns(self, data):
+    def get_patterns_Evaluator(self, data):
         """
         获取形态质量评估列表
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
-            DataFrame: 包含形态质量评估列表的DataFrame
+            Data_frame: 包含形态质量评估列表的Data_frame
         """
         # 返回形态质量评估列表
         patterns = pd.DataFrame({
@@ -80,12 +80,12 @@ class PatternQualityEvaluator(BaseIndicator, PatternSignalMixin):
         
         return patterns
     
-    def calculate_raw_score(self, data):
+    def calculate_raw_score_Evaluator(self, data):
         """
         计算原始评分
         
         Args:
-            data: DataFrame, 包含价格和成交量数据
+            data: Data_frame, 包含价格和成交量数据
             
         Returns:
             float: 介于0-100之间的评分值
@@ -93,7 +93,7 @@ class PatternQualityEvaluator(BaseIndicator, PatternSignalMixin):
         # 简单实现，返回固定评分
         return 85.0 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Evaluator(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

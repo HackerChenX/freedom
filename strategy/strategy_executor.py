@@ -13,18 +13,18 @@ from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_manager import Strategy_manager
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor, safe_run, cache_result
 from utils.exceptions import (
-    StrategyExecutionError,
-    StrategyValidationError,
-    DataAccessError,
-    IndicatorExecutionError
+    Strategy_execution_error,
+    Strategy_validation_error,
+    Data_access_error,
+    Indicator_execution_error
 )
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class StrategyExecutor:
@@ -32,7 +32,7 @@ class StrategyExecutor:
     策略执行器，负责执行策略，对股票列表进行筛选和评分
     """
     
-    def __init__(self, max_workers: int = None, cache_enabled: bool = True):
+    def __init___70(self, max_workers: int = None, cache_enabled: bool = True):
         """
         初始化策略执行器
 
@@ -54,8 +54,8 @@ class StrategyExecutor:
             logger.error(f"❌ 初始化指标注册系统失败: {e}")
 
         # 初始化条件评估器，确保所有线程共享同一个实例
-        from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
-        self._evaluator = StrategyConditionEvaluator()
+        from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+        self._evaluator = Strategy_condition_evaluator()
 
         logger.info(f"策略执行器初始化完成，最大线程数: {self.max_workers}, 缓存{'启用' if cache_enabled else '禁用'}")
     
@@ -63,7 +63,7 @@ class StrategyExecutor:
     def execute_strategy_by_id(
         self, 
         strategy_id: str, 
-        strategy_manager: StrategyManager,
+        strategy_manager: Strategy_manager,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         progress_callback: Optional[Callable[[float, str], None]] = None
@@ -79,10 +79,10 @@ class StrategyExecutor:
             progress_callback: 进度回调函数，参数为进度百分比和状态消息
             
         Returns:
-            选股结果DataFrame
+            选股结果Data_frame
             
         Raises:
-            StrategyExecutionError: 策略执行错误
+            Strategy_execution_error: 策略执行错误
         """
         try:
             # 检查缓存
@@ -103,15 +103,15 @@ class StrategyExecutor:
             if progress_callback:
                 progress_callback(0.2, "正在解析策略配置")
                 
-            from strategy.strategy_parser import StrategyParser
-            parser = StrategyParser()
+            from strategy.strategy_parser import Strategy_parser
+            parser = Strategy_parser()
             strategy_plan = parser.parse_strategy(strategy_config)
             
             # 执行策略
             if progress_callback:
                 progress_callback(0.3, "开始执行策略")
                 
-            result = self.execute_strategy(
+            result = self.execute_strategy_Executor_Strategy_Executor(
                 strategy_plan=strategy_plan,
                 start_date=start_date,
                 end_date=end_date,
@@ -128,7 +128,7 @@ class StrategyExecutor:
             raise StrategyExecutionError(f"执行策略失败: {str(e)}")
     
     @performance_monitor(threshold=1.0)
-    def execute_strategy(
+    def execute_strategy_Executor_Strategy_Executor(
         self, 
         strategy_plan: Dict[str, Any],
         start_date: Optional[str] = None,
@@ -146,10 +146,10 @@ class StrategyExecutor:
             progress_callback: 进度回调函数，参数为进度百分比和状态消息
             
         Returns:
-            选股结果DataFrame
+            选股结果Data_frame
             
         Raises:
-            StrategyExecutionError: 策略执行错误
+            Strategy_execution_error: 策略执行错误
         """
         try:
             # 1. 验证策略计划
@@ -200,7 +200,7 @@ class StrategyExecutor:
             self._preload_common_data(end_date)
             
             # 创建共享的线程池，而不是每个批次单独创建
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            with concurrent.futures.Thread_pool_executor(max_workers=self.max_workers) as executor:
                 # 批次处理循环
                 for batch_idx in range(0, total_stocks, batch_size):
                     batch_end = min(batch_idx + batch_size, total_stocks)
@@ -422,7 +422,7 @@ class StrategyExecutor:
                     if self.cache_enabled:
                         self.cache[cache_key] = data
                         
-                except DataAccessError as e:
+                except Data_access_error as e:
                     logger.warning(f"获取股票 {stock_code} 数据失败: {e}")
                     return None
                 
@@ -517,7 +517,7 @@ class StrategyExecutor:
                 change_pct = latest_data['pct_chg'] if 'pct_chg' in latest_data else 0.0
                 
                 # 计算评分
-                score = self._calculate_stock_score(stock_code, data, condition_details)
+                score = self._calculate_stock_score_Strategy_Executor(stock_code, data, condition_details)
                 
                 # 获取行业信息
                 industry = self.data_manager.get_stock_industry(stock_code)
@@ -541,7 +541,7 @@ class StrategyExecutor:
             logger.error(f"处理股票 {stock_code} 时出错: {e}")
             return None
     
-    def _calculate_stock_score(self, stock_code: str, data: pd.DataFrame, 
+    def _calculate_stock_score_Strategy_Executor(self, stock_code: str, data: pd.DataFrame, 
                               details: Dict[str, Any]) -> float:
         """
         计算股票评分
@@ -564,19 +564,19 @@ class StrategyExecutor:
                 return base_score
                 
             # 计算技术指标得分 (30%)
-            tech_score = self._calculate_technical_score(data, details)
+            tech_score = self._calculate_technical_score_Strategy_Executor(data, details)
             
             # 计算趋势得分 (25%)
-            trend_score = self._calculate_trend_score(data)
+            trend_score = self._calculate_trend_score_Strategy_Executor(data)
             
             # 计算动量得分 (15%)
-            momentum_score = self._calculate_momentum_score(data)
+            momentum_score = self._calculate_momentum_score_Strategy_Executor(data)
             
             # 计算成交量得分 (15%)
-            volume_score = self._calculate_volume_score(data)
+            volume_score = self._calculate_volume_score_Strategy_Executor(data)
             
             # 计算波动性得分 (10%)
-            volatility_score = self._calculate_volatility_score(data)
+            volatility_score = self._calculate_volatility_score_Strategy_Executor(data)
             
             # 计算市场环境得分 (5%)
             market_score = self._calculate_market_score(stock_code, data)
@@ -600,10 +600,10 @@ class StrategyExecutor:
             logger.error(f"计算股票 {stock_code} 评分时出错: {e}")
             return base_score  # 返回默认评分
     
-    def _calculate_technical_score(self, data: pd.DataFrame,
+    def _calculate_technical_score_Strategy_Executor(self, data: pd.DataFrame,
                                  details: Dict[str, Any]) -> float:
         """
-        计算技术指标评分（使用CompleteIndicatorRegistry动态计算）
+        计算技术指标评分（使用Complete_indicator_registry动态计算）
 
         Args:
             data: 股票数据
@@ -629,7 +629,7 @@ class StrategyExecutor:
 
     def _calculate_dynamic_technical_score(self, data: pd.DataFrame, passing_indicators: List[str]) -> float:
         """
-        使用CompleteIndicatorRegistry动态计算技术指标评分
+        使用Complete_indicator_registry动态计算技术指标评分
 
         Args:
             data: 股票数据
@@ -690,7 +690,7 @@ class StrategyExecutor:
 
     def _calculate_core_indicators_score(self, data: pd.DataFrame) -> float:
         """
-        使用CompleteIndicatorRegistry计算核心指标评分
+        使用Complete_indicator_registry计算核心指标评分
 
         Args:
             data: 股票数据
@@ -765,7 +765,7 @@ class StrategyExecutor:
             logger.debug(f"动态获取指标 {indicator_type} 评分失败: {e}")
             return 60.0
     
-    def _calculate_trend_score(self, data: pd.DataFrame) -> float:
+    def _calculate_trend_score_Strategy_Executor(self, data: pd.DataFrame) -> float:
         """
         计算趋势强度评分
         
@@ -853,7 +853,7 @@ class StrategyExecutor:
             logger.error(f"计算趋势评分时出错: {e}")
             return 50.0
     
-    def _calculate_momentum_score(self, data: pd.DataFrame) -> float:
+    def _calculate_momentum_score_Strategy_Executor(self, data: pd.DataFrame) -> float:
         """
         计算动量评分
         
@@ -913,7 +913,7 @@ class StrategyExecutor:
             logger.error(f"计算动量评分时出错: {e}")
             return 50.0
     
-    def _calculate_volume_score(self, data: pd.DataFrame) -> float:
+    def _calculate_volume_score_Strategy_Executor(self, data: pd.DataFrame) -> float:
         """
         计算成交量评分
         
@@ -1000,7 +1000,7 @@ class StrategyExecutor:
             logger.error(f"计算成交量评分时出错: {e}")
             return 50.0
     
-    def _calculate_volatility_score(self, data: pd.DataFrame) -> float:
+    def _calculate_volatility_score_Strategy_Executor(self, data: pd.DataFrame) -> float:
         """
         计算波动性评分（较低的波动性得高分，但不能太低）
         
@@ -1169,7 +1169,7 @@ class StrategyExecutor:
             filters: 过滤条件
 
         Returns:
-            股票列表DataFrame
+            股票列表Data_frame
         """
         # 如果指定了股票代码列表，直接使用
         if 'stock_codes' in filters and filters['stock_codes']:
@@ -1217,7 +1217,7 @@ class StrategyExecutor:
             验证通过返回True
             
         Raises:
-            StrategyValidationError: 策略验证错误
+            Strategy_validation_error: 策略验证错误
         """
         # 检查必要字段
         required_fields = ['strategy_id', 'name', 'conditions']
@@ -1264,13 +1264,13 @@ class StrategyExecutor:
         
         return True
     
-    def clear_cache(self):
+    def clear_cache_Executor(self):
         """清除结果缓存"""
         old_size = len(self.cache)
         self.cache.clear()
         logger.info(f"已清除策略执行器缓存，共 {old_size} 项")
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats_Executor(self) -> Dict[str, Any]:
         """
         获取缓存统计信息
         

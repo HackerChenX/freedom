@@ -7,7 +7,7 @@
 from enum import Enum, auto
 
 
-class IndicatorType(Enum):
+class IndicatorType_Indicators(Enum):
     """指标类型枚举"""
     MA = auto()  # 移动平均线
     EMA = auto()  # 指数移动平均线
@@ -43,7 +43,7 @@ class TrendType(Enum):
     REVERSAL_DOWN = auto()  # 向下反转
 
 
-class VolumePattern(Enum):
+class VolumePattern_Indicators(Enum):
     """成交量模式枚举"""
     INCREASING = auto()  # 放量
     DECREASING = auto()  # 缩量
@@ -52,7 +52,7 @@ class VolumePattern(Enum):
     CONSISTENT = auto()  # 均衡
 
 
-class PatternType(Enum):
+class PatternType_Indicators(Enum):
     """形态类型枚举"""
     HEAD_AND_SHOULDERS = auto()  # 头肩顶
     INVERSE_HEAD_AND_SHOULDERS = auto()  # 头肩底

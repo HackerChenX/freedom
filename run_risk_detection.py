@@ -10,17 +10,17 @@ import sys
 root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
-from tools.automated_risk_detection import AutomatedRiskDetector, RiskLevel
+from tools.automated_risk_detection import Automated_risk_detector, Risk_level
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-def main():
+def main_runriskdetection():
     """主函数"""
     print("🔍 开始自动化风险检测...")
     
     # 创建风险检测器
-    detector = AutomatedRiskDetector()
+    detector = Automated_risk_detector()
     
     # 扫描所有指标
     results = detector.scan_all_indicators()
@@ -31,9 +31,9 @@ def main():
     
     # 统计信息
     total_count = len(results)
-    high_risk_count = sum(1 for r in results.values() if r.risk_level == RiskLevel.HIGH)
-    medium_risk_count = sum(1 for r in results.values() if r.risk_level == RiskLevel.MEDIUM)
-    low_risk_count = sum(1 for r in results.values() if r.risk_level == RiskLevel.LOW)
+    high_risk_count = sum(1 for r in results.values() if r.risk_level == Risk_level.HIGH)
+    medium_risk_count = sum(1 for r in results.values() if r.risk_level == Risk_level.MEDIUM)
+    low_risk_count = sum(1 for r in results.values() if r.risk_level == Risk_level.LOW)
     
     print(f"\n📊 检测结果统计:")
     print(f"   总指标数: {total_count}")
@@ -48,7 +48,7 @@ def main():
         
         high_risk_indicators = []
         for name, result in results.items():
-            if result.risk_level == RiskLevel.HIGH:
+            if result.risk_level == Risk_level.HIGH:
                 high_risk_indicators.append(name)
                 print(f"\n【{name}】")
                 print(f"  指标类型: {result.indicator_type.value}")
@@ -101,4 +101,4 @@ def main():
     print("\n🔍 风险检测完成！")
 
 if __name__ == "__main__":
-    main() 
+    main_runriskdetection() 

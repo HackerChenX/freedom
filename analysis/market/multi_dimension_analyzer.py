@@ -13,29 +13,30 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db, get_default_config
-from enums.kline_period import KlinePeriod
-from utils.logger import get_logger
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from enums.kline_period import Kline_period
+from utils.logger import getLogger
 from utils.path_utils import get_backtest_result_dir
 from indicators.complete_indicator_registry import complete_registry
 
 # 获取日志记录器
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
-class MultiDimensionAnalyzer:
+class MultidimensionanalyzerAnalyzer:
     """
     多维度分析器 - 对股票进行多个维度的技术分析
     
     支持多周期、多指标组合分析，评估股票在不同维度上的表现
     """
     
-    def __init__(self):
+    def __init___118(self):
         """初始化多维度分析器"""
         logger.info("初始化多维度分析器")
         
-        # 获取数据库连接
-        config = get_default_config()
-        self.ch_db = get_clickhouse_db(config=config)
+        # 使用依赖注入架构
+        self.container = get_container()
+        self.data_access = self.get_service(Data_access_interface)
         
         # 使用统一指标注册系统
         self.indicator_registry = complete_registry
@@ -49,8 +50,8 @@ class MultiDimensionAnalyzer:
         
         logger.info("多维度分析器初始化完成")
         
-    def analyze_stock(self, stock_code: str, analysis_date: str = None, 
-                      periods: List[KlinePeriod] = None, 
+    def analyze_stock_Analyzer(self, stock_code: str, analysis_date: str = None, 
+                      periods: List[Kline_period] = None, 
                       indicators: List[str] = None) -> Dict[str, Any]:
         """
         对单个股票进行多维度分析
@@ -66,7 +67,7 @@ class MultiDimensionAnalyzer:
         """
         # 设置默认值
         if periods is None:
-            periods = [KlinePeriod.DAILY, KlinePeriod.WEEKLY, KlinePeriod.MIN_60]
+            periods = [Kline_period.DAILY, Kline_period.WEEKLY, Kline_period.MIN_60]
             
         if indicators is None:
             indicators = ["MA", "MACD", "KDJ", "RSI", "BOLL", "VOL"]
@@ -89,7 +90,7 @@ class MultiDimensionAnalyzer:
         
         # 分析各个周期
         for period in periods:
-            period_result = self._analyze_period(stock_code, analysis_date, period, indicators)
+            period_result = self._analyze_period_Multi_Dimension_Analyzer(stock_code, analysis_date, period, indicators)
             if period_result:
                 # 只有首次获取股票名称和行业
                 if not result["name"] and "name" in period_result:
@@ -104,8 +105,8 @@ class MultiDimensionAnalyzer:
         
         return result 
 
-    def _analyze_period(self, stock_code: str, analysis_date: str, 
-                       period: KlinePeriod, indicators: List[str]) -> Dict[str, Any]:
+    def _analyze_period_Multi_Dimension_Analyzer(self, stock_code: str, analysis_date: str, 
+                       period: Kline_period, indicators: List[str]) -> Dict[str, Any]:
         """
         分析指定周期的技术指标
         
@@ -126,7 +127,7 @@ class MultiDimensionAnalyzer:
             
             # 从数据库获取K线数据
             logger.info(f"获取 {stock_code} 从 {start_date} 到 {end_date} 的 {period.name} 数据")
-            data = self._get_kline_data(stock_code, period, start_date, end_date)
+            data = self._get_kline_data_Multi_Dimension_Analyzer(stock_code, period, start_date, end_date)
             
             if data is None or len(data) == 0:
                 logger.warning(f"未找到 {stock_code} 的 {period.name} 数据")
@@ -179,7 +180,7 @@ class MultiDimensionAnalyzer:
             logger.error(f"分析 {stock_code} 的 {period.name} 数据时出错: {e}")
             return {} 
 
-    def _get_kline_data(self, stock_code: str, period: KlinePeriod, 
+    def _get_kline_data_Multi_Dimension_Analyzer(self, stock_code: str, period: Kline_period, 
                        start_date: str, end_date: str) -> pd.DataFrame:
         """
         获取K线数据
@@ -195,7 +196,7 @@ class MultiDimensionAnalyzer:
         """
         try:
             # 从数据库获取数据
-            data = self.ch_db.get_stock_info(stock_code, period.value, start_date, end_date)
+            data = self.data_access.get_stock_info(stock_code, period.value, start_date, end_date)
             
             if not data or len(data) == 0:
                 logger.warning(f"未找到 {stock_code} 的 {period.name} 数据")
@@ -421,7 +422,7 @@ class MultiDimensionAnalyzer:
         return patterns
         
     def analyze_multiple_stocks(self, stock_codes: List[str], analysis_date: str = None,
-                              periods: List[KlinePeriod] = None,
+                              periods: List[Kline_period] = None,
                               indicators: List[str] = None) -> List[Dict[str, Any]]:
         """
         分析多个股票
@@ -439,7 +440,7 @@ class MultiDimensionAnalyzer:
         
         for stock_code in stock_codes:
             try:
-                result = self.analyze_stock(stock_code, analysis_date, periods, indicators)
+                result = self.analyze_stock_Analyzer(stock_code, analysis_date, periods, indicators)
                 if result and "dimensions" in result and result["dimensions"]:
                     results.append(result)
                     logger.info(f"成功分析股票: {stock_code}")
@@ -572,7 +573,7 @@ class MultiDimensionAnalyzer:
         
         return common_features
         
-    def save_results(self, output_file: str, format_type: str = "json") -> None:
+    def save_results_Analyzer_Multi_Dimension_Analyzer(self, output_file: str, format_type: str = "json") -> None:
         """
         保存分析结果
         
@@ -610,7 +611,7 @@ class MultiDimensionAnalyzer:
             
             # 使用JSON编码器处理numpy类型
             class NumpyEncoder(json.JSONEncoder):
-                def default(self, obj):
+                def default_Analyzer(self, obj):
                     if isinstance(obj, np.integer):
                         return int(obj)
                     elif isinstance(obj, np.floating):
@@ -621,11 +622,11 @@ class MultiDimensionAnalyzer:
                         return bool(obj)
                     elif obj is None or obj == np.nan:
                         return None
-                    return super(NumpyEncoder, self).default(obj)
+                    return super(Numpy_encoder, self).default_Analyzer(obj)
             
             # 保存到文件
             with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(full_results, f, indent=2, ensure_ascii=False, cls=NumpyEncoder)
+                json.dump(full_results, f, indent=2, ensure_ascii=False, cls=Numpy_encoder)
                 
             logger.info(f"分析结果已保存到: {output_file}")
             
@@ -708,7 +709,7 @@ class MultiDimensionAnalyzer:
             logger.error(f"保存Markdown结果时出错: {e}")
             
 # 主函数
-def main():
+def main_51():
     """命令行入口函数"""
     import argparse
     
@@ -739,11 +740,11 @@ def main():
         return
     
     # 创建分析器并执行分析
-    analyzer = MultiDimensionAnalyzer()
+    analyzer = Multi_dimension_analyzer_Analyzer()
     results = analyzer.analyze_multiple_stocks(stock_codes, args.date)
     
     # 保存结果
-    analyzer.save_results(args.output, args.format)
+    analyzer.save_results_Analyzer_Multi_Dimension_Analyzer(args.output, args.format)
     
 if __name__ == "__main__":
-    main() 
+    main_51() 

@@ -318,7 +318,7 @@ def generate_json_summary(validation_results: Dict[str, Any],
     return summary
 
 
-def main():
+def main_generateclosedloopsummary():
     """主函数"""
     logger.info("🚀 开始生成真正闭环验证综合报告")
     
@@ -371,4 +371,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
+    main_generateclosedloopsummary() 

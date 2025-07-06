@@ -8,16 +8,16 @@ from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 
-class TestVIX(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestVIX_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestspecialindicators(self):
         self.indicator = VIX(period=14)
         self.expected_columns = ['vix', 'vix_smooth']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 50}
         ])
 
-class TestSAR(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestSAR_Indicators(unittest.TestCase, IndicatorTestMixin):
+    def setUp_IndicatorsTestspecialindicators(self):
         self.indicator = SAR(acceleration=0.02, maximum=0.2)
         self.expected_columns = ['sar']
         self.data = TestDataGenerator.generate_price_sequence([
@@ -25,7 +25,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin):
         ])
 
 class TestTRIX(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+    def setUp_IndicatorsTestspecialindicators(self):
         self.indicator = TRIX(n=12, m=9)
         self.expected_columns = ['TRIX', 'MATRIX']
         self.data = TestDataGenerator.generate_price_sequence([

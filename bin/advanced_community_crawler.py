@@ -19,7 +19,7 @@ from urllib.parse import urljoin, urlparse
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -30,8 +30,8 @@ import requests
 class AdvancedCommunityCrawler:
     """高级社区爬虫 - 无Selenium版本"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___11(self):
+        self.concept_extractor = Concept_stock_extractor()
 
         # 创建会话
         self.session = requests.Session()
@@ -77,7 +77,7 @@ class AdvancedCommunityCrawler:
             }
         }
 
-    def get_advanced_headers(self, referer: str = None) -> Dict[str, str]:
+    def get_advanced_headers_Crawler(self, referer: str = None) -> Dict[str, str]:
         """获取高级请求头"""
         headers = {
             'User-Agent': random.choice(self.user_agents),
@@ -98,12 +98,12 @@ class AdvancedCommunityCrawler:
 
         return headers
 
-    def safe_request(self, url: str, retries: int = 3) -> Dict[str, Any]:
+    def safe_request_Crawler(self, url: str, retries: int = 3) -> Dict[str, Any]:
         """安全请求页面"""
         for attempt in range(retries):
             try:
                 # 更新请求头
-                headers = self.get_advanced_headers()
+                headers = self.get_advanced_headers_Crawler()
                 self.session.headers.update(headers)
 
                 print(f"📡 请求 (尝试 {attempt + 1}/{retries}): {url}")
@@ -213,7 +213,7 @@ class AdvancedCommunityCrawler:
         # 尝试多个URL
         for url in self.communities['xueqiu']['web_urls']:
             try:
-                result = self.safe_request(url)
+                result = self.safe_request_Crawler(url)
 
                 if result.get('success'):
                     found_discussions = self.extract_discussions_from_html(
@@ -246,7 +246,7 @@ class AdvancedCommunityCrawler:
         # 尝试多个URL
         for url in self.communities['taoguba']['web_urls']:
             try:
-                result = self.safe_request(url)
+                result = self.safe_request_Crawler(url)
 
                 if result.get('success'):
                     found_discussions = self.extract_discussions_from_html(
@@ -279,7 +279,7 @@ class AdvancedCommunityCrawler:
         # 尝试多个URL
         for url in self.communities['eastmoney_guba']['web_urls']:
             try:
-                result = self.safe_request(url)
+                result = self.safe_request_Crawler(url)
 
                 if result.get('success'):
                     found_discussions = self.extract_discussions_from_html(
@@ -330,7 +330,7 @@ class AdvancedCommunityCrawler:
 
         return all_discussions
 
-    def analyze_discussions(self, discussions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def analyze_discussions_Crawler(self, discussions: List[Dict[str, Any]]) -> Dict[str, Any]:
         """分析讨论数据"""
         if not discussions:
             return {}
@@ -368,7 +368,7 @@ class AdvancedCommunityCrawler:
         return analysis
 
 
-def main():
+def main_18():
     """主函数"""
     print("=== 高级股市社区爬虫系统 ===")
     print(f"启动时间: {datetime.now()}")
@@ -377,7 +377,7 @@ def main():
     print("=" * 60)
 
     # 创建高级爬虫实例
-    crawler = AdvancedCommunityCrawler()
+    crawler = Advanced_community_crawler()
 
     try:
         # 爬取所有社区讨论
@@ -401,7 +401,7 @@ def main():
                 print(f"   内容预览: {content_preview}...")
 
             # 数据分析
-            analysis = crawler.analyze_discussions(discussions)
+            analysis = crawler.analyze_discussions_Crawler(discussions)
 
             print(f"\n📊 讨论数据分析:")
             print(f"总讨论数: {analysis['total_discussions']}")
@@ -456,4 +456,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_18()

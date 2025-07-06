@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
@@ -13,7 +15,7 @@ import re
 import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Callable
 
-class MockClickHouseDB:
+class Mock_click_house_dB:
     """模拟ClickHouse数据库服务"""
     
     def __init__(self, data_path: Optional[str] = None):
@@ -76,7 +78,7 @@ class MockClickHouseDB:
         
         Args:
             query_pattern: SQL查询模式（正则表达式）
-            response_data: 响应数据，可以是DataFrame或字典/列表
+            response_data: 响应数据，可以是Data_frame或字典/列表
         """
         # 如果响应是列表，转换为DataFrame
         if isinstance(response_data, list) and response_data:
@@ -92,7 +94,7 @@ class MockClickHouseDB:
             sql: SQL查询语句
             
         Returns:
-            查询结果DataFrame
+            查询结果Data_frame
         """
         # 记录查询历史
         self.query_history.append(sql)
@@ -105,7 +107,7 @@ class MockClickHouseDB:
         # 如果没有匹配的响应，返回空DataFrame
         return pd.DataFrame()
     
-    def execute(self, sql: str) -> None:
+    def execute_dbmock(self, sql: str) -> None:
         """
         模拟执行非查询SQL
         
@@ -134,20 +136,20 @@ class MockClickHouseDB:
         self.query_history = []
 
 
-class MockDataManager:
+class Mockdatamanager_mock:
     """模拟数据管理器，用于替代实际数据管理器进行测试"""
     
-    def __init__(self, mock_db: Optional[MockClickHouseDB] = None):
+    def __init__(self, mock_db: Optional[Mock_click_house_dB] = None):
         """
         初始化模拟数据管理器
         
         Args:
             mock_db: 模拟数据库实例，如果不提供则自动创建
         """
-        self.db = mock_db or MockClickHouseDB()
+        self.db = mock_db or Mockget_service(Data_access_interface)
         self.cache = {}
     
-    def get_stock_list(self, market: Optional[str] = None) -> pd.DataFrame:
+    def get_stock_list_Mock(self, market: Optional[str] = None) -> pd.DataFrame:
         """
         获取股票列表
         
@@ -155,14 +157,14 @@ class MockDataManager:
             market: 市场代码，例如 'SH', 'SZ'
             
         Returns:
-            股票列表DataFrame
+            股票列表Data_frame
         """
         cache_key = f"stock_list_{market or 'ALL'}"
         
         if cache_key in self.cache:
             return self.cache[cache_key]
         
-        sql = "SELECT * FROM stock_list"
+        sql = "SELECT code, name, date, level, open, close, high, low, volume FROM stock_list"
         if market:
             sql += f" WHERE market = '{market}'"
         
@@ -171,7 +173,7 @@ class MockDataManager:
         
         return result
     
-    def get_kline_data(self, 
+    def get_kline_data_Mock(self, 
                        stock_code: str, 
                        start_date: Optional[str] = None, 
                        end_date: Optional[str] = None, 
@@ -186,14 +188,14 @@ class MockDataManager:
             period: K线周期，如 'daily', 'weekly', 'monthly'
             
         Returns:
-            K线数据DataFrame
+            K线数据Data_frame
         """
         cache_key = f"kline_{stock_code}_{period}_{start_date}_{end_date}"
         
         if cache_key in self.cache:
             return self.cache[cache_key]
         
-        sql = f"SELECT * FROM kline_{period} WHERE code = '{stock_code}'"
+        sql = f"SELECT code, name, date, level, open, close, high, low, volume FROM kline_{period} WHERE code = '{stock_code}'"
         
         if start_date:
             sql += f" AND date >= '{start_date}'"
@@ -223,14 +225,14 @@ class MockDataManager:
             end_date: 结束日期
             
         Returns:
-            指标数据DataFrame
+            指标数据Data_frame
         """
         cache_key = f"indicator_{indicator_name}_{stock_code}_{start_date}_{end_date}"
         
         if cache_key in self.cache:
             return self.cache[cache_key]
         
-        sql = f"SELECT * FROM indicator_{indicator_name} WHERE code = '{stock_code}'"
+        sql = f"SELECT code, name, date, level, open, close, high, low, volume FROM indicator_{indicator_name} WHERE code = '{stock_code}'"
         
         if start_date:
             sql += f" AND date >= '{start_date}'"
@@ -245,13 +247,13 @@ class MockDataManager:
         
         return result
     
-    def clear_cache(self) -> None:
+    def clear_cache_Mock(self) -> None:
         """清除缓存"""
         self.cache = {}
 
 
 # 用于测试的工厂函数
-def create_mock_data_manager(response_data_path: Optional[str] = None) -> MockDataManager:
+def create_mock_data_manager(response_data_path: Optional[str] = None) -> Mock_data_manager:
     """
     创建预配置的模拟数据管理器
     
@@ -261,5 +263,5 @@ def create_mock_data_manager(response_data_path: Optional[str] = None) -> MockDa
     Returns:
         配置好的模拟数据管理器
     """
-    mock_db = MockClickHouseDB(response_data_path)
-    return MockDataManager(mock_db) 
+    mock_db = Mock_click_house_dB(response_data_path)
+    return Mock_data_manager_Mock(mock_db) 

@@ -49,7 +49,7 @@ class SimpleStrategyExecutor:
             logger.error(f"加载策略配置失败: {e}")
             raise
     
-    def execute_strategy(self, config_file: str, target_date: str = None) -> pd.DataFrame:
+    def execute_strategy_Executor(self, config_file: str, target_date: str = None) -> pd.DataFrame:
         """
         执行策略
         
@@ -235,7 +235,7 @@ class SimpleStrategyExecutor:
         
         return pd.DataFrame(demo_stocks)
     
-    def generate_report(self, results: pd.DataFrame, strategy_config: dict, 
+    def generate_report_Executor(self, results: pd.DataFrame, strategy_config: dict, 
                        execution_time: float, output_dir: Path):
         """生成执行报告"""
         try:
@@ -276,7 +276,7 @@ class SimpleStrategyExecutor:
             logger.error(f"生成报告失败: {e}")
 
 
-def main():
+def main_simplestrategyexecutor():
     """主函数"""
     parser = argparse.ArgumentParser(description="简化策略执行器")
     parser.add_argument("--config", required=True, help="策略配置文件路径")
@@ -301,7 +301,7 @@ def main():
     
     try:
         # 执行策略
-        results = executor.execute_strategy(args.config, args.date)
+        results = executor.execute_strategy_Executor(args.config, args.date)
         
         # 计算执行时间
         execution_time = (datetime.now() - start_time).total_seconds()
@@ -310,7 +310,7 @@ def main():
         strategy_config = executor.load_strategy_config(args.config)['strategy']
         
         # 生成报告
-        executor.generate_report(results, strategy_config, execution_time, output_dir)
+        executor.generate_report_Executor(results, strategy_config, execution_time, output_dir)
         
         # 打印结果摘要
         print(f"\n策略执行完成！")
@@ -330,4 +330,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    mainSimplestrategyexecutor()

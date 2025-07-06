@@ -7,7 +7,7 @@ from indicators.complete_indicator_registry import complete_registry
 class TestEnhancedWR(unittest.TestCase):
     """测试增强型威廉指标(Williams %R)"""
 
-    def setUp(self):
+    def setUp_Wr_Test_Enhanced_Wr(self):
         """准备测试数据"""
         # 创建模拟价格数据
         np.random.seed(42)  # 确保结果可重现
@@ -170,7 +170,7 @@ class TestEnhancedWR(unittest.TestCase):
         self.assertTrue((oscillation['band_width'].dropna() >= 0).all())
         self.assertTrue((oscillation['band_width'] == (oscillation['upper_band'] - oscillation['lower_band'])).all())
 
-    def test_pattern_identification(self):
+    def test_pattern_identification_Wr(self):
         """测试形态识别功能"""
         # 计算WR
         self.wr.calculate(self.test_data)
@@ -198,7 +198,7 @@ class TestEnhancedWR(unittest.TestCase):
         self.assertIn('overbought_stagnation', patterns.columns)
         self.assertIn('oversold_stagnation', patterns.columns)
 
-    def test_score_calculation(self):
+    def test_score_calculation_Wr(self):
         """测试评分计算功能"""
         # 计算WR
         self.wr.calculate(self.test_data)
@@ -222,7 +222,7 @@ class TestEnhancedWR(unittest.TestCase):
         # 检查市场环境是否影响评分
         self.assertFalse(bull_score.equals(bear_score))
 
-    def test_signal_generation(self):
+    def test_signal_generation_Wr(self):
         """测试信号生成功能"""
         # 计算WR并生成信号
         signals = self.wr.generate_signals(self.test_data)

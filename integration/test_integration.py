@@ -8,13 +8,13 @@ import unittest
 import json
 import pandas as pd
 import numpy as np
-from unittest.mock import MagicMock, patch
+from unittest.mock import Magic_mock, patch
 from datetime import datetime, timedelta
 
-class IntegrationTest(unittest.TestCase):
+class Integration_test(unittest.Test_case):
     """集成测试基类"""
     
-    def setUp(self):
+    def set_up_Integration(self):
         """测试前准备"""
         # 创建测试数据
         self.prepare_test_data()
@@ -155,7 +155,7 @@ class IntegrationTest(unittest.TestCase):
         }
 
 
-class StockSelectionIntegrationTest(IntegrationTest):
+class Stock_selection_integration_test(Integration_test):
     """选股流程集成测试"""
     
     def test_end_to_end_stock_selection(self):
@@ -170,7 +170,7 @@ class StockSelectionIntegrationTest(IntegrationTest):
             kline['rsi'].iloc[-1] = 25
         
         # 模拟依赖对象
-        mock_data_manager = MagicMock()
+        mock_data_manager = Magic_mock()
         # 只返回主板和创业板的股票
         mock_data_manager.get_stock_list.return_value = self.stock_list[
             self.stock_list['market'].isin(['主板', '创业板'])
@@ -178,15 +178,15 @@ class StockSelectionIntegrationTest(IntegrationTest):
         mock_data_manager.get_kline_data.side_effect = lambda stock_code, **kwargs: self.kline_data.get(stock_code, pd.DataFrame())
         
         # 模拟指标
-        class MockMACross:
+        class Mock_mACross:
             def __init__(self, name="MA_CROSS", parameters=None):
                 self.name = name
                 self.parameters = parameters or {}
                 
-            def calculate(self, data):
+            def calculate_Integration_Test_Integration_Test_Integration_testintegration(self, data):
                 return data
                 
-            def generate_signals(self, data):
+            def generate_signals_Integration_Test_Integration_Test_Integration_testintegration(self, data):
                 # 判断MA5是否上穿MA20
                 last_idx = len(data) - 1
                 if last_idx >= 20:
@@ -199,15 +199,15 @@ class StockSelectionIntegrationTest(IntegrationTest):
                     }, index=data.index)
                 return pd.DataFrame({'signal': [False] * len(data)}, index=data.index)
                 
-        class MockRSIOversold:
+        class Mock_rSIOversold:
             def __init__(self, name="RSI_OVERSOLD", parameters=None):
                 self.name = name
                 self.parameters = parameters or {"threshold": 30}
                 
-            def calculate(self, data):
+            def calculate_Integration_Test_Integration_Test_Integration_testintegration(self, data):
                 return data
                 
-            def generate_signals(self, data):
+            def generate_signals_Integration_Test_Integration_Test_Integration_testintegration(self, data):
                 # 判断RSI是否小于阈值
                 last_idx = len(data) - 1
                 if last_idx >= 14:
@@ -221,7 +221,7 @@ class StockSelectionIntegrationTest(IntegrationTest):
                 return pd.DataFrame({'signal': [False] * len(data)}, index=data.index)
         
         # 模拟策略解析器
-        mock_strategy_parser = MagicMock()
+        mock_strategy_parser = Magic_mock()
         mock_strategy_parser.parse.return_value = {
             "strategy_id": "TEST_STRATEGY",
             "name": "测试策略",
@@ -247,7 +247,7 @@ class StockSelectionIntegrationTest(IntegrationTest):
         }
         
         # 模拟策略执行器
-        class MockStrategyExecutor:
+        class Mock_strategy_executor:
             def __init__(self, data_manager):
                 self.data_manager = data_manager
                 
@@ -270,7 +270,7 @@ class StockSelectionIntegrationTest(IntegrationTest):
                         if condition["type"] == "indicator":
                             # 计算指标信号
                             indicator = condition["indicator"]
-                            signals = indicator.generate_signals(kline_data)
+                            signals = indicator.generate_signals_Integration_Test_Integration_Test_Integration_testintegration(kline_data)
                             
                             # 检查最后一条信号
                             last_signal = signals['signal'].iloc[-1] if not signals.empty else False
@@ -318,13 +318,13 @@ class StockSelectionIntegrationTest(IntegrationTest):
                 return results
         
         # 创建执行器
-        executor = MockStrategyExecutor(mock_data_manager)
+        executor = Mock_strategy_executor(mock_data_manager)
         
         # 执行策略
         results = executor.execute(mock_strategy_parser.parse())
         
         # 验证结果
-        self.assertEqual(len(results), 2)  # 应该有2支股票满足条件（000001和000005）
+        self.assert_equal(len(results), 2)  # 应该有2支股票满足条件（000001和000005）
         
         # 检查是否按市值升序排序
         self.assertEqual(results[0]['stock_code'], '000001')
@@ -337,7 +337,7 @@ class StockSelectionIntegrationTest(IntegrationTest):
             kline = self.kline_data[stock_code]
             
             # 验证MA5上穿MA20
-            self.assertTrue(
+            self.assert_true(
                 kline['ma5'].iloc[-1] > kline['ma20'].iloc[-1] and 
                 kline['ma5'].iloc[-2] <= kline['ma20'].iloc[-2]
             )
@@ -402,11 +402,11 @@ class StockSelectionIntegrationTest(IntegrationTest):
         
         # 验证有效配置
         is_valid, message = validate_strategy_config(self.strategy_config)
-        self.assertTrue(is_valid)
+        self.assert_true(is_valid)
         
         # 验证无效配置
         is_valid, message = validate_strategy_config(invalid_config)
-        self.assertFalse(is_valid)
+        self.assert_false(is_valid)
         self.assertEqual(message, "缺少策略条件")
     
     def test_result_format_and_export(self):
@@ -439,7 +439,7 @@ class StockSelectionIntegrationTest(IntegrationTest):
         results_df = pd.DataFrame(selection_results)
         
         # 验证DataFrame
-        self.assertEqual(len(results_df), 2)
+        self.assert_equal(len(results_df), 2)
         self.assertEqual(list(results_df.columns), ['stock_code', 'stock_name', 'market', 'industry', 'market_cap', 'ma5', 'ma20', 'rsi'])
         
         # 测试导出为JSON
@@ -447,7 +447,7 @@ class StockSelectionIntegrationTest(IntegrationTest):
         loaded_json = json.loads(results_json)
         
         # 验证JSON
-        self.assertEqual(len(loaded_json), 2)
+        self.assert_equal(len(loaded_json), 2)
         self.assertEqual(loaded_json[0]['stock_code'], '000001')
         self.assertEqual(loaded_json[1]['stock_code'], '000005')
 

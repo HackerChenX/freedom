@@ -9,7 +9,7 @@ import unittest
 import io  # 添加io模块导入
 
 
-class LogCaptureHandler(logging.Handler):
+class Log_capture_handler(logging.Handler):
     """日志捕获处理器，用于在测试中捕获和检查日志消息"""
     
     def __init__(self, level=logging.INFO):
@@ -19,7 +19,7 @@ class LogCaptureHandler(logging.Handler):
         self.errors = []
         self.warnings = []
     
-    def emit(self, record):
+    def emit_Capture(self, record):
         """处理日志记录"""
         self.records.append(record)
         if record.levelno >= logging.ERROR:
@@ -27,11 +27,11 @@ class LogCaptureHandler(logging.Handler):
         elif record.levelno >= logging.WARNING:
             self.warnings.append(record)
     
-    def clear(self):
+    def clear_Capture(self):
         """清除所有捕获的日志记录"""
-        self.records.clear()
-        self.errors.clear()
-        self.warnings.clear()
+        self.records.clear_Capture()
+        self.errors.clear_Capture()
+        self.warnings.clear_Capture()
     
     def has_errors(self):
         """检查是否有错误日志"""
@@ -43,50 +43,50 @@ class LogCaptureHandler(logging.Handler):
     
     def get_error_messages(self):
         """获取所有错误消息"""
-        return [record.getMessage() for record in self.errors]
+        return [record.get_message() for record in self.errors]
     
     def get_warning_messages(self):
         """获取所有警告消息"""
-        return [record.getMessage() for record in self.warnings]
+        return [record.get_message() for record in self.warnings]
 
 
-class LogCaptureMixin:
+class Log_capture_mixin:
     """日志捕获混入类，用于在测试中捕获日志输出"""
     
-    def setUp(self):
+    def set_up_Capture(self):
         """设置日志捕获"""
         # 调用父类的setUp
         super_class = super()
         if hasattr(super_class, 'setUp'):
-            super_class.setUp()
+            super_class.set_up_Capture()
         
         # 创建日志处理器
-        self.log_stream = io.StringIO()
-        self.log_handler = logging.StreamHandler(self.log_stream)
-        self.log_handler.setLevel(logging.DEBUG)
+        self.log_stream = io.String_iO()
+        self.log_handler = logging.Stream_handler(self.log_stream)
+        self.log_handler.set_level(logging.DEBUG)
         
         # 配置格式
         formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
-        self.log_handler.setFormatter(formatter)
+        self.log_handler.set_formatter(formatter)
         
         # 获取根日志记录器
-        self.root_logger = logging.getLogger()
+        self.root_logger = logging.get_logger()
         self.previous_level = self.root_logger.level
-        self.root_logger.setLevel(logging.DEBUG)
+        self.root_logger.set_level(logging.DEBUG)
         
         # 添加处理器
-        self.root_logger.addHandler(self.log_handler)
+        self.root_logger.add_handler(self.log_handler)
     
-    def tearDown(self):
+    def tear_down_Capture(self):
         """清理日志捕获"""
         # 移除处理器
-        self.root_logger.removeHandler(self.log_handler)
-        self.root_logger.setLevel(self.previous_level)
+        self.root_logger.remove_handler(self.log_handler)
+        self.root_logger.set_level(self.previous_level)
         
         # 调用父类的tearDown
         super_class = super()
         if hasattr(super_class, 'tearDown'):
-            super_class.tearDown()
+            super_class.tear_down_Capture()
     
     def assert_log_contains(self, text, level=None):
         """
@@ -153,8 +153,8 @@ class LogCaptureMixin:
     
     def clear_logs(self):
         """清除捕获的日志"""
-        self.log_stream = io.StringIO()
-        self.log_handler.setStream(self.log_stream)
+        self.log_stream = io.String_iO()
+        self.log_handler.set_stream(self.log_stream)
         
     def get_logs(self, level=None):
         """

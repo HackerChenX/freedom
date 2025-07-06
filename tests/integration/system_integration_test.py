@@ -21,8 +21,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from strategy.strategy_executor import Strategy_executor
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from monitoring.performance_monitor import get_performance_monitor
 from utils.stability_enhancer import get_stability_manager
 from utils.logger import get_logger
@@ -30,15 +30,15 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class SystemIntegrationTest:
+class System_integration_test:
     """系统集成测试器"""
     
     def __init__(self):
         """初始化测试器"""
         # 获取优化后的组件
         self.data_manager = get_unified_data_manager()
-        self.strategy_executor = StrategyExecutor(max_workers=8, cache_enabled=True)
-        self.buypoint_analyzer = BuyPointBatchAnalyzer()
+        self.strategy_executor = Strategy_executor(max_workers=8, cache_enabled=True)
+        self.buypoint_analyzer = Buy_point_batch_analyzer()
         self.performance_monitor = get_performance_monitor()
         self.stability_manager = get_stability_manager()
         
@@ -68,7 +68,7 @@ class SystemIntegrationTest:
             start_time = time.time()
             
             # 测试单股票查询
-            stock_info = self.data_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
                 stock_code='000001',
                 level='DAILY',
                 limit=100
@@ -143,7 +143,7 @@ class SystemIntegrationTest:
             
             # 执行并发测试
             start_time = time.time()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with concurrent.futures.Thread_pool_executor(max_workers=5) as executor:
                 futures = [executor.submit(concurrent_query, i) for i in range(10)]
                 concurrent_results = [future.result() for future in concurrent.futures.as_completed(futures)]
             
@@ -337,7 +337,7 @@ class SystemIntegrationTest:
             test_results['backward_compatibility'] = self.test_backward_compatibility()
             
             # 5. 整体评估
-            test_results['overall_assessment'] = self._generate_overall_assessment(test_results)
+            test_results['overall_assessment'] = self._generate_overall_assessment_System_Integration_Test(test_results)
             
             logger.info("系统集成综合测试完成")
             
@@ -350,7 +350,7 @@ class SystemIntegrationTest:
         
         return test_results
     
-    def _generate_overall_assessment(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_overall_assessment_System_Integration_Test(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
         """生成整体评估"""
         assessment = {
             'integration_success': True,
@@ -389,7 +389,7 @@ class SystemIntegrationTest:
         return assessment
 
 
-def main():
+def main_systemintegrationtest():
     """主函数"""
     print("=" * 80)
     print("系统集成测试")
@@ -400,7 +400,7 @@ def main():
     
     try:
         # 创建测试实例
-        test_framework = SystemIntegrationTest()
+        test_framework = System_integration_test()
         
         # 运行综合测试
         results = test_framework.run_comprehensive_integration_test()
@@ -461,5 +461,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_systemintegrationtest()
     sys.exit(exit_code)

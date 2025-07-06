@@ -6,8 +6,8 @@ import logging
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
-class TestEMA(unittest.TestCase):
-    def setUp(self):
+class Test_eMA(unittest.Test_case):
+    def set_up_Ema(self):
         # Suppress all logging outputs during tests
         logging.disable(logging.CRITICAL)
         
@@ -15,10 +15,10 @@ class TestEMA(unittest.TestCase):
         self.data = self._create_test_data()
         self.ema_indicator = complete_registry.create_indicator('EMA', periods=[5, 10])
         # Get a clean instance of the registry for testing
-        self.registry = PatternRegistry()
+        self.registry = Pattern_registry()
         self.registry.clear_registry()
 
-    def tearDown(self):
+    def tear_down_Ema(self):
         # Re-enable logging after tests
         logging.disable(logging.NOTSET)
 
@@ -52,14 +52,14 @@ class TestEMA(unittest.TestCase):
         uptrend_data = self._create_test_data('up')
         df_up = self.ema_indicator.calculate(uptrend_data)
         scores_up = self.ema_indicator.calculate_raw_score(df_up)
-        self.assertTrue((scores_up >= 0).all() and (scores_up <= 100).all())
+        self.assert_true((scores_up >= 0).all() and (scores_up <= 100).all())
         self.assertGreater(scores_up.iloc[-1], 60, "Score should be high in an uptrend")
 
         # Test with downtrend data
         downtrend_data = self._create_test_data('down')
         df_down = self.ema_indicator.calculate(downtrend_data)
         scores_down = self.ema_indicator.calculate_raw_score(df_down)
-        self.assertTrue((scores_down >= 0).all() and (scores_down <= 100).all())
+        self.assert_true((scores_down >= 0).all() and (scores_down <= 100).all())
         self.assertLess(scores_down.iloc[-1], 40, "Score should be low in a downtrend")
 
     def test_get_patterns(self):
@@ -100,7 +100,7 @@ class TestEMA(unittest.TestCase):
         ]
         
         for pattern_id in expected_patterns:
-            self.assertIn(pattern_id, registered_patterns)
+            self.assert_in(pattern_id, registered_patterns)
 
 if __name__ == '__main__':
     unittest.main() 

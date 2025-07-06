@@ -34,7 +34,7 @@ def test_indicator_import(module_path: str, class_name: str) -> bool:
     
     return False
 
-def test_core_indicators():
+def test_core_indicators_Register_Indicators():
     """测试核心指标"""
     print("=== 测试核心指标 ===")
     
@@ -81,7 +81,7 @@ def test_core_indicators():
     print(f"\n核心指标测试结果: {success_count}/{len(core_indicators)} 成功")
     return success_count
 
-def test_enhanced_indicators():
+def test_enhanced_indicators_Register_Indicators():
     """测试增强指标"""
     print("\n=== 测试增强指标 ===")
     
@@ -106,7 +106,7 @@ def test_enhanced_indicators():
     print(f"\n增强指标测试结果: {success_count}/{len(enhanced_indicators)} 成功")
     return success_count
 
-def test_composite_indicators():
+def test_composite_indicators_Register_Indicators():
     """测试复合指标"""
     print("\n=== 测试复合指标 ===")
     
@@ -162,14 +162,14 @@ def test_tool_indicators():
     print(f"\n工具指标测试结果: {success_count}/{len(tool_indicators)} 成功")
     return success_count
 
-def main():
+def main_registerindicators():
     """主函数"""
     print("开始测试指标导入...")
     
     # 测试各类指标
-    core_success = test_core_indicators()
-    enhanced_success = test_enhanced_indicators()
-    composite_success = test_composite_indicators()
+    core_success = test_core_indicators_Register_Indicators()
+    enhanced_success = test_enhanced_indicators_Register_Indicators()
+    composite_success = test_composite_indicators_Register_Indicators()
     pattern_success = test_pattern_indicators()
     tool_success = test_tool_indicators()
     
@@ -190,4 +190,4 @@ def main():
         return False
 
 if __name__ == "__main__":
-    main()
+    mainRegisterindicators()

@@ -10,10 +10,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from indicators.complete_indicator_registry import complete_registry
-from indicators.zxm_washplate import ZXMWashPlate
+from indicators.zxm_washplate import ZXMWash_plate
 
 
-def generate_sample_data(periods=150, start_price=100):
+def generate_sample_data_Demo(periods=150, start_price=100):
     """生成示例股票数据"""
     np.random.seed(42)  # 确保结果可重现
 
@@ -66,14 +66,14 @@ def generate_sample_data(periods=150, start_price=100):
     return pd.DataFrame(data)
 
 
-class ZXMTradingSystem:
+class ZXMTrading_system:
     """ZXM交易体系实现"""
     
     def __init__(self):
         self.zxm_absorb = ZXMAbsorb()
-        self.zxm_washplate = ZXMWashPlate()
+        self.zxm_washplate = ZXMWash_plate()
     
-    def analyze_stock(self, data: pd.DataFrame) -> dict:
+    def analyze_stock_Demo(self, data: pd.DataFrame) -> dict:
         """
         分析股票的ZXM信号
         
@@ -112,7 +112,7 @@ class ZXMTradingSystem:
             'buy_point_validation': buy_point_validation,
             'v11_value': float(latest_absorb['EMA_V11_3']) if latest_absorb is not None else None,
             'v12_value': float(latest_absorb['V12']) if latest_absorb is not None else None,
-            'recommendation': self._generate_recommendation(
+            'recommendation': self._generate_recommendation_Zxm_System_Demo(
                 absorb_score.iloc[-1] if not absorb_score.empty else 50.0,
                 washplate_score.iloc[-1] if not washplate_score.empty else 50.0,
                 bool(latest_absorb['BUY']) if latest_absorb is not None else False,
@@ -120,7 +120,7 @@ class ZXMTradingSystem:
             )
         }
     
-    def _generate_recommendation(self, absorb_score: float, washplate_score: float, 
+    def _generate_recommendation_Zxm_System_Demo(self, absorb_score: float, washplate_score: float, 
                                absorb_signal: bool, buy_point_validation: dict) -> dict:
         """
         生成投资建议
@@ -186,30 +186,30 @@ def demo_zxm_system():
     print("=" * 60)
     
     # 创建ZXM交易系统
-    zxm_system = ZXMTradingSystem()
+    zxm_system = ZXMTrading_system()
     
     # 生成模拟股票数据
     print("\n1. 生成模拟股票数据...")
     
     # 场景1：上升趋势中的吸筹信号
     print("\n场景1：上升趋势中的吸筹机会")
-    trend_data = generate_sample_data(periods=150, start_price=100)
+    trend_data = generate_sample_data_Demo(periods=150, start_price=100)
 
-    analysis1 = zxm_system.analyze_stock(trend_data)
+    analysis1 = zxm_system.analyze_stock_Demo(trend_data)
     print_analysis_result("上升趋势股票", analysis1)
 
     # 场景2：洗盘后的机会
     print("\n场景2：洗盘后的投资机会")
-    washplate_data = generate_sample_data(periods=150, start_price=110)
+    washplate_data = generate_sample_data_Demo(periods=150, start_price=110)
 
-    analysis2 = zxm_system.analyze_stock(washplate_data)
+    analysis2 = zxm_system.analyze_stock_Demo(washplate_data)
     print_analysis_result("洗盘后股票", analysis2)
 
     # 场景3：下降趋势中的风险
     print("\n场景3：下降趋势中的风险识别")
-    decline_data = generate_sample_data(periods=150, start_price=90)
+    decline_data = generate_sample_data_Demo(periods=150, start_price=90)
 
-    analysis3 = zxm_system.analyze_stock(decline_data)
+    analysis3 = zxm_system.analyze_stock_Demo(decline_data)
     print_analysis_result("下降趋势股票", analysis3)
     
     print("\n" + "=" * 60)

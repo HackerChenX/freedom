@@ -11,11 +11,11 @@ from typing import Tuple, List, Dict, Optional, Union
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import ma, ema, macd, kdj, ref, highest, lowest, cross, crossover, crossunder
-from enums.indicator_types import IndicatorType
-from enums.pattern_types import BuyPointType, AbsorptionPatternType, VolumePattern
+from enums.indicator_types import Indicator_type
+from enums.pattern_types import Buy_point_type, Absorption_pattern_type, Volume_pattern
 
 
-class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
+class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin):
     """ZXM体系买点和吸筹形态识别指标"""
     
     def __init__(self):
@@ -25,14 +25,14 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         self.name = "ZXMPattern"
         self.description = "基于ZXM体系的买点和吸筹形态识别指标"
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Patterns_Zxm_Patterns(self, **kwargs):
         """
         设置指标参数
         """
         # ZXM形态识别通常没有可变参数，但为了符合接口要求，提供此方法
         pass
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Patterns_Zxm_Patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取ZXM相关形态
 
@@ -41,11 +41,11 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_zxmpatterns(data, **kwargs)
 
         patterns = pd.DataFrame(index=data.index)
 
@@ -56,7 +56,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         # 直接返回计算结果，因为_calculate已经包含了所有形态
         return self._result
     
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_zxmpatterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算ZXM体系的买点和吸筹形态指标
 
@@ -64,7 +64,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
             data: 输入数据，包含OHLCV数据
 
         Returns:
-            pd.DataFrame: 包含各种买点和吸筹形态识别结果的DataFrame
+            pd.DataFrame: 包含各种买点和吸筹形态识别结果的Data_frame
         """
         # 验证输入数据
         if data is None or len(data) == 0:
@@ -124,7 +124,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         result_dict = {}
 
         # 识别买点形态
-        result_dict.update(self._identify_buy_points(
+        result_dict.update(self._identify_buy_points_Zxm_Patterns(
             open_prices, high_prices, low_prices, close_prices, volumes,
             ma5, ma10, ma20, ma30, ma60, dif, dea, macd_hist, k, d, j,
             vol_ma5, vol_ma10
@@ -148,7 +148,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
 
         return result
         
-    def _identify_buy_points(self, 
+    def _identify_buy_points_Zxm_Patterns(self, 
                              open_prices: np.ndarray, 
                              high_prices: np.ndarray, 
                              low_prices: np.ndarray, 
@@ -328,7 +328,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         return result
     
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Patterns_Zxm_Patterns(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM体系买点和吸筹形态指标的原始评分
         
@@ -618,13 +618,13 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         
         return result
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Patterns_Zxm_Patterns(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算ZXMPatternIndicator指标的置信度
+        计算ZXMPattern_indicator指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -687,9 +687,9 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def register_patterns(self):
+    def register_patterns_Patterns_Zxm_Patterns(self):
         """
-        注册ZXMPatternIndicator指标的形态到全局形态注册表
+        注册ZXMPattern_indicator指标的形态到全局形态注册表
         """
         # 注册买点形态
         self.register_pattern_to_registry(
@@ -823,9 +823,9 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> dict:
+    def generate_trading_signals_Patterns_Zxm_Patterns(self, data: pd.DataFrame, **kwargs) -> dict:
         """
-        生成ZXMPatternIndicator交易信号
+        生成ZXMPattern_indicator交易信号
 
         Args:
             data: 输入数据
@@ -836,7 +836,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_zxmpatterns(data, **kwargs)
 
         if self._result is None or self._result.empty:
             return {
@@ -897,7 +897,7 @@ class ZXMPatternIndicator(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Patterns_Zxm_Patterns(self) -> str:
         """
         获取指标类型
 
@@ -921,7 +921,7 @@ if __name__ == "__main__":
     volumes = np.random.normal(10000, 3000, length)
     
     # 创建ZXM识别器
-    zxm_indicator = ZXMPatternIndicator()
+    zxm_indicator = ZXMPattern_indicator()
     
     # 计算结果
     result = zxm_indicator.calculate(
@@ -932,7 +932,7 @@ if __name__ == "__main__":
     for key, value in result.items():
         print(f"{key}: {np.sum(value)} signals") 
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Patterns_Zxm_Patterns(self, pattern_id: str) -> dict:
         """
         获取形态信息
         
@@ -967,4 +967,4 @@ if __name__ == "__main__":
 
 
 # 为了向后兼容，创建别名
-ZXMPatterns = ZXMPatternIndicator
+zxmpatterns = ZXMPattern_indicator

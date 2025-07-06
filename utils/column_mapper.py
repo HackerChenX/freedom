@@ -7,9 +7,9 @@
 import pandas as pd
 import logging
 from typing import Dict, List, Optional, Union
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class ColumnMapper:
@@ -34,12 +34,12 @@ class ColumnMapper:
     }
     
     @classmethod
-    def find_column(cls, df: pd.DataFrame, column_type: str) -> Optional[str]:
+    def find_column_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(cls, df: pd.DataFrame, column_type: str) -> Optional[str]:
         """
-        在DataFrame中查找指定类型的列名
+        在Data_frame中查找指定类型的列名
         
         Args:
-            df: 数据DataFrame
+            df: 数据Data_frame
             column_type: 列类型 ('open', 'high', 'low', 'close', 'volume', etc.)
             
         Returns:
@@ -58,19 +58,19 @@ class ColumnMapper:
         return None
     
     @classmethod
-    def get_column_safe(cls, df: pd.DataFrame, column_type: str, default_value=None) -> pd.Series:
+    def get_column_safe_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(cls, df: pd.DataFrame, column_type: str, default_value=None) -> pd.Series:
         """
         安全地获取指定类型的列数据
         
         Args:
-            df: 数据DataFrame
+            df: 数据Data_frame
             column_type: 列类型
             default_value: 如果找不到列时的默认值
             
         Returns:
             pd.Series: 列数据，如果找不到返回默认值填充的Series
         """
-        column_name = cls.find_column(df, column_type)
+        column_name = cls.find_column_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(df, column_type)
         
         if column_name is not None:
             return df[column_name]
@@ -82,16 +82,16 @@ class ColumnMapper:
                 return pd.Series(index=df.index, dtype=float)
     
     @classmethod
-    def standardize_columns(cls, df: pd.DataFrame, required_columns: List[str] = None) -> pd.DataFrame:
+    def standardize_columns_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(cls, df: pd.DataFrame, required_columns: List[str] = None) -> pd.DataFrame:
         """
-        标准化DataFrame的列名
+        标准化Data_frame的列名
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             required_columns: 必需的列类型列表，默认为['open', 'high', 'low', 'close', 'volume']
             
         Returns:
-            pd.DataFrame: 标准化后的DataFrame
+            pd.DataFrame: 标准化后的Data_frame
         """
         if required_columns is None:
             required_columns = ['open', 'high', 'low', 'close', 'volume']
@@ -100,7 +100,7 @@ class ColumnMapper:
         mapping_log = []
         
         for column_type in required_columns:
-            original_column = cls.find_column(df, column_type)
+            original_column = cls.find_column_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(df, column_type)
             
             if original_column is not None:
                 # 如果原列名不是标准名，则重命名
@@ -118,12 +118,12 @@ class ColumnMapper:
         return result_df
     
     @classmethod
-    def validate_data(cls, df: pd.DataFrame, required_columns: List[str] = None) -> Dict[str, Union[bool, List[str]]]:
+    def validate_data_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(cls, df: pd.DataFrame, required_columns: List[str] = None) -> Dict[str, Union[bool, List[str]]]:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             required_columns: 必需的列类型列表
             
         Returns:
@@ -136,7 +136,7 @@ class ColumnMapper:
         found_columns = []
         
         for column_type in required_columns:
-            column_name = cls.find_column(df, column_type)
+            column_name = cls.find_column_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(df, column_type)
             if column_name is not None:
                 found_columns.append(f"{column_type}({column_name})")
             else:
@@ -157,7 +157,7 @@ class ColumnMapper:
         获取标准化的OHLCV数据
         
         Args:
-            df: 输入DataFrame
+            df: 输入Data_frame
             strict: 是否严格模式（缺少任何列都返回None）
             
         Returns:
@@ -170,7 +170,7 @@ class ColumnMapper:
         
         # 处理必需列
         for column_type in required_columns:
-            column_name = cls.find_column(df, column_type)
+            column_name = cls.find_column_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(df, column_type)
             if column_name is not None:
                 result_df[column_type] = df[column_name]
             else:
@@ -183,7 +183,7 @@ class ColumnMapper:
         
         # 处理可选列
         for column_type in optional_columns:
-            column_name = cls.find_column(df, column_type)
+            column_name = cls.find_column_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(df, column_type)
             if column_name is not None:
                 result_df[column_type] = df[column_name]
             else:
@@ -209,7 +209,7 @@ class ColumnMapper:
         def wrapped_calculate(self, data: pd.DataFrame, *args, **kwargs):
             # 在计算前标准化列名
             try:
-                standardized_data = cls.standardize_columns(data)
+                standardized_data = cls.standardize_columns_Mapper_Column_Mapper_Column_Mapper_1_columnmapper(data)
                 return original_calculate(self, standardized_data, *args, **kwargs)
             except Exception as e:
                 logger.warning(f"列名标准化失败，使用原始数据: {e}")
@@ -220,21 +220,3 @@ class ColumnMapper:
 
 
 # 便捷函数
-def get_column_safe(df: pd.DataFrame, column_type: str, default_value=None) -> pd.Series:
-    """便捷函数：安全地获取列数据"""
-    return ColumnMapper.get_column_safe(df, column_type, default_value)
-
-
-def find_column(df: pd.DataFrame, column_type: str) -> Optional[str]:
-    """便捷函数：查找列名"""
-    return ColumnMapper.find_column(df, column_type)
-
-
-def standardize_columns(df: pd.DataFrame, required_columns: List[str] = None) -> pd.DataFrame:
-    """便捷函数：标准化列名"""
-    return ColumnMapper.standardize_columns(df, required_columns)
-
-
-def validate_data(df: pd.DataFrame, required_columns: List[str] = None) -> Dict[str, Union[bool, List[str]]]:
-    """便捷函数：验证数据"""
-    return ColumnMapper.validate_data(df, required_columns)

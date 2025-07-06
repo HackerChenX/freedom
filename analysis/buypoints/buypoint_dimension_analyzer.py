@@ -11,17 +11,20 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 import openpyxl
 
 # 添加项目根目录到Python路径
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db, get_default_config
-from enums.kline_period import KlinePeriod
-from utils.logger import get_logger
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from enums.kline_period import Kline_period
+from utils.logger import getLogger
 from utils.path_utils import get_result_dir
 from indicators.complete_indicator_registry import complete_registry
 
 # 获取日志记录器
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class BuyPointDimensionAnalyzer:
     """
@@ -30,13 +33,14 @@ class BuyPointDimensionAnalyzer:
     支持对形态、趋势、时间特征等维度进行买点分析，发现买点共性特征
     """
     
-    def __init__(self):
+    def __init___108(self):
+    query_executor = get_query_executor()
         """初始化买点维度分析器"""
         logger.info("初始化买点维度分析器")
         
-        # 获取数据库连接
-        config = get_default_config()
-        self.ch_db = get_clickhouse_db(config=config)
+        # 使用依赖注入架构
+        self.container = get_container()
+        self.data_access = self.get_service(Data_access_interface)
         
         # 使用统一指标注册系统
         self.indicator_registry = complete_registry
@@ -85,14 +89,12 @@ class BuyPointDimensionAnalyzer:
             # 获取K线数据
             for stock_code in stock_codes:
                 # 获取股票K线数据
-                sql = f"""
-                SELECT date, open, high, low, close, volume, amount
-                FROM stock_{period.lower()}
-                WHERE stock_code = '{stock_code}'
-                  AND date >= '{start_date}' AND date <= '{end_date}'
-                ORDER BY date
-                """
-                kline_data = self.ch_db.query_df(sql)
+                kline_data = self.data_access.get_kline_data(
+                    stock_code=stock_code,
+                    start_date=start_date,
+                    end_date=end_date,
+                    period=period
+                )
                 
                 if kline_data.empty:
                     logger.warning(f"未找到股票 {stock_code} 的K线数据")
@@ -504,7 +506,7 @@ class BuyPointDimensionAnalyzer:
                 
                 sql = f"""
                 SELECT date, open, high, low, close, volume, amount
-                FROM stock_{period.lower()}
+                FROM stock_ LIMIT 1000{period.lower()}
                 WHERE stock_code = '{stock_code}'
                   AND date >= '{start_date_extended}' AND date <= '{end_date}'
                 ORDER BY date
@@ -775,7 +777,7 @@ class BuyPointDimensionAnalyzer:
                 
                 sql = f"""
                 SELECT date, open, high, low, close, volume, amount
-                FROM stock_{period.lower()}
+                FROM stock_ LIMIT 1000{period.lower()}
                 WHERE stock_code = '{stock_code}'
                   AND date >= '{start_date_extended}' AND date <= '{end_date}'
                 ORDER BY date
@@ -1028,7 +1030,7 @@ class BuyPointDimensionAnalyzer:
             
             for period in periods:
                 # 获取对应周期的数据起止日期
-                start_date, end_date = self._get_period_date_range(date, period)
+                start_date, end_date = self._get_period_date_range_Buypoint_Dimension_Analyzer(date, period)
                 
                 # 获取形态特征
                 pattern_features = self.analyze_pattern_features(stock_codes, start_date, end_date, period)
@@ -1085,7 +1087,7 @@ class BuyPointDimensionAnalyzer:
                     })
             
             # 分析特征关联性
-            correlation_result = self.analyze_feature_correlation(feature_data_for_correlation)
+            correlation_result = self.analyze_feature_correlation_Analyzer(feature_data_for_correlation)
             
             # 分析特征时序模式
             temporal_result = self.analyze_temporal_patterns(feature_data_for_correlation)
@@ -1152,7 +1154,7 @@ class BuyPointDimensionAnalyzer:
                 
                 sql = f"""
                 SELECT date, open, high, low, close, volume, amount
-                FROM stock_{period.lower()}
+                FROM stock_ LIMIT 1000{period.lower()}
                 WHERE stock_code = '{stock_code}'
                   AND date >= '{start_date_extended}' AND date <= '{end_date}'
                 ORDER BY date
@@ -1231,7 +1233,7 @@ class BuyPointDimensionAnalyzer:
             logger.error(f"分析指标信号时出错: {e}")
             return {}
     
-    def _get_period_date_range(self, date: str, period: str) -> Tuple[str, str]:
+    def _get_period_date_range_Buypoint_Dimension_Analyzer(self, date: str, period: str) -> Tuple[str, str]:
         """根据周期获取日期范围"""
         date_obj = datetime.strptime(date, "%Y%m%d")
         
@@ -1574,7 +1576,7 @@ class BuyPointDimensionAnalyzer:
                 "feature_scores": {}
             }
     
-    def save_results(self, output_file: str, format_type: str = "json") -> None:
+    def save_results_Analyzer_Buypoint_Dimension_Analyzer(self, output_file: str, format_type: str = "json") -> None:
         """
         保存分析结果
         
@@ -1608,7 +1610,7 @@ class BuyPointDimensionAnalyzer:
                 report = self.get_comprehensive_report()
                 
                 # 构建Markdown内容
-                md_content = self._generate_markdown_report(report)
+                md_content = self._generate_markdown_report_Buypoint_Dimension_Analyzer(report)
                 
                 # 保存到文件
                 with open(output_file, 'w', encoding='utf-8') as f:
@@ -1619,7 +1621,7 @@ class BuyPointDimensionAnalyzer:
         except Exception as e:
             logger.error(f"保存买点分析结果时出错: {e}")
     
-    def _generate_markdown_report(self, report: Dict[str, Any]) -> str:
+    def _generate_markdown_report_Buypoint_Dimension_Analyzer(self, report: Dict[str, Any]) -> str:
         """
         生成Markdown格式的报告
         
@@ -1808,7 +1810,7 @@ class BuyPointDimensionAnalyzer:
         
         return "".join(md)
 
-    def export_to_excel(self, output_file: str) -> None:
+    def export_to_excel_Analyzer(self, output_file: str) -> None:
         """
         导出分析结果到Excel文件
         
@@ -2118,7 +2120,7 @@ class BuyPointDimensionAnalyzer:
         else:
             return "无法生成买点描述，关键特征不足。" 
 
-    def analyze_feature_correlation(self, features_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def analyze_feature_correlation_Analyzer(self, features_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         分析特征之间的关联性
         

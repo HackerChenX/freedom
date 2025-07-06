@@ -15,13 +15,13 @@ import logging
 import json
 import importlib.util
 from typing import List, Dict, Any
-from BeautifulReport import BeautifulReport
+from Beautiful_report import Beautiful_report
 
 # 获取日志记录器
 logger = get_logger("system_review")
 
 
-def run_all_tests() -> Dict[str, Any]:
+def run_all_tests_Tests_Run_All_Tests() -> Dict[str, Any]:
     """
     运行所有测试并收集结果
     
@@ -147,7 +147,7 @@ def run_all_tests() -> Dict[str, Any]:
     return test_stats
 
 
-def generate_report(test_stats: Dict[str, Any]) -> str:
+def generate_report_Tests(test_stats: Dict[str, Any]) -> str:
     """
     生成测试报告
     
@@ -338,11 +338,11 @@ if __name__ == "__main__":
     try:
         # 运行所有测试
         logger.info("开始运行所有测试...")
-        test_stats = run_all_tests()
+        test_stats = run_all_tests_Tests_Run_All_Tests()
         
         # 生成报告
         logger.info("开始生成测试报告...")
-        report_file = generate_report(test_stats)
+        report_file = generate_report_Tests(test_stats)
         
         # 清理临时文件
         logger.info("清理测试临时文件...")

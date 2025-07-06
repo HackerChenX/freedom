@@ -4,10 +4,10 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 
 
-class TestMergedPSY(unittest.TestCase):
+class Test_merged_pSY(unittest.Test_case):
     """测试合并后的PSY指标功能"""
     
-    def setUp(self):
+    def set_up_Psy(self):
         """准备测试数据"""
         # 创建样本数据
         np.random.seed(42)
@@ -58,11 +58,11 @@ class TestMergedPSY(unittest.TestCase):
         
         # 验证模式识别
         patterns = psy.identify_patterns(self.data)
-        self.assertTrue(isinstance(patterns, list))
+        self.assert_true(isinstance(patterns, list))
         
         # 验证评分系统
         score = psy.calculate_raw_score(self.data)
-        self.assertTrue((score >= 0).all() and (score <= 100).all())
+        self.assert_true((score >= 0).all() and (score <= 100).all())
     
     def test_deprecated_enhanced_psy_class(self):
         """测试弃用的EnhancedPSY类仍能正常工作"""
@@ -85,7 +85,7 @@ class TestMergedPSY(unittest.TestCase):
         psy = complete_registry.create_indicator("PSY", period=12)
 
         # 检查是否成功创建
-        self.assertIsNotNone(psy)
+        self.assert_is_not_none(psy)
         
         # 计算PSY
         result = psy.calculate(self.data)
@@ -94,7 +94,7 @@ class TestMergedPSY(unittest.TestCase):
         self.assertIn('psy_momentum', result.columns)
         
         # 检查设置参数是否生效
-        self.assertEqual(psy.period, 12)
+        self.assert_equal(psy.period, 12)
 
 
 if __name__ == '__main__':

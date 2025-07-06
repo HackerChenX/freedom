@@ -19,9 +19,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from analysis.engines.indicator_validation_framework import (
-    IndicatorValidationFramework, 
-    IndicatorValidationConfig, 
-    ValidationMode
+    Indicator_validation_framework, 
+    Indicator_validation_config, 
+    Validation_mode
 )
 from utils.logger import get_logger
 
@@ -38,8 +38,8 @@ def create_debug_config(mode='quick', stop_on_success=True, stop_on_error=True):
         'full': ValidationMode.FULL
     }
     
-    return IndicatorValidationConfig(
-        mode=mode_mapping.get(mode, ValidationMode.QUICK),  # 支持动态模式
+    return Indicator_validation_config(
+        mode=mode_mapping.get(mode, Validation_mode.QUICK),  # 支持动态模式
         stock_pool_size=100,              # 较小的股票池，加快验证速度
         max_selection_ratio=0.2,          # 较宽松的选股比例限制
         min_selection_count=1,            # 最少选出1只股票就算成功
@@ -71,7 +71,7 @@ def run_debug_validation(mode='quick', stop_on_success=True, stop_on_error=True)
     logger.info("-" * 60)
     
     # 创建验证框架
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     try:
         # 执行验证
@@ -174,7 +174,7 @@ def run_single_indicator_debug(indicator_name: str):
     config.stop_on_error = False
     
     # 创建验证框架
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     try:
         # 验证指标
@@ -213,7 +213,7 @@ def run_single_indicator_debug(indicator_name: str):
         raise
 
 
-def main():
+def main_indicatordebugvalidator():
     """主函数"""
     import argparse
     
@@ -244,7 +244,7 @@ def main():
             
             run_debug_validation(args.mode, stop_on_success, stop_on_error)
             
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         logger.info("🛑 用户中断验证")
     except Exception as e:
         logger.error(f"❌ 程序执行失败: {e}")
@@ -254,4 +254,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main()) 
+    exit(main_indicatordebugvalidator()) 

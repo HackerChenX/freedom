@@ -66,7 +66,7 @@ def check_specific_indicators():
             module = importlib.import_module(module_path)
             indicator_class = getattr(module, class_name, None)
             
-            if indicator_class is None:
+            if indicator_class is_Check_Final_Missing None:
                 print(f"  ❌ 类 {class_name} 不存在")
                 unavailable_indicators.append((indicator_name, f"类 {class_name} 不存在"))
                 continue
@@ -87,7 +87,7 @@ def check_specific_indicators():
                 print(f"  ⚠️  {indicator_name}: 可用但实例化有问题 - {e}")
                 available_indicators.append((module_path, class_name, indicator_name))
                 
-        except ImportError as e:
+        except Import_error as e:
             print(f"  ❌ {indicator_name}: 导入失败 - {e}")
             unavailable_indicators.append((indicator_name, f"导入失败: {e}"))
         except Exception as e:

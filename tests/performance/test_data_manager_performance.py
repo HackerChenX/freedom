@@ -6,9 +6,9 @@
 
 import unittest
 import time
-import cProfile
+import c_profile
 import pstats
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, Magic_mock
 
 import pandas as pd
 import numpy as np
@@ -16,16 +16,16 @@ import numpy as np
 from db.unified_data_manager import get_unified_data_manager
 from enums.period import Period
 from utils.logger import get_logger, setup_logger
-from tests.helper.data_generator import TestDataGenerator
+from tests.helper.data_generator import Test_data_generator
 
 logger = get_logger(__name__)
 
 
-class TestDataManagerPerformance(unittest.TestCase):
+class Test_data_manager_performance(unittest.Test_case):
     """测试数据管理器的性能"""
     
     @classmethod
-    def setUpClass(cls):
+    def set_up_class_Performance(cls):
         """测试类初始化（仅运行一次）"""
         # 设置日志级别
         setup_logger(level="INFO")
@@ -94,14 +94,14 @@ class TestDataManagerPerformance(unittest.TestCase):
             'turnover_rate': np.random.uniform(1, 10, 100)
         })
     
-    def setUp(self):
+    def set_up_Performance_Test_Data_Manager_Performance(self):
         """测试前准备"""
         # 创建数据管理器
         self.data_manager = get_unified_data_manager()
         # 清除缓存
         self.data_manager.clear_cache()
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
+    @patch('db.data_access.ClickHouseDB.query')
     def test_get_kline_data_performance(self, mock_query):
         """测试获取K线数据的性能"""
         # 配置模拟对象
@@ -137,7 +137,7 @@ class TestDataManagerPerformance(unittest.TestCase):
         self.assertLess(second_execution_time, first_execution_time, "缓存应该显著提高性能")
         self.assertGreater(first_execution_time/second_execution_time, 5, "缓存应该至少提高5倍性能")
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
+    @patch('db.data_access.ClickHouseDB.query')
     def test_get_stock_list_performance(self, mock_query):
         """测试获取股票列表的性能"""
         # 配置模拟对象
@@ -162,7 +162,7 @@ class TestDataManagerPerformance(unittest.TestCase):
         # 验证缓存加速效果
         self.assertLess(second_execution_time, first_execution_time, "缓存应该显著提高性能")
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
+    @patch('db.data_access.ClickHouseDB.query')
     def test_cache_eviction_performance(self, mock_query):
         """测试缓存淘汰策略的性能"""
         # 配置模拟对象
@@ -197,7 +197,7 @@ class TestDataManagerPerformance(unittest.TestCase):
         self.assertGreater(cache_stats['hit_rate'], 0, "缓存命中率应大于0")
         self.assertLessEqual(cache_stats['size'], self.data_manager.max_cache_size, "缓存大小不应超过最大限制")
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
+    @patch('db.data_access.ClickHouseDB.query')
     def test_multithreaded_cache_performance(self, mock_query):
         """测试多线程环境下缓存的性能"""
         # 配置模拟对象

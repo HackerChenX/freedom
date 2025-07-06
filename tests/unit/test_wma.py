@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_wMA(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """WMA指标测试类"""
     
-    def setUp(self):
+    def set_up_Wma(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Wma(self)
         
         self.indicator = complete_registry.create_indicator('WMA', period=14)
         self.expected_columns = ['WMA14']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tear_down_Wma(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Wma(self)
     
     def test_wma_calculation_accuracy(self):
         """测试WMA计算准确性"""
@@ -42,7 +42,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             self.assertTrue(all(v > 0 for v in wma_values), "WMA值应该为正数")
             # WMA值应该在合理范围内
             price_range = (self.data['close'].min(), self.data['close'].max())
-            self.assertTrue(all(price_range[0] <= v <= price_range[1] * 1.1 for v in wma_values), 
+            self.assert_true(all(price_range[0] <= v <= price_range[1] * 1.1 for v in wma_values), 
                            "WMA值应该在价格范围内")
     
     def test_wma_manual_calculation(self):
@@ -69,7 +69,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             calculated_wma = result['WMA3'].iloc[2]
             
             if not pd.isna(calculated_wma):
-                self.assertAlmostEqual(calculated_wma, expected_wma, places=6, 
+                self.assert_almost_equal(calculated_wma, expected_wma, places=6, 
                                      msg="WMA计算不正确")
     
     def test_wma_score_range(self):
@@ -88,9 +88,9 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_wma_parameter_update(self):
         """测试WMA参数更新"""
@@ -98,8 +98,8 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.period, new_period)
-        self.assertEqual(self.indicator.periods, [new_period])
+        self.assert_equal(self.indicator.period, new_period)
+        self.assert_equal(self.indicator.periods, [new_period])
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -120,13 +120,13 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_wma_comprehensive_score(self):
         """测试WMA综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -134,20 +134,20 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertGreaterEqual(score_result['score'], 0.0)
         self.assertLessEqual(score_result['score'], 100.0)
     
-    def test_wma_patterns(self):
+    def test_wma_patterns_Wma(self):
         """测试WMA形态识别"""
         # 使用多周期以便检测交叉
         multi_indicator = WMA(period=14, periods=[5, 10])
         
         # 先计算指标
         result = multi_indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = multi_indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -189,13 +189,13 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = multi_indicator.generate_trading_signals(self.data)
         
         # 验证信号字典结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy', 'sell', 'exit_long', 'exit_short']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Wma(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -206,10 +206,10 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('WMA14', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Wma(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -220,7 +220,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_wma_register_patterns(self):
         """测试WMA形态注册"""
@@ -239,7 +239,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # WMA应该能处理数据不足的情况
         wma_values = result['WMA14'].dropna()
         # 数据不足时，前面的值应该是NaN
-        self.assertTrue(len(wma_values) == 0 or len(wma_values) < len(small_data), 
+        self.assert_true(len(wma_values) == 0 or len(wma_values) < len(small_data), 
                        "数据不足时WMA应该有NaN值")
     
     def test_wma_compute_method(self):
@@ -259,7 +259,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['close'], axis=1)
         
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.calculate(invalid_data)
     
     def test_wma_weight_calculation(self):
@@ -279,7 +279,7 @@ class TestWMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 当所有价格相同时，WMA应该等于价格
         wma_value = result['WMA4'].iloc[3]
         if not pd.isna(wma_value):
-            self.assertAlmostEqual(wma_value, 100.0, places=6, 
+            self.assert_almost_equal(wma_value, 100.0, places=6, 
                                  msg="相同价格时WMA应该等于价格")
     
     def test_wma_responsiveness(self):

@@ -36,7 +36,7 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
     """策略执行器性能测试类"""
     
     @classmethod
-    def setUpClass(cls):
+    def setUpClass_Performance_Test_Strategy_Executor_Performance(cls):
         """测试类初始化（仅运行一次）"""
         # 设置日志级别
         setup_logger(level="INFO")
@@ -146,7 +146,7 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
             'RSI_OVERSOLD': cls.mock_rsi_oversold
         }
     
-    def setUp(self):
+    def setUp_Performance_Test_Strategy_Executor_Performance(self):
         """测试前准备"""
         # 清除缓存
         data_manager = get_unified_data_manager()

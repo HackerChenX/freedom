@@ -1,7 +1,7 @@
 """
 布林带指标模块
 
-实现布林带(BOLL)指标计算
+实现布林带(BOLL_Boll)指标计算
 """
 
 import pandas as pd
@@ -11,13 +11,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import boll as calc_boll
-from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
+from utils.logger import getLogger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength, Pattern_polarity
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class BOLL(BaseIndicator, PatternSignalMixin):
+class BollBoll(BaseIndicator, PatternSignalMixin):
     """
     布林带指标类
     
@@ -32,13 +32,13 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         Args:
             **kwargs: 指标参数，支持period、std_dev、ma_type等
         """
-        super().__init__(name="BOLL", description="布林带")
+        super().__init__(name="BOLL_Boll", description="布林带")
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_boll()
 
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Boll(**kwargs)
 
         self._market_environment = 'SIDEWAYS_MARKET'
 
@@ -50,11 +50,11 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         self.crossover = crossover
         self.crossunder = crossunder
 
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_boll(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 20, "std_dev": 2.0, "ma_type": "SMA"}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Boll(self, **kwargs):
         """
         设置指标参数
 
@@ -70,11 +70,11 @@ class BOLL(BaseIndicator, PatternSignalMixin):
 
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
 
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('BOLL', params)
+            is_valid, errors = validator.validate_indicator_parameters('BOLL_Boll', params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
@@ -94,19 +94,19 @@ class BOLL(BaseIndicator, PatternSignalMixin):
     def _register_boll_patterns(self):
         """注册布林带指标的各种形态"""
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 价格触及上轨形态
         registry.register(
             pattern_id="PRICE_TOUCH_UPPER",
             display_name="布林带价格触及上轨",
             description="价格触及上轨但未突破，可能是阻力位",
-            indicator_id="BOLL",
-            pattern_type=PatternType.RESISTANCE,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.RESISTANCE,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-10.0,
             detection_function=self._detect_price_touch_upper,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
 
         # 价格触及下轨形态
@@ -114,12 +114,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="PRICE_TOUCH_LOWER",
             display_name="布林带价格触及下轨",
             description="价格触及下轨但未突破，可能是支撑位",
-            indicator_id="BOLL",
-            pattern_type=PatternType.SUPPORT,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.SUPPORT,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=10.0,
             detection_function=self._detect_price_touch_lower,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
         
         # 价格突破上轨形态
@@ -127,12 +127,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="PRICE_BREAK_UPPER",
             display_name="布林带价格突破上轨",
             description="价格突破上轨，可能是强势信号",
-            indicator_id="BOLL",
-            pattern_type=PatternType.BREAKOUT,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.BREAKOUT,
+            default_strength=Pattern_strength.STRONG,
             score_impact=15.0,
             detection_function=self._detect_price_break_upper,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         # 价格突破下轨形态
@@ -140,12 +140,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="PRICE_BREAK_LOWER",
             display_name="布林带价格突破下轨",
             description="价格突破下轨，可能是弱势信号",
-            indicator_id="BOLL",
-            pattern_type=PatternType.BREAKOUT,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.BREAKOUT,
+            default_strength=Pattern_strength.STRONG,
             score_impact=-15.0,
             detection_function=self._detect_price_break_lower,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
         
         # 带宽扩大形态
@@ -153,12 +153,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="BANDWIDTH_EXPANDING",
             display_name="布林带宽扩大",
             description="带宽扩大，波动性增加",
-            indicator_id="BOLL",
-            pattern_type=PatternType.VOLATILITY,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.VOLATILITY,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=0.0,
             detection_function=self._detect_bandwidth_expanding,
-            polarity=PatternPolarity.NEUTRAL
+            polarity=Pattern_polarity.NEUTRAL
         )
 
         # 带宽收缩形态
@@ -166,12 +166,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="BANDWIDTH_CONTRACTING",
             display_name="布林带宽收缩",
             description="带宽收缩，波动性减小",
-            indicator_id="BOLL",
-            pattern_type=PatternType.VOLATILITY,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.VOLATILITY,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=0.0,
             detection_function=self._detect_bandwidth_contracting,
-            polarity=PatternPolarity.NEUTRAL
+            polarity=Pattern_polarity.NEUTRAL
         )
         
         # 价格上穿中轨形态
@@ -179,12 +179,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="PRICE_CROSS_UP_MIDDLE",
             display_name="价格上穿布林中轨",
             description="价格从下方穿越中轨，可能是趋势转变信号",
-            indicator_id="BOLL",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=5.0,
             detection_function=self._detect_price_cross_up_middle,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         # 价格下穿中轨形态
@@ -192,12 +192,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="PRICE_CROSS_DOWN_MIDDLE",
             display_name="价格下穿布林中轨",
             description="价格从上方穿越中轨，可能是趋势转变信号",
-            indicator_id="BOLL",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-5.0,
             detection_function=self._detect_price_cross_down_middle,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
 
         # 布林带平行形态
@@ -205,12 +205,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="PARALLEL_BANDS",
             display_name="布林带平行",
             description="上下轨道平行，趋势稳定",
-            indicator_id="BOLL",
-            pattern_type=PatternType.TREND,
-            default_strength=PatternStrength.WEAK,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.TREND,
+            default_strength=Pattern_strength.WEAK,
             score_impact=0.0,
             detection_function=self._detect_parallel_bands,
-            polarity=PatternPolarity.NEUTRAL
+            polarity=Pattern_polarity.NEUTRAL
         )
         
         # W底形态
@@ -218,12 +218,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="W_BOTTOM",
             display_name="布林带W底",
             description="价格在下轨附近形成W底，看涨信号",
-            indicator_id="BOLL",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=20.0,
             detection_function=self._detect_w_bottom,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         # M顶形态
@@ -231,12 +231,12 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             pattern_id="M_TOP",
             display_name="布林带M顶",
             description="价格在上轨附近形成M顶，看跌信号",
-            indicator_id="BOLL",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="BOLL_Boll",
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=-20.0,
             detection_function=self._detect_m_top,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
     
     def _detect_price_touch_upper(self, data: pd.DataFrame) -> bool:
@@ -460,7 +460,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         
         return False
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Boll(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算布林带指标的原始评分（0-100分制）
         
@@ -471,7 +471,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         Returns:
             pd.Series: 原始评分序列，取值范围0-100
         """
-        if not self.has_result():
+        if not self.has_result_Boll():
             self.calculate(data, **kwargs)
         
         # 获取布林带指标值
@@ -527,7 +527,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         )
         
         # 检测形态对评分的影响
-        patterns = self.identify_patterns(data, **kwargs)
+        patterns = self.identify_patterns_Boll(data, **kwargs)
         
         # 形态影响分数：最多调整±20分
         pattern_adjustment = 0
@@ -551,16 +551,16 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         
         return pd.Series(final_score, index=data.index)
     
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_boll(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算布林带指标
         
         Args:
-            data: 包含OHLC数据的DataFrame
+            data: 包含OHLC数据的Data_frame
             *args, **kwargs: 其他参数
             
         Returns:
-            计算完成的DataFrame，包含中轨、上轨和下轨
+            计算完成的Data_frame，包含中轨、上轨和下轨
         """
         try:
             # 检查是否有足够的数据和必要的列
@@ -702,7 +702,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         分析带宽变化趋势，识别压缩和扩张形态
         
         Args:
-            data: 包含bandwidth列的DataFrame
+            data: 包含bandwidth列的Data_frame
             
         Returns:
             Dict[str, pd.Series]: 包含带宽分析结果的字典
@@ -766,7 +766,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         评估中轨作为支撑/阻力的有效性
         
         Args:
-            data: 包含close, middle等列的DataFrame
+            data: 包含close, middle等列的Data_frame
             
         Returns:
             Dict[str, pd.Series]: 包含中轨支撑阻力分析结果的字典
@@ -875,7 +875,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             'reversal_probability': reversal_probability
         }
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Boll(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别BOLL技术形态
         
@@ -889,7 +889,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         patterns = []
         
         # 确保已计算BOLL
-        if not self.has_result():
+        if not self.has_result_Boll():
             self.calculate(data, **kwargs)
         
         if self._result is None:
@@ -1130,7 +1130,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         设置市场环境
         
         Args:
-            environment: 市场环境，可以是MarketEnvironment枚举或字符串
+            environment: 市场环境，可以是Market_environment枚举或字符串
         """
         if isinstance(environment, str):
             self._market_environment = environment
@@ -1156,7 +1156,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         获取当前市场环境
         
         Returns:
-            MarketEnvironment: 当前市场环境
+            Market_environment: 当前市场环境
         """
         return self._market_environment
     
@@ -1168,13 +1168,13 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             data: 输入数据，包含价格数据
             
         Returns:
-            MarketEnvironment: 检测到的市场环境
+            Market_environment: 检测到的市场环境
         """
         if 'close' not in data.columns:
             raise ValueError("输入数据必须包含'close'列")
             
         # 确保已计算布林带
-        if not self.has_result():
+        if not self.has_result_Boll():
             self.calculate(data)
             
         result = self._result
@@ -1241,7 +1241,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             # 默认为盘整市场
             return "SIDEWAYS_MARKET"
     
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Boll(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成布林带交易信号
         
@@ -1253,7 +1253,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             Dict[str, pd.Series]: 包含各类信号的字典
         """
         # 确保已计算布林带
-        if not self.has_result():
+        if not self.has_result_Boll():
             self.calculate(data)
             
         result = self._result
@@ -1404,13 +1404,13 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         signals['m_top'] = m_top
         
         # 计算并添加评分
-        score = self.calculate_raw_score(data)
+        score = self.calculate_raw_score_Boll(data)
         signals['score'] = score
 
         # 将字典转换为DataFrame
         return pd.DataFrame(signals)
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Boll(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取布林带指标的所有形态信息
 
@@ -1419,14 +1419,14 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算布林带
-        if not self.has_result():
+        if not self.has_result_Boll():
             self.calculate(data, **kwargs)
 
         # 获取形态列表
-        pattern_list = self.identify_patterns(data, **kwargs)
+        pattern_list = self.identify_patterns_Boll(data, **kwargs)
 
         # 创建形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
@@ -1472,7 +1472,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Boll(self):
         """
         注册BOLL指标的形态到全局形态注册表
         """
@@ -1581,7 +1581,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Boll(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算指标评分
         
@@ -1600,7 +1600,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 确保已计算布林带
-            if not self.has_result():
+            if not self.has_result_Boll():
                 self.calculate(data)
                 
             # 检测市场环境
@@ -1608,19 +1608,19 @@ class BOLL(BaseIndicator, PatternSignalMixin):
             self.set_market_environment(market_env)
             
             # 计算原始评分
-            raw_score = self.calculate_raw_score(data, **kwargs)
+            raw_score = self.calculate_raw_score_Boll(data, **kwargs)
             
             # 应用市场环境调整
             final_score = self.apply_market_environment_adjustment(raw_score, market_env)
             
             # 识别形态
-            patterns = self.identify_patterns(data, **kwargs)
+            patterns = self.identify_patterns_Boll(data, **kwargs)
             
             # 生成信号
-            signals = self.generate_trading_signals(data, **kwargs)
+            signals = self.generate_trading_signals_Boll(data, **kwargs)
             
             # 计算置信度
-            confidence = self.calculate_confidence(raw_score, patterns, signals)
+            confidence = self.calculate_confidence_Boll(raw_score, patterns, signals)
             
             # 构建返回结果
             result = {
@@ -1649,7 +1649,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
                 'error': str(e)
             }
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Boll(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -1753,7 +1753,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         # 限制评分范围在0-100之间
         return pd.Series(np.clip(adjusted_score, 0, 100), index=score.index)
         
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Boll(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算指标结果的置信度
         
@@ -1794,7 +1794,7 @@ class BOLL(BaseIndicator, PatternSignalMixin):
         # 限制置信度范围在0-1之间
         return max(0.0, min(1.0, confidence))
         
-    def has_result(self) -> bool:
+    def has_result_Boll(self) -> bool:
         """
         检查是否已计算过指标
         

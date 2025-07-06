@@ -19,9 +19,9 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_parser import StrategyParser
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_parser import Strategy_parser
+from strategy.strategy_manager import Strategy_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -76,7 +76,7 @@ def test_complex_strategy():
             }
         }
         
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         print("1. 验证复杂策略配置...")
         is_valid = executor._validate_strategy_plan(complex_strategy)
@@ -129,7 +129,7 @@ def test_performance_metrics():
             }
         }
         
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         print("1. 执行性能测试...")
         start_time = datetime.now()
@@ -225,7 +225,7 @@ def test_error_handling():
     print("\n=== 测试错误处理 ===")
     
     try:
-        executor = StrategyExecutor()
+        executor = Strategy_executor()
         
         print("1. 测试无效策略配置...")
         
@@ -278,7 +278,7 @@ def test_error_handling():
         return False
 
 
-def main():
+def main_testcomprehensivestockselection():
     """主测试函数"""
     print("开始可配置策略选股系统综合测试...")
     
@@ -322,5 +322,5 @@ def main():
 
 
 if __name__ == "__main__":
-    exit_code = main()
+    exit_code = main_testcomprehensivestockselection()
     sys.exit(exit_code)

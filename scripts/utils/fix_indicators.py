@@ -69,8 +69,8 @@ INDICATOR_MODULES = {
 
 # 抽象方法和它们的默认实现
 ABSTRACT_METHODS = {
-    'calculate_raw_score': """
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    'calculate_raw_score_Fix_Indicators': """
+    def calculate_raw_score_Fix_Indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         \"\"\"
         计算指标原始评分
         
@@ -97,8 +97,8 @@ ABSTRACT_METHODS = {
         return score
     """,
     
-    'generate_trading_signals': """
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    'generate_trading_signals_Fix_Indicators': """
+    def generate_trading_signals_Fix_Indicators(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         \"\"\"
         生成交易信号
         
@@ -194,7 +194,7 @@ def add_method_to_file(file_path: str, method_implementation: str) -> bool:
         logger.error(f"向文件 {file_path} 添加方法时出错: {e}")
         return False
 
-def fix_indicator_file(indicator_name: str, module_name: str) -> None:
+def fix_indicator_file_Indicators_Fix_Indicators(indicator_name: str, module_name: str) -> None:
     """
     修复指标文件，添加缺少的抽象方法
     
@@ -220,7 +220,7 @@ def fix_indicator_file(indicator_name: str, module_name: str) -> None:
         else:
             logger.info(f"{indicator_name} 已经实现了方法: {method_name}")
 
-def main():
+def main_fixindicators():
     """主函数"""
     logger.info("开始修复指标类...")
     
@@ -231,9 +231,9 @@ from typing import Dict, List, Union, Optional, Tuple, Any"""
     # 为每个指标添加缺少的方法
     for indicator_name, module_name in INDICATOR_MODULES.items():
         logger.info(f"检查指标 {indicator_name}...")
-        fix_indicator_file(indicator_name, module_name)
+        fix_indicator_file_Indicators_Fix_Indicators(indicator_name, module_name)
         
     logger.info("所有指标类修复完成")
 
 if __name__ == "__main__":
-    main() 
+    mainFixindicators() 

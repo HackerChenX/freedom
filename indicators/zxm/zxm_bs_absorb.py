@@ -3,7 +3,7 @@ from indicators.base.pattern_signal_mixin import PatternSignalMixin
 import pandas as pd
 from typing import Dict
 
-class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
+class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin):
     """
     主力吸筹指标 (ZXM Buy/Sell Absorb)
     
@@ -15,15 +15,15 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
         self.long_period = long_period
         self.mid_period = mid_period
 
-    def set_parameters(self, short_period=12, long_period=26, mid_period=9):
+    def set_parameters_Absorb_Zxm_Bs_Absorb(self, short_period=12, long_period=26, mid_period=9):
         self.short_period = short_period
         self.long_period = long_period
         self.mid_period = mid_period
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Absorb_Zxm_Bs_Absorb(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         return 0.5
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Absorb_Zxm_Bs_Absorb(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取ZXMBSAbsorb相关形态
 
@@ -32,11 +32,11 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
-            self._calculate(data, **kwargs)
+            self._calculate_zxmbsabsorb(data, **kwargs)
 
         patterns = pd.DataFrame(index=data.index)
 
@@ -62,7 +62,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Absorb(self):
         """
         注册ZXMBSAbsorb指标的形态到全局形态注册表
         """
@@ -99,7 +99,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_zxmbsabsorb(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算主力吸筹指标
         """
@@ -137,7 +137,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Absorb(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

@@ -17,8 +17,8 @@ import gc
 from memory_profiler import profile
 from functools import wraps
 from indicators.complete_indicator_registry import complete_registry
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 def measure_memory(func):
     """装饰器，用于测量函数执行前后的内存变化"""
@@ -50,22 +50,22 @@ def measure_memory(func):
         return result
     return wrapper
 
-class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
+class Test_indicator_performance(unittest.Test_case, Log_capture_mixin):
 
-    def setUp(self):
+    def set_up_Performance_Test_Indicator_Performance(self):
         """准备测试数据"""
         # 生成不同大小的数据集用于性能测试
-        self.small_data = TestDataGenerator.generate_price_sequence([
+        self.small_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 100},
         ])
         
-        self.medium_data = TestDataGenerator.generate_price_sequence([
+        self.medium_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 500},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 500},
         ])
         
-        self.large_data = TestDataGenerator.generate_price_sequence([
+        self.large_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 1000},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 1000},
         ])
@@ -79,8 +79,8 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
             dataset['industry'] = 'Technology'  # 模拟行业
         
         # 注册所有指标
-        IndicatorFactory.auto_register_all_indicators()
-        self.supported_indicators = IndicatorFactory.get_supported_indicators()
+        Indicator_factory.auto_register_all_indicators()
+        self.supported_indicators = Indicator_factory.get_supported_indicators()
         
         # 排除列表：一些高级或特殊指标可能不适合性能测试
         self.exclude_list = [
@@ -121,7 +121,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
                 continue
             
             try:
-                indicator = IndicatorFactory.create_indicator(name)
+                indicator = Indicator_factory.create_indicator(name)
                 
                 start_time = time.time()
                 # 我们只关心能否成功计算，不关心结果的合并
@@ -154,7 +154,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
             results[name] = {}
             
             try:
-                indicator = IndicatorFactory.create_indicator(name)
+                indicator = Indicator_factory.create_indicator(name)
                 
                 # 小规模数据测试
                 start_time = time.time()
@@ -197,14 +197,14 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
         """测试指标计算的内存使用情况"""
         for name in self.test_indicators:
             try:
-                indicator = IndicatorFactory.create_indicator(name)
+                indicator = Indicator_factory.create_indicator(name)
                 
                 # 使用装饰器测量内存使用
                 @measure_memory
-                def calculate_indicator():
+                def calculate_indicator_Performance():
                     return indicator.calculate(self.large_data.copy())
                 
-                _ = calculate_indicator()
+                _ = calculate_indicator_Performance()
                 
             except Exception as e:
                 self.fail(f"指标 '{name}' 在内存使用测试中失败: {e}")
@@ -215,7 +215,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
         
         for name in self.test_indicators:
             try:
-                indicator = IndicatorFactory.create_indicator(name)
+                indicator = Indicator_factory.create_indicator(name)
                 
                 # 检查是否有get_patterns方法
                 if hasattr(indicator, 'get_patterns'):
@@ -250,7 +250,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
         individual_results = {}
         
         for name in test_subset:
-            indicator = IndicatorFactory.create_indicator(name)
+            indicator = Indicator_factory.create_indicator(name)
             result = indicator.calculate(self.medium_data.copy())
             individual_results[name] = result
         
@@ -261,7 +261,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
         batch_df = self.medium_data.copy()
         
         for name in test_subset:
-            indicator = IndicatorFactory.create_indicator(name)
+            indicator = Indicator_factory.create_indicator(name)
             batch_df = indicator.calculate(batch_df)
         
         batch_time = time.time() - batch_start
@@ -280,7 +280,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
         # 选择一个典型指标进行测试
         test_indicator = 'MACD'
         if test_indicator in self.supported_indicators and test_indicator not in self.exclude_list:
-            indicator = IndicatorFactory.create_indicator(test_indicator)
+            indicator = Indicator_factory.create_indicator(test_indicator)
             
             # 第一次计算
             start_time = time.time()
@@ -309,7 +309,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
         test_indicator = 'MA'
         if test_indicator in self.supported_indicators and test_indicator not in self.exclude_list:
             # 默认参数
-            default_indicator = IndicatorFactory.create_indicator(test_indicator)
+            default_indicator = Indicator_factory.create_indicator(test_indicator)
             
             start_time = time.time()
             _ = default_indicator.calculate(self.medium_data.copy())
@@ -318,7 +318,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
             # 修改参数（例如增加更多的移动平均周期）
             try:
                 # 尝试创建带有自定义参数的指标
-                custom_indicator = IndicatorFactory.create_indicator(
+                custom_indicator = Indicator_factory.create_indicator(
                     test_indicator, 
                     periods=[5, 10, 20, 30, 60, 120, 250]  # 增加更多周期
                 )
@@ -335,7 +335,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
                 print(f"性能比例 (自定义/默认): {custom_time/default_time:.2f}")
                 
                 # 参数增加后，计算时间可能会增加，但不应该增加过多
-                self.assertLess(custom_time, default_time * 3, 
+                self.assert_less(custom_time, default_time * 3, 
                                "参数增加后，计算时间增加过多")
             except Exception as e:
                 print(f"警告: 无法使用自定义参数创建指标 {test_indicator}: {e}")
@@ -346,7 +346,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
         test_indicator = 'MACD'
         
         if test_indicator in self.supported_indicators and test_indicator not in self.exclude_list:
-            indicator = IndicatorFactory.create_indicator(test_indicator)
+            indicator = Indicator_factory.create_indicator(test_indicator)
             
             # 正常数据计算
             start_time = time.time()
@@ -377,7 +377,7 @@ class TestIndicatorPerformance(unittest.TestCase, LogCaptureMixin):
                 
                 # 验证错误处理不应该明显拖慢系统
                 # 注意：错误处理通常会导致一些性能下降
-                self.assertLess(error_time, normal_time * 5, 
+                self.assert_less(error_time, normal_time * 5, 
                                "错误处理导致性能严重下降")
                 
             finally:

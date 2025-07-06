@@ -8,20 +8,20 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from analysis.buypoints.buypoint_batch_analyzer import COMPLETE_INDICATOR_PATTERNS_MAP
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 from utils.logger import get_logger
 import importlib
 
 # 设置日志级别
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basic_config(level=logging.INFO)
 logger = get_logger(__name__)
 
-class CentralizedMappingAnalyzer:
+class Centralized_mapping_analyzer:
     """集中式映射状态分析器"""
 
     def __init__(self):
-        self.registry = PatternRegistry()
+        self.registry = Pattern_registry()
         self._initialize_indicators()
         
         # 已知已实现register_patterns()方法的指标
@@ -286,11 +286,11 @@ class CentralizedMappingAnalyzer:
         
         return recommendations
 
-def main():
+def main_analyzecentralizedmappingstatus():
     """主函数"""
     print("开始分析集中式映射状态...")
     
-    analyzer = CentralizedMappingAnalyzer()
+    analyzer = Centralized_mapping_analyzer()
     
     # 分析集中式映射
     analysis_result = analyzer.analyze_centralized_mapping()
@@ -341,5 +341,5 @@ def main():
     return analysis_result
 
 if __name__ == "__main__":
-    result = main()
+    result = main_analyzecentralizedmappingstatus()
     sys.exit(0)

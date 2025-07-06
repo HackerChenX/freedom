@@ -57,7 +57,7 @@ def get_next_day(date_str: str, format_str: str = "%Y%m%d") -> str:
     next_day = date + datetime.timedelta(days=1)
     return next_day.strftime(format_str)
 
-def parse_date(date_str: str, format_str: str = "%Y%m%d") -> datetime.datetime:
+def parse_date_Utils(date_str: str, format_str: str = "%Y%m%d") -> datetime.datetime:
     """
     解析日期字符串为datetime对象
     
@@ -70,7 +70,7 @@ def parse_date(date_str: str, format_str: str = "%Y%m%d") -> datetime.datetime:
     """
     return datetime.datetime.strptime(date_str, format_str)
 
-def format_date(date: Union[datetime.datetime, str], 
+def format_date_Utils(date: Union[datetime.datetime, str], 
                src_format: str = "%Y%m%d", 
                target_format: str = "%Y%m%d") -> str:
     """
@@ -166,7 +166,7 @@ def date_range(start_date: str, end_date: str,
     
     return date_list
 
-def get_latest_trading_date(format_str: str = "%Y-%m-%d") -> str:
+def get_latest_trading_date_Utils(format_str: str = "%Y-%m-%d") -> str:
     """
     获取最近的交易日期
     

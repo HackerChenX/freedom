@@ -12,7 +12,7 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_strategies_dir, get_data_dir
-from scripts.backtest.unified_backtest import UnifiedBacktest, analyze_buypoint_indicators
+from scripts.backtest.unified_backtest import Unified_backtest, analyze_buypoint_indicators
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -44,7 +44,7 @@ def generate_output_filename(input_file: str, pattern_type: str = ""):
     output_file = os.path.join(get_backtest_result_dir(), output_name)
     return output_file
 
-def main():
+def main_39():
     """主程序入口"""
     parser = argparse.ArgumentParser(description="统一回测系统运行工具")
     parser.add_argument("--input", "-i", help="输入文件路径，包含股票代码和买点日期", required=True)
@@ -57,8 +57,8 @@ def main():
     # 如果选择了检查模式，则运行指标检查
     if args.check:
         logger.info("执行指标检查模式...")
-        from scripts.backtest.indicator_check import IndicatorChecker
-        checker = IndicatorChecker()
+        from scripts.backtest.indicator_check import Indicator_checker
+        checker = Indicator_checker()
         checker.run_all_checks()
         return
     
@@ -74,7 +74,7 @@ def main():
     logger.info("注意: 系统将获取每个股票的完整历史数据，买点日期仅作为数据截止日期")
     
     # 创建回测实例并执行分析
-    backtest = UnifiedBacktest()
+    backtest = Unified_backtest()
     backtest.batch_analyze(args.input, output_file, args.type)
     
     # 添加额外步骤：使用系统命令处理JSON文件，移除末尾的百分号
@@ -94,4 +94,4 @@ def main():
     logger.info(f"策略文件已生成: {strategy_file}")
 
 if __name__ == "__main__":
-    main() 
+    main_39() 

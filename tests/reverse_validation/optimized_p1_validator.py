@@ -20,16 +20,16 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from intelligent_p1_generator import IntelligentP1Generator
-from extended_technical_indicators import ExtendedTechnicalIndicators
+from intelligent_p1_generator import Intelligent_p1_generator
+from extended_technical_indicators import Extended_technical_indicators
 
 
-class OptimizedP1Validator:
+class Optimized_p1_validator:
     """优化的P1指标验证器"""
     
     def __init__(self):
-        self.intelligent_generator = IntelligentP1Generator()
-        self.extended_indicators = ExtendedTechnicalIndicators()
+        self.intelligent_generator = Intelligent_p1_generator()
+        self.extended_indicators = Extended_technical_indicators()
     
     def validate_sar_optimized(self) -> dict:
         """优化验证SAR指标的所有5个形态"""
@@ -395,7 +395,7 @@ class OptimizedP1Validator:
         return summary
 
 
-def main():
+def main_optimizedp1validator():
     """主函数"""
     print("=" * 80)
     print("优化P1重要指标验证测试")
@@ -404,7 +404,7 @@ def main():
     print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    validator = OptimizedP1Validator()
+    validator = Optimized_p1_validator()
     
     try:
         results = validator.validate_all_p1_optimized()
@@ -460,5 +460,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_optimizedp1validator()
     sys.exit(exit_code)

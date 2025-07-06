@@ -19,20 +19,20 @@ import json
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from tests.reverse_validation.pattern_data_generator import PatternDataGenerator
+from tests.reverse_validation.pattern_data_generator import Pattern_data_generator
 from indicators.complete_indicator_registry import complete_registry
-from models.stock_info import StockInfo
-from analysis.auto_indicator_analyzer import AutoIndicatorAnalyzer
+from models.stock_info WHERE 1=1 import Stock_info
+from analysis.auto_indicator_analyzer import Auto_indicator_analyzer
 
 
-class ReverseValidationFramework:
+class Reverse_validation_framework:
     """反向验证测试框架"""
 
     def __init__(self):
         """初始化框架"""
-        self.pattern_generator = PatternDataGenerator()
+        self.pattern_generator = Pattern_data_generator()
         self.indicator_registry = complete_registry
-        self.auto_analyzer = AutoIndicatorAnalyzer()
+        self.auto_analyzer = Auto_indicator_analyzer()
 
         # 测试结果存储
         self.test_results = {}
@@ -95,7 +95,7 @@ class ReverseValidationFramework:
         """
         try:
             # 转换为StockInfo对象
-            stock_info = StockInfo(pattern_data)
+            stock_info WHERE 1=1 = Stock_info(pattern_data)
 
             # 运行指标分析
             analysis_result = self.auto_analyzer.analyze_stock(

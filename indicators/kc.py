@@ -8,15 +8,15 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
-from enums.indicator_types import TrendType, CrossType
-from enums.indicator_enum import IndicatorEnum
+from enums.indicator_types import Trend_type, Cross_type
+from enums.indicator_enum import Indicator_enum
 from indicators.common import crossover, crossunder
-from .base_indicator import BaseIndicator
+from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
-logger = logging.getLogger(__name__)
+logger = logging.get_Logger(__name__)
 
-class KC(BaseIndicator, PatternSignalMixin):
+class KeltnerChannel(BaseIndicator, PatternSignalMixin):
     """
     肯特纳通道指标 (Keltner Channel)
     
@@ -33,14 +33,14 @@ class KC(BaseIndicator, PatternSignalMixin):
                  name: str = "KC", description: str = "肯特纳通道指标"):
         """初始化KC指标"""
         super().__init__(name, description)
-        self.indicator_type = IndicatorEnum.KC.name
+        self.indicator_type = Indicator_enum.KC.name
         self.period = period
         self.atr_period = atr_period
         self.multiplier = multiplier
         self._result = None
         self.REQUIRED_COLUMNS = ['high', 'low', 'close']
 
-    def set_parameters(self, period: int = None, atr_period: int = None, multiplier: float = None):
+    def set_parameters_Kc_Kc_Kc_kc(self, period: int = None, atr_period: int = None, multiplier: float = None):
         """
         设置指标参数
 
@@ -56,15 +56,15 @@ class KC(BaseIndicator, PatternSignalMixin):
         if multiplier is not None:
             self.multiplier = multiplier
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_kc(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算KC指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
             
         Returns:
-            包含kc_upper, kc_middle, kc_lower列的DataFrame
+            包含kc_upper, kc_middle, kc_lower列的Data_frame
         """
         if self._result is not None:
             return self._result
@@ -118,12 +118,12 @@ class KC(BaseIndicator, PatternSignalMixin):
         self._result = result
         return result
     
-    def generate_signals(self, df: pd.DataFrame) -> List[Dict]:
+    def generate_signals_Kc(self, df: pd.DataFrame) -> List[Dict]:
         """
         生成标准化的交易信号
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
             
         Returns:
             包含交易信号的字典列表
@@ -152,13 +152,13 @@ class KC(BaseIndicator, PatternSignalMixin):
         
         # 判断趋势方向
         if current_price > kc_middle:
-            trend = TrendType.UP
+            trend = Trend_type.UP
             trend_strength = 50 + kc_position * 0.5  # 50-100
         elif current_price < kc_middle:
-            trend = TrendType.DOWN
+            trend = Trend_type.DOWN
             trend_strength = 50 - (100 - kc_position) * 0.5  # 0-50
         else:
-            trend = TrendType.FLAT
+            trend = Trend_type.FLAT
             trend_strength = 50
         
         # 基础信号评分(0-100)
@@ -178,7 +178,7 @@ class KC(BaseIndicator, PatternSignalMixin):
         elif current_price > kc_upper:  # 价格在上轨之上
             signal_type = "上轨之上"
             signal_desc = "价格位于肯特纳通道上轨之上，显示超买状态"
-            cross_type = CrossType.NO_CROSS
+            cross_type = Cross_type.NO_CROSS
             score = 70 + (current_price - kc_upper) / kc_upper * 100  # 根据超出程度增加评分
         elif current_price < kc_lower:  # 价格在下轨之下
             signal_type = "下轨之下"
@@ -304,12 +304,12 @@ class KC(BaseIndicator, PatternSignalMixin):
         signals.append(signal)
         return signals
         
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Kc(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算原始评分(0-100分)
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             包含评分的Series，范围0-100
@@ -378,13 +378,13 @@ class KC(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Kc(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算KC指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -445,12 +445,12 @@ class KC(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Kc(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别KC指标形态
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
             形态描述列表
@@ -524,7 +524,7 @@ class KC(BaseIndicator, PatternSignalMixin):
             
         return patterns
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Kc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取KC指标的技术形态
 
@@ -533,7 +533,7 @@ class KC(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算KC
         if not self.has_result():
@@ -599,7 +599,7 @@ class KC(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_Kc(self):
         """
         注册KC指标的技术形态
         """
@@ -728,7 +728,7 @@ class KC(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Kc(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -812,42 +812,11 @@ class KC(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
-    def __init__(self, **kwargs):
-        """
-        初始化KC指标
-
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__(name="KC", description="肯特纳通道指标")
-            except:
-                pass
-
-        self.name = "KC"
-        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
-
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-
-        # 确保KC特有属性存在
-        if not hasattr(self, 'period'):
-            self.period = 20
-        if not hasattr(self, 'atr_period'):
-            self.atr_period = 10
-        if not hasattr(self, 'multiplier'):
-            self.multiplier = 2.0
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_kc(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 20, "atr_period": 10, "multiplier": 2.0}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Kc_Kc_Kc_kc_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -856,8 +825,8 @@ class KC(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -866,8 +835,8 @@ class KC(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('KC', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"KC参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

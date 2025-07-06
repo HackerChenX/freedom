@@ -6,30 +6,30 @@ import pandas as pd
 import numpy as np
 
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testaroon_aroon(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """Aroon指标单元测试类"""
 
-    def setUp(self):
+    def set_up_Aroon(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        Log_capture_mixin.set_up_Aroon(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('AROON', period=14)
         self.expected_columns = ['aroon_up', 'aroon_down', 'aroon_oscillator']
         # 使用一个包含多种走势的数据进行通用测试
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30},
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tearDown(self):
+    def tear_down_Aroon(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)  # 显式调用Mixin的tearDown
+        Log_capture_mixin.tear_down_Aroon(self)  # 显式调用Mixin的tear_down
 
-    def test_basic_calculation(self):
+    def test_basic_calculation_Aroon(self):
         """测试Aroon基础计算功能"""
         result = self.indicator.calculate(self.data)
         
@@ -55,7 +55,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_uptrend_detection(self):
         """测试上升趋势检测"""
         # 生成明确的上升趋势数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 130, 'periods': 30}
         ])
         
@@ -74,7 +74,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_downtrend_detection(self):
         """测试下降趋势检测"""
         # 生成明确的下降趋势数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 130, 'end_price': 100, 'periods': 30}
         ])
         
@@ -92,7 +92,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
     def test_crossover_detection(self):
         """测试Aroon交叉检测"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 10},   # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 15},   # 反弹
@@ -111,7 +111,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_strong_trend_detection(self):
         """测试强趋势检测"""
         # 生成强上升趋势数据
-        strong_up_data = TestDataGenerator.generate_price_sequence([
+        strong_up_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 20}
         ])
         
@@ -124,7 +124,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
     def test_oscillator_patterns(self):
         """测试震荡器形态检测"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 15},  # 上涨
             {'type': 'trend', 'start_price': 120, 'end_price': 95, 'periods': 15},   # 下跌
@@ -142,7 +142,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_consolidation_detection(self):
         """测试盘整检测"""
         # 生成横盘数据
-        sideways_data = TestDataGenerator.generate_price_sequence([
+        sideways_data = Test_data_generator.generate_price_sequence([
             {'type': 'sideways', 'start_price': 100, 'periods': 40, 'volatility': 0.01}
         ])
         
@@ -159,7 +159,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_signal_generation(self):
         """测试Aroon信号生成"""
         # 生成包含多种走势的数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 10},   # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 15},   # 反弹
@@ -182,7 +182,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_score_calculation(self):
         """测试Aroon评分计算功能"""
         # 生成测试数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 10},   # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 15},   # 反弹
@@ -210,7 +210,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_edge_cases(self):
         """测试边界条件"""
         # 测试数据长度不足的情况
-        short_data = TestDataGenerator.generate_price_sequence([
+        short_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 5}
         ])
         
@@ -218,7 +218,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(result, pd.DataFrame, "短数据计算结果应为DataFrame")
         
         # 测试价格无变化的情况
-        flat_data = TestDataGenerator.generate_price_sequence([
+        flat_data = Test_data_generator.generate_price_sequence([
             {'type': 'flat', 'start_price': 100, 'periods': 20}
         ])
         
@@ -228,7 +228,7 @@ class TestAroon(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_robustness(self):
         """测试Aroon指标的鲁棒性"""
         # 测试包含异常值的数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 20}
         ])
         

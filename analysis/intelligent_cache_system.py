@@ -17,27 +17,27 @@ import numpy as np
 from typing import Dict, List, Tuple, Any, Optional, Union
 import json
 from datetime import datetime, timedelta
-from collections import OrderedDict
+from collections import Ordered_dict
 import threading
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class LRUCache:
     """LRU缓存实现"""
     
-    def __init__(self, max_size: int = 1000):
+    def __init___93_intelligentcachesystem(self, max_size: int = 1000):
         self.max_size = max_size
-        self.cache = OrderedDict()
+        self.cache = Ordered_dict()
         self.lock = threading.RLock()
         
-    def get(self, key: str) -> Optional[Any]:
+    def get_14(self, key: str) -> Optional[Any]:
         """获取缓存值"""
         with self.lock:
             if key in self.cache:
@@ -47,7 +47,7 @@ class LRUCache:
                 return value
             return None
     
-    def set(self, key: str, value: Any) -> None:
+    def set_13(self, key: str, value: Any) -> None:
         """设置缓存值"""
         with self.lock:
             if key in self.cache:
@@ -59,10 +59,10 @@ class LRUCache:
             
             self.cache[key] = value
     
-    def clear(self) -> None:
+    def clear_System(self) -> None:
         """清空缓存"""
         with self.lock:
-            self.cache.clear()
+            self.cache.clear_System()
     
     def size(self) -> int:
         """获取缓存大小"""
@@ -75,19 +75,6 @@ class LRUCache:
 
 class IntelligentCacheSystem:
     """智能缓存系统"""
-    
-    def __init__(self, max_memory_cache_size: int = 1000, 
-                 enable_disk_cache: bool = True,
-                 cache_dir: str = "data/cache"):
-        self.memory_cache = LRUCache(max_memory_cache_size)
-        self.enable_disk_cache = enable_disk_cache
-        self.cache_dir = cache_dir
-        self.hit_count = 0
-        self.miss_count = 0
-        
-        # 创建缓存目录
-        if self.enable_disk_cache:
-            os.makedirs(self.cache_dir, exist_ok=True)
     
     def _generate_cache_key(self, stock_code: str, indicator_name: str, 
                           end_date: str, params: Dict[str, Any]) -> str:
@@ -160,7 +147,7 @@ class IntelligentCacheSystem:
         cache_key = self._generate_cache_key(stock_code, indicator_name, end_date, params)
         
         # 首先尝试内存缓存
-        result = self.memory_cache.get(cache_key)
+        result = self.memory_cache.get_14(cache_key)
         if result is not None:
             self.hit_count += 1
             logger.debug(f"内存缓存命中: {indicator_name} for {stock_code}")
@@ -170,7 +157,7 @@ class IntelligentCacheSystem:
         result = self._load_from_disk(cache_key)
         if result is not None:
             # 将磁盘缓存结果加载到内存缓存
-            self.memory_cache.set(cache_key, result)
+            self.memory_cache.set_13(cache_key, result)
             self.hit_count += 1
             logger.debug(f"磁盘缓存命中: {indicator_name} for {stock_code}")
             return result
@@ -188,7 +175,7 @@ class IntelligentCacheSystem:
         cache_key = self._generate_cache_key(stock_code, indicator_name, end_date, params)
         
         # 保存到内存缓存
-        self.memory_cache.set(cache_key, result)
+        self.memory_cache.set_13(cache_key, result)
         
         # 保存到磁盘缓存
         self._save_to_disk(cache_key, result)
@@ -208,9 +195,9 @@ class IntelligentCacheSystem:
             'disk_cache_enabled': self.enable_disk_cache
         }
     
-    def clear_cache(self, clear_disk: bool = False) -> None:
+    def clear_cache_System(self, clear_disk: bool = False) -> None:
         """清空缓存"""
-        self.memory_cache.clear()
+        self.memory_cache.clear_System()
         
         if clear_disk and self.enable_disk_cache:
             try:
@@ -230,9 +217,6 @@ class IntelligentCacheSystem:
 
 class CachedIndicatorCalculator:
     """带缓存的指标计算器"""
-    
-    def __init__(self, cache_system: IntelligentCacheSystem):
-        self.cache_system = cache_system
     
     def calculate_with_cache(self, stock_code: str, indicator_name: str, 
                            end_date: str, data: pd.DataFrame, 
@@ -291,8 +275,8 @@ def benchmark_cache_performance():
     print("="*60)
     
     # 创建缓存系统
-    cache_system = IntelligentCacheSystem(max_memory_cache_size=100)
-    calculator = CachedIndicatorCalculator(cache_system)
+    cache_system = Intelligent_cache_system(max_memory_cache_size=100)
+    calculator = Cached_indicator_calculator(cache_system)
     
     # 创建测试数据
     np.random.seed(42)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 AROON指标修复验证测试
 
@@ -19,9 +21,10 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from indicators.aroon import AROON
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 
-def create_test_data():
+def create_test_data_Fix():
     """创建测试数据"""
     dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
     
@@ -64,7 +67,7 @@ def test_aroon_calculation():
     print("=== AROON计算功能测试 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix()
     
     # 创建AROON指标实例
     aroon = AROON(period=14)
@@ -123,7 +126,7 @@ def test_aroon_scoring():
     print("\n=== AROON评分功能测试 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix()
     
     # 创建AROON指标实例
     aroon = AROON(period=14)
@@ -168,7 +171,7 @@ def test_aroon_patterns():
     print("\n=== AROON形态识别测试 ===")
     
     # 创建测试数据
-    data = create_test_data()
+    data = create_test_data_Fix()
     
     # 创建AROON指标实例
     aroon = AROON(period=14)
@@ -194,7 +197,7 @@ def test_with_real_data():
     
     try:
         # 获取数据库连接
-        db = get_clickhouse_db()
+        data_access = get_container().resolve(IData_access)
         
         # 查询真实数据
         query = """
@@ -247,7 +250,7 @@ def test_with_real_data():
     except Exception as e:
         print(f"真实数据测试失败: {e}")
 
-def main():
+def main_testaroonfix():
     """主函数"""
     print("AROON指标修复验证测试")
     print("=" * 50)
@@ -268,4 +271,4 @@ def main():
     print("测试完成")
 
 if __name__ == "__main__":
-    main() 
+    main_testaroonfix() 

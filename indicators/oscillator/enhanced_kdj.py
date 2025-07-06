@@ -11,13 +11,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base_indicator import BaseIndicator
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.indicator_utils import crossover, crossunder
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
+class EnhancedKdj(BaseIndicator, PatternSignalMixin):
     """
     增强型随机指标(KDJ)
     
@@ -71,7 +71,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         self.use_smoothed_kdj = use_smoothed_kdj
         self.smoothing_period = smoothing_period
     
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_enhancedkdj(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         实现BaseIndicator的抽象方法
 
@@ -119,7 +119,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate_Kdj_Enhanced_Kdj(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型KDJ指标
         
@@ -136,7 +136,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
                 raise ValueError(f"数据必须包含'{col}'列")
 
         # 调用父类的calculate方法，获取包含K, D, J基础计算的DataFrame
-        result = super().calculate(data, *args, **kwargs)
+        result = super().calculate_Kdj_Enhanced_Kdj(data, *args, **kwargs)
 
         # 确保result包含原始数据列
         for col in required_columns:
@@ -199,11 +199,11 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         
         # 计算K值，使用EMA方法
         k = rsv.ewm(alpha=1/m1, adjust=False).mean()
-        k.fillna(50.0, inplace=True)  # 填充初始NaN值
+        k.fillna(50.0, inplace=True)  # 填充初始Na_n值
         
         # 计算D值，使用EMA方法
         d = k.ewm(alpha=1/m2, adjust=False).mean()
-        d.fillna(50.0, inplace=True)  # 填充初始NaN值
+        d.fillna(50.0, inplace=True)  # 填充初始Na_n值
         
         # 计算J值
         j = 3 * k - 2 * d
@@ -238,11 +238,11 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         
         # 计算K值，使用EMA方法
         k = rsv.ewm(alpha=1/m1, adjust=False).mean()
-        k.fillna(50.0, inplace=True)  # 填充初始NaN值
+        k.fillna(50.0, inplace=True)  # 填充初始Na_n值
         
         # 计算D值，使用EMA方法
         d = k.ewm(alpha=1/m2, adjust=False).mean()
-        d.fillna(50.0, inplace=True)  # 填充初始NaN值
+        d.fillna(50.0, inplace=True)  # 填充初始Na_n值
         
         # 计算J值
         j = 3 * k - 2 * d
@@ -318,7 +318,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         
         return j_normalized
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Kdj_Enhanced_Kdj(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别KDJ指标形态
         
@@ -330,7 +330,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
             List[str]: 识别出的形态列表
         """
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Kdj_Enhanced_Kdj(data)
             
         patterns = []
         k = self._result["K"]
@@ -379,7 +379,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
                 
         # 5. 背离检测
         if len(data) >= 30:
-            divergence = self._detect_divergence(data["close"], j)
+            divergence = self._detect_divergence_Enhanced_Kdj(data["close"], j)
             if divergence == "bullish":
                 patterns.append("KDJ正背离")
             elif divergence == "bearish":
@@ -467,7 +467,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
             
         return True
     
-    def _detect_divergence(self, price: pd.Series, j: pd.Series) -> Optional[str]:
+    def _detect_divergence_Enhanced_Kdj(self, price: pd.Series, j: pd.Series) -> Optional[str]:
         """
         检测KDJ背离
         
@@ -535,7 +535,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         
         return None
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Kdj_Enhanced_Kdj(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算增强型KDJ原始评分
         
@@ -548,7 +548,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算KDJ
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Kdj_Enhanced_Kdj(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -603,11 +603,11 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         score += ((kd_position - 50) / 50 * 10)  # KD均值偏高，加分；偏低，减分
         
         # 6. 多周期KDJ一致性评分
-        multi_period_score = self._calculate_multi_period_consistency()
+        multi_period_score = self._calculate_multi_period_consistency_Enhanced_Kdj()
         score += multi_period_score
         
         # 7. 背离评分
-        divergence = [self._detect_divergence(data["close"].iloc[:i+1], j.iloc[:i+1]) 
+        divergence = [self._detect_divergence_Enhanced_Kdj(data["close"].iloc[:i+1], j.iloc[:i+1]) 
                      for i in range(len(data))]
         
         # 正背离（看涨）
@@ -628,7 +628,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         # 限制得分范围
         return np.clip(score, 0, 100)
     
-    def _calculate_multi_period_consistency(self) -> pd.Series:
+    def _calculate_multi_period_consistency_Enhanced_Kdj(self) -> pd.Series:
         """
         计算多周期KDJ一致性评分
         
@@ -689,7 +689,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Kdj(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成KDJ交易信号
         
@@ -698,11 +698,11 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
             *args, **kwargs: 其他参数
             
         Returns:
-            pd.DataFrame: 信号DataFrame
+            pd.DataFrame: 信号Data_frame
         """
         # 确保已计算KDJ
         if not self.has_result():
-            self.calculate(data, *args, **kwargs)
+            self.calculate_Kdj_Enhanced_Kdj(data, *args, **kwargs)
             
         result = self._result.copy()
         
@@ -713,7 +713,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         signals['J'] = result["J"]
         
         # 计算KDJ评分
-        kdj_score = self.calculate_raw_score(data)
+        kdj_score = self.calculate_raw_score_Kdj_Enhanced_Kdj(data)
         signals['score'] = kdj_score
         
         # 生成买入信号
@@ -761,17 +761,17 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         signals['bear_trend'] = signals['score'] < 40
         
         # 添加信号强度
-        signals['signal_strength'] = self._calculate_signal_strength(result, signals)
+        signals['signal_strength'] = self._calculate_signal_strength_Enhanced_Kdj(result, signals)
         
         return signals
     
-    def _calculate_signal_strength(self, result: pd.DataFrame, signals: pd.DataFrame) -> pd.Series:
+    def _calculate_signal_strength_Enhanced_Kdj(self, result: pd.DataFrame, signals: pd.DataFrame) -> pd.Series:
         """
         计算信号强度
         
         Args:
             result: 指标计算结果
-            signals: 信号DataFrame
+            signals: 信号Data_frame
             
         Returns:
             pd.Series: 信号强度序列
@@ -812,7 +812,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         
         return strength
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Kdj_Enhanced_Kdj(self, **kwargs):
         """
         设置指标参数
 
@@ -832,13 +832,13 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         if 'multi_periods' in kwargs:
             self.multi_periods = kwargs['multi_periods']
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Kdj_Enhanced_Kdj(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算EnhancedKDJ指标的置信度
+        计算Enhanced_kDJ指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -888,20 +888,20 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Kdj_Enhanced_Kdj(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EnhancedKDJ相关形态
+        获取Enhanced_kDJ相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Kdj_Enhanced_Kdj(data)
 
         if self._result is None:
             return pd.DataFrame(index=data.index)
@@ -935,9 +935,9 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Kdj_Enhanced_Kdj(self):
         """
-        注册EnhancedKDJ指标的形态到全局形态注册表
+        注册Enhanced_kDJ指标的形态到全局形态注册表
         """
         # 注册KDJ交叉形态
         self.register_pattern_to_registry(
@@ -1023,9 +1023,9 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Kdj_Enhanced_Kdj(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成EnhancedKDJ交易信号
+        生成Enhanced_kDJ交易信号
 
         Args:
             data: 输入数据
@@ -1036,7 +1036,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data)
+            self.calculate_Kdj_Enhanced_Kdj(data)
 
         if self._result is None:
             return {
@@ -1087,7 +1087,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Kdj(self) -> str:
         """
         获取指标类型
 
@@ -1096,7 +1096,7 @@ class EnhancedKDJ(BaseIndicator, PatternSignalMixin):
         """
         return self.indicator_type
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Kdj_Enhanced_Kdj(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 

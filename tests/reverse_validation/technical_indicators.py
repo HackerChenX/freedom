@@ -13,14 +13,14 @@ import numpy as np
 from typing import Dict, List, Any, Tuple, Optional
 
 
-class TechnicalIndicators:
+class TechnicalIndicators_Indicators:
     """技术指标计算器"""
 
     def __init__(self):
         """初始化计算器"""
         pass
 
-    def calculate_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def calculate_rsi_Indicators(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
         """
         计算RSI指标
 
@@ -45,7 +45,7 @@ class TechnicalIndicators:
 
         return rsi
 
-    def calculate_macd(self, data: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict[str, pd.Series]:
+    def calculate_macd_Indicators(self, data: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict[str, pd.Series]:
         """
         计算MACD指标
 
@@ -79,7 +79,7 @@ class TechnicalIndicators:
             'MACD': macd
         }
 
-    def calculate_kdj(self, data: pd.DataFrame, period: int = 9, k_period: int = 3, d_period: int = 3) -> Dict[str, pd.Series]:
+    def calculate_kdj_Indicators(self, data: pd.DataFrame, period: int = 9, k_period: int = 3, d_period: int = 3) -> Dict[str, pd.Series]:
         """
         计算KDJ指标
 
@@ -116,7 +116,7 @@ class TechnicalIndicators:
             'J': j
         }
 
-    def calculate_bollinger_bands(self, data: pd.DataFrame, period: int = 20, std_dev: float = 2.0) -> Dict[str, pd.Series]:
+    def calculate_bollinger_bands_Indicators(self, data: pd.DataFrame, period: int = 20, std_dev: float = 2.0) -> Dict[str, pd.Series]:
         """
         计算布林带指标
 
@@ -146,7 +146,7 @@ class TechnicalIndicators:
             'LOWER': lower
         }
 
-    def calculate_ma(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20, 60]) -> Dict[str, pd.Series]:
+    def calculate_ma_Indicators(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20, 60]) -> Dict[str, pd.Series]:
         """
         计算移动平均线
 
@@ -165,7 +165,7 @@ class TechnicalIndicators:
 
         return ma_dict
 
-    def calculate_ema(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20, 60]) -> Dict[str, pd.Series]:
+    def calculate_ema_Indicators(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20, 60]) -> Dict[str, pd.Series]:
         """
         计算指数移动平均线
 
@@ -190,7 +190,7 @@ class PatternRecognizer:
 
     def __init__(self):
         """初始化识别器"""
-        self.indicators = TechnicalIndicators()
+        self.indicators = TechnicalIndicators_Indicators()
 
     def detect_rsi_patterns(self, data: pd.DataFrame) -> Dict[str, bool]:
         """
@@ -202,7 +202,7 @@ class PatternRecognizer:
         Returns:
             检测到的形态字典
         """
-        rsi = self.indicators.calculate_rsi(data)
+        rsi = self.indicators.calculate_rsi_Indicators(data)
         patterns = {}
 
         if len(rsi) < 2:
@@ -215,13 +215,13 @@ class PatternRecognizer:
         patterns['RSI_OVERSOLD'] = rsi.iloc[-1] < 30
 
         # RSI金叉 (RSI从下方突破50)
-        patterns['RSI_GOLDEN_CROSS'] = self._detect_golden_cross(rsi, 50)
+        patterns['RSI_GOLDEN_CROSS'] = self._detect_golden_cross_Technical_Indicators(rsi, 50)
 
         # RSI死叉 (RSI从上方跌破50)
-        patterns['RSI_DEATH_CROSS'] = self._detect_death_cross(rsi, 50)
+        patterns['RSI_DEATH_CROSS'] = self._detect_death_cross_Technical_Indicators(rsi, 50)
 
         # RSI背离 (价格创新高但RSI不创新高，或价格创新低但RSI不创新低)
-        patterns['RSI_DIVERGENCE'] = self._detect_rsi_divergence(data, rsi)
+        patterns['RSI_DIVERGENCE'] = self._detect_rsi_divergence_Technical_Indicators(data, rsi)
 
         return patterns
 
@@ -235,7 +235,7 @@ class PatternRecognizer:
         Returns:
             检测到的形态字典
         """
-        macd_data = self.indicators.calculate_macd(data)
+        macd_data = self.indicators.calculate_macd_Indicators(data)
         dif = macd_data['DIF']
         dea = macd_data['DEA']
         macd = macd_data['MACD']
@@ -271,7 +271,7 @@ class PatternRecognizer:
         Returns:
             检测到的形态字典
         """
-        kdj_data = self.indicators.calculate_kdj(data)
+        kdj_data = self.indicators.calculate_kdj_Indicators(data)
         k = kdj_data['K']
         d = kdj_data['D']
         j = kdj_data['J']
@@ -307,7 +307,7 @@ class PatternRecognizer:
         Returns:
             检测到的形态字典
         """
-        boll_data = self.indicators.calculate_bollinger_bands(data)
+        boll_data = self.indicators.calculate_bollinger_bands_Indicators(data)
         upper = boll_data['UPPER']
         middle = boll_data['MIDDLE']
         lower = boll_data['LOWER']
@@ -344,7 +344,7 @@ class PatternRecognizer:
         Returns:
             检测到的形态字典
         """
-        ma_data = self.indicators.calculate_ma(data, [5, 20])
+        ma_data = self.indicators.calculate_ma_Indicators(data, [5, 20])
         ma5 = ma_data['MA5']
         ma20 = ma_data['MA20']
         patterns = {}
@@ -379,7 +379,7 @@ class PatternRecognizer:
         Returns:
             检测到的形态字典
         """
-        ema_data = self.indicators.calculate_ema(data, [5, 20])
+        ema_data = self.indicators.calculate_ema_Indicators(data, [5, 20])
         ema5 = ema_data['EMA5']
         ema20 = ema_data['EMA20']
         patterns = {}
@@ -405,7 +405,7 @@ class PatternRecognizer:
         return patterns
 
     # 辅助检测方法
-    def _detect_golden_cross(self, series: pd.Series, threshold: float) -> bool:
+    def _detect_golden_cross_Technical_Indicators(self, series: pd.Series, threshold: float) -> bool:
         """检测金叉（从下方突破阈值）"""
         if len(series) < 5:
             return False
@@ -423,7 +423,7 @@ class PatternRecognizer:
 
         return False
 
-    def _detect_death_cross(self, series: pd.Series, threshold: float) -> bool:
+    def _detect_death_cross_Technical_Indicators(self, series: pd.Series, threshold: float) -> bool:
         """检测死叉（从上方跌破阈值）"""
         if len(series) < 5:
             return False
@@ -456,7 +456,7 @@ class PatternRecognizer:
                    fast_line.iloc[-1] < slow_line.iloc[-1])
         return False
 
-    def _detect_rsi_divergence(self, data: pd.DataFrame, rsi: pd.Series) -> bool:
+    def _detect_rsi_divergence_Technical_Indicators(self, data: pd.DataFrame, rsi: pd.Series) -> bool:
         """检测RSI背离"""
         if len(data) < 20 or len(rsi) < 20:
             return False

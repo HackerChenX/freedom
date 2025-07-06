@@ -23,17 +23,17 @@ import gc
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
-from analysis.optimized_buypoint_analyzer import OptimizedBuyPointAnalyzer
-from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
+from utils.logger import getLogger
+from analysis.optimized_buypoint_analyzer import Optimized_buy_point_analyzer
+from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class AdvancedPerformanceAnalyzer:
     """高级性能分析器"""
     
-    def __init__(self):
+    def __init___92(self):
         self.performance_data = {}
         self.bottleneck_analysis = {}
         
@@ -50,7 +50,7 @@ class AdvancedPerformanceAnalyzer:
         """
         logger.info("开始分析向量化潜力...")
         
-        analyzer = OptimizedBuyPointAnalyzer(enable_cache=False, enable_vectorization=True)
+        analyzer = Optimized_buy_point_analyzer(enable_cache=False, enable_vectorization=True)
         buypoints_df = analyzer.load_buypoints_from_csv(buypoints_csv)
         test_df = buypoints_df.head(sample_size)
         
@@ -200,7 +200,7 @@ class AdvancedPerformanceAnalyzer:
         except ImportError:
             logger.warning("tracemalloc不可用，跳过内存追踪")
         
-        analyzer = OptimizedBuyPointAnalyzer(enable_cache=False, enable_vectorization=True)
+        analyzer = Optimized_buy_point_analyzer(enable_cache=False, enable_vectorization=True)
         buypoints_df = analyzer.load_buypoints_from_csv(buypoints_csv)
         test_df = buypoints_df.head(sample_size)
         
@@ -361,7 +361,7 @@ class AdvancedPerformanceAnalyzer:
         
         return gpu_analysis
     
-    def run_comprehensive_analysis(self, buypoints_csv: str, sample_size: int = 3) -> Dict[str, Any]:
+    def run_comprehensive_analysis_Analyzer(self, buypoints_csv: str, sample_size: int = 3) -> Dict[str, Any]:
         """
         运行综合性能分析
         
@@ -392,14 +392,14 @@ class AdvancedPerformanceAnalyzer:
         return analysis_results
 
 
-def main():
+def main_44():
     """主函数"""
     print("="*60)
     print("高级性能分析 - 深度优化空间评估")
     print("="*60)
     
-    analyzer = AdvancedPerformanceAnalyzer()
-    results = analyzer.run_comprehensive_analysis("data/buypoints.csv", sample_size=2)
+    analyzer = Advanced_performance_analyzer()
+    results = analyzer.run_comprehensive_analysis_Analyzer("data/buypoints.csv", sample_size=2)
     
     # 显示分析结果
     print("\n📊 当前性能基线:")
@@ -448,4 +448,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_44()

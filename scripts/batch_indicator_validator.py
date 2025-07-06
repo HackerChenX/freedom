@@ -4,6 +4,7 @@
 """
 批量指标验证器
 只查询一次股票数据，然后用同一份数据验证多个指标
+使用依赖注入架构
 """
 
 import os
@@ -20,7 +21,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 
 logger = get_logger(__name__)
 
@@ -29,7 +30,9 @@ class BatchIndicatorValidator:
     
     def __init__(self):
         """初始化验证器"""
-        self.db = get_clickhouse_db()
+        # 通过容器获取数据访问接口
+        container = get_container()
+        self.data_access = container.get_data_access()
         
         # 验证配置
         self.validation_date = "2024-12-28"
@@ -43,7 +46,7 @@ class BatchIndicatorValidator:
         
         logger.info("✅ 批量指标验证器初始化完成")
     
-    def _get_stock_pool(self) -> List[str]:
+    def _get_stock_pool_Batch_Indicator_Validator(self) -> List[str]:
         """获取股票池（带缓存）"""
         if (self._stock_pool_cache is not None and 
             self._cache_date == self.validation_date):
@@ -53,22 +56,24 @@ class BatchIndicatorValidator:
         logger.info(f"🔍 查询股票池，日期: {self.validation_date}")
         
         try:
-            # 查询活跃股票
-            query = f"""
-            SELECT DISTINCT code 
-            FROM stock_info 
-            WHERE level = '日线' AND date = '{self.validation_date}'
-            AND volume > 0 AND close > 0
-            ORDER BY volume DESC
-            LIMIT {self.stock_pool_size}
-            """
+            # 使用数据访问接口查询活跃股票
+            stock_info WHERE 1=1 = self.data_access.get_stock_info(
+                level='日线',
+                start_date=self.validation_date,
+                end_date=self.validation_date,
+                limit=self.stock_pool_size,
+                order_by="volume DESC"
+            )
             
-            result = self.db.query(query)
-            if result.empty:
+            df = stock_info.to_dataframe()
+            
+            if df.empty:
                 logger.warning("⚠️ 未找到股票数据，使用默认股票池")
                 stock_pool = ['000001', '000002', '600000', '600036', '000858']
             else:
-                stock_pool = result['code'].tolist()
+                # 筛选有效数据
+                valid_df = df[(df['volume'] > 0) & (df['close'] > 0)]
+                stock_pool = valid_df['code'].unique().tolist()
             
             # 缓存结果
             self._stock_pool_cache = stock_pool
@@ -81,7 +86,7 @@ class BatchIndicatorValidator:
             logger.error(f"❌ 查询股票池失败: {e}")
             return ['000001', '000002', '600000', '600036', '000858']
     
-    def _load_stock_data(self, stock_codes: List[str]) -> pd.DataFrame:
+    def _load_stock_data_Batch_Indicator_Validator(self, stock_codes: List[str]) -> pd.DataFrame:
         """加载股票数据（一次性查询所有需要的数据）"""
         if (self._stock_data_cache is not None and 
             self._cache_date == self.validation_date):
@@ -91,34 +96,29 @@ class BatchIndicatorValidator:
         logger.info(f"📥 加载股票数据，股票数量: {len(stock_codes)}")
         
         try:
-            # 构建股票代码列表
-            codes_str = "', '".join(stock_codes[:self.test_stock_count])
+            # 计算开始日期（向前推60天以获取足够的历史数据）
+            from datetime import datetime, timedelta
+            end_date = datetime.strptime(self.validation_date, '%Y-%m-%d')
+            start_date = (end_date - timedelta(days=60)).strftime('%Y-%m-%d')
             
-            # 一次性查询所有需要的股票数据（包含足够的历史数据用于指标计算）
-            query = f"""
-            SELECT 
-                code,
-                date,
-                open,
-                high,
-                low,
-                close,
-                volume
-            FROM stock_info 
-            WHERE code IN ('{codes_str}')
-            AND level = '日线' 
-            AND date <= '{self.validation_date}'
-            ORDER BY code, date DESC
-            """
+            # 使用数据访问接口一次性查询所有需要的股票数据
+            test_codes = stock_codes[:self.test_stock_count]
+            stock_info WHERE 1=1 = self.data_access.get_stock_info(
+                stock_code=test_codes,
+                level='日线',
+                start_date=start_date,
+                end_date=self.validation_date,
+                order_by="code, date DESC"
+            )
             
-            result = self.db.query(query)
+            result = stock_info.to_dataframe()
             
             if result.empty:
                 logger.warning("⚠️ 未找到股票数据，创建模拟数据")
                 # 创建模拟数据用于测试
                 dates = pd.date_range(end=self.validation_date, periods=30, freq='D')
                 mock_data = []
-                for code in stock_codes[:self.test_stock_count]:
+                for code in test_codes:
                     for i, date in enumerate(dates):
                         price = 10.0 + i * 0.1  # 模拟价格
                         mock_data.append({
@@ -906,7 +906,7 @@ class BatchIndicatorValidator:
             logger.error(f"❌ OBV指标验证失败: {e}")
             return {"success": False, "error": str(e)}
     
-    def validate_all_indicators(self, indicators: Optional[List[str]] = None) -> Dict[str, Any]:
+    def validate_all_indicators_Validator_Batch_Indicator_Validator(self, indicators: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         批量验证多个指标
         
@@ -925,10 +925,10 @@ class BatchIndicatorValidator:
         
         try:
             # 1. 获取股票池
-            stock_pool = self._get_stock_pool()
+            stock_pool = self._get_stock_pool_Batch_Indicator_Validator()
             
             # 2. 一次性加载股票数据
-            stock_data = self._load_stock_data(stock_pool)
+            stock_data = self._load_stock_data_Batch_Indicator_Validator(stock_pool)
             
             if stock_data.empty:
                 return {
@@ -1006,7 +1006,7 @@ class BatchIndicatorValidator:
                 "elapsed_time": elapsed_time
             }
     
-    def _print_validation_summary(self, results: Dict[str, Any]):
+    def _print_validation_summary_Batch_Indicator_Validator(self, results: Dict[str, Any]):
         """打印验证结果汇总"""
         print("\n" + "="*80)
         print("📊 批量指标验证结果汇总")
@@ -1123,7 +1123,7 @@ class BatchIndicatorValidator:
         
         print("="*80)
 
-def main():
+def main_batchindicatorvalidator():
     """主函数"""
     parser = argparse.ArgumentParser(description='批量指标验证器')
     parser.add_argument('--indicators', '-i', type=str, nargs='*',
@@ -1132,15 +1132,15 @@ def main():
     args = parser.parse_args()
     
     # 创建验证器
-    validator = BatchIndicatorValidator()
+    validator = Batch_indicator_validator()
     
     # 执行批量验证
-    results = validator.validate_all_indicators(args.indicators)
+    results = validator.validate_all_indicators_Validator_Batch_Indicator_Validator(args.indicators)
     
     # 打印结果
-    validator._print_validation_summary(results)
+    validator._print_validation_summary_Batch_Indicator_Validator(results)
     
     logger.info("🎉 批量验证完成")
 
 if __name__ == "__main__":
-    main() 
+    main_batchindicatorvalidator() 

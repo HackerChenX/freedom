@@ -24,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def create_test_data(n_rows=100):
+def create_test_data_Indicators(n_rows=100):
     """
     创建测试数据
     
@@ -61,7 +61,7 @@ def create_test_data(n_rows=100):
     return df
 
 
-def test_all_indicators():
+def test_all_indicators_Indicators():
     """
     测试所有技术指标
     
@@ -74,7 +74,7 @@ def test_all_indicators():
     logger.info(f"开始测试 {len(supported_indicators)} 个指标...")
     
     # 创建测试数据
-    df = create_test_data(200)
+    df = create_test_data_Indicators(200)
     
     # 测试结果
     results = {}
@@ -137,7 +137,7 @@ def test_all_indicators():
     return results
 
 
-def save_results(results, output_file):
+def save_results_Indicators(results, output_file):
     """
     保存测试结果到文件
     
@@ -153,10 +153,10 @@ def save_results(results, output_file):
 
 if __name__ == "__main__":
     # 执行测试
-    results = test_all_indicators()
+    results = test_all_indicators_Indicators()
     
     # 保存结果
     output_dir = os.path.join(root_dir, 'data', 'result')
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, 'indicator_verification_result.json')
-    save_results(results, output_file) 
+    save_results_Indicators(results, output_file) 

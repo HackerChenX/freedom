@@ -204,7 +204,7 @@ def convert_report_to_strategy(report_file: str, output_dir: Optional[str] = Non
         return None
 
 
-def main():
+def main_reporttostrategy():
     """报告转换为策略主函数"""
     parser = argparse.ArgumentParser(description="将分析报告转换为选股策略")
     
@@ -222,4 +222,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    main() 
+    mainReporttostrategy() 

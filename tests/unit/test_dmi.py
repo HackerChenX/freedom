@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testdmi_dmi(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """DMI指标测试类"""
     
-    def setUp(self):
+    def set_up_Dmi_Test_Dmi(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Dmi_Test_Dmi(self)
         
         self.indicator = DMI(period=14, adx_period=14)
         self.expected_columns = ['PDI', 'MDI', 'ADX', 'ADXR']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 60}
         ])
     
-    def tearDown(self):
+    def tear_down_Dmi_Test_Dmi(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Dmi_Test_Dmi(self)
     
     def test_dmi_calculation_accuracy(self):
         """测试DMI计算准确性"""
@@ -66,9 +66,9 @@ class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_dmi_parameter_update(self):
         """测试DMI参数更新"""
@@ -77,8 +77,8 @@ class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, adx_period=new_adx_period)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.period, new_period)
-        self.assertEqual(self.indicator.adx_period, new_adx_period)
+        self.assert_equal(self.indicator.period, new_period)
+        self.assert_equal(self.indicator.adx_period, new_adx_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -91,13 +91,13 @@ class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_cols = ['high', 'low', 'close']
         for col in expected_cols:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_dmi_comprehensive_score(self):
         """测试DMI综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -105,12 +105,12 @@ class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertGreaterEqual(score_result['score'], 0.0)
         self.assertLessEqual(score_result['score'], 100.0)
     
-    def test_dmi_patterns(self):
+    def test_dmi_patterns_Dmi(self):
         """测试DMI形态识别"""
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证预期的形态列存在
         expected_patterns = [
@@ -129,10 +129,10 @@ class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         for value in test_values:
             classification = self.indicator._classify_adx_strength(value)
-            self.assertIsInstance(classification, str)
+            self.assert_is_instance(classification, str)
             self.assertIn("趋势", classification)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Dmi_Test_Dmi(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -143,11 +143,11 @@ class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Dmi_Test_Dmi(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -158,7 +158,7 @@ class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

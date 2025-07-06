@@ -15,9 +15,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from analysis.engines.indicator_validation_framework import (
-    IndicatorValidationFramework, 
-    IndicatorValidationConfig, 
-    ValidationMode
+    Indicator_validation_framework, 
+    Indicator_validation_config, 
+    Validation_mode
 )
 from utils.logger import get_logger
 
@@ -30,8 +30,8 @@ def test_early_stop_with_loose_conditions():
     print("=" * 60)
     
     # 创建非常宽松的配置，确保能选出股票
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=20,           # 很小的股票池，加快速度
         max_selection_ratio=0.8,      # 非常宽松的选股比例（80%）
         min_selection_count=1,        # 最少1只股票
@@ -42,7 +42,7 @@ def test_early_stop_with_loose_conditions():
         validation_date="2025-06-28"  # 使用最近的日期
     )
     
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     # 手动创建一个总是成功的策略配置
     always_success_strategy = {
@@ -112,8 +112,8 @@ def test_framework_early_stop():
     print("=" * 60)
     
     # 创建宽松配置
-    config = IndicatorValidationConfig(
-        mode=ValidationMode.QUICK,
+    config = Indicator_validation_config(
+        mode=Validation_mode.QUICK,
         stock_pool_size=10,           # 更小的股票池
         max_selection_ratio=0.9,      # 90%选股比例
         min_selection_count=1,        # 最少1只
@@ -123,7 +123,7 @@ def test_framework_early_stop():
         validation_date="2025-06-28"
     )
     
-    framework = IndicatorValidationFramework(config)
+    framework = Indicator_validation_framework(config)
     
     # 只测试一个指标
     test_indicators = ['MA']
@@ -160,7 +160,7 @@ def test_framework_early_stop():
     print(f"\n⏱️ 框架测试耗时: {end_time - start_time:.2f}秒")
 
 
-def main():
+def main_testearlystopsuccess():
     """主函数"""
     print("🚀 开始早停功能测试")
     print("=" * 80)
@@ -178,4 +178,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testearlystopsuccess() 

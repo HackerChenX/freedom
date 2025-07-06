@@ -25,7 +25,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def generate_test_data(length: int = 100) -> pd.DataFrame:
+def generate_test_data_Scoring_Test_Ma_Ema_Sar_Scoring(length: int = 100) -> pd.DataFrame:
     """
     生成测试数据
     
@@ -77,7 +77,7 @@ def test_ma_scoring():
     print("=" * 50)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ma_Ema_Sar_Scoring(100)
     
     # 创建MA指标
     ma_indicator = MA(periods=[5, 10, 20, 30])
@@ -112,7 +112,7 @@ def test_ema_scoring():
     print("=" * 50)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ma_Ema_Sar_Scoring(100)
     
     # 创建EMA指标
     ema_indicator = EMA(periods=[5, 10, 20, 30])
@@ -147,7 +147,7 @@ def test_sar_scoring():
     print("=" * 50)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ma_Ema_Sar_Scoring(100)
     
     # 创建SAR指标
     sar_indicator = SAR(acceleration=0.02, maximum=0.2)
@@ -182,7 +182,7 @@ def test_scoring_consistency():
     print("=" * 50)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Ma_Ema_Sar_Scoring(100)
     
     indicators = [
         ("MA", MA(periods=[5, 10, 20])),
@@ -219,7 +219,7 @@ def test_scoring_consistency():
     return True
 
 
-def test_edge_cases():
+def test_edge_cases_Scoring():
     """测试边界情况"""
     print("=" * 50)
     print("测试边界情况")
@@ -237,7 +237,7 @@ def test_edge_cases():
     
     # 测试数据不足
     try:
-        small_data = generate_test_data(3)
+        small_data = generate_test_data_Scoring_Test_Ma_Ema_Sar_Scoring(3)
         ma_indicator = MA(periods=[5, 10])
         score_result = ma_indicator.calculate_score(small_data)
         print("✅ 小数据集正确处理")
@@ -246,7 +246,7 @@ def test_edge_cases():
     
     # 测试包含NaN的数据
     try:
-        nan_data = generate_test_data(50)
+        nan_data = generate_test_data_Scoring_Test_Ma_Ema_Sar_Scoring(50)
         nan_data.loc[nan_data.index[10:15], 'close'] = np.nan
         ma_indicator = MA(periods=[5, 10])
         score_result = ma_indicator.calculate_score(nan_data)
@@ -257,7 +257,7 @@ def test_edge_cases():
     return True
 
 
-def main():
+def main_testmaemasarscoring():
     """主函数"""
     print("开始测试MA、EMA、SAR指标评分功能")
     print("=" * 80)
@@ -269,7 +269,7 @@ def main():
     test_results.append(("EMA评分功能", test_ema_scoring()))
     test_results.append(("SAR评分功能", test_sar_scoring()))
     test_results.append(("评分一致性", test_scoring_consistency()))
-    test_results.append(("边界情况", test_edge_cases()))
+    test_results.append(("边界情况", test_edge_cases_Scoring()))
     
     # 汇总测试结果
     print("=" * 80)
@@ -297,5 +297,5 @@ def main():
 
 
 if __name__ == "__main__":
-    success = main()
+    success = main_testmaemasarscoring()
     sys.exit(0 if success else 1) 

@@ -12,8 +12,8 @@ from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 
-class TestRSI(unittest.TestCase, IndicatorTestMixin):
-    def setUp(self):
+class TestRSI_Rsi_Test_Rsi(unittest.TestCase, IndicatorTestMixin):
+    def setUp_Rsi_Test_Rsi(self):
         """Set up test data for RSI indicator."""
         # Create a sample DataFrame that can trigger various RSI patterns
         dates = pd.to_datetime(pd.date_range(start='2023-01-01', periods=50, freq='D'))
@@ -92,7 +92,7 @@ class TestRSI(unittest.TestCase, IndicatorTestMixin):
         # Ensure it's not True elsewhere
         self.assertFalse(patterns['RSI_CROSS_ABOVE_50'][~cross_above_mask].any())
 
-    def test_bullish_divergence_pattern(self):
+    def test_bullish_divergence_pattern_Rsi(self):
         """Test the RSI_BULLISH_DIVERGENCE pattern."""
         # Note: Vectorized divergence is an approximation and might be tricky to test precisely.
         # This test checks if the pattern is detected in a crafted scenario.

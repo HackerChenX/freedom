@@ -1,22 +1,22 @@
 """
-CompositeIndicator指标单元测试
+Composite_indicator指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testcompositeindicator_indicator(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """CompositeIndicator指标测试类"""
     
-    def setUp(self):
+    def set_up_Indicator(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Indicator(self)
         
         # 创建子指标
         self.ma_indicator = complete_registry.create_indicator('MA', periods=[20])
@@ -35,18 +35,18 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         self.expected_columns = [
             'composite_score', 'MA_score', 'RSI_score', 'MACD_score'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Indicator(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Indicator(self)
     
     def test_composite_indicator_initialization(self):
         """测试CompositeIndicator初始化"""
         # 验证指标数量
-        self.assertEqual(len(self.indicator.indicators), 3)
+        self.assert_equal(len(self.indicator.indicators), 3)
         
         # 验证权重
         self.assertAlmostEqual(self.indicator.weights["MA"], 0.4)
@@ -55,7 +55,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         
         # 验证权重总和为1
         total_weight = sum(self.indicator.weights.values())
-        self.assertAlmostEqual(total_weight, 1.0, places=6)
+        self.assert_almost_equal(total_weight, 1.0, places=6)
     
     def test_composite_indicator_calculation_accuracy(self):
         """测试CompositeIndicator计算准确性"""
@@ -74,7 +74,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         
         if len(composite_scores) > 0:
             # 评分应该在0-100范围内
-            self.assertTrue(all(0 <= s <= 100 for s in composite_scores), 
+            self.assert_true(all(0 <= s <= 100 for s in composite_scores), 
                            "组合评分应该在0-100范围内")
     
     def test_composite_indicator_add_remove_indicators(self):
@@ -86,14 +86,14 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         composite.add_indicator(self.ma_indicator, 0.5)
         composite.add_indicator(self.rsi_indicator, 0.5)
         
-        self.assertEqual(len(composite.indicators), 2)
+        self.assert_equal(len(composite.indicators), 2)
         self.assertAlmostEqual(composite.weights["MA"], 0.5)
         self.assertAlmostEqual(composite.weights["RSI"], 0.5)
         
         # 移除指标
         composite.remove_indicator("MA")
         
-        self.assertEqual(len(composite.indicators), 1)
+        self.assert_equal(len(composite.indicators), 1)
         self.assertNotIn("MA", composite.weights)
         self.assertAlmostEqual(composite.weights["RSI"], 1.0)
     
@@ -113,9 +113,9 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_composite_indicator_parameter_update(self):
         """测试CompositeIndicator参数更新"""
@@ -125,7 +125,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         self.indicator.set_parameters(indicators=[new_ma, self.rsi_indicator], weights=new_weights)
         
         # 验证参数更新
-        self.assertEqual(len(self.indicator.indicators), 2)
+        self.assert_equal(len(self.indicator.indicators), 2)
         self.assertAlmostEqual(self.indicator.weights["MA"], 0.6)
         self.assertAlmostEqual(self.indicator.weights["RSI"], 0.4)
     
@@ -134,19 +134,19 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_composite_indicator_patterns(self):
         """测试CompositeIndicator形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -183,7 +183,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         patterns_list = self.indicator.get_patterns(self.data)
         
         # 验证形态检测结果
-        self.assertIsInstance(patterns_list, pd.DataFrame)
+        self.assert_is_instance(patterns_list, pd.DataFrame)
     
     def test_composite_indicator_weight_normalization(self):
         """测试CompositeIndicator权重标准化"""
@@ -196,7 +196,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         
         # 验证权重被标准化
         total_weight = sum(composite.weights.values())
-        self.assertAlmostEqual(total_weight, 1.0, places=6)
+        self.assert_almost_equal(total_weight, 1.0, places=6)
         self.assertAlmostEqual(composite.weights["MA"], 0.4)
         self.assertAlmostEqual(composite.weights["RSI"], 0.6)
     
@@ -206,29 +206,29 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         
         # 计算应该返回原始数据
         result = empty_composite.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 评分应该返回默认值
         score = empty_composite.calculate_raw_score(self.data)
-        self.assertIsInstance(score, pd.Series)
+        self.assert_is_instance(score, pd.Series)
     
     def test_composite_indicator_signals(self):
         """测试CompositeIndicator信号生成"""
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_composite_indicator_indicator_names(self):
         """测试CompositeIndicator指标名称获取"""
         names = self.indicator.get_indicator_names()
         
-        self.assertIsInstance(names, list)
-        self.assertEqual(len(names), 3)
+        self.assert_is_instance(names, list)
+        self.assert_equal(len(names), 3)
         self.assertIn("MA", names)
         self.assertIn("RSI", names)
         self.assertIn("MACD", names)
@@ -237,7 +237,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         """测试CompositeIndicator权重获取"""
         weights = self.indicator.get_indicator_weights()
         
-        self.assertIsInstance(weights, dict)
+        self.assert_is_instance(weights, dict)
         self.assertAlmostEqual(weights["MA"], 0.4)
         self.assertAlmostEqual(weights["RSI"], 0.3)
         self.assertAlmostEqual(weights["MACD"], 0.3)
@@ -249,10 +249,10 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         
         for env in environments:
             self.indicator.set_market_environment(env)
-            self.assertEqual(self.indicator.market_environment, env)
+            self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assertRaises(ValueError):
+        with self.assert_raises(Value_error):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_composite_indicator_automatic_scoring(self):
@@ -266,9 +266,9 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         self.indicator.calculate_score_automatically = False
         result2 = self.indicator.calculate(self.data)
         # 即使禁用自动评分，composite_score列也应该存在（通过其他方式计算）
-        self.assertIsInstance(result2, pd.DataFrame)
+        self.assert_is_instance(result2, pd.DataFrame)
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Indicator(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -279,10 +279,10 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('composite_score', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Indicator(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -293,7 +293,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_composite_indicator_register_patterns(self):
         """测试CompositeIndicator形态注册"""
@@ -310,7 +310,7 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         result = self.indicator.calculate(small_data)
         
         # CompositeIndicator应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_composite_indicator_validation(self):
         """测试CompositeIndicator数据验证"""
@@ -320,8 +320,8 @@ class TestCompositeIndicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
         # CompositeIndicator应该能处理缺少列的情况（由子指标处理）
         try:
             result = self.indicator.calculate(invalid_data)
-            self.assertIsInstance(result, pd.DataFrame)
-        except ValueError:
+            self.assert_is_instance(result, pd.DataFrame)
+        except Value_error:
             # 如果子指标抛出异常也是可以接受的
             pass
     

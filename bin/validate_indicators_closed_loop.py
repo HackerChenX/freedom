@@ -132,7 +132,7 @@ def display_recommendations(recommendations: list):
         print(f"   {i}. {recommendation}")
 
 
-def main():
+def main_31():
     """主函数"""
     parser = argparse.ArgumentParser(
         description='指标闭环验证系统',
@@ -252,4 +252,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_31() 

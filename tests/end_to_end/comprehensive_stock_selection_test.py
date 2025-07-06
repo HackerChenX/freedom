@@ -23,22 +23,22 @@ warnings.filterwarnings('ignore')
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_manager import Strategy_manager
 # DataManager将在运行时动态导入
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class ComprehensiveStockSelectionTest:
+class Comprehensive_stock_selection_test:
     """选股系统端到端综合测试验证器"""
     
     def __init__(self):
         """初始化测试框架"""
         try:
-            self.strategy_executor = StrategyExecutor(max_workers=8, cache_enabled=True)
-            self.strategy_manager = StrategyManager()
+            self.strategy_executor = Strategy_executor(max_workers=8, cache_enabled=True)
+            self.strategy_manager = Strategy_manager()
             from db.unified_data_manager import get_unified_data_manager
             self.data_manager = get_unified_data_manager()
             self.use_mock_data = False
@@ -335,7 +335,7 @@ class ComprehensiveStockSelectionTest:
         
         return strategies
 
-    def prepare_test_data(self) -> Dict[str, Any]:
+    def prepare_test_data_Test(self) -> Dict[str, Any]:
         """准备测试数据"""
         logger.info("开始准备测试数据...")
 
@@ -346,7 +346,7 @@ class ComprehensiveStockSelectionTest:
 
             # 尝试获取真实股票数据
             try:
-                stock_info = self.data_manager.get_stock_info(
+                stock_info WHERE 1=1 = self.data_manager.get_stock_info(
                     level='DAILY',
                     start_date=start_date,
                     end_date=end_date,
@@ -638,7 +638,7 @@ class ComprehensiveStockSelectionTest:
 
         return quality
 
-    def run_comprehensive_test(self) -> Dict[str, Any]:
+    def run_comprehensive_test_Test_Comprehensive_Stock_Selection_Test(self) -> Dict[str, Any]:
         """运行综合测试"""
         logger.info("=" * 80)
         logger.info("开始选股系统端到端综合测试")
@@ -647,7 +647,7 @@ class ComprehensiveStockSelectionTest:
         start_time = time.time()
 
         # 准备测试数据
-        test_data = self.prepare_test_data()
+        test_data = self.prepare_test_data_Test()
 
         # 创建测试策略
         test_strategies = self.create_test_strategies()
@@ -762,7 +762,7 @@ class ComprehensiveStockSelectionTest:
             'strategy_details': {},
             'performance_analysis': self.test_stats['performance_metrics'],
             'quality_assessment': self._assess_overall_quality(),
-            'recommendations': self._generate_recommendations(),
+            'recommendations': self._generate_recommendations_Comprehensive_Stock_Selection_Test(),
             'technical_indicators_coverage': self._analyze_indicator_coverage(),
             'system_integration_status': self._assess_system_integration(),
             'raw_statistics': self.test_stats
@@ -807,7 +807,7 @@ class ComprehensiveStockSelectionTest:
 
         return quality_assessment
 
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations_Comprehensive_Stock_Selection_Test(self) -> List[str]:
         """生成改进建议"""
         recommendations = []
 
@@ -911,7 +911,7 @@ class ComprehensiveStockSelectionTest:
 
             # 生成Markdown报告
             markdown_file = os.path.join(output_dir, f"stock_selection_test_report_{timestamp}.md")
-            self._generate_markdown_report(report, markdown_file)
+            self._generate_markdown_report_Comprehensive_Stock_Selection_Test(report, markdown_file)
 
             logger.info(f"测试报告已保存: {report_file}")
             logger.info(f"Markdown报告已保存: {markdown_file}")
@@ -922,7 +922,7 @@ class ComprehensiveStockSelectionTest:
             logger.error(f"保存测试报告失败: {e}")
             return None
 
-    def _generate_markdown_report(self, report: Dict[str, Any], output_file: str):
+    def _generate_markdown_report_Comprehensive_Stock_Selection_Test(self, report: Dict[str, Any], output_file: str):
         """生成Markdown格式的测试报告"""
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -1006,7 +1006,7 @@ class ComprehensiveStockSelectionTest:
             logger.error(f"生成Markdown报告失败: {e}")
 
 
-def main():
+def main_comprehensivestockselectiontest():
     """主函数"""
     print("=" * 80)
     print("选股系统端到端综合测试验证")
@@ -1017,10 +1017,10 @@ def main():
 
     try:
         # 创建测试实例
-        test_framework = ComprehensiveStockSelectionTest()
+        test_framework = Comprehensive_stock_selection_test()
 
         # 运行综合测试
-        report = test_framework.run_comprehensive_test()
+        report = test_framework.run_comprehensive_test_Test_Comprehensive_Stock_Selection_Test()
 
         # 保存测试报告
         report_file = test_framework.save_test_report(report)
@@ -1080,5 +1080,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensivestockselectiontest()
     sys.exit(exit_code)

@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -18,14 +20,15 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
 
 
-def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
+def load_test_data_Optimization_Test_Basic_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
     """加载测试数据"""
     print(f"加载测试数据: {stock_code} 从 {start_date} 到 {end_date}")
     
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     sql = f"""
     SELECT 
         trade_date,
@@ -43,7 +46,7 @@ def load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='20
     ORDER BY trade_date
     """
     
-    df = db.query(sql)
+    df = data_access.execute_query(sql)
     df['trade_date'] = pd.to_datetime(df['trade_date'])
     df.set_index('trade_date', inplace=True)
     
@@ -109,7 +112,7 @@ def test_rsi_optimization(data):
     
     # 临时修改回原始计算方法计算优化前的评分
     # 修改为更简单的计算方法，不使用动态阈值和速率因子
-    def simple_calculate_raw_score(self, data):
+    def simple_calculate_raw_score_Optimization_Test_Basic_Optimization_Test_Basic_Optimization_testbasicoptimization(self, data):
         if not self.has_result():
             self.calculate(data)
         
@@ -159,7 +162,7 @@ def test_rsi_optimization(data):
     
     # 临时替换方法
     original_calculate_raw_score = rsi.calculate_raw_score
-    rsi.calculate_raw_score = lambda d: simple_calculate_raw_score(rsi, d)
+    rsi.calculate_raw_score = lambda d: simple_calculate_raw_score_Optimization_Test_Basic_Optimization_Test_Basic_Optimization_testbasicoptimization(rsi, d)
     
     # 计算优化前评分
     old_score = rsi.calculate_raw_score(data)
@@ -200,7 +203,7 @@ def test_macd_optimization(data):
     new_score = macd.calculate_raw_score(data)
     
     # 临时修改回原始计算方法计算优化前的评分
-    def simple_calculate_raw_score(self, data):
+    def simple_calculate_raw_score_Optimization_Test_Basic_Optimization_Test_Basic_Optimization_testbasicoptimization(self, data):
         if not self.has_result():
             self.calculate(data)
         
@@ -255,7 +258,7 @@ def test_macd_optimization(data):
     
     # 临时替换方法
     original_calculate_raw_score = macd.calculate_raw_score
-    macd.calculate_raw_score = lambda d: simple_calculate_raw_score(macd, d)
+    macd.calculate_raw_score = lambda d: simple_calculate_raw_score_Optimization_Test_Basic_Optimization_Test_Basic_Optimization_testbasicoptimization(macd, d)
     
     # 计算优化前评分
     old_score = macd.calculate_raw_score(data)
@@ -284,17 +287,17 @@ def test_macd_optimization(data):
     return data, old_score, new_score
 
 
-def main():
+def main_testbasicoptimization():
     """主函数"""
     # 测试不同市场环境
     # 牛市：2019年
-    bull_data = load_test_data(stock_code='000001.SZ', start_date='2019-01-01', end_date='2019-12-31')
+    bull_data = load_test_data_Optimization_Test_Basic_Optimization(stock_code='000001.SZ', start_date='2019-01-01', end_date='2019-12-31')
     
     # 熊市：2022年
-    bear_data = load_test_data(stock_code='000001.SZ', start_date='2022-01-01', end_date='2022-12-31')
+    bear_data = load_test_data_Optimization_Test_Basic_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2022-12-31')
     
     # 震荡市：2023年
-    sideways_data = load_test_data(stock_code='000001.SZ', start_date='2023-01-01', end_date='2023-12-31')
+    sideways_data = load_test_data_Optimization_Test_Basic_Optimization(stock_code='000001.SZ', start_date='2023-01-01', end_date='2023-12-31')
     
     # 测试MA指标优化
     print("\n===== 牛市环境下MA指标优化效果 =====")
@@ -344,4 +347,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_testbasicoptimization() 

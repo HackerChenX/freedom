@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 统一分析引擎测试启动脚本
 
 提供交互式界面，让用户选择测试类型和参数
-支持早停机制，连接真实ClickHouse数据
+支持早停机制，连接真实Click_house数据
 """
 
 import sys
@@ -22,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def print_banner():
+def print_banner_Test():
     """打印测试横幅"""
     print("\n" + "="*80)
     print("🔍 统一分析引擎全面测试系统")
@@ -57,7 +59,7 @@ def get_user_choice():
                 return choice
             else:
                 print("❌ 无效选择，请输入0-7之间的数字")
-        except KeyboardInterrupt:
+        except Keyboard_interrupt:
             print("\n\n👋 用户取消操作")
             return '0'
         except Exception as e:
@@ -80,7 +82,7 @@ def get_custom_parameters():
                 break
             else:
                 print("❌ 股票数量应在1-5000之间")
-        except ValueError:
+        except Value_error:
             print("❌ 请输入有效的数字")
     
     # 并发数
@@ -95,7 +97,7 @@ def get_custom_parameters():
                 break
             else:
                 print("❌ 并发数应在1-10之间")
-        except ValueError:
+        except Value_error:
             print("❌ 请输入有效的数字")
     
     # 早停机制
@@ -134,17 +136,17 @@ def get_custom_parameters():
     }
 
 
-def run_test(test_type: str, custom_params: dict = None):
+def run_test_Test(test_type: str, custom_params: dict = None):
     """运行测试"""
     print(f"\n🚀 开始执行测试: {test_type}")
     print(f"⏰ 开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     try:
         # 导入测试运行器
-        from bin.run_unified_engine_test import UnifiedEngineTestRunner
+        from bin.run_unified_engine_test import Unified_engine_test_runner
         
         # 创建测试运行器
-        runner = UnifiedEngineTestRunner()
+        runner = Unified_engine_test_runner()
         
         # 根据测试类型执行相应测试
         if test_type == 'quick':
@@ -196,7 +198,7 @@ def run_test(test_type: str, custom_params: dict = None):
         
         return True
         
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print("\n\n🛑 用户中断测试")
         return False
     except Exception as e:
@@ -257,7 +259,7 @@ def check_prerequisites():
         data_manager = get_unified_data_manager()
         
         # 简单查询测试连接
-        test_query = "SELECT COUNT(*) as count FROM stock_info LIMIT 1"
+        test_query = "SELECT COUNT(*) as count FROM stock_info WHERE date >= '2020-01-01' LIMIT 1"
         result = data_manager.query(test_query)
         
         if not result.empty:
@@ -272,9 +274,9 @@ def check_prerequisites():
         return False
 
 
-def main():
+def main_startunifiedenginetest():
     """主函数"""
-    print_banner()
+    print_banner_Test()
     
     # 检查前置条件
     if not check_prerequisites():
@@ -290,20 +292,20 @@ def main():
             break
         
         elif choice == '1':
-            success = run_test('quick')
+            success = run_test_Test('quick')
         elif choice == '2':
-            success = run_test('priority')
+            success = run_test_Test('priority')
         elif choice == '3':
-            success = run_test('logic')
+            success = run_test_Test('logic')
         elif choice == '4':
-            success = run_test('zxm')
+            success = run_test_Test('zxm')
         elif choice == '5':
-            success = run_test('enhanced')
+            success = run_test_Test('enhanced')
         elif choice == '6':
-            success = run_test('comprehensive')
+            success = run_test_Test('comprehensive')
         elif choice == '7':
             custom_params = get_custom_parameters()
-            success = run_test('custom', custom_params)
+            success = run_test_Test('custom', custom_params)
         
         # 询问是否继续
         if choice != '0':
@@ -324,8 +326,8 @@ def main():
 
 if __name__ == '__main__':
     try:
-        exit(main())
-    except KeyboardInterrupt:
+        exit(main_startunifiedenginetest())
+    except Keyboard_interrupt:
         print("\n\n👋 用户取消操作，退出程序")
         exit(0)
     except Exception as e:

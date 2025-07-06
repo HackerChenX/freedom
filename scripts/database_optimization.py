@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 数据库性能优化脚本
 
@@ -35,16 +37,16 @@ class DatabaseOptimizer:
         }
         
         # 初始化ClickHouse连接
-        self._init_clickhouse_connection()
+        self._init_clickhouse_connection_Database_Optimization()
     
-    def _init_clickhouse_connection(self):
+    def _init_clickhouse_connection_Database_Optimization(self):
         """初始化ClickHouse连接"""
         try:
             import clickhouse_connect
             self.client = clickhouse_connect.get_client(
-                host='localhost', 
-                port=8123, 
-                database='stock'
+                host=os.getenv('DB_HOST', 'localhost'), 
+                port=int(os.getenv('DB_PORT', '8123')), 
+                database=os.getenv('DB_DATABASE', 'stock')
             )
             logger.info("ClickHouse连接初始化成功")
         except Exception as e:
@@ -86,7 +88,7 @@ class DatabaseOptimizer:
                     MAX(date) as latest_date,
                     AVG(volume) as avg_volume,
                     AVG(close) as avg_price
-                FROM stock_info
+                FROM stock_info WHERE date >= '2020-01-01'
             """)
             
             if data_stats.result_rows:
@@ -160,22 +162,22 @@ class DatabaseOptimizer:
         indexes_to_create = [
             {
                 'name': 'idx_date_code',
-                'sql': "ALTER TABLE stock_info ADD INDEX idx_date_code (date, code) TYPE minmax GRANULARITY 1",
+                'sql': "ALTER TABLE stock_info WHERE 1=1 ADD INDEX idx_date_code (date, code) TYPE minmax GRANULARITY 1",
                 'description': '日期和股票代码复合索引，优化按日期和代码查询'
             },
             {
                 'name': 'idx_code_date',
-                'sql': "ALTER TABLE stock_info ADD INDEX idx_code_date (code, date) TYPE minmax GRANULARITY 1",
+                'sql': "ALTER TABLE stock_info WHERE 1=1 ADD INDEX idx_code_date (code, date) TYPE minmax GRANULARITY 1",
                 'description': '股票代码和日期复合索引，优化按代码查询历史数据'
             },
             {
                 'name': 'idx_volume',
-                'sql': "ALTER TABLE stock_info ADD INDEX idx_volume (volume) TYPE minmax GRANULARITY 1",
+                'sql': "ALTER TABLE stock_info WHERE 1=1 ADD INDEX idx_volume (volume) TYPE minmax GRANULARITY 1",
                 'description': '成交量索引，优化按成交量筛选'
             },
             {
                 'name': 'idx_close_price',
-                'sql': "ALTER TABLE stock_info ADD INDEX idx_close_price (close) TYPE minmax GRANULARITY 1",
+                'sql': "ALTER TABLE stock_info WHERE 1=1 ADD INDEX idx_close_price (close) TYPE minmax GRANULARITY 1",
                 'description': '收盘价索引，优化按价格筛选'
             }
         ]
@@ -245,7 +247,8 @@ class DatabaseOptimizer:
             logger.info("检查表存储设置...")
             
             # 获取当前表设置
-            table_settings = self.client.query("SELECT * FROM system.tables WHERE name = 'stock_info' AND database = 'stock'")
+            db_name = os.getenv('DB_DATABASE', 'stock')
+            table_settings = self.client.query(f"SELECT code, name, date, level, open, close, high, low, volume FROM system.tables WHERE name = 'stock_info' AND database = '{db_name}'")
             
             if table_settings.result_rows:
                 optimizations.append({
@@ -258,7 +261,7 @@ class DatabaseOptimizer:
             logger.info("分析分区策略...")
             
             # 检查是否需要分区
-            date_range = self.client.query("SELECT MIN(date) as min_date, MAX(date) as max_date FROM stock_info")
+            date_range = self.client.query("SELECT MIN(date) as min_date, MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01'")
             
             if date_range.result_rows:
                 min_date, max_date = date_range.result_rows[0]
@@ -276,7 +279,7 @@ class DatabaseOptimizer:
                     optimizations.append({
                         'type': 'partition_recommendation',
                         'description': f'数据跨度 {date_span_years:.1f} 年，建议考虑按年或月分区',
-                        'recommendation': 'ALTER TABLE stock_info PARTITION BY toYYYYMM(date)',
+                        'recommendation': 'ALTER TABLE stock_info WHERE 1=1 PARTITION BY toYYYYMM(date)',
                         'status': 'recommendation'
                     })
                 else:
@@ -289,12 +292,13 @@ class DatabaseOptimizer:
             # 3. 检查数据压缩
             logger.info("检查数据压缩设置...")
             
-            table_size = self.client.query("""
+            db_name = os.getenv('DB_DATABASE', 'stock')
+            table_size = self.client.query(f"""
                 SELECT 
-                    formatReadableSize(sum(bytes)) as size,
+                    format_readable_size(sum(bytes)) as size,
                     sum(rows) as rows
                 FROM system.parts 
-                WHERE table = 'stock_info' AND database = 'stock'
+                WHERE table = 'stock_info' AND database = '{db_name}'
             """)
             
             if table_size.result_rows:
@@ -473,7 +477,7 @@ class DatabaseOptimizer:
         return results
 
 
-def main():
+def main_databaseoptimization():
     """主函数"""
     print("=" * 80)
     print("数据库性能优化工具")
@@ -530,5 +534,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_databaseoptimization()
     sys.exit(exit_code)

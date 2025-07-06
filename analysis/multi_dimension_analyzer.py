@@ -10,21 +10,23 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Union
 
 # 添加项目根目录到Python路径
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 # 使用新的依赖注入架构
-from db.interfaces.data_access_interface import IDataAccess
-from db.container import get_container
-from enums.kline_period import KlinePeriod
-from utils.logger import get_logger
+from db.interfaces.data_access_interface import IData_access
+from utils.dependency_injection import get_service
+from enums.kline_period import Kline_period
+from utils.logger import getLogger
 from utils.path_utils import get_result_dir
 from indicators.complete_indicator_registry import complete_registry
-from analysis.market.market_dimension_analyzer import MarketDimensionAnalyzer
-from analysis.buypoints.buypoint_dimension_analyzer import BuyPointDimensionAnalyzer
+from analysis.market.market_dimension_analyzer import Market_dimension_analyzer
+from analysis.buypoints.buypoint_dimension_analyzer import Buy_point_dimension_analyzer
 
 # 获取日志记录器
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 class MultiDimensionAnalyzer:
     """
@@ -33,7 +35,8 @@ class MultiDimensionAnalyzer:
     支持对个股和市场进行多周期、多指标的综合分析，能够提取共性特征并生成分析报告
     """
     
-    def __init__(self, data_access: Optional[IDataAccess] = None):
+    def __init__(self, data_access: Optional[IData_access] = None):
+    query_executor = get_query_executor()
         """
         初始化多维度分析器
         
@@ -44,14 +47,14 @@ class MultiDimensionAnalyzer:
         
         # 使用依赖注入获取数据访问服务
         container = get_container()
-        self.data_access = data_access or container.resolve(IDataAccess)
+        self.data_access = data_access or get_service(Data_access_interface)
         
         # 使用统一指标注册系统
         self.indicator_registry = complete_registry
         
         # 创建市场分析器和买点分析器
-        self.market_analyzer = MarketDimensionAnalyzer()
-        self.buypoint_analyzer = BuyPointDimensionAnalyzer()
+        self.market_analyzer = Market_dimension_analyzer()
+        self.buypoint_analyzer = Buy_point_dimension_analyzer()
         
         # 存储分析结果
         self.analysis_results = {
@@ -86,7 +89,7 @@ class MultiDimensionAnalyzer:
         
         try:
             # 获取股票基本信息
-            stock_info = self._get_stock_info(stock_code)
+            stock_info WHERE 1=1 = self._get_stock_info(stock_code)
             
             if not stock_info:
                 logger.warning(f"未找到股票 {stock_code} 的基本信息")
@@ -163,7 +166,7 @@ class MultiDimensionAnalyzer:
         try:
             sql = f"""
             SELECT code as stock_code, name as stock_name, industry
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE code = '{stock_code}'
             ORDER BY date DESC
             LIMIT 1
@@ -189,7 +192,7 @@ class MultiDimensionAnalyzer:
                 
             sql = f"""
             SELECT DISTINCT code as stock_code
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE industry = '{industry}'{exclude_condition}
             LIMIT 50
             """
@@ -464,7 +467,7 @@ class MultiDimensionAnalyzer:
             stock_codes_str = "', '".join(stock_codes)
             sql = f"""
             SELECT industry, COUNT(*) as count
-            FROM stock_info
+            FROM stock_info WHERE 1=1
             WHERE stock_code IN ('{stock_codes_str}')
             GROUP BY industry
             ORDER BY count DESC
@@ -1057,7 +1060,7 @@ class MultiDimensionAnalyzer:
         
         return assessment
     
-    def save_results(self, output_file: str, format_type: str = "json") -> None:
+    def save_results_Analyzer(self, output_file: str, format_type: str = "json") -> None:
         """
         保存分析结果
         

@@ -6,21 +6,21 @@ import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_zXMSystem(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """ZXM体系指标测试类"""
     
-    def setUp(self):
+    def set_up_System(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_System(self)
 
         self.zxm_absorb = ZXMAbsorb()
-        self.zxm_washplate = ZXMWashPlate()
+        self.zxm_washplate = ZXMWash_plate()
 
         # 为IndicatorTestMixin设置默认指标
         self.indicator = self.zxm_absorb
@@ -44,13 +44,13 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             'ZXM_WASH_VOLUME_CONFIRM', 'ZXM_WASH_SUPPORT', 'ZXM_WASH_BREAKOUT'
         ]
         
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_System(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_System(self)
     
     def test_zxm_absorb_initialization(self):
         """测试ZXMAbsorb初始化"""
@@ -64,7 +64,7 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.zxm_absorb.calculate(self.data)
         
         # 验证ZXMAbsorb列存在
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 验证包含核心列
         core_columns = ['V11', 'V12', 'EMA_V11_3', 'AA', 'BB', 'XG', 'BUY']
@@ -87,9 +87,9 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.zxm_absorb.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_zxm_absorb_parameter_update(self):
         """测试ZXMAbsorb参数更新"""
@@ -97,28 +97,28 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.zxm_absorb.set_parameters(v11_threshold=15, v12_threshold=10, xg_threshold=4)
         
         # 验证参数已设置
-        self.assertEqual(self.zxm_absorb.v11_threshold, 15)
-        self.assertEqual(self.zxm_absorb.v12_threshold, 10)
-        self.assertEqual(self.zxm_absorb.xg_threshold, 4)
+        self.assert_equal(self.zxm_absorb.v11_threshold, 15)
+        self.assert_equal(self.zxm_absorb.v12_threshold, 10)
+        self.assert_equal(self.zxm_absorb.xg_threshold, 4)
     
     def test_zxm_absorb_required_columns(self):
         """测试ZXMAbsorb必需列"""
         self.assertTrue(hasattr(self.zxm_absorb, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.zxm_absorb.REQUIRED_COLUMNS)
+            self.assert_in(col, self.zxm_absorb.REQUIRED_COLUMNS)
     
     def test_zxm_absorb_patterns(self):
         """测试ZXMAbsorb形态识别"""
         # 先计算指标
         result = self.zxm_absorb.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.zxm_absorb.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -130,16 +130,16 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.zxm_absorb.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_zxm_washplate_initialization(self):
         """测试ZXMWashPlate初始化"""
         # 测试默认初始化
-        default_indicator = ZXMWashPlate()
+        default_indicator = ZXMWash_plate()
         self.assertEqual(default_indicator.name, "ZXMWashPlate")
         self.assertIn("ZXM洗盘形态识别指标", default_indicator.description)
     
@@ -148,10 +148,10 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.zxm_washplate.calculate(self.data)
         
         # 验证ZXMWashPlate列存在
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 验证包含洗盘形态列
-        for wash_type in WashPlateType:
+        for wash_type in Wash_plate_type:
             self.assertIn(wash_type.value, result.columns, f"缺少洗盘形态列: {wash_type.value}")
     
     def test_zxm_washplate_score_range(self):
@@ -170,9 +170,9 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.zxm_washplate.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_zxm_washplate_parameter_update(self):
         """测试ZXMWashPlate参数更新"""
@@ -180,27 +180,27 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.zxm_washplate.set_parameters(shock_price_threshold=0.05, shock_volume_ratio=3.0)
         
         # 验证参数已设置
-        self.assertEqual(self.zxm_washplate.shock_price_threshold, 0.05)
-        self.assertEqual(self.zxm_washplate.shock_volume_ratio, 3.0)
+        self.assert_equal(self.zxm_washplate.shock_price_threshold, 0.05)
+        self.assert_equal(self.zxm_washplate.shock_volume_ratio, 3.0)
     
     def test_zxm_washplate_required_columns(self):
         """测试ZXMWashPlate必需列"""
         self.assertTrue(hasattr(self.zxm_washplate, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.zxm_washplate.REQUIRED_COLUMNS)
+            self.assert_in(col, self.zxm_washplate.REQUIRED_COLUMNS)
     
     def test_zxm_washplate_patterns(self):
         """测试ZXMWashPlate形态识别"""
         # 先计算指标
         result = self.zxm_washplate.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.zxm_washplate.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -212,16 +212,16 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.zxm_washplate.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_zxm_absorb_v11_calculation(self):
         """测试ZXMAbsorb V11指标计算"""
         # 使用足够的数据进行V11计算测试
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -239,7 +239,7 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_zxm_absorb_xg_calculation(self):
         """测试ZXMAbsorb XG吸筹强度计算"""
         # 使用足够的数据进行XG计算测试
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -265,18 +265,18 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_zxm_washplate_recent_wash_plates(self):
         """测试ZXMWashPlate最近洗盘形态"""
         # 使用足够的数据进行洗盘形态测试
-        long_data = TestDataGenerator.generate_price_sequence([
+        long_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
         recent_wash_plates = self.zxm_washplate.get_recent_wash_plates(long_data, lookback=10)
         
         # 验证返回字典
-        self.assertIsInstance(recent_wash_plates, dict)
+        self.assert_is_instance(recent_wash_plates, dict)
         
         # 验证包含所有洗盘类型
-        for wash_type in WashPlateType:
-            self.assertIn(wash_type.value, recent_wash_plates)
+        for wash_type in Wash_plate_type:
+            self.assert_in(wash_type.value, recent_wash_plates)
             # 检查是否为布尔类型（包括numpy布尔类型）
             value = recent_wash_plates[wash_type.value]
             self.assertTrue(isinstance(value, (bool, np.bool_)), f"值应该是布尔类型，实际类型: {type(value)}")
@@ -288,7 +288,7 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.zxm_absorb.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_zxm_washplate_validation(self):
         """测试ZXMWashPlate数据验证"""
@@ -297,7 +297,7 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.zxm_washplate.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_zxm_absorb_indicator_type(self):
         """测试ZXMAbsorb指标类型"""
@@ -336,7 +336,7 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_no_errors_during_zxm_washplate_calculation(self):
         """测试ZXMWashPlate计算过程中无ERROR日志"""
@@ -349,7 +349,7 @@ class TestZXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
 
 
 if __name__ == '__main__':

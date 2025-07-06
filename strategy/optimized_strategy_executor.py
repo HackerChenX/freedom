@@ -16,16 +16,16 @@ import gc
 from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime
 
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_executor import Strategy_executor
 from strategy.batch_data_optimizer import get_batch_optimizer
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_manager import Strategy_manager
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor, safe_run
-from utils.exceptions import StrategyExecutionError
+from utils.exceptions import Strategy_execution_error
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 try:
     import psutil
@@ -35,7 +35,7 @@ except ImportError:
     logger.warning("psutil not available, memory monitoring disabled")
 
 
-class OptimizedStrategyExecutor(StrategyExecutor):
+class OptimizedStrategyExecutor(Strategy_executor):
     """
     优化的策略执行器
     
@@ -47,7 +47,7 @@ class OptimizedStrategyExecutor(StrategyExecutor):
     5. 可配置的早停机制
     """
     
-    def __init__(self, 
+    def __init___68(self, 
                  max_workers: int = None, 
                  cache_enabled: bool = True,
                  batch_size: int = None,
@@ -61,7 +61,7 @@ class OptimizedStrategyExecutor(StrategyExecutor):
             batch_size: 批量处理大小
             enable_memory_monitoring: 是否启用内存监控
         """
-        super().__init__(max_workers, cache_enabled)
+        super().__init___68(max_workers, cache_enabled)
         
         # 批量数据优化器
         self.batch_optimizer = get_batch_optimizer(
@@ -268,7 +268,7 @@ class OptimizedStrategyExecutor(StrategyExecutor):
         stock_items = list(stocks_data.items())
         
         # 分批并行处理
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        with concurrent.futures.Thread_pool_executor(max_workers=self.max_workers) as executor:
             for batch_start in range(0, total_stocks, batch_size):
                 batch_end = min(batch_start + batch_size, total_stocks)
                 batch_items = stock_items[batch_start:batch_end]
@@ -570,7 +570,7 @@ class OptimizedStrategyExecutor(StrategyExecutor):
 _optimized_executor = None
 
 
-def get_optimized_executor(**kwargs) -> OptimizedStrategyExecutor:
+def get_optimized_executor(**kwargs) -> Optimized_strategy_executor:
     """
     获取优化策略执行器实例
     
@@ -578,11 +578,11 @@ def get_optimized_executor(**kwargs) -> OptimizedStrategyExecutor:
         **kwargs: 初始化参数
         
     Returns:
-        OptimizedStrategyExecutor: 优化执行器实例
+        Optimized_strategy_executor: 优化执行器实例
     """
     global _optimized_executor
     
     if _optimized_executor is None:
-        _optimized_executor = OptimizedStrategyExecutor(**kwargs)
+        _optimized_executor = Optimized_strategy_executor(**kwargs)
     
     return _optimized_executor 

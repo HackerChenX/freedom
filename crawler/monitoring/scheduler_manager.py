@@ -14,7 +14,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ScheduledTask:
+class Scheduled_task:
     """调度任务"""
 
     def __init__(self, name: str, func: Callable, interval: int,
@@ -47,7 +47,7 @@ class ScheduledTask:
             return False
         return datetime.now() >= self.next_run
 
-    def execute(self) -> bool:
+    def execute_schedulermanager(self) -> bool:
         """执行任务"""
         if not self.enabled:
             return False

@@ -21,7 +21,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class SystemIntegrationAnalyzer:
+class System_integration_analyzer:
     """系统集成状态分析器"""
     
     def __init__(self):
@@ -35,9 +35,9 @@ class SystemIntegrationAnalyzer:
         
         try:
             # 导入买点分析相关模块
-            from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
-            from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
-            from analysis.buypoints.buypoint_strategy_adapter import BuyPointToStrategyAdapter
+            from analysis.buypoints.analyze_buypoints import Buy_point_analyzer
+            from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
+            from analysis.buypoints.buypoint_strategy_adapter import Buy_point_to_strategy_adapter
             
             # 分析模块结构
             buypoint_modules = {
@@ -73,9 +73,9 @@ class SystemIntegrationAnalyzer:
         try:
             # 导入策略选股相关模块
             from strategy.base_strategy import BaseStrategy
-            from strategy.strategy_executor import StrategyExecutor
-            from strategy.enhanced_strategy_executor import EnhancedStrategyExecutor
-            from strategy.strategy_manager import StrategyManager
+            from strategy.strategy_executor import Strategy_executor
+            from strategy.enhanced_strategy_executor import Enhanced_strategy_executor
+            from strategy.strategy_manager import Strategy_manager
             
             # 分析模块结构
             strategy_modules = {
@@ -111,10 +111,10 @@ class SystemIntegrationAnalyzer:
         
         try:
             # 导入统一分析引擎模块
-            from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
-            from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
-            from analysis.engines.complex_logic_processor import ComplexLogicProcessor
-            from analysis.engines.date_manager import DateManager
+            from analysis.engines.unified_indicator_engine import Unified_indicator_engine
+            from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
+            from analysis.engines.complex_logic_processor import Complex_logic_processor
+            from analysis.engines.date_manager import Date_manager
             
             # 分析引擎组件
             engine_components = {
@@ -561,10 +561,10 @@ class SystemIntegrationAnalyzer:
         print("=" * 80)
 
 
-def main():
+def main_systemintegrationanalyzer():
     """主函数"""
     try:
-        analyzer = SystemIntegrationAnalyzer()
+        analyzer = System_integration_analyzer()
         result = analyzer.run_comprehensive_analysis()
         
         # 保存分析结果
@@ -589,4 +589,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_systemintegrationanalyzer() 

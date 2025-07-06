@@ -15,7 +15,7 @@ from indicators.zxm.score_indicators import (
 class TestZXMScoreIndicators(unittest.TestCase):
     """ZXM评分指标测试类"""
     
-    def setUp(self):
+    def setUp_IndicatorsTestzxmscoreindicators(self):
         """设置测试数据"""
         # 生成测试数据
         dates = pd.date_range(start='2023-01-01', periods=200, freq='D')
@@ -157,7 +157,7 @@ class TestZXMScoreIndicators(unittest.TestCase):
         
         print(f"✅ ZXM股票综合评分指标测试通过 - 评分范围: {score.min():.1f}-{score.max():.1f}, 置信度: {confidence:.3f}")
     
-    def test_all_indicators_integration(self):
+    def test_all_indicators_integration_Indicators_Test_Zxm_Score_Indicators(self):
         """测试所有评分指标的集成"""
         indicators = [
             ZXMElasticityScore(),

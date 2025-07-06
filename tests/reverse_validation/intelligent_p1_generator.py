@@ -14,13 +14,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class IntelligentP1Generator:
+class Intelligent_p1_generator:
     """智能P1指标数据生成器"""
     
     def __init__(self):
         pass
     
-    def _generate_ohlc_from_close(self, dates: pd.DatetimeIndex, close_prices: List[float]) -> pd.DataFrame:
+    def _generate_ohlc_from_close_Intelligent_P1_Generator(self, dates: pd.Datetime_index, close_prices: List[float]) -> pd.DataFrame:
         """从收盘价生成OHLC数据"""
         data = []
         for i, (date, close) in enumerate(zip(dates, close_prices)):
@@ -46,7 +46,7 @@ class IntelligentP1Generator:
         
         return pd.DataFrame(data)
     
-    def _standardize_data_format(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
+    def _standardize_data_format_Intelligent_P1_Generator(self, data: pd.DataFrame, pattern_name: str) -> pd.DataFrame:
         """标准化数据格式"""
         # 确保列顺序正确
         column_order = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -68,8 +68,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'SAR_UPTREND')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'SAR_UPTREND')
     
     def generate_sar_downtrend_intelligent(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """智能生成SAR下降趋势数据"""
@@ -87,8 +87,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'SAR_DOWNTREND')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'SAR_DOWNTREND')
     
     def generate_sar_reversal_intelligent(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """智能生成SAR转向信号数据"""
@@ -109,8 +109,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'SAR_REVERSAL')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'SAR_REVERSAL')
     
     def generate_sar_support_intelligent(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """智能生成SAR支撑数据"""
@@ -138,8 +138,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'SAR_SUPPORT')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'SAR_SUPPORT')
     
     def generate_sar_resistance_intelligent(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """智能生成SAR阻力数据"""
@@ -167,8 +167,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'SAR_RESISTANCE')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'SAR_RESISTANCE')
     
     def generate_adx_strong_trend_intelligent(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """智能生成ADX强趋势数据"""
@@ -183,8 +183,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ADX_STRONG_TREND')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'ADX_STRONG_TREND')
     
     def generate_adx_weak_trend_intelligent(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """智能生成ADX弱趋势数据"""
@@ -199,8 +199,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ADX_WEAK_TREND')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'ADX_WEAK_TREND')
     
     def generate_adx_rising_intelligent(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """智能生成ADX上升数据"""
@@ -223,8 +223,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ADX_RISING')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'ADX_RISING')
     
     def generate_adx_falling_intelligent(self, base_price: float = 100, periods: int = 50) -> pd.DataFrame:
         """智能生成ADX下降数据"""
@@ -247,8 +247,8 @@ class IntelligentP1Generator:
             new_price = prices[-1] * (1 + daily_change)
             prices.append(new_price)
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ADX_FALLING')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'ADX_FALLING')
     
     def generate_adx_divergence_intelligent(self, base_price: float = 100, periods: int = 60) -> pd.DataFrame:
         """智能生成ADX背离数据"""
@@ -279,13 +279,13 @@ class IntelligentP1Generator:
         if prices[-1] <= first_peak:
             prices[-1] = first_peak * 1.05
         
-        data = self._generate_ohlc_from_close(dates, prices)
-        return self._standardize_data_format(data, 'ADX_DIVERGENCE')
+        data = self._generate_ohlc_from_close_Intelligent_P1_Generator(dates, prices)
+        return self._standardize_data_format_Intelligent_P1_Generator(data, 'ADX_DIVERGENCE')
 
 
 def test_intelligent_generator():
     """测试智能生成器"""
-    generator = IntelligentP1Generator()
+    generator = Intelligent_p1_generator()
     
     print("测试智能P1数据生成器...")
     

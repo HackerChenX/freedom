@@ -25,7 +25,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def create_test_data(length=100):
+def create_test_data_Scoring(length=100):
     """
     创建测试数据
     
@@ -76,7 +76,7 @@ def test_wma_scoring():
     print("="*50)
     
     # 创建测试数据
-    data = create_test_data(100)
+    data = create_test_data_Scoring(100)
     
     # 初始化WMA指标
     wma = WMA(periods=[5, 10, 20])
@@ -150,7 +150,7 @@ def test_bias_scoring():
     print("="*50)
     
     # 创建测试数据
-    data = create_test_data(100)
+    data = create_test_data_Scoring(100)
     
     # 初始化BIAS指标
     bias = BIAS(periods=[6, 12, 24])
@@ -224,7 +224,7 @@ def test_mtm_scoring():
     print("="*50)
     
     # 创建测试数据
-    data = create_test_data(100)
+    data = create_test_data_Scoring(100)
     
     # 初始化MTM指标
     mtm = MTM(period=14, signal_period=6)
@@ -291,7 +291,7 @@ def test_mtm_scoring():
         return False
 
 
-def main():
+def main_testwmabiasmtmscoring():
     """主函数"""
     print("🚀 开始测试WMA、BIAS、MTM指标评分功能")
     print(f"测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -340,5 +340,5 @@ def main():
 
 
 if __name__ == "__main__":
-    success = main()
+    success = main_testwmabiasmtmscoring()
     sys.exit(0 if success else 1) 

@@ -8,20 +8,20 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from indicators.kdj import KDJ
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 
 def test_manual_pattern_registration():
     """手动测试形态注册"""
     print("=== 手动形态注册测试 ===")
     
     # 清空注册表
-    PatternRegistry.clear_registry()
+    Pattern_registry.clear_registry()
     
     # 创建KDJ实例
     kdj = KDJ(k_period=9, d_period=3, j_period=3)
     
     # 获取PatternRegistry实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     print(f"注册前形态数量: {len(registry.get_all_patterns())}")
     
@@ -58,10 +58,10 @@ def test_kdj_automatic_registration():
     print("\n=== KDJ自动注册测试 ===")
     
     # 清空注册表
-    PatternRegistry.clear_registry()
+    Pattern_registry.clear_registry()
     
     # 获取PatternRegistry实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     print(f"清空后形态数量: {len(registry.get_all_patterns())}")
     
     # 创建KDJ实例（应该自动注册形态）
@@ -91,24 +91,24 @@ def test_pattern_registry_methods():
     print("\n=== PatternRegistry方法测试 ===")
     
     # 清空注册表
-    PatternRegistry.clear_registry()
+    Pattern_registry.clear_registry()
     
     # 获取PatternRegistry实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     # 直接使用registry.register方法
     try:
-        from indicators.pattern_registry import PatternType, PatternStrength, PatternPolarity
+        from indicators.pattern_registry import Pattern_type, Pattern_strength, Pattern_polarity
         
         registry.register(
             pattern_id="DIRECT_TEST",
             display_name="直接测试形态",
             description="直接使用registry.register方法",
             indicator_id="TEST",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=20.0,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
         print("✅ 直接注册成功")
     except Exception as e:

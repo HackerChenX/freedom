@@ -235,7 +235,7 @@ def batch_register_tool_indicators():
     print(f"工具指标注册完成: {success_count}/{len(tool_indicators)}")
     return success_count
 
-def main():
+def main_batchregisterindicators():
     """主函数"""
     print("开始批量注册未注册指标...")
     
@@ -274,4 +274,4 @@ def main():
         return False
 
 if __name__ == "__main__":
-    main()
+    mainBatchregisterindicators()

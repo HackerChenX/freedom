@@ -9,10 +9,10 @@ import pandas as pd
 from typing import Union, Tuple, List, Optional, Any
 
 # 类型别名
-NumericArray = Union[List[float], np.ndarray, pd.Series]
+numeric_array = Union[List[float], np.ndarray, pd.Series]
 
 
-def ma(series: NumericArray, periods: int) -> np.ndarray:
+def ma(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算简单移动平均线
     
@@ -26,7 +26,7 @@ def ma(series: NumericArray, periods: int) -> np.ndarray:
     return pd.Series(series).rolling(periods).mean().values
 
 
-def ema(series: NumericArray, periods: int) -> np.ndarray:
+def ema(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算指数移动平均线
     
@@ -40,7 +40,7 @@ def ema(series: NumericArray, periods: int) -> np.ndarray:
     return pd.Series(series).ewm(span=periods, adjust=False).mean().values
 
 
-def sma(series: NumericArray, periods: int, weight: float = 1) -> np.ndarray:
+def sma(series: Numeric_array, periods: int, weight: float = 1) -> np.ndarray:
     """
     计算中国式的SMA平滑移动平均线
     
@@ -55,7 +55,7 @@ def sma(series: NumericArray, periods: int, weight: float = 1) -> np.ndarray:
     return pd.Series(series).ewm(alpha=weight/periods, adjust=False).mean().values
 
 
-def wma(series: NumericArray, periods: int) -> np.ndarray:
+def wma(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算加权移动平均线
     
@@ -75,7 +75,7 @@ def wma(series: NumericArray, periods: int) -> np.ndarray:
     ).values
 
 
-def dma(series: NumericArray, alpha: Union[float, NumericArray]) -> np.ndarray:
+def dma(series: Numeric_array, alpha: Union[float, Numeric_array]) -> np.ndarray:
     """
     计算动态移动平均线
     
@@ -102,7 +102,7 @@ def dma(series: NumericArray, alpha: Union[float, NumericArray]) -> np.ndarray:
     return result
 
 
-def highest(series: NumericArray, periods: int) -> np.ndarray:
+def highest(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算周期内最高值
     
@@ -116,7 +116,7 @@ def highest(series: NumericArray, periods: int) -> np.ndarray:
     return pd.Series(series).rolling(periods).max().values
 
 
-def lowest(series: NumericArray, periods: int) -> np.ndarray:
+def lowest(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算周期内最低值
     
@@ -130,7 +130,7 @@ def lowest(series: NumericArray, periods: int) -> np.ndarray:
     return pd.Series(series).rolling(periods).min().values
 
 
-def ref(series: NumericArray, periods: int = 1) -> np.ndarray:
+def ref(series: Numeric_array, periods: int = 1) -> np.ndarray:
     """
     计算序列向前移动周期数
     
@@ -144,7 +144,7 @@ def ref(series: NumericArray, periods: int = 1) -> np.ndarray:
     return pd.Series(series).shift(periods).values
 
 
-def std(series: NumericArray, periods: int) -> np.ndarray:
+def std(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算标准差
     
@@ -158,7 +158,7 @@ def std(series: NumericArray, periods: int) -> np.ndarray:
     return pd.Series(series).rolling(periods).std(ddof=0).values
 
 
-def sum(series: NumericArray, periods: int) -> np.ndarray:
+def sum(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算周期内求和
     
@@ -175,7 +175,7 @@ def sum(series: NumericArray, periods: int) -> np.ndarray:
         return pd.Series(series).rolling(periods).sum().values
 
 
-def diff(series: NumericArray, periods: int = 1) -> np.ndarray:
+def diff(series: Numeric_array, periods: int = 1) -> np.ndarray:
     """
     计算序列差分
     
@@ -189,7 +189,7 @@ def diff(series: NumericArray, periods: int = 1) -> np.ndarray:
     return pd.Series(series).diff(periods).values
 
 
-def macd(close: NumericArray, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def macd(close: Numeric_array, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     计算MACD指标
     
@@ -221,7 +221,7 @@ def macd(close: NumericArray, fast_period: int = 12, slow_period: int = 26, sign
     return dif, dea, macd_value
 
 
-def kdj(close: NumericArray, high: NumericArray, low: NumericArray, n: int = 9, m1: int = 3, m2: int = 3) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def kdj(close: Numeric_array, high: Numeric_array, low: Numeric_array, n: int = 9, m1: int = 3, m2: int = 3) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     计算KDJ指标
     
@@ -243,7 +243,7 @@ def kdj(close: NumericArray, high: NumericArray, low: NumericArray, n: int = 9, 
     return k, d, j
 
 
-def boll(close: NumericArray, periods: int = 20, std_dev: float = 2.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def boll(close: Numeric_array, periods: int = 20, std_dev: float = 2.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     计算布林带指标
     
@@ -262,7 +262,7 @@ def boll(close: NumericArray, periods: int = 20, std_dev: float = 2.0) -> Tuple[
     return upper, mid, lower
 
 
-def rsi(close: NumericArray, periods: int = 14) -> np.ndarray:
+def rsi(close: Numeric_array, periods: int = 14) -> np.ndarray:
     """
     计算RSI指标
     
@@ -286,7 +286,7 @@ def rsi(close: NumericArray, periods: int = 14) -> np.ndarray:
     return rsi_values
 
 
-def atr(close: NumericArray, high: NumericArray, low: NumericArray, periods: int = 14) -> np.ndarray:
+def atr(close: Numeric_array, high: Numeric_array, low: Numeric_array, periods: int = 14) -> np.ndarray:
     """
     计算ATR指标
     
@@ -307,7 +307,7 @@ def atr(close: NumericArray, high: NumericArray, low: NumericArray, periods: int
     return ma(tr, periods)
 
 
-def obv(close: NumericArray, volume: NumericArray) -> np.ndarray:
+def obv(close: Numeric_array, volume: Numeric_array) -> np.ndarray:
     """
     计算OBV(On-Balance Volume)指标
     
@@ -332,7 +332,7 @@ def obv(close: NumericArray, volume: NumericArray) -> np.ndarray:
     return obv_values
 
 
-def cross(series1: NumericArray, series2: NumericArray) -> np.ndarray:
+def cross(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
     """
     判断两条线是否交叉（金叉）
     
@@ -357,7 +357,7 @@ def cross(series1: NumericArray, series2: NumericArray) -> np.ndarray:
     return cond1 & cond2
 
 
-def crossover(series1: NumericArray, series2: NumericArray) -> np.ndarray:
+def crossover(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
     """
     判断向上穿越情况（金叉）
     
@@ -390,7 +390,7 @@ def crossover(series1: NumericArray, series2: NumericArray) -> np.ndarray:
     return crossover_result
 
 
-def crossunder(series1: NumericArray, series2: NumericArray) -> np.ndarray:
+def crossunder(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
     """
     判断向下穿越情况（死叉）
     
@@ -423,7 +423,7 @@ def crossunder(series1: NumericArray, series2: NumericArray) -> np.ndarray:
     return crossunder_result
 
 
-def barslast(condition: NumericArray) -> np.ndarray:
+def barslast(condition: Numeric_array) -> np.ndarray:
     """
     计算上一次条件成立到当前的周期数
     

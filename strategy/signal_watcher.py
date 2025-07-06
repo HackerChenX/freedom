@@ -10,13 +10,13 @@ import numpy as np
 from datetime import datetime, timedelta
 import json
 
-from indicators.factory import IndicatorFactory
+from indicators.factory import Indicator_factory
 from enums.period import Period
-from db.unified_data_manager import get_unified_data_manager, UnifiedDataManager
-from utils.logger import get_logger
+from db.unified_data_manager import get_unified_data_manager, Unified_data_manager
+from utils.logger import getLogger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class SignalWatcher:
@@ -26,8 +26,8 @@ class SignalWatcher:
     识别接近触发条件但尚未满足的股票，提供趋势预测和信号强度梯度评估
     """
     
-    def __init__(self, data_manager: Optional[UnifiedDataManager] = None,
-                 indicator_factory: Optional[IndicatorFactory] = None):
+    def __init__(self, data_manager: Optional[Unified_data_manager] = None,
+                 indicator_factory: Optional[Indicator_factory] = None):
         """
         初始化观察信号处理器
         
@@ -36,7 +36,7 @@ class SignalWatcher:
             indicator_factory: 指标工厂实例
         """
         self.data_manager = data_manager or get_unified_data_manager()
-        self.indicator_factory = indicator_factory or IndicatorFactory()
+        self.indicator_factory = indicator_factory or Indicator_factory()
         
     @performance_monitor(threshold=5.0)
     @log_calls(level="info")
@@ -58,7 +58,7 @@ class SignalWatcher:
             trend_days: 趋势分析天数
             
         Returns:
-            观察信号结果DataFrame
+            观察信号结果Data_frame
         """
         # 设置默认日期
         if end_date is None:
@@ -100,8 +100,8 @@ class SignalWatcher:
             
             if watch_result:
                 # 获取股票基本信息
-                stock_info = self.data_manager.get_stock_info(stock_code, 'day')
-                stock_name = stock_info.name if stock_info else ""
+                stock_info WHERE 1=1 = self.data_manager.get_stock_info(stock_code, 'day')
+                stock_name = stock_info.name if stock_info WHERE 1=1 else ""
                 
                 # 添加到结果
                 watch_result["stock_code"] = stock_code
@@ -240,7 +240,7 @@ class SignalWatcher:
             return None
             
         # 计算趋势得分
-        trend_score = self._calculate_trend_score(condition_results)
+        trend_score = self._calculate_trend_score_Signal_Watcher(condition_results)
         
         # 返回观察信号结果
         return {
@@ -259,7 +259,7 @@ class SignalWatcher:
         分析信号接近度和趋势
         
         Args:
-            signals: 信号DataFrame
+            signals: 信号Data_frame
             signal_type: 信号类型
             trend_days: 趋势分析天数
             
@@ -364,7 +364,7 @@ class SignalWatcher:
         
         return proximity, is_satisfied, trend_direction
     
-    def _calculate_trend_score(self, condition_results: List[Dict[str, Any]]) -> float:
+    def _calculate_trend_score_Signal_Watcher(self, condition_results: List[Dict[str, Any]]) -> float:
         """
         计算趋势得分
         
@@ -422,8 +422,8 @@ class SignalWatcher:
             return {"error": "策略没有定义条件"}
         
         # 获取股票基本信息
-        stock_info = self.data_manager.get_stock_info(stock_code, 'day')
-        if not stock_info or not stock_info.name:
+        stock_info WHERE 1=1 = self.data_manager.get_stock_info(stock_code, 'day')
+        if not stock_info WHERE 1=1 or not stock_info.name:
             return {"error": f"未找到股票 {stock_code} 的基本信息"}
             
         stock_name = stock_info.name
@@ -507,7 +507,7 @@ class SignalWatcher:
         分析信号历史
         
         Args:
-            signals: 信号DataFrame
+            signals: 信号Data_frame
             signal_type: 信号类型
             lookback_days: 回溯天数
             

@@ -21,7 +21,7 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, time_it
-from utils.period_manager import PeriodManager
+from utils.period_manager import Period_manager
 from db.db_manager import DBManager
 from enums.period import Period
 
@@ -50,21 +50,21 @@ class BacktestDataManager:
             raise Exception("回测系统必须使用 ClickHouse 数据库，请检查数据库配置和连接状态")
         
         # 初始化周期管理器
-        self.period_manager = PeriodManager()
+        self.period_manager = Period_manager()
         
         # 缓存
         self.data_cache = {}
         
         logger.info("回测数据管理器初始化完成")
 
-    def get_stock_list(self) -> pd.DataFrame:
+    def get_stock_list_Manager(self) -> pd.DataFrame:
         """
         获取股票列表
         
         Returns:
             pd.DataFrame: 股票列表
         """
-        return self.db_manager.get_stock_list()
+        return self.db_manager.get_stock_list_Manager()
     
     def get_stock_name(self, stock_code: str) -> str:
         """
@@ -78,7 +78,7 @@ class BacktestDataManager:
         """
         return self.db_manager.get_stock_name(stock_code)
     
-    def get_stock_data(self, stock_code: str, period: Union[str, Period], 
+    def get_stock_data_Manager(self, stock_code: str, period: Union[str, Period], 
                       start_date: str, end_date: str) -> pd.DataFrame:
         """
         获取股票数据
@@ -93,13 +93,13 @@ class BacktestDataManager:
             pd.DataFrame: 股票数据
         
         Raises:
-            ValueError: 参数无效时抛出
+            Value_error: 参数无效时抛出
         """
         # 转换周期为 Period 枚举
         if isinstance(period, str):
             try:
                 period = Period.from_string(period)
-            except ValueError as e:
+            except Value_error as e:
                 raise ValueError(f"无效的K线周期: {period}，支持的周期: {', '.join(Period.get_all_period_values())}") from e
         elif not isinstance(period, Period):
             raise ValueError(f"周期参数必须是 Period 枚举或可转换为 Period 的字符串，当前类型: {type(period)}")
@@ -162,7 +162,7 @@ class BacktestDataManager:
             end_date=end_date
         )
     
-    def clear_cache(self):
+    def clear_cache_Manager_Data_Manager(self):
         """清除缓存"""
         self.data_cache.clear()
         logger.info("数据缓存已清除")
@@ -177,7 +177,7 @@ class BacktestDataManager:
         Returns:
             float or None: 收盘价
         """
-        df = self.get_stock_data(stock_code, period, end_date, end_date)
+        df = self.get_stock_data_Manager(stock_code, period, end_date, end_date)
         if df is not None and not df.empty:
             # 取最后一行的close
             return float(df.iloc[-1]["close"])
@@ -187,16 +187,16 @@ class BacktestDataManager:
 # 测试代码
 if __name__ == "__main__":
     # 初始化数据管理器
-    data_manager = BacktestDataManager()
+    data_manager = Backtest_data_manager()
     
     # 获取股票列表
-    stock_list = data_manager.get_stock_list()
+    stock_list = data_manager.get_stock_list_Manager()
     print(f"股票列表: {len(stock_list)} 只股票")
     
     # 获取单只股票数据
     if not stock_list.empty:
         test_stock = stock_list.iloc[0]['code']
-        data = data_manager.get_stock_data(
+        data = data_manager.get_stock_data_Manager(
             stock_code=test_stock,
             period=Period.DAILY,
             start_date="20220101",

@@ -1,41 +1,29 @@
 """
-缓存工具模块，提供内存缓存和持久化缓存功能
+缓存管理模块
+
+提供内存缓存、磁盘缓存和LRU缓存的实现
+支持依赖注入和向后兼容的单例模式
 """
 
 import os
-import pickle
 import time
 import threading
+import pickle
 import logging
-from typing import Dict, Any, Optional, Callable, Tuple, List, Union
-from functools import wraps
+from typing import Dict, Any, Tuple, Optional
+from functools import wraps, lru_cache
 
-from config import get_config
-from utils.file_utils import ensure_dir
+from utils.dependency_injection import get_service
 
 
 class MemoryCache:
     """
     内存缓存类，提供线程安全的内存缓存功能
+    重构为普通类，支持依赖注入
     """
-    
-    _instance = None
-    _lock = threading.Lock()
-    
-    @classmethod
-    def get_instance(cls):
-        """获取单例实例"""
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = MemoryCache()
-        return cls._instance
     
     def __init__(self):
         """初始化缓存"""
-        if MemoryCache._instance is not None:
-            raise Exception("MemoryCache是单例类，请使用get_instance()方法获取实例")
-        
         self._cache: Dict[str, Tuple[Any, float, Optional[float]]] = {}  # (value, timestamp, ttl)
         self._lock = threading.Lock()
     
@@ -140,28 +128,22 @@ class DiskCache:
     磁盘缓存类，提供持久化缓存功能
     """
     
-    _instance = None
-    _lock = threading.Lock()
-    
-    @classmethod
-    def get_instance(cls):
-        """获取单例实例"""
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = DiskCache()
-        return cls._instance
-    
-    def __init__(self):
-        """初始化缓存"""
-        if DiskCache._instance is not None:
-            raise Exception("DiskCache是单例类，请使用get_instance()方法获取实例")
+    def __init__(self, base_dir: str = "cache"):
+        """
+        初始化磁盘缓存
         
-        self._base_dir = os.path.join(get_config('paths.output'), '.cache')
-        ensure_dir(self._base_dir)
-        self._lock = threading.Lock()
-        self._index_file = os.path.join(self._base_dir, 'index.pkl')
+        Args:
+            base_dir: 缓存基础目录
+        """
+        self._base_dir = base_dir
+        self._index_file = os.path.join(base_dir, "index.pkl")
         self._index: Dict[str, Tuple[str, float, Optional[float]]] = {}  # (file_path, timestamp, ttl)
+        self._lock = threading.Lock()
+        
+        # 创建缓存目录
+        os.makedirs(base_dir, exist_ok=True)
+        
+        # 加载索引
         self._load_index()
     
     def _load_index(self) -> None:
@@ -196,121 +178,6 @@ class DiskCache:
         filename = f"{hash(key)}.cache"
         return os.path.join(self._base_dir, filename)
     
-    def get(self, key: str, default: Any = None) -> Any:
-        """
-        获取缓存值
-        
-        Args:
-            key: 缓存键
-            default: 默认值
-            
-        Returns:
-            缓存值或默认值
-        """
-        with self._lock:
-            if key in self._index:
-                file_path, timestamp, ttl = self._index[key]
-                # 检查是否过期
-                if ttl is not None and time.time() - timestamp > ttl:
-                    self.delete(key)
-                    return default
-                
-                # 读取缓存文件
-                try:
-                    with open(file_path, 'rb') as f:
-                        return pickle.load(f)
-                except Exception as e:
-                    logging.error(f"读取缓存文件失败: {e}")
-                    self.delete(key)
-                    return default
-            return default
-    
-    def set(self, key: str, value: Any, ttl: Optional[float] = None) -> bool:
-        """
-        设置缓存值
-        
-        Args:
-            key: 缓存键
-            value: 缓存值
-            ttl: 过期时间（秒），None表示永不过期
-            
-        Returns:
-            bool: 是否设置成功
-        """
-        with self._lock:
-            file_path = self._get_file_path(key)
-            
-            # 保存值到文件
-            try:
-                with open(file_path, 'wb') as f:
-                    pickle.dump(value, f)
-            except Exception as e:
-                logging.error(f"保存缓存文件失败: {e}")
-                return False
-            
-            # 更新索引
-            self._index[key] = (file_path, time.time(), ttl)
-            self._save_index()
-            return True
-    
-    def delete(self, key: str) -> bool:
-        """
-        删除缓存值
-        
-        Args:
-            key: 缓存键
-            
-        Returns:
-            bool: 是否删除成功
-        """
-        with self._lock:
-            if key in self._index:
-                file_path, _, _ = self._index[key]
-                
-                # 删除缓存文件
-                try:
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                except Exception as e:
-                    logging.error(f"删除缓存文件失败: {e}")
-                
-                # 更新索引
-                del self._index[key]
-                self._save_index()
-                return True
-            return False
-    
-    def exists(self, key: str) -> bool:
-        """
-        检查键是否存在且未过期
-        
-        Args:
-            key: 缓存键
-            
-        Returns:
-            bool: 是否存在且未过期
-        """
-        with self._lock:
-            if key in self._index:
-                file_path, timestamp, ttl = self._index[key]
-                # 检查是否过期
-                if ttl is not None and time.time() - timestamp > ttl:
-                    self.delete(key)
-                    return False
-                return os.path.exists(file_path)
-            return False
-    
-    def clear(self) -> None:
-        """清空缓存"""
-        with self._lock:
-            # 删除所有缓存文件
-            for key in list(self._index.keys()):
-                self.delete(key)
-            
-            # 清空索引
-            self._index.clear()
-            self._save_index()
-    
     def cleanup(self) -> int:
         """
         清理过期的缓存
@@ -326,6 +193,52 @@ class DiskCache:
                     self.delete(key)
                     count += 1
             return count
+
+
+class LRUCache:
+    """
+    LRU (Least Recently Used) 缓存实现
+    """
+    
+    def __init__(self, max_size: int = 128):
+        """
+        初始化LRU缓存
+        
+        Args:
+            max_size: 最大缓存大小
+        """
+        self.max_size = max_size
+        self._cache = {}
+        self._order = []  # 访问顺序，最新访问的在末尾
+        self._lock = threading.Lock()
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """获取缓存值并更新访问顺序"""
+        with self._lock:
+            if key in self._cache:
+                # 更新访问顺序
+                self._order.remove(key)
+                self._order.append(key)
+                return self._cache[key]
+            return default
+    
+    def set(self, key: str, value: Any) -> None:
+        """设置缓存值"""
+        with self._lock:
+            if key in self._cache:
+                # 更新现有值
+                self._order.remove(key)
+                self._order.append(key)
+                self._cache[key] = value
+            else:
+                # 添加新值
+                if len(self._cache) >= self.max_size:
+                    # 移除最少使用的项
+                    oldest_key = self._order.pop(0)
+                    del self._cache[oldest_key]
+                
+                self._cache[key] = value
+                self._order.append(key)
 
 
 def cache_result(ttl: Optional[float] = None, 
@@ -346,154 +259,76 @@ def cache_result(ttl: Optional[float] = None,
         @wraps(func)
         def wrapper(*args, **kwargs):
             # 生成缓存键
-            key_parts = [key_prefix if key_prefix else func.__name__]
+            key = f"{key_prefix}{func.__name__}_{hash(str(args) + str(sorted(kwargs.items())))}"
             
-            # 添加位置参数
-            for arg in args:
-                key_parts.append(str(arg))
-            
-            # 添加关键字参数（按键排序）
-            for k in sorted(kwargs.keys()):
-                key_parts.append(f"{k}={kwargs[k]}")
-            
-            cache_key = ":".join(key_parts)
-            
-            # 选择缓存实现
-            cache = DiskCache.get_instance() if disk_cache else MemoryCache.get_instance()
+            # 选择缓存类型
+            if disk_cache:
+                cache = get_disk_cache()
+            else:
+                cache = get_memory_cache()
             
             # 尝试从缓存获取
-            if cache.exists(cache_key):
-                return cache.get(cache_key)
+            result = cache.get(key)
+            if result is not None:
+                return result
             
             # 执行函数并缓存结果
             result = func(*args, **kwargs)
-            cache.set(cache_key, result, ttl)
+            cache.set(key, result, ttl)
             
             return result
         return wrapper
-    return decorator 
+    return decorator
 
 
-class LRUCache:
-    """
-    LRU（最近最少使用）缓存实现
-    
-    使用OrderedDict保持项目的使用顺序，实现高效的LRU淘汰策略
-    """
-    
-    def __init__(self, capacity: int):
-        """
-        初始化LRU缓存
-        
-        Args:
-            capacity: 缓存容量
-        """
-        self._capacity = max(1, capacity)
-        self._cache = {}
-        self._usage_order = []
-        self._lock = threading.Lock()
-        # 添加统计信息
-        self._hits = 0
-        self._misses = 0
-    
-    def get(self, key: str, default: Any = None) -> Any:
-        """
-        获取缓存值，并更新使用顺序
-        
-        Args:
-            key: 缓存键
-            default: 默认值
-            
-        Returns:
-            缓存值或默认值
-        """
-        with self._lock:
-            if key not in self._cache:
-                self._misses += 1
-                return default
-            
-            # 命中统计
-            self._hits += 1
-            
-            # 更新使用顺序
-            self._usage_order.remove(key)
-            self._usage_order.append(key)
-            
-            return self._cache[key]
-    
-    def set(self, key: str, value: Any) -> None:
-        """
-        设置缓存值
-        
-        Args:
-            key: 缓存键
-            value: 缓存值
-        """
-        with self._lock:
-            # 如果键已存在，更新使用顺序
-            if key in self._cache:
-                self._usage_order.remove(key)
-            # 如果缓存已满，删除最久未使用的项
-            elif len(self._cache) >= self._capacity:
-                oldest_key = self._usage_order.pop(0)
-                del self._cache[oldest_key]
-            
-            # 添加新项
-            self._cache[key] = value
-            self._usage_order.append(key)
-    
-    def delete(self, key: str) -> bool:
-        """
-        删除缓存值
-        
-        Args:
-            key: 缓存键
-            
-        Returns:
-            bool: 是否删除成功
-        """
-        with self._lock:
-            if key in self._cache:
-                del self._cache[key]
-                self._usage_order.remove(key)
-                return True
-            return False
-    
-    def exists(self, key: str) -> bool:
-        """
-        检查键是否存在
-        
-        Args:
-            key: 缓存键
-            
-        Returns:
-            bool: 是否存在
-        """
-        with self._lock:
-            return key in self._cache
-    
-    def clear(self) -> None:
-        """清空缓存"""
-        with self._lock:
-            self._cache.clear()
-            self._usage_order.clear()
-    
-    def get_stats(self) -> Dict[str, Any]:
-        """
-        获取缓存统计信息
-        
-        Returns:
-            Dict: 包含缓存统计信息的字典
-        """
-        with self._lock:
-            total_requests = self._hits + self._misses
-            hit_rate = self._hits / total_requests if total_requests > 0 else 0.0
-            
-            return {
-                'capacity': self._capacity,
-                'size': len(self._cache),
-                'usage': len(self._cache) / self._capacity if self._capacity > 0 else 0,
-                'hits': self._hits,
-                'misses': self._misses,
-                'hit_rate': hit_rate
-            } 
+# 向后兼容的单例接口
+_legacy_memory_cache = None
+_legacy_disk_cache = None
+_legacy_lock = threading.Lock()
+
+
+def get_memory_cache() -> MemoryCache:
+    """获取内存缓存实例（向后兼容）"""
+    global _legacy_memory_cache
+    if _legacy_memory_cache is None:
+        with _legacy_lock:
+            if _legacy_memory_cache is None:
+                try:
+                    # 尝试从容器获取实例
+                    from utils.dependency_injection import get_container
+                    container = get_container()
+                    if container.is_registered(MemoryCache):
+                        _legacy_memory_cache = container.resolve(MemoryCache)
+                    else:
+                        # 如果未注册，创建默认实例
+                        _legacy_memory_cache = MemoryCache()
+                except Exception:
+                    # 如果容器不可用，创建默认实例
+                    _legacy_memory_cache = MemoryCache()
+    return _legacy_memory_cache
+
+
+def get_disk_cache(base_dir: str = "cache") -> DiskCache:
+    """获取磁盘缓存实例（向后兼容）"""
+    global _legacy_disk_cache
+    if _legacy_disk_cache is None:
+        with _legacy_lock:
+            if _legacy_disk_cache is None:
+                _legacy_disk_cache = DiskCache(base_dir)
+    return _legacy_disk_cache
+
+
+# 现代化的依赖注入接口
+def get_cache_service() -> MemoryCache:
+    """通过依赖注入获取缓存服务"""
+    return get_service(MemoryCache)
+
+
+# 兼容性别名
+def get_instance():
+    """向后兼容的获取实例方法"""
+    return get_memory_cache()
+
+
+# 缓存实例别名（向后兼容）
+cache = get_memory_cache

@@ -3,31 +3,31 @@ import pandas as pd
 import numpy as np
 
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
-class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testkdj_kdj(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """KDJ指标单元测试类"""
 
-    def setUp(self):
+    def set_up_Kdj_Test_Kdj(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        Log_capture_mixin.set_up_Kdj_Test_Kdj(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('KDJ', n=9, m1=3, m2=3)
         self.expected_columns = ['K', 'D', 'J']
         # 使用一个包含多种走势的数据进行通用测试
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30},
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tearDown(self):
+    def tear_down_Kdj_Test_Kdj(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self) # 显式调用Mixin的tearDown
+        Log_capture_mixin.tear_down_Kdj_Test_Kdj(self) # 显式调用Mixin的tear_down
 
     def test_golden_cross(self):
         """测试KDJ金叉"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 10}, # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 105, 'periods': 15}, # 反弹
@@ -47,7 +47,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
     def test_death_cross(self):
         """测试KDJ死叉"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 10}, # 上涨
             {'type': 'trend', 'start_price': 110, 'end_price': 95, 'periods': 15}, # 回调
@@ -68,7 +68,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_j_value_overbought(self):
         """测试J值超买"""
         # 生成更剧烈的上涨趋势数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 10},  # 快速上涨
         ])
@@ -79,7 +79,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_j_value_oversold(self):
         """测试J值超卖"""
         # 生成更剧烈的下跌趋势数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 10},   # 快速下跌
         ])
@@ -90,7 +90,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_overbought_oversold_patterns(self):
         """测试超买超卖形态检测"""
         # 生成超买数据
-        overbought_data = TestDataGenerator.generate_price_sequence([
+        overbought_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 10},  # 快速上涨
         ])
@@ -102,7 +102,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(overbought_patterns['KDJ_OVERBOUGHT'].iloc[-5:].any(), "未检测到超买形态")
         
         # 生成超卖数据
-        oversold_data = TestDataGenerator.generate_price_sequence([
+        oversold_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 10},   # 快速下跌
         ])
@@ -139,10 +139,10 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 鲁棒交叉检测应该检测到更少的信号
         self.assertLessEqual(robust_golden_cross.sum(), normal_golden_cross.sum(), "鲁棒交叉检测应该检测到更少的信号")
 
-    def test_score_calculation(self):
+    def test_score_calculation_Kdj(self):
         """测试KDJ评分计算功能"""
         # 生成测试数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 10},   # 快速下跌
             {'type': 'trend', 'start_price': 70, 'end_price': 120, 'periods': 10},   # 快速上涨
@@ -171,7 +171,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         # 验证评分与KDJ值的关系
         # 在超卖区域应该有较高的评分
-        oversold_data = TestDataGenerator.generate_price_sequence([
+        oversold_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 20},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 70, 'periods': 10},   # 快速下跌
         ])
@@ -184,7 +184,7 @@ class TestKDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertGreater(oversold_score, 20, "超卖区域的评分应该较高（大于20）")
         
         # 在超买区域应该有较低的评分
-        overbought_data = TestDataGenerator.generate_price_sequence([
+        overbought_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 70, 'end_price': 70, 'periods': 20},    # 横盘
             {'type': 'trend', 'start_price': 70, 'end_price': 120, 'periods': 10},   # 快速上涨
         ])

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-相对强弱指数(RSI)
+相对强弱指数(RSI_Rsi)
 
 通过比较一段时期内平均收盘涨数和平均收盘跌数来分析市场买卖盘的意向和实力
 """
@@ -14,20 +14,20 @@ from typing import List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class RSI(BaseIndicator, PatternSignalMixin):
+class RsiRsi(BaseIndicator, PatternSignalMixin):
     """
-    相对强弱指数(RSI)
+    相对强弱指数(RSI_Rsi)
     """
 
     def __init__(self, period: int = 14, ma_periods: List[int] = None, overbought: float = 70.0, oversold: float = 30.0):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         super().__init__()
-        self.name = "RSI"
+        self.name = "RSI_Rsi"
         self.period = period
         self.ma_periods = ma_periods if ma_periods is not None else [5, 10]
         self.overbought = overbought
@@ -81,7 +81,7 @@ class RSI(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def set_parameters(self, period: int = 14, overbought: float = 70.0, oversold: float = 30.0, **kwargs):
+    def set_parameters_Rsi_Rsi_Rsi_rsi(self, period: int = 14, overbought: float = 70.0, oversold: float = 30.0, **kwargs):
         """
         设置RSI指标的参数
         """
@@ -91,15 +91,15 @@ class RSI(BaseIndicator, PatternSignalMixin):
         if 'ma_periods' in kwargs:
             self.ma_periods = kwargs['ma_periods']
 
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_rsi(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算RSI指标，并包含均线和信号
         
         Args:
-            df: 包含价格数据的DataFrame
+            df: 包含价格数据的Data_frame
             
         Returns:
-            pd.DataFrame: 添加了RSI指标的DataFrame
+            pd.DataFrame: 添加了RSI指标的Data_frame
         """
         if data.empty:
             return data
@@ -140,11 +140,11 @@ class RSI(BaseIndicator, PatternSignalMixin):
 
         return result_df
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Rsi_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取RSI相关形态
         """
-        calculated_data = self._calculate(data)
+        calculated_data = self._calculate_rsi(data)
         patterns_df = pd.DataFrame(index=data.index)
 
         # 确保列存在
@@ -166,13 +166,13 @@ class RSI(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Rsi(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成RSI交易信号
         """
-        calculated_data = self._calculate(data)
+        calculated_data = self._calculate_rsi(data)
 
-        patterns = self.get_patterns(data)
+        patterns = self.get_patterns_Rsi_Rsi(data)
 
         signals = pd.DataFrame(index=data.index)
         signals['buy_signal'] = patterns['RSI_GOLDEN_CROSS'] | (patterns['RSI_OVERSOLD'])
@@ -180,11 +180,11 @@ class RSI(BaseIndicator, PatternSignalMixin):
 
         return signals
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Rsi_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算RSI指标的原始评分 (0-100分)
         """
-        calculated_data = self._calculate(data)
+        calculated_data = self._calculate_rsi(data)
         
         if calculated_data is None or f'rsi_{self.period}' not in calculated_data.columns:
             return pd.Series(50.0, index=data.index)
@@ -210,13 +210,13 @@ class RSI(BaseIndicator, PatternSignalMixin):
             
         return score.clip(0, 100)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Rsi_Rsi(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
         """
         计算RSI指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -261,7 +261,7 @@ class RSI(BaseIndicator, PatternSignalMixin):
 
         return min(confidence, 1.0)
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Rsi(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -274,7 +274,7 @@ class RSI(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Rsi_Rsi(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -291,11 +291,11 @@ class RSI(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
-            signals = self.generate_signals(data, **kwargs)
+            patterns = self.get_patterns_Rsi_Rsi(data, **kwargs)
+            signals = self.generate_signals_Rsi(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, signals.to_dict('series') if hasattr(signals, 'to_dict') else {})
+            confidence = self.calculate_confidence_Rsi_Rsi(raw_scores, patterns, signals.to_dict('series') if hasattr(signals, 'to_dict') else {})
 
             return {
                 'score': final_score,
@@ -305,7 +305,7 @@ class RSI(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def register_patterns(self):
+    def register_patterns_Rsi(self):
         """
         注册RSI指标的形态到全局形态注册表
         """
@@ -353,7 +353,7 @@ class RSI(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Rsi(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 
@@ -406,39 +406,11 @@ class RSI(BaseIndicator, PatternSignalMixin):
             "strength": "WEAK",
             "score_impact": 0.0
         })
-    def __init__(self, **kwargs):
-        """
-        初始化RSI指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "RSI"
-
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-
-        # 初始化必需的属性以保持向后兼容
-        self.period = kwargs.get('period', 14)
-        self.overbought = kwargs.get('overbought', 70.0)
-        self.oversold = kwargs.get('oversold', 30.0)
-        self.ma_periods = kwargs.get('ma_periods', [5, 10])
-
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_rsi(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Rsi_Rsi_Rsi_rsi_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -447,18 +419,18 @@ class RSI(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('RSI', params)
+            is_valid, errors = validator.validate_indicator_parameters('RSI_Rsi', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"RSI参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

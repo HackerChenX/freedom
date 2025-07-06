@@ -29,17 +29,17 @@ warnings.filterwarnings('ignore')
 from enums.period import Period
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_stock_result_file, get_strategies_dir
-from utils.period_manager import PeriodManager
+from utils.period_manager import Period_manager
 from utils.period_data_structure import (
-    IndicatorPeriodResult, 
-    PeriodAnalysisResult, 
-    MultiPeriodAnalysisResult
+    Indicator_period_result, 
+    Period_analysis_result, 
+    Multi_period_analysis_result
 )
 from utils.decorators import performance_monitor, time_it
 from db.db_manager import DBManager
 from indicators.complete_indicator_registry import complete_registry
-from indicators.pattern_registry import PatternRegistry
-from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+from indicators.pattern_registry import Pattern_registry
+from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -68,8 +68,8 @@ class OptimizedBacktest:
             config: 回测配置
             cpu_cores: 并行计算的CPU核心数，默认为系统可用核心数的75%
         """
-        self.db_manager = DBManager.get_instance()
-        self.period_manager = PeriodManager.get_instance()
+        self.db_manager = DBManager.get_instance_Backtest()
+        self.period_manager = Period_manager.get_instance_Backtest()
         self.result_dir = get_backtest_result_dir()
         self.strategies_dir = get_strategies_dir()
         
@@ -82,10 +82,10 @@ class OptimizedBacktest:
         self.pattern_stats = defaultdict(int)
         
         # 指标工厂
-        self.indicator_factory = IndicatorFactory()
+        self.indicator_factory = Indicator_factory()
         
         # 策略条件评估器
-        self.condition_evaluator = StrategyConditionEvaluator()
+        self.condition_evaluator = Strategy_condition_evaluator()
         
         # 回测性能统计
         self.performance_stats = {
@@ -163,13 +163,13 @@ class OptimizedBacktest:
         }
         
         if config is not None:
-            self.config = self._merge_config(self.default_config, config)
+            self.config = self._merge_config_Optimized_Backtest(self.default_config, config)
         else:
             self.config = self.default_config
         
         logger.info("优化版回测系统初始化完成")
     
-    def _merge_config(self, default: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    def _merge_config_Optimized_Backtest(self, default: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """
         递归合并配置字典
         
@@ -185,7 +185,7 @@ class OptimizedBacktest:
         for key, value in override.items():
             # 如果两个都是字典，递归合并
             if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-                result[key] = self._merge_config(result[key], value)
+                result[key] = self._merge_config_Optimized_Backtest(result[key], value)
             else:
                 # 否则直接覆盖
                 result[key] = value
@@ -194,8 +194,8 @@ class OptimizedBacktest:
 
     @time_it
     @performance_monitor()
-    def analyze_stock(self, code: str, buy_date: str, 
-                     custom_config: Optional[Dict[str, Any]] = None) -> MultiPeriodAnalysisResult:
+    def analyze_stock_Backtest(self, code: str, buy_date: str, 
+                     custom_config: Optional[Dict[str, Any]] = None) -> Multi_period_analysis_result:
         """
         分析单个股票的买点
         
@@ -205,14 +205,14 @@ class OptimizedBacktest:
             custom_config: 自定义配置，会与基础配置合并
             
         Returns:
-            MultiPeriodAnalysisResult: 多周期分析结果
+            Multi_period_analysis_result: 多周期分析结果
         """
         try:
             # 合并配置
             if custom_config is None:
                 config = self.config
             else:
-                config = self._merge_config(self.config, custom_config)
+                config = self._merge_config_Optimized_Backtest(self.config, custom_config)
             
             # 转换日期格式
             buy_date_obj = datetime.datetime.strptime(buy_date, "%Y%m%d")
@@ -220,7 +220,7 @@ class OptimizedBacktest:
             end_date = (buy_date_obj + datetime.timedelta(days=config['days_after'])).strftime("%Y%m%d")
             
             # 创建多周期分析结果对象
-            result = MultiPeriodAnalysisResult(code, buy_date)
+            result = Multi_period_analysis_result(code, buy_date)
             
             # 记录配置
             result.metadata['config'] = config
@@ -228,7 +228,7 @@ class OptimizedBacktest:
             
             # 分析各个周期
             for period in config['periods']:
-                period_result = self._analyze_period(code, buy_date, period, start_date, end_date, config)
+                period_result = self._analyze_period_Optimized_Backtest(code, buy_date, period, start_date, end_date, config)
                 if period_result is not None:
                     result.add_period_result(period_result)
             
@@ -257,14 +257,14 @@ class OptimizedBacktest:
             self.performance_stats["failed_analyses"] += 1
             
             # 返回空结果
-            empty_result = MultiPeriodAnalysisResult(code, buy_date)
+            empty_result = Multi_period_analysis_result(code, buy_date)
             empty_result.metadata['error'] = str(e)
             return empty_result
     
     @time_it
-    def _analyze_period(self, code: str, buy_date: str, period: Period, 
+    def _analyze_period_Optimized_Backtest(self, code: str, buy_date: str, period: Period, 
                        start_date: str, end_date: str, 
-                       config: Dict[str, Any]) -> Optional[PeriodAnalysisResult]:
+                       config: Dict[str, Any]) -> Optional[Period_analysis_result]:
         """
         分析指定周期的技术指标
         
@@ -277,7 +277,7 @@ class OptimizedBacktest:
             config: 分析配置
             
         Returns:
-            Optional[PeriodAnalysisResult]: 周期分析结果
+            Optional[Period_analysis_result]: 周期分析结果
         """
         try:
             # 从周期管理器获取数据
@@ -306,7 +306,7 @@ class OptimizedBacktest:
                 return None
             
             # 创建周期分析结果对象
-            period_result = PeriodAnalysisResult(period)
+            period_result = Period_analysis_result(period)
             
             # 记录买点信息
             period_result.metadata['buy_date'] = buy_date
@@ -339,7 +339,7 @@ class OptimizedBacktest:
                         signals = indicator.generate_signals(indicator_data)
                         
                         # 创建指标周期结果
-                        indicator_result = IndicatorPeriodResult(indicator_name, period)
+                        indicator_result = Indicator_period_result(indicator_name, period)
                         indicator_result.set_data(indicator_data)
                         indicator_result.set_patterns(patterns)
                         indicator_result.set_score(score.get('final_score') if isinstance(score, dict) else score)
@@ -374,8 +374,8 @@ class OptimizedBacktest:
     
     @time_it
     @performance_monitor()
-    def batch_analyze(self, input_file: str, output_file: str, 
-                     custom_config: Optional[Dict[str, Any]] = None) -> List[MultiPeriodAnalysisResult]:
+    def batch_analyze_Backtest(self, input_file: str, output_file: str, 
+                     custom_config: Optional[Dict[str, Any]] = None) -> List[Multi_period_analysis_result]:
         """
         批量分析多个股票的买点
         
@@ -385,7 +385,7 @@ class OptimizedBacktest:
             custom_config: 自定义配置，会与基础配置合并
             
         Returns:
-            List[MultiPeriodAnalysisResult]: 分析结果列表
+            List[Multi_period_analysis_result]: 分析结果列表
         """
         try:
             # 开始计时
@@ -395,7 +395,7 @@ class OptimizedBacktest:
             if custom_config is None:
                 config = self.config
             else:
-                config = self._merge_config(self.config, custom_config)
+                config = self._merge_config_Optimized_Backtest(self.config, custom_config)
             
             # 读取输入文件
             buy_points = pd.read_csv(input_file)
@@ -443,17 +443,17 @@ class OptimizedBacktest:
                     logger.info(f"分析进度: {i+1}/{total} - 股票: {code}, 买点日期: {buy_date}")
                     
                     # 调用分析函数
-                    result = self.analyze_stock(code, buy_date, config)
+                    result = self.analyze_stock_Backtest(code, buy_date, config)
                     results.append(result)
                     
                     # 保存中间结果
                     if config['output']['save_interim'] and (i+1) % 10 == 0:
                         interim_file = f"{output_file}.interim_{i+1}"
-                        self.save_results(results, interim_file)
+                        self.save_results_Backtest_Optimized_Backtest(results, interim_file)
                         logger.info(f"已保存中间结果: {interim_file}")
             
             # 保存最终结果
-            self.save_results(results, output_file)
+            self.save_results_Backtest_Optimized_Backtest(results, output_file)
             
             # 打印形态统计
             self._print_pattern_stats()
@@ -481,7 +481,7 @@ class OptimizedBacktest:
             return []
     
     def _parallel_analyze_stock(self, code: str, buy_date: str, 
-                              config: Dict[str, Any]) -> Optional[MultiPeriodAnalysisResult]:
+                              config: Dict[str, Any]) -> Optional[Multi_period_analysis_result]:
         """
         并行分析单个股票的包装函数
         
@@ -491,12 +491,12 @@ class OptimizedBacktest:
             config: 分析配置
             
         Returns:
-            Optional[MultiPeriodAnalysisResult]: 分析结果
+            Optional[Multi_period_analysis_result]: 分析结果
         """
         try:
             # 创建独立的回测实例以避免多进程共享问题
-            backtest = OptimizedBacktest(config)
-            result = backtest.analyze_stock(code, buy_date)
+            backtest = Optimized_backtest(config)
+            result = backtest.analyze_stock_Backtest(code, buy_date)
             
             # 更新全局统计信息（这部分在主进程中汇总）
             if result:
@@ -508,7 +508,7 @@ class OptimizedBacktest:
             return None
     
     @time_it
-    def save_results(self, results: List[MultiPeriodAnalysisResult], output_file: str) -> None:
+    def save_results_Backtest_Optimized_Backtest(self, results: List[Multi_period_analysis_result], output_file: str) -> None:
         """
         保存分析结果到文件
         
@@ -544,7 +544,7 @@ class OptimizedBacktest:
             # 保存Excel格式
             if 'excel' in formats:
                 excel_file = f"{base_name}.xlsx" if ext != '.xlsx' else output_file
-                self._save_to_excel(results, excel_file)
+                self._save_to_excel_Optimized_Backtest(results, excel_file)
                 logger.info(f"分析结果已保存到Excel文件: {excel_file}")
             
             # 保存CSV格式
@@ -558,7 +558,7 @@ class OptimizedBacktest:
             import traceback
             logger.error(traceback.format_exc())
     
-    def _save_to_excel(self, results: List[MultiPeriodAnalysisResult], output_file: str) -> None:
+    def _save_to_excel_Optimized_Backtest(self, results: List[Multi_period_analysis_result], output_file: str) -> None:
         """
         将结果保存为Excel格式
         
@@ -668,7 +668,7 @@ class OptimizedBacktest:
             import traceback
             logger.error(traceback.format_exc())
     
-    def _save_to_csv(self, results: List[MultiPeriodAnalysisResult], output_file: str) -> None:
+    def _save_to_csv(self, results: List[Multi_period_analysis_result], output_file: str) -> None:
         """
         将结果保存为CSV格式
         
@@ -715,7 +715,7 @@ class OptimizedBacktest:
         sorted_patterns = sorted(self.pattern_stats.items(), key=lambda x: x[1], reverse=True)
         
         # 获取形态显示名称
-        pattern_registry = PatternRegistry()
+        pattern_registry = Pattern_registry()
         
         for pattern_id, count in sorted_patterns[:20]:  # 只显示前20个
             display_name = pattern_registry.get_display_name(pattern_id)
@@ -727,7 +727,7 @@ class OptimizedBacktest:
     
     @time_it
     @performance_monitor()
-    def generate_strategy(self, results: List[MultiPeriodAnalysisResult], 
+    def generate_strategy_Backtest_Optimized_Backtest(self, results: List[Multi_period_analysis_result], 
                          output_file: str, threshold: int = 2) -> Dict[str, Any]:
         """
         根据分析结果生成选股策略
@@ -762,7 +762,7 @@ class OptimizedBacktest:
                                if count >= threshold}
             
             # 获取形态元数据
-            pattern_registry = PatternRegistry()
+            pattern_registry = Pattern_registry()
             
             # 构建策略对象
             strategy = {
@@ -885,7 +885,7 @@ class OptimizedBacktest:
     
     @time_it
     @performance_monitor()
-    def backtest_strategy(self, strategy: Dict[str, Any], 
+    def backtest_strategy_Backtest(self, strategy: Dict[str, Any], 
                          stock_pool: List[str], 
                          start_date: str, 
                          end_date: str,
@@ -1151,7 +1151,7 @@ class OptimizedBacktest:
                 # 遍历股票池
                 for stock_code in stock_pool:
                     # 获取股票数据
-                    data = self._get_stock_data(stock_code, date, Period.DAILY)
+                    data = self._get_stock_data_Optimized_Backtest(stock_code, date, Period.DAILY)
                     if data is None or data.empty:
                         continue
                     
@@ -1167,7 +1167,7 @@ class OptimizedBacktest:
                     # 确定对应的周期类型
                     try:
                         period = Period(period_value)
-                    except ValueError:
+                    except Value_error:
                         logger.warning(f"无效的周期值: {period_value}")
                         continue
                     
@@ -1177,7 +1177,7 @@ class OptimizedBacktest:
                             continue  # 已经选中，跳过
                         
                         # 获取股票数据
-                        data = self._get_stock_data(stock_code, date, period)
+                        data = self._get_stock_data_Optimized_Backtest(stock_code, date, period)
                         if data is None or data.empty:
                             continue
                         
@@ -1194,7 +1194,7 @@ class OptimizedBacktest:
             logger.error(f"选择股票时出错: {e}")
             return []
     
-    def _get_stock_data(self, stock_code: str, date: str, period: Period) -> Optional[pd.DataFrame]:
+    def _get_stock_data_Optimized_Backtest(self, stock_code: str, date: str, period: Period) -> Optional[pd.DataFrame]:
         """
         获取股票数据
         
@@ -1232,7 +1232,7 @@ class OptimizedBacktest:
         """
         try:
             # 获取日K数据
-            data = self._get_stock_data(stock_code, date, Period.DAILY)
+            data = self._get_stock_data_Optimized_Backtest(stock_code, date, Period.DAILY)
             if data is None or data.empty:
                 return 0
             
@@ -1285,8 +1285,8 @@ class OptimizedBacktest:
         logger.info("=" * 50)
     
     @staticmethod
-    def get_instance() -> 'OptimizedBacktest':
+    def get_instance_Backtest() -> 'OptimizedBacktest':
         """获取单例实例"""
         if not hasattr(OptimizedBacktest, '_instance'):
-            OptimizedBacktest._instance = OptimizedBacktest()
-        return OptimizedBacktest._instance 
+            Optimized_backtest._instance = Optimized_backtest()
+        return Optimized_backtest._instance 

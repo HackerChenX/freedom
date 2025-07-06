@@ -10,12 +10,12 @@ import json
 import uuid
 from datetime import datetime
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from enums.period import Period
-from indicators.indicator_factory import IndicatorFactory
-from formula.stock_formula import StockFormula
+from indicators.indicator_factory import Indicator_factory
+from formula.stock_formula import Stock_formula
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class FormulaConverter:
@@ -23,14 +23,14 @@ class FormulaConverter:
     公式转换器，将通达信风格公式转换为选股策略配置
     """
     
-    def __init__(self, indicator_factory: Optional[IndicatorFactory] = None):
+    def __init__(self, indicator_factory: Optional[Indicator_factory] = None):
         """
         初始化公式转换器
         
         Args:
             indicator_factory: 指标工厂实例，用于创建和管理指标
         """
-        self.indicator_factory = indicator_factory or IndicatorFactory()
+        self.indicator_factory = indicator_factory or Indicator_factory()
         
         # 通达信函数与系统指标的映射
         self.function_map = {
@@ -493,16 +493,7 @@ class FormulaEditor:
     公式编辑器，提供公式编辑和测试功能
     """
     
-    def __init__(self, converter: Optional[FormulaConverter] = None):
-        """
-        初始化公式编辑器
-        
-        Args:
-            converter: 公式转换器实例
-        """
-        self.converter = converter or FormulaConverter()
-    
-    def validate_formula(self, formula_text: str) -> Tuple[bool, str]:
+    def validate_formula_Converter(self, formula_text: str) -> Tuple[bool, str]:
         """
         验证公式语法
         
@@ -540,7 +531,7 @@ class FormulaEditor:
         except Exception as e:
             return False, f"公式验证失败: {str(e)}"
     
-    def test_formula(self, formula_text: str, stock_code: str, 
+    def test_formula_Converter(self, formula_text: str, stock_code: str, 
                    start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
         """
         测试公式
@@ -556,12 +547,12 @@ class FormulaEditor:
         """
         try:
             # 验证公式
-            is_valid, error_msg = self.validate_formula(formula_text)
+            is_valid, error_msg = self.validate_formula_Converter(formula_text)
             if not is_valid:
                 return {"success": False, "message": error_msg}
             
             # 创建StockFormula实例
-            formula = StockFormula(stock_code, start=start_date, end=end_date)
+            formula = Stock_formula(stock_code, start=start_date, end=end_date)
             
             # 预处理公式
             formula_text = self.converter._preprocess_formula(formula_text)

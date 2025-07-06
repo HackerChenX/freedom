@@ -20,7 +20,8 @@ sys.path.append(root_dir)
 
 from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
 from indicators.complete_indicator_registry import complete_registry
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir
 from enums.kline_period import KlinePeriod
@@ -28,7 +29,7 @@ from enums.kline_period import KlinePeriod
 logger = get_logger(__name__)
 
 
-def parse_args():
+def parse_args_Analysis():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="形态识别分析工具")
     
@@ -41,12 +42,14 @@ def parse_args():
     parser.add_argument("--output", "-o", default=None, help="输出文件路径")
     parser.add_argument("--detail", action="store_true", help="是否输出详细信息")
     
-    return parser.parse_args()
+    return parser.parse_args_Analysis()
 
 
-def get_stock_data(stock_code, periods, start_date=None, end_date=None, days=120):
+def get_stock_data_Analysis(stock_code, periods, start_date=None, end_date=None, days=120):
     """获取股票数据"""
-    db = get_clickhouse_db()
+    # 使用依赖注入架构
+    container = get_container()
+    data_access = get_service(DataAccessInterface)
     
     # 如果没有指定开始日期，则使用当前日期减去指定天数
     if not start_date:
@@ -57,14 +60,14 @@ def get_stock_data(stock_code, periods, start_date=None, end_date=None, days=120
         end_date = datetime.now().strftime("%Y-%m-%d")
     
     # 获取股票名称
-    stock_name = db.get_stock_name(stock_code)
+    stock_name = data_access.get_stock_name(stock_code)
     
     # 按周期获取数据
     data = {}
     
     for period in periods:
         try:
-            period_data = db.get_kline_data(
+            period_data = data_access.get_kline_data(
                 stock_code=stock_code,
                 start_date=start_date,
                 end_date=end_date,
@@ -84,9 +87,9 @@ def get_stock_data(stock_code, periods, start_date=None, end_date=None, days=120
     return data, stock_name
 
 
-def main():
+def main_24():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Analysis()
     
     # 解析参数
     stock_code = args.stock
@@ -105,7 +108,7 @@ def main():
     logger.info(f"分析指标: {indicators}")
     
     # 获取股票数据
-    stock_data, stock_name = get_stock_data(
+    stock_data, stock_name = get_stock_data_Analysis(
         stock_code=stock_code,
         periods=periods,
         start_date=start_date,
@@ -194,4 +197,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_24() 

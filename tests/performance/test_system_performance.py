@@ -24,10 +24,10 @@ init_logging(level="INFO")
 logger = get_logger(__name__)
 
 
-class TestSystemPerformance(unittest.TestCase):
+class Test_system_performance(unittest.Test_case):
     """系统性能测试类"""
     
-    def setUp(self):
+    def set_up_Performance(self):
         """设置测试环境"""
         self.test_indicators = [
             'ZXM_BS_ABSORB',
@@ -139,7 +139,7 @@ class TestSystemPerformance(unittest.TestCase):
         avg_processing_time = np.mean(total_processing_times)
         
         # 验证性能要求：<0.1秒/股
-        self.assertLess(avg_processing_time, 0.1, 
+        self.assert_less(avg_processing_time, 0.1, 
                        f"平均每股处理时间应该<0.1秒，实际: {avg_processing_time:.3f}秒")
         
         # 计算性能改进
@@ -150,7 +150,7 @@ class TestSystemPerformance(unittest.TestCase):
         logger.info(f"✅ 性能改进: {improvement:.1f}%")
         
         # 验证性能改进目标：20%+
-        self.assertGreaterEqual(improvement, 20.0, 
+        self.assert_greater_equal(improvement, 20.0, 
                                f"性能改进应该>=20%，实际: {improvement:.1f}%")
     
     def test_indicator_calculation_performance(self):
@@ -192,7 +192,7 @@ class TestSystemPerformance(unittest.TestCase):
         avg_calculation_time = np.mean(valid_times) if valid_times else float('inf')
         
         # 验证计算性能
-        self.assertLess(avg_calculation_time, 0.1, 
+        self.assert_less(avg_calculation_time, 0.1, 
                        f"平均指标计算时间应该<0.1秒，实际: {avg_calculation_time:.3f}秒")
         
         logger.info(f"✅ 平均指标计算时间: {avg_calculation_time:.3f}秒")
@@ -237,7 +237,7 @@ class TestSystemPerformance(unittest.TestCase):
         avg_signal_time = np.mean(signal_generation_times)
         
         # 验证信号生成性能
-        self.assertLess(avg_signal_time, 0.05, 
+        self.assert_less(avg_signal_time, 0.05, 
                        f"平均信号生成时间应该<0.05秒，实际: {avg_signal_time:.3f}秒")
         
         # 计算性能改进
@@ -290,7 +290,7 @@ class TestSystemPerformance(unittest.TestCase):
         logger.info(f"内存增长: {memory_increase:.1f} MB")
         
         # 验证内存使用合理性（增长不超过100MB）
-        self.assertLess(memory_increase, 100, 
+        self.assert_less(memory_increase, 100, 
                        f"内存增长应该<100MB，实际: {memory_increase:.1f}MB")
         
         logger.info("✅ 内存使用优化验证通过")
@@ -331,7 +331,7 @@ class TestSystemPerformance(unittest.TestCase):
         
         start_time = time.time()
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        with concurrent.futures.Thread_pool_executor(max_workers=3) as executor:
             parallel_results = list(executor.map(process_indicator, test_indicators))
         
         parallel_time = time.time() - start_time

@@ -1,10 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 选股系统真实数据环境性能测试框架
 
-基于ClickHouse真实股票数据，执行全面的性能测试和优化分析
+基于Click_house真实股票数据，执行全面的性能测试和优化分析
 测试覆盖500-1000只股票，验证大规模数据处理能力
 """
 
@@ -25,15 +27,15 @@ warnings.filterwarnings('ignore')
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_manager import Strategy_manager
 from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class PerformanceMonitor:
+class Performancemonitor_test:
     """性能监控器"""
     
     def __init__(self):
@@ -47,11 +49,11 @@ class PerformanceMonitor:
         self.monitoring = False
         self.monitor_thread = None
     
-    def start_monitoring(self):
+    def start_monitoring_Test(self):
         """开始性能监控"""
         self.start_time = time.time()
         self.monitoring = True
-        self.monitor_thread = threading.Thread(target=self._monitor_loop)
+        self.monitor_thread = threading.Thread(target=self._monitor_loop_Real_Data_Performance_Test)
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
         logger.info("性能监控已启动")
@@ -63,7 +65,7 @@ class PerformanceMonitor:
             self.monitor_thread.join(timeout=1)
         logger.info("性能监控已停止")
     
-    def _monitor_loop(self):
+    def _monitor_loop_Real_Data_Performance_Test(self):
         """监控循环"""
         while self.monitoring:
             try:
@@ -106,7 +108,7 @@ class PerformanceMonitor:
             
             time.sleep(1)  # 每秒采集一次
     
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary_Test(self) -> Dict[str, Any]:
         """获取性能监控摘要"""
         if not self.metrics['cpu_usage']:
             return {}
@@ -130,15 +132,15 @@ class PerformanceMonitor:
         }
 
 
-class RealDataPerformanceTest:
+class Real_data_performance_test:
     """真实数据环境性能测试器"""
     
     def __init__(self):
         """初始化测试框架"""
         self.data_manager = get_unified_data_manager()
-        self.strategy_executor = StrategyExecutor(max_workers=8, cache_enabled=True)
-        self.strategy_manager = StrategyManager()
-        self.performance_monitor = PerformanceMonitor()
+        self.strategy_executor = Strategy_executor(max_workers=8, cache_enabled=True)
+        self.strategy_manager = Strategy_manager()
+        self.performance_monitor = Performance_monitor_Test()
         
         # 测试统计
         self.test_stats = {
@@ -169,7 +171,7 @@ class RealDataPerformanceTest:
             query_start = time.time()
             
             # 获取股票信息
-            stock_info = self.data_manager.get_stock_info(
+            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
                 level='DAILY',
                 start_date=start_date,
                 end_date=end_date,
@@ -218,11 +220,11 @@ class RealDataPerformanceTest:
             
             # 直接查询最近的股票代码
             import clickhouse_connect
-            client = clickhouse_connect.get_client(host='localhost', port=8123, database='stock')
+            client = clickhouse_connect.get_client(host=os.getenv('DB_HOST', 'localhost'), port=int(os.getenv('DB_PORT', '8123')), database=os.getenv('DB_DATABASE', 'stock'))
             
             result = client.query("""
                 SELECT DISTINCT code 
-                FROM stock_info 
+                FROM stock_info WHERE 1=1
                 WHERE date >= '2024-01-01' 
                 LIMIT 500
             """)
@@ -474,8 +476,8 @@ class RealDataPerformanceTest:
         }
 
         # 启动性能监控
-        monitor = PerformanceMonitor()
-        monitor.start_monitoring()
+        monitor = Performance_monitor_Test()
+        monitor.start_monitoring_Test()
 
         start_time = time.time()
 
@@ -491,7 +493,7 @@ class RealDataPerformanceTest:
 
             # 停止性能监控
             monitor.stop_monitoring()
-            performance_summary = monitor.get_summary()
+            performance_summary = monitor.get_summary_Test()
 
             # 分析结果
             if results is not None and not results.empty:
@@ -655,8 +657,8 @@ class RealDataPerformanceTest:
         logger.info("开始并发执行性能测试")
 
         # 启动系统级性能监控
-        system_monitor = PerformanceMonitor()
-        system_monitor.start_monitoring()
+        system_monitor = Performance_monitor_Test()
+        system_monitor.start_monitoring_Test()
 
         start_time = time.time()
 
@@ -665,7 +667,7 @@ class RealDataPerformanceTest:
             import concurrent.futures
 
             results = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with concurrent.futures.Thread_pool_executor(max_workers=5) as executor:
                 # 提交所有策略任务
                 future_to_strategy = {
                     executor.submit(self._execute_strategy_with_real_data, strategy, test_data): strategy['strategy']['id']
@@ -693,7 +695,7 @@ class RealDataPerformanceTest:
 
             # 停止监控
             system_monitor.stop_monitoring()
-            performance_summary = system_monitor.get_summary()
+            performance_summary = system_monitor.get_summary_Test()
 
             # 分析并发性能
             concurrent_analysis = {
@@ -1101,7 +1103,7 @@ class RealDataPerformanceTest:
             logger.error(f"生成Markdown性能报告失败: {e}")
 
 
-def main():
+def main_realdataperformancetest():
     """主函数"""
     print("=" * 80)
     print("选股系统真实数据环境全面性能测试")
@@ -1112,7 +1114,7 @@ def main():
 
     try:
         # 创建性能测试实例
-        performance_test = RealDataPerformanceTest()
+        performance_test = Real_data_performance_test()
 
         # 运行全面性能测试
         report = performance_test.run_comprehensive_performance_test()
@@ -1183,5 +1185,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_realdataperformancetest()
     sys.exit(exit_code)

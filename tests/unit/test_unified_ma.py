@@ -1,37 +1,37 @@
 """
-UnifiedMA指标单元测试
+Unified_mA指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_unified_mA(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """UnifiedMA指标测试类"""
     
-    def setUp(self):
+    def set_up_Ma_Test_Unified_Ma(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Ma_Test_Unified_Ma(self)
         
         self.indicator = UnifiedMA(periods=[5, 10, 20], ma_type='simple')
         self.expected_columns = ['MA5', 'MA10', 'MA20']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Ma(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Ma(self)
     
     def test_unified_ma_initialization(self):
         """测试UnifiedMA初始化"""
         # 测试默认初始化
-        default_indicator = UnifiedMA()
+        default_indicator = Unified_mA()
         self.assertEqual(default_indicator._parameters['ma_type'], 'simple')
         self.assertEqual(default_indicator._parameters['periods'], [5, 10, 20, 30, 60])
         
@@ -63,8 +63,8 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         ma_types = ['simple', 'ema', 'wma', 'ama', 'hma']
         
         for ma_type in ma_types:
-            with self.subTest(ma_type=ma_type):
-                indicator = UnifiedMA(periods=[10, 20], ma_type=ma_type)
+            with self.sub_test(ma_type=ma_type):
+                indicator = Unified_mA(periods=[10, 20], ma_type=ma_type)
                 result = indicator.calculate(self.data)
                 
                 # 验证MA列存在
@@ -76,10 +76,10 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
                 ma20_values = result['MA20'].dropna()
                 
                 if len(ma10_values) > 0:
-                    self.assertTrue(all(np.isfinite(v) for v in ma10_values), 
+                    self.assert_true(all(np.isfinite(v) for v in ma10_values), 
                                    f"{ma_type} MA10值应该是有限数值")
                 if len(ma20_values) > 0:
-                    self.assertTrue(all(np.isfinite(v) for v in ma20_values), 
+                    self.assert_true(all(np.isfinite(v) for v in ma20_values), 
                                    f"{ma_type} MA20值应该是有限数值")
     
     def test_unified_ma_score_range(self):
@@ -98,9 +98,9 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_unified_ma_parameter_update(self):
         """测试UnifiedMA参数更新"""
@@ -121,19 +121,19 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_unified_ma_patterns(self):
         """测试UnifiedMA形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -151,11 +151,11 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_unified_ma_trend_detection(self):
         """测试UnifiedMA趋势检测"""
@@ -166,7 +166,7 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         trend = self.indicator.get_ma_trend(period=10)
         
         # 验证趋势检测结果
-        self.assertIsInstance(trend, pd.Series)
+        self.assert_is_instance(trend, pd.Series)
         
         if not trend.empty:
             # 趋势值应该在-1, 0, 1之间
@@ -183,7 +183,7 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         consolidation = self.indicator.is_consolidation(period=10, threshold=0.01)
         
         # 验证盘整检测结果
-        self.assertIsInstance(consolidation, pd.Series)
+        self.assert_is_instance(consolidation, pd.Series)
         
         if not consolidation.empty:
             # 盘整值应该是布尔值
@@ -285,7 +285,7 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         if len(ma20_values) > 0:
             self.assertTrue(all(np.isfinite(v) for v in ma20_values), "单周期MA值应该是有限数值")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Ma(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -296,11 +296,11 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Ma(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -311,7 +311,7 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_unified_ma_register_patterns(self):
         """测试UnifiedMA形态注册"""
@@ -328,9 +328,9 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # UnifiedMA应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
     def test_unified_ma_validation(self):
         """测试UnifiedMA数据验证"""
@@ -339,7 +339,7 @@ class TestUnifiedMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
         # BaseIndicator会处理缺失列并返回空DataFrame
         result = self.indicator.calculate(invalid_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
     
     def test_unified_ma_indicator_type(self):
         """测试UnifiedMA指标类型"""

@@ -1,5 +1,5 @@
 """
-增强型资金流向指标(EnhancedMFI)模块
+增强型资金流向指标(Enhanced_mFI)模块
 
 实现增强型MFI指标计算，提供自适应阈值、异常成交量滤波、价格结构协同分析和市场环境适应功能
 """
@@ -11,12 +11,12 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.mfi import MFI
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class EnhancedMFI(MFI):
+class EnhancedMfi(MFI):
     """
     增强型资金流向指标(Enhanced Money Flow Index)
     
@@ -57,7 +57,7 @@ class EnhancedMFI(MFI):
         # 存储价格结构关键点
         self._price_key_levels = {}
     
-    def set_market_environment(self, environment: str) -> None:
+    def set_market_environment_Mfi(self, environment: str) -> None:
         """
         设置市场环境
         
@@ -70,7 +70,7 @@ class EnhancedMFI(MFI):
         
         self.market_environment = environment
     
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_enhancedmfi(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         实现BaseIndicator的抽象方法
         
@@ -105,7 +105,7 @@ class EnhancedMFI(MFI):
             processed_data["volume"] = self._smooth_abnormal_volume(data["volume"])
         
         # 使用父类MFI的_calculate方法计算基础MFI
-        result = super()._calculate(processed_data, **kwargs)
+        result = super()._calculate_enhancedmfi(processed_data, **kwargs)
 
         # 检查父类计算结果并标准化列名
         if result is None:
@@ -183,7 +183,7 @@ class EnhancedMFI(MFI):
         根据市场波动率动态调整MFI超买超卖阈值
         
         Args:
-            data: 包含价格数据的DataFrame
+            data: 包含价格数据的Data_frame
         """
         # 计算价格波动率
         returns = data["close"].pct_change()
@@ -267,7 +267,7 @@ class EnhancedMFI(MFI):
         分析价格结构关键点
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
         """
         # 查找最近的支撑位和阻力位
         close = data["close"]
@@ -325,7 +325,7 @@ class EnhancedMFI(MFI):
         分析MFI在价格关键结构点的表现
         
         Args:
-            data: 包含OHLCV和MFI数据的DataFrame
+            data: 包含OHLCV和MFI数据的Data_frame
             
         Returns:
             pd.DataFrame: 价格结构协同分析结果
@@ -365,7 +365,7 @@ class EnhancedMFI(MFI):
         
         return result
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Mfi_Enhanced_Mfi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算增强型MFI原始评分
         
@@ -472,7 +472,7 @@ class EnhancedMFI(MFI):
         
         return adjusted_score
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Mfi(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别MFI技术形态
         
@@ -596,7 +596,7 @@ class EnhancedMFI(MFI):
         
         return patterns
     
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Mfi(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成增强型MFI指标标准化交易信号
         
@@ -606,7 +606,7 @@ class EnhancedMFI(MFI):
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 信号结果DataFrame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame，包含标准化信号
         """
         # 确保已计算增强型MFI指标
         if not self.has_result():
@@ -629,11 +629,11 @@ class EnhancedMFI(MFI):
         signals['volume_confirmation'] = False
         
         # 计算评分
-        score = self.calculate_raw_score(data, **kwargs)
+        score = self.calculate_raw_score_Mfi_Enhanced_Mfi(data, **kwargs)
         signals['score'] = score
         
         # 检测形态
-        patterns = self.identify_patterns(data, **kwargs)
+        patterns = self.identify_patterns_Mfi(data, **kwargs)
         
         # 获取MFI数据
         mfi = self._result['mfi']
@@ -891,7 +891,7 @@ class EnhancedMFI(MFI):
 
         return patterns
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Mfi_Enhanced_Mfi(self, **kwargs):
         """
         设置指标参数
 
@@ -907,13 +907,13 @@ class EnhancedMFI(MFI):
         if 'volume_filter_threshold' in kwargs:
             self.volume_filter_threshold = kwargs['volume_filter_threshold']
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Mfi_Enhanced_Mfi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算EnhancedMFI指标的置信度
+        计算Enhanced_mFI指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -963,16 +963,16 @@ class EnhancedMFI(MFI):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Mfi_Enhanced_Mfi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EnhancedMFI相关形态
+        获取Enhanced_mFI相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if not self.has_result():
@@ -1012,9 +1012,9 @@ class EnhancedMFI(MFI):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Mfi(self):
         """
-        注册EnhancedMFI指标的形态到全局形态注册表
+        注册Enhanced_mFI指标的形态到全局形态注册表
         """
         # 注册MFI超买超卖形态
         self.register_pattern_to_registry(
@@ -1100,9 +1100,9 @@ class EnhancedMFI(MFI):
             polarity="NEGATIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Mfi(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成EnhancedMFI交易信号
+        生成Enhanced_mFI交易信号
 
         Args:
             data: 输入数据
@@ -1165,7 +1165,7 @@ class EnhancedMFI(MFI):
             'signal_strength': signal_strength
         }
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Mfi(self, pattern_id: str) -> dict:
         """
         获取形态信息
         

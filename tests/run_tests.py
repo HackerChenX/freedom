@@ -10,9 +10,9 @@
 import unittest
 import os
 import sys
-from HTMLTestRunner import HTMLTestRunner
+from HTMLTest_runner import HTMLTest_runner
 
-def run_all_tests():
+def run_all_tests_Tests():
     # ...
     test_dir = os.path.dirname(os.path.abspath(__file__))
     discover = unittest.defaultTestLoader.discover(test_dir, pattern='test_*.py')
@@ -22,7 +22,7 @@ def run_all_tests():
     report_path = os.path.join(report_dir, 'test_report.html')
     
     with open(report_path, 'wb') as f:
-        runner = HTMLTestRunner(stream=f,
+        runner = HTMLTest_runner(stream=f,
                                 title='Test Report',
                                 description='This is a test report.')
         runner.run(discover)
@@ -43,13 +43,13 @@ def run_test(test_path):
         test_path = test_path.replace('\\', '.')
     
     # 加载测试套件
-    suite = unittest.defaultTestLoader.loadTestsFromName(test_path)
+    suite = unittest.default_test_loader.load_tests_from_name(test_path)
     
     # 运行测试
-    runner = unittest.TextTestRunner(verbosity=2)
+    runner = unittest.Text_test_runner(verbosity=2)
     result = runner.run(suite)
     
-    return result.wasSuccessful()
+    return result.was_successful()
 
 if __name__ == '__main__':
     # 检查命令行参数

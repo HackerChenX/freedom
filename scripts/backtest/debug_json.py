@@ -20,11 +20,11 @@ from utils.logger import get_logger
 # 设置日志输出到控制台
 logger = get_logger("json_debug")
 logger.handlers = []
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
+console = logging.Stream_handler()
+console.set_level(logging.INFO)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
-console.setFormatter(formatter)
-logger.addHandler(console)
+console.set_formatter(formatter)
+logger.add_handler(console)
 
 def check_value(value, path=""):
     """递归检查值是否包含百分号"""
@@ -42,7 +42,7 @@ def check_value(value, path=""):
                 return True
     return False
 
-def create_test_data():
+def create_test_data_Json():
     """创建测试数据，模拟实际情况"""
     # 模拟可能产生百分号的情况
     result = {
@@ -67,7 +67,7 @@ def create_test_data():
 
 def test_standard_json():
     """测试标准JSON序列化"""
-    data = create_test_data()
+    data = create_test_data_Json()
     logger.info("检查原始数据是否包含百分号:")
     check_value(data)
     
@@ -100,7 +100,7 @@ def test_standard_json():
 def test_custom_encoder():
     """测试自定义编码器"""
     class CleanEncoder(json.JSONEncoder):
-        def default(self, obj):
+        def default_Json(self, obj):
             if isinstance(obj, np.integer):
                 return int(obj)
             elif isinstance(obj, np.floating):
@@ -111,16 +111,16 @@ def test_custom_encoder():
                 return bool(obj)
             elif pd.isna(obj) or obj is None or obj == np.nan:
                 return None
-            return super(CleanEncoder, self).default(obj)
+            return super(Clean_encoder, self).default_Json(obj)
         
         def encode(self, obj):
             if isinstance(obj, str):
                 return super(CleanEncoder, self).encode(obj.replace('%', ''))
             elif isinstance(obj, dict):
-                return super(CleanEncoder, self).encode({k: self._clean_value(v) for k, v in obj.items()})
+                return super(Clean_encoder, self).encode({k: self._clean_value(v) for k, v in obj.items()})
             elif isinstance(obj, list):
-                return super(CleanEncoder, self).encode([self._clean_value(v) for v in obj])
-            return super(CleanEncoder, self).encode(obj)
+                return super(Clean_encoder, self).encode([self._clean_value(v) for v in obj])
+            return super(Clean_encoder, self).encode(obj)
         
         def _clean_value(self, value):
             if isinstance(value, str):
@@ -137,9 +137,9 @@ def test_custom_encoder():
                 return None
             return value
     
-    data = create_test_data()
+    data = create_test_data_Json()
     logger.info("\n=== 使用自定义编码器测试 ===")
-    json_str = json.dumps(data, cls=CleanEncoder, ensure_ascii=False, indent=2)
+    json_str = json.dumps(data, cls=Clean_encoder, ensure_ascii=False, indent=2)
     logger.info(f"JSON字符串末尾10个字符: {json_str[-10:]}")
     if "%" in json_str:
         logger.info("JSON字符串中包含百分号")
@@ -165,7 +165,7 @@ def test_custom_encoder():
 
 def test_direct_writing():
     """测试直接写入文件，不使用json.dump"""
-    data = create_test_data()
+    data = create_test_data_Json()
     logger.info("\n=== 使用直接写入文件测试 ===")
     
     # 先转换为JSON字符串
@@ -192,7 +192,7 @@ def test_direct_writing():
 
 def test_post_process():
     """测试后处理：写入后再用系统命令处理"""
-    data = create_test_data()
+    data = create_test_data_Json()
     logger.info("\n=== 使用后处理测试 ===")
     
     # 写入文件测试
@@ -219,7 +219,7 @@ def test_post_process():
 
 def test_final_hack():
     """测试一个严格的解决方案，处理JSON最后一个字符问题"""
-    data = create_test_data()
+    data = create_test_data_Json()
     logger.info("\n=== 使用终极解决方案测试 ===")
     
     # 写入文件测试
@@ -245,7 +245,7 @@ def test_final_hack():
         last_bytes = f.read()
         logger.info(f"文件末尾字符: {last_bytes}")
 
-def main():
+def main_debugjson():
     logger.info("=== JSON序列化问题调试脚本 ===")
     
     test_standard_json()
@@ -257,4 +257,4 @@ def main():
     logger.info("调试完成")
 
 if __name__ == "__main__":
-    main() 
+    main_debugjson() 

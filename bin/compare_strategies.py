@@ -13,7 +13,7 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.path_utils import get_result_dir
-from analysis.strategy_comparison import StrategyComparison
+from analysis.strategy_comparison import Strategy_comparison
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ def validate_date(date_str):
     try:
         datetime.strptime(date_str, "%Y%m%d")
         return date_str
-    except ValueError:
+    except Value_error:
         raise argparse.ArgumentTypeError(f"日期格式错误: {date_str}，应为YYYYMMDD格式")
 
 def validate_strategy_list(strategy_str):
@@ -54,7 +54,7 @@ def validate_weight_list(weight_str):
             raise argparse.ArgumentTypeError("策略权重不能为负")
             
         return weights
-    except ValueError:
+    except Value_error:
         raise argparse.ArgumentTypeError("权重格式错误，应为逗号分隔的数字")
 
 def validate_dimension_list(dimension_str):
@@ -71,14 +71,14 @@ def validate_dimension_list(dimension_str):
     
     invalid_dimensions = [d for d in dimensions if d not in valid_dimensions]
     if invalid_dimensions:
-        raise argparse.ArgumentTypeError(
+        raise argparse.Argument_type_error(
             f"无效的维度: {', '.join(invalid_dimensions)}，" +
             f"可用维度: {', '.join(valid_dimensions)}"
         )
     
     return dimensions
 
-def main():
+def main_32():
     """命令行入口函数"""
     # 解析命令行参数
     parser = argparse.ArgumentParser(description="策略比较工具")
@@ -117,7 +117,7 @@ def main():
         return
     
     # 创建策略比较器
-    strategy_comparison = StrategyComparison()
+    strategy_comparison = Strategy_comparison()
     
     # 处理输出文件参数，默认为结果目录下的文件
     if not hasattr(args, 'output') or not args.output:
@@ -145,7 +145,7 @@ def main():
                         try:
                             datetime.strptime(parts[1], "%Y%m%d")
                             datetime.strptime(parts[2], "%Y%m%d")
-                        except ValueError:
+                        except Value_error:
                             logger.warning(f"时间周期 {period_str} 的日期格式错误，将被跳过")
                             continue
                             
@@ -282,4 +282,4 @@ def main():
         parser.print_help()
 
 if __name__ == "__main__":
-    main() 
+    main_32() 

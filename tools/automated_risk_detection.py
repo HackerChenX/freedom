@@ -20,7 +20,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class IndicatorType(Enum):
+class Indicator_type(Enum):
     """指标类型枚举"""
     COUNT_TYPE = "count_type"          # 计数型指标
     RATIO_TYPE = "ratio_type"          # 比率型指标
@@ -31,7 +31,7 @@ class IndicatorType(Enum):
     UNKNOWN_TYPE = "unknown_type"       # 未知类型
 
 
-class RiskLevel(Enum):
+class Risk_level(Enum):
     """风险等级枚举"""
     HIGH = "high"       # 高风险
     MEDIUM = "medium"   # 中风险
@@ -40,18 +40,18 @@ class RiskLevel(Enum):
 
 
 @dataclass
-class RiskAssessmentResult:
+class Risk_assessment_result:
     """风险评估结果"""
     indicator_name: str
-    indicator_type: IndicatorType
-    risk_level: RiskLevel
+    indicator_type: Indicator_type
+    risk_level: Risk_level
     risk_factors: List[str]
     signal_consistency_score: float
     recommendations: List[str]
     details: Dict[str, Any]
 
 
-class IndicatorRiskAnalyzer:
+class Indicator_risk_analyzer:
     """指标风险分析器"""
 
     def __init__(self):
@@ -107,12 +107,12 @@ class IndicatorRiskAnalyzer:
             }
         }
 
-    def analyze_indicator_risk(self, indicator_class) -> RiskAssessmentResult:
+    def analyze_indicator_risk(self, indicator_class) -> Risk_assessment_result:
         """分析指标风险"""
         logger.info(f"开始分析指标风险: {indicator_class.__name__}")
 
         # 1. 识别指标类型
-        indicator_type = self._identify_indicator_type(indicator_class)
+        indicator_type = self._identify_indicator_type_Automated_Risk_Detection(indicator_class)
 
         # 2. 评估风险等级
         risk_level = self._assess_risk_level(indicator_class, indicator_type)
@@ -129,7 +129,7 @@ class IndicatorRiskAnalyzer:
         # 6. 收集详细信息
         details = self._collect_detailed_info(indicator_class, indicator_type)
 
-        result = RiskAssessmentResult(
+        result = Risk_assessment_result(
             indicator_name=indicator_class.__name__,
             indicator_type=indicator_type,
             risk_level=risk_level,
@@ -143,7 +143,7 @@ class IndicatorRiskAnalyzer:
 
         return result
 
-    def _identify_indicator_type(self, indicator_class) -> IndicatorType:
+    def _identify_indicator_type_Automated_Risk_Detection(self, indicator_class) -> Indicator_type:
         """识别指标类型"""
         # 分析类名
         class_name = indicator_class.__name__.lower()
@@ -158,46 +158,46 @@ class IndicatorRiskAnalyzer:
         for pattern_name, pattern_info in self.risk_patterns.items():
             if self._match_patterns(class_name, source_code, output_columns, pattern_info):
                 if "count" in pattern_name:
-                    return IndicatorType.COUNT_TYPE
+                    return Indicator_type.COUNT_TYPE
                 elif "level" in pattern_name:
-                    return IndicatorType.LEVEL_TYPE
+                    return Indicator_type.LEVEL_TYPE
                 elif "state" in pattern_name:
-                    return IndicatorType.STATE_TYPE
+                    return Indicator_type.STATE_TYPE
                 elif "ratio" in pattern_name:
-                    return IndicatorType.RATIO_TYPE
+                    return Indicator_type.RATIO_TYPE
 
         # 检查是否为复合型指标
         if self._is_composite_indicator(indicator_class, source_code):
-            return IndicatorType.COMPOSITE_TYPE
+            return Indicator_type.COMPOSITE_TYPE
 
         # 默认为连续型
-        return IndicatorType.CONTINUOUS_TYPE
+        return Indicator_type.CONTINUOUS_TYPE
 
-    def _assess_risk_level(self, indicator_class, indicator_type: IndicatorType) -> RiskLevel:
+    def _assess_risk_level(self, indicator_class, indicator_type: Indicator_type) -> Risk_level:
         """评估风险等级"""
         # 高风险类型
-        high_risk_types = [IndicatorType.COUNT_TYPE, IndicatorType.LEVEL_TYPE, IndicatorType.STATE_TYPE]
+        high_risk_types = [Indicator_type.COUNT_TYPE, Indicator_type.LEVEL_TYPE, Indicator_type.STATE_TYPE]
 
         if indicator_type in high_risk_types:
             # 检查是否已经有专用信号生成逻辑
             if self._has_custom_signal_logic(indicator_class):
-                return RiskLevel.LOW
+                return Risk_level.LOW
             else:
-                return RiskLevel.HIGH
+                return Risk_level.HIGH
 
         # 中风险类型
-        elif indicator_type == IndicatorType.RATIO_TYPE:
-            return RiskLevel.MEDIUM
+        elif indicator_type == Indicator_type.RATIO_TYPE:
+            return Risk_level.MEDIUM
 
         # 低风险类型
-        elif indicator_type in [IndicatorType.CONTINUOUS_TYPE, IndicatorType.COMPOSITE_TYPE]:
-            return RiskLevel.LOW
+        elif indicator_type in [Indicator_type.CONTINUOUS_TYPE, Indicator_type.COMPOSITE_TYPE]:
+            return Risk_level.LOW
 
         # 未知类型
         else:
-            return RiskLevel.MEDIUM
+            return Risk_level.MEDIUM
 
-    def _identify_risk_factors(self, indicator_class, indicator_type: IndicatorType) -> List[str]:
+    def _identify_risk_factors(self, indicator_class, indicator_type: Indicator_type) -> List[str]:
         """识别风险因素"""
         risk_factors = []
 
@@ -220,7 +220,7 @@ class IndicatorRiskAnalyzer:
 
         return risk_factors
 
-    def _assess_signal_consistency(self, indicator_class, indicator_type: IndicatorType) -> float:
+    def _assess_signal_consistency(self, indicator_class, indicator_type: Indicator_type) -> float:
         """评估信号一致性"""
         # 基础分数
         base_score = 50.0
@@ -230,7 +230,7 @@ class IndicatorRiskAnalyzer:
             base_score += 40.0
 
         # 根据指标类型调整
-        if indicator_type in [IndicatorType.COUNT_TYPE, IndicatorType.LEVEL_TYPE, IndicatorType.STATE_TYPE]:
+        if indicator_type in [Indicator_type.COUNT_TYPE, Indicator_type.LEVEL_TYPE, Indicator_type.STATE_TYPE]:
             if self._has_custom_signal_logic(indicator_class):
                 base_score += 10.0  # 高风险类型有专用逻辑，额外加分
             else:
@@ -246,12 +246,12 @@ class IndicatorRiskAnalyzer:
     def _generate_recommendations(
             self,
             indicator_class,
-            indicator_type: IndicatorType,
+            indicator_type: Indicator_type,
             risk_factors: List[str]) -> List[str]:
         """生成建议"""
         recommendations = []
 
-        if indicator_type in [IndicatorType.COUNT_TYPE, IndicatorType.LEVEL_TYPE, IndicatorType.STATE_TYPE]:
+        if indicator_type in [Indicator_type.COUNT_TYPE, Indicator_type.LEVEL_TYPE, Indicator_type.STATE_TYPE]:
             if not self._has_custom_signal_logic(indicator_class):
                 recommendations.append("建议添加专用信号生成逻辑，重写buy_signal/sell_signal/hold_signal")
                 recommendations.append(f"参考{indicator_type.value}的语义特征设计信号逻辑")
@@ -267,7 +267,7 @@ class IndicatorRiskAnalyzer:
 
         return recommendations
 
-    def _collect_detailed_info(self, indicator_class, indicator_type: IndicatorType) -> Dict[str, Any]:
+    def _collect_detailed_info(self, indicator_class, indicator_type: Indicator_type) -> Dict[str, Any]:
         """收集详细信息"""
         source_code = self._get_source_code(indicator_class)
 
@@ -399,14 +399,14 @@ class IndicatorRiskAnalyzer:
         return False
 
 
-class AutomatedRiskDetector:
+class Automated_risk_detector:
     """自动化风险检测器"""
 
     def __init__(self):
-        self.analyzer = IndicatorRiskAnalyzer()
-        self.detection_results: Dict[str, RiskAssessmentResult] = {}
+        self.analyzer = Indicator_risk_analyzer()
+        self.detection_results: Dict[str, Risk_assessment_result] = {}
 
-    def scan_all_indicators(self) -> Dict[str, RiskAssessmentResult]:
+    def scan_all_indicators(self) -> Dict[str, Risk_assessment_result]:
         """扫描所有指标"""
         logger.info("开始扫描所有指标的风险")
 
@@ -443,9 +443,9 @@ class AutomatedRiskDetector:
 
         # 统计信息
         total_indicators = len(self.detection_results)
-        high_risk_count = sum(1 for r in self.detection_results.values() if r.risk_level == RiskLevel.HIGH)
-        medium_risk_count = sum(1 for r in self.detection_results.values() if r.risk_level == RiskLevel.MEDIUM)
-        low_risk_count = sum(1 for r in self.detection_results.values() if r.risk_level == RiskLevel.LOW)
+        high_risk_count = sum(1 for r in self.detection_results.values() if r.risk_level == Risk_level.HIGH)
+        medium_risk_count = sum(1 for r in self.detection_results.values() if r.risk_level == Risk_level.MEDIUM)
+        low_risk_count = sum(1 for r in self.detection_results.values() if r.risk_level == Risk_level.LOW)
 
         report.append("## 总体统计\n")
         report.append(f"- 总指标数: {total_indicators}")
@@ -458,7 +458,7 @@ class AutomatedRiskDetector:
         if high_risk_count > 0:
             report.append("## 高风险指标详情\n")
             for name, result in self.detection_results.items():
-                if result.risk_level == RiskLevel.HIGH:
+                if result.risk_level == Risk_level.HIGH:
                     report.append(f"### {name}")
                     report.append(f"- 指标类型: {result.indicator_type.value}")
                     report.append(f"- 信号一致性评分: {result.signal_consistency_score:.1f}")
@@ -480,7 +480,7 @@ class AutomatedRiskDetector:
     def get_high_risk_indicators(self) -> List[str]:
         """获取高风险指标列表"""
         return [name for name, result in self.detection_results.items()
-                if result.risk_level == RiskLevel.HIGH]
+                if result.risk_level == Risk_level.HIGH]
 
     def get_recommendations_summary(self) -> Dict[str, List[str]]:
         """获取建议摘要"""
@@ -498,7 +498,7 @@ if __name__ == "__main__":
     init_logging(level="INFO")
     
     # 创建检测器并运行扫描
-    detector = AutomatedRiskDetector()
+    detector = Automated_risk_detector()
     results = detector.scan_all_indicators()
     
     # 生成风险报告

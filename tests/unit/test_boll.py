@@ -3,29 +3,29 @@ import pandas as pd
 import numpy as np
 
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
-class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Test_bOLL(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """BOLL指标单元测试类"""
 
-    def setUp(self):
+    def set_up_Boll(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp(self)  # 显式调用Mixin的setUp
+        Log_capture_mixin.set_up_Boll(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('BOLL', period=20, std_dev=2)
         self.expected_columns = ['middle', 'upper', 'lower']  # 修正期望的列名
         # 使用一个包含多种走势的数据进行通用测试
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 50},
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 50},
         ])
 
-    def tearDown(self):
+    def tear_down_Boll(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)  # 显式调用Mixin的tearDown
+        Log_capture_mixin.tear_down_Boll(self)  # 显式调用Mixin的tear_down
 
-    def test_basic_calculation(self):
+    def test_basic_calculation_Boll(self):
         """测试BOLL基础计算功能"""
         result = self.indicator.calculate(self.data)
 
@@ -53,7 +53,7 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_boll_squeeze(self):
         """测试布林带缩口（squeeze）"""
         # 在窄幅震荡行情中，布林带宽度应该会变小
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'sideways', 'start_price': 100, 'volatility': 0.01, 'periods': 100}
         ])
         result = self.indicator.calculate(data)
@@ -73,7 +73,7 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_boll_breakout(self):
         """测试布林带开口（breakout）"""
         # V形反转的剧烈波动应该导致布林带开口
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 50}
         ])
         result = self.indicator.calculate(data)
@@ -93,7 +93,7 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
     def test_price_within_bands(self):
         """测试价格大部分时间在布林带轨道内"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
              {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 100}
         ])
         result = self.indicator.calculate(data)
@@ -107,10 +107,10 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             # 根据统计学，大部分数据点应落在2个标准差内
             self.assertGreater(within_bands_ratio, 0.8, "大部分价格点应落在布林带轨道内")
 
-    def test_signal_generation(self):
+    def test_signal_generation_Boll(self):
         """测试BOLL信号生成"""
         # 生成包含多种走势的数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 30},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 15},   # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 20},   # 反弹
@@ -125,7 +125,7 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
     def test_pattern_detection(self):
         """测试BOLL形态检测"""
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 30},  # 横盘
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 85, 'periods': 30},  # V形反转
         ])
@@ -135,10 +135,10 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 验证形态检测结果
         self.assertIsInstance(patterns, list, "形态检测结果应为列表")
 
-    def test_score_calculation(self):
+    def test_score_calculation_Boll(self):
         """测试BOLL评分计算功能"""
         # 生成测试数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 100, 'periods': 30},  # 横盘
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 15},   # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 20},   # 反弹
@@ -149,7 +149,7 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(raw_score, pd.Series, "原始评分应为Series")
         self.assertTrue(all(0 <= s <= 100 for s in raw_score if not pd.isna(s)), "原始评分应在0-100范围内")
 
-    def test_parameter_setting(self):
+    def test_parameter_setting_Boll(self):
         """测试BOLL参数设置"""
         # 测试参数设置方法
         new_period = 30
@@ -165,10 +165,10 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(self.data)
         self.assertIn('middle', result.columns, "结果应包含middle列")
 
-    def test_edge_cases(self):
+    def test_edge_cases_Boll(self):
         """测试边界条件"""
         # 测试数据长度不足的情况
-        short_data = TestDataGenerator.generate_price_sequence([
+        short_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 10}
         ])
 
@@ -176,7 +176,7 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertIsInstance(result, pd.DataFrame, "短数据计算结果应为DataFrame")
 
         # 测试价格无变化的情况
-        flat_data = TestDataGenerator.generate_price_sequence([
+        flat_data = Test_data_generator.generate_price_sequence([
             {'type': 'flat', 'start_price': 100, 'periods': 30}
         ])
 
@@ -194,10 +194,10 @@ class TestBOLL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             self.assertTrue(all(abs(valid_data['upper'] - valid_data['middle']) < 0.01), "价格无变化时上轨应等于中轨")
             self.assertTrue(all(abs(valid_data['lower'] - valid_data['middle']) < 0.01), "价格无变化时下轨应等于中轨")
 
-    def test_robustness(self):
+    def test_robustness_Boll(self):
         """测试BOLL指标的鲁棒性"""
         # 测试包含异常值的数据
-        data = TestDataGenerator.generate_price_sequence([
+        data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 30}
         ])
 

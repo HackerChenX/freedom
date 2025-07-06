@@ -10,10 +10,10 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
 import logging
 
-from utils.logger import get_logger
-from utils.cache import MemoryCache
+from utils.logger import getLogger
+from utils.cache import Memory_cache
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class UnifiedIndicatorEngine:
@@ -23,7 +23,7 @@ class UnifiedIndicatorEngine:
     提供标准化的技术指标计算接口，支持缓存机制和性能优化
     """
     
-    def __init__(self, enable_cache: bool = True):
+    def __init___115(self, enable_cache: bool = True):
         """
         初始化统一指标计算引擎
         
@@ -31,7 +31,7 @@ class UnifiedIndicatorEngine:
             enable_cache: 是否启用缓存机制
         """
         self.enable_cache = enable_cache
-        self.cache_manager = MemoryCache.get_instance() if enable_cache else None
+        self.cache_manager = Memory_cache.get_instance() if enable_cache else None
         self.performance_stats = {
             'total_calculations': 0,
             'cache_hits': 0,
@@ -58,15 +58,15 @@ class UnifiedIndicatorEngine:
             
         return True
     
-    def calculate_ma(self, data: Union[pd.DataFrame, np.ndarray], period: int, 
+    def calculate_ma_Engine(self, data: Union[pd.DataFrame, np.ndarray], period: int, 
                     field: str = 'close') -> Union[pd.Series, np.ndarray]:
         """
         计算移动平均线
         
         Args:
-            data: 股票数据DataFrame或numpy数组
+            data: 股票数据Data_frame或numpy数组
             period: 计算周期
-            field: 计算字段，默认为收盘价（仅DataFrame时使用）
+            field: 计算字段，默认为收盘价（仅Data_frame时使用）
             
         Returns:
             移动平均线序列
@@ -110,9 +110,9 @@ class UnifiedIndicatorEngine:
         计算指数移动平均线
         
         Args:
-            data: 股票数据DataFrame或numpy数组
+            data: 股票数据Data_frame或numpy数组
             period: 计算周期
-            field: 计算字段，默认为收盘价（仅DataFrame时使用）
+            field: 计算字段，默认为收盘价（仅Data_frame时使用）
             
         Returns:
             指数移动平均线序列
@@ -182,7 +182,7 @@ class UnifiedIndicatorEngine:
         计算MACD指标
         
         Args:
-            data: 股票数据DataFrame或numpy数组
+            data: 股票数据Data_frame或numpy数组
             fast: 快线周期，默认12
             slow: 慢线周期，默认26
             signal: 信号线周期，默认9
@@ -247,7 +247,7 @@ class UnifiedIndicatorEngine:
         计算KDJ指标
         
         Args:
-            high: 最高价数据（DataFrame或numpy数组）
+            high: 最高价数据（Data_frame或numpy数组）
             low: 最低价数据（仅numpy数组时需要）
             close: 收盘价数据（仅numpy数组时需要）
             k_period: RSV周期，默认9
@@ -291,7 +291,7 @@ class UnifiedIndicatorEngine:
                 return {'k': k, 'd': d, 'j': j}
             
             # 处理DataFrame输入（原有逻辑）
-            data = high  # 在DataFrame模式下，第一个参数是完整的data
+            data = high  # 在Data_frame模式下，第一个参数是完整的data
             required_columns = ['high', 'low', 'close']
             for col in required_columns:
                 if col not in data.columns:
@@ -339,12 +339,12 @@ class UnifiedIndicatorEngine:
             
         return result
     
-    def calculate_rsi(self, data: Union[pd.DataFrame, np.ndarray], period: int = 14) -> Union[pd.Series, np.ndarray]:
+    def calculate_rsi_Engine(self, data: Union[pd.DataFrame, np.ndarray], period: int = 14) -> Union[pd.Series, np.ndarray]:
         """
         计算RSI指标
         
         Args:
-            data: 股票数据DataFrame或numpy数组
+            data: 股票数据Data_frame或numpy数组
             period: 计算周期，默认14
             
         Returns:
@@ -418,7 +418,7 @@ class UnifiedIndicatorEngine:
         计算布林带指标
         
         Args:
-            data: 股票数据DataFrame
+            data: 股票数据Data_frame
             period: 计算周期，默认20
             std_dev: 标准差倍数，默认2.0
             
@@ -432,7 +432,7 @@ class UnifiedIndicatorEngine:
             close = data['close']
             
             # 计算中轨（移动平均线）
-            middle = self.calculate_ma(data, period)
+            middle = self.calculate_ma_Engine(data, period)
             
             # 计算标准差
             std = close.rolling(window=period, min_periods=1).std()
@@ -452,7 +452,7 @@ class UnifiedIndicatorEngine:
         计算WVAD指标（威廉变异离散量）
         
         Args:
-            data: 股票数据DataFrame，需包含high、low、close列
+            data: 股票数据Data_frame，需包含high、low、close列
             period: 计算周期，默认55
             
         Returns:
@@ -486,7 +486,7 @@ class UnifiedIndicatorEngine:
             wvad = 3 * s1 - 2 * s2
             
             # 计算WVAD的移动平均
-            wv_ma = self.calculate_ma(pd.DataFrame({'close': wvad}), 3)
+            wv_ma = self.calculate_ma_Engine(pd.DataFrame({'close': wvad}), 3)
             
             # 计算变化率
             wv_chg = wv_ma.pct_change() * 100
@@ -503,7 +503,7 @@ class UnifiedIndicatorEngine:
         计算所有或指定的技术指标
         
         Args:
-            data: 股票数据DataFrame
+            data: 股票数据Data_frame
             indicators: 指定要计算的指标列表，None表示计算所有指标
             
         Returns:
@@ -525,7 +525,7 @@ class UnifiedIndicatorEngine:
                 if indicator_upper == 'MA':
                     # 计算多个周期的MA
                     for period in [5, 10, 20, 30, 60]:
-                        results[f'MA{period}'] = self.calculate_ma(data, period)
+                        results[f'MA{period}'] = self.calculate_ma_Engine(data, period)
                 
                 elif indicator_upper == 'EMA':
                     # 计算多个周期的EMA
@@ -541,7 +541,7 @@ class UnifiedIndicatorEngine:
                     results.update(kdj_result)
                 
                 elif indicator_upper == 'RSI':
-                    results['RSI'] = self.calculate_rsi(data)
+                    results['RSI'] = self.calculate_rsi_Engine(data)
                 
                 elif indicator_upper == 'BOLL':
                     boll_result = self.calculate_bollinger_bands(data)
@@ -569,7 +569,7 @@ class UnifiedIndicatorEngine:
         获取指定日期索引的指标值
         
         Args:
-            data: 股票数据DataFrame
+            data: 股票数据Data_frame
             indicator: 指标名称
             date_idx: 日期索引
             **kwargs: 指标参数
@@ -582,7 +582,7 @@ class UnifiedIndicatorEngine:
             
             if indicator_upper == 'MA':
                 period = kwargs.get('period', 5)
-                ma_values = self.calculate_ma(data, period)
+                ma_values = self.calculate_ma_Engine(data, period)
                 return ma_values.iloc[date_idx] if date_idx < len(ma_values) else np.nan
             
             elif indicator_upper == 'EMA':
@@ -607,7 +607,7 @@ class UnifiedIndicatorEngine:
                 }
             
             elif indicator_upper == 'RSI':
-                rsi_values = self.calculate_rsi(data, **kwargs)
+                rsi_values = self.calculate_rsi_Engine(data, **kwargs)
                 return rsi_values.iloc[date_idx] if date_idx < len(rsi_values) else np.nan
             
             elif indicator_upper == 'BOLL':
@@ -634,7 +634,7 @@ class UnifiedIndicatorEngine:
             logger.error(f"获取指标值失败: {e}")
             return np.nan
     
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats_Engine(self) -> Dict[str, Any]:
         """获取性能统计信息"""
         stats = self.performance_stats.copy()
         if stats['total_calculations'] > 0:
@@ -649,7 +649,7 @@ class UnifiedIndicatorEngine:
         
         return stats
     
-    def clear_cache(self):
+    def clear_cache_Engine(self):
         """清除缓存"""
         if self.cache_manager:
             self.cache_manager.clear()

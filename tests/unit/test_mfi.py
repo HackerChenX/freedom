@@ -16,10 +16,10 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class TestMFI(unittest.TestCase):
+class Testmfi_mfi(unittest.Test_case):
     """MFI指标测试类"""
     
-    def setUp(self):
+    def set_up_Mfi(self):
         """设置测试环境"""
         self.mfi = MFI(period=14)
         
@@ -81,14 +81,14 @@ class TestMFI(unittest.TestCase):
         result = self.mfi.calculate(self.test_data)
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('mfi', result.columns)
-        self.assertEqual(len(result), len(self.test_data))
+        self.assert_equal(len(result), len(self.test_data))
         
         # 验证MFI值在合理范围内（0-100）
         mfi_values = result['mfi'].dropna()
-        self.assertTrue((mfi_values >= 0).all())
-        self.assertTrue((mfi_values <= 100).all())
+        self.assert_true((mfi_values >= 0).all())
+        self.assert_true((mfi_values <= 100).all())
         
         # 验证前period-1个值为NaN（因为需要period个数据点才能计算）
         self.assertTrue(pd.isna(result['mfi'].iloc[:self.mfi.period-1]).all())
@@ -107,8 +107,8 @@ class TestMFI(unittest.TestCase):
         patterns = self.mfi.get_patterns(self.test_data)
         
         # 验证形态结果
-        self.assertIsInstance(patterns, pd.DataFrame)
-        self.assertEqual(len(patterns), len(self.test_data))
+        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assert_equal(len(patterns), len(self.test_data))
         
         # 验证关键形态列存在
         expected_patterns = [
@@ -120,11 +120,11 @@ class TestMFI(unittest.TestCase):
         ]
         
         for pattern in expected_patterns:
-            self.assertIn(pattern, patterns.columns)
+            self.assert_in(pattern, patterns.columns)
         
         # 验证形态值为布尔类型
         for pattern in expected_patterns:
-            self.assertTrue(patterns[pattern].dtype == bool)
+            self.assert_true(patterns[pattern].dtype == bool)
         
         logger.info(f"形态识别成功，识别出 {len(patterns.columns)} 种形态")
     
@@ -136,8 +136,8 @@ class TestMFI(unittest.TestCase):
         score = self.mfi.calculate_raw_score(self.test_data)
 
         # 验证评分结果
-        self.assertIsInstance(score, pd.Series)
-        self.assertEqual(len(score), len(self.test_data))
+        self.assert_is_instance(score, pd.Series)
+        self.assert_equal(len(score), len(self.test_data))
 
         # 调试：打印评分统计信息
         logger.info(f"评分统计: min={score.min():.2f}, max={score.max():.2f}, mean={score.mean():.2f}")
@@ -171,9 +171,9 @@ class TestMFI(unittest.TestCase):
         confidence = self.mfi.calculate_confidence(score, patterns, {})
         
         # 验证置信度
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
         
         logger.info(f"置信度计算成功: {confidence:.3f}")
     
@@ -185,8 +185,8 @@ class TestMFI(unittest.TestCase):
         signals = self.mfi.generate_signals(self.test_data)
         
         # 验证信号结果
-        self.assertIsInstance(signals, pd.DataFrame)
-        self.assertEqual(len(signals), len(self.test_data))
+        self.assert_is_instance(signals, pd.DataFrame)
+        self.assert_equal(len(signals), len(self.test_data))
         
         # 验证关键信号列存在
         expected_columns = [
@@ -195,7 +195,7 @@ class TestMFI(unittest.TestCase):
         ]
         
         for col in expected_columns:
-            self.assertIn(col, signals.columns)
+            self.assert_in(col, signals.columns)
         
         # 验证信号类型
         self.assertTrue(signals['buy_signal'].dtype == bool)
@@ -227,16 +227,16 @@ class TestMFI(unittest.TestCase):
         # 测试空数据
         empty_data = pd.DataFrame(columns=['open', 'high', 'low', 'close', 'volume'])
         result = self.mfi.calculate(empty_data)
-        self.assertTrue(result.empty)
+        self.assert_true(result.empty)
         
         # 测试数据不足的情况
         small_data = self.test_data.head(5)  # 少于period的数据
         result = self.mfi.calculate(small_data)
-        self.assertEqual(len(result), len(small_data))
+        self.assert_equal(len(result), len(small_data))
         
         # 测试所有MFI值为NaN的情况
         nan_count = result['mfi'].isna().sum()
-        self.assertGreater(nan_count, 0)  # 应该有一些NaN值
+        self.assert_greater(nan_count, 0)  # 应该有一些Na_n值
         
         logger.info("边界情况测试完成")
 

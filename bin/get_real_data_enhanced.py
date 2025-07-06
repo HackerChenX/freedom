@@ -16,7 +16,7 @@ from typing import Dict, List, Any
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,8 +25,8 @@ logger = get_logger(__name__)
 class EnhancedDataCollector:
     """增强版数据收集器"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___7(self):
+        self.concept_extractor = Concept_stock_extractor()
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -157,7 +157,7 @@ class EnhancedDataCollector:
         return analysis
 
 
-def main():
+def main_12():
     """主函数"""
     parser = argparse.ArgumentParser(description='增强版真实股市数据获取工具')
     parser.add_argument('--output', default='real_stock_data_enhanced.json',
@@ -172,7 +172,7 @@ def main():
     print("=" * 50)
 
     # 创建数据收集器
-    collector = EnhancedDataCollector()
+    collector = Enhanced_data_collector()
 
     # 如果指定了股票代码，使用指定的代码
     if args.stocks:
@@ -267,4 +267,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_12()

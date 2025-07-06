@@ -4,7 +4,7 @@
 
 实现完整的指标验证闭环：
 1. 逐个指标生成选股策略
-2. 使用ClickHouse真实数据进行选股
+2. 使用Click_house真实数据进行选股
 3. 对选出的股票进行买点分析
 4. 验证指标的有效性，形成闭环
 
@@ -28,7 +28,7 @@ sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import StrategyExecutor
+from strategy.strategy_executor import Strategy_executor
 from utils.logger import get_logger
 from utils.date_utils import get_latest_trading_date, get_previous_trading_date
 
@@ -49,9 +49,9 @@ class IndicatorClosedLoopValidator:
         Args:
             config_file: 配置文件路径
         """
-        self.config = self._load_config(config_file)
+        self.config = self._load_config_Indicator_Closed_Loop_Validator(config_file)
         self.data_manager = get_unified_data_manager()
-        self.strategy_executor = StrategyExecutor()
+        self.strategy_executor = Strategy_executor()
         
         # 初始化指标注册系统
         self.indicator_registry = complete_registry
@@ -73,7 +73,7 @@ class IndicatorClosedLoopValidator:
         
         logger.info("🔄 指标闭环验证器初始化完成")
     
-    def _load_config(self, config_file: str = None) -> Dict[str, Any]:
+    def _load_config_Indicator_Closed_Loop_Validator(self, config_file: str = None) -> Dict[str, Any]:
         """加载配置文件"""
         default_config = {
             'validation': {
@@ -115,7 +115,7 @@ class IndicatorClosedLoopValidator:
             else:
                 default[key] = value
     
-    def validate_all_indicators(self, mode: str = 'full') -> Dict[str, Any]:
+    def validate_all_indicators_Validator(self, mode: str = 'full') -> Dict[str, Any]:
         """
         验证所有指标的闭环流程
         
@@ -128,7 +128,7 @@ class IndicatorClosedLoopValidator:
         logger.info(f"🚀 开始执行指标闭环验证，模式: {mode}")
         
         # 获取要验证的指标列表
-        indicators_to_validate = self._get_indicators_by_mode(mode)
+        indicators_to_validate = self._get_indicators_by_mode_Indicator_Closed_Loop_Validator(mode)
         
         self.validation_stats['total_indicators'] = len(indicators_to_validate)
         
@@ -205,7 +205,7 @@ class IndicatorClosedLoopValidator:
         try:
             # 步骤1: 生成指标选股策略
             logger.info(f"📝 步骤1: 为指标 {indicator_name} 生成选股策略")
-            strategy_config = self._generate_indicator_strategy(indicator_name)
+            strategy_config = self._generate_indicator_strategy_Indicator_Closed_Loop_Validator(indicator_name)
             result['strategy_config'] = strategy_config
             
             if not strategy_config:
@@ -214,7 +214,7 @@ class IndicatorClosedLoopValidator:
             
             # 步骤2: 使用ClickHouse真实数据执行选股
             logger.info(f"🎯 步骤2: 使用真实数据执行选股")
-            selected_stocks = self._execute_strategy_selection(strategy_config, stock_pool)
+            selected_stocks = self._execute_strategy_selection_Indicator_Closed_Loop_Validator(strategy_config, stock_pool)
             
             result['selection_count'] = len(selected_stocks)
             result['selection_ratio'] = len(selected_stocks) / len(stock_pool) if stock_pool else 0
@@ -253,7 +253,7 @@ class IndicatorClosedLoopValidator:
         result['execution_time'] = time.time() - start_time
         return result
     
-    def _generate_indicator_strategy(self, indicator_name: str) -> Dict[str, Any]:
+    def _generate_indicator_strategy_Indicator_Closed_Loop_Validator(self, indicator_name: str) -> Dict[str, Any]:
         """
         为指标生成选股策略配置
         
@@ -273,7 +273,7 @@ class IndicatorClosedLoopValidator:
             }
             
             # 根据指标类型生成不同的策略条件
-            conditions = self._generate_indicator_conditions(indicator_name)
+            conditions = self._generate_indicator_conditions_Indicator_Closed_Loop_Validator(indicator_name)
             strategy_config['conditions'] = conditions
             
             return strategy_config
@@ -282,7 +282,7 @@ class IndicatorClosedLoopValidator:
             logger.error(f"生成指标 {indicator_name} 策略失败: {e}")
             return {}
     
-    def _generate_indicator_conditions(self, indicator_name: str) -> List[Dict[str, Any]]:
+    def _generate_indicator_conditions_Indicator_Closed_Loop_Validator(self, indicator_name: str) -> List[Dict[str, Any]]:
         """
         为指标生成验证条件
         
@@ -369,7 +369,7 @@ class IndicatorClosedLoopValidator:
         
         return conditions
     
-    def _execute_strategy_selection(self, strategy_config: Dict[str, Any], stock_pool: List[str]) -> List[str]:
+    def _execute_strategy_selection_Indicator_Closed_Loop_Validator(self, strategy_config: Dict[str, Any], stock_pool: List[str]) -> List[str]:
         """
         执行策略选股
         
@@ -630,7 +630,7 @@ class IndicatorClosedLoopValidator:
             logger.warning(f"计算质量评分失败: {e}")
             return 0.0
     
-    def _get_indicators_by_mode(self, mode: str) -> List[str]:
+    def _get_indicators_by_mode_Indicator_Closed_Loop_Validator(self, mode: str) -> List[str]:
         """根据模式获取要验证的指标列表"""
         all_indicators = self.indicator_registry.get_indicator_names()
         
@@ -666,12 +666,12 @@ class IndicatorClosedLoopValidator:
             'success_rate': self.validation_stats['successful_validations'] / self.validation_stats['total_indicators'] if self.validation_stats['total_indicators'] > 0 else 0,
             'closed_loop_rate': self.validation_stats['closed_loop_success'] / self.validation_stats['total_indicators'] if self.validation_stats['total_indicators'] > 0 else 0,
             'results': self.validation_results,
-            'recommendations': self._generate_recommendations()
+            'recommendations': self._generate_recommendations_Indicator_Closed_Loop_Validator()
         }
         
         return report
     
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations_Indicator_Closed_Loop_Validator(self) -> List[str]:
         """生成改进建议"""
         recommendations = []
         
@@ -740,7 +740,7 @@ class IndicatorClosedLoopValidator:
         except Exception as e:
             logger.error(f"保存CSV结果失败: {e}")
     
-    def validate_single_indicator(self, indicator_name: str) -> Dict[str, Any]:
+    def validate_single_indicator_Validator_Indicator_Closed_Loop_Validator(self, indicator_name: str) -> Dict[str, Any]:
         """
         验证单个指标
         
@@ -776,7 +776,7 @@ class IndicatorClosedLoopValidator:
         return result
 
 
-def main():
+def main_indicatorclosedloopvalidator():
     """主函数，用于测试"""
     import argparse
     
@@ -789,19 +789,19 @@ def main():
     args = parser.parse_args()
     
     # 创建验证器
-    validator = IndicatorClosedLoopValidator(config_file=args.config)
+    validator = Indicator_closed_loop_validator(config_file=args.config)
     
     if args.indicator:
         # 验证单个指标
-        result = validator.validate_single_indicator(args.indicator)
+        result = validator.validate_single_indicator_Validator_Indicator_Closed_Loop_Validator(args.indicator)
         print(f"\n指标 {args.indicator} 验证结果:")
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         # 批量验证
-        report = validator.validate_all_indicators(mode=args.mode)
+        report = validator.validate_all_indicators_Validator(mode=args.mode)
         print(f"\n验证完成，成功率: {report['success_rate']:.2%}")
         print(f"闭环验证通过率: {report['closed_loop_rate']:.2%}")
 
 
 if __name__ == "__main__":
-    main() 
+    main_indicatorclosedloopvalidator() 

@@ -26,7 +26,7 @@ from enums.period import Period
 
 logger = get_logger(__name__)
 
-def load_buypoints(file_path):
+def load_buypoints_Strategy(file_path):
     """加载买点数据"""
     try:
         buypoints_df = pd.read_csv(file_path)
@@ -50,7 +50,7 @@ def load_buypoints(file_path):
         logger.error(f"加载买点数据失败: {e}")
         return None
 
-def verify_strategy():
+def verify_strategy_Strategy():
     """验证策略"""
     try:
         # 初始化日志
@@ -58,7 +58,7 @@ def verify_strategy():
         
         # 加载买点数据
         buypoints_file = os.path.join(root_dir, "data", "buypoints.csv")
-        buypoints_df = load_buypoints(buypoints_file)
+        buypoints_df = load_buypoints_Strategy(buypoints_file)
         if buypoints_df is None or len(buypoints_df) == 0:
             logger.error("买点数据为空，无法进行验证")
             return
@@ -281,4 +281,4 @@ def verify_strategy():
         logger.error(traceback.format_exc())
 
 if __name__ == "__main__":
-    verify_strategy() 
+    verify_strategy_Strategy() 

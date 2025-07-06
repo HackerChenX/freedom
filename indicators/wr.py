@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-威廉指标(WR)
+威廉指标(WR_Wr)
 
 与KDJ配合使用，确认超买超卖
 """
@@ -15,15 +15,15 @@ from typing import Dict, Any, Union, List, Dict, Optional, Tuple, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength, PatternPolarity
+from utils.logger import getLogger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength, Pattern_polarity
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class WR(BaseIndicator, PatternSignalMixin):
+class WrWr(BaseIndicator, PatternSignalMixin):
     """
-    威廉指标(WR) (WR)
+    威廉指标(WR_Wr) (WR_Wr)
     
     分类：震荡类指标
     描述：与KDJ配合使用，确认超买超卖
@@ -37,32 +37,32 @@ class WR(BaseIndicator, PatternSignalMixin):
             **kwargs: 指标参数，支持period、overbought、oversold等
         """
         super().__init__()
-        self.name = "WR"
+        self.name = "WR_Wr"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_wr()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Wr_Wr(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_wr(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14, "overbought": -20.0, "oversold": -80.0}
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Wr_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算WR指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含WR指标的DataFrame
+            包含WR指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_wr(data)
         
-    def set_parameters(self, **kwargs):
+    def set_parameters_Wr_Wr(self, **kwargs):
         """
         设置指标参数
         
@@ -73,18 +73,18 @@ class WR(BaseIndicator, PatternSignalMixin):
                 - oversold: 超卖阈值
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
         
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('WR', params)
+            is_valid, errors = validator.validate_indicator_parameters('WR_Wr', params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
@@ -97,9 +97,9 @@ class WR(BaseIndicator, PatternSignalMixin):
         self.period = params.get('period', 14)
         self.overbought = params.get('overbought', -20.0)
         self.oversold = params.get('oversold', -80.0)
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_wr(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
             df: 输入数据
@@ -112,43 +112,43 @@ class WR(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Wr(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算WR指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 
         Returns:
-            包含WR指标的DataFrame
+            包含WR指标的Data_frame
         """
-        return self.calculate(df)
+        return self.calculate_Wr_Wr(df)
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_wr(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        计算威廉指标(WR)指标
+        计算威廉指标(WR_Wr)指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 必须包含以下列：
                 - close: 收盘价
                 - high: 最高价
                 - low: 最低价
                 
         Returns:
-            添加了WR指标列的DataFrame
+            添加了WR指标列的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
 
         # 确保数据包含必要的列
         required_columns = ['close', 'high', 'low']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_wr(df, required_columns)
         
         df_copy = df.copy()
         
-        # 实现威廉指标(WR)计算逻辑
-        # WR = -100 * (HIGH(n) - CLOSE) / (HIGH(n) - LOW(n))
+        # 实现威廉指标(WR_Wr)计算逻辑
+        # WR_Wr = -100 * (HIGH(n) - CLOSE) / (HIGH(n) - LOW(n))
         # 其中HIGH(n)和LOW(n)分别为n周期内的最高价和最低价
         highest_high = df_copy['high'].rolling(window=self.period).max()
         lowest_low = df_copy['low'].rolling(window=self.period).min()
@@ -165,7 +165,7 @@ class WR(BaseIndicator, PatternSignalMixin):
 
         return df_copy
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Wr_Wr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算WR原始评分
         
@@ -178,7 +178,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算WR
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wr_Wr(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -188,11 +188,11 @@ class WR(BaseIndicator, PatternSignalMixin):
         wr = self._result['wr']
         
         # 1. 超买超卖区域评分
-        # WR < -80（超卖）+20分
+        # WR_Wr < -80（超卖）+20分
         oversold_condition = wr < -80
         score += oversold_condition * 20
         
-        # WR > -20（超买）-20分
+        # WR_Wr > -20（超买）-20分
         overbought_condition = wr > -20
         score -= overbought_condition * 20
         
@@ -216,15 +216,15 @@ class WR(BaseIndicator, PatternSignalMixin):
         
         # 4. WR背离评分
         if len(data) >= 20:
-            divergence_score = self._calculate_wr_divergence(data['close'], wr)
+            divergence_score = self._calculate_wr_divergence_Wr(data['close'], wr)
             score += divergence_score
         
         # 5. WR极端值评分
-        # WR < -90（极度超卖）+30分
+        # WR_Wr < -90（极度超卖）+30分
         extreme_oversold = wr < -90
         score += extreme_oversold * 30
         
-        # WR > -10（极度超买）-30分
+        # WR_Wr > -10（极度超买）-30分
         extreme_overbought = wr > -10
         score -= extreme_overbought * 30
         
@@ -234,7 +234,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Wr(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别WR技术形态
         
@@ -249,7 +249,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算WR
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wr_Wr(data, **kwargs)
         
         if self._result is None:
             return patterns
@@ -288,7 +288,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         if len(data) >= 20:
             divergence_type = self._detect_wr_divergence_pattern(data['close'], wr)
             if divergence_type:
-                patterns.append(f"WR{divergence_type}")
+                patterns.append(f"WR_Wr{divergence_type}")
         
         # 4. 钝化形态
         if self._detect_wr_stagnation(recent_wr, threshold=-80, periods=5, direction='low'):
@@ -307,7 +307,7 @@ class WR(BaseIndicator, PatternSignalMixin):
 
         return patterns
     
-    def _calculate_wr_divergence(self, price: pd.Series, wr: pd.Series) -> pd.Series:
+    def _calculate_wr_divergence_Wr(self, price: pd.Series, wr: pd.Series) -> pd.Series:
         """
         计算WR背离评分
         
@@ -463,18 +463,18 @@ class WR(BaseIndicator, PatternSignalMixin):
         
         return False
         
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Wr(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成威廉指标(WR)指标交易信号
+        生成威廉指标(WR_Wr)指标交易信号
         
         Args:
-            df: 包含价格数据和WR指标的DataFrame
+            df: 包含价格数据和WR指标的Data_frame
             **kwargs: 额外参数
                 overbought: 超买阈值
                 oversold: 超卖阈值
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - wr_signal: 1=买入信号, -1=卖出信号, 0=无信号
         """
         if df.empty:
@@ -482,7 +482,7 @@ class WR(BaseIndicator, PatternSignalMixin):
             
         # 检查必要的指标列是否存在
         required_columns = ['wr']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_wr(df, required_columns)
         
         df_copy = df.copy()
         
@@ -509,29 +509,29 @@ class WR(BaseIndicator, PatternSignalMixin):
         注册WR指标相关形态
         """
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 注册WR超买超卖形态
         registry.register(
             pattern_id="WR_OVERBOUGHT",
             display_name="WR超买",
             description="WR值高于-20，表明市场可能超买，存在回调风险",
-            indicator_id="WR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-15.0,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
 
         registry.register(
             pattern_id="WR_OVERSOLD",
             display_name="WR超卖",
             description="WR值低于-80，表明市场可能超卖，存在反弹机会",
-            indicator_id="WR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=15.0,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         # 注册WR趋势形态
@@ -539,22 +539,22 @@ class WR(BaseIndicator, PatternSignalMixin):
             pattern_id="WR_UPTREND",
             display_name="WR上升趋势",
             description="WR值连续上升，表明价格相对高点接近",
-            indicator_id="WR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=12.0,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         registry.register(
             pattern_id="WR_DOWNTREND",
             display_name="WR下降趋势",
             description="WR值连续下降，表明价格相对低点接近",
-            indicator_id="WR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-12.0,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
         
         # 注册WR零轴穿越形态
@@ -562,22 +562,22 @@ class WR(BaseIndicator, PatternSignalMixin):
             pattern_id="WR_CROSS_ABOVE_MID",
             display_name="WR上穿中轴",
             description="WR从下方穿越-50中轴线，表明买盘力量增强",
-            indicator_id="WR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=10.0,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         registry.register(
             pattern_id="WR_CROSS_BELOW_MID",
             display_name="WR下穿中轴",
             description="WR从上方穿越-50中轴线，表明卖盘力量增强",
-            indicator_id="WR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-10.0,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
 
         # 注册WR背离形态
@@ -585,22 +585,22 @@ class WR(BaseIndicator, PatternSignalMixin):
             pattern_id="WR_BULLISH_DIVERGENCE",
             display_name="WR底背离",
             description="价格创新低，但WR未创新低，表明下跌动能减弱",
-            indicator_id="WR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=20.0,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         registry.register(
             pattern_id="WR_BEARISH_DIVERGENCE",
             display_name="WR顶背离",
             description="价格创新高，但WR未创新高，表明上涨动能减弱",
-            indicator_id="WR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=-20.0,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
 
         # 注册WR反转形态
@@ -608,25 +608,25 @@ class WR(BaseIndicator, PatternSignalMixin):
             pattern_id="WR_BULLISH_REVERSAL",
             display_name="WR超卖反转",
             description="WR在超卖区见底回升，表明可能形成底部",
-            indicator_id="WR",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=18.0,
-            polarity=PatternPolarity.POSITIVE
+            polarity=Pattern_polarity.POSITIVE
         )
 
         registry.register(
             pattern_id="WR_BEARISH_REVERSAL",
             display_name="WR超买反转",
             description="WR在超买区触顶回落，表明可能形成顶部",
-            indicator_id="WR",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.STRONG,
+            indicator_id="WR_Wr",
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=-18.0,
-            polarity=PatternPolarity.NEGATIVE
+            polarity=Pattern_polarity.NEGATIVE
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Wr(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
@@ -639,7 +639,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Wr_Wr(data, **kwargs)
         
         # 初始化信号
         signals = {}
@@ -653,7 +653,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         
         return signals
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Wr_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取WR相关形态
 
@@ -662,11 +662,11 @@ class WR(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Wr_Wr(data)
 
         if self._result is None or 'wr' not in self._result.columns:
             return pd.DataFrame(index=data.index)
@@ -720,13 +720,13 @@ class WR(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Wr_Wr(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算WR指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -776,7 +776,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Wr(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -789,7 +789,7 @@ class WR(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Wr_Wr(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -806,10 +806,10 @@ class WR(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Wr_Wr(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Wr_Wr(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -819,7 +819,7 @@ class WR(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def register_patterns(self):
+    def register_patterns_Wr(self):
         """
         注册WR指标的形态到全局形态注册表
         """
@@ -936,7 +936,7 @@ class WR(BaseIndicator, PatternSignalMixin):
             score_impact=-18.0,
             polarity="NEGATIVE"
         )
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Wr(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         

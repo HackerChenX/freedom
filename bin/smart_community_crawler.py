@@ -2,7 +2,7 @@
 """
 智能社区爬虫系统
 
-专门解决JavaScript渲染和动态内容的问题
+专门解决Java_script渲染和动态内容的问题
 使用多种策略获取股市讨论内容
 """
 
@@ -18,7 +18,7 @@ from typing import Dict, List, Any
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,8 +29,8 @@ import requests
 class SmartCommunityCrawler:
     """智能社区爬虫 - 专门处理动态内容"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___9(self):
+        self.concept_extractor = Concept_stock_extractor()
         self.session = requests.Session()
 
         # 高级User-Agent池
@@ -250,7 +250,7 @@ class SmartCommunityCrawler:
         return analysis
 
 
-def main():
+def main_15():
     """主函数"""
     print("=== 智能股市社区爬虫系统 ===")
     print(f"启动时间: {datetime.now()}")
@@ -259,7 +259,7 @@ def main():
     print("=" * 60)
 
     # 创建智能爬虫实例
-    crawler = SmartCommunityCrawler()
+    crawler = Smart_community_crawler()
 
     try:
         # 智能爬取讨论内容
@@ -334,4 +334,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_15()

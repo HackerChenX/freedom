@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python3
 """
 测试Enhanced TRIX指标修复效果
@@ -12,8 +14,9 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
-from indicators.trend.enhanced_trix import EnhancedTRIX
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from indicators.trend.enhanced_trix import Enhanced_tRIX
 
 def test_enhanced_trix():
     """测试Enhanced TRIX指标"""
@@ -22,13 +25,13 @@ def test_enhanced_trix():
     print("=" * 60)
     
     # 获取数据库连接
-    db = get_clickhouse_db()
+    data_access = get_container().resolve(IData_access)
     
     # 测试股票代码
     test_codes = ['000001', '000002', '000858']
     
     # 创建指标实例
-    indicator = EnhancedTRIX(n=12, m=9)
+    indicator = Enhanced_tRIX(n=12, m=9)
     
     total_signals = 0
     total_tests = 0
@@ -47,14 +50,14 @@ def test_enhanced_trix():
                 low,
                 close,
                 volume
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE code = '{code}' 
             AND date >= '2025-03-01' 
             AND date <= '2025-07-31'
             ORDER BY date
             """
             
-            data = db.query(sql)
+            data = data_access.execute_query(sql)
             
             if data.empty:
                 print(f"  警告: 股票 {code} 没有数据")

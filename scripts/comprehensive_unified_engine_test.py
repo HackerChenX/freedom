@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 统一分析引擎全面测试框架
 
-连接真实ClickHouse数据，测试所有指标和形态的选股条件
+连接真实Click_house数据，测试所有指标和形态的选股条件
 采用早停机制，出现错误立即停止并报告问题
 """
 
@@ -16,14 +18,14 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 import pandas as pd
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Thread_pool_executor, as_completed
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.optimized_strategy_executor import OptimizedStrategyExecutor
+from strategy.optimized_strategy_executor import Optimized_strategy_executor
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from utils.date_utils import get_latest_trading_date
@@ -53,7 +55,7 @@ class UnifiedEngineComprehensiveTest:
         
         # 初始化组件
         self.data_manager = get_unified_data_manager()
-        self.executor = OptimizedStrategyExecutor(
+        self.executor = Optimized_strategy_executor(
             max_workers=32,
             cache_enabled=True,
             enable_memory_monitoring=True
@@ -76,16 +78,16 @@ class UnifiedEngineComprehensiveTest:
         logger.info(f"测试日期: {self.test_date}")
         
         # 获取测试股票池
-        self.test_stocks = self._get_test_stock_pool()
+        self.test_stocks = self._get_test_stock_pool_Comprehensive_Unified_Engine_Test()
         logger.info(f"测试股票池: {len(self.test_stocks)} 只股票")
     
-    def _get_test_stock_pool(self) -> List[str]:
+    def _get_test_stock_pool_Comprehensive_Unified_Engine_Test(self) -> List[str]:
         """获取测试股票池"""
         try:
             # 获取活跃股票，排除ST、*ST等特殊股票
             query = f"""
             SELECT DISTINCT code as stock_code
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE date = '{self.test_date}'
             AND level = '日线'
             AND close > 2.0 
@@ -370,7 +372,7 @@ class UnifiedEngineComprehensiveTest:
         
         return test_result
     
-    def run_comprehensive_test(self) -> Dict[str, Any]:
+    def run_comprehensive_test_Test_Comprehensive_Unified_Engine_Test(self) -> Dict[str, Any]:
         """运行全面测试"""
         logger.info("🚀 开始统一分析引擎全面测试")
         self.test_stats['start_time'] = datetime.now()
@@ -425,7 +427,7 @@ class UnifiedEngineComprehensiveTest:
             
             # 尝试获取指定日期的数据
             try:
-                stock_info = self.data_manager.get_stock_info(
+                stock_info WHERE 1=1 = self.data_manager.get_stock_info(
                     stock_code=stock_list[0],
                     level='日线',
                     start_date=self.test_date,
@@ -452,7 +454,7 @@ class UnifiedEngineComprehensiveTest:
         """并发执行测试"""
         results = []
         
-        with ThreadPoolExecutor(max_workers=self.max_concurrent_tests) as executor:
+        with Thread_pool_executor(max_workers=self.max_concurrent_tests) as executor:
             # 提交所有测试任务
             future_to_strategy = {
                 executor.submit(self.test_single_strategy, strategy): strategy
@@ -638,7 +640,7 @@ class UnifiedEngineComprehensiveTest:
             }
         }
     
-    def save_test_report(self, report: Dict[str, Any], filename: Optional[str] = None):
+    def save_test_report_Test(self, report: Dict[str, Any], filename: Optional[str] = None):
         """保存测试报告"""
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -658,7 +660,7 @@ class UnifiedEngineComprehensiveTest:
         except Exception as e:
             logger.error(f"保存测试报告失败: {e}")
     
-    def print_test_summary(self, report: Dict[str, Any]):
+    def print_test_summary_Test(self, report: Dict[str, Any]):
         """打印测试摘要"""
         summary = report['test_summary']
         
@@ -701,7 +703,7 @@ class UnifiedEngineComprehensiveTest:
         print("="*80)
 
 
-def main():
+def main_comprehensiveunifiedenginetest():
     """主函数"""
     print("🚀 启动统一分析引擎全面测试")
     
@@ -713,17 +715,17 @@ def main():
     }
     
     # 创建测试实例
-    tester = UnifiedEngineComprehensiveTest(**test_config)
+    tester = Unified_engine_comprehensive_test(**test_config)
     
     try:
         # 运行全面测试
-        report = tester.run_comprehensive_test()
+        report = tester.run_comprehensive_test_Test_Comprehensive_Unified_Engine_Test()
         
         # 显示测试摘要
-        tester.print_test_summary(report)
+        tester.print_test_summary_Test(report)
         
         # 保存测试报告
-        tester.save_test_report(report)
+        tester.save_test_report_Test(report)
         
         # 检查是否有失败的测试
         if report['test_summary']['failed_tests'] > 0:
@@ -740,4 +742,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit(main())
+    exit(main_comprehensiveunifiedenginetest())

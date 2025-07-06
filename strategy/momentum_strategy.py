@@ -8,11 +8,11 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
-from formula.stock_formula import StockFormula
-from utils.logger import get_logger
-from enums.kline_period import KlinePeriod
+from formula.stock_formula import Stock_formula
+from utils.logger import getLogger
+from enums.kline_period import Kline_period
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class MomentumStrategy(BaseStrategy):
@@ -22,9 +22,9 @@ class MomentumStrategy(BaseStrategy):
     基于股票动量特性的选股策略，结合吸筹、弹性和换手率等因素
     """
     
-    def __init__(self):
+    def __init___75(self):
         """初始化动量策略"""
-        super().__init__(name="动量策略", description="基于股票动量特性的选股策略，结合吸筹、弹性和换手率等因素")
+        super().__init___75(name="动量策略", description="基于股票动量特性的选股策略，结合吸筹、弹性和换手率等因素")
         
         # 设置默认参数
         self._parameters = {
@@ -36,7 +36,7 @@ class MomentumStrategy(BaseStrategy):
             'end_date': '20241231'  # 结束日期
         }
     
-    def select(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+    def select_Strategy_Momentum_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
         执行动量选股策略
         
@@ -74,10 +74,10 @@ class MomentumStrategy(BaseStrategy):
                     logger.info(f"已处理 {i + 1}/{total_stocks} 只股票")
                 
                 # 创建股票公式对象
-                f = StockFormula(code, start=start_date, end=end_date)
+                f = Stock_formula(code, start=start_date, end=end_date)
                 
                 # 跳过没有数据的股票
-                if f.dataDay.history is None or len(f.dataDay.history) == 0:
+                if f.data_day.history is None or len(f.data_day.history) == 0:
                     continue
                 
                 # 应用选股条件
@@ -95,12 +95,12 @@ class MomentumStrategy(BaseStrategy):
                 
                 # 日线吸筹条件
                 if require_daily_absorption and conditions_met:
-                    if not f.吸筹(KlinePeriod.DAILY):
+                    if not f.吸筹(Kline_period.DAILY):
                         conditions_met = False
                 
                 # 周线吸筹条件
                 if require_weekly_absorption and conditions_met:
-                    if not f.吸筹(KlinePeriod.WEEKLY):
+                    if not f.吸筹(Kline_period.WEEKLY):
                         conditions_met = False
                 
                 # 如果满足所有条件，添加到选股结果

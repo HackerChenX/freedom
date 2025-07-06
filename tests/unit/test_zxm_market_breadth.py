@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from indicators.complete_indicator_registry import complete_registry
 
 
-class TestZXMMarketBreadth(unittest.TestCase):
+class Test_zXMMarket_breadth(unittest.Test_case):
     """ZXM市场宽度指标测试类"""
     
-    def setUp(self):
+    def set_up_Breadth(self):
         """设置测试数据"""
         # 生成多股票测试数据
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
@@ -90,11 +90,11 @@ class TestZXMMarketBreadth(unittest.TestCase):
     
     def test_market_breadth_with_multi_index_data(self):
         """测试ZXM市场宽度指标（多股票数据）"""
-        indicator = ZXMMarketBreadth()
+        indicator = ZXMMarket_breadth()
         
         # 测试计算功能
         result = indicator.calculate(self.test_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 检查基本列是否存在
         expected_columns = ['ad_ratio', 'ad_line', 'market_breadth_indicator', 'market_state']
@@ -103,18 +103,18 @@ class TestZXMMarketBreadth(unittest.TestCase):
         
         # 测试评分功能
         score_result = indicator.calculate_raw_score(self.test_data)
-        self.assertIsInstance(score_result, pd.DataFrame)
+        self.assert_is_instance(score_result, pd.DataFrame)
         self.assertIn('raw_score', score_result.columns)
         self.assertTrue(all(0 <= s <= 100 for s in score_result['raw_score']))
         
         # 测试形态识别
         patterns = indicator.identify_patterns(self.test_data)
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         self.assertIn('pattern', patterns.columns)
         
         # 测试信号生成
         signals = indicator.generate_signals(self.test_data)
-        self.assertIsInstance(signals, pd.DataFrame)
+        self.assert_is_instance(signals, pd.DataFrame)
         self.assertIn('buy_signal', signals.columns)
         self.assertIn('sell_signal', signals.columns)
         
@@ -122,81 +122,81 @@ class TestZXMMarketBreadth(unittest.TestCase):
     
     def test_market_breadth_with_single_stock_data(self):
         """测试ZXM市场宽度指标（单股票数据）"""
-        indicator = ZXMMarketBreadth()
+        indicator = ZXMMarket_breadth()
         
         # 测试计算功能（单股票数据应该返回空结果或默认值）
         result = indicator.calculate(self.single_stock_data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 测试评分功能
         score_result = indicator.calculate_raw_score(self.single_stock_data)
-        self.assertIsInstance(score_result, pd.DataFrame)
+        self.assert_is_instance(score_result, pd.DataFrame)
         
         # 测试形态识别
         patterns = indicator.identify_patterns(self.single_stock_data)
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 测试置信度计算
         if not score_result.empty and 'raw_score' in score_result.columns:
             score_series = score_result['raw_score']
             confidence = indicator.calculate_confidence(score_series, [], {})
-            self.assertIsInstance(confidence, float)
-            self.assertTrue(0 <= confidence <= 1)
+            self.assert_is_instance(confidence, float)
+            self.assert_true(0 <= confidence <= 1)
         
         print("✅ ZXM市场宽度指标（单股票）测试通过")
     
     def test_market_breadth_abstract_methods(self):
         """测试ZXM市场宽度指标的抽象方法"""
-        indicator = ZXMMarketBreadth()
+        indicator = ZXMMarket_breadth()
         
         # 测试set_parameters方法
         indicator.set_parameters(lookback_period=30, signal_threshold=75)
-        self.assertEqual(indicator.lookback_period, 30)
-        self.assertEqual(indicator.signal_threshold, 75)
+        self.assert_equal(indicator.lookback_period, 30)
+        self.assert_equal(indicator.signal_threshold, 75)
         
         # 测试get_patterns方法
         patterns_df = indicator.get_patterns(self.test_data)
-        self.assertIsInstance(patterns_df, pd.DataFrame)
+        self.assert_is_instance(patterns_df, pd.DataFrame)
         
         # 测试calculate_confidence方法
         score_series = pd.Series([60, 70, 80])
         patterns_list = ["市场宽度扩展"]
         confidence = indicator.calculate_confidence(score_series, patterns_list, {})
-        self.assertIsInstance(confidence, float)
-        self.assertTrue(0 <= confidence <= 1)
+        self.assert_is_instance(confidence, float)
+        self.assert_true(0 <= confidence <= 1)
         
         print("✅ ZXM市场宽度指标抽象方法测试通过")
     
     def test_market_breadth_helper_methods(self):
         """测试ZXM市场宽度指标的辅助方法"""
-        indicator = ZXMMarketBreadth()
+        indicator = ZXMMarket_breadth()
         
         # 测试涨跌比率计算
         ad_result = indicator._calculate_advance_decline_ratio(self.test_data)
-        self.assertIsInstance(ad_result, pd.DataFrame)
+        self.assert_is_instance(ad_result, pd.DataFrame)
         self.assertIn('ad_ratio', ad_result.columns)
         self.assertIn('ad_line', ad_result.columns)
         
         # 测试新高新低比率计算
         hl_result = indicator._calculate_new_highs_lows_ratio(self.test_data, 20)
-        self.assertIsInstance(hl_result, pd.DataFrame)
+        self.assert_is_instance(hl_result, pd.DataFrame)
         self.assertIn('new_highs_ratio', hl_result.columns)
         self.assertIn('new_lows_ratio', hl_result.columns)
         self.assertIn('hl_ratio', hl_result.columns)
         
         # 测试站上均线比例计算
         above_ma = indicator._calculate_percentage_above_ma(self.test_data, 20)
-        self.assertIsInstance(above_ma, pd.Series)
+        self.assert_is_instance(above_ma, pd.Series)
         
         # 测试成交量宽度计算
         volume_result = indicator._calculate_volume_breadth(self.test_data)
-        self.assertIsInstance(volume_result, pd.DataFrame)
+        self.assert_is_instance(volume_result, pd.DataFrame)
         self.assertIn('volume_surge_ratio', volume_result.columns)
         self.assertIn('volume_decline_ratio', volume_result.columns)
         
         # 测试动量宽度计算
         momentum_result = indicator._calculate_momentum_breadth(self.test_data)
-        self.assertIsInstance(momentum_result, pd.DataFrame)
+        self.assert_is_instance(momentum_result, pd.DataFrame)
         self.assertIn('positive_ratio', momentum_result.columns)
         self.assertIn('negative_ratio', momentum_result.columns)
         
@@ -204,7 +204,7 @@ class TestZXMMarketBreadth(unittest.TestCase):
     
     def test_market_state_classification(self):
         """测试市场状态分类"""
-        indicator = ZXMMarketBreadth()
+        indicator = ZXMMarket_breadth()
         
         # 创建测试数据
         test_result = pd.DataFrame({
@@ -212,20 +212,20 @@ class TestZXMMarketBreadth(unittest.TestCase):
         })
         
         market_states = indicator._classify_market_state(test_result)
-        self.assertIsInstance(market_states, pd.Series)
+        self.assert_is_instance(market_states, pd.Series)
         
         # 验证状态分类逻辑
         expected_states = ['bear', 'sideways', 'sideways', 'bull', 'top']
         for i, expected_state in enumerate(expected_states):
             actual_state = market_states.iloc[i]
             # 由于逻辑可能有重叠，只检查不是None
-            self.assertIsNotNone(actual_state)
+            self.assert_is_not_none(actual_state)
         
         print("✅ 市场状态分类测试通过")
     
     def test_pattern_detection_methods(self):
         """测试形态检测方法"""
-        indicator = ZXMMarketBreadth()
+        indicator = ZXMMarket_breadth()
         
         # 创建测试数据
         test_result = pd.DataFrame({
@@ -233,12 +233,12 @@ class TestZXMMarketBreadth(unittest.TestCase):
         })
         
         # 测试各种形态检测方法
-        self.assertIsInstance(indicator._is_breadth_divergence(test_result, 5, True), bool)
-        self.assertIsInstance(indicator._is_breadth_extreme(test_result, 5, True), bool)
-        self.assertIsInstance(indicator._is_breadth_expansion(test_result, 5), bool)
-        self.assertIsInstance(indicator._is_breadth_contraction(test_result, 7), bool)
-        self.assertIsInstance(indicator._is_market_overheated(test_result, 5), bool)
-        self.assertIsInstance(indicator._is_market_oversold(test_result, 0), bool)
+        self.assert_is_instance(indicator._is_breadth_divergence(test_result, 5, True), bool)
+        self.assert_is_instance(indicator._is_breadth_extreme(test_result, 5, True), bool)
+        self.assert_is_instance(indicator._is_breadth_expansion(test_result, 5), bool)
+        self.assert_is_instance(indicator._is_breadth_contraction(test_result, 7), bool)
+        self.assert_is_instance(indicator._is_market_overheated(test_result, 5), bool)
+        self.assert_is_instance(indicator._is_market_oversold(test_result, 0), bool)
         
         print("✅ 形态检测方法测试通过")
 

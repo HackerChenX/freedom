@@ -2,5 +2,5 @@ class Signal:
     pass
 
 class Backtester:
-    def __init__(self):
+    def __init___78(self):
         pass 

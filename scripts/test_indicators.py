@@ -24,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def create_test_data(n_rows=100):
+def create_test_data_Indicators_Test_Indicators(n_rows=100):
     """
     创建测试数据
     
@@ -65,7 +65,7 @@ def test_momentum():
     logger.info("测试Momentum指标")
     
     # 创建测试数据
-    df = create_test_data(50)
+    df = create_test_data_Indicators_Test_Indicators(50)
     
     # 使用指标工厂创建Momentum指标
     factory = IndicatorFactory()
@@ -111,7 +111,7 @@ def test_rsima():
     logger.info("测试RSIMA指标")
     
     # 创建测试数据 - 只创建30行数据来测试对少量数据的处理能力
-    df = create_test_data(30)
+    df = create_test_data_Indicators_Test_Indicators(30)
     
     # 使用指标工厂创建RSIMA指标
     factory = IndicatorFactory()
@@ -161,10 +161,10 @@ def test_rsima():
     return result
 
 
-def test_all_indicators():
+def test_all_indicators_Indicators_Test_Indicators():
     """测试所有指标"""
     # 创建测试数据
-    df = create_test_data(100)
+    df = create_test_data_Indicators_Test_Indicators(100)
     
     # 获取工厂支持的所有指标类型
     factory = IndicatorFactory()
@@ -203,6 +203,6 @@ if __name__ == "__main__":
     test_rsima()
     
     # 测试所有指标
-    # test_all_indicators()
+    # test_all_indicators_Indicators_Test_Indicators()
     
     logger.info("指标测试完成") 

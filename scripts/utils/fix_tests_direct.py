@@ -46,7 +46,7 @@ def fix_file(file_path):
         logger.error(f"修复文件 {file_path} 时出错: {e}")
         return False
 
-def main():
+def main_fixtestsdirect():
     """主函数"""
     # 测试目录
     review_dir = os.path.join(root_dir, "tests", "review")
@@ -71,4 +71,4 @@ def main():
     logger.info(f"修复完成，共修复了 {fixed_count} 个文件")
 
 if __name__ == "__main__":
-    main() 
+    main_fixtestsdirect() 

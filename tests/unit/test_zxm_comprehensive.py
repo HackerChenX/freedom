@@ -9,28 +9,28 @@ from datetime import datetime, timedelta
 
 # 导入所有ZXM指标
 from indicators.zxm.trend_indicators import (
-    ZXMDailyTrendUp, ZXMWeeklyTrendUp, ZXMMonthlyKDJTrendUp,
-    ZXMWeeklyKDJDOrDEATrendUp, ZXMWeeklyKDJDTrendUp, ZXMMonthlyMACD,
-    TrendDetector, TrendDuration, ZXMWeeklyMACD
+    ZXMDaily_trend_up, ZXMWeekly_trend_up, ZXMMonthly_kDJTrend_up,
+    ZXMWeekly_kDJDOr_dEATrend_up, ZXMWeekly_kDJDTrend_up, ZXMMonthly_mACD,
+    Trend_detector, Trend_duration, ZXMWeekly_mACD
 )
 from indicators.zxm.buy_point_indicators import (
-    ZXMDailyMACD, ZXMTurnover, ZXMVolumeShrink,
+    ZXMDaily_mACD, ZXMTurnover, ZXMVolume_shrink,
     ZXMMACallback, ZXMBSAbsorb
 )
 from indicators.zxm.elasticity_indicators import (
-    AmplitudeElasticity, ZXMRiseElasticity, Elasticity
+    Amplitude_elasticity, ZXMRise_elasticity, Elasticity
 )
 from indicators.zxm.score_indicators import (
-    ZXMElasticityScore, ZXMBuyPointScore, StockScoreCalculator
+    ZXMElasticity_score, ZXMBuy_point_score, Stock_score_calculator
 )
 from indicators.complete_indicator_registry import complete_registry
 from indicators.zxm.diagnostics import ZXMDiagnostics
 
 
-class TestZXMComprehensive(unittest.TestCase):
+class Test_zXMComprehensive(unittest.Test_case):
     """ZXM指标综合测试类"""
     
-    def setUp(self):
+    def set_up_Comprehensive(self):
         """设置测试数据"""
         # 生成测试数据
         dates = pd.date_range(start='2023-01-01', periods=150, freq='D')
@@ -74,36 +74,36 @@ class TestZXMComprehensive(unittest.TestCase):
     def test_all_zxm_trend_indicators(self):
         """测试所有ZXM趋势指标"""
         trend_indicators = [
-            ZXMDailyTrendUp(),
-            ZXMWeeklyTrendUp(),
-            ZXMMonthlyKDJTrendUp(),
-            ZXMWeeklyKDJDOrDEATrendUp(),
-            ZXMWeeklyKDJDTrendUp(),
-            ZXMMonthlyMACD(),
-            TrendDetector(),
-            TrendDuration(),
-            ZXMWeeklyMACD()
+            ZXMDaily_trend_up(),
+            ZXMWeekly_trend_up(),
+            ZXMMonthly_kDJTrend_up(),
+            ZXMWeekly_kDJDOr_dEATrend_up(),
+            ZXMWeekly_kDJDTrend_up(),
+            ZXMMonthly_mACD(),
+            Trend_detector(),
+            Trend_duration(),
+            ZXMWeekly_mACD()
         ]
         
         for indicator in trend_indicators:
-            with self.subTest(indicator=indicator.name):
+            with self.sub_test(indicator=indicator.name):
                 try:
                     # 测试基本计算
                     result = indicator.calculate(self.test_data)
-                    self.assertIsInstance(result, pd.DataFrame)
+                    self.assert_is_instance(result, pd.DataFrame)
                     
                     # 测试评分
                     score = indicator.calculate_raw_score(self.test_data)
-                    self.assertIsInstance(score, pd.Series)
-                    self.assertTrue(all(0 <= s <= 100 for s in score))
+                    self.assert_is_instance(score, pd.Series)
+                    self.assert_true(all(0 <= s <= 100 for s in score))
                     
                     # 测试抽象方法
                     patterns = indicator.identify_patterns(self.test_data)
-                    self.assertIsInstance(patterns, list)
+                    self.assert_is_instance(patterns, list)
                     
                     confidence = indicator.calculate_confidence(score, patterns, {})
-                    self.assertIsInstance(confidence, float)
-                    self.assertTrue(0 <= confidence <= 1)
+                    self.assert_is_instance(confidence, float)
+                    self.assert_true(0 <= confidence <= 1)
                     
                     print(f"✅ {indicator.name} 测试通过")
                     
@@ -113,32 +113,32 @@ class TestZXMComprehensive(unittest.TestCase):
     def test_all_zxm_buy_point_indicators(self):
         """测试所有ZXM买点指标"""
         buy_point_indicators = [
-            ZXMDailyMACD(),
+            ZXMDaily_mACD(),
             ZXMTurnover(),
-            ZXMVolumeShrink(),
+            ZXMVolume_shrink(),
             ZXMMACallback(),
             ZXMBSAbsorb()
         ]
         
         for indicator in buy_point_indicators:
-            with self.subTest(indicator=indicator.name):
+            with self.sub_test(indicator=indicator.name):
                 try:
                     # 测试基本计算
                     result = indicator.calculate(self.test_data)
-                    self.assertIsInstance(result, pd.DataFrame)
+                    self.assert_is_instance(result, pd.DataFrame)
                     
                     # 测试评分
                     score = indicator.calculate_raw_score(self.test_data)
-                    self.assertIsInstance(score, pd.Series)
-                    self.assertTrue(all(0 <= s <= 100 for s in score))
+                    self.assert_is_instance(score, pd.Series)
+                    self.assert_true(all(0 <= s <= 100 for s in score))
                     
                     # 测试抽象方法
                     patterns = indicator.identify_patterns(self.test_data)
-                    self.assertIsInstance(patterns, list)
+                    self.assert_is_instance(patterns, list)
                     
                     confidence = indicator.calculate_confidence(score, patterns, {})
-                    self.assertIsInstance(confidence, float)
-                    self.assertTrue(0 <= confidence <= 1)
+                    self.assert_is_instance(confidence, float)
+                    self.assert_true(0 <= confidence <= 1)
                     
                     print(f"✅ {indicator.name} 测试通过")
                     
@@ -148,30 +148,30 @@ class TestZXMComprehensive(unittest.TestCase):
     def test_all_zxm_elasticity_indicators(self):
         """测试所有ZXM弹性指标"""
         elasticity_indicators = [
-            AmplitudeElasticity(),
-            ZXMRiseElasticity(),
+            Amplitude_elasticity(),
+            ZXMRise_elasticity(),
             Elasticity()
         ]
         
         for indicator in elasticity_indicators:
-            with self.subTest(indicator=indicator.name):
+            with self.sub_test(indicator=indicator.name):
                 try:
                     # 测试基本计算
                     result = indicator.calculate(self.test_data)
-                    self.assertIsInstance(result, pd.DataFrame)
+                    self.assert_is_instance(result, pd.DataFrame)
                     
                     # 测试评分
                     score = indicator.calculate_raw_score(self.test_data)
-                    self.assertIsInstance(score, pd.Series)
-                    self.assertTrue(all(0 <= s <= 100 for s in score))
+                    self.assert_is_instance(score, pd.Series)
+                    self.assert_true(all(0 <= s <= 100 for s in score))
                     
                     # 测试抽象方法
                     patterns = indicator.identify_patterns(self.test_data)
-                    self.assertIsInstance(patterns, list)
+                    self.assert_is_instance(patterns, list)
                     
                     confidence = indicator.calculate_confidence(score, patterns, {})
-                    self.assertIsInstance(confidence, float)
-                    self.assertTrue(0 <= confidence <= 1)
+                    self.assert_is_instance(confidence, float)
+                    self.assert_true(0 <= confidence <= 1)
                     
                     print(f"✅ {indicator.name} 测试通过")
                     
@@ -181,30 +181,30 @@ class TestZXMComprehensive(unittest.TestCase):
     def test_all_zxm_score_indicators(self):
         """测试所有ZXM评分指标"""
         score_indicators = [
-            ZXMElasticityScore(),
-            ZXMBuyPointScore(),
-            StockScoreCalculator()
+            ZXMElasticity_score(),
+            ZXMBuy_point_score(),
+            Stock_score_calculator()
         ]
         
         for indicator in score_indicators:
-            with self.subTest(indicator=indicator.name):
+            with self.sub_test(indicator=indicator.name):
                 try:
                     # 测试基本计算
                     result = indicator.calculate(self.test_data)
-                    self.assertIsInstance(result, pd.DataFrame)
+                    self.assert_is_instance(result, pd.DataFrame)
                     
                     # 测试评分
                     score = indicator.calculate_raw_score(self.test_data)
-                    self.assertIsInstance(score, pd.Series)
-                    self.assertTrue(all(0 <= s <= 100 for s in score))
+                    self.assert_is_instance(score, pd.Series)
+                    self.assert_true(all(0 <= s <= 100 for s in score))
                     
                     # 测试抽象方法
                     patterns = indicator.identify_patterns(self.test_data)
-                    self.assertIsInstance(patterns, list)
+                    self.assert_is_instance(patterns, list)
                     
                     confidence = indicator.calculate_confidence(score, patterns, {})
-                    self.assertIsInstance(confidence, float)
-                    self.assertTrue(0 <= confidence <= 1)
+                    self.assert_is_instance(confidence, float)
+                    self.assert_true(0 <= confidence <= 1)
                     
                     print(f"✅ {indicator.name} 测试通过")
                     
@@ -213,20 +213,20 @@ class TestZXMComprehensive(unittest.TestCase):
     
     def test_zxm_selection_model(self):
         """测试ZXM选股模型"""
-        indicator = SelectionModel()
+        indicator = Selection_model()
 
         try:
             # 只测试抽象方法的存在性，不测试复杂的计算逻辑
             # 测试set_parameters方法
             indicator.set_parameters(selection_threshold=80)
-            self.assertEqual(indicator.selection_threshold, 80)
+            self.assert_equal(indicator.selection_threshold, 80)
 
             # 测试calculate_confidence方法
             score_series = pd.Series([60, 70, 80])
             patterns_list = ["选股系统买入信号"]
             confidence = indicator.calculate_confidence(score_series, patterns_list, {})
-            self.assertIsInstance(confidence, float)
-            self.assertTrue(0 <= confidence <= 1)
+            self.assert_is_instance(confidence, float)
+            self.assert_true(0 <= confidence <= 1)
 
             print(f"✅ {indicator.name} 抽象方法测试通过")
 
@@ -240,23 +240,23 @@ class TestZXMComprehensive(unittest.TestCase):
         try:
             # 测试基本计算
             result = indicator.calculate(self.test_data)
-            self.assertIsInstance(result, pd.DataFrame)
+            self.assert_is_instance(result, pd.DataFrame)
             
             # 测试评分
             score_result = indicator.calculate_raw_score(self.test_data)
-            self.assertIsInstance(score_result, pd.DataFrame)
+            self.assert_is_instance(score_result, pd.DataFrame)
             self.assertIn('raw_score', score_result.columns)
             self.assertTrue(all(0 <= s <= 100 for s in score_result['raw_score']))
             
             # 测试抽象方法
             score_series = score_result['raw_score']
             confidence = indicator.calculate_confidence(score_series, [], {})
-            self.assertIsInstance(confidence, float)
-            self.assertTrue(0 <= confidence <= 1)
+            self.assert_is_instance(confidence, float)
+            self.assert_true(0 <= confidence <= 1)
             
             # 测试信号生成
             signals = indicator.generate_signals(self.test_data)
-            self.assertIsInstance(signals, pd.DataFrame)
+            self.assert_is_instance(signals, pd.DataFrame)
             
             print(f"✅ {indicator.name} 测试通过")
             

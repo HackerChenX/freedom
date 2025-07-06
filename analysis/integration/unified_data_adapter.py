@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 #!/usr/bin/env python3
 """
 统一数据适配器
@@ -11,15 +13,17 @@ import os
 from typing import Dict, List, Any, Optional, Union
 from datetime import datetime
 import pandas as pd
+import threading
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.logger import get_logger
+from utils.logger import getLogger
 from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class UnifiedDataAdapter:
@@ -137,7 +141,7 @@ class UnifiedDataAdapter:
             analysis_date = buypoint_result.get('buypoint_date', datetime.now().strftime('%Y%m%d'))
             
             # 获取股票基本信息
-            stock_info = self._get_stock_basic_info(stock_code, analysis_date)
+            stock_info = self._get_stock_basic_info_Unified_Data_Adapter(stock_code, analysis_date)
             if not stock_info:
                 logger.warning(f"无法获取股票 {stock_code} 的基本信息")
                 return None
@@ -149,7 +153,7 @@ class UnifiedDataAdapter:
             score = self._calculate_unified_score(buypoint_result, match_details)
             
             # 生成推荐等级
-            recommendation = self._generate_recommendation(score)
+            recommendation = self._generate_recommendation_Unified_Data_Adapter(score)
             
             # 构建标准格式数据
             standard_data = {
@@ -316,7 +320,7 @@ class UnifiedDataAdapter:
             logger.error(f"合并分析结果时出错: {e}")
             return []
     
-    def _get_stock_basic_info(self, stock_code: str, date: str) -> Optional[Dict[str, Any]]:
+    def _get_stock_basic_info_Unified_Data_Adapter(self, stock_code: str, date: str) -> Optional[Dict[str, Any]]:
         """获取股票基本信息"""
         try:
             # 构建查询语句
@@ -331,7 +335,7 @@ class UnifiedDataAdapter:
                 pb_ratio,
                 volume,
                 turnover_rate
-            FROM stock_info 
+            FROM stock_info WHERE 1=1
             WHERE code = '{stock_code}' 
             AND date <= '{date}'
             ORDER BY date DESC 
@@ -474,7 +478,7 @@ class UnifiedDataAdapter:
             logger.error(f"计算统一评分时出错: {e}")
             return 0.0
     
-    def _generate_recommendation(self, score: float) -> str:
+    def _generate_recommendation_Unified_Data_Adapter(self, score: float) -> str:
         """根据评分生成推荐等级"""
         if score >= 80:
             return "强烈买入"
@@ -552,7 +556,7 @@ class UnifiedDataAdapter:
                 merged['match_details']['indicator_scores'] = merged_scores
             
             # 更新推荐等级
-            merged['recommendation'] = self._generate_recommendation(merged['score'])
+            merged['recommendation'] = self._generate_recommendation_Unified_Data_Adapter(merged['score'])
             
             return merged
             
@@ -561,12 +565,40 @@ class UnifiedDataAdapter:
             return result1
 
 
-# 全局实例
-_unified_adapter_instance = None
+# ===== 依赖注入和兼容性接口 =====
+
+def create_unified_data_adapter() -> UnifiedDataAdapter:
+    """创建统一数据适配器实例（兼容性方法）"""
+    return UnifiedDataAdapter()
+
 
 def get_unified_data_adapter() -> UnifiedDataAdapter:
-    """获取统一数据适配器实例（单例模式）"""
-    global _unified_adapter_instance
-    if _unified_adapter_instance is None:
-        _unified_adapter_instance = UnifiedDataAdapter()
-    return _unified_adapter_instance 
+    """
+    获取统一数据适配器实例（依赖注入方式）
+    
+    Returns:
+        UnifiedDataAdapter: 统一数据适配器实例
+    """
+    try:
+        from utils.dependency_injection import get_container
+        container = get_container()
+        return container.resolve(UnifiedDataAdapter)
+    except Exception as e:
+        logger.warning(f"从依赖注入容器获取UnifiedDataAdapter失败，创建新实例: {e}")
+        return UnifiedDataAdapter()
+
+
+def get_legacy_unified_data_adapter() -> UnifiedDataAdapter:
+    """获取统一数据适配器实例（向后兼容）"""
+    return get_unified_data_adapter()
+
+
+# 注册到依赖注入容器
+try:
+    from utils.dependency_injection import get_container
+    container = get_container()
+    if not container.is_registered(UnifiedDataAdapter):
+        container.register_singleton(UnifiedDataAdapter, UnifiedDataAdapter)
+        logger.info("UnifiedDataAdapter已注册到依赖注入容器")
+except Exception as e:
+    logger.warning(f"注册UnifiedDataAdapter到依赖注入容器失败: {e}")

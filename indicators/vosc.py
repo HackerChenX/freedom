@@ -16,13 +16,13 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
-from indicators.pattern_registry import PatternRegistry, PatternType, PatternStrength
+from utils.logger import getLogger
+from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class VOSC(BaseIndicator, PatternSignalMixin):
+class Vosc(BaseIndicator, PatternSignalMixin):
     """
     成交量震荡指标(VOSC) (VOSC)
     
@@ -43,7 +43,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         self.short_period = short_period
         self.long_period = long_period
         
-    def set_parameters(self, short_period: int = None, long_period: int = None):
+    def set_parameters_Vosc_Vosc_Vosc_vosc(self, short_period: int = None, long_period: int = None):
         """
         设置指标参数
         """
@@ -52,26 +52,26 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         if long_period is not None:
             self.long_period = long_period
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Vosc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VOSC指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             **kwargs: 其他参数
 
         Returns:
-            包含VOSC指标的DataFrame
+            包含VOSC指标的Data_frame
         """
-        return self._calculate(data)
+        return self._calculate_vosc(data)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Vosc(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
         计算VOSC指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -121,9 +121,9 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
         
-    def _validate_dataframe(self, df: pd.DataFrame, required_columns: List[str]) -> None:
+    def _validate_dataframe_vosc(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
-        验证DataFrame是否包含所需的列
+        验证Data_frame是否包含所需的列
         
         Args:
             df: 输入数据
@@ -136,36 +136,36 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         if missing_columns:
             raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_Vosc(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算VOSC指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 
         Returns:
-            包含VOSC指标的DataFrame
+            包含VOSC指标的Data_frame
         """
-        return self.calculate(df)
+        return self.calculate_Vosc(df)
         
-    def _calculate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_vosc(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算成交量震荡指标(VOSC)指标
         
         Args:
-            df: 包含OHLCV数据的DataFrame
+            df: 包含OHLCV数据的Data_frame
                 必须包含以下列：
                 - volume: 成交量
                 
         Returns:
-            添加了VOSC指标列的DataFrame
+            添加了VOSC指标列的Data_frame
         """
         if df.empty:
             return pd.DataFrame()
 
         # 确保数据包含必要的列
         required_columns = ['volume']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_vosc(df, required_columns)
         
         df_copy = df.copy()
         
@@ -189,16 +189,16 @@ class VOSC(BaseIndicator, PatternSignalMixin):
 
         return df_copy
 
-    def get_signals(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals_Vosc(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成成交量震荡指标(VOSC)指标交易信号
         
         Args:
-            df: 包含价格数据和VOSC指标的DataFrame
+            df: 包含价格数据和VOSC指标的Data_frame
             **kwargs: 额外参数
                 
         Returns:
-            添加了信号列的DataFrame:
+            添加了信号列的Data_frame:
             - vosc_buy_signal: 1=买入信号, 0=无信号
             - vosc_sell_signal: 1=卖出信号, 0=无信号
         """
@@ -207,7 +207,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             
         # 检查必要的指标列是否存在
         required_columns = ['vosc', 'vosc_signal']
-        self._validate_dataframe(df, required_columns)
+        self._validate_dataframe_vosc(df, required_columns)
         
         df_copy = df.copy()
         
@@ -233,7 +233,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
 
         return df_copy
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Vosc(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算VOSC原始评分
         
@@ -246,7 +246,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算VOSC
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Vosc(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -275,7 +275,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         
         return np.clip(score, 0, 100)
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_Vosc(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别VOSC技术形态
         
@@ -290,7 +290,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         
         # 确保已计算VOSC
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Vosc(data, **kwargs)
         
         if self._result is None:
             return patterns
@@ -662,7 +662,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         
         return patterns
         
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Vosc(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
         生成交易信号
         
@@ -675,7 +675,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Vosc(data, **kwargs)
         
         # 初始化信号
         signals = {}
@@ -688,7 +688,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
     
         return signals
         
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Vosc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取VOSC相关形态
 
@@ -697,11 +697,11 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Vosc(data)
 
         if self._result is None or 'vosc' not in self._result.columns:
             return pd.DataFrame(index=data.index)
@@ -763,7 +763,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def calculate_score_Vosc(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         计算最终评分
 
@@ -776,7 +776,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores = self.calculate_raw_score(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Vosc(data, **kwargs)
 
             # 如果数据不足，返回中性评分
             if len(raw_scores) < 3:
@@ -793,10 +793,10 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
-            patterns = self.get_patterns(data, **kwargs)
+            patterns = self.get_patterns_Vosc(data, **kwargs)
 
             # 3. 计算置信度
-            confidence = self.calculate_confidence(raw_scores, patterns, {})
+            confidence = self.calculate_confidence_Vosc(raw_scores, patterns, {})
 
             return {
                 'score': final_score,
@@ -806,7 +806,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
             return {'score': 50.0, 'confidence': 0.0}
 
-    def register_patterns(self):
+    def register_patterns_Vosc(self):
         """
         注册VOSC指标的形态到全局形态注册表
         """
@@ -920,7 +920,7 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         注册VOSC指标相关形态
         """
         # 获取PatternRegistry实例
-        registry = PatternRegistry()
+        registry = Pattern_registry()
         
         # 注册VOSC零轴穿越形态
         registry.register(
@@ -928,8 +928,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC上穿零轴",
             description="VOSC从下方穿越零轴，表明短期成交量超过长期成交量，看涨信号",
             indicator_id="VOSC",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=15.0
         )
         
@@ -938,8 +938,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC下穿零轴",
             description="VOSC从上方穿越零轴，表明短期成交量低于长期成交量，看跌信号",
             indicator_id="VOSC",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-15.0
         )
         
@@ -949,8 +949,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC金叉",
             description="VOSC上穿信号线，表明成交量动量增强",
             indicator_id="VOSC",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=12.0
         )
         
@@ -959,8 +959,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC死叉",
             description="VOSC下穿信号线，表明成交量动量减弱",
             indicator_id="VOSC",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-12.0
         )
         
@@ -970,8 +970,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC上升趋势",
             description="VOSC连续上升，表明成交量持续增加",
             indicator_id="VOSC",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=10.0
         )
         
@@ -980,8 +980,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC下降趋势",
             description="VOSC连续下降，表明成交量持续萎缩",
             indicator_id="VOSC",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-10.0
         )
         
@@ -991,8 +991,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC极高值",
             description="VOSC值异常高，表明短期成交量远超长期成交量，可能出现爆量",
             indicator_id="VOSC",
-            pattern_type=PatternType.BULLISH,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.BULLISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=18.0
         )
         
@@ -1001,8 +1001,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC极低值",
             description="VOSC值异常低，表明短期成交量远低于长期成交量，可能出现极度萎缩",
             indicator_id="VOSC",
-            pattern_type=PatternType.BEARISH,
-            default_strength=PatternStrength.STRONG,
+            pattern_type=Pattern_type.BEARISH,
+            default_strength=Pattern_strength.STRONG,
             score_impact=-18.0
         )
         
@@ -1012,8 +1012,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC价格确认",
             description="VOSC与价格同向变动，成交量确认价格趋势",
             indicator_id="VOSC",
-            pattern_type=PatternType.NEUTRAL,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.NEUTRAL,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=10.0
         )
         
@@ -1022,11 +1022,11 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             display_name="VOSC价格不确认",
             description="VOSC与价格反向变动，成交量不支持价格趋势",
             indicator_id="VOSC",
-            pattern_type=PatternType.NEUTRAL,
-            default_strength=PatternStrength.MEDIUM,
+            pattern_type=Pattern_type.NEUTRAL,
+            default_strength=Pattern_strength.MEDIUM,
             score_impact=-10.0
         )
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Vosc(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -1113,45 +1113,11 @@ class VOSC(BaseIndicator, PatternSignalMixin):
 
 
 
-    def __init__(self, **kwargs):
-        """
-        初始化VOSC指标
-        
-        Args:
-            **kwargs: 指标参数
-        """
-        # 保持原有初始化逻辑
-        if hasattr(super(), '__init__'):
-            try:
-                super().__init__()
-            except:
-                pass
-        
-        self.name = "VOSC"
-        
-        # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
-        
-        # 应用用户参数
-        self.set_parameters(**kwargs)
-        
-        # 确保VOSC特有属性存在
-        if not hasattr(self, 'short_period'):
-            self.short_period = 12
-        if not hasattr(self, 'long_period'):
-            self.long_period = 26
-        
-        # 确保VOSC特有属性存在
-        if not hasattr(self, 'short_period'):
-            self.short_period = 12
-        if not hasattr(self, 'long_period'):
-            self.long_period = 26
-    
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_vosc(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'short_period': 12, 'long_period': 26}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Vosc_Vosc_Vosc_vosc_duplicate(self, **kwargs):
         """
         设置指标参数
         
@@ -1160,8 +1126,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -1170,8 +1136,8 @@ class VOSC(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('VOSC', params)
             if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
+                from utils.logger import getLogger
+                logger = getLogger(__name__)
                 logger.warning(f"VOSC参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

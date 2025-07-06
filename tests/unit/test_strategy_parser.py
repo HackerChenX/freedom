@@ -24,7 +24,7 @@ from utils.exceptions import (
 class TestStrategyParser(unittest.TestCase):
     """策略解析器测试类"""
     
-    def setUp(self):
+    def setUp_Parser(self):
         """测试前准备"""
         self.parser = StrategyParser()
         
@@ -78,7 +78,7 @@ class TestStrategyParser(unittest.TestCase):
         # 创建临时文件和目录
         self.temp_dir = tempfile.TemporaryDirectory()
         
-    def tearDown(self):
+    def tearDown_Parser(self):
         """测试后清理"""
         # 清理临时文件和目录
         self.temp_dir.cleanup()

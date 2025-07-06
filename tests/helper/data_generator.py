@@ -10,11 +10,11 @@ import datetime
 from typing import List, Dict, Any, Union, Optional
 
 
-class TestDataGenerator:
+class Testdatagenerator_generator:
     """测试数据生成器类"""
     
     @staticmethod
-    def generate_price_sequence(sequence_specs: List[Dict[str, Any]], 
+    def generate_price_sequence_Generator(sequence_specs: List[Dict[str, Any]], 
                                 base_date: str = '2023-01-01',
                                 base_volume: int = 10000,
                                 apply_noise: bool = True,
@@ -30,7 +30,7 @@ class TestDataGenerator:
             noise_level: 噪声级别
             
         Returns:
-            包含价格序列的DataFrame
+            包含价格序列的Data_frame
         """
         # 初始化数据列表
         data_list = []
@@ -44,7 +44,7 @@ class TestDataGenerator:
             
             # 根据序列类型生成数据
             if seq_type == 'trend':
-                segment = TestDataGenerator._generate_trend(
+                segment = Test_data_generator._generate_trend(
                     periods=periods,
                     start_price=spec.get('start_price', 100),
                     end_price=spec.get('end_price', 110),
@@ -52,14 +52,14 @@ class TestDataGenerator:
                     volume_trend=spec.get('volume_trend', 'follow_price')
                 )
             elif seq_type == 'v_shape':
-                segment = TestDataGenerator._generate_v_shape(
+                segment = Test_data_generator._generate_v_shape(
                     periods=periods,
                     start_price=spec.get('start_price', 100),
                     bottom_price=spec.get('bottom_price', 90),
                     base_volume=base_volume
                 )
             elif seq_type == 'head_shoulders':
-                segment = TestDataGenerator._generate_head_shoulders(
+                segment = Test_data_generator._generate_head_shoulders(
                     periods=periods,
                     start_price=spec.get('start_price', 100),
                     peak_price=spec.get('peak_price', 110),
@@ -67,7 +67,7 @@ class TestDataGenerator:
                     inverse=spec.get('inverse', False)
                 )
             elif seq_type == 'double_top':
-                segment = TestDataGenerator._generate_double_top(
+                segment = Test_data_generator._generate_double_top(
                     periods=periods,
                     start_price=spec.get('start_price', 100),
                     peak_price=spec.get('peak_price', 110),
@@ -75,7 +75,7 @@ class TestDataGenerator:
                     inverse=spec.get('inverse', False)
                 )
             elif seq_type == 'triangle':
-                segment = TestDataGenerator._generate_triangle(
+                segment = Test_data_generator._generate_triangle(
                     periods=periods,
                     start_price=spec.get('start_price', 100),
                     end_price=spec.get('end_price', 110),
@@ -84,7 +84,7 @@ class TestDataGenerator:
                     pattern=spec.get('pattern', 'ascending')
                 )
             else:  # 默认为横盘
-                segment = TestDataGenerator._generate_sideways(
+                segment = Test_data_generator._generate_sideways(
                     periods=periods,
                     start_price=spec.get('start_price', 100),
                     volatility=spec.get('volatility', 0.02),
@@ -93,7 +93,7 @@ class TestDataGenerator:
             
             # 应用噪声
             if apply_noise:
-                segment = TestDataGenerator._apply_noise(segment, noise_level)
+                segment = Test_data_generator._apply_noise(segment, noise_level)
             
             # 添加日期
             dates = [current_date + datetime.timedelta(days=i) for i in range(periods)]
@@ -139,10 +139,10 @@ class TestDataGenerator:
             base_volume: 基础成交量
 
         Returns:
-            pd.DataFrame: 包含稳定趋势的DataFrame
+            pd.DataFrame: 包含稳定趋势的Data_frame
         """
         end_price = start_price + (periods * slope)
-        trend_data = TestDataGenerator._generate_trend(
+        trend_data = Test_data_generator._generate_trend(
             periods=periods,
             start_price=start_price,
             end_price=end_price,
@@ -184,7 +184,7 @@ class TestDataGenerator:
             volume_trend: 成交量趋势类型
             
         Returns:
-            包含趋势序列的DataFrame
+            包含趋势序列的Data_frame
         """
         # 计算价格变化
         price_change = (end_price - start_price) / (periods - 1)
@@ -193,7 +193,7 @@ class TestDataGenerator:
         close_prices = np.array([start_price + i * price_change for i in range(periods)])
         
         # 生成OHLC数据
-        data = TestDataGenerator._generate_ohlc_from_close(close_prices)
+        data = Test_data_generator._generate_ohlc_from_close_Data_Generator(close_prices)
         
         # 生成成交量
         if volume_trend == 'follow_price':
@@ -235,7 +235,7 @@ class TestDataGenerator:
             base_volume: 基础成交量
             
         Returns:
-            包含V形反转序列的DataFrame
+            包含V形反转序列的Data_frame
         """
         # 计算中点
         mid_point = periods // 2
@@ -245,7 +245,7 @@ class TestDataGenerator:
         up_periods = periods - mid_point
         
         # 生成下降部分
-        down_trend = TestDataGenerator._generate_trend(
+        down_trend = Test_data_generator._generate_trend(
             periods=down_periods, 
             start_price=start_price, 
             end_price=bottom_price,
@@ -254,7 +254,7 @@ class TestDataGenerator:
         )
         
         # 生成上升部分
-        up_trend = TestDataGenerator._generate_trend(
+        up_trend = Test_data_generator._generate_trend(
             periods=up_periods, 
             start_price=bottom_price, 
             end_price=start_price,
@@ -284,7 +284,7 @@ class TestDataGenerator:
             inverse: 是否为头肩底
             
         Returns:
-            包含头肩顶/底序列的DataFrame
+            包含头肩顶/底序列的Data_frame
         """
         # 计算各个点的位置
         segment_size = periods // 6
@@ -335,7 +335,7 @@ class TestDataGenerator:
                 close_prices[j] = start_val + progress * (end_val - start_val)
         
         # 生成OHLC数据
-        data = TestDataGenerator._generate_ohlc_from_close(close_prices)
+        data = Test_data_generator._generate_ohlc_from_close_Data_Generator(close_prices)
         
         # 生成成交量
         volume = np.ones(periods) * base_volume
@@ -367,7 +367,7 @@ class TestDataGenerator:
             inverse: 是否为双底
             
         Returns:
-            包含双顶/底序列的DataFrame
+            包含双顶/底序列的Data_frame
         """
         # 计算各个点的位置
         segment_size = periods // 5
@@ -413,7 +413,7 @@ class TestDataGenerator:
                 close_prices[j] = start_val + progress * (end_val - start_val)
         
         # 生成OHLC数据
-        data = TestDataGenerator._generate_ohlc_from_close(close_prices)
+        data = Test_data_generator._generate_ohlc_from_close_Data_Generator(close_prices)
         
         # 生成成交量
         volume = np.ones(periods) * base_volume
@@ -446,7 +446,7 @@ class TestDataGenerator:
             pattern: 三角形类型，可选'ascending'(上升),'descending'(下降),'symmetric'(对称)
             
         Returns:
-            包含三角形整理序列的DataFrame
+            包含三角形整理序列的Data_frame
         """
         # 生成收盘价
         close_prices = np.zeros(periods)
@@ -488,7 +488,7 @@ class TestDataGenerator:
                     close_prices[i] = support_line[i] - (i - (periods - 10)) * (support_line[i] - end_price) / 10
         
         # 生成OHLC数据
-        data = TestDataGenerator._generate_ohlc_from_close(close_prices)
+        data = Test_data_generator._generate_ohlc_from_close_Data_Generator(close_prices)
         
         # 生成成交量
         volume = np.ones(periods) * base_volume
@@ -517,7 +517,7 @@ class TestDataGenerator:
             base_volume: 基础成交量
             
         Returns:
-            包含横盘整理序列的DataFrame
+            包含横盘整理序列的Data_frame
         """
         # 生成随机波动
         changes = np.random.normal(0, volatility * start_price, periods)
@@ -530,7 +530,7 @@ class TestDataGenerator:
             close_prices[i] = close_prices[i-1] + changes[i]
         
         # 生成OHLC数据
-        data = TestDataGenerator._generate_ohlc_from_close(close_prices)
+        data = Test_data_generator._generate_ohlc_from_close_Data_Generator(close_prices)
         
         # 生成随机成交量
         volume_factor = 0.8 + 0.4 * np.random.random(periods)
@@ -539,7 +539,7 @@ class TestDataGenerator:
         return data
     
     @staticmethod
-    def _generate_ohlc_from_close(close_prices: np.ndarray) -> pd.DataFrame:
+    def _generate_ohlc_from_close_Data_Generator(close_prices: np.ndarray) -> pd.DataFrame:
         """
         从收盘价生成OHLC数据
         
@@ -547,7 +547,7 @@ class TestDataGenerator:
             close_prices: 收盘价数组
             
         Returns:
-            包含OHLC数据的DataFrame
+            包含OHLC数据的Data_frame
         """
         periods = len(close_prices)
         

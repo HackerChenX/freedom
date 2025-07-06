@@ -11,13 +11,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base_indicator import BaseIndicator
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.indicator_utils import crossover, crossunder
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class EnhancedMACD(BaseIndicator, PatternSignalMixin):
+class EnhancedMacd(BaseIndicator, PatternSignalMixin):
     """
     增强型MACD指标
     
@@ -56,7 +56,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         self.volume_weighted = volume_weighted
         self.adapt_to_volatility = adapt_to_volatility
     
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_Macd_Enhanced_Macd(self) -> str:
         """
         获取指标类型
         
@@ -65,7 +65,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         """
         return self.indicator_type
 
-    def _calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_enhancedmacd(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         实现BaseIndicator的抽象方法
 
@@ -75,9 +75,9 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         Returns:
             pd.DataFrame: 计算结果
         """
-        return self.calculate(data)
+        return self.calculate_Macd_Enhanced_Macd(data)
 
-    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def calculate_Macd_Enhanced_Macd(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算增强型MACD指标
         
@@ -126,7 +126,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         result["hist_change_rate"] = self._calculate_histogram_change_rate(result["macd_hist"])
         
         # 计算MACD趋势强度
-        result["trend_strength"] = self._calculate_trend_strength(result["macd_hist"])
+        result["trend_strength"] = self._calculate_trend_strength_Enhanced_Macd(result["macd_hist"])
         
         # 计算MACD零线交叉角度
         result["zero_cross_angle"] = self._calculate_zero_cross_angle(result["macd"])
@@ -142,7 +142,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         
         return result
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Macd_Enhanced_Macd_Enhanced_Macd(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算增强型MACD指标原始评分 (0-100分)
         
@@ -155,7 +155,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if not self.has_result():
-            result = self.calculate(data)
+            result = self.calculate_Macd_Enhanced_Macd(data)
         else:
             result = self._result
         
@@ -194,7 +194,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         计算基础MACD指标评分
         
         Args:
-            result: 包含MACD指标的DataFrame
+            result: 包含MACD指标的Data_frame
             
         Returns:
             pd.Series: 评分序列，取值范围0-30
@@ -247,7 +247,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         计算多周期MACD一致性评分
         
         Args:
-            result: 包含多周期MACD指标的DataFrame
+            result: 包含多周期MACD指标的Data_frame
             
         Returns:
             pd.Series: 评分序列，取值范围0-20
@@ -293,7 +293,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         计算趋势强度评分
         
         Args:
-            result: 包含趋势强度指标的DataFrame
+            result: 包含趋势强度指标的Data_frame
             
         Returns:
             pd.Series: 评分序列，取值范围0-20
@@ -326,7 +326,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         计算柱状体变化率评分
         
         Args:
-            result: 包含柱状体变化率的DataFrame
+            result: 包含柱状体变化率的Data_frame
             
         Returns:
             pd.Series: 评分序列，取值范围0-15
@@ -365,7 +365,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         计算交叉角度和偏离度评分
         
         Args:
-            result: 包含交叉角度和偏离度的DataFrame
+            result: 包含交叉角度和偏离度的Data_frame
             
         Returns:
             pd.Series: 评分序列，取值范围0-15
@@ -679,7 +679,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         
         return change_rate_smooth
     
-    def _calculate_trend_strength(self, hist: pd.Series, window: int = 14) -> pd.Series:
+    def _calculate_trend_strength_Enhanced_Macd(self, hist: pd.Series, window: int = 14) -> pd.Series:
         """
         计算MACD趋势强度
         
@@ -779,7 +779,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         
         return deviation
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Macd_Enhanced_Macd_Enhanced_Macd(self, **kwargs):
         """
         设置指标参数
 
@@ -799,13 +799,13 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         if 'adapt_to_volatility' in kwargs:
             self.adapt_to_volatility = kwargs['adapt_to_volatility']
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Macd_Enhanced_Macd_Enhanced_Macd(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算EnhancedMACD指标的置信度
+        计算Enhanced_mACD指标的置信度
 
         Args:
             score: 得分序列
-            patterns: 检测到的形态DataFrame
+            patterns: 检测到的形态Data_frame
             signals: 生成的信号字典
 
         Returns:
@@ -855,20 +855,20 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Macd_Enhanced_Macd_Enhanced_Macd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EnhancedMACD相关形态
+        获取Enhanced_mACD相关形态
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信息的DataFrame
+            pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Macd_Enhanced_Macd(data)
 
         if self._result is None:
             return pd.DataFrame(index=data.index)
@@ -902,9 +902,9 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def register_patterns(self):
+    def register_patterns_Macd_Enhanced_Macd(self):
         """
-        注册EnhancedMACD指标的形态到全局形态注册表
+        注册Enhanced_mACD指标的形态到全局形态注册表
         """
         # 注册MACD交叉形态
         self.register_pattern_to_registry(
@@ -969,9 +969,9 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_trading_signals_Macd(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成EnhancedMACD交易信号
+        生成Enhanced_mACD交易信号
 
         Args:
             data: 输入数据
@@ -982,7 +982,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
         """
         # 确保已计算指标
         if self._result is None:
-            self.calculate(data)
+            self.calculate_Macd_Enhanced_Macd(data)
 
         if self._result is None:
             return {
@@ -1033,7 +1033,7 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
             'signal_strength': signal_strength
         }
 
-    def identify_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
+    def identify_patterns_Macd(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         识别MACD相关形态
 
@@ -1044,9 +1044,9 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 形态识别结果
         """
         # 使用get_patterns方法
-        return self.get_patterns(data)
+        return self.get_patterns_Macd_Enhanced_Macd_Enhanced_Macd(data)
 
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Macd_Enhanced_Macd(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
 

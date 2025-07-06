@@ -11,7 +11,7 @@ from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
 logger = logging.getLogger(__name__)
 
-class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
+class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin):
     """
     ZXM市场宽度指标
     
@@ -35,13 +35,13 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
             'momentum_breadth': 0.15      # 动量宽度
         }
         
-    def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _calculate_marketbreadth(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算市场宽度指标
         
         Args:
-            data: DataFrame，包含市场数据，需要有多个股票的数据
-                data必须是一个多层索引DataFrame，第一级是日期，第二级是股票代码
+            data: Data_frame，包含市场数据，需要有多个股票的数据
+                data必须是一个多层索引Data_frame，第一级是日期，第二级是股票代码
                 必须包含的列：['open', 'high', 'low', 'close', 'volume']
             *args: 位置参数
             **kwargs: 关键字参数
@@ -50,7 +50,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
                 index_code: 大盘指数代码，默认None
                 
         Returns:
-            DataFrame: 包含市场宽度指标的DataFrame
+            Data_frame: 包含市场宽度指标的Data_frame
         """
         if data.empty:
             return pd.DataFrame()
@@ -61,7 +61,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         index_code = kwargs.get('index_code', None)
         
         # 检查数据结构，如果不是多层索引，则使用简化计算
-        if not isinstance(data.index, pd.MultiIndex):
+        if not isinstance(data.index, pd.Multi_index):
             logger.debug(f"{self.name}: 输入数据不是多层索引DataFrame，使用简化的市场宽度计算。")
             return self._calculate_simplified_breadth(data, **kwargs)
             
@@ -121,12 +121,12 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
 
         return result
         
-    def calculate_raw_score(self, data: pd.DataFrame, *args, **kwargs) -> pd.Series:
+    def calculate_raw_score_Breadth(self, data: pd.DataFrame, *args, **kwargs) -> pd.Series:
         """
         计算市场宽度原始评分 (0-100分)
         
         Args:
-            data: DataFrame，包含市场数据，需要有多个股票的数据
+            data: Data_frame，包含市场数据，需要有多个股票的数据
             *args: 位置参数
             **kwargs: 关键字参数
                 
@@ -174,18 +174,18 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         
         return scores
         
-    def identify_patterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def identify_patterns_Breadth(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         识别市场宽度中的关键形态
         
         Args:
-            data: DataFrame，包含市场数据，需要有多个股票的数据
+            data: Data_frame，包含市场数据，需要有多个股票的数据
             *args: 位置参数
             **kwargs: 关键字参数
                 min_pattern_strength: 最小形态强度阈值，默认0.6
                 
         Returns:
-            DataFrame: 包含识别出的形态的DataFrame
+            Data_frame: 包含识别出的形态的Data_frame
         """
         # 获取参数
         min_pattern_strength = kwargs.get('min_pattern_strength', 0.6)
@@ -251,18 +251,18 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         
         return patterns
         
-    def generate_signals(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def generate_signals_Breadth(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成市场宽度信号
         
         Args:
-            data: DataFrame，包含市场数据
+            data: Data_frame，包含市场数据
             *args: 位置参数
             **kwargs: 关键字参数
                 signal_threshold: 信号阈值，默认70
                 
         Returns:
-            DataFrame: 包含标准化信号的DataFrame
+            Data_frame: 包含标准化信号的Data_frame
         """
         # 获取参数
         signal_threshold = kwargs.get('signal_threshold', 70)
@@ -291,7 +291,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
             return signals
         
         # 识别形态
-        patterns = self.identify_patterns(data, *args, **kwargs)
+        patterns = self.identify_patterns_Breadth(data, *args, **kwargs)
         
         # 基于市场宽度指标生成信号
         for i in range(5, len(signals)):
@@ -402,7 +402,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         
         return signals
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Breadth(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -441,7 +441,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, max(0.0, base_confidence + pattern_boost))
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Breadth(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -450,11 +450,11 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 包含形态信号的DataFrame
+            pd.DataFrame: 包含形态信号的Data_frame
         """
-        return self.identify_patterns(data, **kwargs)
+        return self.identify_patterns_Breadth(data, **kwargs)
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_Breadth(self, **kwargs):
         """
         设置指标参数
 
@@ -813,7 +813,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
         """检测市场超跌"""
         if 'market_breadth_indicator' not in result.columns:
             return False
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_Breadth(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -907,7 +907,7 @@ class ZXMMarketBreadth(BaseIndicator, PatternSignalMixin):
             **kwargs: 其他参数
 
         Returns:
-            DataFrame: 包含简化市场宽度指标的DataFrame
+            Data_frame: 包含简化市场宽度指标的Data_frame
         """
         if data.empty or len(data) < 20:
             return pd.DataFrame(index=data.index)

@@ -10,18 +10,19 @@
 import os
 import sys
 import pandas as pd
+import numpy as np
 from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime, timedelta
+from sklearn.metrics import confusion_matrix
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from indicators.base_indicator import BaseIndicator
-from utils.logger import get_logger
+from utils.logger import getLogger
 from utils.decorators import performance_monitor
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class ScoringValidator:
@@ -31,7 +32,7 @@ class ScoringValidator:
     验证技术指标评分系统的有效性和准确性
     """
     
-    def __init__(self, lookforward_days: int = 5, score_thresholds: Dict[str, float] = None):
+    def __init___47(self, lookforward_days: int = 5, score_thresholds: Dict[str, float] = None):
         """
         初始化评分系统验证器
         
@@ -166,7 +167,7 @@ class ScoringValidator:
         
         Args:
             scores: 评分序列
-            price_data: 价格数据DataFrame
+            price_data: 价格数据Data_frame
             threshold_range: 阈值范围元组 (最小值, 最大值, 步长)
                              用于确定bullish阈值，bearish阈值自动设置为100-bullish
         

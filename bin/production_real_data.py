@@ -16,7 +16,7 @@ from typing import Dict, List, Any
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crawler.processors.concept_extractor import ConceptStockExtractor
+from crawler.processors.concept_extractor import Concept_stock_extractor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,8 +25,8 @@ logger = get_logger(__name__)
 class ProductionDataCollector:
     """生产级数据收集器"""
 
-    def __init__(self):
-        self.concept_extractor = ConceptStockExtractor()
+    def __init___5(self):
+        self.concept_extractor = Concept_stock_extractor()
 
         # 设置请求头
         self.headers = {
@@ -306,7 +306,7 @@ class ProductionDataCollector:
         }
 
 
-def main():
+def main_7():
     """主函数"""
     print("=== 生产级股市数据获取系统 ===")
     print(f"启动时间: {datetime.now()}")
@@ -314,7 +314,7 @@ def main():
     print("=" * 50)
 
     # 创建数据收集器
-    collector = ProductionDataCollector()
+    collector = Production_data_collector()
 
     try:
         # 收集数据
@@ -408,4 +408,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_7()

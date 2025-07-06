@@ -22,22 +22,22 @@ sys.path.append(project_root)
 from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
 from db.unified_data_manager import get_unified_data_manager
 from monitoring.performance_monitor import get_performance_monitor, start_monitoring, stop_monitoring
-from utils.stability_enhancer import get_stability_manager, retry, CircuitBreaker
+from utils.stability_enhancer import get_stability_manager, retry, Circuit_breaker
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class ComprehensiveOptimizationTest:
+class Comprehensive_optimization_test:
     """综合优化验证测试器"""
     
     def __init__(self):
         """初始化测试器"""
         # 初始化所有优化组件
         self.connection_pool = initialize_connection_pool(
-            host='localhost',
-            port=9000,
-            database='stock',
+            host=os.getenv('DB_HOST', 'localhost'),
+            port=int(os.getenv('DB_PORT', '9000')),
+            database=os.getenv('DB_DATABASE', 'stock'),
             max_connections=20,
             min_connections=5
         )
@@ -109,7 +109,7 @@ class ComprehensiveOptimizationTest:
             # 执行并发测试
             start_time = time.time()
             
-            with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
+            with concurrent.futures.Thread_pool_executor(max_workers=thread_count) as executor:
                 futures = [executor.submit(query_task, i) for i in range(thread_count)]
                 thread_results = [future.result() for future in concurrent.futures.as_completed(futures)]
             
@@ -387,7 +387,7 @@ class ComprehensiveOptimizationTest:
             test_results['monitoring_integration'] = self.test_monitoring_integration()
             
             # 5. 整体评估
-            test_results['overall_assessment'] = self._generate_overall_assessment(test_results)
+            test_results['overall_assessment'] = self._generate_overall_assessment_Comprehensive_Optimization_Test(test_results)
             
             logger.info("综合优化验证测试完成")
             
@@ -397,7 +397,7 @@ class ComprehensiveOptimizationTest:
         
         return test_results
     
-    def _generate_overall_assessment(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_overall_assessment_Comprehensive_Optimization_Test(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
         """生成整体评估"""
         assessment = {
             'optimization_grade': 'A',
@@ -458,7 +458,7 @@ class ComprehensiveOptimizationTest:
         return assessment
 
 
-def main():
+def main_comprehensiveoptimizationtest():
     """主函数"""
     print("=" * 80)
     print("综合优化验证测试")
@@ -469,7 +469,7 @@ def main():
     
     try:
         # 创建测试实例
-        test_framework = ComprehensiveOptimizationTest()
+        test_framework = Comprehensive_optimization_test()
         
         # 运行综合测试
         results = test_framework.run_comprehensive_optimization_test()
@@ -525,5 +525,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_comprehensiveoptimizationtest()
     sys.exit(exit_code)

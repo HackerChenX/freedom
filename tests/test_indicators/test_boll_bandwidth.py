@@ -18,7 +18,7 @@ from indicators.complete_indicator_registry import complete_registry
 class TestBOLLBandwidth(unittest.TestCase):
     """测试布林带带宽变化率功能"""
 
-    def setUp(self):
+    def setUp_Bandwidth(self):
         """
         创建测试数据
         """

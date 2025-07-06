@@ -24,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def generate_test_data(days: int = 100) -> pd.DataFrame:
+def generate_test_data_Scoring_Test_Pattern_Indicators_Scoring(days: int = 100) -> pd.DataFrame:
     """
     生成测试用的OHLCV数据
     
@@ -99,7 +99,7 @@ def test_candlestick_patterns_scoring():
     print("\n=== 测试K线形态识别指标评分功能 ===")
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Pattern_Indicators_Scoring(100)
     
     # 创建指标实例
     indicator = CandlestickPatterns()
@@ -131,7 +131,7 @@ def test_advanced_candlestick_patterns_scoring():
     print("\n=== 测试高级K线形态识别指标评分功能 ===")
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Pattern_Indicators_Scoring(100)
     
     # 创建指标实例
     indicator = AdvancedCandlestickPatterns()
@@ -163,7 +163,7 @@ def test_fibonacci_tools_scoring():
     print("\n=== 测试斐波那契工具指标评分功能 ===")
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Pattern_Indicators_Scoring(100)
     
     # 创建指标实例
     indicator = FibonacciTools()
@@ -195,7 +195,7 @@ def test_elliott_wave_scoring():
     print("\n=== 测试艾略特波浪理论指标评分功能 ===")
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_Pattern_Indicators_Scoring(100)
     
     # 创建指标实例
     indicator = ElliottWave()
@@ -222,7 +222,7 @@ def test_elliott_wave_scoring():
         return False
 
 
-def main():
+def mainTestpatternindicatorsscoring():
     """主函数"""
     print("开始测试形态识别指标评分功能...")
     
@@ -250,5 +250,5 @@ def main():
 
 
 if __name__ == "__main__":
-    success = main()
+    success = mainTestpatternindicatorsscoring()
     sys.exit(0 if success else 1) 

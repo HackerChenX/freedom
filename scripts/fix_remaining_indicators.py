@@ -58,7 +58,7 @@ def test_and_fix_indicators():
             print(f"获取类: {indicator['class_name']}")
             indicator_class = getattr(module, indicator['class_name'], None)
             
-            if indicator_class is None:
+            if indicator_class is_Fix_Remaining_Indicators None:
                 print(f"❌ 类 {indicator['class_name']} 不存在")
                 failed_fixes.append(f"{indicator['name']}: 类不存在")
                 continue
@@ -133,7 +133,7 @@ def test_and_fix_indicators():
     
     return success, successful_fixes, failed_fixes
 
-def generate_registration_code(successful_fixes):
+def generate_registration_code_Indicators(successful_fixes):
     """为成功修复的指标生成注册代码"""
     if not successful_fixes:
         return
@@ -172,7 +172,7 @@ def generate_registration_code(successful_fixes):
     print(f"    except Exception as e:")
     print(f"        logger.debug(f'修复注册失败 {{indicator_name}}: {{e}}')")
 
-def estimate_final_system_status(successful_fixes):
+def estimate_final_system_status_Indicators(successful_fixes):
     """估算修复后的最终系统状态"""
     print(f"\n📈 修复后系统状态估算:")
     print(f"="*60)
@@ -237,10 +237,10 @@ def main():
     
     # 生成注册代码
     if successful_fixes:
-        generate_registration_code(successful_fixes)
+        generate_registration_code_Indicators(successful_fixes)
     
     # 估算最终状态
-    final_success = estimate_final_system_status(successful_fixes)
+    final_success = estimate_final_system_status_Indicators(successful_fixes)
     
     print(f"\n" + "="*60)
     print(f"📋 修复工作总结")

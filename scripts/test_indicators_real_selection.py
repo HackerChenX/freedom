@@ -97,7 +97,7 @@ class IndicatorRealSelectionTester:
                 }
             }
     
-    def run_comprehensive_test(self, test_limit: int = None) -> Dict[str, Any]:
+    def run_comprehensive_test_Selection(self, test_limit: int = None) -> Dict[str, Any]:
         """运行综合测试"""
         logger.info("开始指标真实数据选股测试")
         
@@ -151,7 +151,7 @@ class IndicatorRealSelectionTester:
         logger.info(f"测试完成: {len(can_select_indicators)}/{len(all_indicators)} 个指标可以选股")
         return summary
     
-    def save_results(self, results: Dict[str, Any], output_file: str = None):
+    def save_results_Selection(self, results: Dict[str, Any], output_file: str = None):
         """保存测试结果"""
         if output_file is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -190,17 +190,17 @@ class IndicatorRealSelectionTester:
                 
         logger.info(f"测试报告已保存到: {report_file}")
 
-def main():
+def main_testindicatorsrealselection():
     """主函数"""
     try:
         tester = IndicatorRealSelectionTester()
         
         # 先测试前10个指标
         print("开始测试前10个指标的选股能力...")
-        results = tester.run_comprehensive_test(test_limit=10)
+        results = tester.run_comprehensive_test_Selection(test_limit=10)
         
         # 保存结果
-        tester.save_results(results)
+        tester.save_results_Selection(results)
         
         # 打印摘要
         print(f"\n{'='*60}")
@@ -235,4 +235,4 @@ def main():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    main() 
+    mainTestindicatorsrealselection() 

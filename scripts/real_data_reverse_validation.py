@@ -4,7 +4,7 @@
 """
 真实数据反向验证工具
 
-使用ClickHouse真实数据执行策略选股，验证买点策略的有效性
+使用Click_house真实数据执行策略选股，验证买点策略的有效性
 """
 
 import sys
@@ -19,8 +19,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from strategy.strategy_executor import StrategyExecutor
-from strategy.strategy_manager import StrategyManager
+from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_manager import Strategy_manager
 from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger
 
@@ -56,8 +56,8 @@ class RealDataReverseValidator:
         """初始化验证器"""
         try:
             self.data_manager = get_unified_data_manager()
-            self.strategy_executor = StrategyExecutor()
-            self.strategy_manager = StrategyManager()
+            self.strategy_executor = Strategy_executor()
+            self.strategy_manager = Strategy_manager()
             print("✅ 成功连接到ClickHouse数据库")
             print("✅ 策略执行器初始化完成")
         except Exception as e:
@@ -88,10 +88,10 @@ class RealDataReverseValidator:
         
         try:
             # 1. 加载原始买点数据
-            original_buypoints = self._load_buypoints(buypoints_file)
+            original_buypoints = self._load_buypoints_Real_Data_Reverse_Validation(buypoints_file)
             
             # 2. 加载策略
-            strategy = self._load_strategy(strategy_file)
+            strategy = self._load_strategy_Real_Data_Reverse_Validation(strategy_file)
             
             # 3. 提取原始买点股票列表
             original_stocks = self._extract_original_stocks(original_buypoints)
@@ -138,7 +138,7 @@ class RealDataReverseValidator:
             }
             
             # 8. 评估验证质量
-            quality_assessment = self._assess_validation_quality(validation_results)
+            quality_assessment = self._assess_validation_quality_Real_Data_Reverse_Validation(validation_results)
             validation_results["quality_assessment"] = quality_assessment
             
             print(f"✅ 真实数据验证完成，匹配率: {match_analysis['match_rate']:.1%}")
@@ -153,7 +153,7 @@ class RealDataReverseValidator:
                 "execution_mode": "real_data"
             }
     
-    def _load_buypoints(self, buypoints_file: str) -> pd.DataFrame:
+    def _load_buypoints_Real_Data_Reverse_Validation(self, buypoints_file: str) -> pd.DataFrame:
         """加载买点数据"""
         try:
             if buypoints_file.endswith('.csv'):
@@ -170,7 +170,7 @@ class RealDataReverseValidator:
         except Exception as e:
             raise Exception(f"加载买点数据失败: {e}")
     
-    def _load_strategy(self, strategy_file: str) -> dict:
+    def _load_strategy_Real_Data_Reverse_Validation(self, strategy_file: str) -> dict:
         """加载策略文件"""
         try:
             with open(strategy_file, 'r', encoding='utf-8') as f:
@@ -200,7 +200,7 @@ class RealDataReverseValidator:
             print(f"⚠️ 未找到明确的股票代码列，使用第一列: {stock_column}")
         
         # 转换为字符串类型并格式化为6位股票代码
-        def format_stock_code(code):
+        def format_stock_code_Validation_Real_Data_Reverse_Validation_Real_Data_Reverse_Validation_realdatareversevalidation(code):
             """格式化股票代码为6位字符串"""
             code_str = str(code).strip()
             # 如果是数字，补齐到6位
@@ -208,7 +208,7 @@ class RealDataReverseValidator:
                 return code_str.zfill(6)
             return code_str
 
-        original_stocks = set(format_stock_code(code) for code in buypoints[stock_column].unique())
+        original_stocks = set(format_stock_code_Validation_Real_Data_Reverse_Validation_Real_Data_Reverse_Validation_realdatareversevalidation(code) for code in buypoints[stock_column].unique())
         print(f"📈 提取到 {len(original_stocks)} 只原始买点股票")
         print(f"📈 股票列表: {sorted(list(original_stocks))}")
 
@@ -296,13 +296,13 @@ class RealDataReverseValidator:
             print(f"📅 执行策略选股，截止日期: {validation_date}")
 
             # 设置进度回调
-            def progress_callback(progress, message):
+            def progress_callback_Validation(progress, message):
                 if config.get("enable_progress", True):
                     print(f"  📊 进度: {progress:.1%} - {message}")
 
             # 修改策略执行计划，只处理原始买点股票
             # 重新加载买点数据来获取原始股票列表
-            buypoints_df = self._load_buypoints(buypoints_file)
+            buypoints_df = self._load_buypoints_Real_Data_Reverse_Validation(buypoints_file)
             original_stocks = self._extract_original_stocks(buypoints_df)
 
             # 创建包含原始股票的股票列表DataFrame
@@ -348,7 +348,6 @@ class RealDataReverseValidator:
                     print(f"⚠️ 使用第一列作为股票代码: {stock_column}")
                 
                 # 转换为字符串类型并格式化股票代码
-                def format_stock_code(code):
                     """格式化股票代码为6位字符串"""
                     code_str = str(code).strip()
                     # 如果是数字，补齐到6位
@@ -356,7 +355,7 @@ class RealDataReverseValidator:
                         return code_str.zfill(6)
                     return code_str
 
-                selected_stocks = set(format_stock_code(code) for code in selected_stocks_df[stock_column].tolist())
+                selected_stocks = set(format_stock_code_Validation_Real_Data_Reverse_Validation_Real_Data_Reverse_Validation_realdatareversevalidation(code) for code in selected_stocks_df[stock_column].tolist())
 
                 print(f"✅ 策略执行完成，选出 {len(selected_stocks)} 只股票")
                 print(f"📈 选中股票: {sorted(list(selected_stocks))}")
@@ -383,7 +382,7 @@ class RealDataReverseValidator:
             for stock_code in selected_stocks:
                 try:
                     # 获取股票基本信息
-                    stock_info = self.data_manager.get_stock_basic_info(stock_code)
+                    stock_info WHERE 1=1 = self.data_manager.get_stock_basic_info(stock_code)
                     if stock_info:
                         details[stock_code] = {
                             "stock_name": stock_info.get("stock_name", "未知"),
@@ -442,7 +441,7 @@ class RealDataReverseValidator:
         
         return analysis
     
-    def _assess_validation_quality(self, results: dict) -> dict:
+    def _assess_validation_quality_Real_Data_Reverse_Validation(self, results: dict) -> dict:
         """评估验证质量"""
         match_analysis = results["match_analysis"]
         match_rate = match_analysis["match_rate"]
@@ -501,7 +500,7 @@ class RealDataReverseValidator:
         return assessment
 
 
-def main():
+def main_realdatareversevalidation():
     """主函数"""
     parser = argparse.ArgumentParser(description="真实数据反向验证工具")
     parser.add_argument("--buypoints", required=True, help="原始买点数据文件")
@@ -526,7 +525,7 @@ def main():
     
     try:
         # 创建验证器并执行验证
-        validator = RealDataReverseValidator()
+        validator = Real_data_reverse_validator()
         
         print(f"🎯 真实数据反向验证")
         print(f"买点文件: {args.buypoints}")
@@ -652,4 +651,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_realdatareversevalidation()

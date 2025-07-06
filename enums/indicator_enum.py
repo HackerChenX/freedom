@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class IndicatorEnum(str, Enum):
+class Indicator_enum(str, Enum):
     """指标常量枚举"""
 
     # ZXM系列指标

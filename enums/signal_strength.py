@@ -1,18 +1,18 @@
 from enum import Enum
 
-class SignalStrength(Enum):
+class Signalstrength_strength(Enum):
     """
     统一信号强度枚举
 
     数值越大，信号越强。正数代表看涨/积极，负数代表看跌/消极。
     """
     VERY_STRONG = 2.0
-    STRONG = 1.5
-    MODERATE = 1.0
-    WEAK = 0.5
+    strong = 1.5
+    moderate = 1.0
+    weak = 0.5
     VERY_WEAK = 0.25
     
-    NEUTRAL = 0.0
+    neutral = 0.0
     
     VERY_STRONG_NEGATIVE = -2.0
     STRONG_NEGATIVE = -1.5

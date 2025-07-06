@@ -23,7 +23,7 @@ from utils.logger import get_logger
 logger = get_logger("system_review")
 
 
-def main():
+def main_2():
     """主函数"""
     start_time = time.time()
     
@@ -56,7 +56,7 @@ def main():
             logger.error("回顾测试执行失败")
             return result.returncode
             
-    except subprocess.CalledProcessError as e:
+    except subprocess.Called_process_error as e:
         logger.error(f"回顾测试执行出错: {e}")
         return e.returncode
     except Exception as e:
@@ -78,4 +78,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main_2()) 

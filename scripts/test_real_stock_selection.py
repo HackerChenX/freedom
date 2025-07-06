@@ -18,9 +18,10 @@ import pandas as pd
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
-from strategy.strategy_factory import StrategyFactory
-from enums.indicator_enum import IndicatorEnum
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IData_access
+from strategy.strategy_factory import Strategy_factory
+from enums.indicator_enum import Indicator_enum
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,11 +30,11 @@ class RealStockSelectionTester:
     """真实数据选股测试器"""
     
     def __init__(self):
-        self.db = get_clickhouse_db()
-        self.strategy_factory = StrategyFactory()
+        self.data_access = get_container().resolve(IData_access)
+        self.strategy_factory = Strategy_factory()
         self.results = {}
         
-    def get_test_stocks(self, limit: int = 50) -> List[str]:
+    def get_test_stocks_Selection(self, limit: int = 50) -> List[str]:
         """获取测试用的股票列表"""
         try:
             # 获取有日线数据的股票
@@ -64,7 +65,7 @@ class RealStockSelectionTester:
             logger.error(f"获取测试股票列表失败: {str(e)}")
             return []
     
-    def test_single_indicator(self, indicator_name: str, test_stocks: List[str]) -> Dict[str, Any]:
+    def test_single_indicator_Selection(self, indicator_name: str, test_stocks: List[str]) -> Dict[str, Any]:
         """测试单个指标的选股效果"""
         try:
             logger.info(f"测试指标: {indicator_name}")
@@ -138,12 +139,12 @@ class RealStockSelectionTester:
                 "error": str(e)
             }
     
-    def run_comprehensive_test(self) -> Dict[str, Any]:
+    def run_comprehensive_test_Selection_Test_Real_Stock_Selection(self) -> Dict[str, Any]:
         """运行综合测试"""
         logger.info("开始真实数据选股测试")
         
         # 获取测试股票
-        test_stocks = self.get_test_stocks(limit=100)
+        test_stocks = self.get_test_stocks_Selection(limit=100)
         if not test_stocks:
             logger.error("无法获取测试股票数据")
             return {"error": "无法获取测试股票数据"}
@@ -151,7 +152,7 @@ class RealStockSelectionTester:
         logger.info(f"使用 {len(test_stocks)} 只股票进行测试")
         
         # 获取所有指标
-        all_indicators = [indicator.name for indicator in IndicatorEnum]
+        all_indicators = [indicator.name for indicator in Indicator_enum]
         logger.info(f"准备测试 {len(all_indicators)} 个指标")
         
         # 测试每个指标
@@ -162,7 +163,7 @@ class RealStockSelectionTester:
         for i, indicator_name in enumerate(all_indicators, 1):
             logger.info(f"进度: {i}/{len(all_indicators)} - 测试指标 {indicator_name}")
             
-            result = self.test_single_indicator(indicator_name, test_stocks)
+            result = self.test_single_indicator_Selection(indicator_name, test_stocks)
             test_results.append(result)
             
             if result["status"] == "success":
@@ -187,7 +188,7 @@ class RealStockSelectionTester:
         logger.info(f"测试完成: {len(successful_indicators)}/{len(all_indicators)} 个指标成功选股")
         return summary
     
-    def save_results(self, results: Dict[str, Any], output_file: str = None):
+    def save_results_Selection_Test_Real_Stock_Selection(self, results: Dict[str, Any], output_file: str = None):
         """保存测试结果"""
         if output_file is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -224,20 +225,20 @@ class RealStockSelectionTester:
                 
         logger.info(f"测试报告已保存到: {report_file}")
 
-def main():
+def main_testrealstockselection():
     """主函数"""
     try:
-        tester = RealStockSelectionTester()
+        tester = Real_stock_selection_tester()
         
         # 运行综合测试
-        results = tester.run_comprehensive_test()
+        results = tester.run_comprehensive_test_Selection_Test_Real_Stock_Selection()
         
         if "error" in results:
             print(f"❌ 测试失败: {results['error']}")
             return
             
         # 保存结果
-        tester.save_results(results)
+        tester.save_results_Selection_Test_Real_Stock_Selection(results)
         
         # 打印摘要
         print(f"\n{'='*60}")
@@ -264,4 +265,4 @@ def main():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    main() 
+    main_testrealstockselection() 

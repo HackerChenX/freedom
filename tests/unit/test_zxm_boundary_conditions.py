@@ -2,7 +2,7 @@
 ZXM指标边界条件处理测试模块
 
 专门测试ZXM指标在边界条件下的稳定性和错误处理能力
-包括：NaN值、数据不足、极值情况等
+包括：Na_n值、数据不足、极值情况等
 """
 
 import unittest
@@ -11,16 +11,16 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # 导入需要测试的ZXM指标
-from indicators.zxm.buy_point_indicators import ZXMTurnover, ZXMVolumeShrink, ZXMBSAbsorb
-from indicators.zxm.trend_indicators import ZXMDailyTrendUp, ZXMWeeklyTrendUp
-from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZXMRiseElasticity
-from indicators.zxm.score_indicators import ZXMElasticityScore, ZXMBuyPointScore, StockScoreCalculator
+from indicators.zxm.buy_point_indicators import ZXMTurnover, ZXMVolume_shrink, ZXMBSAbsorb
+from indicators.zxm.trend_indicators import ZXMDaily_trend_up, ZXMWeekly_trend_up
+from indicators.zxm.elasticity_indicators import Amplitude_elasticity, ZXMRise_elasticity
+from indicators.zxm.score_indicators import ZXMElasticity_score, ZXMBuy_point_score, Stock_score_calculator
 
 
-class TestZXMBoundaryConditions(unittest.TestCase):
+class Test_zXMBoundary_conditions(unittest.Test_case):
     """ZXM指标边界条件测试类"""
     
-    def setUp(self):
+    def set_up_Conditions(self):
         """设置测试数据"""
         self.boundary_scenarios = self._generate_boundary_test_scenarios()
     
@@ -153,7 +153,7 @@ class TestZXMBoundaryConditions(unittest.TestCase):
         ]
         
         for indicator_name, indicator in indicators_to_test:
-            with self.subTest(indicator=indicator_name):
+            with self.sub_test(indicator=indicator_name):
                 try:
                     result = indicator.calculate(insufficient_data)
                     
@@ -185,7 +185,7 @@ class TestZXMBoundaryConditions(unittest.TestCase):
         ]
         
         for indicator_name, indicator in indicators_to_test:
-            with self.subTest(indicator=indicator_name):
+            with self.sub_test(indicator=indicator_name):
                 try:
                     result = indicator.calculate(nan_data)
                     
@@ -219,7 +219,7 @@ class TestZXMBoundaryConditions(unittest.TestCase):
         ]
         
         for indicator_name, indicator in indicators_to_test:
-            with self.subTest(indicator=indicator_name):
+            with self.sub_test(indicator=indicator_name):
                 try:
                     result = indicator.calculate(extreme_data)
                     
@@ -246,7 +246,7 @@ class TestZXMBoundaryConditions(unittest.TestCase):
         ]
         
         for indicator_name, indicator in indicators_to_test:
-            with self.subTest(indicator=indicator_name):
+            with self.sub_test(indicator=indicator_name):
                 try:
                     result = indicator.calculate(zero_data)
                     
@@ -273,7 +273,7 @@ class TestZXMBoundaryConditions(unittest.TestCase):
         ]
         
         for indicator_name, indicator in indicators_to_test:
-            with self.subTest(indicator=indicator_name):
+            with self.sub_test(indicator=indicator_name):
                 try:
                     result = indicator.calculate(constant_data)
                     
@@ -301,7 +301,7 @@ class TestZXMBoundaryConditions(unittest.TestCase):
         ]
         
         for indicator_name, indicator in indicators_to_test:
-            with self.subTest(indicator=indicator_name):
+            with self.sub_test(indicator=indicator_name):
                 try:
                     result = indicator.calculate(empty_data)
                     

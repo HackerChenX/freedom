@@ -28,15 +28,15 @@ warnings.filterwarnings('ignore')
 from enums.period import Period
 from utils.logger import get_logger
 from utils.path_utils import get_backtest_result_dir, get_stock_result_file, get_strategies_dir
-from utils.period_manager import PeriodManager
+from utils.period_manager import Period_manager
 from utils.period_data_structure import (
-    IndicatorPeriodResult, 
-    PeriodAnalysisResult, 
-    MultiPeriodAnalysisResult
+    Indicator_period_result, 
+    Period_analysis_result, 
+    Multi_period_analysis_result
 )
 from db.db_manager import DBManager
 from indicators.complete_indicator_registry import complete_registry
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -55,8 +55,8 @@ class EnhancedBacktest:
     
     def __init__(self):
         """初始化增强版回测系统"""
-        self.db_manager = DBManager.get_instance()
-        self.period_manager = PeriodManager.get_instance()
+        self.db_manager = DBManager.get_instance_Backtest_Enhanced_Backtest()
+        self.period_manager = Period_manager.get_instance_Backtest_Enhanced_Backtest()
         self.result_dir = get_backtest_result_dir()
         self.strategies_dir = get_strategies_dir()
         
@@ -69,7 +69,7 @@ class EnhancedBacktest:
         self.pattern_stats = defaultdict(int)
         
         # 指标工厂
-        self.indicator_factory = IndicatorFactory()
+        self.indicator_factory = Indicator_factory()
         
         # 默认配置
         self.default_config = {
@@ -98,8 +98,8 @@ class EnhancedBacktest:
         
         logger.info("增强版回测系统初始化完成")
     
-    def analyze_stock(self, code: str, buy_date: str, 
-                     config: Optional[Dict[str, Any]] = None) -> MultiPeriodAnalysisResult:
+    def analyze_stock_Backtest_Enhanced_Backtest(self, code: str, buy_date: str, 
+                     config: Optional[Dict[str, Any]] = None) -> Multi_period_analysis_result:
         """
         分析单个股票的买点
         
@@ -109,7 +109,7 @@ class EnhancedBacktest:
             config: 分析配置，如不提供则使用默认配置
             
         Returns:
-            MultiPeriodAnalysisResult: 多周期分析结果
+            Multi_period_analysis_result: 多周期分析结果
         """
         try:
             # 合并配置
@@ -126,11 +126,11 @@ class EnhancedBacktest:
             end_date = (buy_date_obj + datetime.timedelta(days=config['days_after'])).strftime("%Y%m%d")
             
             # 创建多周期分析结果对象
-            result = MultiPeriodAnalysisResult(code, buy_date)
+            result = Multi_period_analysis_result(code, buy_date)
             
             # 分析各个周期
             for period in config['periods']:
-                period_result = self._analyze_period(code, buy_date, period, end_date, config)
+                period_result = self._analyze_period_Enhanced_Backtest(code, buy_date, period, end_date, config)
                 if period_result is not None:
                     result.add_period_result(period_result)
             
@@ -147,10 +147,10 @@ class EnhancedBacktest:
             
         except Exception as e:
             logger.error(f"分析股票 {code} 时出错: {e}")
-            return MultiPeriodAnalysisResult(code, buy_date)
+            return Multi_period_analysis_result(code, buy_date)
     
-    def _analyze_period(self, code: str, buy_date: str, period: Period, 
-                       end_date: str, config: Dict[str, Any]) -> Optional[PeriodAnalysisResult]:
+    def _analyze_period_Enhanced_Backtest(self, code: str, buy_date: str, period: Period, 
+                       end_date: str, config: Dict[str, Any]) -> Optional[Period_analysis_result]:
         """
         分析指定周期的技术指标
         
@@ -162,7 +162,7 @@ class EnhancedBacktest:
             config: 分析配置
             
         Returns:
-            Optional[PeriodAnalysisResult]: 周期分析结果
+            Optional[Period_analysis_result]: 周期分析结果
         """
         try:
             # 从周期管理器获取数据
@@ -191,7 +191,7 @@ class EnhancedBacktest:
                 return None
             
             # 创建周期分析结果对象
-            period_result = PeriodAnalysisResult(period)
+            period_result = Period_analysis_result(period)
             
             # 分析所有启用的指标
             for indicator_name, indicator_config in config['indicators'].items():
@@ -212,7 +212,7 @@ class EnhancedBacktest:
                         signals = indicator.generate_trading_signals(indicator_data)
                         
                         # 创建指标周期结果
-                        indicator_result = IndicatorPeriodResult(indicator_name, period)
+                        indicator_result = Indicator_period_result(indicator_name, period)
                         indicator_result.set_data(indicator_data)
                         indicator_result.set_patterns(patterns)
                         indicator_result.set_score(score.get('final_score') if isinstance(score, dict) else score)
@@ -230,8 +230,8 @@ class EnhancedBacktest:
             logger.error(f"分析周期 {period.value} 时出错: {e}")
             return None
     
-    def batch_analyze(self, input_file: str, output_file: str, 
-                     config: Optional[Dict[str, Any]] = None) -> List[MultiPeriodAnalysisResult]:
+    def batch_analyze_Backtest_Enhanced_Backtest(self, input_file: str, output_file: str, 
+                     config: Optional[Dict[str, Any]] = None) -> List[Multi_period_analysis_result]:
         """
         批量分析多个股票的买点
         
@@ -241,7 +241,7 @@ class EnhancedBacktest:
             config: 分析配置，如不提供则使用默认配置
             
         Returns:
-            List[MultiPeriodAnalysisResult]: 分析结果列表
+            List[Multi_period_analysis_result]: 分析结果列表
         """
         try:
             # 读取输入文件
@@ -267,14 +267,14 @@ class EnhancedBacktest:
                     buy_date = buy_date.replace('-', '')
                 
                 # 调用分析函数
-                result = self.analyze_stock(row['code'], buy_date, config)
+                result = self.analyze_stock_Backtest_Enhanced_Backtest(row['code'], buy_date, config)
                 results.append(result)
             
             # 保存结果
-            self.save_results(results, output_file)
+            self.save_results_Backtest_Enhanced_Backtest(results, output_file)
             
             # 打印形态统计
-            self._print_pattern_stats()
+            self._print_pattern_stats_Enhanced_Backtest()
             
             return results
             
@@ -282,7 +282,7 @@ class EnhancedBacktest:
             logger.error(f"批量分析出错: {e}")
             return []
     
-    def save_results(self, results: List[MultiPeriodAnalysisResult], output_file: str) -> None:
+    def save_results_Backtest_Enhanced_Backtest(self, results: List[Multi_period_analysis_result], output_file: str) -> None:
         """
         保存分析结果到文件
         
@@ -307,7 +307,7 @@ class EnhancedBacktest:
         except Exception as e:
             logger.error(f"保存分析结果时出错: {e}")
     
-    def generate_strategy(self, results: List[MultiPeriodAnalysisResult], 
+    def generate_strategy_Backtest_Enhanced_Backtest(self, results: List[Multi_period_analysis_result], 
                          output_file: str, threshold: int = 2) -> Dict[str, Any]:
         """
         根据分析结果生成选股策略
@@ -353,7 +353,7 @@ class EnhancedBacktest:
             }
             
             # 获取形态元数据
-            pattern_registry = PatternRegistry()
+            pattern_registry = Pattern_registry()
             
             # 为每个周期生成条件
             for period_value, patterns in period_patterns.items():
@@ -416,7 +416,7 @@ class EnhancedBacktest:
             logger.error(f"生成策略时出错: {e}")
             return {}
     
-    def _print_pattern_stats(self) -> None:
+    def _print_pattern_stats_Enhanced_Backtest(self) -> None:
         """打印形态统计信息"""
         logger.info("形态统计结果:")
         
@@ -424,7 +424,7 @@ class EnhancedBacktest:
         sorted_patterns = sorted(self.pattern_stats.items(), key=lambda x: x[1], reverse=True)
         
         # 获取形态显示名称
-        pattern_registry = PatternRegistry()
+        pattern_registry = Pattern_registry()
         
         for pattern_id, count in sorted_patterns[:20]:  # 只显示前20个
             display_name = pattern_registry.get_display_name(pattern_id)
@@ -435,8 +435,8 @@ class EnhancedBacktest:
             logger.info(f"... 还有 {total_patterns - 20} 个形态未显示 ...")
     
     @staticmethod
-    def get_instance() -> 'EnhancedBacktest':
+    def get_instance_Backtest_Enhanced_Backtest() -> 'EnhancedBacktest':
         """获取单例实例"""
         if not hasattr(EnhancedBacktest, '_instance'):
-            EnhancedBacktest._instance = EnhancedBacktest()
-        return EnhancedBacktest._instance 
+            Enhanced_backtest._instance = Enhanced_backtest()
+        return Enhanced_backtest._instance 

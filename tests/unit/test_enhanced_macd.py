@@ -1,36 +1,36 @@
 """
-EnhancedMACD指标单元测试
+Enhanced_mACD指标单元测试
 """
 import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testenhancedmacd_macd(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """EnhancedMACD指标测试类"""
     
-    def setUp(self):
+    def set_up_Macd(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Macd(self)
         
-        self.indicator = EnhancedMACD(fast_period=12, slow_period=26, signal_period=9)
+        self.indicator = Enhanced_mACD(fast_period=12, slow_period=26, signal_period=9)
         self.expected_columns = [
             'macd', 'macd_signal', 'macd_hist', 'fast_ema', 'slow_ema',
             'hist_change_rate', 'trend_strength', 'zero_cross_angle',
             'signal_cross_angle', 'macd_deviation'
         ]
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
     
-    def tearDown(self):
+    def tear_down_Macd(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Macd(self)
     
     def test_enhanced_macd_calculation_accuracy(self):
         """测试EnhancedMACD计算准确性"""
@@ -63,7 +63,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         })
         
         # 使用较小的周期便于验证
-        test_indicator = EnhancedMACD(fast_period=5, slow_period=10, signal_period=3)
+        test_indicator = Enhanced_mACD(fast_period=5, slow_period=10, signal_period=3)
         result = test_indicator.calculate(simple_data)
         
         # 验证MACD计算逻辑
@@ -74,7 +74,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             
             if not pd.isna(macd_value) and not pd.isna(signal_value) and not pd.isna(hist_value):
                 # 验证柱状体 = MACD - 信号线
-                self.assertAlmostEqual(hist_value, macd_value - signal_value, places=6,
+                self.assert_almost_equal(hist_value, macd_value - signal_value, places=6,
                                      msg="柱状体应该等于MACD减去信号线")
     
     def test_enhanced_macd_score_range(self):
@@ -93,9 +93,9 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_enhanced_macd_parameter_update(self):
         """测试EnhancedMACD参数更新"""
@@ -105,9 +105,9 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(fast_period=new_fast, slow_period=new_slow, signal_period=new_signal)
         
         # 验证参数更新
-        self.assertEqual(self.indicator._fast_period, new_fast)
-        self.assertEqual(self.indicator._slow_period, new_slow)
-        self.assertEqual(self.indicator._signal_period, new_signal)
+        self.assert_equal(self.indicator._fast_period, new_fast)
+        self.assert_equal(self.indicator._slow_period, new_slow)
+        self.assert_equal(self.indicator._signal_period, new_signal)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -120,7 +120,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_enhanced_macd_comprehensive_score(self):
         """测试EnhancedMACD综合评分"""
@@ -130,7 +130,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 然后计算评分
         raw_score = self.indicator.calculate_raw_score(self.data)
         
-        self.assertIsInstance(raw_score, pd.Series)
+        self.assert_is_instance(raw_score, pd.Series)
         
         # 验证评分范围
         valid_scores = raw_score.dropna()
@@ -141,13 +141,13 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试EnhancedMACD形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -163,7 +163,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_enhanced_macd_multi_period_analysis(self):
         """测试EnhancedMACD多周期分析"""
         # 使用多周期参数
-        multi_indicator = EnhancedMACD(
+        multi_indicator = Enhanced_mACD(
             fast_period=12, slow_period=26, signal_period=9,
             multi_periods=[(8, 17, 9), (12, 26, 9), (24, 52, 18)]
         )
@@ -181,14 +181,14 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_enhanced_macd_volume_weighted(self):
         """测试EnhancedMACD成交量加权"""
         # 测试成交量加权模式
-        volume_indicator = EnhancedMACD(
+        volume_indicator = Enhanced_mACD(
             fast_period=12, slow_period=26, signal_period=9,
             volume_weighted=True
         )
         result = volume_indicator.calculate(self.data)
         
         # 验证成交量加权MACD计算
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('macd', result.columns)
         self.assertIn('macd_signal', result.columns)
         self.assertIn('macd_hist', result.columns)
@@ -196,24 +196,24 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_enhanced_macd_volatility_adaptation(self):
         """测试EnhancedMACD波动率自适应"""
         # 测试自适应模式
-        adaptive_indicator = EnhancedMACD(
+        adaptive_indicator = Enhanced_mACD(
             fast_period=12, slow_period=26, signal_period=9,
             adapt_to_volatility=True
         )
         result = adaptive_indicator.calculate(self.data)
         
         # 验证自适应功能
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('macd', result.columns)
         
         # 测试非自适应模式
-        non_adaptive_indicator = EnhancedMACD(
+        non_adaptive_indicator = Enhanced_mACD(
             fast_period=12, slow_period=26, signal_period=9,
             adapt_to_volatility=False
         )
         result2 = non_adaptive_indicator.calculate(self.data)
         
-        self.assertIsInstance(result2, pd.DataFrame)
+        self.assert_is_instance(result2, pd.DataFrame)
         self.assertIn('macd', result2.columns)
     
     def test_enhanced_macd_sensitivity_adjustment(self):
@@ -222,20 +222,20 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         sensitivities = [0.5, 1.0, 1.5, 2.0]
         
         for sensitivity in sensitivities:
-            test_indicator = EnhancedMACD(
+            test_indicator = Enhanced_mACD(
                 fast_period=12, slow_period=26, signal_period=9,
                 sensitivity=sensitivity
             )
             result = test_indicator.calculate(self.data)
             
             # 验证灵敏度调整功能
-            self.assertIsInstance(result, pd.DataFrame)
+            self.assert_is_instance(result, pd.DataFrame)
             self.assertIn('macd', result.columns)
             
             # 验证MACD值的合理性
             macd_values = result['macd'].dropna()
             if len(macd_values) > 0:
-                self.assertTrue(all(np.isfinite(v) for v in macd_values), 
+                self.assert_true(all(np.isfinite(v) for v in macd_values), 
                                f"灵敏度{sensitivity}时MACD值应该是有限数值")
     
     def test_enhanced_macd_signals(self):
@@ -243,11 +243,11 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assertIsInstance(signals, dict)
+        self.assert_is_instance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assertIsInstance(signals[key], pd.Series)
+            self.assert_is_instance(signals[key], pd.Series)
     
     def test_enhanced_macd_trend_strength(self):
         """测试EnhancedMACD趋势强度计算"""
@@ -260,7 +260,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         trend_strength = result['trend_strength'].dropna()
         if len(trend_strength) > 0:
             # 趋势强度应该在-1到1范围内
-            self.assertTrue(all(-1 <= v <= 1 for v in trend_strength), 
+            self.assert_true(all(-1 <= v <= 1 for v in trend_strength), 
                            "趋势强度应该在-1到1范围内")
     
     def test_enhanced_macd_histogram_change_rate(self):
@@ -274,10 +274,10 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         change_rate = result['hist_change_rate'].dropna()
         if len(change_rate) > 0:
             # 变化率应该是有限数值
-            self.assertTrue(all(np.isfinite(v) for v in change_rate), 
+            self.assert_true(all(np.isfinite(v) for v in change_rate), 
                            "柱状体变化率应该是有限数值")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Macd(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -288,11 +288,11 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assertIn(col, result.columns)
+            self.assert_in(col, result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Macd(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -303,7 +303,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_enhanced_macd_register_patterns(self):
         """测试EnhancedMACD形态注册"""
@@ -320,7 +320,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(small_data)
         
         # EnhancedMACD应该能处理数据不足的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('macd', result.columns)
     
     def test_enhanced_macd_validation(self):
@@ -328,7 +328,7 @@ class TestEnhancedMACD(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['close'], axis=1)
         
-        with self.assertRaises((ValueError, KeyError)):
+        with self.assert_raises((Value_error, Key_error)):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_macd_indicator_type(self):

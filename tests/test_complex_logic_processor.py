@@ -10,16 +10,16 @@ import pandas as pd
 from unittest.mock import Mock, patch
 
 from analysis.engines.complex_logic_processor import (
-    ComplexLogicProcessor,
-    LogicExpressionLexer,
-    LogicExpressionParser,
-    TokenType,
+    Complex_logic_processor,
+    Logic_expression_lexer,
+    Logic_expression_parser,
+    Token_type,
     Token
 )
-from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
+from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
 
 
-class TestLogicExpressionLexer(unittest.TestCase):
+class Test_logic_expression_lexer(unittest.Test_case):
     """逻辑表达式词法分析器测试"""
     
     def test_tokenize_simple_expression(self):
@@ -27,14 +27,14 @@ class TestLogicExpressionLexer(unittest.TestCase):
         lexer = LogicExpressionLexer("price > 10")
         tokens = lexer.tokenize()
         
-        self.assertEqual(len(tokens), 4)  # price, >, 10, EOF
-        self.assertEqual(tokens[0].type, TokenType.IDENTIFIER)
+        self.assert_equal(len(tokens), 4)  # price, >, 10, EOF
+        self.assert_equal(tokens[0].type, Token_type.IDENTIFIER)
         self.assertEqual(tokens[0].value, "price")
-        self.assertEqual(tokens[1].type, TokenType.OPERATOR)
+        self.assert_equal(tokens[1].type, Token_type.OPERATOR)
         self.assertEqual(tokens[1].value, ">")
-        self.assertEqual(tokens[2].type, TokenType.NUMBER)
+        self.assert_equal(tokens[2].type, Token_type.NUMBER)
         self.assertEqual(tokens[2].value, "10")
-        self.assertEqual(tokens[3].type, TokenType.EOF)
+        self.assert_equal(tokens[3].type, Token_type.EOF)
     
     def test_tokenize_complex_expression(self):
         """测试复杂表达式词法分析"""
@@ -42,7 +42,7 @@ class TestLogicExpressionLexer(unittest.TestCase):
         tokens = lexer.tokenize()
         
         # 验证关键标记
-        token_values = [token.value for token in tokens if token.type != TokenType.EOF]
+        token_values = [token.value for token in tokens if token.type != Token_type.EOF]
         self.assertIn("CROSS", token_values)
         self.assertIn("MA", token_values)
         self.assertIn("AND", token_values)
@@ -53,44 +53,44 @@ class TestLogicExpressionLexer(unittest.TestCase):
         lexer = LogicExpressionLexer("a AND b OR c NOT d")
         tokens = lexer.tokenize()
         
-        and_tokens = [t for t in tokens if t.type == TokenType.AND]
-        or_tokens = [t for t in tokens if t.type == TokenType.OR]
-        not_tokens = [t for t in tokens if t.type == TokenType.NOT]
+        and_tokens = [t for t in tokens if t.type == Token_type.AND]
+        or_tokens = [t for t in tokens if t.type == Token_type.OR]
+        not_tokens = [t for t in tokens if t.type == Token_type.NOT]
         
-        self.assertEqual(len(and_tokens), 1)
-        self.assertEqual(len(or_tokens), 1)
-        self.assertEqual(len(not_tokens), 1)
+        self.assert_equal(len(and_tokens), 1)
+        self.assert_equal(len(or_tokens), 1)
+        self.assert_equal(len(not_tokens), 1)
     
     def test_tokenize_parentheses(self):
         """测试括号词法分析"""
         lexer = LogicExpressionLexer("(a > b) AND (c < d)")
         tokens = lexer.tokenize()
         
-        left_paren_tokens = [t for t in tokens if t.type == TokenType.LEFT_PAREN]
-        right_paren_tokens = [t for t in tokens if t.type == TokenType.RIGHT_PAREN]
+        left_paren_tokens = [t for t in tokens if t.type == Token_type.LEFT_PAREN]
+        right_paren_tokens = [t for t in tokens if t.type == Token_type.RIGHT_PAREN]
         
-        self.assertEqual(len(left_paren_tokens), 2)
-        self.assertEqual(len(right_paren_tokens), 2)
+        self.assert_equal(len(left_paren_tokens), 2)
+        self.assert_equal(len(right_paren_tokens), 2)
     
     def test_tokenize_strings(self):
         """测试字符串词法分析"""
         lexer = LogicExpressionLexer('name = "test" AND type = \'stock\'')
         tokens = lexer.tokenize()
         
-        string_tokens = [t for t in tokens if t.type == TokenType.STRING]
-        self.assertEqual(len(string_tokens), 2)
+        string_tokens = [t for t in tokens if t.type == Token_type.STRING]
+        self.assert_equal(len(string_tokens), 2)
         self.assertEqual(string_tokens[0].value, "test")
         self.assertEqual(string_tokens[1].value, "stock")
 
 
-class TestLogicExpressionParser(unittest.TestCase):
+class Test_logic_expression_parser(unittest.Test_case):
     """逻辑表达式语法分析器测试"""
     
     def test_parse_simple_comparison(self):
         """测试简单比较表达式解析"""
         lexer = LogicExpressionLexer("price > 10")
         tokens = lexer.tokenize()
-        parser = LogicExpressionParser(tokens)
+        parser = Logic_expression_parser(tokens)
         
         ast = parser.parse()
         
@@ -105,7 +105,7 @@ class TestLogicExpressionParser(unittest.TestCase):
         """测试AND逻辑表达式解析"""
         lexer = LogicExpressionLexer("price > 10 AND volume > 1000")
         tokens = lexer.tokenize()
-        parser = LogicExpressionParser(tokens)
+        parser = Logic_expression_parser(tokens)
         
         ast = parser.parse()
         
@@ -118,7 +118,7 @@ class TestLogicExpressionParser(unittest.TestCase):
         """测试OR逻辑表达式解析"""
         lexer = LogicExpressionLexer("price > 100 OR volume > 1000000")
         tokens = lexer.tokenize()
-        parser = LogicExpressionParser(tokens)
+        parser = Logic_expression_parser(tokens)
         
         ast = parser.parse()
         
@@ -129,7 +129,7 @@ class TestLogicExpressionParser(unittest.TestCase):
         """测试NOT逻辑表达式解析"""
         lexer = LogicExpressionLexer("NOT price > 10")
         tokens = lexer.tokenize()
-        parser = LogicExpressionParser(tokens)
+        parser = Logic_expression_parser(tokens)
         
         ast = parser.parse()
         
@@ -141,7 +141,7 @@ class TestLogicExpressionParser(unittest.TestCase):
         """测试括号表达式解析"""
         lexer = LogicExpressionLexer("(price > 10 AND volume > 1000) OR close < 5")
         tokens = lexer.tokenize()
-        parser = LogicExpressionParser(tokens)
+        parser = Logic_expression_parser(tokens)
         
         ast = parser.parse()
         
@@ -152,7 +152,7 @@ class TestLogicExpressionParser(unittest.TestCase):
         """测试函数调用解析"""
         lexer = LogicExpressionLexer("MA(close, 20) > 10")
         tokens = lexer.tokenize()
-        parser = LogicExpressionParser(tokens)
+        parser = Logic_expression_parser(tokens)
         
         ast = parser.parse()
         
@@ -162,12 +162,12 @@ class TestLogicExpressionParser(unittest.TestCase):
         self.assertEqual(len(ast['left']['args']), 2)
 
 
-class TestComplexLogicProcessor(unittest.TestCase):
+class Test_complex_logic_processor(unittest.Test_case):
     """复杂逻辑处理器测试"""
     
-    def setUp(self):
+    def set_up_Processor(self):
         """测试设置"""
-        self.processor = ComplexLogicProcessor()
+        self.processor = Complex_logic_processor()
         
         # 模拟数据
         self.test_data = {
@@ -187,7 +187,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_evaluate_logical_and(self):
         """测试AND逻辑表达式评估"""
@@ -196,14 +196,14 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
         
         result = self.processor.evaluate_expression(
             "price > 20 AND amount > 10000",
             self.test_data
         )
         
-        self.assertFalse(result)
+        self.assert_false(result)
     
     def test_evaluate_logical_or(self):
         """测试OR逻辑表达式评估"""
@@ -212,14 +212,14 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
         
         result = self.processor.evaluate_expression(
             "price > 20 OR amount > 20000",
             self.test_data
         )
         
-        self.assertFalse(result)
+        self.assert_false(result)
     
     def test_evaluate_logical_not(self):
         """测试NOT逻辑表达式评估"""
@@ -228,7 +228,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_evaluate_parentheses(self):
         """测试括号表达式评估"""
@@ -237,7 +237,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_custom_functions(self):
         """测试自定义函数"""
@@ -247,7 +247,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 测试SQRT函数
         result = self.processor.evaluate_expression(
@@ -255,7 +255,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_custom_variables(self):
         """测试自定义变量"""
@@ -266,7 +266,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertFalse(result)
+        self.assert_false(result)
         
         # 清空变量
         self.processor.clear_variables()
@@ -284,7 +284,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_cache_functionality(self):
         """测试缓存功能"""
@@ -296,12 +296,12 @@ class TestComplexLogicProcessor(unittest.TestCase):
         # 第二次评估（应该使用缓存）
         result2 = self.processor.evaluate_expression(expression, self.test_data)
         
-        self.assertEqual(result1, result2)
+        self.assert_equal(result1, result2)
         
         stats = self.processor.get_stats()
         self.assertGreater(stats['cache_hits'], 0)
     
-    def test_error_handling(self):
+    def test_error_handling_Processor(self):
         """测试错误处理"""
         # 语法错误
         result = self.processor.evaluate_expression(
@@ -309,7 +309,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertFalse(result)
+        self.assert_false(result)
         
         # 未知标识符
         result = self.processor.evaluate_expression(
@@ -317,7 +317,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
             self.test_data
         )
         
-        self.assertFalse(result)
+        self.assert_false(result)
     
     def test_complex_expression(self):
         """测试复杂表达式"""
@@ -330,7 +330,7 @@ class TestComplexLogicProcessor(unittest.TestCase):
         
         result = self.processor.evaluate_expression(expression, self.test_data)
         
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_statistics(self):
         """测试统计信息"""

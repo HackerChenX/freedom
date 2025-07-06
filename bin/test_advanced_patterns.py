@@ -4,7 +4,7 @@
 """
 高级K线形态识别测试工具
 
-用于测试AdvancedCandlestickPatterns指标的识别功能
+用于测试Advanced_candlestick_patterns指标的识别功能
 """
 
 import os
@@ -25,7 +25,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def parse_args():
+def parse_args_Patterns():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='测试高级K线形态识别功能')
     
@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('-o', '--output', help='输出CSV文件路径，不指定则输出到控制台')
     parser.add_argument('-v', '--verbose', action='store_true', help='显示详细信息')
     
-    return parser.parse_args()
+    return parser.parse_args_Patterns()
 
 
 def get_historical_data(stock_code, period, days):
@@ -49,7 +49,7 @@ def get_historical_data(stock_code, period, days):
         days: 天数
         
     Returns:
-        K线数据DataFrame
+        K线数据Data_frame
     """
     data_manager = get_unified_data_manager()
     
@@ -77,10 +77,10 @@ def test_pattern_recognition(data, verbose=False):
         verbose: 是否显示详细信息
         
     Returns:
-        识别结果DataFrame
+        识别结果Data_frame
     """
     # 创建高级K线形态识别指标
-    indicator = AdvancedCandlestickPatterns()
+    indicator = Advanced_candlestick_patterns()
     
     # 计算指标
     result = indicator.calculate(data)
@@ -129,9 +129,9 @@ def test_pattern_recognition(data, verbose=False):
     return merged, pattern_stats
 
 
-def main():
+def main_41():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Patterns()
     
     logger.info(f"开始测试股票 {args.stock} 的高级K线形态识别功能")
     
@@ -187,4 +187,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
+    main_41() 

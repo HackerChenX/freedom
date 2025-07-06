@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 生产环境数据库连接测试工具
 
 支持多种连接方式：
-1. 本地ClickHouse服务器
-2. 远程ClickHouse服务器（通过环境变量）
-3. Docker容器中的ClickHouse
-4. 云端ClickHouse服务
+1. 本地Click_house服务器
+2. 远程Click_house服务器（通过环境变量）
+3. Docker容器中的Click_house
+4. 云端Click_house服务
 
 完整的系统验证包括：
 - 数据库连接测试
@@ -28,9 +30,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from config.database_config_manager import get_database_config_manager
-from db.unified_data_manager import UnifiedDataManager
+from db.unified_data_manager import Unified_data_manager
 from utils.logger import get_logger
-from analysis.engines.indicator_validation_framework import ProductionIndicatorValidator
+from analysis.engines.indicator_validation_framework import Production_indicator_validator
 
 logger = get_logger(__name__)
 
@@ -45,7 +47,7 @@ class ProductionDatabaseTester:
         self.data_manager = None
         self.validator = None
     
-    def print_banner(self):
+    def print_banner_Test_Production_Database_Test(self):
         """打印测试横幅"""
         print("=" * 80)
         print("🚀 生产环境数据库连接测试工具")
@@ -153,9 +155,9 @@ class ProductionDatabaseTester:
             }
             
             return self._test_connection_with_config(docker_config)
-        except subprocess.TimeoutExpired:
+        except subprocess.Timeout_expired:
             return {'success': False, 'error': 'Docker命令超时'}
-        except FileNotFoundError:
+        except File_not_found_error:
             return {'success': False, 'error': 'Docker未安装'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
@@ -179,7 +181,7 @@ class ProductionDatabaseTester:
         
         try:
             # 创建数据管理器实例
-            data_manager = UnifiedDataManager()
+            data_manager = Unified_data_manager()
             
             # 测试基本连接
             connection_test = data_manager.test_connection()
@@ -192,7 +194,7 @@ class ProductionDatabaseTester:
                 }
             
             # 测试数据查询
-            test_query = "SELECT COUNT(*) as count FROM system.databases"
+            test_query = "SELECT COUNT(*) as count FROM system LIMIT 1000.databases"
             result = data_manager.execute_query(test_query)
             
             if result is None or result.empty:
@@ -223,7 +225,7 @@ class ProductionDatabaseTester:
         print("\n🗃️ 测试数据库架构...")
         
         try:
-            data_manager = UnifiedDataManager()
+            data_manager = Unified_data_manager()
             
             # 检查必要的表
             required_tables = [
@@ -267,10 +269,10 @@ class ProductionDatabaseTester:
         print("\n📊 测试股票数据质量...")
         
         try:
-            data_manager = UnifiedDataManager()
+            data_manager = Unified_data_manager()
             
             # 获取股票列表
-            stocks_query = "SELECT code, name FROM stock_info LIMIT 10"
+            stocks_query = "SELECT code, name FROM stock_info WHERE date >= '2020-01-01' LIMIT 10"
             stocks_result = data_manager.execute_query(stocks_query)
             
             if stocks_result is None or stocks_result.empty:
@@ -332,12 +334,12 @@ class ProductionDatabaseTester:
                 'error': str(e)
             }
     
-    def test_indicator_calculation(self) -> Dict[str, Any]:
+    def test_indicator_calculation_Test(self) -> Dict[str, Any]:
         """测试指标计算功能"""
         print("\n🧮 测试指标计算功能...")
         
         try:
-            validator = ProductionIndicatorValidator()
+            validator = Production_indicator_validator()
             
             # 选择几个关键指标进行测试
             test_indicators = [
@@ -404,10 +406,10 @@ class ProductionDatabaseTester:
                 'error': str(e)
             }
     
-    def run_comprehensive_test(self) -> Dict[str, Any]:
+    def run_comprehensive_test_Test_Production_Database_Test(self) -> Dict[str, Any]:
         """运行全面的生产环境测试"""
         self.start_time = time.time()
-        self.print_banner()
+        self.print_banner_Test_Production_Database_Test()
         
         comprehensive_results = {
             'start_time': datetime.now().isoformat(),
@@ -454,7 +456,7 @@ class ProductionDatabaseTester:
         print("\n" + "="*50)
         print("阶段 4: 指标计算测试")
         print("="*50)
-        indicator_results = self.test_indicator_calculation()
+        indicator_results = self.test_indicator_calculation_Test()
         comprehensive_results['indicator_test'] = indicator_results
         
         # 计算总体结果
@@ -508,11 +510,11 @@ class ProductionDatabaseTester:
             print(f"\n❌ 保存测试结果失败: {e}")
 
 
-def main():
+def main_productiondatabasetest():
     """主函数"""
     try:
-        tester = ProductionDatabaseTester()
-        results = tester.run_comprehensive_test()
+        tester = Production_database_tester()
+        results = tester.run_comprehensive_test_Test_Production_Database_Test()
         tester.save_test_results(results)
         
         # 根据测试结果设置退出码
@@ -521,7 +523,7 @@ def main():
         else:
             sys.exit(1)
             
-    except KeyboardInterrupt:
+    except Keyboard_interrupt:
         print("\n\n⚠️  测试被用户中断")
         sys.exit(130)
     except Exception as e:
@@ -531,4 +533,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_productiondatabasetest() 

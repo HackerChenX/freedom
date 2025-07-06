@@ -13,9 +13,9 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 
 from db.unified_data_manager import get_unified_data_manager
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
 class BuyPointToStrategyAdapter:
@@ -141,7 +141,7 @@ class BuyPointToStrategyAdapter:
             buypoint_results: 买点分析结果列表
             
         Returns:
-            pd.DataFrame: 选股策略格式的结果DataFrame
+            pd.DataFrame: 选股策略格式的结果Data_frame
         """
         converted_results = []
         
@@ -443,9 +443,9 @@ class BuyPointToStrategyAdapter:
             return "hold"  # 默认推荐
 
 
-def get_buypoint_strategy_adapter() -> BuyPointToStrategyAdapter:
+def get_buypoint_strategy_adapter() -> Buy_point_to_strategy_adapter:
     """获取买点分析到选股策略适配器实例"""
-    return BuyPointToStrategyAdapter()
+    return Buy_point_to_strategy_adapter()
 
 
 # 使用示例

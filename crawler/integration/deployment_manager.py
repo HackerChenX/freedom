@@ -1,4 +1,5 @@
 """
+from config import get_config
 部署管理器
 
 生产环境部署管理工具
@@ -13,7 +14,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class DockerManager:
+class Docker_manager:
     """Docker容器管理器"""
 
     def __init__(self):
@@ -42,7 +43,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 设置环境变量
-ENV PYTHONPATH=/app
+ENV pythonpath=/app
 ENV LOG_LEVEL=INFO
 
 # 暴露端口
@@ -64,7 +65,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 环境变量
-ENV PYTHONPATH=/app
+ENV pythonpath=/app
 ENV LOG_LEVEL=INFO
 
 # 启动监控服务
@@ -83,7 +84,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -91,8 +92,8 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     ports:
-      - "8123:8123"
-      - "9000:9000"
+      - "${CLICKHOUSE_HTTP_PORT:-8123}:8123"
+      - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     environment:
@@ -110,12 +111,12 @@ services:
       - clickhouse
     environment:
       - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - REDIS_PORT=${REDIS_PORT:-6379}
       - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_PORT=${CLICKHOUSE_HTTP_PORT:-8123}
       - CLICKHOUSE_DATABASE=stock_crawler
-      - MAX_WORKERS=5
-      - USE_PROXY=false
+      - MAX_WORKERS=${MAX_WORKERS:-5}
+      - USE_PROXY=${USE_PROXY:-false}
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
@@ -125,3 +126,19 @@ volumes:
   redis_data:
   clickhouse_data:
 '''
+    def get_docker_config(self) -> Dict[str, any]:
+        """获取Docker配置"""
+        try:
+            config = get_config()
+            return config.get('docker', {
+                'redis': {'port': 6379},
+                'clickhouse': {'http_port': 8123, 'native_port': 9000},
+                'crawler': {'max_workers': 5, 'use_proxy': False}
+            })
+        except Exception as e:
+            logger.warning(f"获取Docker配置失败，使用默认配置: {e}")
+            return {
+                'redis': {'port': 6379},
+                'clickhouse': {'http_port': 8123, 'native_port': 9000},
+                'crawler': {'max_workers': 5, 'use_proxy': False}
+            }

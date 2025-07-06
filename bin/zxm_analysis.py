@@ -14,366 +14,519 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Optional, Tuple, Union
 from datetime import datetime, timedelta
+import json
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import IDataAccess
+from utils.decorators import exception_handler, performance_monitor
+from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
 from enums.indicator_types import IndicatorType, TimeFrame
-from utils.logger import setup_logging
 from utils import path_utils
 from utils import date_utils
+from indicators.zxm.buy_point_indicators import ZXMBuyPointIndicator
+from indicators.zxm.zxm_score_indicator import ZXMScoreIndicator
+from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 
+logger = get_logger(__name__)
 
-def setup_argparser() -> argparse.ArgumentParser:
-    """设置命令行参数解析器"""
-    parser = argparse.ArgumentParser(description="ZXM体系分析工具")
+class ZXMAnalysisSystem:
+    """ZXM指标分析系统"""
     
-    parser.add_argument("--stock", "-s", type=str, required=True,
-                        help="股票代码，例如：000001.SZ")
-    
-    parser.add_argument("--start-date", "-sd", type=str, default=None,
-                        help="开始日期，格式：YYYY-MM-DD，默认为180天前")
-    
-    parser.add_argument("--end-date", "-ed", type=str, default=None,
-                        help="结束日期，格式：YYYY-MM-DD，默认为今天")
-    
-    parser.add_argument("--timeframe", "-tf", type=str, default="daily",
-                        choices=["1min", "5min", "15min", "30min", "60min", "daily", "weekly", "monthly"],
-                        help="时间周期，默认为日线")
-    
-    parser.add_argument("--output", "-o", type=str, default=None,
-                        help="输出文件路径，默认为results/zxm_analysis_{stock_code}_{timeframe}_{date}.csv")
-    
-    parser.add_argument("--detailed", "-d", action="store_true",
-                        help="是否输出详细分析结果")
-    
-    parser.add_argument("--multi-timeframe", "-mt", action="store_true",
-                        help="是否进行多周期联合分析")
-    
-    return parser
-
-
-def get_stock_data(stock_code: str, start_date: str, end_date: str, 
-                   timeframe: str) -> pd.DataFrame:
-    """
-    获取股票数据
-    
-    Args:
-        stock_code: 股票代码
-        start_date: 开始日期
-        end_date: 结束日期
-        timeframe: 时间周期
+    def __init__(self):
+        """初始化ZXM分析系统"""
+        self.container = get_container()
+        self.data_access = self.get_service(DataAccessInterface)
+        self.buypoint_analyzer = BuyPointAnalyzer()
+        self.analysis_results = {}
         
-    Returns:
-        包含OHLCV数据的DataFrame
-    """
-    db = get_clickhouse_db()
-    
-    # 构建查询语句
-    if timeframe == "daily":
-        table = "stock_daily_data"
-        time_column = "trade_date"
-    elif timeframe == "weekly":
-        table = "stock_weekly_data"
-        time_column = "trade_date"
-    elif timeframe == "monthly":
-        table = "stock_monthly_data"
-        time_column = "trade_date"
-    else:
-        # 分钟级数据
-        table = "stock_min_data"
-        time_column = "trade_time"
-    
-    query = f"""
-    SELECT 
-        {time_column} as date,
-        open,
-        high,
-        low,
-        close,
-        volume
-    FROM {table}
-    WHERE ts_code = %(stock_code)s
-    """
-    
-    # 添加时间过滤条件
-    if timeframe in ["daily", "weekly", "monthly"]:
-        query += """
-        AND trade_date >= %(start_date)s
-        AND trade_date <= %(end_date)s
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=5.0)
+    def load_stock_data(self, code: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
-    else:
-        query += """
-        AND trade_time >= %(start_date)s
-        AND trade_time <= %(end_date)s
+        加载股票数据
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            pd.DataFrame: 股票数据
         """
-        # 分钟级数据需要按指定的周期聚合
-        interval_map = {
-            "1min": 1,
-            "5min": 5,
-            "15min": 15,
-            "30min": 30,
-            "60min": 60
-        }
+        try:
+            logger.info(f"加载股票数据: {code}, {start_date} - {end_date}")
+            
+            # 使用数据访问接口获取数据
+            stock_data = self.data_access.get_stock_data(
+                code=code,
+                start_date=start_date,
+                end_date=end_date,
+                level='日线'
+            )
+            
+            if stock_data.empty:
+                logger.warning(f"未找到股票 {code} 的数据")
+                return pd.DataFrame()
+                
+            logger.info(f"成功加载 {len(stock_data)} 条数据")
+            return stock_data
+            
+        except Exception as e:
+            logger.error(f"加载股票数据失败: {e}")
+            raise
+    
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=10.0)
+    def calculate_zxm_indicators(self, data: pd.DataFrame) -> Dict[str, pd.Series]:
+        """
+        计算ZXM指标
         
-        if timeframe in interval_map:
-            query += f"""
-            AND minute_freq = {interval_map[timeframe]}
-            """
-    
-    query += f"""
-    ORDER BY {time_column} ASC
-    """
-    
-    # 执行查询
-    params = {
-        "stock_code": stock_code,
-        "start_date": start_date.replace('-', ''),
-        "end_date": end_date.replace('-', '')
-    }
-    
-    df = db.query_to_dataframe(query, params)
-    
-    # 检查是否有数据
-    if df.empty:
-        logging.error(f"未找到股票 {stock_code} 在指定时间范围和周期下的数据")
-        sys.exit(1)
-    
-    return df
-
-
-def analyze_zxm_patterns(data: pd.DataFrame) -> Dict[str, np.ndarray]:
-    """
-    分析ZXM体系买点和吸筹形态
-    
-    Args:
-        data: 包含OHLCV数据的DataFrame
-        
-    Returns:
-        包含各种形态识别结果的字典
-    """
-    # 创建ZXM模式识别器
-    zxm_indicator = complete_registry.create_indicator('ZXM_PATTERNS')
-    if not zxm_indicator:
-        logger.error("无法创建ZXM_PATTERNS指标")
-        return {}
-    
-    # 计算结果
-    result = zxm_indicator.calculate(
-        data['open'].values,
-        data['high'].values,
-        data['low'].values,
-        data['close'].values,
-        data['volume'].values
-    )
-    
-    return result
-
-
-def format_results(data: pd.DataFrame, results: Dict[str, np.ndarray]) -> pd.DataFrame:
-    """
-    格式化分析结果
-    
-    Args:
-        data: 原始数据DataFrame
-        results: ZXM分析结果
-        
-    Returns:
-        包含分析结果的DataFrame
-    """
-    # 创建结果DataFrame
-    result_df = data.copy()
-    
-    # 添加识别结果
-    for key, value in results.items():
-        result_df[key] = value
-    
-    # 计算所有买点信号
-    buy_columns = [col for col in result_df.columns if 'buy' in col]
-    if buy_columns:
-        result_df['any_buy_signal'] = result_df[buy_columns].any(axis=1)
-    
-    # 计算所有吸筹信号
-    absorption_columns = [col for col in result_df.columns if col not in buy_columns and col not in data.columns]
-    if absorption_columns:
-        result_df['any_absorption_signal'] = result_df[absorption_columns].any(axis=1)
-    
-    return result_df
-
-
-def analyze_multi_timeframe(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
-    """
-    进行多周期联合分析
-    
-    Args:
-        stock_code: 股票代码
-        start_date: 开始日期
-        end_date: 结束日期
-        
-    Returns:
-        包含多周期分析结果的DataFrame
-    """
-    # 定义要分析的周期
-    timeframes = ["daily", "60min", "15min"]
-    
-    # 存储各周期分析结果
-    results = {}
-    
-    # 分析每个周期
-    for tf in timeframes:
-        # 获取数据
-        df = get_stock_data(stock_code, start_date, end_date, tf)
-        
-        # 分析ZXM形态
-        patterns = analyze_zxm_patterns(df)
-        
-        # 格式化结果
-        result_df = format_results(df, patterns)
-        
-        # 存储结果
-        results[tf] = result_df
-    
-    # 找到日线结果中有买点的日期
-    daily_buy_dates = results["daily"][results["daily"]["any_buy_signal"]]["date"].tolist()
-    
-    # 创建多周期共振分析结果
-    resonance_df = pd.DataFrame()
-    
-    if daily_buy_dates:
-        # 对每个日线买点，检查60分钟和15分钟级别是否也有买点
-        for date in daily_buy_dates:
-            # 日期格式转换
-            if isinstance(date, str):
-                date_str = date
-                date_obj = datetime.strptime(date, "%Y%m%d")
+        Args:
+            data: 股票数据
+            
+        Returns:
+            Dict[str, pd.Series]: ZXM指标结果
+        """
+        try:
+            logger.info("开始计算ZXM指标")
+            
+            results = {}
+            
+            # 计算ZXM买点指标
+            zxm_buypoint = ZXMBuyPointIndicator()
+            buypoint_result = zxm_buypoint.calculate(data)
+            
+            if isinstance(buypoint_result, dict):
+                results.update(buypoint_result)
             else:
-                date_str = date.strftime("%Y%m%d")
-                date_obj = date
+                results['zxm_buypoint'] = buypoint_result
             
-            # 找到这一天的60分钟和15分钟数据
-            next_day = (date_obj + timedelta(days=1)).strftime("%Y%m%d")
+            # 计算ZXM评分指标
+            zxm_score = ZXMScoreIndicator()
+            score_result = zxm_score.calculate(data)
             
-            # 60分钟买点
-            min60_data = results["60min"]
-            min60_date_mask = (min60_data["date"] >= date_str) & (min60_data["date"] < next_day)
-            has_60min_buy = min60_data[min60_date_mask]["any_buy_signal"].any()
+            if isinstance(score_result, dict):
+                results.update(score_result)
+            else:
+                results['zxm_score'] = score_result
             
-            # 15分钟买点
-            min15_data = results["15min"]
-            min15_date_mask = (min15_data["date"] >= date_str) & (min15_data["date"] < next_day)
-            has_15min_buy = min15_data[min15_date_mask]["any_buy_signal"].any()
+            logger.info(f"ZXM指标计算完成，生成了 {len(results)} 个指标")
+            return results
             
-            # 记录结果
-            resonance_df = resonance_df.append({
-                "date": date_str,
-                "daily_buy": True,
-                "60min_buy": has_60min_buy,
-                "15min_buy": has_15min_buy,
-                "resonance_level": 1 + int(has_60min_buy) + int(has_15min_buy)  # 1-3的共振等级
-            }, ignore_index=True)
+        except Exception as e:
+            logger.error(f"计算ZXM指标失败: {e}")
+            raise
     
-    return resonance_df
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=8.0)
+    def analyze_buy_signals(self, data: pd.DataFrame, 
+                           zxm_indicators: Dict[str, pd.Series]) -> Dict[str, Any]:
+        """
+        分析买入信号
+        
+        Args:
+            data: 股票数据
+            zxm_indicators: ZXM指标结果
+            
+        Returns:
+            Dict[str, Any]: 买入信号分析结果
+        """
+        try:
+            logger.info("开始分析买入信号")
+            
+            # 使用买点分析器分析信号
+            buypoint_result = self.buypoint_analyzer.analyze_buypoints(
+                data=data,
+                indicators=zxm_indicators
+            )
+            
+            # 提取关键信号信息
+            signals = {
+                'latest_signals': {},
+                'signal_history': {},
+                'signal_strength': {},
+                'buy_points': []
+            }
+            
+            # 获取最新信号
+            for indicator_name, values in zxm_indicators.items():
+                if not values.empty:
+                    signals['latest_signals'][indicator_name] = values.iloc[-1]
+                    signals['signal_history'][indicator_name] = values.tail(10).tolist()
+                    
+                    # 计算信号强度
+                    if indicator_name.endswith('_score'):
+                        recent_values = values.tail(5)
+                        if len(recent_values) > 1:
+                            trend = recent_values.iloc[-1] - recent_values.iloc[0]
+                            signals['signal_strength'][indicator_name] = {
+                                'current': recent_values.iloc[-1],
+                                'trend': trend,
+                                'volatility': recent_values.std()
+                            }
+            
+            # 识别买点
+            signals['buy_points'] = self._identify_buy_points(data, zxm_indicators)
+            
+            # 生成综合评估
+            signals['comprehensive_assessment'] = self._generate_comprehensive_assessment(
+                signals['latest_signals'], 
+                signals['signal_strength']
+            )
+            
+            logger.info("买入信号分析完成")
+            return signals
+            
+        except Exception as e:
+            logger.error(f"分析买入信号失败: {e}")
+            raise
+    
+    def _identify_buy_points(self, data: pd.DataFrame, 
+                           indicators: Dict[str, pd.Series]) -> List[Dict[str, Any]]:
+        """识别买点"""
+        buy_points = []
+        
+        try:
+            # 基于ZXM指标识别买点
+            for i in range(len(data) - 10, len(data)):  # 检查最近10个交易日
+                if i < 0:
+                    continue
+                    
+                date = data.iloc[i]['date'] if 'date' in data.columns else data.index[i]
+                price = data.iloc[i]['close']
+                
+                # 检查是否满足买点条件
+                is_buy_point = False
+                buy_signals = []
+                
+                for indicator_name, values in indicators.items():
+                    if i < len(values) and not pd.isna(values.iloc[i]):
+                        value = values.iloc[i]
+                        
+                        # ZXM买点条件判断
+                        if indicator_name == 'zxm_buypoint' and value > 0.7:
+                            is_buy_point = True
+                            buy_signals.append(f"{indicator_name}信号强度: {value:.3f}")
+                        elif indicator_name == 'zxm_score' and value > 80:
+                            is_buy_point = True
+                            buy_signals.append(f"{indicator_name}评分: {value:.1f}")
+                
+                if is_buy_point:
+                    buy_points.append({
+                        'date': str(date),
+                        'price': price,
+                        'signals': buy_signals,
+                        'confidence': self._calculate_buy_point_confidence(indicators, i)
+                    })
+            
+        except Exception as e:
+            logger.error(f"识别买点失败: {e}")
+        
+        return buy_points
+    
+    def _calculate_buy_point_confidence(self, indicators: Dict[str, pd.Series], 
+                                      index: int) -> float:
+        """计算买点置信度"""
+        try:
+            confidence_scores = []
+            
+            for indicator_name, values in indicators.items():
+                if index < len(values) and not pd.isna(values.iloc[index]):
+                    value = values.iloc[index]
+                    
+                    if indicator_name == 'zxm_buypoint':
+                        confidence_scores.append(min(value, 1.0))
+                    elif indicator_name == 'zxm_score':
+                        confidence_scores.append(min(value / 100.0, 1.0))
+            
+            return sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.0
+            
+        except Exception as e:
+            logger.error(f"计算买点置信度失败: {e}")
+            return 0.0
+    
+    def _generate_comprehensive_assessment(self, latest_signals: Dict[str, float], 
+                                         signal_strength: Dict[str, Dict]) -> Dict[str, Any]:
+        """生成综合评估"""
+        try:
+            assessment = {
+                'overall_score': 0.0,
+                'recommendation': '观望',
+                'confidence': '低',
+                'key_factors': [],
+                'risk_warnings': []
+            }
+            
+            # 计算综合评分
+            scores = []
+            for indicator_name, value in latest_signals.items():
+                if indicator_name.endswith('_score'):
+                    scores.append(min(value / 100.0, 1.0))
+                elif indicator_name.endswith('_buypoint'):
+                    scores.append(min(value, 1.0))
+            
+            if scores:
+                assessment['overall_score'] = sum(scores) / len(scores)
+            
+            # 生成建议
+            overall_score = assessment['overall_score']
+            if overall_score >= 0.8:
+                assessment['recommendation'] = '强烈买入'
+                assessment['confidence'] = '高'
+                assessment['key_factors'].append('多项ZXM指标发出强烈买入信号')
+            elif overall_score >= 0.6:
+                assessment['recommendation'] = '买入'
+                assessment['confidence'] = '中高'
+                assessment['key_factors'].append('ZXM指标偏向看涨')
+            elif overall_score >= 0.4:
+                assessment['recommendation'] = '谨慎观望'
+                assessment['confidence'] = '中等'
+                assessment['key_factors'].append('ZXM指标信号中性')
+            else:
+                assessment['recommendation'] = '观望'
+                assessment['confidence'] = '低'
+                assessment['risk_warnings'].append('ZXM指标信号偏弱')
+            
+            # 检查信号强度趋势
+            for indicator_name, strength in signal_strength.items():
+                if strength['trend'] > 0.1:
+                    assessment['key_factors'].append(f'{indicator_name}呈上升趋势')
+                elif strength['trend'] < -0.1:
+                    assessment['risk_warnings'].append(f'{indicator_name}呈下降趋势')
+            
+            return assessment
+            
+        except Exception as e:
+            logger.error(f"生成综合评估失败: {e}")
+            return {'overall_score': 0.0, 'recommendation': '数据错误', 'confidence': '无'}
+    
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=20.0)
+    def run_comprehensive_analysis_Analysis(self, stock_codes: List[str], 
+                                 start_date: str, end_date: str) -> Dict[str, Dict[str, Any]]:
+        """
+        运行综合分析
+        
+        Args:
+            stock_codes: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            Dict[str, Dict[str, Any]]: 综合分析结果
+        """
+        results = {}
+        
+        logger.info(f"开始ZXM综合分析，股票数量: {len(stock_codes)}")
+        
+        for i, code in enumerate(stock_codes, 1):
+            try:
+                logger.info(f"分析股票 {i}/{len(stock_codes)}: {code}")
+                
+                # 加载股票数据
+                data = self.load_stock_data(code, start_date, end_date)
+                
+                if data.empty:
+                    logger.warning(f"跳过股票 {code}，无数据")
+                    continue
+                
+                # 计算ZXM指标
+                zxm_indicators = self.calculate_zxm_indicators(data)
+                
+                # 分析买入信号
+                buy_signals = self.analyze_buy_signals(data, zxm_indicators)
+                
+                # 组装结果
+                results[code] = {
+                    'stock_info': {
+                        'code': code,
+                        'latest_price': data.iloc[-1]['close'] if not data.empty else 0,
+                        'latest_date': str(data.iloc[-1]['date']) if 'date' in data.columns else str(data.index[-1])
+                    },
+                    'zxm_indicators': {k: v.iloc[-1] if not v.empty else 0 for k, v in zxm_indicators.items()},
+                    'buy_signals': buy_signals,
+                    'data_quality': {
+                        'data_points': len(data),
+                        'indicator_count': len(zxm_indicators),
+                        'signal_count': len(buy_signals.get('buy_points', []))
+                    }
+                }
+                
+            except Exception as e:
+                logger.error(f"分析股票 {code} 失败: {e}")
+                continue
+                
+        logger.info(f"ZXM综合分析完成，处理了 {len(results)} 只股票")
+        return results
+    
+    @exception_handler(reraise=True)
+    def save_analysis_results_Analysis(self, results: Dict[str, Dict[str, Any]], 
+                            output_file: str) -> None:
+        """
+        保存分析结果
+        
+        Args:
+            results: 分析结果
+            output_file: 输出文件路径
+        """
+        try:
+            # 确保输出目录存在
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            
+            # 保存为JSON格式
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(results, f, indent=2, ensure_ascii=False, default=str)
+                
+            logger.info(f"分析结果已保存到: {output_file}")
+            
+            # 生成汇总报告
+            summary_file = output_file.replace('.json', '_summary.txt')
+            self._generate_analysis_summary(results, summary_file)
+            
+        except Exception as e:
+            logger.error(f"保存分析结果失败: {e}")
+            raise
+    
+    def _generate_analysis_summary(self, results: Dict[str, Dict[str, Any]], 
+                                 summary_file: str) -> None:
+        """生成分析汇总报告"""
+        try:
+            with open(summary_file, 'w', encoding='utf-8') as f:
+                f.write("ZXM指标分析汇总报告\n")
+                f.write("=" * 60 + "\n\n")
+                
+                f.write(f"分析时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"分析股票数量: {len(results)}\n\n")
+                
+                if results:
+                    # 统计买入推荐的股票
+                    strong_buy_stocks = []
+                    buy_stocks = []
+                    
+                    for code, result in results.items():
+                        recommendation = result['buy_signals']['comprehensive_assessment']['recommendation']
+                        overall_score = result['buy_signals']['comprehensive_assessment']['overall_score']
+                        
+                        if recommendation == '强烈买入':
+                            strong_buy_stocks.append((code, overall_score))
+                        elif recommendation == '买入':
+                            buy_stocks.append((code, overall_score))
+                    
+                    # 按评分排序
+                    strong_buy_stocks.sort(key=lambda x: x[1], reverse=True)
+                    buy_stocks.sort(key=lambda x: x[1], reverse=True)
+                    
+                    f.write("强烈买入推荐股票:\n")
+                    f.write("-" * 40 + "\n")
+                    if strong_buy_stocks:
+                        for i, (code, score) in enumerate(strong_buy_stocks[:10], 1):
+                            f.write(f"{i:2d}. {code}: {score:.3f}\n")
+                    else:
+                        f.write("无\n")
+                    
+                    f.write("\n买入推荐股票:\n")
+                    f.write("-" * 40 + "\n")
+                    if buy_stocks:
+                        for i, (code, score) in enumerate(buy_stocks[:10], 1):
+                            f.write(f"{i:2d}. {code}: {score:.3f}\n")
+                    else:
+                        f.write("无\n")
+                    
+                    f.write("\n详细分析结果:\n")
+                    f.write("-" * 40 + "\n")
+                    for code, result in list(results.items())[:10]:  # 只显示前10个
+                        stock_info WHERE 1=1 = result['stock_info']
+                        assessment = result['buy_signals']['comprehensive_assessment']
+                        
+                        f.write(f"\n{code} ({stock_info['latest_price']:.2f}):\n")
+                        f.write(f"  推荐: {assessment['recommendation']}\n")
+                        f.write(f"  置信度: {assessment['confidence']}\n")
+                        f.write(f"  综合评分: {assessment['overall_score']:.3f}\n")
+                        
+                        if assessment['key_factors']:
+                            f.write(f"  关键因素: {', '.join(assessment['key_factors'])}\n")
+                        if assessment['risk_warnings']:
+                            f.write(f"  风险提示: {', '.join(assessment['risk_warnings'])}\n")
+                
+            logger.info(f"分析汇总报告已生成: {summary_file}")
+            
+        except Exception as e:
+            logger.error(f"生成分析汇总报告失败: {e}")
 
-
+@exception_handler(reraise=True)
+@performance_monitor(threshold_seconds=120.0)
 def main():
     """主函数"""
-    # 解析命令行参数
-    parser = setup_argparser()
+    parser = argparse.ArgumentParser(description='ZXM指标分析系统')
+    parser.add_argument('--codes', type=str, nargs='+', 
+                       help='股票代码列表')
+    parser.add_argument('--start-date', type=str, 
+                       default=(datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d'),
+                       help='开始日期 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, 
+                       default=datetime.now().strftime('%Y-%m-%d'),
+                       help='结束日期 (YYYY-MM-DD)')
+    parser.add_argument('--output', type=str, 
+                       default='data/result/zxm_analysis_results.json',
+                       help='输出文件路径')
+    parser.add_argument('--single', type=str,
+                       help='分析单个股票代码')
+    
     args = parser.parse_args()
     
-    # 设置日志
-    setup_logging()
-    
-    # 处理日期参数
-    if args.start_date is None:
-        start_date = (datetime.now() - timedelta(days=180)).strftime("%Y-%m-%d")
-    else:
-        start_date = args.start_date
-    
-    if args.end_date is None:
-        end_date = datetime.now().strftime("%Y-%m-%d")
-    else:
-        end_date = args.end_date
-    
-    # 股票代码格式化
-    stock_code = args.stock.upper()
-    
-    # 输出文件路径
-    if args.output is None:
-        today = datetime.now().strftime("%Y%m%d")
-        output_dir = path_utils.get_result_dir()
-        output_file = os.path.join(output_dir, f"zxm_analysis_{stock_code}_{args.timeframe}_{today}.csv")
-    else:
-        output_file = args.output
-    
-    logging.info(f"分析股票: {stock_code}")
-    logging.info(f"时间范围: {start_date} 至 {end_date}")
-    logging.info(f"时间周期: {args.timeframe}")
-    
-    # 多周期分析
-    if args.multi_timeframe:
-        logging.info("进行多周期联合分析...")
-        result_df = analyze_multi_timeframe(stock_code, start_date, end_date)
+    try:
+        # 初始化ZXM分析系统
+        zxm_system = ZXMAnalysisSystem()
         
-        # 输出共振分析结果
-        if not result_df.empty:
-            # 保存到文件
-            result_df.to_csv(output_file, index=False)
-            logging.info(f"多周期共振分析结果已保存到: {output_file}")
-            
-            # 显示结果概要
-            resonance_count = result_df["resonance_level"].value_counts().to_dict()
-            logging.info("多周期共振分析结果概要:")
-            for level, count in sorted(resonance_count.items()):
-                logging.info(f"共振等级 {level}: {count} 个买点")
+        # 获取股票代码列表
+        if args.single:
+            stock_codes = [args.single]
+        elif args.codes:
+            stock_codes = args.codes
         else:
-            logging.info("未发现多周期共振买点")
-    
-    # 单周期分析
-    else:
-        # 获取股票数据
-        data = get_stock_data(stock_code, start_date, end_date, args.timeframe)
-        logging.info(f"获取到 {len(data)} 条记录")
+            # 默认使用一些示例股票
+            stock_codes = ['000001.SZ', '000002.SZ', '600000.SH', '600036.SH', '603359.SH']
         
-        # 分析ZXM形态
-        logging.info("分析ZXM体系形态...")
-        results = analyze_zxm_patterns(data)
+        logger.info(f"开始ZXM指标分析")
+        logger.info(f"股票代码: {stock_codes}")
+        logger.info(f"时间范围: {args.start_date} - {args.end_date}")
         
-        # 格式化结果
-        result_df = format_results(data, results)
+        # 运行综合分析
+        results = zxm_system.run_comprehensive_analysis_Analysis(
+            stock_codes=stock_codes,
+            start_date=args.start_date,
+            end_date=args.end_date
+        )
         
         # 保存结果
-        result_df.to_csv(output_file, index=False)
-        logging.info(f"分析结果已保存到: {output_file}")
+        zxm_system.save_analysis_results_Analysis(results, args.output)
         
-        # 显示结果概要
-        buy_signals = result_df["any_buy_signal"].sum() if "any_buy_signal" in result_df.columns else 0
-        absorption_signals = result_df["any_absorption_signal"].sum() if "any_absorption_signal" in result_df.columns else 0
-        
-        logging.info("分析结果概要:")
-        logging.info(f"共识别出 {buy_signals} 个买点信号")
-        logging.info(f"共识别出 {absorption_signals} 个吸筹形态信号")
-        
-        # 显示详细结果
-        if args.detailed and not result_df.empty:
-            logging.info("详细买点信号:")
-            buy_columns = [col for col in result_df.columns if 'buy' in col and col != 'any_buy_signal']
-            for col in buy_columns:
-                signal_count = result_df[col].sum()
-                if signal_count > 0:
-                    logging.info(f"- {col}: {signal_count} 个信号")
+        # 如果是单个股票分析，输出详细结果
+        if args.single and args.single in results:
+            result = results[args.single]
+            assessment = result['buy_signals']['comprehensive_assessment']
             
-            logging.info("详细吸筹形态信号:")
-            absorption_columns = [col for col in result_df.columns if col not in buy_columns and 
-                                 col not in data.columns and col != 'any_absorption_signal']
-            for col in absorption_columns:
-                signal_count = result_df[col].sum()
-                if signal_count > 0:
-                    logging.info(f"- {col}: {signal_count} 个信号")
-
+            print(f"\n{args.single} ZXM分析结果:")
+            print(f"推荐操作: {assessment['recommendation']}")
+            print(f"置信度: {assessment['confidence']}")
+            print(f"综合评分: {assessment['overall_score']:.3f}")
+            print(f"最新价格: {result['stock_info']['latest_price']:.2f}")
+            
+            if assessment['key_factors']:
+                print(f"关键因素: {', '.join(assessment['key_factors'])}")
+            if assessment['risk_warnings']:
+                print(f"风险提示: {', '.join(assessment['risk_warnings'])}")
+        
+        logger.info("ZXM指标分析完成")
+        
+    except Exception as e:
+        logger.error(f"ZXM指标分析失败: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main() 

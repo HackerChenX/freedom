@@ -15,13 +15,13 @@ from typing import List, Dict, Any
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from scripts.production_indicator_validator import ProductionIndicatorValidator
+from scripts.production_indicator_validator import Production_indicator_validator
 from utils.logger import get_logger
 
 class ExpandedStockPoolTester:
     def __init__(self):
         self.logger = get_logger(__name__)
-        self.validator = ProductionIndicatorValidator()
+        self.validator = Production_indicator_validator()
         
         # 无选股的37个指标
         self.no_selection_indicators = [
@@ -181,5 +181,5 @@ class ExpandedStockPoolTester:
         return results, improved_indicators, still_no_selection
 
 if __name__ == "__main__":
-    tester = ExpandedStockPoolTester()
+    tester = Expanded_stock_pool_tester()
     results, improved, still_no_selection = tester.test_expanded_pool() 

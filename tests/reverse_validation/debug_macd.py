@@ -18,16 +18,16 @@ sys.path.append(project_root)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from smart_pattern_generator import SmartPatternGenerator
-from technical_indicators import TechnicalIndicators
+from smart_pattern_generator import Smart_pattern_generator
+from technical_indicators import Technical_indicators
 
 
 def debug_macd_golden_cross():
     """调试MACD金叉形态"""
     print("调试MACD金叉形态...")
 
-    generator = SmartPatternGenerator()
-    indicators = TechnicalIndicators()
+    generator = Smart_pattern_generator()
+    indicators = Technical_indicators()
 
     # 生成金叉数据
     data = generator.generate_macd_golden_cross_data()
@@ -96,8 +96,8 @@ def debug_macd_death_cross():
     print("\n" + "="*50)
     print("调试MACD死叉形态...")
 
-    generator = SmartPatternGenerator()
-    indicators = TechnicalIndicators()
+    generator = Smart_pattern_generator()
+    indicators = Technical_indicators()
 
     # 生成死叉数据
     data = generator.generate_macd_death_cross_data()

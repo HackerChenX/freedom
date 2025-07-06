@@ -15,10 +15,10 @@ from datetime import datetime
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from tests.reverse_validation.reverse_validation_framework import ReverseValidationFramework
+from tests.reverse_validation.reverse_validation_framework import Reverse_validation_framework
 
 
-def main():
+def main_runreversevalidation():
     """主函数"""
     parser = argparse.ArgumentParser(description='选股系统反向验证测试')
     parser.add_argument('--indicators', nargs='+',
@@ -38,7 +38,7 @@ def main():
 
     # 初始化验证框架
     print("初始化反向验证测试框架...")
-    framework = ReverseValidationFramework()
+    framework = Reverse_validation_framework()
 
     # 运行批量验证
     print("开始运行反向验证测试...")
@@ -108,5 +108,5 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    exit_code = main_runreversevalidation()
     sys.exit(exit_code)

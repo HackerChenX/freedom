@@ -22,18 +22,18 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, time_it
-from scripts.backtest.backtest_runner import BacktestRunner
-from scripts.backtest.data_manager import BacktestDataManager
-from scripts.backtest.pattern_analyzer import PatternAnalyzer
-from scripts.backtest.strategy_manager import StrategyManager
-from scripts.backtest.report_generator import ReportGenerator
+from scripts.backtest.backtest_runner import Backtest_runner
+from scripts.backtest.data_manager import Backtest_data_manager
+from scripts.backtest.pattern_analyzer import Pattern_analyzer
+from scripts.backtest.strategy_manager import Strategy_manager
+from scripts.backtest.report_generator import Report_generator
 
 # 获取日志记录器
 logger = get_logger(__name__)
 
 
 @time_it
-def run_backtest(stock_code: str, start_date: str, end_date: str, 
+def run_backtest_Backtest_Consolidated_Backtest(stock_code: str, start_date: str, end_date: str, 
                 strategy: str = "pattern", **kwargs) -> Dict[str, Any]:
     """
     运行回测
@@ -49,7 +49,7 @@ def run_backtest(stock_code: str, start_date: str, end_date: str,
         Dict[str, Any]: 回测结果
     """
     # 初始化回测运行器
-    runner = BacktestRunner()
+    runner = Backtest_runner()
     
     # 运行回测
     if strategy == "pattern":
@@ -102,7 +102,7 @@ def batch_backtest(stock_codes: List[str], start_date: str, end_date: str,
         List[Dict[str, Any]]: 回测结果列表
     """
     # 初始化回测运行器
-    runner = BacktestRunner()
+    runner = Backtest_runner()
     
     # 批量回测
     if strategy == "pattern":
@@ -134,7 +134,7 @@ def batch_backtest(stock_codes: List[str], start_date: str, end_date: str,
 
 
 @time_it
-def analyze_patterns(results: List[Dict[str, Any]], 
+def analyze_patterns_Backtest(results: List[Dict[str, Any]], 
                     output_file: str = None) -> Dict[str, Any]:
     """
     分析形态统计
@@ -147,7 +147,7 @@ def analyze_patterns(results: List[Dict[str, Any]],
         Dict[str, Any]: 统计信息
     """
     # 初始化回测运行器
-    runner = BacktestRunner()
+    runner = Backtest_runner()
     
     # 生成统计
     stats = runner.generate_pattern_statistics(results)
@@ -176,7 +176,7 @@ def analyze_zxm(results: List[Dict[str, Any]],
         Dict[str, Any]: 统计信息
     """
     # 初始化回测运行器
-    runner = BacktestRunner()
+    runner = Backtest_runner()
     
     # 生成统计
     stats = runner.generate_zxm_statistics(results)
@@ -191,7 +191,7 @@ def analyze_zxm(results: List[Dict[str, Any]],
     return stats
 
 
-def parse_args():
+def parse_args_Backtest_Consolidated_Backtest():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="综合回测系统")
     
@@ -230,16 +230,16 @@ def parse_args():
     runner_parser.add_argument("--args", "-a", type=str, required=True, 
                              help="传递给BacktestRunner的参数，格式为命令行参数")
     
-    return parser.parse_args()
+    return parser.parse_args_Backtest_Consolidated_Backtest()
 
 
-def main():
+def main_consolidatedbacktest():
     """主函数"""
-    args = parse_args()
+    args = parse_args_Backtest_Consolidated_Backtest()
     
     if args.command == "single":
         # 单股回测
-        result = run_backtest(
+        result = run_backtest_Backtest_Consolidated_Backtest(
             stock_code=args.stock,
             start_date=args.start_date,
             end_date=args.end_date,
@@ -263,7 +263,7 @@ def main():
             
         # 导出结果
         if args.output:
-            runner = BacktestRunner()
+            runner = Backtest_runner()
             runner.export_results_to_csv(args.output, [result])
             print(f"结果已导出到: {args.output}")
     
@@ -304,7 +304,7 @@ def main():
         
         # 生成统计
         if args.type == "pattern":
-            stats = analyze_patterns(results, args.output)
+            stats = analyze_patterns_Backtest(results, args.output)
         elif args.type == "zxm":
             stats = analyze_zxm(results, args.output)
         
@@ -334,9 +334,8 @@ class BacktestSuite:
     """
     回测套件
     """
-    def __init__(self):
         pass
 
 
 if __name__ == "__main__":
-    main()
+    main_consolidatedbacktest()

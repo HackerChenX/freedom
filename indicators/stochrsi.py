@@ -11,12 +11,12 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class STOCHRSI(BaseIndicator, PatternSignalMixin):
+class Stochrsi(BaseIndicator, PatternSignalMixin):
     """
     STOCHRSI (Stochastic RSI) 随机相对强弱指标
     
@@ -34,16 +34,16 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
         self.name = "STOCHRSI"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_stochrsi()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Stochrsi(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_stochrsi(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"rsi_period": 14, "stoch_period": 14, "k_period": 3, "d_period": 3}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Stochrsi(self, **kwargs):
         """
         设置指标参数
         
@@ -51,15 +51,15 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
             **kwargs: 参数字典
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
         
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('STOCHRSI', params)
@@ -77,29 +77,29 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
         self.k_period = params.get('k_period', 3)
         self.d_period = params.get('d_period', 3)
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算STOCHRSI指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了STOCHRSI指标的DataFrame
+            添加了STOCHRSI指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_stochrsi(data, **kwargs)
         self._result = result
         return result
     
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算STOCHRSI指标
         
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
             
         Returns:
-            添加了STOCHRSI指标的DataFrame
+            添加了STOCHRSI指标的Data_frame
         """
         df = data.copy()
         
@@ -187,7 +187,7 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算STOCHRSI指标的原始评分（0-100分制）
         
@@ -205,7 +205,7 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
             pd.Series: 原始评分序列，取值范围0-100
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Stochrsi(data, **kwargs)
         
         # 获取STOCHRSI指标值
         if self._result is None or 'STOCHRSI_K' not in self._result.columns or 'STOCHRSI_D' not in self._result.columns:
@@ -254,10 +254,10 @@ class STOCHRSI(BaseIndicator, PatternSignalMixin):
         # 限制评分在0-100之间
         return final_score.clip(0, 100)
     
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Stochrsi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.5
     
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)

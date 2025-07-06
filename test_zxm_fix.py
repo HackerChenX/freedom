@@ -93,7 +93,7 @@ def test_strategy_evaluation():
     print("\n=== 测试策略评估 ===\n")
     
     # 模拟策略条件评估器的逻辑
-    from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+    from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
     
     # 获取数据管理器
     data_manager = get_unified_data_manager()
@@ -122,7 +122,7 @@ def test_strategy_evaluation():
     print(f"日线数据: {len(daily_data)} 条")
     
     # 创建条件评估器
-    evaluator = StrategyConditionEvaluator()
+    evaluator = Strategy_condition_evaluator()
     
     # 模拟策略条件
     conditions = [
@@ -223,7 +223,7 @@ def test_zxm_volume_shrink():
         print("❌ 没有找到目标日期的数据")
         return False
 
-def main():
+def main_testzxmfix():
     """主函数"""
     print("🔧 测试ZXM指标修复结果\n")
     
@@ -247,4 +247,4 @@ def main():
         print("\n⚠️  还有问题需要解决。")
 
 if __name__ == "__main__":
-    main()
+    main_testzxmfix()

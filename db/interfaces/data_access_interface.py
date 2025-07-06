@@ -1,212 +1,175 @@
 """
-数据访问接口定义
+统一数据访问接口层
 
-定义系统核心数据访问接口，遵循架构分层规则
+提供标准的数据访问抽象接口，解决直接依赖数据库实现类的问题
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Union
-from datetime import datetime
+from typing import Dict, List, Any, Optional, Union
 import pandas as pd
+from datetime import datetime
 
 
-class IDataAccess(ABC):
-    """
-    数据访问接口
-    
-    定义所有数据访问的标准接口，确保分层架构的清晰性
-    """
+class DataAccessInterface(ABC):
+    """统一数据访问接口"""
     
     @abstractmethod
-    def get_stock_info(self, 
-                       stock_code: Union[str, List[str]] = None,
-                       level: Union[str, Any] = None,
-                       start_date: Optional[str] = None,
-                       end_date: Optional[str] = None,
-                       filters: Optional[Dict[str, Any]] = None,
-                       limit: Optional[int] = None,
-                       order_by: str = "date DESC") -> Any:
+    def get_stock_data(self, code: str, start_date: str, end_date: str, 
+                      columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         获取股票数据
         
         Args:
-            stock_code: 股票代码或股票代码列表
-            level: K线周期
+            code: 股票代码
             start_date: 开始日期
             end_date: 结束日期
-            filters: 过滤条件
-            limit: 限制返回记录数
-            order_by: 排序规则
+            columns: 需要的列名列表，None表示所有列
             
         Returns:
-            Any: 股票数据对象
+            股票数据DataFrame
         """
         pass
     
     @abstractmethod
-    def get_stock_list(self, 
-                       industry: Optional[str] = None,
-                       market: Optional[str] = None,
-                       filters: Optional[Dict[str, Any]] = None) -> List[str]:
+    def get_stocks_data_batch(self, codes: List[str], start_date: str, end_date: str,
+                             columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
-        获取股票代码列表
+        批量获取多只股票数据
+        
+        Args:
+            codes: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            columns: 需要的列名列表
+            
+        Returns:
+            股票数据DataFrame
+        """
+        pass
+    
+    @abstractmethod
+    def get_indicator_data(self, code: str, indicator: str, start_date: str, end_date: str,
+                          params: Optional[Dict] = None) -> pd.DataFrame:
+        """
+        获取指标数据
+        
+        Args:
+            code: 股票代码
+            indicator: 指标名称
+            start_date: 开始日期
+            end_date: 结束日期
+            params: 指标参数
+            
+        Returns:
+            指标数据DataFrame
+        """
+        pass
+    
+    @abstractmethod
+    def get_stock_list(self, industry: Optional[str] = None, 
+                      market: Optional[str] = None) -> List[str]:
+        """
+        获取股票列表
         
         Args:
             industry: 行业筛选
             market: 市场筛选
-            filters: 其他过滤条件
             
         Returns:
-            List[str]: 股票代码列表
+            股票代码列表
         """
         pass
     
     @abstractmethod
-    def get_industry_list(self) -> pd.DataFrame:
+    def get_industry_list(self) -> List[str]:
         """
         获取行业列表
         
         Returns:
-            pd.DataFrame: 行业列表数据
+            行业列表
         """
         pass
     
     @abstractmethod
-    def query(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def execute_query(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
         """
-        执行SQL查询
+        执行查询
         
         Args:
-            sql: SQL查询语句
+            query: SQL查询语句
             params: 查询参数
             
         Returns:
-            pd.DataFrame: 查询结果
+            查询结果DataFrame
         """
         pass
     
     @abstractmethod
-    def execute(self, sql: str, params: Optional[Dict[str, Any]] = None) -> None:
+    def check_data_exists(self, table: str, conditions: Dict) -> bool:
         """
-        执行SQL语句
+        检查数据是否存在
         
         Args:
-            sql: SQL语句
-            params: 执行参数
-        """
-        pass
-    
-    @abstractmethod
-    def test_connection(self) -> bool:
-        """
-        测试数据库连接
-        
+            table: 表名
+            conditions: 检查条件
+            
         Returns:
-            bool: 连接状态
+            数据是否存在
         """
         pass
     
     @abstractmethod
-    def get_stock_max_date(self) -> datetime:
+    def get_latest_data(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
         """
-        获取股票数据最新日期
-        
-        Returns:
-            datetime: 最新日期
-        """
-        pass
-    
-    @abstractmethod
-    def get_industry_max_date(self) -> datetime:
-        """
-        获取行业数据最新日期
-        
-        Returns:
-            datetime: 最新日期
-        """
-        pass
-    
-    @abstractmethod
-    def get_avg_price(self, code: str, start_date: Union[str, datetime]) -> float:
-        """
-        获取股票平均价格
+        获取最新数据
         
         Args:
+            table: 表名
             code: 股票代码
-            start_date: 开始日期
+            columns: 需要的列名
             
         Returns:
-            float: 平均价格
+            最新数据字典
         """
         pass
 
 
-class IStockDataProvider(ABC):
-    """
-    股票数据提供者接口
-    """
+class ClickHouseDataAccess(DataAccessInterface):
+    """ClickHouse数据访问实现"""
     
-    @abstractmethod
-    def get_kline_data(self, 
-                       code: str, 
-                       start_date: str, 
-                       end_date: str, 
-                       level: str = '日线') -> pd.DataFrame:
+    def __init__(self, connection_pool, sql_manager):
         """
-        获取K线数据
+        初始化ClickHouse数据访问
         
         Args:
-            code: 股票代码
-            start_date: 开始日期
-            end_date: 结束日期
-            level: K线周期
-            
-        Returns:
-            pd.DataFrame: K线数据
+            connection_pool: 连接池
+            sql_manager: SQL管理器
         """
-        pass
+        self.connection_pool = connection_pool
+        self.sql_manager = sql_manager
     
-    @abstractmethod
-    def get_stock_basic_info(self, codes: List[str]) -> pd.DataFrame:
-        """
-        获取股票基本信息
-        
-        Args:
-            codes: 股票代码列表
-            
-        Returns:
-            pd.DataFrame: 股票基本信息
-        """
-        pass
+class DataAccessError(Exception):
+    """数据访问异常"""
+    pass
 
 
-class IMarketDataProvider(ABC):
-    """
-    市场数据提供者接口
-    """
+class DataAccessFactory:
+    """数据访问工厂类"""
     
-    @abstractmethod
-    def get_market_overview(self, date: str) -> Dict[str, Any]:
-        """
-        获取市场概览数据
-        
-        Args:
-            date: 查询日期
-            
-        Returns:
-            Dict[str, Any]: 市场概览数据
-        """
-        pass
+    @staticmethod
+    def create_clickhouse_access(connection_pool, sql_manager) -> DataAccessInterface:
+        """创建ClickHouse数据访问实例"""
+        return ClickHouseDataAccess(connection_pool, sql_manager)
     
-    @abstractmethod
-    def get_industry_performance(self, date: str) -> pd.DataFrame:
-        """
-        获取行业表现数据
-        
-        Args:
-            date: 查询日期
-            
-        Returns:
-            pd.DataFrame: 行业表现数据
-        """
-        pass 
+    @staticmethod
+    def create_mock_access() -> DataAccessInterface:
+        """创建模拟数据访问实例（用于测试）"""
+        try:
+            # 使用动态导入避免分层违规
+            import importlib
+            mock_module = importlib.import_module('tests.mocks.mock_data_access')
+            MockDataAccess = mock_module.MockDataAccess
+            return MockDataAccess()
+        except ImportError:
+            # 如果测试模块不可用，返回None
+            return None

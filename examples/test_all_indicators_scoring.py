@@ -35,7 +35,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def generate_test_data(length: int = 100) -> pd.DataFrame:
+def generate_test_data_Scoring_Test_All_Indicators_Scoring(length: int = 100) -> pd.DataFrame:
     """
     生成测试数据
     
@@ -115,13 +115,13 @@ def test_indicator_scoring(indicator_name: str, indicator_instance, data: pd.Dat
         return False
 
 
-def main():
+def mainTestallindicatorsscoring():
     """主函数"""
     print("开始测试所有指标评分功能")
     print("=" * 80)
     
     # 生成测试数据
-    data = generate_test_data(100)
+    data = generate_test_data_Scoring_Test_All_Indicators_Scoring(100)
     
     # 定义所有已实现评分功能的指标
     indicators = [
@@ -198,5 +198,5 @@ def main():
 
 
 if __name__ == "__main__":
-    success = main()
+    success = mainTestallindicatorsscoring()
     sys.exit(0 if success else 1) 

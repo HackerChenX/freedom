@@ -5,7 +5,7 @@
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, Magic_mock
 import pandas as pd
 import os
 import sys
@@ -16,19 +16,19 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from db.data_manager_adapter import DataManagerAdapter as DataManager
-from models.stock_info import StockInfo
+from db.data_manager_adapter import Data_manager_adapter as Data_manager
+from models.stock_info WHERE 1=1 import Stock_info
 from enums.period import Period
-from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError
+from utils.exceptions import Data_access_error, Data_not_found_error, Data_validation_error
 
 
-class TestDataManager(unittest.TestCase):
+class Test_data_manager(unittest.Test_case):
     """数据管理器单元测试类"""
     
-    def setUp(self):
+    def set_up_Manager_Test_Data_Manager(self):
         """测试前准备"""
         # 创建数据管理器实例
-        self.data_manager = DataManager()
+        self.data_manager = Data_manager()
         
         # 清除缓存
         self.data_manager.clear_cache()
@@ -60,7 +60,7 @@ class TestDataManager(unittest.TestCase):
     def test_get_kline_data_success(self, mock_get_stock_info):
         """测试成功获取K线数据"""
         # 配置模拟对象
-        mock_get_stock_info.return_value = StockInfo(self.test_kline_data)
+        mock_get_stock_info.return_value = Stock_info(self.test_kline_data)
 
         # 调用被测方法
         result = self.data_manager.get_kline_data(
@@ -71,9 +71,9 @@ class TestDataManager(unittest.TestCase):
         )
 
         # 验证结果
-        self.assertIsNotNone(result)
-        self.assertTrue(result.is_collection)
-        self.assertEqual(len(result), 10)
+        self.assert_is_not_none(result)
+        self.assert_true(result.is_collection)
+        self.assert_equal(len(result), 10)
         self.assertEqual(result[0].date.strftime('%Y-%m-%d'), '2023-01-01')
 
         # 验证模拟对象被调用
@@ -83,7 +83,7 @@ class TestDataManager(unittest.TestCase):
     def test_get_kline_data_empty(self, mock_get_stock_info):
         """测试获取空K线数据"""
         # 配置模拟对象返回空DataFrame
-        mock_get_stock_info.return_value = StockInfo(pd.DataFrame())
+        mock_get_stock_info.return_value = Stock_info(pd.DataFrame())
 
         # 调用被测方法
         result = self.data_manager.get_kline_data(
@@ -94,7 +94,7 @@ class TestDataManager(unittest.TestCase):
         )
 
         # 验证结果
-        self.assertEqual(len(result), 0)
+        self.assert_equal(len(result), 0)
 
         # 验证模拟对象被调用
         mock_get_stock_info.assert_called_once()
@@ -106,7 +106,7 @@ class TestDataManager(unittest.TestCase):
         mock_get_stock_info.side_effect = Exception("数据库连接错误")
 
         # 测试数据库错误
-        with self.assertRaises(DataAccessError):
+        with self.assert_raises(Data_access_error):
             self.data_manager.get_kline_data(
                 stock_code='000001',
                 level='day',
@@ -121,7 +121,7 @@ class TestDataManager(unittest.TestCase):
     def test_get_kline_data_cache(self, mock_get_stock_info):
         """测试K线数据缓存功能"""
         # 配置模拟对象
-        mock_get_stock_info.return_value = StockInfo(self.test_kline_data)
+        mock_get_stock_info.return_value = Stock_info(self.test_kline_data)
 
         # 首次调用
         self.data_manager.get_kline_data(
@@ -150,15 +150,15 @@ class TestDataManager(unittest.TestCase):
     def test_get_stock_info_for_list_success(self, mock_get_stock_info):
         """测试成功获取股票列表"""
         # 配置模拟对象
-        mock_get_stock_info.return_value = StockInfo(self.test_stock_list)
+        mock_get_stock_info.return_value = Stock_info(self.test_stock_list)
 
         # 调用被测方法
         result = self.data_manager.get_stock_info()
         result_df = result.to_dataframe()
 
         # 验证结果
-        self.assertIsNotNone(result_df)
-        self.assertEqual(len(result_df), 3)
+        self.assert_is_not_none(result_df)
+        self.assert_equal(len(result_df), 3)
         self.assertEqual(result_df.iloc[0]['stock_code'], '000001')
 
         # 验证模拟对象被调用
@@ -169,7 +169,7 @@ class TestDataManager(unittest.TestCase):
         """测试使用过滤器获取股票列表"""
         # 配置模拟对象
         filtered_df = self.test_stock_list[self.test_stock_list['market'] == '主板']
-        mock_get_stock_info.return_value = StockInfo(filtered_df)
+        mock_get_stock_info.return_value = Stock_info(filtered_df)
 
         # 调用被测方法
         result = self.data_manager.get_stock_info(
@@ -178,8 +178,8 @@ class TestDataManager(unittest.TestCase):
         result_df = result.to_dataframe()
 
         # 验证结果
-        self.assertIsNotNone(result_df)
-        self.assertEqual(len(result_df), 1)
+        self.assert_is_not_none(result_df)
+        self.assert_equal(len(result_df), 1)
         self.assertEqual(result_df.iloc[0]['stock_code'], '000001')
 
         # 验证模拟对象被调用
@@ -192,14 +192,14 @@ class TestDataManager(unittest.TestCase):
         mock_get_stock_info.side_effect = Exception("数据库连接错误")
 
         # 测试数据库错误
-        with self.assertRaises(DataAccessError):
+        with self.assert_raises(Data_access_error):
             self.data_manager.get_stock_info()
 
         # 验证模拟对象被调用
         mock_get_stock_info.assert_called_once()
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    @patch('db.clickhouse_db.ClickHouseDB.execute')
+    @patch('db.data_access.ClickHouseDB.query')
+    @patch('db.data_access.ClickHouseDB.execute')
     def test_save_selection_result_success(self, mock_execute, mock_query):
         """测试成功保存选股结果"""
         # 创建测试选股结果
@@ -221,13 +221,13 @@ class TestDataManager(unittest.TestCase):
         )
         
         # 验证结果
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 验证模拟对象被调用
         mock_execute.assert_called_once()
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    @patch('db.clickhouse_db.ClickHouseDB.execute')
+    @patch('db.data_access.ClickHouseDB.query')
+    @patch('db.data_access.ClickHouseDB.execute')
     def test_save_selection_result_empty(self, mock_execute, mock_query):
         """测试保存空选股结果"""
         # 创建空选股结果
@@ -241,13 +241,13 @@ class TestDataManager(unittest.TestCase):
         )
         
         # 验证结果
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 验证模拟对象未被调用
         mock_execute.assert_not_called()
     
-    @patch('db.clickhouse_db.ClickHouseDB.query')
-    @patch('db.clickhouse_db.ClickHouseDB.execute')
+    @patch('db.data_access.ClickHouseDB.query')
+    @patch('db.data_access.ClickHouseDB.execute')
     def test_save_selection_result_db_error(self, mock_execute, mock_query):
         """测试数据库错误时保存选股结果"""
         # 创建测试选股结果
@@ -262,7 +262,7 @@ class TestDataManager(unittest.TestCase):
         mock_execute.side_effect = Exception("数据库连接错误")
         
         # 测试数据库错误
-        with self.assertRaises(DataAccessError):
+        with self.assert_raises(Data_access_error):
             self.data_manager.save_selection_result(
                 result=selection_result,
                 strategy_id='TEST_STRATEGY',

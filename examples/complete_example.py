@@ -216,7 +216,7 @@ def show_file_structure(output_dir):
     print_tree(output_path)
 
 
-def main():
+def main_completeexample():
     """主函数"""
     print("🎯 买点策略反向验证完整示例")
     print("=" * 60)
@@ -247,4 +247,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_completeexample()

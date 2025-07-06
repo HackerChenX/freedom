@@ -5,28 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
-from tests.helper.data_generator import TestDataGenerator
-from tests.helper.log_capture import LogCaptureMixin
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
+from tests.helper.data_generator import Test_data_generator
+from tests.helper.log_capture import Log_capture_mixin
 
 
-class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
+class Testsar_sar(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
     """SAR指标测试类"""
     
-    def setUp(self):
+    def set_up_Sar(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        LogCaptureMixin.setUp(self)
+        Log_capture_mixin.set_up_Sar(self)
         
         self.indicator = complete_registry.create_indicator('SAR', acceleration=0.02, maximum=0.2)
         self.expected_columns = ['sar', 'trend']
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
     
-    def tearDown(self):
+    def tear_down_Sar(self):
         """清理日志捕获器"""
-        LogCaptureMixin.tearDown(self)
+        Log_capture_mixin.tear_down_Sar(self)
     
     def test_sar_calculation_accuracy(self):
         """测试SAR计算准确性"""
@@ -45,7 +45,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             price_range = price_max - price_min
             
             # SAR值应该在合理范围内（价格范围的0.5-2倍）
-            self.assertTrue(all(price_min - price_range <= v <= price_max + price_range 
+            self.assert_true(all(price_min - price_range <= v <= price_max + price_range 
                                for v in sar_values), "SAR值应该在合理范围内")
     
     def test_sar_trend_values(self):
@@ -55,7 +55,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 验证趋势值只能是1或-1
         trend_values = result['trend'].dropna()
         if len(trend_values) > 0:
-            self.assertTrue(all(v in [1, -1] for v in trend_values), 
+            self.assert_true(all(v in [1, -1] for v in trend_values), 
                            "趋势值应该只能是1或-1")
     
     def test_sar_score_range(self):
@@ -74,9 +74,9 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assertIsInstance(confidence, float)
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+        self.assert_is_instance(confidence, float)
+        self.assert_greater_equal(confidence, 0.0)
+        self.assert_less_equal(confidence, 1.0)
     
     def test_sar_parameter_update(self):
         """测试SAR参数更新"""
@@ -85,8 +85,8 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(acceleration=new_acceleration, maximum=new_maximum)
         
         # 验证参数更新
-        self.assertEqual(self.indicator.acceleration, new_acceleration)
-        self.assertEqual(self.indicator.maximum, new_maximum)
+        self.assert_equal(self.indicator.acceleration, new_acceleration)
+        self.assert_equal(self.indicator.maximum, new_maximum)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -98,13 +98,13 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
+            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_sar_comprehensive_score(self):
         """测试SAR综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assertIsInstance(score_result, dict)
+        self.assert_is_instance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -116,13 +116,13 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试SAR形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -137,7 +137,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_sar_reversal_detection(self):
         """测试SAR反转检测"""
         # 创建包含反转的数据
-        reversal_data = TestDataGenerator.generate_price_sequence([
+        reversal_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 25},
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 25}
         ])
@@ -152,7 +152,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_sar_trend_consistency(self):
         """测试SAR趋势一致性"""
         # 创建明显的上升趋势数据
-        uptrend_data = TestDataGenerator.generate_price_sequence([
+        uptrend_data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 50}
         ])
         
@@ -162,7 +162,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         trend_values = result['trend'].dropna()
         if len(trend_values) > 10:
             positive_trend_ratio = (trend_values == 1).sum() / len(trend_values)
-            self.assertGreater(positive_trend_ratio, 0.3, 
+            self.assert_greater(positive_trend_ratio, 0.3, 
                               "在上升趋势中，正趋势比例应该较高")
     
     def test_sar_distance_calculation(self):
@@ -179,10 +179,10 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             
             if len(valid_distances) > 0:
                 # 距离应该在合理范围内（通常小于20%）
-                self.assertTrue(all(d < 50 for d in valid_distances), 
+                self.assert_true(all(d < 50 for d in valid_distances), 
                                "SAR与价格的距离应该在合理范围内")
     
-    def test_no_errors_during_calculation(self):
+    def test_no_errors_during_calculation_Sar(self):
         """测试计算过程中无ERROR日志"""
         self.clear_logs()
         
@@ -193,11 +193,11 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('sar', result.columns)
         self.assertIn('trend', result.columns)
     
-    def test_no_errors_during_pattern_detection(self):
+    def test_no_errors_during_pattern_detection_Sar(self):
         """测试形态检测过程中无ERROR日志"""
         self.clear_logs()
         
@@ -208,7 +208,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assertIsInstance(patterns, pd.DataFrame)
+        self.assert_is_instance(patterns, pd.DataFrame)
     
     def test_sar_register_patterns(self):
         """测试SAR形态注册"""
@@ -229,7 +229,7 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(flat_data)
         
         # SAR应该能够处理价格不变的情况
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         self.assertIn('sar', result.columns)
         self.assertIn('trend', result.columns)
     
@@ -251,8 +251,8 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         low_trend_changes = (low_result['trend'] != low_result['trend'].shift(1)).sum()
         
         # 这个测试可能不总是成立，所以只验证计算成功
-        self.assertGreaterEqual(high_trend_changes, 0)
-        self.assertGreaterEqual(low_trend_changes, 0)
+        self.assert_greater_equal(high_trend_changes, 0)
+        self.assert_greater_equal(low_trend_changes, 0)
 
 
 if __name__ == '__main__':

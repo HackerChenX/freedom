@@ -13,11 +13,11 @@ import datetime
 from typing import List, Dict, Any, Optional
 
 from utils.logger import get_logger
-from scripts.backtest.consolidated_backtest import ConsolidatedBacktest
+from scripts.backtest.consolidated_backtest import Consolidated_backtest
 
 logger = get_logger(__name__)
 
-def main():
+def main_35():
     """股票综合回测主函数"""
     parser = argparse.ArgumentParser(description="股票综合回测分析工具")
     
@@ -32,7 +32,7 @@ def main():
     # 运行综合回测
     try:
         print("开始股票综合回测分析...")
-        backtest = ConsolidatedBacktest()
+        backtest = Consolidated_backtest()
         report_file, strategy_file = backtest.run(args.csv, args.days_before, args.days_after)
         
         if report_file:
@@ -53,4 +53,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_35() 

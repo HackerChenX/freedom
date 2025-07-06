@@ -8,27 +8,27 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from indicators.kdj import KDJ
-from indicators.pattern_registry import PatternRegistry
+from indicators.pattern_registry import Pattern_registry
 
 def test_pattern_id_normalization():
     """测试形态ID规范化"""
     print("=== 形态ID规范化测试 ===")
     
     # 清空注册表
-    PatternRegistry.clear_registry()
+    Pattern_registry.clear_registry()
     
     # 创建KDJ实例
     kdj = KDJ(k_period=9, d_period=3, j_period=3)
     
     # 获取PatternRegistry实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     print(f"KDJ指标类型: {kdj.get_indicator_type()}")
     
     # 测试规范化方法
     pattern_id = "TEST_PATTERN"
     indicator_id = "KDJ"
-    normalized_id = PatternRegistry._normalize_pattern_id(pattern_id, indicator_id)
+    normalized_id = Pattern_registry._normalize_pattern_id(pattern_id, indicator_id)
     print(f"原始ID: {pattern_id}")
     print(f"指标ID: {indicator_id}")
     print(f"规范化ID: {normalized_id}")
@@ -77,13 +77,13 @@ def test_kdj_pattern_registration_detailed():
     print("\n=== KDJ形态注册详细测试 ===")
     
     # 清空注册表
-    PatternRegistry.clear_registry()
+    Pattern_registry.clear_registry()
     
     # 创建KDJ实例
     kdj = KDJ(k_period=9, d_period=3, j_period=3)
     
     # 获取PatternRegistry实例
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     # 手动调用注册方法
     print("调用 _register_patterns() 前...")
@@ -127,7 +127,7 @@ def test_kdj_scoring_with_registered_patterns():
     
     # 使用前面注册的形态
     kdj = KDJ(k_period=9, d_period=3, j_period=3)
-    registry = PatternRegistry()
+    registry = Pattern_registry()
     
     # 创建测试数据
     import pandas as pd

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CCI (Commodity Channel Index) 顺势指标
+CCI_Cci (Commodity Channel Index) 顺势指标
 
 CCI指标是一种超买超卖指标，用于识别价格偏离统计平均值的程度。
 """
@@ -11,14 +11,14 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import get_logger
+from utils.logger import getLogger
 
-logger = get_logger(__name__)
+logger = getLogger(__name__)
 
 
-class CCI(BaseIndicator, PatternSignalMixin):
+class CciCci(BaseIndicator, PatternSignalMixin):
     """
-    CCI (Commodity Channel Index) 顺势指标
+    CCI_Cci (Commodity Channel Index) 顺势指标
     
     CCI指标通过计算价格与其统计平均值的偏离程度来识别超买超卖状态。
     """
@@ -31,19 +31,19 @@ class CCI(BaseIndicator, PatternSignalMixin):
             **kwargs: 指标参数
         """
         super().__init__()
-        self.name = "CCI"
+        self.name = "CCI_Cci"
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters()
+        self._default_parameters = self._get_default_parameters_cci()
         
         # 应用用户参数
-        self.set_parameters(**kwargs)
+        self.set_parameters_Cci(**kwargs)
     
-    def _get_default_parameters(self) -> Dict[str, Any]:
+    def _get_default_parameters_cci(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 20, "constant": 0.015}
     
-    def set_parameters(self, **kwargs):
+    def set_parameters_Cci(self, **kwargs):
         """
         设置指标参数
         
@@ -51,18 +51,18 @@ class CCI(BaseIndicator, PatternSignalMixin):
             **kwargs: 参数字典
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
+        from utils.indicator_parameter_validator import Indicator_parameter_validator
+        validator = Indicator_parameter_validator()
         
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
+            from utils.indicator_parameter_validator import Indicator_parameter_validator
+            validator = Indicator_parameter_validator()
             
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('CCI', params)
+            is_valid, errors = validator.validate_indicator_parameters('CCI_Cci', params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
@@ -75,36 +75,36 @@ class CCI(BaseIndicator, PatternSignalMixin):
         self.period = params.get('period', 20)
         self.constant = params.get('constant', 0.015)
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算CCI指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            添加了CCI指标的DataFrame
+            添加了CCI指标的Data_frame
         """
-        result = self._calculate(data, **kwargs)
+        result = self._calculate_cci(data, **kwargs)
         self._result = result
         return result
 
-    def _calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _calculate_cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算CCI指标
 
         Args:
-            data: 包含OHLCV数据的DataFrame
+            data: 包含OHLCV数据的Data_frame
 
         Returns:
-            添加了CCI指标的DataFrame
+            添加了CCI指标的Data_frame
         """
         df = data.copy()
 
         # 确保数据有足够的长度
         if len(df) < self.period:
             logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period})，返回原始数据")
-            df[f'CCI{self.period}'] = np.nan
+            df[f'CCI_Cci{self.period}'] = np.nan
             return df
             
         # 计算典型价格
@@ -119,7 +119,7 @@ class CCI(BaseIndicator, PatternSignalMixin):
         )
 
         # 计算CCI
-        df[f'CCI{self.period}'] = (df['TP'] - df['MA']) / (self.constant * df['MD'])
+        df[f'CCI_Cci{self.period}'] = (df['TP'] - df['MA']) / (self.constant * df['MD'])
 
         # 清理中间计算列
         df.drop(['TP', 'MA', 'MD'], axis=1, inplace=True)
@@ -140,7 +140,7 @@ class CCI(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 获取CCI值
-            cci_col = f'CCI{self.period}'
+            cci_col = f'CCI_Cci{self.period}'
             if cci_col not in df.columns:
                 # 如果没有CCI值，使用默认信号
                 return df
@@ -180,14 +180,14 @@ class CCI(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Cci(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算CCI指标的原始评分（0-100分制）
         
         CCI评分逻辑：
         - CCI在-100到100之间为正常区间，得分50分
-        - CCI < -100为超卖区间，越低得分越高（最高80分）
-        - CCI > 100为超买区间，越高得分越低（最低20分）
+        - CCI_Cci < -100为超卖区间，越低得分越高（最高80分）
+        - CCI_Cci > 100为超买区间，越高得分越低（最低20分）
         - 结合CCI变化趋势进行调整
         
         Args:
@@ -198,10 +198,10 @@ class CCI(BaseIndicator, PatternSignalMixin):
             pd.Series: 原始评分序列，取值范围0-100
         """
         if not self.has_result():
-            self.calculate(data, **kwargs)
+            self.calculate_Cci(data, **kwargs)
         
         # 获取CCI指标值
-        cci_col = f'CCI{self.period}'
+        cci_col = f'CCI_Cci{self.period}'
         if self._result is None or cci_col not in self._result.columns:
             return pd.Series(50.0, index=data.index)
 
@@ -211,15 +211,15 @@ class CCI(BaseIndicator, PatternSignalMixin):
         # 1. 位置分：基于CCI值的位置，贡献70分权重
         position_score = pd.Series(50.0, index=data.index)
         
-        # 超卖区间（CCI < -100）：看涨信号，得分增加
+        # 超卖区间（CCI_Cci < -100）：看涨信号，得分增加
         oversold = cci < -100
         position_score[oversold] = 50 + np.minimum(30, (-cci[oversold] - 100) * 0.15)  # 最高80分
         
-        # 超买区间（CCI > 100）：看跌信号，得分减少
+        # 超买区间（CCI_Cci > 100）：看跌信号，得分减少
         overbought = cci > 100
         position_score[overbought] = 50 - np.minimum(30, (cci[overbought] - 100) * 0.15)  # 最低20分
         
-        # 正常区间（-100 <= CCI <= 100）：中性，基于距离零轴的远近微调
+        # 正常区间（-100 <= CCI_Cci <= 100）：中性，基于距离零轴的远近微调
         normal = (cci >= -100) & (cci <= 100)
         position_score[normal] = 50 + cci[normal] * 0.1  # -100时为40分，100时为60分
         
@@ -236,10 +236,10 @@ class CCI(BaseIndicator, PatternSignalMixin):
         # 限制评分在0-100之间
         return final_score.clip(0, 100)
 
-    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Cci(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.5
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)

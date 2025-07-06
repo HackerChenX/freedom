@@ -9,24 +9,24 @@ import numpy as np
 import pandas as pd
 import time
 
-from analysis.engines.complex_logic_processor import ComplexLogicProcessor
-from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
-from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
+from analysis.engines.complex_logic_processor import Complex_logic_processor
+from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
+from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
 
-class TestComplexLogicProcessorIntegration(unittest.TestCase):
+class Test_complex_logic_processor_integration(unittest.Test_case):
     """复杂逻辑处理器集成测试"""
     
-    def setUp(self):
+    def set_up_Integration_Test_Complex_Logic_Processor_Integration(self):
         """测试设置"""
         # 创建统一指标引擎
-        self.indicator_engine = UnifiedIndicatorEngine()
+        self.indicator_engine = Unified_indicator_engine()
         
         # 创建共享条件评估器
-        self.condition_evaluator = SharedConditionEvaluator(self.indicator_engine)
+        self.condition_evaluator = Shared_condition_evaluator(self.indicator_engine)
         
         # 创建复杂逻辑处理器
-        self.processor = ComplexLogicProcessor(self.condition_evaluator)
+        self.processor = Complex_logic_processor(self.condition_evaluator)
         
         # 模拟股票数据
         self.stock_data = {
@@ -55,7 +55,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8  # 使用倒数第二个数据点
         )
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 复合条件
         result = self.processor.evaluate_expression(
@@ -63,7 +63,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_arithmetic_expressions(self):
         """测试算术表达式"""
@@ -73,7 +73,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # 复杂算术表达式
         result = self.processor.evaluate_expression(
@@ -81,7 +81,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_function_calls(self):
         """测试函数调用"""
@@ -91,7 +91,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # SQRT函数
         result = self.processor.evaluate_expression(
@@ -99,7 +99,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
         
         # MAX函数
         result = self.processor.evaluate_expression(
@@ -107,7 +107,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_complex_buypoint_conditions(self):
         """测试复杂买点条件"""
@@ -150,7 +150,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_nested_expressions(self):
         """测试嵌套表达式"""
@@ -173,7 +173,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
             self.stock_data,
             date_idx=8
         )
-        self.assertTrue(result)
+        self.assert_true(result)
     
     def test_performance_with_large_expressions(self):
         """测试大型表达式的性能"""
@@ -193,7 +193,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
         )
         end_time = time.time()
         
-        self.assertTrue(result)
+        self.assert_true(result)
         self.assertLess(end_time - start_time, 0.1, "大型表达式评估时间过长")
     
     def test_cache_effectiveness(self):
@@ -210,7 +210,7 @@ class TestComplexLogicProcessorIntegration(unittest.TestCase):
         result2 = self.processor.evaluate_expression(expression, self.stock_data, date_idx=8)
         second_time = time.time() - start_time
         
-        self.assertEqual(result1, result2)
+        self.assert_equal(result1, result2)
         # 由于缓存，第二次应该更快（但可能不到50%，因为表达式比较简单）
         
         # 检查统计信息

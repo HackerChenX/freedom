@@ -6,16 +6,16 @@ import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.helper.data_generator import TestDataGenerator
-from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import Test_data_generator
+from tests.unit.indicator_test_mixin import Indicator_test_mixin
 
-class TestIndicatorIntegration(unittest.TestCase):
+class Test_indicator_integration(unittest.Test_case):
     """测试不同指标之间的集成与协作"""
 
-    def setUp(self):
+    def set_up_Integration_Test_Indicator_Integration(self):
         """准备测试数据和指标实例"""
         # 生成多种市场形态的测试数据
-        self.data = TestDataGenerator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50},  # 上升趋势
             {'type': 'v_shape', 'start_price': 110, 'bottom_price': 95, 'periods': 50},  # V形反转
             {'type': 'm_shape', 'start_price': 95, 'top_price': 105, 'periods': 50},  # M形态
@@ -23,7 +23,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         ])
         
         # 确保所有指标被注册
-        IndicatorFactory.auto_register_all_indicators()
+        Indicator_factory.auto_register_all_indicators()
         
         # 为了测试需要，模拟一些StockInfo字段
         self.data['volume'] = self.data['volume'].astype(float)
@@ -33,7 +33,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         self.data['industry'] = 'Technology'  # 模拟行业
         
         # 保存支持的指标列表，排除不适合集成测试的指标
-        self.supported_indicators = IndicatorFactory.get_supported_indicators()
+        self.supported_indicators = Indicator_factory.get_supported_indicators()
         self.exclude_list = [
             'ZXMPATTERNINDICATOR', 'CompositeIndicator', 'FibonacciTools', 'SENTIMENTANALYSIS',
             'KDJ_CONDITION', 'MACD_CONDITION', 'MA_CONDITION', 'GENERIC_CONDITION',
@@ -45,7 +45,7 @@ class TestIndicatorIntegration(unittest.TestCase):
     def test_composite_indicator_with_basic_indicators(self):
         """测试复合指标与基础指标(MACD, RSI, BOLL)的集成"""
         # 1. 创建复合指标实例
-        composite_indicator = CompositeIndicator()
+        composite_indicator = Composite_indicator()
 
         # 2. 创建并添加多个基础指标
         macd = IndicatorFactory.create_indicator('MACD')
@@ -60,7 +60,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         result_df = composite_indicator.calculate(self.data.copy())
 
         # 4. 验证结果
-        self.assertIsInstance(result_df, pd.DataFrame)
+        self.assert_is_instance(result_df, pd.DataFrame)
         
         # 验证是否包含了所有子指标的列
         expected_macd_cols = ['macd_line', 'macd_signal', 'macd_histogram']
@@ -76,7 +76,7 @@ class TestIndicatorIntegration(unittest.TestCase):
     def test_trend_and_oscillator_integration(self):
         """测试趋势指标和震荡指标的集成"""
         # 创建复合指标，组合趋势指标和震荡指标
-        composite = CompositeIndicator()
+        composite = Composite_indicator()
         
         # 添加趋势指标
         ma = IndicatorFactory.create_indicator('MA')
@@ -96,7 +96,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         result = composite.calculate(self.data.copy())
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         expected_cols = [
             'MA5', 'MA10', 'MA20',
             'ADX14', 'PDI14', 'MDI14',
@@ -114,7 +114,7 @@ class TestIndicatorIntegration(unittest.TestCase):
     
     def test_volume_and_price_indicators_integration(self):
         """测试成交量指标和价格指标的集成"""
-        composite = CompositeIndicator()
+        composite = Composite_indicator()
         
         # 价格指标
         macd = IndicatorFactory.create_indicator('MACD')
@@ -128,7 +128,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         result = composite.calculate(self.data.copy())
         
         # 验证结果
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assert_is_instance(result, pd.DataFrame)
         expected_cols = [
             'macd_line', 'macd_signal', 'macd_histogram',
             'obv'
@@ -154,14 +154,14 @@ class TestIndicatorIntegration(unittest.TestCase):
             try:
                 # 获取MACD形态
                 macd_patterns = macd.get_patterns(macd_result)
-                self.assertIsInstance(macd_patterns, pd.DataFrame)
+                self.assert_is_instance(macd_patterns, pd.DataFrame)
                 
                 # 获取KDJ形态
                 kdj_patterns = kdj.get_patterns(self.data.copy())
-                self.assertIsInstance(kdj_patterns, pd.DataFrame)
+                self.assert_is_instance(kdj_patterns, pd.DataFrame)
                 
                 # 验证至少有一些形态被识别
-                self.assertTrue(len(macd_patterns.columns) > 0 or len(kdj_patterns.columns) > 0, 
+                self.assert_true(len(macd_patterns.columns) > 0 or len(kdj_patterns.columns) > 0, 
                                 "没有识别出任何形态")
             except Exception as e:
                 self.skipTest(f"形态识别测试失败: {e}")
@@ -220,7 +220,7 @@ class TestIndicatorIntegration(unittest.TestCase):
                                              (consistent_signals['kdj'] < 0)]
             
             # 这里我们只是验证可以找到信号，不验证具体数量
-            self.assertIsInstance(consistent_signals, pd.DataFrame)
+            self.assert_is_instance(consistent_signals, pd.DataFrame)
         except Exception as e:
             self.skipTest(f"无法完成信号一致性测试: {e}")
     
@@ -234,7 +234,7 @@ class TestIndicatorIntegration(unittest.TestCase):
         
         for name in test_indicator_names:
             if name in self.supported_indicators and name not in self.exclude_list:
-                indicators.append(IndicatorFactory.create_indicator(name))
+                indicators.append(Indicator_factory.create_indicator(name))
         
         # 链式计算
         try:

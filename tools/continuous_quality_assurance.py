@@ -16,13 +16,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from utils.logger import get_logger
-from tools.automated_risk_detection import AutomatedRiskDetector
+from tools.automated_risk_detection import Automated_risk_detector
 
 logger = get_logger(__name__)
 
 
 @dataclass
-class QualityCheckResult:
+class Quality_check_result:
     """质量检查结果"""
     check_name: str
     success: bool
@@ -32,7 +32,7 @@ class QualityCheckResult:
     timestamp: datetime
 
 
-class PreCommitHooks:
+class Pre_commit_hooks:
     """Pre-commit钩子管理器"""
     
     def __init__(self):
@@ -43,7 +43,7 @@ class PreCommitHooks:
             self._check_performance_regression
         ]
     
-    def run_all_hooks(self) -> List[QualityCheckResult]:
+    def run_all_hooks(self) -> List[Quality_check_result]:
         """运行所有pre-commit钩子"""
         logger.info("开始运行pre-commit质量检查")
         results = []
@@ -61,7 +61,7 @@ class PreCommitHooks:
                     
             except Exception as e:
                 logger.error(f"Pre-commit钩子执行失败: {hook.__name__}: {e}")
-                results.append(QualityCheckResult(
+                results.append(Quality_check_result(
                     check_name=hook.__name__,
                     success=False,
                     score=0.0,
@@ -75,7 +75,7 @@ class PreCommitHooks:
         
         return results
     
-    def _check_code_style(self) -> QualityCheckResult:
+    def _check_code_style(self) -> Quality_check_result:
         """检查代码风格"""
         start_time = time.time()
         
@@ -93,7 +93,7 @@ class PreCommitHooks:
             execution_time = time.time() - start_time
             success = result.returncode == 0
             
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="代码风格检查",
                 success=success,
                 score=100.0 if success else 0.0,
@@ -106,9 +106,9 @@ class PreCommitHooks:
                 timestamp=datetime.now()
             )
             
-        except subprocess.TimeoutExpired:
+        except subprocess.Timeout_expired:
             execution_time = time.time() - start_time
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="代码风格检查",
                 success=False,
                 score=0.0,
@@ -118,7 +118,7 @@ class PreCommitHooks:
             )
         except Exception as e:
             execution_time = time.time() - start_time
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="代码风格检查",
                 success=True,  # 如果flake8不可用，跳过检查
                 score=50.0,
@@ -127,7 +127,7 @@ class PreCommitHooks:
                 timestamp=datetime.now()
             )
     
-    def _check_test_coverage(self) -> QualityCheckResult:
+    def _check_test_coverage(self) -> Quality_check_result:
         """检查测试覆盖率"""
         start_time = time.time()
         
@@ -156,7 +156,7 @@ class PreCommitHooks:
             else:
                 coverage_score = 0
             
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="测试覆盖率检查",
                 success=success and coverage_score >= 90,
                 score=coverage_score,
@@ -170,9 +170,9 @@ class PreCommitHooks:
                 timestamp=datetime.now()
             )
             
-        except subprocess.TimeoutExpired:
+        except subprocess.Timeout_expired:
             execution_time = time.time() - start_time
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="测试覆盖率检查",
                 success=False,
                 score=0.0,
@@ -182,7 +182,7 @@ class PreCommitHooks:
             )
         except Exception as e:
             execution_time = time.time() - start_time
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="测试覆盖率检查",
                 success=False,
                 score=0.0,
@@ -191,13 +191,13 @@ class PreCommitHooks:
                 timestamp=datetime.now()
             )
     
-    def _check_signal_consistency(self) -> QualityCheckResult:
+    def _check_signal_consistency(self) -> Quality_check_result:
         """检查信号一致性"""
         start_time = time.time()
         
         try:
             # 使用自动化风险检测工具
-            detector = AutomatedRiskDetector()
+            detector = Automated_risk_detector()
             
             # 只检查关键的ZXM指标
             key_indicators = [
@@ -229,7 +229,7 @@ class PreCommitHooks:
             
             execution_time = time.time() - start_time
             
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="信号一致性检查",
                 success=success,
                 score=avg_score,
@@ -244,7 +244,7 @@ class PreCommitHooks:
             
         except Exception as e:
             execution_time = time.time() - start_time
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="信号一致性检查",
                 success=False,
                 score=0.0,
@@ -253,15 +253,15 @@ class PreCommitHooks:
                 timestamp=datetime.now()
             )
     
-    def _check_performance_regression(self) -> QualityCheckResult:
+    def _check_performance_regression(self) -> Quality_check_result:
         """检查性能回归"""
         start_time = time.time()
         
         try:
             # 运行性能测试
-            from tests.framework.layered_testing_framework import LayeredTestingFramework
+            from tests.framework.layered_testing_framework import Layered_testing_framework
             
-            framework = LayeredTestingFramework()
+            framework = Layered_testing_framework()
             test_indicators = ['ZXM_BS_ABSORB', 'ZXM_TURNOVER']
             
             summary = framework.run_all_layers(test_indicators)
@@ -279,7 +279,7 @@ class PreCommitHooks:
             
             score = min(100, (10.0 - total_time) / 10.0 * 50 + coverage / 100 * 50)
             
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="性能回归检查",
                 success=success,
                 score=max(0, score),
@@ -295,7 +295,7 @@ class PreCommitHooks:
             
         except Exception as e:
             execution_time = time.time() - start_time
-            return QualityCheckResult(
+            return Quality_check_result(
                 check_name="性能回归检查",
                 success=False,
                 score=0.0,
@@ -305,7 +305,7 @@ class PreCommitHooks:
             )
 
 
-class ProductionMonitor:
+class Production_monitor:
     """生产环境监控器"""
 
     def __init__(self):
@@ -357,7 +357,7 @@ class ProductionMonitor:
             }
             
             # 检查关键指标的信号生成
-            detector = AutomatedRiskDetector()
+            detector = Automated_risk_detector()
             key_indicators = ['ZXM_BS_ABSORB', 'ZXM_TURNOVER']
             
             high_risk_indicators = []
@@ -695,7 +695,7 @@ class ProductionMonitor:
             }
 
 
-class RegressionTestSuite:
+class Regression_test_suite:
     """回归测试套件"""
     
     def __init__(self):
@@ -752,9 +752,9 @@ class RegressionTestSuite:
     def _test_zxm_indicators(self) -> Dict[str, Any]:
         """测试ZXM指标"""
         try:
-            from tests.framework.layered_testing_framework import LayeredTestingFramework
+            from tests.framework.layered_testing_framework import Layered_testing_framework
             
-            framework = LayeredTestingFramework()
+            framework = Layered_testing_framework()
             test_indicators = ['ZXM_BS_ABSORB', 'ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK']
             
             summary = framework.run_all_layers(test_indicators)
@@ -855,13 +855,13 @@ class RegressionTestSuite:
             }
 
 
-class ContinuousQualityAssurance:
+class Continuous_quality_assurance:
     """持续质量保证主类"""
     
     def __init__(self):
-        self.pre_commit_hooks = PreCommitHooks()
-        self.production_monitor = ProductionMonitor()
-        self.regression_suite = RegressionTestSuite()
+        self.pre_commit_hooks = Pre_commit_hooks()
+        self.production_monitor = Production_monitor()
+        self.regression_suite = Regression_test_suite()
     
     def run_full_quality_check(self) -> Dict[str, Any]:
         """运行完整的质量检查"""

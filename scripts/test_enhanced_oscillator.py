@@ -1,3 +1,5 @@
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
 """
 测试增强型震荡指标的脚本
 
@@ -16,19 +18,19 @@ sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from indicators.oscillator.enhanced_kdj import EnhancedKDJ
+from indicators.oscillator.enhanced_kdj import Enhanced_kDJ
 from indicators.kdj import KDJ
-from indicators.enhanced_factory import EnhancedIndicatorFactory
-from indicators.market_env import MarketDetector
-from indicators.base_indicator import MarketEnvironment
+from indicators.enhanced_factory import Enhanced_indicator_factory
+from indicators.market_env import Market_detector
+from indicators.base_indicator import Market_environment
 
-from db.clickhouse_db import get_clickhouse_db
+from utils.dependency_injection import get_service
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def get_test_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+def get_test_data_Oscillator(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
     获取测试数据
     
@@ -42,33 +44,34 @@ def get_test_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFra
     """
     try:
         # 从数据库获取数据
-        db = get_clickhouse_db()
+        container = get_container()
+        data_access = container.get_data_access()
         query = f"""
         SELECT 
-            trade_date, 
-            open, 
-            high, 
-            low, 
-            close, 
-            volume
-        FROM 
-            stock_daily_price
-        WHERE 
-            ts_code = '{stock_code}' AND 
-            trade_date BETWEEN '{start_date}' AND '{end_date}'
-        ORDER BY 
-            trade_date
+            date,
+            open,
+            high,
+            low,
+            close,
+            volume,
+            turnover
+        FROM stock_info WHERE 1=1
+        WHERE code = '{stock_code}'
+          AND level = '日线'
+          AND date >= '{start_date}'
+          AND date <= '{end_date}'
+        ORDER BY date
         """
         
-        data = db.query_dataframe(query)
+        df = data_access.query_dataframe(query)
         
         # 确保日期列是日期类型
-        data['trade_date'] = pd.to_datetime(data['trade_date'])
+        df['date'] = pd.to_datetime(df['date'])
         
         # 设置日期为索引
-        data.set_index('trade_date', inplace=True)
+        df.set_index('date', inplace=True)
         
-        return data
+        return df
         
     except Exception as e:
         logger.error(f"获取测试数据失败: {e}")
@@ -109,7 +112,7 @@ def test_enhanced_rsi():
     logger.info("开始测试增强型RSI指标")
     
     # 获取测试数据
-    data = get_test_data('000001.SZ', '20220101', '20221231')
+    data = get_test_data_Oscillator('000001.SZ', '20220101', '20221231')
     
     if data.empty:
         logger.error("获取测试数据失败")
@@ -119,11 +122,11 @@ def test_enhanced_rsi():
     
     # 创建标准RSI和增强型RSI
     std_rsi = RSI(period=14)
-    enhanced_rsi = EnhancedRSI(period=14, multi_periods=[9, 14, 21])
+    enhanced_rsi = Enhanced_rSI(period=14, multi_periods=[9, 14, 21])
     print(f"DEBUG: Indicator type is {enhanced_rsi.get_indicator_type()}")
     
     # 检测市场环境
-    market_detector = MarketDetector()
+    market_detector = Market_detector()
     market_env = market_detector.detect_environment(data)
     enhanced_rsi.set_market_environment(market_env)
     
@@ -170,7 +173,7 @@ def test_enhanced_kdj():
     logger.info("开始测试增强型KDJ指标")
     
     # 获取测试数据
-    data = get_test_data('000001.SZ', '20220101', '20221231')
+    data = get_test_data_Oscillator('000001.SZ', '20220101', '20221231')
     
     if data.empty:
         logger.error("获取测试数据失败")
@@ -180,10 +183,10 @@ def test_enhanced_kdj():
     
     # 创建标准KDJ和增强型KDJ
     std_kdj = KDJ(n=9, m1=3, m2=3)
-    enhanced_kdj = EnhancedKDJ(n=9, m1=3, m2=3, multi_periods=[5, 9, 14])
+    enhanced_kdj = Enhanced_kDJ(n=9, m1=3, m2=3, multi_periods=[5, 9, 14])
     
     # 检测市场环境
-    market_detector = MarketDetector()
+    market_detector = Market_detector()
     market_env = market_detector.detect_environment(data)
     enhanced_kdj.set_market_environment(market_env)
     

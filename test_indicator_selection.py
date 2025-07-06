@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
-from indicators.complete_indicator_registry import CompleteIndicatorRegistry
+from indicators.complete_indicator_registry import Complete_indicator_registry
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -52,7 +52,7 @@ def test_all_indicators():
     print("=== 开始测试所有指标的选股功能 ===")
     
     # 初始化指标注册表
-    registry = CompleteIndicatorRegistry()
+    registry = Complete_indicator_registry()
     
     # 生成测试数据
     test_data = generate_test_data()
