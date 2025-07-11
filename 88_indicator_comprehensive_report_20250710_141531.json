@@ -1,0 +1,1822 @@
+{
+  "timestamp": "2025-07-10T14:15:31.242148",
+  "execution_time": 1.5054230690002441,
+  "total_indicators_planned": 109,
+  "total_indicators_tested": 109,
+  "total_successful": 109,
+  "overall_success_rate": 100.0,
+  "category_results": {
+    "core_indicators": {
+      "category": "core_indicators",
+      "total_count": 6,
+      "success_count": 6,
+      "failure_count": 0,
+      "results": {
+        "MA": {
+          "indicator_name": "MA",
+          "status": "success",
+          "calculation_time": 1.4381070137023926,
+          "data_points": 252,
+          "valid_points": "233",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'numpy.ndarray'>"
+        },
+        "EMA": {
+          "indicator_name": "EMA",
+          "status": "success",
+          "calculation_time": 0.002830982208251953,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "MACD": {
+          "indicator_name": "MACD",
+          "status": "success",
+          "calculation_time": 0.0010190010070800781,
+          "data_points": 252,
+          "valid_points": 1,
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'tuple'>"
+        },
+        "RSI": {
+          "indicator_name": "RSI",
+          "status": "success",
+          "calculation_time": 0.001157999038696289,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'numpy.ndarray'>"
+        },
+        "BOLL": {
+          "indicator_name": "BOLL",
+          "status": "success",
+          "calculation_time": 0.0007798671722412109,
+          "data_points": 252,
+          "valid_points": 1,
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'tuple'>"
+        },
+        "PSY": {
+          "indicator_name": "PSY",
+          "status": "success",
+          "calculation_time": 0.001004934310913086,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 1.4464111328125
+    },
+    "trend_indicators": {
+      "category": "trend_indicators",
+      "total_count": 10,
+      "success_count": 10,
+      "failure_count": 0,
+      "results": {
+        "DMA": {
+          "indicator_name": "DMA",
+          "status": "success",
+          "calculation_time": 0.0006241798400878906,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "DMI": {
+          "indicator_name": "DMI",
+          "status": "success",
+          "calculation_time": 0.0009660720825195312,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ADX": {
+          "indicator_name": "ADX",
+          "status": "success",
+          "calculation_time": 0.0006778240203857422,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "AROON": {
+          "indicator_name": "AROON",
+          "status": "success",
+          "calculation_time": 0.0005159378051757812,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "SAR": {
+          "indicator_name": "SAR",
+          "status": "success",
+          "calculation_time": 0.0007510185241699219,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "TRIX": {
+          "indicator_name": "TRIX",
+          "status": "success",
+          "calculation_time": 0.0006511211395263672,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "CCI": {
+          "indicator_name": "CCI",
+          "status": "success",
+          "calculation_time": 0.0007967948913574219,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "EnhancedCCI": {
+          "indicator_name": "EnhancedCCI",
+          "status": "success",
+          "calculation_time": 0.0005450248718261719,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "EnhancedTRIX": {
+          "indicator_name": "EnhancedTRIX",
+          "status": "success",
+          "calculation_time": 0.0004930496215820312,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "WMA": {
+          "indicator_name": "WMA",
+          "status": "success",
+          "calculation_time": 0.0005512237548828125,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 0.00699615478515625
+    },
+    "oscillator_indicators": {
+      "category": "oscillator_indicators",
+      "total_count": 9,
+      "success_count": 9,
+      "failure_count": 0,
+      "results": {
+        "KDJ": {
+          "indicator_name": "KDJ",
+          "status": "success",
+          "calculation_time": 0.00133514404296875,
+          "data_points": 252,
+          "valid_points": 1,
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'tuple'>"
+        },
+        "WR": {
+          "indicator_name": "WR",
+          "status": "success",
+          "calculation_time": 0.0005381107330322266,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "CMO": {
+          "indicator_name": "CMO",
+          "status": "success",
+          "calculation_time": 0.0005419254302978516,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "STOCHRSI": {
+          "indicator_name": "STOCHRSI",
+          "status": "success",
+          "calculation_time": 0.0004341602325439453,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'numpy.ndarray'>"
+        },
+        "EnhancedRSI": {
+          "indicator_name": "EnhancedRSI",
+          "status": "success",
+          "calculation_time": 0.000347137451171875,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'numpy.ndarray'>"
+        },
+        "EnhancedKDJ": {
+          "indicator_name": "EnhancedKDJ",
+          "status": "success",
+          "calculation_time": 0.0003409385681152344,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "k",
+            "d",
+            "j",
+            "signal"
+          ]
+        },
+        "EnhancedWR": {
+          "indicator_name": "EnhancedWR",
+          "status": "success",
+          "calculation_time": 0.0004360675811767578,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "MOMENTUM": {
+          "indicator_name": "MOMENTUM",
+          "status": "success",
+          "calculation_time": 0.0004258155822753906,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ROC": {
+          "indicator_name": "ROC",
+          "status": "success",
+          "calculation_time": 0.0004220008850097656,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 0.005001068115234375
+    },
+    "volume_indicators": {
+      "category": "volume_indicators",
+      "total_count": 9,
+      "success_count": 9,
+      "failure_count": 0,
+      "results": {
+        "OBV": {
+          "indicator_name": "OBV",
+          "status": "success",
+          "calculation_time": 0.0006110668182373047,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "AD": {
+          "indicator_name": "AD",
+          "status": "success",
+          "calculation_time": 0.0008001327514648438,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "EMV": {
+          "indicator_name": "EMV",
+          "status": "success",
+          "calculation_time": 0.0005559921264648438,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "VOL": {
+          "indicator_name": "VOL",
+          "status": "success",
+          "calculation_time": 0.0011589527130126953,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "pandas",
+          "shape": "(252,)"
+        },
+        "VR": {
+          "indicator_name": "VR",
+          "status": "success",
+          "calculation_time": 0.0009570121765136719,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "VOSC": {
+          "indicator_name": "VOSC",
+          "status": "success",
+          "calculation_time": 0.0009298324584960938,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "MFI": {
+          "indicator_name": "MFI",
+          "status": "success",
+          "calculation_time": 0.0007369518280029297,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "PVT": {
+          "indicator_name": "PVT",
+          "status": "success",
+          "calculation_time": 0.0005619525909423828,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "CHAIKIN": {
+          "indicator_name": "CHAIKIN",
+          "status": "success",
+          "calculation_time": 0.0004668235778808594,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 0.0071010589599609375
+    },
+    "volatility_indicators": {
+      "category": "volatility_indicators",
+      "total_count": 4,
+      "success_count": 4,
+      "failure_count": 0,
+      "results": {
+        "ATR": {
+          "indicator_name": "ATR",
+          "status": "success",
+          "calculation_time": 0.0004837512969970703,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "KC": {
+          "indicator_name": "KC",
+          "status": "success",
+          "calculation_time": 0.0005319118499755859,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "VIX": {
+          "indicator_name": "VIX",
+          "status": "success",
+          "calculation_time": 0.0005190372467041016,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "STDDEV": {
+          "indicator_name": "STDDEV",
+          "status": "success",
+          "calculation_time": 0.0004489421844482422,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 0.0020461082458496094
+    },
+    "zxm_indicators": {
+      "category": "zxm_indicators",
+      "total_count": 35,
+      "success_count": 35,
+      "failure_count": 0,
+      "results": {
+        "ZXM_DAILY_MACD": {
+          "indicator_name": "ZXM_DAILY_MACD",
+          "status": "success",
+          "calculation_time": 0.000354766845703125,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "dif",
+            "dea",
+            "macd",
+            "signal"
+          ]
+        },
+        "ZXM_TURNOVER": {
+          "indicator_name": "ZXM_TURNOVER",
+          "status": "success",
+          "calculation_time": 0.0005328655242919922,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_VOLUME_SHRINK": {
+          "indicator_name": "ZXM_VOLUME_SHRINK",
+          "status": "success",
+          "calculation_time": 0.0004291534423828125,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "pandas",
+          "shape": "(252,)"
+        },
+        "ZXM_MA_CALLBACK": {
+          "indicator_name": "ZXM_MA_CALLBACK",
+          "status": "success",
+          "calculation_time": 0.00047516822814941406,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_BS_ABSORB": {
+          "indicator_name": "ZXM_BS_ABSORB",
+          "status": "success",
+          "calculation_time": 0.0004611015319824219,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_DAILY_TREND_UP": {
+          "indicator_name": "ZXM_DAILY_TREND_UP",
+          "status": "success",
+          "calculation_time": 0.0005369186401367188,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_WEEKLY_TREND_UP": {
+          "indicator_name": "ZXM_WEEKLY_TREND_UP",
+          "status": "success",
+          "calculation_time": 0.0004858970642089844,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_MONTHLY_KDJ_TREND_UP": {
+          "indicator_name": "ZXM_MONTHLY_KDJ_TREND_UP",
+          "status": "success",
+          "calculation_time": 0.00039696693420410156,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "k",
+            "d",
+            "j",
+            "signal"
+          ]
+        },
+        "ZXM_WEEKLY_MACD": {
+          "indicator_name": "ZXM_WEEKLY_MACD",
+          "status": "success",
+          "calculation_time": 0.00038623809814453125,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "dif",
+            "dea",
+            "macd",
+            "signal"
+          ]
+        },
+        "ZXM_MONTHLY_MACD": {
+          "indicator_name": "ZXM_MONTHLY_MACD",
+          "status": "success",
+          "calculation_time": 0.0004000663757324219,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "dif",
+            "dea",
+            "macd",
+            "signal"
+          ]
+        },
+        "ZXM_AMPLITUDE_ELASTICITY": {
+          "indicator_name": "ZXM_AMPLITUDE_ELASTICITY",
+          "status": "success",
+          "calculation_time": 0.0004558563232421875,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_RISE_ELASTICITY": {
+          "indicator_name": "ZXM_RISE_ELASTICITY",
+          "status": "success",
+          "calculation_time": 0.0006709098815917969,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_ELASTICITY": {
+          "indicator_name": "ZXM_ELASTICITY",
+          "status": "success",
+          "calculation_time": 0.0004489421844482422,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_BOUNCE_DETECTOR": {
+          "indicator_name": "ZXM_BOUNCE_DETECTOR",
+          "status": "success",
+          "calculation_time": 0.0004260540008544922,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_BUYPOINT_SCORE": {
+          "indicator_name": "ZXM_BUYPOINT_SCORE",
+          "status": "success",
+          "calculation_time": 0.0004200935363769531,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_TREND_SCORE": {
+          "indicator_name": "ZXM_TREND_SCORE",
+          "status": "success",
+          "calculation_time": 0.0005199909210205078,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_ELASTIC_SCORE": {
+          "indicator_name": "ZXM_ELASTIC_SCORE",
+          "status": "success",
+          "calculation_time": 0.0005078315734863281,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_VOLUME_ENERGY": {
+          "indicator_name": "ZXM_VOLUME_ENERGY",
+          "status": "success",
+          "calculation_time": 0.0004239082336425781,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "pandas",
+          "shape": "(252,)"
+        },
+        "ZXM_PRICE_POSITION": {
+          "indicator_name": "ZXM_PRICE_POSITION",
+          "status": "success",
+          "calculation_time": 0.0004799365997314453,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_TECHNICAL_FORM": {
+          "indicator_name": "ZXM_TECHNICAL_FORM",
+          "status": "success",
+          "calculation_time": 0.0004429817199707031,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_MARKET_SENTIMENT": {
+          "indicator_name": "ZXM_MARKET_SENTIMENT",
+          "status": "success",
+          "calculation_time": 0.0005011558532714844,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_CHIP_DISTRIBUTION": {
+          "indicator_name": "ZXM_CHIP_DISTRIBUTION",
+          "status": "success",
+          "calculation_time": 0.0004322528839111328,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_FUND_FLOW": {
+          "indicator_name": "ZXM_FUND_FLOW",
+          "status": "success",
+          "calculation_time": 0.0004343986511230469,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_INSTITUTION_BEHAVIOR": {
+          "indicator_name": "ZXM_INSTITUTION_BEHAVIOR",
+          "status": "success",
+          "calculation_time": 0.0004329681396484375,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_HOT_SPOT": {
+          "indicator_name": "ZXM_HOT_SPOT",
+          "status": "success",
+          "calculation_time": 0.0004241466522216797,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_INDUSTRY_ROTATION": {
+          "indicator_name": "ZXM_INDUSTRY_ROTATION",
+          "status": "success",
+          "calculation_time": 0.00041604042053222656,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_CYCLE_POSITION": {
+          "indicator_name": "ZXM_CYCLE_POSITION",
+          "status": "success",
+          "calculation_time": 0.0004322528839111328,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_RISK_CONTROL": {
+          "indicator_name": "ZXM_RISK_CONTROL",
+          "status": "success",
+          "calculation_time": 0.00041222572326660156,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_TIMING_SIGNAL": {
+          "indicator_name": "ZXM_TIMING_SIGNAL",
+          "status": "success",
+          "calculation_time": 0.00040912628173828125,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_POSITION_MANAGEMENT": {
+          "indicator_name": "ZXM_POSITION_MANAGEMENT",
+          "status": "success",
+          "calculation_time": 0.00045371055603027344,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_PORTFOLIO_OPTIMIZATION": {
+          "indicator_name": "ZXM_PORTFOLIO_OPTIMIZATION",
+          "status": "success",
+          "calculation_time": 0.0004830360412597656,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_STRATEGY_COMBINATION": {
+          "indicator_name": "ZXM_STRATEGY_COMBINATION",
+          "status": "success",
+          "calculation_time": 0.00044417381286621094,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_PERFORMANCE_ATTRIBUTION": {
+          "indicator_name": "ZXM_PERFORMANCE_ATTRIBUTION",
+          "status": "success",
+          "calculation_time": 0.00043392181396484375,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_ALPHA_GENERATION": {
+          "indicator_name": "ZXM_ALPHA_GENERATION",
+          "status": "success",
+          "calculation_time": 0.0004248619079589844,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ZXM_BETA_HEDGING": {
+          "indicator_name": "ZXM_BETA_HEDGING",
+          "status": "success",
+          "calculation_time": 0.00045490264892578125,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 0.016525983810424805
+    },
+    "pattern_indicators": {
+      "category": "pattern_indicators",
+      "total_count": 21,
+      "success_count": 21,
+      "failure_count": 0,
+      "results": {
+        "CANDLESTICK_PATTERNS": {
+          "indicator_name": "CANDLESTICK_PATTERNS",
+          "status": "success",
+          "calculation_time": 0.0010559558868408203,
+          "data_points": 252,
+          "valid_points": 3,
+          "has_signals": false,
+          "has_patterns": true,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "pattern_detected",
+            "pattern_type",
+            "confidence"
+          ]
+        },
+        "DOJI": {
+          "indicator_name": "DOJI",
+          "status": "success",
+          "calculation_time": 0.0004448890686035156,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "HAMMER": {
+          "indicator_name": "HAMMER",
+          "status": "success",
+          "calculation_time": 0.0004298686981201172,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "SHOOTING_STAR": {
+          "indicator_name": "SHOOTING_STAR",
+          "status": "success",
+          "calculation_time": 0.0004382133483886719,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ENGULFING": {
+          "indicator_name": "ENGULFING",
+          "status": "success",
+          "calculation_time": 0.0004191398620605469,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "HARAMI": {
+          "indicator_name": "HARAMI",
+          "status": "success",
+          "calculation_time": 0.0004150867462158203,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "PIERCING_LINE": {
+          "indicator_name": "PIERCING_LINE",
+          "status": "success",
+          "calculation_time": 0.00045418739318847656,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "DARK_CLOUD_COVER": {
+          "indicator_name": "DARK_CLOUD_COVER",
+          "status": "success",
+          "calculation_time": 0.00040912628173828125,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "MORNING_STAR": {
+          "indicator_name": "MORNING_STAR",
+          "status": "success",
+          "calculation_time": 0.00040793418884277344,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "EVENING_STAR": {
+          "indicator_name": "EVENING_STAR",
+          "status": "success",
+          "calculation_time": 0.0004029273986816406,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "THREE_BLACK_CROWS": {
+          "indicator_name": "THREE_BLACK_CROWS",
+          "status": "success",
+          "calculation_time": 0.0004107952117919922,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "THREE_WHITE_SOLDIERS": {
+          "indicator_name": "THREE_WHITE_SOLDIERS",
+          "status": "success",
+          "calculation_time": 0.0004177093505859375,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "ISLAND_REVERSAL": {
+          "indicator_name": "ISLAND_REVERSAL",
+          "status": "success",
+          "calculation_time": 0.0005290508270263672,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "V_SHAPED_REVERSAL": {
+          "indicator_name": "V_SHAPED_REVERSAL",
+          "status": "success",
+          "calculation_time": 0.0004782676696777344,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "HEAD_SHOULDERS": {
+          "indicator_name": "HEAD_SHOULDERS",
+          "status": "success",
+          "calculation_time": 0.0006110668182373047,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "DOUBLE_TOP": {
+          "indicator_name": "DOUBLE_TOP",
+          "status": "success",
+          "calculation_time": 0.0005288124084472656,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "DOUBLE_BOTTOM": {
+          "indicator_name": "DOUBLE_BOTTOM",
+          "status": "success",
+          "calculation_time": 0.0006539821624755859,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "TRIANGLE": {
+          "indicator_name": "TRIANGLE",
+          "status": "success",
+          "calculation_time": 0.0004889965057373047,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "WEDGE": {
+          "indicator_name": "WEDGE",
+          "status": "success",
+          "calculation_time": 0.0007271766662597656,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "FLAG": {
+          "indicator_name": "FLAG",
+          "status": "success",
+          "calculation_time": 0.0004887580871582031,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "PENNANT": {
+          "indicator_name": "PENNANT",
+          "status": "success",
+          "calculation_time": 0.00044918060302734375,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 0.011070966720581055
+    },
+    "enhanced_indicators": {
+      "category": "enhanced_indicators",
+      "total_count": 3,
+      "success_count": 3,
+      "failure_count": 0,
+      "results": {
+        "EnhancedMACD": {
+          "indicator_name": "EnhancedMACD",
+          "status": "success",
+          "calculation_time": 0.0003268718719482422,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "dif",
+            "dea",
+            "macd",
+            "signal"
+          ]
+        },
+        "EnhancedBOLL": {
+          "indicator_name": "EnhancedBOLL",
+          "status": "success",
+          "calculation_time": 0.0003540515899658203,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "upper",
+            "middle",
+            "lower",
+            "signal"
+          ]
+        },
+        "EnhancedSTOCHRSI": {
+          "indicator_name": "EnhancedSTOCHRSI",
+          "status": "success",
+          "calculation_time": 0.0002980232238769531,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'numpy.ndarray'>"
+        }
+      },
+      "execution_time": 0.0010170936584472656
+    },
+    "scoring_indicators": {
+      "category": "scoring_indicators",
+      "total_count": 7,
+      "success_count": 7,
+      "failure_count": 0,
+      "results": {
+        "MACD_SCORE": {
+          "indicator_name": "MACD_SCORE",
+          "status": "success",
+          "calculation_time": 0.0003139972686767578,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "dif",
+            "dea",
+            "macd",
+            "signal"
+          ]
+        },
+        "RSI_SCORE": {
+          "indicator_name": "RSI_SCORE",
+          "status": "success",
+          "calculation_time": 0.000286102294921875,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "<class 'numpy.ndarray'>"
+        },
+        "KDJ_SCORE": {
+          "indicator_name": "KDJ_SCORE",
+          "status": "success",
+          "calculation_time": 0.00030517578125,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "k",
+            "d",
+            "j",
+            "signal"
+          ]
+        },
+        "BOLL_SCORE": {
+          "indicator_name": "BOLL_SCORE",
+          "status": "success",
+          "calculation_time": 0.0003371238708496094,
+          "data_points": 252,
+          "valid_points": 4,
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "upper",
+            "middle",
+            "lower",
+            "signal"
+          ]
+        },
+        "TREND_SCORE": {
+          "indicator_name": "TREND_SCORE",
+          "status": "success",
+          "calculation_time": 0.00040793418884277344,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "VOLUME_SCORE": {
+          "indicator_name": "VOLUME_SCORE",
+          "status": "success",
+          "calculation_time": 0.00035691261291503906,
+          "data_points": 252,
+          "valid_points": "252",
+          "has_signals": false,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "pandas",
+          "shape": "(252,)"
+        },
+        "PATTERN_SCORE": {
+          "indicator_name": "PATTERN_SCORE",
+          "status": "success",
+          "calculation_time": 0.0003399848937988281,
+          "data_points": 252,
+          "valid_points": 3,
+          "has_signals": false,
+          "has_patterns": true,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "pattern_detected",
+            "pattern_type",
+            "confidence"
+          ]
+        }
+      },
+      "execution_time": 0.0024340152740478516
+    },
+    "market_indicators": {
+      "category": "market_indicators",
+      "total_count": 5,
+      "success_count": 5,
+      "failure_count": 0,
+      "results": {
+        "MARKET_ENV": {
+          "indicator_name": "MARKET_ENV",
+          "status": "success",
+          "calculation_time": 0.0005340576171875,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "INSTITUTIONAL_BEHAVIOR": {
+          "indicator_name": "INSTITUTIONAL_BEHAVIOR",
+          "status": "success",
+          "calculation_time": 0.0004527568817138672,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "SENTIMENT_ANALYSIS": {
+          "indicator_name": "SENTIMENT_ANALYSIS",
+          "status": "success",
+          "calculation_time": 0.00047087669372558594,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "HOT_SPOT_ROTATION": {
+          "indicator_name": "HOT_SPOT_ROTATION",
+          "status": "success",
+          "calculation_time": 0.00046706199645996094,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        },
+        "INDUSTRY_STRENGTH": {
+          "indicator_name": "INDUSTRY_STRENGTH",
+          "status": "success",
+          "calculation_time": 0.00042319297790527344,
+          "data_points": 252,
+          "valid_points": "248",
+          "has_signals": true,
+          "has_patterns": false,
+          "error": null,
+          "result_type": "dict",
+          "keys": [
+            "value",
+            "signal"
+          ]
+        }
+      },
+      "execution_time": 0.002464771270751953
+    }
+  },
+  "performance_stats": {},
+  "failed_indicators": [],
+  "successful_indicators": [
+    "MA",
+    "EMA",
+    "MACD",
+    "RSI",
+    "BOLL",
+    "PSY",
+    "DMA",
+    "DMI",
+    "ADX",
+    "AROON",
+    "SAR",
+    "TRIX",
+    "CCI",
+    "EnhancedCCI",
+    "EnhancedTRIX",
+    "WMA",
+    "KDJ",
+    "WR",
+    "CMO",
+    "STOCHRSI",
+    "EnhancedRSI",
+    "EnhancedKDJ",
+    "EnhancedWR",
+    "MOMENTUM",
+    "ROC",
+    "OBV",
+    "AD",
+    "EMV",
+    "VOL",
+    "VR",
+    "VOSC",
+    "MFI",
+    "PVT",
+    "CHAIKIN",
+    "ATR",
+    "KC",
+    "VIX",
+    "STDDEV",
+    "ZXM_DAILY_MACD",
+    "ZXM_TURNOVER",
+    "ZXM_VOLUME_SHRINK",
+    "ZXM_MA_CALLBACK",
+    "ZXM_BS_ABSORB",
+    "ZXM_DAILY_TREND_UP",
+    "ZXM_WEEKLY_TREND_UP",
+    "ZXM_MONTHLY_KDJ_TREND_UP",
+    "ZXM_WEEKLY_MACD",
+    "ZXM_MONTHLY_MACD",
+    "ZXM_AMPLITUDE_ELASTICITY",
+    "ZXM_RISE_ELASTICITY",
+    "ZXM_ELASTICITY",
+    "ZXM_BOUNCE_DETECTOR",
+    "ZXM_BUYPOINT_SCORE",
+    "ZXM_TREND_SCORE",
+    "ZXM_ELASTIC_SCORE",
+    "ZXM_VOLUME_ENERGY",
+    "ZXM_PRICE_POSITION",
+    "ZXM_TECHNICAL_FORM",
+    "ZXM_MARKET_SENTIMENT",
+    "ZXM_CHIP_DISTRIBUTION",
+    "ZXM_FUND_FLOW",
+    "ZXM_INSTITUTION_BEHAVIOR",
+    "ZXM_HOT_SPOT",
+    "ZXM_INDUSTRY_ROTATION",
+    "ZXM_CYCLE_POSITION",
+    "ZXM_RISK_CONTROL",
+    "ZXM_TIMING_SIGNAL",
+    "ZXM_POSITION_MANAGEMENT",
+    "ZXM_PORTFOLIO_OPTIMIZATION",
+    "ZXM_STRATEGY_COMBINATION",
+    "ZXM_PERFORMANCE_ATTRIBUTION",
+    "ZXM_ALPHA_GENERATION",
+    "ZXM_BETA_HEDGING",
+    "CANDLESTICK_PATTERNS",
+    "DOJI",
+    "HAMMER",
+    "SHOOTING_STAR",
+    "ENGULFING",
+    "HARAMI",
+    "PIERCING_LINE",
+    "DARK_CLOUD_COVER",
+    "MORNING_STAR",
+    "EVENING_STAR",
+    "THREE_BLACK_CROWS",
+    "THREE_WHITE_SOLDIERS",
+    "ISLAND_REVERSAL",
+    "V_SHAPED_REVERSAL",
+    "HEAD_SHOULDERS",
+    "DOUBLE_TOP",
+    "DOUBLE_BOTTOM",
+    "TRIANGLE",
+    "WEDGE",
+    "FLAG",
+    "PENNANT",
+    "EnhancedMACD",
+    "EnhancedBOLL",
+    "EnhancedSTOCHRSI",
+    "MACD_SCORE",
+    "RSI_SCORE",
+    "KDJ_SCORE",
+    "BOLL_SCORE",
+    "TREND_SCORE",
+    "VOLUME_SCORE",
+    "PATTERN_SCORE",
+    "MARKET_ENV",
+    "INSTITUTIONAL_BEHAVIOR",
+    "SENTIMENT_ANALYSIS",
+    "HOT_SPOT_ROTATION",
+    "INDUSTRY_STRENGTH"
+  ]
+}

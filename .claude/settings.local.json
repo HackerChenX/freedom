@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rg:*)",
+      "Bash(python:*)",
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(diff:*)",
+      "Bash(sed:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": []
+  }
+}

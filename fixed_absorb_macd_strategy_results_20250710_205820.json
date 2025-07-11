@@ -1,0 +1,2561 @@
+{
+  "strategy_name": "30分钟吸筹信号+MACD上移选股策略（修复版）",
+  "execution_date": "2025-07-10T20:58:20.706032",
+  "target_date": "2025-05-12",
+  "period": "30分钟",
+  "stock_pool_size": 89,
+  "selected_count": 0,
+  "selected_stocks": [],
+  "analysis_details": {
+    "000001": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8173478761708661,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.8173478761708661,
+            "volume_ratio": 1.28842105627063,
+            "wvad": 0.012883729173978401,
+            "close_position": 0.9937144497014023
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.8074580064457835,
+            "volume_ratio": 1.3446780622621035,
+            "wvad": 0.018216355285408405,
+            "close_position": 0.8804062498510652
+          }
+        ],
+        "volume_price_correlation": 0.47185101693799647
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "000002": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7800391076140799,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7800391076140799,
+            "volume_ratio": 1.304142075035764,
+            "wvad": 0.03609405954369548,
+            "close_position": 0.8251801991222188
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.7299320293284294,
+            "volume_ratio": 1.2432178758917123,
+            "wvad": 0.021705632182107037,
+            "close_position": 0.7537772977237079
+          }
+        ],
+        "volume_price_correlation": -0.07109639440010114
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "000858": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.08441082183678092
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "000063": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8570605342777327,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.8570605342777327,
+            "volume_ratio": 1.3876263636920132,
+            "wvad": 0.015918153272873034,
+            "close_position": 0.9907818093968852
+          }
+        ],
+        "volume_price_correlation": 0.1978381178458265
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "000166": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.25781665677557947
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "000725": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7342644901316498,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7328401095153457,
+            "volume_ratio": 1.3047049396016328,
+            "wvad": 0.017106079428272882,
+            "close_position": 0.6860876994873693
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7342644901316498,
+            "volume_ratio": 1.2457242818742216,
+            "wvad": 0.025519136062417035,
+            "close_position": 0.7610634552107869
+          }
+        ],
+        "volume_price_correlation": -0.07196139630757578
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "000776": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.05856370353646054
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600000": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.09853391350312266
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600036": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7276440624473592,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7276440624473592,
+            "volume_ratio": 1.2163689860398061,
+            "wvad": 0.04199350469158939,
+            "close_position": 0.7616613887465331
+          }
+        ],
+        "volume_price_correlation": 0.5810393719696602
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600519": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.726448066169619,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.726448066169619,
+            "volume_ratio": 1.3158981034306303,
+            "wvad": 0.011974888143313465,
+            "close_position": 0.6549878611812427
+          }
+        ],
+        "volume_price_correlation": -0.01677899320953591
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600887": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7001101340226282,
+        "signal_time": "12:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7001101340226282,
+            "volume_ratio": 1.2751276886425118,
+            "wvad": 0.016760733523774957,
+            "close_position": 0.61676946169497
+          }
+        ],
+        "volume_price_correlation": 0.2551735855785962
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600028": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8521813416434627,
+        "signal_time": "15:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:30",
+            "signal_strength": 0.8521813416434627,
+            "volume_ratio": 1.6611756886944673,
+            "wvad": 0.022540785773865018,
+            "close_position": 0.6031627681117208
+          }
+        ],
+        "volume_price_correlation": 0.3972871254746025
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600030": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.3905671509423102
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600031": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.08300110345818887
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600048": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.26243596460805513
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600104": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8603661034038198,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.8603661034038198,
+            "volume_ratio": 1.541982114195352,
+            "wvad": 0.018409775738884925,
+            "close_position": 0.7935010833467117
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7668269357424504,
+            "volume_ratio": 1.4222611336376405,
+            "wvad": 0.013184023122776195,
+            "close_position": 0.6465575845018714
+          }
+        ],
+        "volume_price_correlation": -0.1406169988807825
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600309": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.837769498004861,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7578599679471334,
+            "volume_ratio": 1.338424741256698,
+            "wvad": 0.005605990864249653,
+            "close_position": 0.7360275806172641
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.837769498004861,
+            "volume_ratio": 1.4520512153684406,
+            "wvad": 0.009876145483989926,
+            "close_position": 0.846620560707626
+          }
+        ],
+        "volume_price_correlation": -0.7475917263812912
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600340": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.759543984287267,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.759543984287267,
+            "volume_ratio": 1.3970460407133443,
+            "wvad": 0.01893945185820782,
+            "close_position": 0.6501457748148899
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7314923865652838,
+            "volume_ratio": 1.304391903492839,
+            "wvad": 0.010324744070904666,
+            "close_position": 0.6887940064895891
+          }
+        ],
+        "volume_price_correlation": 0.004360774507829264
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600585": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.815491027021876,
+        "signal_time": "13:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7974544977846241,
+            "volume_ratio": 1.315842603578163,
+            "wvad": 0.011581921885205876,
+            "close_position": 0.8921429326259902
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7331654574639737,
+            "volume_ratio": 1.2909574376220128,
+            "wvad": 0.01589006358102408,
+            "close_position": 0.7067182111362044
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.815491027021876,
+            "volume_ratio": 1.3465790006421186,
+            "wvad": 0.013938152190716833,
+            "close_position": 0.9089266036927123
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7579792294030412,
+            "volume_ratio": 1.2535917666706602,
+            "wvad": 0.008654361767539974,
+            "close_position": 0.8464873806817172
+          }
+        ],
+        "volume_price_correlation": -0.6283828128839442
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600690": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8157484816177931,
+        "signal_time": "13:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.8157484816177931,
+            "volume_ratio": 1.3880872033603953,
+            "wvad": 0.01486857754593338,
+            "close_position": 0.85351009003285
+          }
+        ],
+        "volume_price_correlation": 0.1409875341721133
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600703": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.4926763956327416
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600745": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7655170648443463,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7655170648443463,
+            "volume_ratio": 1.4464810130897765,
+            "wvad": 0.011496228024859981,
+            "close_position": 0.611585970669926
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7294293247108697,
+            "volume_ratio": 1.2115402818238519,
+            "wvad": 0.028123854140154645,
+            "close_position": 0.7879201857976088
+          }
+        ],
+        "volume_price_correlation": -0.12878480723428623
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600809": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.43053200412367354
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600837": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7240843972406776,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7240843972406776,
+            "volume_ratio": 1.2299598467793007,
+            "wvad": 0.014657592466607356,
+            "close_position": 0.7590106026299173
+          }
+        ],
+        "volume_price_correlation": -0.5670507003441415
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600900": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7618952136712599,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7289831952964255,
+            "volume_ratio": 1.2434724407836182,
+            "wvad": 0.026888453042696953,
+            "close_position": 0.7450922769005637
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7618952136712599,
+            "volume_ratio": 1.4292314603142848,
+            "wvad": 0.022902994026755254,
+            "close_position": 0.6111057711250646
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7434979639718142,
+            "volume_ratio": 1.2720412098102662,
+            "wvad": 0.012842040731534667,
+            "close_position": 0.769429559427491
+          }
+        ],
+        "volume_price_correlation": 0.14497513910857052
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601066": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7282981094178803,
+        "signal_time": "13:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7282981094178803,
+            "volume_ratio": 1.2453361438962218,
+            "wvad": 0.025490952496389788,
+            "close_position": 0.7417212203682488
+          }
+        ],
+        "volume_price_correlation": -0.3022352479192709
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601088": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.13235191515042993
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "601138": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7967206409325683,
+        "signal_time": "12:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7967206409325683,
+            "volume_ratio": 1.2366152718338457,
+            "wvad": 0.032899508953881954,
+            "close_position": 0.9740155983762182
+          }
+        ],
+        "volume_price_correlation": 0.12328145348532148
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601166": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7427501449413432,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7427501449413432,
+            "volume_ratio": 1.2126312582399057,
+            "wvad": 0.047540850627982294,
+            "close_position": 0.8114512881899543
+          }
+        ],
+        "volume_price_correlation": 0.31202353029246777
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601169": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.20898116724640114
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "601186": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7014886890189254,
+        "signal_time": "13:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7014886890189254,
+            "volume_ratio": 1.2241012737352357,
+            "wvad": 0.008315486839394991,
+            "close_position": 0.6978451115767084
+          }
+        ],
+        "volume_price_correlation": -0.33167324911150814
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601288": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7190818553841423,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7190818553841423,
+            "volume_ratio": 1.2909138642437448,
+            "wvad": 0.012896585441079491,
+            "close_position": 0.6628244468477352
+          }
+        ],
+        "volume_price_correlation": 0.20718742966753942
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601318": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.2465684414056195
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "601328": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8091029009840631,
+        "signal_time": "12:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.8091029009840631,
+            "volume_ratio": 1.4174772902142292,
+            "wvad": 0.015587940508186675,
+            "close_position": 0.7914520091530513
+          }
+        ],
+        "volume_price_correlation": 0.4738931205848074
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601336": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.19629007908912308
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "601398": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7946293860580271,
+        "signal_time": "13:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.7946293860580271,
+            "volume_ratio": 1.4246578410856152,
+            "wvad": 0.033334895207981635,
+            "close_position": 0.7158859368712884
+          }
+        ],
+        "volume_price_correlation": -0.09776201305444651
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601601": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.742102036885038,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.742102036885038,
+            "volume_ratio": 1.2968676247599737,
+            "wvad": 0.01751637061642456,
+            "close_position": 0.7270002526537366
+          }
+        ],
+        "volume_price_correlation": -0.26548854111489684
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601628": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7132893177507774,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7132893177507774,
+            "volume_ratio": 1.2633905488726518,
+            "wvad": 0.013561463881804863,
+            "close_position": 0.6795488634572509
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7001331963568619,
+            "volume_ratio": 1.2221220171181257,
+            "wvad": 0.011187653030464073,
+            "close_position": 0.693093645334908
+          }
+        ],
+        "volume_price_correlation": -0.2909508941716928
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601668": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8001018736092677,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.8001018736092677,
+            "volume_ratio": 1.4919868699105556,
+            "wvad": 0.03694827315771177,
+            "close_position": 0.6407421456591065
+          }
+        ],
+        "volume_price_correlation": 0.09866213737761881
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601688": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.774442941707076,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.774442941707076,
+            "volume_ratio": 1.3308175086755096,
+            "wvad": 0.010611883800167492,
+            "close_position": 0.7964412436560725
+          }
+        ],
+        "volume_price_correlation": 0.17146530889781258
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601766": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7444645152595166,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.7444645152595166,
+            "volume_ratio": 1.2416190758921883,
+            "wvad": 0.03403884361426746,
+            "close_position": 0.7920174393945367
+          }
+        ],
+        "volume_price_correlation": 0.08105868829067392
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601788": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8140734436074369,
+        "signal_time": "12:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.8140734436074369,
+            "volume_ratio": 1.3230605778757758,
+            "wvad": 0.04779213386449675,
+            "close_position": 0.901705240992592
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.7550072176378322,
+            "volume_ratio": 1.2966663247869474,
+            "wvad": 0.01819010712048583,
+            "close_position": 0.7696121852896913
+          }
+        ],
+        "volume_price_correlation": -0.23180218643119252
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601818": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8071496867075973,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.8071496867075973,
+            "volume_ratio": 1.502985671507181,
+            "wvad": 0.012118000275811891,
+            "close_position": 0.6744000600732715
+          }
+        ],
+        "volume_price_correlation": -0.307971944067253
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601857": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7708311002574376,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7708311002574376,
+            "volume_ratio": 1.439847622535024,
+            "wvad": 0.009438785443796349,
+            "close_position": 0.6402013853676304
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7152749078619589,
+            "volume_ratio": 1.2218671415588431,
+            "wvad": 0.01670382416507583,
+            "close_position": 0.7383896799629963
+          }
+        ],
+        "volume_price_correlation": 0.18760584032878877
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "601939": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.015334973980274858
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "601988": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.04766902813938788
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "601998": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8169524734446881,
+        "signal_time": "12:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.8169524734446881,
+            "volume_ratio": 1.4729998732288203,
+            "wvad": 0.017442380175459064,
+            "close_position": 0.7417327003350741
+          }
+        ],
+        "volume_price_correlation": 0.18933011409177272
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600001": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8013527905975988,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.8013527905975988,
+            "volume_ratio": 1.3052988536483592,
+            "wvad": 0.007405092610258456,
+            "close_position": 0.9233724045172588
+          }
+        ],
+        "volume_price_correlation": -0.31465208584507015
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600004": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.22750610222499665
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600005": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.05274439648087299
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600006": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7662928678592308,
+        "signal_time": "12:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7662928678592308,
+            "volume_ratio": 1.3179854717206576,
+            "wvad": 0.016494386917794555,
+            "close_position": 0.7805012103187643
+          }
+        ],
+        "volume_price_correlation": -0.004800128917475613
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600007": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.04068562017577573
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600008": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8010491392915966,
+        "signal_time": "12:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7411001905883701,
+            "volume_ratio": 1.2574078888302358,
+            "wvad": 0.011532536711865026,
+            "close_position": 0.7822575801423874
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.8010491392915966,
+            "volume_ratio": 1.4745350886547504,
+            "wvad": 0.031235015129608162,
+            "close_position": 0.6728819976360467
+          }
+        ],
+        "volume_price_correlation": 0.039762440341838644
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600009": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7280257683847536,
+        "signal_time": "13:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.7280257683847536,
+            "volume_ratio": 1.3509124939875135,
+            "wvad": 0.006930128314505524,
+            "close_position": 0.6186057743179886
+          }
+        ],
+        "volume_price_correlation": 0.3196048609981911
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600010": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7494870621639212,
+        "signal_time": "13:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7494870621639212,
+            "volume_ratio": 1.3138532436267325,
+            "wvad": 0.013300796007906813,
+            "close_position": 0.7331850863695208
+          }
+        ],
+        "volume_price_correlation": -0.23108133068323883
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600011": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8879084494165969,
+        "signal_time": "12:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7287249811638019,
+            "volume_ratio": 1.3623657131015763,
+            "wvad": 0.008741083157319765,
+            "close_position": 0.6038545699199181
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.8879084494165969,
+            "volume_ratio": 1.4598048293733423,
+            "wvad": 0.0445847680527363,
+            "close_position": 0.9687036241714634
+          }
+        ],
+        "volume_price_correlation": -0.08309552480680163
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600015": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.4403315374540692
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "600016": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7706786275730677,
+        "signal_time": "13:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.7706786275730677,
+            "volume_ratio": 1.3212074460694267,
+            "wvad": 0.011689585355850452,
+            "close_position": 0.7956292451284732
+          }
+        ],
+        "volume_price_correlation": -0.2069661568042372
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600017": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7868850710512849,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.7868850710512849,
+            "volume_ratio": 1.2973912671918775,
+            "wvad": 0.011551121561004537,
+            "close_position": 0.8815440923541084
+          }
+        ],
+        "volume_price_correlation": 0.004595833065035607
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600018": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7786697195313546,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.7786697195313546,
+            "volume_ratio": 1.426854568512054,
+            "wvad": 0.017196398020358054,
+            "close_position": 0.6758965757347517
+          }
+        ],
+        "volume_price_correlation": 0.018128632762058065
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "600019": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8393588739809583,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.8393588739809583,
+            "volume_ratio": 1.3570116310775515,
+            "wvad": 0.017400673258350274,
+            "close_position": 0.9711133985747757
+          }
+        ],
+        "volume_price_correlation": 0.21834472861401946
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002415": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7084628249309696,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.7084628249309696,
+            "volume_ratio": 1.217567099150907,
+            "wvad": 0.014313617344034333,
+            "close_position": 0.723806333557988
+          }
+        ],
+        "volume_price_correlation": 0.5811566323786884
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002594": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7995889038899698,
+        "signal_time": "13:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7995889038899698,
+            "volume_ratio": 1.3953728948633388,
+            "wvad": 0.01001126029981566,
+            "close_position": 0.7947878928489652
+          }
+        ],
+        "volume_price_correlation": -0.5071300142208184
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002304": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.2870401181695252
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "002230": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7561959494323728,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7519504099490817,
+            "volume_ratio": 1.2358925399679488,
+            "wvad": 0.0352690992876574,
+            "close_position": 0.8233755472520168
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.7486815133730231,
+            "volume_ratio": 1.2600191560761709,
+            "wvad": 0.0315416429293208,
+            "close_position": 0.7840378602125289
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7561959494323728,
+            "volume_ratio": 1.3595700848757872,
+            "wvad": 0.00555084842209996,
+            "close_position": 0.7023422031847596
+          }
+        ],
+        "volume_price_correlation": -0.22671461970710718
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002142": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.505000302770614
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "002146": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.2870381498627353
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "002236": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8433628368254105,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.8433628368254105,
+            "volume_ratio": 1.4061762847360628,
+            "wvad": 0.013501969140038055,
+            "close_position": 0.9228057739632464
+          }
+        ],
+        "volume_price_correlation": -0.27592276201061766
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002352": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.41613410899399433
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "002405": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7805201882102988,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7805201882102988,
+            "volume_ratio": 1.4843738084199525,
+            "wvad": 0.010051380075222152,
+            "close_position": 0.6125175027325036
+          }
+        ],
+        "volume_price_correlation": -0.2961761319966626
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002456": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8790617176404776,
+        "signal_time": "12:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.8790617176404776,
+            "volume_ratio": 1.56557689886986,
+            "wvad": 0.024291499468472793,
+            "close_position": 0.818478360839972
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6924603255798786,
+            "volume_ratio": 1.203336158725546,
+            "wvad": 0.03369011420709289,
+            "close_position": 0.6700627594251075
+          }
+        ],
+        "volume_price_correlation": 0.5733203860968182
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002475": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.145928562337462
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "002493": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6872568576848112,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.6872568576848112,
+            "volume_ratio": 1.2521200211123937,
+            "wvad": 0.013083093924035272,
+            "close_position": 0.6082797368754771
+          }
+        ],
+        "volume_price_correlation": -0.2727113618669096
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002508": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7206441828005317,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.7206441828005317,
+            "volume_ratio": 1.3347463585642725,
+            "wvad": 0.006042318786539958,
+            "close_position": 0.6164431457962024
+          }
+        ],
+        "volume_price_correlation": 0.20788076292471122
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "002555": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8810850994549912,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7522413356169573,
+            "volume_ratio": 1.2060686298007963,
+            "wvad": 0.0046903742819392686,
+            "close_position": 0.8946892380401897
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.8810850994549912,
+            "volume_ratio": 1.4412473043387906,
+            "wvad": 0.01818706175060206,
+            "close_position": 0.9971001973143149
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.8485290981958922,
+            "volume_ratio": 1.3698534280290677,
+            "wvad": 0.033772723270073454,
+            "close_position": 0.9681863666774767
+          }
+        ],
+        "volume_price_correlation": 0.49518477689401214
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300750": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7705922596578947,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7705922596578947,
+            "volume_ratio": 1.240686678136148,
+            "wvad": 0.01598035118248594,
+            "close_position": 0.8984116101622992
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7592382625140695,
+            "volume_ratio": 1.409352449030912,
+            "wvad": 0.008969686155016041,
+            "close_position": 0.642687923517333
+          }
+        ],
+        "volume_price_correlation": -0.08711378508581927
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300014": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8956332086460883,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.8956332086460883,
+            "volume_ratio": 1.479640020094976,
+            "wvad": 0.01740139966870547,
+            "close_position": 0.9951892690249541
+          }
+        ],
+        "volume_price_correlation": -0.614777949765054
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300015": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.4240127719958308
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "300033": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.36981178476802945
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "300059": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.08324041013983699
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "300070": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8542432434787564,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.8542432434787564,
+            "volume_ratio": 1.6245540398541547,
+            "wvad": 0.013048481254465413,
+            "close_position": 0.6683569438691828
+          }
+        ],
+        "volume_price_correlation": 0.162843088271812
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300124": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.881067703783702,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.8068086764807056,
+            "volume_ratio": 1.4705995136481107,
+            "wvad": 0.02386768822035157,
+            "close_position": 0.7046952151845198
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.881067703783702,
+            "volume_ratio": 1.4843325779289633,
+            "wvad": 0.007529577182393766,
+            "close_position": 0.9502526648579951
+          }
+        ],
+        "volume_price_correlation": -0.32860477284476025
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300136": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8090923374881811,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.8090923374881811,
+            "volume_ratio": 1.3358701418781795,
+            "wvad": 0.017547557415199866,
+            "close_position": 0.8982667117078312
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.718637402991703,
+            "volume_ratio": 1.233971561242443,
+            "wvad": 0.015323737310129846,
+            "close_position": 0.7348388576722895
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7894922043266873,
+            "volume_ratio": 1.4228847442239436,
+            "wvad": 0.017202362979377404,
+            "close_position": 0.7172586591443221
+          }
+        ],
+        "volume_price_correlation": 0.8396429762769302
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300142": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": 0.6391956583275799
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "300144": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7793013097801063,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.749787624203568,
+            "volume_ratio": 1.3303468906638491,
+            "wvad": 0.014472250961778104,
+            "close_position": 0.7110239754983164
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7793013097801063,
+            "volume_ratio": 1.3195159689028697,
+            "wvad": 0.017237237318106596,
+            "close_position": 0.8210791700784212
+          }
+        ],
+        "volume_price_correlation": 0.2404046273337469
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300168": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8644731488972042,
+        "signal_time": "15:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.8644731488972042,
+            "volume_ratio": 1.551893863672721,
+            "wvad": 0.012350715943139346,
+            "close_position": 0.8000346288172464
+          }
+        ],
+        "volume_price_correlation": 0.25449851189476375
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300296": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.07849973951874473
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false,
+      "data_source": "simulated"
+    },
+    "300347": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7485830468394926,
+        "signal_time": "12:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7485830468394926,
+            "volume_ratio": 1.3633886200716931,
+            "wvad": 0.0097964787063569,
+            "close_position": 0.6676288506630277
+          }
+        ],
+        "volume_price_correlation": -0.24213335461812077
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    },
+    "300408": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7625751914501205,
+        "signal_time": "12:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7625751914501205,
+            "volume_ratio": 1.3778320916544418,
+            "wvad": 0.029742558362092514,
+            "close_position": 0.675065290932387
+          }
+        ],
+        "volume_price_correlation": -0.006153826276234176
+      },
+      "macd_result": {
+        "macd_upward": "False",
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": "False",
+      "data_source": "simulated"
+    }
+  },
+  "data_source_statistics": {
+    "real_30min": 0,
+    "simulated": 89,
+    "no_data": 0
+  },
+  "strategy_criteria": {
+    "absorb_signal": "30分钟周期内出现吸筹信号",
+    "macd_upward": "MACD指标上移",
+    "target_date": "2025-05-12",
+    "selection_rule": "同时满足吸筹信号AND MACD上移",
+    "data_priority": "优先使用真实30分钟数据，回退到模拟数据"
+  }
+}

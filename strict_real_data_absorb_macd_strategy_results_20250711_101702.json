@@ -1,0 +1,12 @@
+{
+  "strategy_name": "严格禁止模拟数据的30分钟吸筹信号+MACD上移选股策略",
+  "execution_date": "2025-07-11T10:17:02.541232",
+  "target_date": "2025-05-12",
+  "period": "30分钟",
+  "stock_pool_size": 0,
+  "status": "FAILED",
+  "error": "❌ ClickHouse数据库连接失败，无法获取真实数据，策略拒绝执行",
+  "selected_count": 0,
+  "selected_stocks": [],
+  "reason": "数据库连接失败，严格禁止使用模拟数据"
+}

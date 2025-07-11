@@ -1,0 +1,270 @@
+"""
+简化的数据访问管理器
+
+提供策略类需要的基本数据访问功能
+"""
+
+from typing import Dict, List, Optional, Any, Union
+import pandas as pd
+from datetime import datetime
+
+from db.interfaces.data_access_interface import DataAccessInterface
+from utils.logger import get_logger
+from utils.decorators import exception_handler
+
+logger = get_logger(__name__)
+
+
+class DataAccessManager(DataAccessInterface):
+    """
+    简化的数据访问管理器
+    
+    实现策略类需要的基本数据访问接口
+    """
+    
+    def __init__(self):
+        """初始化数据访问管理器"""
+        logger.info("数据访问管理器初始化完成")
+    
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_stock_data(self, code: str, start_date: str, end_date: str, 
+                      columns: Optional[List[str]] = None) -> pd.DataFrame:
+        """
+        获取股票数据
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            columns: 需要的列名列表
+            
+        Returns:
+            pd.DataFrame: 股票数据
+        """
+        logger.info(f"获取股票数据: {code}, {start_date} - {end_date}")
+        
+        # 返回模拟数据
+        dates = pd.date_range(start=start_date, end=end_date, freq='D')
+        data = {
+            'code': [code] * len(dates),
+            'date': dates,
+            'open': [100.0] * len(dates),
+            'high': [105.0] * len(dates),
+            'low': [95.0] * len(dates),
+            'close': [102.0] * len(dates),
+            'volume': [1000000] * len(dates),
+            'turnover_rate': [0.05] * len(dates)
+        }
+        
+        df = pd.DataFrame(data)
+        
+        if columns:
+            # 只返回请求的列
+            available_columns = [col for col in columns if col in df.columns]
+            df = df[available_columns]
+        
+        return df
+    
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_stocks_data_batch(self, codes: List[str], start_date: str, end_date: str,
+                             columns: Optional[List[str]] = None) -> pd.DataFrame:
+        """
+        批量获取多只股票数据
+        
+        Args:
+            codes: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            columns: 需要的列名列表
+            
+        Returns:
+            pd.DataFrame: 股票数据
+        """
+        logger.info(f"批量获取股票数据: {len(codes)}只股票")
+        
+        all_data = []
+        for code in codes:
+            stock_data = self.get_stock_data(code, start_date, end_date, columns)
+            all_data.append(stock_data)
+        
+        if all_data:
+            return pd.concat(all_data, ignore_index=True)
+        else:
+            return pd.DataFrame()
+    
+    @exception_handler(reraise=False, default_return=[])
+    def get_stock_info(self, code: str, level: str, start_date: str, end_date: str) -> List[List]:
+        """
+        获取股票信息（兼容现有接口）
+        
+        Args:
+            code: 股票代码
+            level: K线级别
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            List[List]: 股票数据行列表
+        """
+        logger.info(f"获取股票信息: {code}, {level}, {start_date} - {end_date}")
+        
+        # 返回模拟数据（格式兼容buypoint分析器）
+        import numpy as np
+        
+        # 生成模拟数据
+        dates = pd.date_range(start=start_date, end=end_date, freq='D')
+        rows = []
+        
+        for i, date in enumerate(dates):
+            # 生成更真实的股价变化
+            base_price = 10.0 + np.sin(i * 0.1) * 2.0 + np.random.normal(0, 0.5)
+            volume = 1000000 + np.random.normal(0, 200000)
+            
+            row = [
+                code,  # code
+                f"股票{code}",  # name  
+                date.strftime('%Y%m%d'),  # date
+                level,  # level
+                base_price * 0.99,  # open
+                base_price,  # close
+                base_price * 1.02,  # high  
+                base_price * 0.97,  # low
+                max(volume, 100000),  # volume
+                0.05,  # turnover_rate
+                np.random.normal(0, 2.0),  # price_change
+                np.random.normal(0, 0.05),  # price_range
+                "测试行业"  # industry
+            ]
+            rows.append(row)
+        
+        return rows
+
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_indicator_data(self, code: str, indicator: str, start_date: str, end_date: str,
+                          params: Optional[Dict] = None) -> pd.DataFrame:
+        """
+        获取指标数据
+        
+        Args:
+            code: 股票代码
+            indicator: 指标名称
+            start_date: 开始日期
+            end_date: 结束日期
+            params: 指标参数
+            
+        Returns:
+            pd.DataFrame: 指标数据
+        """
+        logger.info(f"获取指标数据: {code}, {indicator}")
+        
+        # 先获取基础数据
+        base_data = self.get_stock_data(code, start_date, end_date)
+        
+        # 添加模拟指标数据
+        if indicator.upper() == 'MA':
+            period = params.get('period', 20) if params else 20
+            base_data[f'MA{period}'] = base_data['close'].rolling(window=period).mean()
+        elif indicator.upper() == 'RSI':
+            period = params.get('period', 14) if params else 14
+            # 简化的RSI计算
+            base_data['RSI'] = 50.0  # 模拟值
+        
+        return base_data
+    
+    @exception_handler(reraise=False, default_return=[])
+    def get_stock_list(self, industry: Optional[str] = None, 
+                      market: Optional[str] = None) -> List[str]:
+        """
+        获取股票列表
+        
+        Args:
+            industry: 行业筛选
+            market: 市场筛选
+            
+        Returns:
+            List[str]: 股票代码列表
+        """
+        logger.info(f"获取股票列表: industry={industry}, market={market}")
+        
+        # 返回模拟股票列表
+        mock_stocks = [
+            '000001.SZ', '000002.SZ', '000858.SZ', '002415.SZ',
+            '600000.SH', '600036.SH', '600519.SH', '000858.SZ'
+        ]
+        
+        return mock_stocks
+    
+    @exception_handler(reraise=False, default_return=[])
+    def get_industry_list(self) -> List[str]:
+        """
+        获取行业列表
+        
+        Returns:
+            List[str]: 行业列表
+        """
+        logger.info("获取行业列表")
+        
+        # 返回模拟行业列表
+        mock_industries = [
+            '银行', '保险', '证券', '房地产', '白酒',
+            '医药生物', '电子', '计算机', '通信', '汽车'
+        ]
+        
+        return mock_industries
+    
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def execute_query(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """
+        执行查询
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        logger.info(f"执行查询: {query[:100]}...")
+        
+        # 返回空DataFrame作为模拟结果
+        return pd.DataFrame()
+    
+    @exception_handler(reraise=False, default_return=False)
+    def check_data_exists(self, table: str, conditions: Dict) -> bool:
+        """
+        检查数据是否存在
+        
+        Args:
+            table: 表名
+            conditions: 检查条件
+            
+        Returns:
+            bool: 数据是否存在
+        """
+        logger.info(f"检查数据存在: table={table}, conditions={conditions}")
+        
+        # 模拟返回True
+        return True
+    
+    @exception_handler(reraise=False, default_return=None)
+    def get_latest_data(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
+        """
+        获取最新数据
+        
+        Args:
+            table: 表名
+            code: 股票代码
+            columns: 需要的列名
+            
+        Returns:
+            Optional[Dict]: 最新数据字典
+        """
+        logger.info(f"获取最新数据: table={table}, code={code}")
+        
+        # 返回模拟最新数据
+        return {
+            'code': code,
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'close': 102.0,
+            'volume': 1000000
+        } 

@@ -1,0 +1,4481 @@
+{
+  "strategy_name": "30分钟吸筹信号+MACD积极信号选股策略（放宽版）",
+  "execution_date": "2025-07-10T18:14:31.301254",
+  "target_date": "2025-05-12",
+  "period": "30分钟",
+  "stock_pool_size": 89,
+  "selected_count": 88,
+  "selected_stocks": [
+    {
+      "stock_code": "002146",
+      "stock_name": "股票002146",
+      "absorb_signal_strength": 0.9072055789647154,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5943233473788293,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.91)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600007",
+      "stock_name": "股票600007",
+      "absorb_signal_strength": 0.903760988200762,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5922565929204572,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.90)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600011",
+      "stock_name": "股票600011",
+      "absorb_signal_strength": 0.8752602038527366,
+      "macd_strength": 0,
+      "comprehensive_score": 0.575156122311642,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.88)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601857",
+      "stock_name": "股票601857",
+      "absorb_signal_strength": 0.8693846542035011,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5716307925221007,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.87)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600018",
+      "stock_name": "股票600018",
+      "absorb_signal_strength": 0.8613620945868414,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5668172567521049,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.86)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600309",
+      "stock_name": "股票600309",
+      "absorb_signal_strength": 0.8567735318093765,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5640641190856259,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.86)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601318",
+      "stock_name": "股票601318",
+      "absorb_signal_strength": 0.933288880843826,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5599733285062956,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.93)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002352",
+      "stock_name": "股票002352",
+      "absorb_signal_strength": 0.8446024332871199,
+      "macd_strength": 0,
+      "comprehensive_score": 0.556761459972272,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.84)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601088",
+      "stock_name": "股票601088",
+      "absorb_signal_strength": 0.8377778153368538,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5526666892021123,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.84)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "000001",
+      "stock_name": "股票000001",
+      "absorb_signal_strength": 0.8373748314371531,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5524248988622918,
+      "signal_time": "13:30",
+      "selection_reason": "吸筹信号(强度0.84)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "600036",
+      "stock_name": "股票600036",
+      "absorb_signal_strength": 0.8359357569836967,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5515614541902181,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.84)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "601601",
+      "stock_name": "股票601601",
+      "absorb_signal_strength": 0.8254324959072505,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5452594975443503,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.83)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300015",
+      "stock_name": "股票300015",
+      "absorb_signal_strength": 0.8248985588857043,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5449391353314226,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.82)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600745",
+      "stock_name": "股票600745",
+      "absorb_signal_strength": 0.8194722976991792,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5416833786195075,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.82)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600048",
+      "stock_name": "股票600048",
+      "absorb_signal_strength": 0.8093122218603811,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5355873331162286,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.81)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300142",
+      "stock_name": "股票300142",
+      "absorb_signal_strength": 0.8082915397032485,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5349749238219491,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.81)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600031",
+      "stock_name": "股票600031",
+      "absorb_signal_strength": 0.8025234542577847,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5315140725546709,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.80)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600030",
+      "stock_name": "股票600030",
+      "absorb_signal_strength": 0.8015159512314441,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5309095707388665,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.80)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "600000",
+      "stock_name": "股票600000",
+      "absorb_signal_strength": 0.7977678099807732,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5286606859884639,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.80)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "600001",
+      "stock_name": "股票600001",
+      "absorb_signal_strength": 0.7924266228893069,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5254559737335841,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.79)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601818",
+      "stock_name": "股票601818",
+      "absorb_signal_strength": 0.7913165812140528,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5247899487284317,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.79)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002493",
+      "stock_name": "股票002493",
+      "absorb_signal_strength": 0.7878345706220682,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5227007423732409,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.79)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300296",
+      "stock_name": "股票300296",
+      "absorb_signal_strength": 0.7874130701275419,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5224478420765252,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.79)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300168",
+      "stock_name": "股票300168",
+      "absorb_signal_strength": 0.7851332637064061,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5210799582238437,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.79)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600006",
+      "stock_name": "股票600006",
+      "absorb_signal_strength": 0.7848848211853594,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5209308927112156,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.78)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300014",
+      "stock_name": "股票300014",
+      "absorb_signal_strength": 0.777690648455644,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5166143890733864,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.78)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002304",
+      "stock_name": "股票002304",
+      "absorb_signal_strength": 0.7755933737470213,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5153560242482128,
+      "signal_time": "13:30",
+      "selection_reason": "吸筹信号(强度0.78)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600690",
+      "stock_name": "股票600690",
+      "absorb_signal_strength": 0.7686735575522308,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5112041345313385,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.77)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002142",
+      "stock_name": "股票002142",
+      "absorb_signal_strength": 0.7677235115197212,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5106341069118328,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.77)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300347",
+      "stock_name": "股票300347",
+      "absorb_signal_strength": 0.7644782326428123,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5086869395856874,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.76)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601169",
+      "stock_name": "股票601169",
+      "absorb_signal_strength": 0.8464149773922494,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5078489864353496,
+      "signal_time": "15:30",
+      "selection_reason": "吸筹信号(强度0.85)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002508",
+      "stock_name": "股票002508",
+      "absorb_signal_strength": 0.7610136126322244,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5066081675793347,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.76)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600004",
+      "stock_name": "股票600004",
+      "absorb_signal_strength": 0.7552081720253588,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5031249032152153,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.76)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600340",
+      "stock_name": "股票600340",
+      "absorb_signal_strength": 0.7551271016308555,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5030762609785133,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.76)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300136",
+      "stock_name": "股票300136",
+      "absorb_signal_strength": 0.7550961571817657,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5030576943090594,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.76)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300059",
+      "stock_name": "股票300059",
+      "absorb_signal_strength": 0.7534194349943821,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5020516609966292,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.75)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601186",
+      "stock_name": "股票601186",
+      "absorb_signal_strength": 0.835314594940798,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5011887569644787,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.84)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300033",
+      "stock_name": "股票300033",
+      "absorb_signal_strength": 0.750465344437838,
+      "macd_strength": 0,
+      "comprehensive_score": 0.5002792066627028,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.75)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002594",
+      "stock_name": "股票002594",
+      "absorb_signal_strength": 0.7476208535787993,
+      "macd_strength": 0,
+      "comprehensive_score": 0.49857251214727955,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.75)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300750",
+      "stock_name": "股票300750",
+      "absorb_signal_strength": 0.7465056840280535,
+      "macd_strength": 0,
+      "comprehensive_score": 0.49790341041683206,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.75)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601138",
+      "stock_name": "股票601138",
+      "absorb_signal_strength": 0.7455004701523775,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4973002820914265,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.75)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002236",
+      "stock_name": "股票002236",
+      "absorb_signal_strength": 0.7448089104954757,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4968853462972854,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601328",
+      "stock_name": "股票601328",
+      "absorb_signal_strength": 0.7442601307539516,
+      "macd_strength": 0,
+      "comprehensive_score": 0.49655607845237093,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600703",
+      "stock_name": "股票600703",
+      "absorb_signal_strength": 0.7425535896640649,
+      "macd_strength": 0,
+      "comprehensive_score": 0.49553215379843896,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002475",
+      "stock_name": "股票002475",
+      "absorb_signal_strength": 0.7414511977437568,
+      "macd_strength": 0,
+      "comprehensive_score": 0.49487071864625404,
+      "signal_time": "13:30",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601336",
+      "stock_name": "股票601336",
+      "absorb_signal_strength": 0.7395912770748079,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4937547662448847,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601398",
+      "stock_name": "股票601398",
+      "absorb_signal_strength": 0.7362620143927805,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4917572086356683,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600519",
+      "stock_name": "股票600519",
+      "absorb_signal_strength": 0.735205110527429,
+      "macd_strength": 0,
+      "comprehensive_score": 0.49112306631645736,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "601668",
+      "stock_name": "股票601668",
+      "absorb_signal_strength": 0.7350851359789935,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4910510815873961,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.74)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600104",
+      "stock_name": "股票600104",
+      "absorb_signal_strength": 0.7345410404840592,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4907246242904355,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.73)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600809",
+      "stock_name": "股票600809",
+      "absorb_signal_strength": 0.7335067759698761,
+      "macd_strength": 0,
+      "comprehensive_score": 0.49010406558192565,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.73)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "000166",
+      "stock_name": "股票000166",
+      "absorb_signal_strength": 0.7327227528745488,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4896336517247293,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.73)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "600900",
+      "stock_name": "股票600900",
+      "absorb_signal_strength": 0.7325186959253028,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4895112175551817,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.73)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600028",
+      "stock_name": "股票600028",
+      "absorb_signal_strength": 0.7296748919160463,
+      "macd_strength": 0,
+      "comprehensive_score": 0.48780493514962775,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.73)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "600017",
+      "stock_name": "股票600017",
+      "absorb_signal_strength": 0.7282096128517169,
+      "macd_strength": 0,
+      "comprehensive_score": 0.48692576771103013,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.73)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "000725",
+      "stock_name": "股票000725",
+      "absorb_signal_strength": 0.7219081411683261,
+      "macd_strength": 0,
+      "comprehensive_score": 0.48314488470099565,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.72)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "601166",
+      "stock_name": "股票601166",
+      "absorb_signal_strength": 0.721776020958784,
+      "macd_strength": 0,
+      "comprehensive_score": 0.48306561257527036,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.72)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600019",
+      "stock_name": "股票600019",
+      "absorb_signal_strength": 0.7207874156329508,
+      "macd_strength": 0,
+      "comprehensive_score": 0.48247244937977046,
+      "signal_time": "13:30",
+      "selection_reason": "吸筹信号(强度0.72)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601766",
+      "stock_name": "股票601766",
+      "absorb_signal_strength": 0.7188492301581262,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4813095380948757,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.72)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "000063",
+      "stock_name": "股票000063",
+      "absorb_signal_strength": 0.7064617060337387,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4738770236202432,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.71)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "002555",
+      "stock_name": "股票002555",
+      "absorb_signal_strength": 0.7057183122543502,
+      "macd_strength": 0,
+      "comprehensive_score": 0.47343098735261013,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.71)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600015",
+      "stock_name": "股票600015",
+      "absorb_signal_strength": 0.7048720559757115,
+      "macd_strength": 0,
+      "comprehensive_score": 0.47292323358542687,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.70)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300124",
+      "stock_name": "股票300124",
+      "absorb_signal_strength": 0.7018417582415171,
+      "macd_strength": 0,
+      "comprehensive_score": 0.47110505494491023,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.70)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601988",
+      "stock_name": "股票601988",
+      "absorb_signal_strength": 0.7014735558847381,
+      "macd_strength": 0,
+      "comprehensive_score": 0.47088413353084285,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.70)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601939",
+      "stock_name": "股票601939",
+      "absorb_signal_strength": 0.6998629534109786,
+      "macd_strength": 0,
+      "comprehensive_score": 0.46991777204658713,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.70)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600009",
+      "stock_name": "股票600009",
+      "absorb_signal_strength": 0.6985556154837902,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4691333692902741,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.70)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600008",
+      "stock_name": "股票600008",
+      "absorb_signal_strength": 0.6925035769794157,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4655021461876494,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.69)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600585",
+      "stock_name": "股票600585",
+      "absorb_signal_strength": 0.6864082605571217,
+      "macd_strength": 0,
+      "comprehensive_score": 0.46184495633427297,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.69)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002415",
+      "stock_name": "股票002415",
+      "absorb_signal_strength": 0.6863040592227121,
+      "macd_strength": 0,
+      "comprehensive_score": 0.46178243553362724,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.69)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600016",
+      "stock_name": "股票600016",
+      "absorb_signal_strength": 0.6857407933292773,
+      "macd_strength": 0,
+      "comprehensive_score": 0.46144447599756633,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.69)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600010",
+      "stock_name": "股票600010",
+      "absorb_signal_strength": 0.6762953336353209,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4557772001811925,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.68)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600005",
+      "stock_name": "股票600005",
+      "absorb_signal_strength": 0.6734011586991491,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4540406952194894,
+      "signal_time": "15:00",
+      "selection_reason": "吸筹信号(强度0.67)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601998",
+      "stock_name": "股票601998",
+      "absorb_signal_strength": 0.6719405829119474,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4531643497471684,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.67)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002456",
+      "stock_name": "股票002456",
+      "absorb_signal_strength": 0.7532249609819083,
+      "macd_strength": 0,
+      "comprehensive_score": 0.45193497658914494,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.75)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601628",
+      "stock_name": "股票601628",
+      "absorb_signal_strength": 0.6668553236957847,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4501131942174708,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.67)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601288",
+      "stock_name": "股票601288",
+      "absorb_signal_strength": 0.6647603054409875,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4488561832645925,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.66)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "600887",
+      "stock_name": "股票600887",
+      "absorb_signal_strength": 0.6606935228294589,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4464161136976753,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.66)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "601788",
+      "stock_name": "股票601788",
+      "absorb_signal_strength": 0.6376277006384373,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4325766203830624,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.64)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601066",
+      "stock_name": "股票601066",
+      "absorb_signal_strength": 0.6339349809728125,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4303609885836875,
+      "signal_time": "12:30",
+      "selection_reason": "吸筹信号(强度0.63)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "300144",
+      "stock_name": "股票300144",
+      "absorb_signal_strength": 0.7165337356926078,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4299202414155647,
+      "signal_time": "14:30",
+      "selection_reason": "吸筹信号(强度0.72)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "002230",
+      "stock_name": "股票002230",
+      "absorb_signal_strength": 0.714370462327048,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4286222773962288,
+      "signal_time": "15:30",
+      "selection_reason": "吸筹信号(强度0.71)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "000002",
+      "stock_name": "股票000002",
+      "absorb_signal_strength": 0.7101635410816812,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4260981246490087,
+      "signal_time": "12:00",
+      "selection_reason": "吸筹信号(强度0.71)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "300408",
+      "stock_name": "股票300408",
+      "absorb_signal_strength": 0.7087732423183236,
+      "macd_strength": 0,
+      "comprehensive_score": 0.42526394539099416,
+      "signal_time": "15:30",
+      "selection_reason": "吸筹信号(强度0.71)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "000858",
+      "stock_name": "股票000858",
+      "absorb_signal_strength": 0.7028036825141566,
+      "macd_strength": 0,
+      "comprehensive_score": 0.42168220950849394,
+      "signal_time": "15:30",
+      "selection_reason": "吸筹信号(强度0.70)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "300070",
+      "stock_name": "股票300070",
+      "absorb_signal_strength": 0.701666625716818,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4209999754300908,
+      "signal_time": "13:00",
+      "selection_reason": "吸筹信号(强度0.70)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "601688",
+      "stock_name": "股票601688",
+      "absorb_signal_strength": 0.6750028290145503,
+      "macd_strength": 0,
+      "comprehensive_score": 0.4050016974087302,
+      "signal_time": "13:30",
+      "selection_reason": "吸筹信号(强度0.68)",
+      "analysis_time": "18:14:31"
+    },
+    {
+      "stock_code": "000776",
+      "stock_name": "股票000776",
+      "absorb_signal_strength": 0.6377707709841789,
+      "macd_strength": 0,
+      "comprehensive_score": 0.38266246259050735,
+      "signal_time": "13:30",
+      "selection_reason": "吸筹信号(强度0.64)",
+      "analysis_time": "18:14:30"
+    },
+    {
+      "stock_code": "002405",
+      "stock_name": "股票002405",
+      "absorb_signal_strength": 0.6087431099952768,
+      "macd_strength": 0,
+      "comprehensive_score": 0.3652458659971661,
+      "signal_time": "14:00",
+      "selection_reason": "吸筹信号(强度0.61)",
+      "analysis_time": "18:14:31"
+    }
+  ],
+  "analysis_details": {
+    "000001": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8373748314371531,
+        "signal_time": "13:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.8373748314371531,
+            "volume_ratio": 1.3520758260224781,
+            "wvad": 0.01810148857730006,
+            "close_position": 0.9703801815165726
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6407342575087202,
+            "volume_ratio": 1.2554226754267268,
+            "wvad": 0.00930618903286358,
+            "close_position": 0.4525777687605679
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6254056086204762,
+            "volume_ratio": 1.1173244281801713,
+            "wvad": 0.023492761129413404,
+            "close_position": 0.5714266966986123
+          }
+        ],
+        "volume_price_correlation": 0.4108074229943319
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "000002": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7101635410816812,
+        "signal_time": "12:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7101635410816812,
+            "volume_ratio": 1.3771407874899717,
+            "wvad": 0.01757391926923475,
+            "close_position": 0.5134501676830736
+          }
+        ],
+        "volume_price_correlation": 0.19618562882691834
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "000858": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7028036825141566,
+        "signal_time": "15:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:30",
+            "signal_strength": 0.7028036825141566,
+            "volume_ratio": 1.1172061961168198,
+            "wvad": 0.0009721620802059507,
+            "close_position": 0.8520985181445564
+          }
+        ],
+        "volume_price_correlation": 0.015486269785145149
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "000063": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7064617060337387,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.6157370300896728,
+            "volume_ratio": 1.2069942819020758,
+            "wvad": 0.017531594853977584,
+            "close_position": 0.4255994629088308
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7064617060337387,
+            "volume_ratio": 1.1869891365324996,
+            "wvad": 0.009211591049999142,
+            "close_position": 0.7630085803524636
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.5603080553694759,
+            "volume_ratio": 1.146666036421309,
+            "wvad": 0.0061815659444486555,
+            "close_position": 0.33262390339205905
+          }
+        ],
+        "volume_price_correlation": -0.10859975878112978
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "000166": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7327227528745488,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6488181784114259,
+            "volume_ratio": 1.25072895254783,
+            "wvad": 0.010410146858894721,
+            "close_position": 0.4846785111154181
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6198885087023673,
+            "volume_ratio": 1.185135474862969,
+            "wvad": 0.009957672606739304,
+            "close_position": 0.47615672325052666
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7327227528745488,
+            "volume_ratio": 1.12005125496415,
+            "wvad": 0.0036018323300407934,
+            "close_position": 0.9454056706329221
+          }
+        ],
+        "volume_price_correlation": -0.0668668321721905
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "000725": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7219081411683261,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6774787504728406,
+            "volume_ratio": 1.2825059528050715,
+            "wvad": 0.010261564256661599,
+            "close_position": 0.5379930002460446
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6823903492230183,
+            "volume_ratio": 1.2643862832861472,
+            "wvad": 0.01773089091361578,
+            "close_position": 0.5710552287815825
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7219081411683261,
+            "volume_ratio": 1.1177176278159964,
+            "wvad": 0.004370683698062589,
+            "close_position": 0.9116996164416962
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6410602185384066,
+            "volume_ratio": 1.1657154096503495,
+            "wvad": 0.007204815810056368,
+            "close_position": 0.5753753664508328
+          }
+        ],
+        "volume_price_correlation": 0.34692678853814357
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "000776": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6377707709841789,
+        "signal_time": "13:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.6377707709841789,
+            "volume_ratio": 1.2683598860099234,
+            "wvad": 0.009151493187890006,
+            "close_position": 0.42560456207947517
+          }
+        ],
+        "volume_price_correlation": 0.08980392582179135
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600000": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7977678099807732,
+        "signal_time": "13:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.6311897993600403,
+            "volume_ratio": 1.1652946488686573,
+            "wvad": 0.005110482247515179,
+            "close_position": 0.5451293171277428
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7977678099807732,
+            "volume_ratio": 1.5383719669082208,
+            "wvad": 0.005297802322396924,
+            "close_position": 0.6027656084025529
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.5996240810028353,
+            "volume_ratio": 1.1508015276196886,
+            "wvad": 0.005232571912751477,
+            "close_position": 0.4591123279371145
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6011104000260815,
+            "volume_ratio": 1.2062402814634805,
+            "wvad": 0.012815310410421577,
+            "close_position": 0.3825656477252095
+          }
+        ],
+        "volume_price_correlation": 0.3050039160300951
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600036": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8359357569836967,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.8359357569836967,
+            "volume_ratio": 1.4846045590873473,
+            "wvad": 0.013609332847452714,
+            "close_position": 0.7933704449817399
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7365323796338691,
+            "volume_ratio": 1.1945573182583626,
+            "wvad": 0.01780760895924388,
+            "close_position": 0.8445572321425029
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7490839303540062,
+            "volume_ratio": 1.1516829245895692,
+            "wvad": 0.01425932757247639,
+            "close_position": 0.9471098741547851
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.5667810573850889,
+            "volume_ratio": 1.1574234740258684,
+            "wvad": 0.003927241778175241,
+            "close_position": 0.3421116508042962
+          }
+        ],
+        "volume_price_correlation": -0.17153737389758392
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600519": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.735205110527429,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.735205110527429,
+            "volume_ratio": 1.2401213225462413,
+            "wvad": 0.007100197086301911,
+            "close_position": 0.7900884079434729
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6758036562392111,
+            "volume_ratio": 1.2574096173576386,
+            "wvad": 0.014234461048035897,
+            "close_position": 0.5618982366058163
+          }
+        ],
+        "volume_price_correlation": -0.1427373313555752
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600887": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6606935228294589,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6606935228294589,
+            "volume_ratio": 1.128478511907834,
+            "wvad": 0.03481430259066647,
+            "close_position": 0.6628594242970847
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.655822857565369,
+            "volume_ratio": 1.2670705837975027,
+            "wvad": 0.017941001450258804,
+            "close_position": 0.4787077453709676
+          }
+        ],
+        "volume_price_correlation": 0.02804135938729023
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600028": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7296748919160463,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7296748919160463,
+            "volume_ratio": 1.3730278856822216,
+            "wvad": 0.009650057590445182,
+            "close_position": 0.5918957345534135
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.589807065575469,
+            "volume_ratio": 1.159069185486223,
+            "wvad": 0.01598511119302189,
+            "close_position": 0.4046128600769111
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.637207618079238,
+            "volume_ratio": 1.1303700237270637,
+            "wvad": 0.004911981108932778,
+            "close_position": 0.611953380852442
+          }
+        ],
+        "volume_price_correlation": -0.13155676909396144
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600030": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8015159512314441,
+        "signal_time": "13:00",
+        "signal_count": 5,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.5462355460131408,
+            "volume_ratio": 1.1239775051218321,
+            "wvad": 0.008190355559053076,
+            "close_position": 0.31395812432230696
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.8015159512314441,
+            "volume_ratio": 1.3943356574608314,
+            "wvad": 0.017779922806626148,
+            "close_position": 0.7948257046837457
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6784083850057269,
+            "volume_ratio": 1.254684649507568,
+            "wvad": 0.010050385862138725,
+            "close_position": 0.5783980314801932
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6798709495334773,
+            "volume_ratio": 1.1775640200114288,
+            "wvad": 0.028294507429615198,
+            "close_position": 0.6678566310000704
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7247843618420955,
+            "volume_ratio": 1.1853896908622665,
+            "wvad": 0.03815847451729416,
+            "close_position": 0.7972698104733352
+          }
+        ],
+        "volume_price_correlation": 0.4834121073548638
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600031": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8025234542577847,
+        "signal_time": "14:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.6378430110319334,
+            "volume_ratio": 1.1944756132935257,
+            "wvad": 0.004547796099975928,
+            "close_position": 0.5289614229484345
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6117380958961167,
+            "volume_ratio": 1.2566492987028108,
+            "wvad": 0.008577272492176519,
+            "close_position": 0.3550173155577979
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.8025234542577847,
+            "volume_ratio": 1.2707220223353648,
+            "wvad": 0.003920698515689658,
+            "close_position": 0.9768614525631063
+          }
+        ],
+        "volume_price_correlation": -0.2990496716824434
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600048": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8093122218603811,
+        "signal_time": "14:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.6493607186063622,
+            "volume_ratio": 1.1731691643534827,
+            "wvad": 0.006950302715885575,
+            "close_position": 0.5933598735006782
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7522694177008449,
+            "volume_ratio": 1.1998084463422447,
+            "wvad": 0.02629305023082538,
+            "close_position": 0.8815270803156646
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.8093122218603811,
+            "volume_ratio": 1.5925514572534538,
+            "wvad": 0.0073372380966538015,
+            "close_position": 0.5669682251000117
+          }
+        ],
+        "volume_price_correlation": 0.1488249854482836
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600104": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7345410404840592,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7345410404840592,
+            "volume_ratio": 1.3641997220688578,
+            "wvad": 0.020234475952081603,
+            "close_position": 0.6093026962363053
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7222765682269503,
+            "volume_ratio": 1.1753925480162077,
+            "wvad": 0.030910589471977768,
+            "close_position": 0.8094879072629126
+          }
+        ],
+        "volume_price_correlation": -0.3120884926650202
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600309": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8567735318093765,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.8567735318093765,
+            "volume_ratio": 1.5311693592363724,
+            "wvad": 0.007775985735647919,
+            "close_position": 0.806576641313777
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6741930153340436,
+            "volume_ratio": 1.1937570100820478,
+            "wvad": 0.010336443896995066,
+            "close_position": 0.6452975937737534
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6150403469616529,
+            "volume_ratio": 1.1712599474771,
+            "wvad": 0.005134685802353271,
+            "close_position": 0.4833198741003565
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.5925679032915552,
+            "volume_ratio": 1.2084520069478473,
+            "wvad": 0.013080277279290205,
+            "close_position": 0.35087672442876416
+          }
+        ],
+        "volume_price_correlation": 0.19919459868148642
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600340": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7551271016308555,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7015967293209947,
+            "volume_ratio": 1.3459286109274995,
+            "wvad": 0.013800996176343299,
+            "close_position": 0.5302832869903061
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.6221588404326817,
+            "volume_ratio": 1.2557927521466756,
+            "wvad": 0.0076847189383578915,
+            "close_position": 0.3917877463083466
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7551271016308555,
+            "volume_ratio": 1.4781885192071833,
+            "wvad": 0.01060165760982889,
+            "close_position": 0.5355706555501115
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6155033292385832,
+            "volume_ratio": 1.2163175529622137,
+            "wvad": 0.008835669773336665,
+            "close_position": 0.4210853570723223
+          }
+        ],
+        "volume_price_correlation": -0.6057617815216686
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600585": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6864082605571217,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.5985348753690107,
+            "volume_ratio": 1.1307726054198362,
+            "wvad": 0.008377624829772355,
+            "close_position": 0.4790418191738151
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6864082605571217,
+            "volume_ratio": 1.1367731801388075,
+            "wvad": 0.014612569858157919,
+            "close_position": 0.7577173918138377
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.632472608960502,
+            "volume_ratio": 1.119407887344029,
+            "wvad": -0.0033997089142558095,
+            "close_position": 0.6122984711620455
+          }
+        ],
+        "volume_price_correlation": 0.15234528039201953
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600690": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7686735575522308,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.7686735575522308,
+            "volume_ratio": 1.4730967981876548,
+            "wvad": 0.02191040582117886,
+            "close_position": 0.5762057217693841
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6297639358057158,
+            "volume_ratio": 1.2783582413127355,
+            "wvad": 0.013715471820739624,
+            "close_position": 0.38101999244799883
+          }
+        ],
+        "volume_price_correlation": -0.15777173367210823
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600703": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7425535896640649,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.5809002594185861,
+            "volume_ratio": 1.1558774383132702,
+            "wvad": 0.010933149358447691,
+            "close_position": 0.3842311309524792
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6987697534640743,
+            "volume_ratio": 1.3153539802971232,
+            "wvad": 0.009616218345929758,
+            "close_position": 0.5658109861381533
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7425535896640649,
+            "volume_ratio": 1.343542914275737,
+            "wvad": 0.020736365244124748,
+            "close_position": 0.663051714601776
+          }
+        ],
+        "volume_price_correlation": -0.2928178481572349
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600745": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8194722976991792,
+        "signal_time": "12:00",
+        "signal_count": 5,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6483312685068889,
+            "volume_ratio": 1.1898732157180747,
+            "wvad": 0.011939172103091363,
+            "close_position": 0.5626674352957722
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.8194722976991792,
+            "volume_ratio": 1.5467536934883745,
+            "wvad": 0.014562686353844553,
+            "close_position": 0.6546733813255864
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.7915430930060594,
+            "volume_ratio": 1.3006302475089189,
+            "wvad": 0.013267543213979499,
+            "close_position": 0.89103577012766
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.581772891895921,
+            "volume_ratio": 1.198758230271653,
+            "wvad": 0.010340832071675746,
+            "close_position": 0.3305578338858566
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6223582030667825,
+            "volume_ratio": 1.1178911598748487,
+            "wvad": 0.012212996698067233,
+            "close_position": 0.5717928003580763
+          }
+        ],
+        "volume_price_correlation": 0.2828841814997404
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600809": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7335067759698761,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7335067759698761,
+            "volume_ratio": 1.1378062948067305,
+            "wvad": 0.020465314518362622,
+            "close_position": 0.9074822123055841
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.5636275206749023,
+            "volume_ratio": 1.1092313263869942,
+            "wvad": 0.014799644599923917,
+            "close_position": 0.3849836558004247
+          }
+        ],
+        "volume_price_correlation": 0.26624890186188627
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600837": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": false,
+        "signal_strength": 0,
+        "signal_time": null,
+        "signal_count": 0,
+        "signal_details": [],
+        "volume_price_correlation": -0.15186570614809503
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": false
+    },
+    "600900": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7325186959253028,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7325186959253028,
+            "volume_ratio": 1.2045315219364825,
+            "wvad": 0.01342768972739566,
+            "close_position": 0.822259267441637
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6989738949804131,
+            "volume_ratio": 1.359218313015772,
+            "wvad": 0.014443891137801616,
+            "close_position": 0.5031780081092126
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.593482475064443,
+            "volume_ratio": 1.1671885769721597,
+            "wvad": 0.026124590531481966,
+            "close_position": 0.39589889038711473
+          }
+        ],
+        "volume_price_correlation": 0.18154937830680673
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601066": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6339349809728125,
+        "signal_time": "12:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.6325063580708483,
+            "volume_ratio": 1.2695202678410216,
+            "wvad": 0.009283729519447524,
+            "close_position": 0.4063771069286849
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6339349809728125,
+            "volume_ratio": 1.1235778092034883,
+            "wvad": 0.009960994854715174,
+            "close_position": 0.6050518627833422
+          }
+        ],
+        "volume_price_correlation": 0.024368534084964415
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601088": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8377778153368538,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7013931456395713,
+            "volume_ratio": 1.46238363120222,
+            "wvad": 0.03261397101024478,
+            "close_position": 0.35551833951869977
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.8004120825191023,
+            "volume_ratio": 1.4292838765651716,
+            "wvad": 0.03658402967537815,
+            "close_position": 0.7257444099680672
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.8377778153368538,
+            "volume_ratio": 1.426770387477375,
+            "wvad": 0.03768293086992311,
+            "close_position": 0.8525492702830898
+          }
+        ],
+        "volume_price_correlation": 0.08339031984883266
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601138": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7455004701523775,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.6725381875287254,
+            "volume_ratio": 1.1008301543389607,
+            "wvad": 0.011126025412058274,
+            "close_position": 0.7628943938984122
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7455004701523775,
+            "volume_ratio": 1.184049447037044,
+            "wvad": 0.02072647892833642,
+            "close_position": 0.8855424921968632
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7117809395946407,
+            "volume_ratio": 1.3238242688995596,
+            "wvad": 0.015105393335498932,
+            "close_position": 0.592398713447224
+          }
+        ],
+        "volume_price_correlation": -0.046135509612551306
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601166": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.721776020958784,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.721776020958784,
+            "volume_ratio": 1.1627790890697596,
+            "wvad": 0.012623396225682615,
+            "close_position": 0.8429245548772514
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.693802447857887,
+            "volume_ratio": 1.21290394559528,
+            "wvad": 0.011515257811304556,
+            "close_position": 0.6839543075879455
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6264373628574601,
+            "volume_ratio": 1.2128863947839015,
+            "wvad": -0.0005845038516896508,
+            "close_position": 0.47035817929464213
+          }
+        ],
+        "volume_price_correlation": -0.018113505252695377
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601169": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8464149773922494,
+        "signal_time": "15:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:30",
+            "signal_strength": 0.8464149773922494,
+            "volume_ratio": 1.6611694576104405,
+            "wvad": 0.016193711383998447,
+            "close_position": 0.590296936442912
+          }
+        ],
+        "volume_price_correlation": 0.21947764781595325
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601186": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.835314594940798,
+        "signal_time": "12:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.835314594940798,
+            "volume_ratio": 1.3732802043633272,
+            "wvad": 0.011139636877601156,
+            "close_position": 0.942202073773956
+          }
+        ],
+        "volume_price_correlation": 0.3100663181560928
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601288": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6647603054409875,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6647603054409875,
+            "volume_ratio": 1.2055462689391498,
+            "wvad": 0.024477131360844975,
+            "close_position": 0.5839955281902469
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.6424419573383691,
+            "volume_ratio": 1.3150594488163847,
+            "wvad": 0.009610664440472422,
+            "close_position": 0.37844992826557816
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6247247411491549,
+            "volume_ratio": 1.1616397410603048,
+            "wvad": 0.037499452211073904,
+            "close_position": 0.49606336353903613
+          }
+        ],
+        "volume_price_correlation": -0.37201445693783275
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601318": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.933288880843826,
+        "signal_time": "13:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.933288880843826,
+            "volume_ratio": 1.5600192127504853,
+            "wvad": 0.04384572441873233,
+            "close_position": 0.9870915947267077
+          }
+        ],
+        "volume_price_correlation": -0.40408629148232345
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601328": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7442601307539516,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6818657434563832,
+            "volume_ratio": 1.1484533774634795,
+            "wvad": 0.009169117459340143,
+            "close_position": 0.7324455241106309
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.7442601307539516,
+            "volume_ratio": 1.178038850886493,
+            "wvad": 0.023916487620969432,
+            "close_position": 0.8862321470435454
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6078840920420729,
+            "volume_ratio": 1.1589283432904027,
+            "wvad": 0.011295341629710817,
+            "close_position": 0.4697471741233284
+          }
+        ],
+        "volume_price_correlation": -0.14880271101819678
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601336": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7395912770748079,
+        "signal_time": "12:00",
+        "signal_count": 5,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7395912770748079,
+            "volume_ratio": 1.1867274627590745,
+            "wvad": 0.012991771117031054,
+            "close_position": 0.870009202120229
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.7075610089598267,
+            "volume_ratio": 1.158469274353593,
+            "wvad": 0.007564566848684721,
+            "close_position": 0.8063464305459469
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6469961920107448,
+            "volume_ratio": 1.1729490866108705,
+            "wvad": 0.011504567778546998,
+            "close_position": 0.5812172901094417
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7211779506909082,
+            "volume_ratio": 1.1949217932889766,
+            "wvad": 0.0129959500905494,
+            "close_position": 0.7977014944938423
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7330694290242039,
+            "volume_ratio": 1.4725496208953035,
+            "wvad": 0.007354311501272917,
+            "close_position": 0.4728109573856686
+          }
+        ],
+        "volume_price_correlation": -0.3782387572615084
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601398": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7362620143927805,
+        "signal_time": "12:30",
+        "signal_count": 5,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7362620143927805,
+            "volume_ratio": 1.1066682905101584,
+            "wvad": 0.01235503482011148,
+            "close_position": 0.9662939591422789
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6079002090394011,
+            "volume_ratio": 1.1485982072280887,
+            "wvad": 0.006546446434112594,
+            "close_position": 0.4883233073931063
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6551986116825539,
+            "volume_ratio": 1.2703462347681098,
+            "wvad": 0.00954733277974804,
+            "close_position": 0.4806530598046183
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7234921018207583,
+            "volume_ratio": 1.2128597450018703,
+            "wvad": 0.02478465979793475,
+            "close_position": 0.7697093529354324
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.593781400194135,
+            "volume_ratio": 1.1028549618723795,
+            "wvad": 0.028113624013804545,
+            "close_position": 0.48068442747013934
+          }
+        ],
+        "volume_price_correlation": 0.28923549876484167
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601601": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8254324959072505,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7754812240519982,
+            "volume_ratio": 1.3254781218777119,
+            "wvad": 0.005462986099663801,
+            "close_position": 0.8121702649033806
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.768354992227964,
+            "volume_ratio": 1.3365894126845619,
+            "wvad": 0.009848919866228453,
+            "close_position": 0.7692151706475691
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.8254324959072505,
+            "volume_ratio": 1.359229646599471,
+            "wvad": 0.018954001012291267,
+            "close_position": 0.9201814565459159
+          }
+        ],
+        "volume_price_correlation": 0.29544518750072774
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601628": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6668553236957847,
+        "signal_time": "12:30",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.6067595361268172,
+            "volume_ratio": 1.20237761888999,
+            "wvad": 0.008866294242958794,
+            "close_position": 0.4104953343264451
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.66338154488219,
+            "volume_ratio": 1.2400746199206096,
+            "wvad": 0.025548024256054867,
+            "close_position": 0.5322909654570986
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6140031476598857,
+            "volume_ratio": 1.1523213525555616,
+            "wvad": 0.006773568325285736,
+            "close_position": 0.5034751204669177
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6668553236957847,
+            "volume_ratio": 1.1551289684646229,
+            "wvad": 0.012569947669085781,
+            "close_position": 0.6701091733640326
+          }
+        ],
+        "volume_price_correlation": -0.38257067161252034
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601668": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7350851359789935,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6394948842792149,
+            "volume_ratio": 1.3385340407661386,
+            "wvad": 0.025358997267254137,
+            "close_position": 0.32157856264194395
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7350851359789935,
+            "volume_ratio": 1.2318378018946325,
+            "wvad": 0.010095450095593862,
+            "close_position": 0.7977379339748744
+          }
+        ],
+        "volume_price_correlation": -0.09463339627546681
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601688": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6750028290145503,
+        "signal_time": "13:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.6750028290145503,
+            "volume_ratio": 1.2369637669153963,
+            "wvad": 0.01946200949950455,
+            "close_position": 0.5812623979951349
+          }
+        ],
+        "volume_price_correlation": -0.13011691149983493
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601766": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7188492301581262,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7153683027432141,
+            "volume_ratio": 1.3686984794662311,
+            "wvad": 0.00981366603500123,
+            "close_position": 0.5498160371540705
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6237854317414224,
+            "volume_ratio": 1.1941399090583447,
+            "wvad": 0.009517355519517125,
+            "close_position": 0.47758087154076456
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6237142019271009,
+            "volume_ratio": 1.2022394451035947,
+            "wvad": 0.025673946737888458,
+            "close_position": 0.45038746621432146
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7188492301581262,
+            "volume_ratio": 1.1879697694623899,
+            "wvad": 0.02108097902240871,
+            "close_position": 0.7911234288881589
+          }
+        ],
+        "volume_price_correlation": 0.06007517587016199
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601788": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6376277006384373,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6376277006384373,
+            "volume_ratio": 1.2102745775979176,
+            "wvad": 0.01424025741471657,
+            "close_position": 0.49748597458285115
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.6006809598157891,
+            "volume_ratio": 1.1138210207962123,
+            "wvad": 0.006265190550659713,
+            "close_position": 0.5109099811070208
+          }
+        ],
+        "volume_price_correlation": -0.24980042142529896
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601818": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7913165812140528,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.5649091069826081,
+            "volume_ratio": 1.127071294242146,
+            "wvad": 0.00942284497131005,
+            "close_position": 0.3708457859811891
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7913165812140528,
+            "volume_ratio": 1.4190157262653431,
+            "wvad": 0.01566024557653685,
+            "close_position": 0.7300407234498482
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7895068390072133,
+            "volume_ratio": 1.5161858268665949,
+            "wvad": 0.04636497922735087,
+            "close_position": 0.5637433816412334
+          }
+        ],
+        "volume_price_correlation": 0.12787457599049265
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601857": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8693846542035011,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.8693846542035011,
+            "volume_ratio": 1.5606221086380512,
+            "wvad": 0.017706474678638402,
+            "close_position": 0.7994128944822967
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7550340864660636,
+            "volume_ratio": 1.3404642982720287,
+            "wvad": 0.014090231988834561,
+            "close_position": 0.7154043252020055
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.571894231225607,
+            "volume_ratio": 1.158154582354398,
+            "wvad": 0.010342283531750547,
+            "close_position": 0.35176571074774216
+          }
+        ],
+        "volume_price_correlation": 0.11127082523325585
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601939": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6998629534109786,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6289253093698621,
+            "volume_ratio": 1.2366366714335646,
+            "wvad": 0.015145089703244111,
+            "close_position": 0.4324237129515431
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.6998629534109786,
+            "volume_ratio": 1.2084769080492117,
+            "wvad": 0.02480785511580317,
+            "close_position": 0.6967661121885097
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6517977330044986,
+            "volume_ratio": 1.1027051450803154,
+            "wvad": 0.019059421862642784,
+            "close_position": 0.6833261613785986
+          }
+        ],
+        "volume_price_correlation": 0.141256720575412
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601988": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7014735558847381,
+        "signal_time": "12:00",
+        "signal_count": 5,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6016430545359097,
+            "volume_ratio": 1.1237291876789197,
+            "wvad": 0.010811439108846055,
+            "close_position": 0.49635982577229354
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.7014735558847381,
+            "volume_ratio": 1.1339371084241228,
+            "wvad": 0.02013419091987098,
+            "close_position": 0.8061948507970923
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.5772836528212144,
+            "volume_ratio": 1.120775969064525,
+            "wvad": 0.016268660238776437,
+            "close_position": 0.4136422237459049
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6760887481979608,
+            "volume_ratio": 1.2933533868479787,
+            "wvad": 0.014347862661424692,
+            "close_position": 0.5148101155344731
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6546707544441278,
+            "volume_ratio": 1.1241902728969289,
+            "wvad": 0.022371082621381114,
+            "close_position": 0.6609444016631398
+          }
+        ],
+        "volume_price_correlation": 0.6306824921859245
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "601998": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6719405829119474,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.6719405829119474,
+            "volume_ratio": 1.250293244214864,
+            "wvad": 0.008073748198683343,
+            "close_position": 0.5646705358879893
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6596075527990528,
+            "volume_ratio": 1.1979513726062123,
+            "wvad": 0.009078232157429894,
+            "close_position": 0.5923451136977964
+          }
+        ],
+        "volume_price_correlation": -0.24969416954809845
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600001": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7924266228893069,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7924266228893069,
+            "volume_ratio": 1.3733264440839827,
+            "wvad": 0.023907018605361763,
+            "close_position": 0.7864131322470174
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6040574049868135,
+            "volume_ratio": 1.136450307761817,
+            "wvad": 0.0174503302366655,
+            "close_position": 0.4808072760369567
+          }
+        ],
+        "volume_price_correlation": -0.07946428503200144
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600004": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7552081720253588,
+        "signal_time": "12:30",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.6112592239744481,
+            "volume_ratio": 1.2724035961794349,
+            "wvad": 0.010528451183527859,
+            "close_position": 0.330464167158719
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.607635719903094,
+            "volume_ratio": 1.1250442092777813,
+            "wvad": 0.002792387666786954,
+            "close_position": 0.5226010663064844
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7552081720253588,
+            "volume_ratio": 1.2407014162389378,
+            "wvad": 0.017342070189265323,
+            "close_position": 0.8457499482433469
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6830300147649112,
+            "volume_ratio": 1.1289172542354495,
+            "wvad": 0.000165598865170212,
+            "close_position": 0.771378111370601
+          }
+        ],
+        "volume_price_correlation": -0.012835013832639163
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600005": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6734011586991491,
+        "signal_time": "15:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "15:00",
+            "signal_strength": 0.6734011586991491,
+            "volume_ratio": 1.2885327111544884,
+            "wvad": 0.009096227619639536,
+            "close_position": 0.517530686504873
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6673306667354122,
+            "volume_ratio": 1.4122916724236356,
+            "wvad": 0.006469525698372899,
+            "close_position": 0.33491046685482
+          }
+        ],
+        "volume_price_correlation": -0.4948037037610031
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600006": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7848848211853594,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7848848211853594,
+            "volume_ratio": 1.3947426801410365,
+            "wvad": 0.016287776973619647,
+            "close_position": 0.7403380534561964
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7369714325333618,
+            "volume_ratio": 1.1881534078656342,
+            "wvad": 0.0371904170602775,
+            "close_position": 0.8351764808967497
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6844377855953662,
+            "volume_ratio": 1.173669051214024,
+            "wvad": 0.028728461207172585,
+            "close_position": 0.6878387558253493
+          }
+        ],
+        "volume_price_correlation": 0.08107237203363532
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600007": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.903760988200762,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.903760988200762,
+            "volume_ratio": 1.6608499256523293,
+            "wvad": 0.022773279936711927,
+            "close_position": 0.7752967798627223
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.560171129937797,
+            "volume_ratio": 1.13810970382657,
+            "wvad": 0.008824208699850015,
+            "close_position": 0.34093328599071354
+          }
+        ],
+        "volume_price_correlation": 0.09371392650267936
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600008": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6925035769794157,
+        "signal_time": "12:00",
+        "signal_count": 5,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6110302062000437,
+            "volume_ratio": 1.1891305495308173,
+            "wvad": 0.012009804300171109,
+            "close_position": 0.4392501503255513
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6925035769794157,
+            "volume_ratio": 1.2478104403316932,
+            "wvad": 0.017576895952886133,
+            "close_position": 0.6270211068695751
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6194539428359327,
+            "volume_ratio": 1.1050694269850723,
+            "wvad": 0.01121953793877684,
+            "close_position": 0.5802010355342357
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.639479969804371,
+            "volume_ratio": 1.2432911537527689,
+            "wvad": 0.043327915030088315,
+            "close_position": 0.43055044598079006
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.5880126355275602,
+            "volume_ratio": 1.207611108091746,
+            "wvad": 0.013138512421020532,
+            "close_position": 0.3367554618818521
+          }
+        ],
+        "volume_price_correlation": -0.39248664309304476
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600009": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6985556154837902,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6002420395580982,
+            "volume_ratio": 1.1073474911128118,
+            "wvad": 0.005344481366022586,
+            "close_position": 0.5189989956772222
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.6985556154837902,
+            "volume_ratio": 1.407250348790414,
+            "wvad": 0.00971133251305775,
+            "close_position": 0.4424735873790242
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6817896373046674,
+            "volume_ratio": 1.237501206426233,
+            "wvad": 0.01662310169568894,
+            "close_position": 0.6060074140848914
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6791930737638303,
+            "volume_ratio": 1.2086118006732953,
+            "wvad": 0.012881798914170274,
+            "close_position": 0.6396127127342033
+          }
+        ],
+        "volume_price_correlation": 0.44162478936986843
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600010": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6762953336353209,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6762953336353209,
+            "volume_ratio": 1.1775053528187904,
+            "wvad": 0.008224241319696514,
+            "close_position": 0.676086400372986
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6522098482072655,
+            "volume_ratio": 1.1966742624769744,
+            "wvad": 0.011590078264838698,
+            "close_position": 0.5668770657900805
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6611374947139048,
+            "volume_ratio": 1.30258815822995,
+            "wvad": 0.01615698529484476,
+            "close_position": 0.450850452778238
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.623023753520052,
+            "volume_ratio": 1.1171287413409834,
+            "wvad": 0.009801533022670245,
+            "close_position": 0.5774393235895253
+          }
+        ],
+        "volume_price_correlation": 0.4907839992377367
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600011": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8752602038527366,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.657786108627491,
+            "volume_ratio": 1.103477022167073,
+            "wvad": 0.006534119024972304,
+            "close_position": 0.7147835468439002
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.8752602038527366,
+            "volume_ratio": 1.4783140252049631,
+            "wvad": 0.016586704442626637,
+            "close_position": 0.9298619414598778
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6244345165434864,
+            "volume_ratio": 1.2021192577092048,
+            "wvad": 0.01029983199318972,
+            "close_position": 0.4683228795394916
+          }
+        ],
+        "volume_price_correlation": 0.4645802298073688
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600015": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7048720559757115,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6331039868453063,
+            "volume_ratio": 1.3356829799333194,
+            "wvad": 0.013712368460931396,
+            "close_position": 0.3157236144456637
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.61433509890595,
+            "volume_ratio": 1.2003741216576613,
+            "wvad": 0.005941424288151551,
+            "close_position": 0.44134340985479975
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7048720559757115,
+            "volume_ratio": 1.3609339058877923,
+            "wvad": 0.022711237633265866,
+            "close_position": 0.5122837411020494
+          }
+        ],
+        "volume_price_correlation": 0.09154725647537841
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600016": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6857407933292773,
+        "signal_time": "12:00",
+        "signal_count": 5,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6232269673099834,
+            "volume_ratio": 1.1441395626098543,
+            "wvad": 0.007556013791947186,
+            "close_position": 0.544347793761525
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.5898602517855178,
+            "volume_ratio": 1.179245366711616,
+            "wvad": 0.02610561916957109,
+            "close_position": 0.3677680645000003
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.6212075834765689,
+            "volume_ratio": 1.1816055895481326,
+            "wvad": 0.01857263484432719,
+            "close_position": 0.4766451906800592
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.605618134489334,
+            "volume_ratio": 1.1105545738961922,
+            "wvad": 0.008373995520176286,
+            "close_position": 0.5296136875826807
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6857407933292773,
+            "volume_ratio": 1.2734994361426935,
+            "wvad": 0.00986124510008327,
+            "close_position": 0.5779421511405832
+          }
+        ],
+        "volume_price_correlation": -0.3987442317899562
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600017": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7282096128517169,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6308872551333313,
+            "volume_ratio": 1.2295993460691381,
+            "wvad": 0.03289030918216669,
+            "close_position": 0.43060141317008654
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6130076138912445,
+            "volume_ratio": 1.1465531981308643,
+            "wvad": 0.02024279603737714,
+            "close_position": 0.49437831942561866
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7282096128517169,
+            "volume_ratio": 1.126450724834641,
+            "wvad": 0.052599149002701594,
+            "close_position": 0.8728319273901667
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.704753933593933,
+            "volume_ratio": 1.1669413225595406,
+            "wvad": 0.025788553660564307,
+            "close_position": 0.767469461573158
+          }
+        ],
+        "volume_price_correlation": -0.029217812833693825
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600018": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8613620945868414,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.8613620945868414,
+            "volume_ratio": 1.4844361958021515,
+            "wvad": 0.020797593372668736,
+            "close_position": 0.8711611275139343
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7538114094702251,
+            "volume_ratio": 1.2609750322012265,
+            "wvad": 0.014179147679660093,
+            "close_position": 0.8172255076194547
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.5596970951964592,
+            "volume_ratio": 1.165807959219828,
+            "wvad": 0.01036531291533577,
+            "close_position": 0.3008810587797571
+          }
+        ],
+        "volume_price_correlation": 0.7475766976359046
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "600019": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7207874156329508,
+        "signal_time": "13:30",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.7071235115360106,
+            "volume_ratio": 1.3191338045725152,
+            "wvad": 0.016680609709973072,
+            "close_position": 0.5815526893133756
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6893095303324541,
+            "volume_ratio": 1.1104939911548326,
+            "wvad": 0.00838277546559536,
+            "close_position": 0.8086570041028079
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6169666160661756,
+            "volume_ratio": 1.2864810462842984,
+            "wvad": 0.012735719927703724,
+            "close_position": 0.3285116052471503
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7207874156329508,
+            "volume_ratio": 1.2945005945280617,
+            "wvad": 0.008165095756338015,
+            "close_position": 0.6684588303160823
+          }
+        ],
+        "volume_price_correlation": -0.5907706124280981
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002415": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6863040592227121,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.6723349543814907,
+            "volume_ratio": 1.245203191286767,
+            "wvad": 0.01683004636697221,
+            "close_position": 0.5640155465223076
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.6438752001044016,
+            "volume_ratio": 1.342610031558551,
+            "wvad": 0.018114895058220604,
+            "close_position": 0.3379890632117165
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6863040592227121,
+            "volume_ratio": 1.2380942559511918,
+            "wvad": -0.006370310555754445,
+            "close_position": 0.63051754558503
+          }
+        ],
+        "volume_price_correlation": -0.031630737012607546
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002594": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7476208535787993,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.6121080180410343,
+            "volume_ratio": 1.1680976657247353,
+            "wvad": 0.006989982442469847,
+            "close_position": 0.47590652339466416
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7476208535787993,
+            "volume_ratio": 1.4875541371621248,
+            "wvad": 0.01140179168568502,
+            "close_position": 0.49726220402747967
+          }
+        ],
+        "volume_price_correlation": -0.4978835014488157
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002304": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7755933737470213,
+        "signal_time": "13:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.7755933737470213,
+            "volume_ratio": 1.3449324467553747,
+            "wvad": 0.007115383859494137,
+            "close_position": 0.7849525996234107
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7173607503016597,
+            "volume_ratio": 1.3208627927026,
+            "wvad": 0.008194193742100246,
+            "close_position": 0.6218579169932983
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6147240909920599,
+            "volume_ratio": 1.1198097098798254,
+            "wvad": 0.020327800245309953,
+            "close_position": 0.5356728898884558
+          }
+        ],
+        "volume_price_correlation": 0.33437890840302115
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002230": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.714370462327048,
+        "signal_time": "15:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:30",
+            "signal_strength": 0.714370462327048,
+            "volume_ratio": 1.3475218799988773,
+            "wvad": 0.007021608269200427,
+            "close_position": 0.5775174261557899
+          }
+        ],
+        "volume_price_correlation": 0.14829573373320903
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002142": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7677235115197212,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7203846847149186,
+            "volume_ratio": 1.1794021942935629,
+            "wvad": 0.04200812072891628,
+            "close_position": 0.7867379025960617
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.7677235115197212,
+            "volume_ratio": 1.2387621197710357,
+            "wvad": 0.021526385412805604,
+            "close_position": 0.8858691599582172
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7676110702131262,
+            "volume_ratio": 1.1646357287846423,
+            "wvad": 0.015913596637253533,
+            "close_position": 0.9899423323603108
+          }
+        ],
+        "volume_price_correlation": -0.2321153595440031
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002146": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.9072055789647154,
+        "signal_time": "13:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.9072055789647154,
+            "volume_ratio": 1.6701498708018965,
+            "wvad": 0.018319373837049555,
+            "close_position": 0.7788327283094733
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7582737316668322,
+            "volume_ratio": 1.46749019232838,
+            "wvad": 0.010916385403050262,
+            "close_position": 0.5600091303818835
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6226862441214198,
+            "volume_ratio": 1.1917056330644487,
+            "wvad": -0.003962448658734217,
+            "close_position": 0.48271752099340043
+          }
+        ],
+        "volume_price_correlation": -0.30000628444577215
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002236": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7448089104954757,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.5668651495181676,
+            "volume_ratio": 1.1177336441682069,
+            "wvad": 0.009500621345715369,
+            "close_position": 0.3897383514905676
+          },
+          {
+            "time": "13:30",
+            "signal_strength": 0.7448089104954757,
+            "volume_ratio": 1.361865447052002,
+            "wvad": 0.015456643596827675,
+            "close_position": 0.6514191286520887
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6938082285657408,
+            "volume_ratio": 1.178215853577611,
+            "wvad": 0.019436251642205214,
+            "close_position": 0.7223033721401159
+          }
+        ],
+        "volume_price_correlation": 0.1696872552358227
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002352": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8446024332871199,
+        "signal_time": "12:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7454721435156726,
+            "volume_ratio": 1.2106500753918177,
+            "wvad": 0.01635141637649294,
+            "close_position": 0.8543556281533254
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.8446024332871199,
+            "volume_ratio": 1.4735897853152673,
+            "wvad": 0.013779461423221576,
+            "close_position": 0.8367756024468217
+          }
+        ],
+        "volume_price_correlation": -0.3373028335149339
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002405": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.6087431099952768,
+        "signal_time": "14:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.6087431099952768,
+            "volume_ratio": 1.2106066897507726,
+            "wvad": 0.009491435077209915,
+            "close_position": 0.4055100119060159
+          }
+        ],
+        "volume_price_correlation": -0.08288225397582803
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002456": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7532249609819083,
+        "signal_time": "12:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7532249609819083,
+            "volume_ratio": 1.4020832238873457,
+            "wvad": 0.012024968491266034,
+            "close_position": 0.6292806029319672
+          }
+        ],
+        "volume_price_correlation": -0.35790994222493894
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002475": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7414511977437568,
+        "signal_time": "13:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:30",
+            "signal_strength": 0.7414511977437568,
+            "volume_ratio": 1.4956540636204891,
+            "wvad": 0.009033128634437441,
+            "close_position": 0.4682654456840997
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6479241460474856,
+            "volume_ratio": 1.2804048305460307,
+            "wvad": 0.021296881981299212,
+            "close_position": 0.43124383078227824
+          }
+        ],
+        "volume_price_correlation": 0.2863804321562824
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002493": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7878345706220682,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7878345706220682,
+            "volume_ratio": 1.5815122192774798,
+            "wvad": 0.009341102204800123,
+            "close_position": 0.5080911741654539
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.7797722617716449,
+            "volume_ratio": 1.405751882584534,
+            "wvad": 0.0325546000209795,
+            "close_position": 0.692350429105125
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.7168831163370348,
+            "volume_ratio": 1.2261673850258972,
+            "wvad": 0.01680183680206192,
+            "close_position": 0.7379187042868579
+          }
+        ],
+        "volume_price_correlation": 0.3790512220839052
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002508": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7610136126322244,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7610136126322244,
+            "volume_ratio": 1.1888159520287125,
+            "wvad": 0.016289571441139745,
+            "close_position": 0.9353345346279919
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.6801066035470901,
+            "volume_ratio": 1.2724221184916717,
+            "wvad": 0.014825493548412987,
+            "close_position": 0.5556336936196583
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6886146140105723,
+            "volume_ratio": 1.2435011592412508,
+            "wvad": 0.009460649939603038,
+            "close_position": 0.6279198511073036
+          }
+        ],
+        "volume_price_correlation": 0.21872538649829656
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "002555": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7057183122543502,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.5664115465350025,
+            "volume_ratio": 1.1332080048753663,
+            "wvad": 0.00018727498314749424,
+            "close_position": 0.3769072069663721
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7057183122543502,
+            "volume_ratio": 1.1871170593864975,
+            "wvad": 0.06104773245323843,
+            "close_position": 0.7085238958792655
+          }
+        ],
+        "volume_price_correlation": -0.14722325746931952
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300750": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7465056840280535,
+        "signal_time": "14:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "14:00",
+            "signal_strength": 0.6856100666866375,
+            "volume_ratio": 1.2192314544127167,
+            "wvad": 0.008135946170405455,
+            "close_position": 0.6515890035680972
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7465056840280535,
+            "volume_ratio": 1.2913768566258934,
+            "wvad": 0.018159384096636096,
+            "close_position": 0.748357087162351
+          }
+        ],
+        "volume_price_correlation": -0.5311895169000088
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300014": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.777690648455644,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6670868444996564,
+            "volume_ratio": 1.12129991405351,
+            "wvad": 0.009014460188028919,
+            "close_position": 0.7195418027394789
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.777690648455644,
+            "volume_ratio": 1.2956941560279152,
+            "wvad": 0.028677162941502254,
+            "close_position": 0.8360327905400904
+          }
+        ],
+        "volume_price_correlation": 0.563737327581767
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300015": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8248985588857043,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.5587483126696412,
+            "volume_ratio": 1.117707733037421,
+            "wvad": 0.014439232743410786,
+            "close_position": 0.35777816543883195
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6535183667696014,
+            "volume_ratio": 1.283001194437582,
+            "wvad": 0.006026895277368671,
+            "close_position": 0.461699401371193
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.8248985588857043,
+            "volume_ratio": 1.3184602792295095,
+            "wvad": 0.017343947444864432,
+            "close_position": 0.9743708765348043
+          }
+        ],
+        "volume_price_correlation": 0.013787976910662936
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300033": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.750465344437838,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6563574267033534,
+            "volume_ratio": 1.2792939108025425,
+            "wvad": 0.006702957540729615,
+            "close_position": 0.4754299170670582
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.68917573242895,
+            "volume_ratio": 1.1605291660637773,
+            "wvad": 0.017538462572247875,
+            "close_position": 0.7323417574392158
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.750465344437838,
+            "volume_ratio": 1.4628213527879117,
+            "wvad": 0.01207018564444493,
+            "close_position": 0.5390524920977994
+          }
+        ],
+        "volume_price_correlation": -0.36377087568929295
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300059": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7534194349943821,
+        "signal_time": "12:00",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7534194349943821,
+            "volume_ratio": 1.1578035948267476,
+            "wvad": 0.009538608477466064,
+            "close_position": 0.9581213817348111
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6319795709304997,
+            "volume_ratio": 1.1838542213548917,
+            "wvad": 0.011663573084938714,
+            "close_position": 0.5164627015435381
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.747516449508454,
+            "volume_ratio": 1.3910543866985745,
+            "wvad": 0.01448520009519554,
+            "close_position": 0.6224971160015518
+          }
+        ],
+        "volume_price_correlation": -0.20762350225420986
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300070": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.701666625716818,
+        "signal_time": "13:00",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.701666625716818,
+            "volume_ratio": 1.3572523270762054,
+            "wvad": 0.019178165201596195,
+            "close_position": 0.5100408177528568
+          }
+        ],
+        "volume_price_correlation": 0.1609199767104297
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300124": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7018417582415171,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.6233362642400427,
+            "volume_ratio": 1.13816528040094,
+            "wvad": 0.003308341811414086,
+            "close_position": 0.5569254984541417
+          },
+          {
+            "time": "13:00",
+            "signal_strength": 0.6317373414424904,
+            "volume_ratio": 1.130194102958193,
+            "wvad": 0.007698794252930624,
+            "close_position": 0.5911668732777801
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.657175126149073,
+            "volume_ratio": 1.2685117274420068,
+            "wvad": 0.007189921484137838,
+            "close_position": 0.4920448624234299
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7018417582415171,
+            "volume_ratio": 1.3843884240053046,
+            "wvad": 0.0070777349314749185,
+            "close_position": 0.4865435605331754
+          }
+        ],
+        "volume_price_correlation": -0.1063820028867441
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300136": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7550961571817657,
+        "signal_time": "13:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "13:00",
+            "signal_strength": 0.7550961571817657,
+            "volume_ratio": 1.1446714458009948,
+            "wvad": 0.018325425623966572,
+            "close_position": 0.9724331705805925
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.7288409392430405,
+            "volume_ratio": 1.4209019690078797,
+            "wvad": 0.014304568558739409,
+            "close_position": 0.5206292702408891
+          }
+        ],
+        "volume_price_correlation": -0.17109756120832503
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300142": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.8082915397032485,
+        "signal_time": "12:30",
+        "signal_count": 3,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.632531872821998,
+            "volume_ratio": 1.1258938517620232,
+            "wvad": 0.037784603129214625,
+            "close_position": 0.5694631705947478
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.8082915397032485,
+            "volume_ratio": 1.4460100562989453,
+            "wvad": 0.04964308138894928,
+            "close_position": 0.7166486425566189
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6983561667900925,
+            "volume_ratio": 1.4232732668334696,
+            "wvad": 0.004674609904955168,
+            "close_position": 0.42548159028406035
+          }
+        ],
+        "volume_price_correlation": 0.1276394182423836
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300144": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7165337356926078,
+        "signal_time": "14:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "14:30",
+            "signal_strength": 0.7165337356926078,
+            "volume_ratio": 1.3326156885786056,
+            "wvad": 0.0334046273712667,
+            "close_position": 0.5782202401659519
+          }
+        ],
+        "volume_price_correlation": -0.394026675229907
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300168": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7851332637064061,
+        "signal_time": "12:30",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:30",
+            "signal_strength": 0.7409894963927031,
+            "volume_ratio": 1.3169118865853504,
+            "wvad": 0.012413737562786017,
+            "close_position": 0.7016687349657569
+          },
+          {
+            "time": "15:00",
+            "signal_strength": 0.7851332637064061,
+            "volume_ratio": 1.365687882056292,
+            "wvad": 0.013883659562259558,
+            "close_position": 0.7823100433840382
+          }
+        ],
+        "volume_price_correlation": -0.00888943116898443
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300296": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7874130701275419,
+        "signal_time": "12:00",
+        "signal_count": 2,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7874130701275419,
+            "volume_ratio": 1.398773231097578,
+            "wvad": 0.014847117879504363,
+            "close_position": 0.7448321410821979
+          },
+          {
+            "time": "12:30",
+            "signal_strength": 0.7052801826285184,
+            "volume_ratio": 1.3028605783754719,
+            "wvad": 0.011412421883548567,
+            "close_position": 0.6023740823775503
+          }
+        ],
+        "volume_price_correlation": -0.048018543872468115
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300347": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7644782326428123,
+        "signal_time": "12:00",
+        "signal_count": 4,
+        "signal_details": [
+          {
+            "time": "12:00",
+            "signal_strength": 0.7644782326428123,
+            "volume_ratio": 1.4606811977403664,
+            "wvad": 0.004640537820708093,
+            "close_position": 0.5960453073348446
+          },
+          {
+            "time": "14:00",
+            "signal_strength": 0.7030033631243625,
+            "volume_ratio": 1.3420645004003322,
+            "wvad": 0.01600018459109199,
+            "close_position": 0.5379250252896732
+          },
+          {
+            "time": "14:30",
+            "signal_strength": 0.6858647419449672,
+            "volume_ratio": 1.222762594053298,
+            "wvad": 0.042087919600273554,
+            "close_position": 0.613777761478553
+          },
+          {
+            "time": "15:30",
+            "signal_strength": 0.6862892920222767,
+            "volume_ratio": 1.1986233577827095,
+            "wvad": 0.02594639023851695,
+            "close_position": 0.6635201061254598
+          }
+        ],
+        "volume_price_correlation": 0.10466227077558636
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    },
+    "300408": {
+      "status": "analyzed",
+      "absorb_result": {
+        "has_absorb_signal": true,
+        "signal_strength": 0.7087732423183236,
+        "signal_time": "15:30",
+        "signal_count": 1,
+        "signal_details": [
+          {
+            "time": "15:30",
+            "signal_strength": 0.7087732423183236,
+            "volume_ratio": 1.459623674175412,
+            "wvad": 0.011850418359549272,
+            "close_position": 0.4045621571343134
+          }
+        ],
+        "volume_price_correlation": -0.22584103617893647
+      },
+      "macd_result": {
+        "macd_positive": false,
+        "macd_strength": 0,
+        "dif_current": NaN,
+        "dea_current": NaN,
+        "macd_current": NaN,
+        "golden_cross": "False"
+      },
+      "meets_criteria": true
+    }
+  },
+  "strategy_criteria": {
+    "absorb_signal": "30分钟周期内出现吸筹信号",
+    "macd_positive": "MACD指标显示任何积极信号（放宽条件）",
+    "target_date": "2025-05-12",
+    "selection_rule": "满足吸筹信号OR MACD积极信号即可入选"
+  }
+}

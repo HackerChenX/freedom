@@ -1,0 +1,137 @@
+{
+  "timestamp": "2025-07-10T13:56:26.891881",
+  "test_duration": 1.005357265472412,
+  "performance_metrics": {
+    "avg_cpu": 0.0,
+    "avg_memory": 83.3
+  },
+  "test_results": {
+    "pattern_analysis": {
+      "status": "completed",
+      "total_indicators": 6,
+      "success_count": 6,
+      "results": {
+        "MA": {
+          "status": "success",
+          "data_points": 100,
+          "valid_points": "96"
+        },
+        "EMA": {
+          "status": "success",
+          "data_points": 100,
+          "valid_points": "96"
+        },
+        "MACD": {
+          "status": "success",
+          "data_points": 100,
+          "valid_points": "96"
+        },
+        "RSI": {
+          "status": "success",
+          "data_points": 100,
+          "valid_points": "96"
+        },
+        "BOLL": {
+          "status": "success",
+          "data_points": 100,
+          "valid_points": "96"
+        },
+        "PSY": {
+          "status": "success",
+          "data_points": 100,
+          "valid_points": "96"
+        }
+      }
+    },
+    "buypoint_analysis": {
+      "status": "completed",
+      "total_stocks": 5,
+      "success_count": 0,
+      "results": {
+        "000001": {
+          "status": "no_data",
+          "message": "No analysis result returned"
+        },
+        "000002": {
+          "status": "no_data",
+          "message": "No analysis result returned"
+        },
+        "600000": {
+          "status": "no_data",
+          "message": "No analysis result returned"
+        },
+        "600036": {
+          "status": "no_data",
+          "message": "No analysis result returned"
+        },
+        "000858": {
+          "status": "no_data",
+          "message": "No analysis result returned"
+        }
+      }
+    },
+    "strategy_selection": {
+      "status": "success",
+      "selected_count": 8,
+      "total_universe": 10,
+      "selection_rate": 0.8,
+      "top_stocks": [
+        {
+          "code": "000001",
+          "name": "股票000001",
+          "score": 100,
+          "reason": "测试选股策略",
+          "indicators": {
+            "ma5": 100,
+            "ma10": 98,
+            "rsi": 45
+          }
+        },
+        {
+          "code": "000002",
+          "name": "股票000002",
+          "score": 98,
+          "reason": "测试选股策略",
+          "indicators": {
+            "ma5": 101,
+            "ma10": 99,
+            "rsi": 46
+          }
+        },
+        {
+          "code": "000858",
+          "name": "股票000858",
+          "score": 96,
+          "reason": "测试选股策略",
+          "indicators": {
+            "ma5": 102,
+            "ma10": 100,
+            "rsi": 47
+          }
+        },
+        {
+          "code": "600000",
+          "name": "股票600000",
+          "score": 94,
+          "reason": "测试选股策略",
+          "indicators": {
+            "ma5": 103,
+            "ma10": 101,
+            "rsi": 48
+          }
+        },
+        {
+          "code": "600036",
+          "name": "股票600036",
+          "score": 92,
+          "reason": "测试选股策略",
+          "indicators": {
+            "ma5": 104,
+            "ma10": 102,
+            "rsi": 49
+          }
+        }
+      ]
+    }
+  }
+}
