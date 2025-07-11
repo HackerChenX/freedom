@@ -20,7 +20,7 @@ sys.path.insert(0, root_dir)
 
 # 使用依赖注入架构
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.decorators import exception_handler, performance_monitor
 from utils.logger import get_logger
 from strategy.backtester import Backtester

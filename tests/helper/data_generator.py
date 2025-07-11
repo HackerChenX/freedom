@@ -111,7 +111,7 @@ class Testdatagenerator_generator:
         # 设置索引
         data = data.set_index('date')
         
-        # 添加股票代码和其他字段，完全符合StockInfo模型规范
+        # 添加股票代码和其他字段，完全符合Stock_info模型规范
         data['code'] = '000001'
         data['name'] = '测试股票'
         data['level'] = 'D'

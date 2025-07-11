@@ -62,7 +62,7 @@ class Simplified_integration_test:
         # 1. 单个查询测试
         try:
             start_time = time.time()
-            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
+            stock_info = self.data_manager.get_stock_info(
                 stock_code='000001',
                 level='DAILY',
                 limit=100
@@ -84,7 +84,7 @@ class Simplified_integration_test:
         # 2. 多股票查询测试
         try:
             start_time = time.time()
-            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
+            stock_info = self.data_manager.get_stock_info(
                 stock_code=['000001', '000002', '600000'],
                 level='DAILY',
                 limit=300

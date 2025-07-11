@@ -27,7 +27,7 @@ class ZXMKDJDemoStrategy:
         self.found_stocks = []
         
         # 模拟股票基础信息
-        self.stock_info WHERE 1=1 = {
+        self.stock_info = {
             '000001': '平安银行',
             '000002': '万科A',
             '000858': '五粮液',

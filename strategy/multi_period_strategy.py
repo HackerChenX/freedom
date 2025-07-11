@@ -13,7 +13,8 @@ import numpy as np
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from strategy.enhanced_base_strategy import Enhanced_base_strategy, Indicator_condition
+from strategy.enhanced_base_strategy import Enhanced_base_strategy
+# from strategy.enhanced_base_strategy import Indicator_condition  # 暂时注释掉不存在的导入
 from utils.logger import getLogger
 
 logger = getLogger(__name__)
@@ -26,8 +27,8 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
     结合日线、周线、小时线数据进行选股
     """
     
-    def __init___76(self):
-        super().__init___76(
+    def __init__(self):
+        super().__init__(
             name="多周期技术指标选股策略",
             description="基于多周期技术指标的综合选股策略",
             default_period="1d"
@@ -150,7 +151,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
         for condition in daily_conditions + weekly_conditions + hourly_conditions:
             self.add_indicator_condition(condition)
     
-    def select_Strategy_Multi_Period_Strategy(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
+    def select_strategy(self, universe: Optional[List[str]] = None, *args, **kwargs) -> pd.DataFrame:
         """
         执行多周期选股
         
@@ -184,7 +185,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
                 logger.info(f"分析股票 {i+1}/{len(universe)}: {stock_code}")
                 
                 # 分析单只股票
-                stock_result = self._analyze_stock_Multi_Period_Strategy(stock_code, start_date, end_date)
+                stock_result = self._analyze_stock(stock_code, start_date, end_date)
                 
                 if stock_result:
                     results.append(stock_result)
@@ -213,7 +214,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
         
         return df_results
     
-    def _analyze_stock_Multi_Period_Strategy(self, stock_code: str, start_date: str, end_date: str) -> Optional[Dict[str, Any]]:
+    def _analyze_stock(self, stock_code: str, start_date: str, end_date: str) -> Optional[Dict[str, Any]]:
         """
         分析单只股票
         
@@ -254,7 +255,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             latest_data = daily_data.iloc[-1]
             
             # 计算总评分
-            total_score = self._calculate_total_score_Multi_Period_Strategy(period_scores)
+            total_score = self._calculate_total_score(period_scores)
             
             # 如果评分太低，直接过滤
             if total_score < 30:  # 预筛选阈值
@@ -555,7 +556,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"评估KDJ条件时出错: {e}")
             return 0.0
     
-    def _calculate_total_score_Multi_Period_Strategy(self, period_scores: Dict[str, float]) -> float:
+    def _calculate_total_score(self, period_scores: Dict[str, float]) -> float:
         """
         计算总评分
         

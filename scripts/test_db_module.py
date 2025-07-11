@@ -44,7 +44,7 @@ def test_db_module():
         # 测试get_stock_info方法
         print("\n测试get_stock_info方法...")
         try:
-            stock_info WHERE 1=1 = data_access.get_stock_info(stock_code='000001', limit=5)
+            stock_info = data_access.get_stock_info(stock_code='000001', limit=5)
             print(f"股票信息类型: {type(stock_info)}")
             if hasattr(stock_info, 'to_dataframe'):
                 df = stock_info.to_dataframe()
@@ -64,7 +64,7 @@ def test_db_module():
             end_date = datetime.datetime.now().strftime('%Y-%m-%d')
             start_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
             
-            stock_info WHERE 1=1 = data_access.get_stock_info(
+            stock_info = data_access.get_stock_info(
                 stock_code=stock_code,
                 start_date=start_date,
                 end_date=end_date,

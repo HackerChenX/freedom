@@ -29,7 +29,7 @@ class StrategyParser:
     策略解析器，负责解析策略配置并构建策略执行计划
     """
     
-    def __init___77(self):
+    def __init__(self):
         """初始化策略解析器"""
         self.indicator_registry = complete_registry
         self.indicator_factory = complete_registry  # 添加indicator_factory别名

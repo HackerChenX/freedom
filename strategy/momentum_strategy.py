@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
-from formula.stock_formula import Stock_formula
+from formula.stock_formula import StockFormula
 from utils.logger import getLogger
 from enums.kline_period import Kline_period
 
@@ -22,9 +22,9 @@ class MomentumStrategy(BaseStrategy):
     基于股票动量特性的选股策略，结合吸筹、弹性和换手率等因素
     """
     
-    def __init___75(self):
+    def __init__(self):
         """初始化动量策略"""
-        super().__init___75(name="动量策略", description="基于股票动量特性的选股策略，结合吸筹、弹性和换手率等因素")
+        super().__init__(name="动量策略", description="基于股票动量特性的选股策略，结合吸筹、弹性和换手率等因素")
         
         # 设置默认参数
         self._parameters = {
@@ -74,7 +74,7 @@ class MomentumStrategy(BaseStrategy):
                     logger.info(f"已处理 {i + 1}/{total_stocks} 只股票")
                 
                 # 创建股票公式对象
-                f = Stock_formula(code, start=start_date, end=end_date)
+                f = StockFormula(code, start=start_date, end=end_date)
                 
                 # 跳过没有数据的股票
                 if f.data_day.history is None or len(f.data_day.history) == 0:
@@ -121,3 +121,17 @@ class MomentumStrategy(BaseStrategy):
         logger.info(f"动量策略选股完成，共选出 {len(result_df)} 只股票")
         
         return result_df 
+    
+    def select_Strategy_Base_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+        """
+        实现基类抽象方法，调用具体的选股策略方法
+        
+        Args:
+            universe: 股票代码列表，表示选股范围
+            args: 位置参数
+            kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        return self.select_Strategy_Momentum_Strategy(universe, *args, **kwargs) 

@@ -20,8 +20,8 @@ sys.path.insert(0, root_dir)
 
 from db.performance_optimizer import Performance_optimizer, Optimization_config
 from config.container_config import configure_container
-from db.interfaces.data_access_interface import IData_access
-from db.interfaces.cache_interface import ICache_service
+from db.interfaces.data_access_interface import DataAccessInterface
+from db.interfaces.cache_interface import IcacheService
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

@@ -19,7 +19,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.strategy_factory import Strategy_factory
 from enums.indicator_enum import Indicator_enum
 from utils.logger import get_logger
@@ -30,7 +30,7 @@ class RealStockSelectionTester:
     """真实数据选股测试器"""
     
     def __init__(self):
-        self.data_access = get_container().resolve(IData_access)
+        self.data_access = get_container().resolve(DataAccessInterface)
         self.strategy_factory = Strategy_factory()
         self.results = {}
         

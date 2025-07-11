@@ -10,9 +10,9 @@ import hashlib
 import pickle
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
-from collections import Ordered_dict
+from collections import OrderedDict
 
-from db.interfaces.cache_interface import ICache_service, IMulti_level_cache, ICache_strategy, ICache_event_listener
+from db.interfaces.cache_interface import IcacheService, ImultiLevelCache, IcacheStrategy, IcacheEventListener
 from utils.logger import getLogger
 from utils.decorators import performance_monitor
 
@@ -99,7 +99,7 @@ class TTLCache:
             return len(expired_keys)
 
 
-class DefaultCacheStrategy(ICache_strategy):
+class DefaultCacheStrategy(IcacheStrategy):
     """默认缓存策略"""
     
     def should_cache(self, key: str, value: Any) -> bool:
@@ -125,7 +125,7 @@ class DefaultCacheStrategy(ICache_strategy):
         return datetime.now() - last_access > timedelta(hours=1)
 
 
-class CacheEventLogger(ICache_event_listener):
+class CacheEventLogger(IcacheEventListener):
     """缓存事件日志记录器"""
     
     def on_cache_hit(self, key: str) -> None:
@@ -145,7 +145,7 @@ class CacheEventLogger(ICache_event_listener):
         logger.debug(f"缓存驱逐: {key}, 原因: {reason}")
 
 
-class CacheManager(IMulti_level_cache):
+class CacheManager(ImultiLevelCache):
     """
     缓存管理器实现
     
@@ -297,11 +297,11 @@ class CacheManager(IMulti_level_cache):
             except Exception as e:
                 logger.error(f"缓存事件监听器错误: {e}")
     
-    def add_event_listener(self, listener: ICache_event_listener) -> None:
+    def add_event_listener(self, listener: IcacheEventListener) -> None:
         """添加事件监听器"""
         self.event_listeners.append(listener)
     
-    def remove_event_listener(self, listener: ICache_event_listener) -> None:
+    def remove_event_listener(self, listener: IcacheEventListener) -> None:
         """移除事件监听器"""
         if listener in self.event_listeners:
             self.event_listeners.remove(listener) 

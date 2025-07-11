@@ -766,7 +766,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin):
         
         return stagnation
     
-    def calculate_score_Trix_Enhanced_Trix(self, data: pd.data_frame = None) -> pd.Series:
+    def calculate_score_Trix_Enhanced_Trix(self, data: pd.DataFrame = None) -> pd.Series:
         """
         计算TRIX综合评分 (0-100)
         

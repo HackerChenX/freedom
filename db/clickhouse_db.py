@@ -636,7 +636,7 @@ class ClickHouseDb:
 
             # 处理结果
             if result.empty:
-                # 返回空StockInfo对象
+                # 返回空Stock_info对象
                 empty_stock = Stock_info()
                 if isinstance(stock_code, str):
                     empty_stock.code = stock_code
@@ -658,12 +658,12 @@ class ClickHouseDb:
             if column_mapping:
                 result = result.rename(columns=column_mapping)
 
-            # 始终返回StockInfo对象
+            # 始终返回Stock_info对象
             return Stock_info(result)
 
         except Exception as e:
             logger.error(f"查询股票数据失败: {e}")
-            # 返回空StockInfo对象
+            # 返回空Stock_info对象
             empty_stock = Stock_info()
             if isinstance(stock_code, str):
                 empty_stock.code = stock_code

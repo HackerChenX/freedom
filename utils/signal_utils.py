@@ -437,4 +437,8 @@ def crossover_Utils_Signal_Utils(series1, series2):
         return False
         
     # 判断当前值是否大于等于series2，且前一个值小于series2
-    return (series1.iloc[-1] >= series2.iloc[-1]) and (series1.iloc[-2] < series2.iloc[-2]) 
+    return (series1.iloc[-1] >= series2.iloc[-1]) and (series1.iloc[-2] < series2.iloc[-2])
+
+# 添加简单别名以便其他模块使用
+crossover = crossover_Utils_Signal_Utils
+crossunder = crossunder_Utils_Signal_Utils 

@@ -5,7 +5,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Union, Context_manager
+from typing import Dict, List, Optional, Any, Union, ContextManager
 from datetime import datetime
 import pandas as pd
 
@@ -18,7 +18,7 @@ class IconnectionManager(ABC):
     """
     
     @abstractmethod
-    def get_connection_Interface_Connection_Interface_Connection_Interface_1_connectioninterface(self, config: Optional[Dict[str, Any]] = None) -> Context_manager:
+    def get_connection_Interface_Connection_Interface_Connection_Interface_1_connectioninterface(self, config: Optional[Dict[str, Any]] = None) -> ContextManager:
         """
         获取数据库连接
         
@@ -26,7 +26,7 @@ class IconnectionManager(ABC):
             config: 连接配置
             
         Returns:
-            Context_manager: 连接上下文管理器
+            ContextManager: 连接上下文管理器
         """
         pass
     
@@ -195,12 +195,12 @@ class ItransactionManager(ABC):
     """
     
     @abstractmethod
-    def begin_transaction_Interface(self) -> Context_manager:
+    def begin_transaction_Interface(self) -> ContextManager:
         """
         开始事务
         
         Returns:
-            Context_manager: 事务上下文管理器
+            ContextManager: 事务上下文管理器
         """
         pass
     

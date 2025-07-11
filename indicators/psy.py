@@ -1430,7 +1430,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin):
 
 
 # 向后兼容的代理类
-class EnhancedPsy(PSY):
+class EnhancedPsy(PsychologicalLine):
     """
     增强型心理线指标(Enhanced PSY)
     
@@ -1527,3 +1527,6 @@ class EnhancedPsy(PSY):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+# 添加兼容性别名
+PSY = PsychologicalLine

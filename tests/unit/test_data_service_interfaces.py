@@ -13,9 +13,9 @@ import os
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from db.interfaces.cache_interface import ICache_manager
-from db.interfaces.connection_interface import IConnection_manager
+from db.interfaces.connection_interface import IconnectionManager
 from db.container import Service_container, Lifecycle_type, get_container, reset_container
 
 
@@ -171,7 +171,7 @@ class Test_data_access_interface(unittest.Test_case):
         ]
         
         for method_name in required_methods:
-            self.assert_true(hasattr(IData_access, method_name), 
+            self.assert_true(hasattr(DataAccessInterface, method_name), 
                           f"IDataAccess接口缺少方法: {method_name}")
 
 
@@ -212,7 +212,7 @@ class Test_connection_interface(unittest.Test_case):
         ]
         
         for method_name in required_methods:
-            self.assert_true(hasattr(IConnection_manager, method_name), 
+            self.assert_true(hasattr(IconnectionManager, method_name), 
                           f"IConnectionManager接口缺少方法: {method_name}")
 
 

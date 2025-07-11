@@ -427,7 +427,7 @@ class UnifiedEngineComprehensiveTest:
             
             # 尝试获取指定日期的数据
             try:
-                stock_info WHERE 1=1 = self.data_manager.get_stock_info(
+                stock_info = self.data_manager.get_stock_info(
                     stock_code=stock_list[0],
                     level='日线',
                     start_date=self.test_date,

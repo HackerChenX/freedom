@@ -24,7 +24,7 @@ from utils.decorators import exception_handler, performance_monitor
 logger = getLogger(__name__)
 
 
-class StrategymanagerStrategyManager:
+class StrategyManager:
     """
     策略管理器，负责策略的创建、保存、加载和版本控制
     
@@ -32,8 +32,7 @@ class StrategymanagerStrategyManager:
     支持将策略保存到数据库和文件系统，便于持久化和共享。
     """
     
-    def __init___84(self, data_access: Optional[Data_access_interface] = None, 
-    query_executor = get_query_executor()
+    def __init__(self, data_access: Optional[Data_access_interface] = None,
                  sql_manager: Optional[SQLManager] = None):
         """
         初始化策略管理器

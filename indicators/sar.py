@@ -646,10 +646,10 @@ class ParabolicSar(BaseIndicator, PatternSignalMixin):
         """
         注册SAR形态
         """
-        from indicators.pattern_registry import Pattern_registry, Pattern_type
+        from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry
         
         # 获取PatternRegistry实例
-        registry = Pattern_registry()
+        registry = PatternRegistry()
         
         # 注册趋势反转形态
         registry.register(

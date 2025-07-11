@@ -56,7 +56,7 @@ def test_connection_Connection():
         # 测试获取股票数据
         print("\n测试获取股票数据...")
         try:
-            stock_info WHERE 1=1 = data_access.get_stock_info(
+            stock_info = data_access.get_stock_info(
                 stock_code='000001',
                 level='日线',
                 limit=5

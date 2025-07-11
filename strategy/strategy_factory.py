@@ -8,10 +8,10 @@ import importlib
 from typing import Dict, List, Any, Optional, Type
 
 from strategy.base_strategy import BaseStrategy
-from strategy.momentum_strategy import Momentum_strategy
-from strategy.rebound_strategy import Rebound_strategy
-from strategy.breakout_strategy import Breakout_strategy
-from utils.logger_Strategy_Factory import getLogger
+from strategy.momentum_strategy import MomentumStrategy
+from strategy.rebound_strategy import ReboundStrategy
+from strategy.breakout_strategy import BreakoutStrategy
+from utils.logger import getLogger
 
 logger_Strategy_Factory = getLogger(__name__)
 

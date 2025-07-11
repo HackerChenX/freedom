@@ -24,4 +24,7 @@ class Signalstrength_strength(Enum):
     STRONG_BUY = "强势买入"
     BUY = "买入"
     SELL = "卖出"
-    STRONG_SELL = "强势卖出" 
+    STRONG_SELL = "强势卖出"
+
+# 添加兼容性别名
+Signal_strength = Signalstrength_strength 

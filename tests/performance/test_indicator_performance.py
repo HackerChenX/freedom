@@ -70,7 +70,7 @@ class Test_indicator_performance(unittest.Test_case, Log_capture_mixin):
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 1000},
         ])
         
-        # 为了测试需要，模拟一些StockInfo字段
+        # 为了测试需要，模拟一些Stock_info字段
         for dataset in [self.small_data, self.medium_data, self.large_data]:
             dataset['volume'] = dataset['volume'].astype(float)
             dataset['turnover_rate'] = dataset['volume'] / 10000  # 模拟换手率

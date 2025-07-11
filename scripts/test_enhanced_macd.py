@@ -18,7 +18,7 @@ sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 from indicators.base_indicator import Market_environment
 
@@ -39,7 +39,7 @@ def get_test_data_Macd(stock_code: str, start_date: str, end_date: str) -> pd.Da
     """
     try:
         # 从数据库获取数据
-        data_access = get_container().resolve(IData_access)
+        data_access = get_container().resolve(DataAccessInterface)
         query = f"""
         SELECT 
             trade_date,

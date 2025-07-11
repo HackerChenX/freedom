@@ -29,21 +29,22 @@ from utils.decorators import performance_monitor, exception_handler
 from strategy.strategy_executor import Strategy_executor
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import Data_access_interface
-from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_manager import Strategy_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
+from strategy.strategy_manager import StrategyManager
 
 # 获取日志记录器
 logger = getLogger(__name__)
 
 
-class StrategyoptimizerStrategyOptimizer:
+class StrategyOptimizer:
     """
     策略优化器类
     
     用于优化选股策略的参数和组合，提高策略的有效性
     """
     
-    def __init___72(self, data_access: Optional[Data_access_interface] = None):
+    def __init__(self, data_access: Optional[Data_access_interface] = None):
         """
         初始化策略优化器
         
@@ -65,8 +66,8 @@ class StrategyoptimizerStrategyOptimizer:
         self.result_dir = get_result_dir()
         os.makedirs(self.result_dir, exist_ok=True)
         
-        self.data_manager = get_unified_data_manager()
-        self.strategy_manager = Strategy_manager()
+        self.data_manager = get_service(DataAccessInterface)
+        self.strategy_manager = StrategyManager()
         self.optimization_cache = {}
         
         logger.info("策略优化器初始化完成")

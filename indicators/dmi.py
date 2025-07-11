@@ -17,7 +17,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from utils.logger import getLogger
-from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
+from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 logger = getLogger(__name__)
 
 class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):

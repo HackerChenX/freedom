@@ -7,7 +7,8 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.technical_utils import find_peaks_and_troughs
 
-logger = logging.get_Logger(__name__)
+from utils.logger import get_logger
+logger = get_logger(__name__)
 from utils.indicator_utils import crossover, crossunder
 
 
@@ -805,7 +806,7 @@ class EnhancedCci(BaseIndicator, PatternSignalMixin):
         
         return signals
     
-    def calculate_score_Cci(self, data: pd.data_frame = None) -> pd.Series:
+    def calculate_score_Cci(self, data: pd.DataFrame = None) -> pd.Series:
         """
         计算CCI综合评分 (0-100)
         

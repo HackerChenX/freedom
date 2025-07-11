@@ -10,8 +10,8 @@ sys.path.append(root_dir)
 
 from config.config import get_config
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
-from db.interfaces.connection_interface import IConnection_manager
+from db.interfaces.data_access_interface import DataAccessInterface
+from db.interfaces.connection_interface import IconnectionManager
 from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
 

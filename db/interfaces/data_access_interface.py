@@ -173,3 +173,8 @@ class DataAccessFactory:
         except ImportError:
             # 如果测试模块不可用，返回None
             return None
+
+
+# 兼容性别名
+Data_access_interface = DataAccessInterface
+IDataAccess = DataAccessInterface

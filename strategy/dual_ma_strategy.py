@@ -8,16 +8,18 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
-from formula.stock_formula import Stock_formula
+from formula.stock_formula import StockFormula
 from utils.logger import getLogger
 from indicators.complete_indicator_registry import complete_registry
-from db.unified_data_manager import get_unified_data_manager
-from models.stock_info WHERE 1=1 import Stock_info  # 导入Stock_info类
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
+from models.stock_info import StockInfo  # 导入Stock_info类
+from indicators.ma import MaMa as MA  # 导入MA指标
 
 logger = getLogger(__name__)
 
 
-class DualMastrategy(BaseStrategy):
+class DualMAStrategy(BaseStrategy):
     """
     双均线突破策略
     
@@ -39,8 +41,8 @@ class DualMastrategy(BaseStrategy):
             'end_date': None         # 结束日期，默认为None表示使用最近交易日期
         }
         
-        # 初始化数据管理器
-        self.data_manager = get_unified_data_manager()
+        # 使用依赖注入获取数据访问接口
+        self.data_access = get_service(DataAccessInterface)
     
     def select_Strategy_Dual_Ma_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
@@ -68,14 +70,14 @@ class DualMastrategy(BaseStrategy):
         end_date = self._parameters['end_date']
         
         # 自动获取最近日期
-        latest_date = self.data_manager.get_latest_trading_date()
+        latest_date = self.data_access.get_latest_trading_date()
         if end_date is None:
             end_date = latest_date
         
         if start_date is None:
             # 计算起始日期，至少要包含足够的数据计算均线
             # 默认往前推 2倍长周期 + 10 个交易日
-            start_date = self.data_manager.get_previous_trading_date(end_date, long_period * 2 + 10)
+            start_date = self.data_access.get_previous_trading_date(end_date, long_period * 2 + 10)
         
         # 存储选股结果
         selected_stocks = []
@@ -91,7 +93,7 @@ class DualMastrategy(BaseStrategy):
                     logger.info(f"已处理 {i + 1}/{total_stocks} 只股票")
                 
                 # 获取股票日线数据
-                df = self.data_manager.get_daily_data(code, start_date, end_date)
+                df = self.data_access.get_daily_data(code, start_date, end_date)
                 
                 # 跳过没有数据的股票
                 if df is None or len(df) < long_period * 2:
@@ -130,16 +132,16 @@ class DualMastrategy(BaseStrategy):
                 # 如果有突破且满足条件，添加到选股结果
                 if has_breakout:
                     # 获取股票基本信息
-                    stock_info WHERE 1=1 = self.data_manager.get_stock_info(code)
+                    stock_info = self.data_access.get_stock_info(code)
                     
                     selected_stocks.append({
                         'code': code,
-                        'name': stock_info.name if stock_info WHERE 1=1 else code,
-                        'industry': stock_info.industry if stock_info WHERE 1=1 else '',
+                        'name': stock_info.name if stock_info else code,
+                        'industry': stock_info.industry if stock_info else '',
                         'breakout_date': recent_data.index[j].strftime('%Y%m%d')
                     })
                     
-                    logger.info(f"选出股票: {code} {stock_info.name if stock_info WHERE 1=1 else ''}")
+                    logger.info(f"选出股票: {code} {stock_info.name if stock_info else ''}")
             
             except Exception as e:
                 logger.error(f"处理股票 {code} 时出错: {e}")
@@ -154,3 +156,17 @@ class DualMastrategy(BaseStrategy):
         logger.info(f"双均线突破策略选股完成，共选出 {len(result_df)} 只股票")
         
         return result_df 
+    
+    def select_Strategy_Base_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+        """
+        实现基类抽象方法，调用具体的选股策略方法
+        
+        Args:
+            universe: 股票代码列表，表示选股范围
+            args: 位置参数
+            kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        return self.select_Strategy_Dual_Ma_Strategy(universe, *args, **kwargs) 

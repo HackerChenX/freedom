@@ -8,9 +8,9 @@
 from db.db_manager import DBManager
 
 # 新的接口定义
-from db.interfaces.data_access_interface import IDataAccess
-from db.interfaces.cache_interface import ICacheService
-from db.interfaces.connection_interface import IConnectionManager
+from db.interfaces.data_access_interface import DataAccessInterface
+from db.interfaces.cache_interface import IcacheService
+from db.interfaces.connection_interface import IconnectionManager
 
 # 具体实现
 from db.managers.data_access_manager import DataAccessManager
@@ -24,16 +24,16 @@ __all__ = [
     'DBManager',
     
     # 接口定义
-    'IDataAccess',
-    'ICacheService',
-    'IConnectionManager',
+    'DataAccessInterface',
+    'IcacheService',
+    'IconnectionManager',
     
     # 具体实现
     'DataAccessManager',
     'ConnectionManager',
     
     # 依赖注入
-    'get_container',
+    'get_service',
     'configure_container',
     'ServiceContainer'
 ] 

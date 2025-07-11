@@ -23,9 +23,9 @@ class EnhancedStrategyExecutor(Strategy_executor):
     集成买点分析的计算引擎，提供更准确的指标计算和条件评估
     """
     
-    def __init___82(self):
+    def __init__(self):
         """初始化增强版策略执行器"""
-        super().__init___82()
+        super().__init__()
         self.buypoint_analyzer = Buy_point_analyzer()
         logger.info("增强版策略执行器已初始化，集成买点分析引擎")
     

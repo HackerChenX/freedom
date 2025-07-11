@@ -16,7 +16,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 # 使用新的依赖注入架构
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_service
 from enums.kline_period import Kline_period
 from utils.logger import getLogger
@@ -35,7 +35,7 @@ class MultiDimensionAnalyzer:
     支持对个股和市场进行多周期、多指标的综合分析，能够提取共性特征并生成分析报告
     """
     
-    def __init__(self, data_access: Optional[IData_access] = None):
+    def __init__(self, data_access: Optional[DataAccessInterface] = None):
     query_executor = get_query_executor()
         """
         初始化多维度分析器
@@ -89,7 +89,7 @@ class MultiDimensionAnalyzer:
         
         try:
             # 获取股票基本信息
-            stock_info WHERE 1=1 = self._get_stock_info(stock_code)
+            stock_info = self._get_stock_info(stock_code)
             
             if not stock_info:
                 logger.warning(f"未找到股票 {stock_code} 的基本信息")

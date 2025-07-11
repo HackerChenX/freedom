@@ -21,7 +21,7 @@ sys.path.append(root_dir)
 from scripts.backtest.advanced_backtest import Advanced_backtester
 from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 from utils.date_utils import get_previous_trade_date, get_next_trade_date
 from utils.file_utils import ensure_dir_exists

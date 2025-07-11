@@ -7,6 +7,6 @@
 提供各种数据结构和模型定义
 """
 
-from models.stock_info WHERE 1=1 import StockInfo
+from models.stock_info import Stock_info
 
-__all__ = ['StockInfo'] 
+__all__ = ['Stock_info'] 

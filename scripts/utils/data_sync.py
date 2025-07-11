@@ -114,7 +114,7 @@ def 同步板块_task(industry_code, industry_name, start_date, max_date):
         max_date: 最大日期
     """
     try:
-        from formula.stock_formula import Industry_data
+        from formula.stock_formula import IndustryData
         
         logger.info(f"同步行业板块数据: {industry_name}({industry_code}) 从 {start_date} 到 {max_date}")
         

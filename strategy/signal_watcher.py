@@ -10,9 +10,10 @@ import numpy as np
 from datetime import datetime, timedelta
 import json
 
-from indicators.factory import Indicator_factory
+from indicators.factory import IndicatorFactory as Indicator_factory
 from enums.period import Period
-from db.unified_data_manager import get_unified_data_manager, Unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface, Unified_data_manager
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
@@ -35,7 +36,7 @@ class SignalWatcher:
             data_manager: 数据管理器实例
             indicator_factory: 指标工厂实例
         """
-        self.data_manager = data_manager or get_unified_data_manager()
+        self.data_manager = data_manager or get_service(DataAccessInterface)
         self.indicator_factory = indicator_factory or Indicator_factory()
         
     @performance_monitor(threshold=5.0)
@@ -100,8 +101,8 @@ class SignalWatcher:
             
             if watch_result:
                 # 获取股票基本信息
-                stock_info WHERE 1=1 = self.data_manager.get_stock_info(stock_code, 'day')
-                stock_name = stock_info.name if stock_info WHERE 1=1 else ""
+                stock_info = self.data_manager.get_stock_info(stock_code, 'day')
+                stock_name = stock_info.name if stock_info else ""
                 
                 # 添加到结果
                 watch_result["stock_code"] = stock_code
@@ -422,8 +423,8 @@ class SignalWatcher:
             return {"error": "策略没有定义条件"}
         
         # 获取股票基本信息
-        stock_info WHERE 1=1 = self.data_manager.get_stock_info(stock_code, 'day')
-        if not stock_info WHERE 1=1 or not stock_info.name:
+        stock_info = self.data_manager.get_stock_info(stock_code, 'day')
+        if not stock_info or not stock_info.name:
             return {"error": f"未找到股票 {stock_code} 的基本信息"}
             
         stock_name = stock_info.name

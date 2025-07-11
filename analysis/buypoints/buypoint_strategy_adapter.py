@@ -12,7 +12,8 @@ import pandas as pd
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import getLogger
 
 logger = getLogger(__name__)
@@ -23,7 +24,7 @@ class BuyPointToStrategyAdapter:
     
     def __init__(self):
         """初始化适配器"""
-        self.data_manager = get_unified_data_manager()
+        self.data_manager = get_service(DataAccessInterface)
         
         # 指标映射表：买点分析指标 -> 选股策略指标
         self.indicator_mapping = {

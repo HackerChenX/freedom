@@ -18,8 +18,8 @@ from dataclasses import dataclass
 from db.batch_data_optimizer import Batch_data_optimizer, Batch_config
 from db.parallel_processor import Parallel_processor, Processing_config, Processing_mode
 from db.memory_optimizer import Memory_optimizer, Memory_config
-from db.interfaces.data_access_interface import IData_access
-from db.interfaces.cache_interface import ICache_service
+from db.interfaces.data_access_interface import DataAccessInterface
+from db.interfaces.cache_interface import IcacheService
 from utils.logger import getLogger
 
 logger = getLogger(__name__)
@@ -83,7 +83,7 @@ class PerformanceOptimizer:
     - 性能监控和调优
     """
     
-    def __init___32(self, data_access: IData_access, cache_service: ICache_service,
+    def __init___32(self, data_access: DataAccessInterface, cache_service: IcacheService,
                  config: Optional[Optimization_config] = None):
         self.data_access = data_access
         self.cache_service = cache_service

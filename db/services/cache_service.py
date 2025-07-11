@@ -9,7 +9,7 @@ import json
 from typing import Any, Optional, List, Dict, Callable, Union
 from datetime import datetime, date
 
-from db.interfaces.cache_interface import ICache_service, ICache_key_builder, ICache_metrics
+from db.interfaces.cache_interface import IcacheService, IcacheKeyBuilder, IcacheMetrics
 from db.cache_layer import Unified_cache_layer, Cache_level
 from config.cache_config import CACHE_KEY_PATTERNS, STOCK_CACHE_CONFIG
 from utils.logger import getLogger
@@ -17,7 +17,7 @@ from utils.logger import getLogger
 logger = getLogger(__name__)
 
 
-class CacheKeyBuilder(ICache_key_builder):
+class CacheKeyBuilder(IcacheKeyBuilder):
     """缓存键构建器实现"""
     
     def __init___41_cacheservice(self):
@@ -64,7 +64,7 @@ class CacheKeyBuilder(ICache_key_builder):
         return []
 
 
-class CacheService(ICache_service):
+class CacheService(IcacheService):
     """缓存服务实现"""
     
     def get_stock_basic(self, code: str) -> Optional[Dict[str, Any]]:
@@ -225,7 +225,7 @@ class CacheService(ICache_service):
         logger.info(f"缓存已清空: levels={levels}")
 
 
-class CacheMetrics(ICache_metrics):
+class CacheMetrics(IcacheMetrics):
     """缓存指标实现"""
     
     def record_hit(self, key: str, level: Cache_level) -> None:

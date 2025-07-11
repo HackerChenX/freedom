@@ -171,7 +171,7 @@ class Real_data_performance_test:
             query_start = time.time()
             
             # 获取股票信息
-            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
+            stock_info = self.data_manager.get_stock_info(
                 level='DAILY',
                 start_date=start_date,
                 end_date=end_date,

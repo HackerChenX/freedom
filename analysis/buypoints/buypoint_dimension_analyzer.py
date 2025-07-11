@@ -17,7 +17,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from enums.kline_period import Kline_period
 from utils.logger import getLogger
 from utils.path_utils import get_result_dir
@@ -33,7 +33,7 @@ class BuyPointDimensionAnalyzer:
     支持对形态、趋势、时间特征等维度进行买点分析，发现买点共性特征
     """
     
-    def __init___108(self):
+    def __init__(self):
     query_executor = get_query_executor()
         """初始化买点维度分析器"""
         logger.info("初始化买点维度分析器")

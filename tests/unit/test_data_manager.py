@@ -17,9 +17,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(root_dir)
 
 from db.data_manager_adapter import Data_manager_adapter as Data_manager
-from models.stock_info WHERE 1=1 import Stock_info
+from models.stock_info import Stock_info
 from enums.period import Period
-from utils.exceptions import Data_access_error, Data_not_found_error, Data_validation_error
+from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError
 
 
 class Test_data_manager(unittest.Test_case):
@@ -106,7 +106,7 @@ class Test_data_manager(unittest.Test_case):
         mock_get_stock_info.side_effect = Exception("数据库连接错误")
 
         # 测试数据库错误
-        with self.assert_raises(Data_access_error):
+        with self.assert_raises(DataAccessError):
             self.data_manager.get_kline_data(
                 stock_code='000001',
                 level='day',
@@ -192,7 +192,7 @@ class Test_data_manager(unittest.Test_case):
         mock_get_stock_info.side_effect = Exception("数据库连接错误")
 
         # 测试数据库错误
-        with self.assert_raises(Data_access_error):
+        with self.assert_raises(DataAccessError):
             self.data_manager.get_stock_info()
 
         # 验证模拟对象被调用
@@ -262,7 +262,7 @@ class Test_data_manager(unittest.Test_case):
         mock_execute.side_effect = Exception("数据库连接错误")
         
         # 测试数据库错误
-        with self.assert_raises(Data_access_error):
+        with self.assert_raises(DataAccessError):
             self.data_manager.save_selection_result(
                 result=selection_result,
                 strategy_id='TEST_STRATEGY',

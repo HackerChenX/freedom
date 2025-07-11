@@ -211,7 +211,7 @@ class Indicator_test_mixin:
         # 创建日期索引
         data.index = pd.date_range(start='2023-01-01', periods=periods, freq='D')
         
-        # 添加StockInfo字段
+        # 添加Stock_info字段
         self._ensure_stock_info_fields(data)
         
         return data

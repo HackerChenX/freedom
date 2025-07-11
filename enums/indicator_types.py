@@ -133,4 +133,9 @@ class Trendtype_indicator_types(Enum):
     
     up = auto()      # 上升趋势
     down = auto()    # 下降趋势
-    flat = auto()    # 震荡趋势 
+    flat = auto()    # 震荡趋势
+
+# 添加别名以保持兼容性
+Indicator_type = Indicatortype_indicator_types
+Trend_type = Trendtype_indicator_types
+Cross_type = Crosstype_indicator_types 

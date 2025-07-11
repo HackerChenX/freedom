@@ -12,7 +12,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import boll as calc_boll
 from utils.logger import getLogger
-from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength, Pattern_polarity
+from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
 
 logger = getLogger(__name__)
 
@@ -94,7 +94,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin):
     def _register_boll_patterns(self):
         """注册布林带指标的各种形态"""
         # 获取PatternRegistry实例
-        registry = Pattern_registry()
+        registry = PatternRegistry()
         
         # 价格触及上轨形态
         registry.register(

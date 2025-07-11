@@ -39,7 +39,7 @@ class MassiveComplianceFixer:
         # 命名规范映射
         self.naming_fixes = {
             # 常见的错误类名
-            'stockInfo': 'StockInfo',
+            'stockInfo': 'Stock_info',
             'stockData': 'StockData',
             'dataAccess': 'DataAccess',
             'cacheManager': 'CacheManager',

@@ -20,7 +20,7 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,7 +31,7 @@ def test_unified_scoring():
     logger.info("开始测试统一评分系统")
     
     # 获取测试数据
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1
@@ -100,7 +100,7 @@ def test_market_environment_detection():
     logger.info("\n=== 测试市场环境检测 ===")
     
     # 获取更长期的数据
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1
@@ -149,7 +149,7 @@ def test_scoring_consistency_Scoring():
     logger.info("\n=== 测试评分一致性 ===")
     
     # 获取测试数据
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1

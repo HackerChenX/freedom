@@ -11,7 +11,7 @@ sys.path.insert(0, root_dir)
 import pandas as pd
 import numpy as np
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from enums.kline_period import Kline_period
 from analysis.market.a_stock_market_analysis import Market_analyzer, print_market_indicators
 from datetime import datetime

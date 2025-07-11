@@ -23,6 +23,10 @@ def crossunder_Utils_Indicator_Utils(series1: pd.Series, series2: Union[pd.Serie
     series2 = pd.Series(series2, index=series1.index) if isinstance(series2, (int, float)) else series2
     return (series1 < series2) & (series1.shift(1) >= series2.shift(1))
 
+# 添加别名以保持兼容性
+crossover = crossover_Utils_Indicator_Utils
+crossunder = crossunder_Utils_Indicator_Utils
+
 
 def sma_Utils_Indicator_Utils(series: pd.Series, periods: int) -> pd.Series:
     """

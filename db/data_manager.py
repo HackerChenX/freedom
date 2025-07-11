@@ -16,10 +16,10 @@ import hashlib
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import Data_access_interface
 from utils.logger import getLogger
-, performance_monitor, safe_run, cache_result
-from utils.exceptions import Data_access_error, Data_not_found_error, Data_validation_error
+from utils.decorators import performance_monitor, safe_run, cache_result
+from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError
 from enums.period import Period
-from models.stock_info WHERE 1=1 import Stock_info  # 导入Stock_info类
+from models.stock_info import Stock_info  # 导入Stock_info类
 
 logger = getLogger(__name__)
 
@@ -123,7 +123,7 @@ class DatamanagerManager:
                 period, start_date, end_date, None, lookback_days
             )
 
-            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
+            stock_info = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level=level,
                 start_date=optimized_start_date,
@@ -136,7 +136,7 @@ class DatamanagerManager:
             if not df.empty and len(df) < self._get_min_data_requirement_Data_Manager(period):
                 logger.warning(f"数据不足({len(df)}条)，尝试扩大查询范围")
                 extended_start_date = self._extend_start_date_Data_Manager(optimized_start_date, period)
-                stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
+                stock_info = self.data_access.get_stock_info_Manager(
                     stock_code=stock_code,
                     level=level,
                     start_date=extended_start_date,
@@ -174,7 +174,7 @@ class DatamanagerManager:
             Stock_info: 股票数据对象
             
         Raises:
-            Data_access_error: 数据访问错误
+            DataAccessError: 数据访问错误
         """
         try:
             # 构建缓存键
@@ -199,7 +199,7 @@ class DatamanagerManager:
                 return cached_data
             
             # 使用数据访问接口获取数据
-            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
+            stock_info = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level=level,
                 start_date=start_date,
@@ -213,7 +213,7 @@ class DatamanagerManager:
             # 缓存结果
             self._set_cache_Data_Manager(cache_key, stock_info, ttl)
             
-            return stock_info WHERE 1=1 except Exception as e:
+            return stock_info except Exception as e:
             logger.error(f"获取股票数据出错: {e}")
             raise DataAccessError(f"获取股票数据失败: {e}")
 
@@ -226,7 +226,7 @@ class DatamanagerManager:
         """
         logger.warning("方法 get_kline_data 已被弃用，请尽快切换到 get_stock_info。")
 
-        # 调用主方法并直接返回StockInfo对象
+        # 调用主方法并直接返回Stock_info对象
         return self.get_stock_info_Manager(
             stock_code=stock_code,
             start_date=start_date,
@@ -249,8 +249,8 @@ class DatamanagerManager:
             保存成功返回True，否则返回False
         
         Raises:
-            Data_access_error: 数据访问错误
-            Data_validation_error: 参数验证错误
+            DataAccessError: 数据访问错误
+            DataValidationError: 参数验证错误
         """
         try:
             # 参数验证
@@ -286,7 +286,7 @@ class DatamanagerManager:
             选股历史记录Data_frame
         
         Raises:
-            Data_access_error: 数据访问错误
+            DataAccessError: 数据访问错误
         """
         try:
             # 使用数据访问接口获取数据
@@ -309,8 +309,8 @@ class DatamanagerManager:
             选股结果Data_frame
         
         Raises:
-            Data_access_error: 数据访问错误
-            Data_validation_error: 参数验证错误
+            DataAccessError: 数据访问错误
+            DataValidationError: 参数验证错误
         """
         try:
             # 参数验证
@@ -324,7 +324,7 @@ class DatamanagerManager:
             return self.data_access.get_selection_result_Manager(strategy_id, selection_date)
             
         except Exception as e:
-            if isinstance(e, Data_validation_error):
+            if isinstance(e, DataValidationError):
                 raise
             logger.error(f"获取选股结果出错: {e}")
             raise DataAccessError(f"获取选股结果失败: {str(e)}")
@@ -492,7 +492,7 @@ class DatamanagerManager:
             pd.DataFrame: 股票基本信息Data_frame
             
         Raises:
-            Data_access_error: 数据访问错误
+            DataAccessError: 数据访问错误
         """
         try:
             if not stock_codes:
@@ -511,7 +511,7 @@ class DatamanagerManager:
                 return cached_data
             
             # 使用数据访问接口获取数据
-            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
+            stock_info = self.data_access.get_stock_info_Manager(
                 stock_code=stock_codes,
                 level='日线',
                 order_by="date DESC",
@@ -594,7 +594,7 @@ class DatamanagerManager:
             bool: 存在返回True，否则返回False
         """
         try:
-            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
+            stock_info = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level='30分钟',
                 start_date=start_date,
@@ -634,7 +634,7 @@ class DatamanagerManager:
                 extended_start_date = start_date
 
             # 获取15分钟数据
-            stock_info WHERE 1=1 = self.data_access.get_stock_info_Manager(
+            stock_info = self.data_access.get_stock_info_Manager(
                 stock_code=stock_code,
                 level='15分钟',
                 start_date=extended_start_date,

@@ -11,7 +11,7 @@ from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.signal_utils import crossover, crossunder
 from enums.signal_strength import Signal_strength
 
-logger = logging.get_Logger(__name__)
+logger = logging.getLogger(__name__)
 
 class AccumulationDistribution(BaseIndicator, PatternSignalMixin):
     """

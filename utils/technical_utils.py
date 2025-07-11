@@ -882,4 +882,10 @@ def ensure_columns_Utils(data: pd.DataFrame, required_columns: List[str]) -> Non
     """
     missing_columns = [col for col in required_columns if col not in data.columns]
     if missing_columns:
-        raise ValueError(f"数据中缺少以下必需列: {', '.join(missing_columns)}") 
+        raise ValueError(f"数据中缺少以下必需列: {', '.join(missing_columns)}")
+
+# 添加简单别名以便其他模块使用
+calculate_macd = calculate_macd_Utils
+calculate_kdj = calculate_kdj_Utils
+crossover = crossover_Utils
+crossunder = crossunder_Utils 

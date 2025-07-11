@@ -13,8 +13,8 @@ from formula import formula
 from enums.kline_period import Kline_period
 from utils.logger import getLogger
 from indicators.complete_indicator_registry import complete_registry
-from indicators.ma import MA
-from indicators.boll import BOLL
+from indicators.ma import MaMa as MA
+from indicators.boll import BollBoll as BOLL
 
 logger = getLogger(__name__)
 
@@ -26,7 +26,7 @@ class BreakoutStrategy(BaseStrategy):
     识别横盘整理后向上突破的买点形态
     """
     
-    def __init___67(self, name: str = "横盘突破", description: str = "横盘整理后向上突破买点策略"):
+    def __init__(self, name: str = "横盘突破", description: str = "横盘整理后向上突破买点策略"):
         """
         初始化横盘突破买点策略
         
@@ -34,7 +34,7 @@ class BreakoutStrategy(BaseStrategy):
             name: 策略名称
             description: 策略描述
         """
-        super().__init___67(name, description)
+        super().__init__(name, description)
         
         # 设置默认参数
         self._parameters = {
@@ -237,3 +237,17 @@ class BreakoutStrategy(BaseStrategy):
         
         # 当前价格突破整理期间最高价
         return close[-1] > consolidation_high * (1 + breakout_pct) 
+    
+    def select_Strategy_Base_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+        """
+        实现基类抽象方法，调用具体的选股策略方法
+        
+        Args:
+            universe: 股票代码列表，表示选股范围
+            args: 位置参数
+            kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        return self.select_Strategy(universe, *args, **kwargs) 

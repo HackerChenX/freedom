@@ -22,7 +22,7 @@ sys.path.insert(0, root_dir)
 
 from indicators.aroon import AROON
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 
 def create_test_data_Fix():
     """创建测试数据"""
@@ -197,7 +197,7 @@ def test_with_real_data():
     
     try:
         # 获取数据库连接
-        data_access = get_container().resolve(IData_access)
+        data_access = get_container().resolve(DataAccessInterface)
         
         # 查询真实数据
         query = """

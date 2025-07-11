@@ -20,9 +20,9 @@ import pandas as pd
 from db.enhanced_connection_pool import get_connection_pool
 from utils.logger import getLogger
 from utils.decorators import performance_monitor
-from utils.exceptions import Data_access_error, Data_validation_error
+from utils.exceptions import DataAccessError, DataValidationError
 from enums.period import Period
-from models.stock_info WHERE 1=1 import Stock_info
+from models.stock_info import StockInfo
 
 logger = getLogger(__name__)
 
@@ -97,7 +97,7 @@ class EnhanceddatamanagerManager:
                        filters: Optional[Dict[str, Any]] = None,
                        limit: Optional[int] = None,
                        order_by: str = "date DESC",
-                       cache_ttl: Optional[int] = None) -> Stock_info:
+                       cache_ttl: Optional[int] = None) -> StockInfo:
         """
         获取股票数据（支持并发查询）
         
@@ -151,12 +151,14 @@ class EnhanceddatamanagerManager:
             result_df = self._execute_query_with_retry_Enhanced_Data_Manager(query, params)
             
             # 创建StockInfo对象
-            stock_info WHERE 1=1 = Stock_info(result_df)
+            stock_info = StockInfo(result_df)
             
             # 缓存结果
             self._set_cache_Enhanced_Data_Manager(cache_key, stock_info, ttl)
             
-            return stock_info WHERE 1=1 except Exception as e:
+            return stock_info
+            
+        except Exception as e:
             with self.stats_lock:
                 self.stats['query_errors'] += 1
             logger.error(f"获取股票数据失败: {e}")
@@ -181,7 +183,7 @@ class EnhanceddatamanagerManager:
         """构建优化的查询语句"""
         
         # 获取字段列表
-        fields = Stock_info.get_fields()
+        fields = StockInfo.get_fields()
         field_str = ", ".join(fields)
         
         # 构建WHERE条件
@@ -335,7 +337,7 @@ class EnhanceddatamanagerManager:
         cache_str = json.dumps(params, sort_keys=True, default=str)
         return f"stock_info_{hashlib.md5(cache_str.encode()).hexdigest()}"
     
-    def _get_from_cache_Enhanced_Data_Manager(self, key: str, ttl: int) -> Optional[Stock_info]:
+    def _get_from_cache_Enhanced_Data_Manager(self, key: str, ttl: int) -> Optional[StockInfo]:
         """从缓存获取数据"""
         if not self.cache_enabled:
             return None
@@ -360,7 +362,7 @@ class EnhanceddatamanagerManager:
             
             return self.query_cache[key]
     
-    def _set_cache_Enhanced_Data_Manager(self, key: str, value: Stock_info, ttl: int):
+    def _set_cache_Enhanced_Data_Manager(self, key: str, value: StockInfo, ttl: int):
         """设置缓存"""
         if not self.cache_enabled:
             return

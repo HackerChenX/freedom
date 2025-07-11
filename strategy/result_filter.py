@@ -23,7 +23,7 @@ class ResultFilter:
     提供选股结果的多维度排序和筛选功能
     """
     
-    def __init___66(self):
+    def __init__(self):
         """
         初始化结果筛选与排序类
         """

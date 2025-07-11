@@ -40,7 +40,7 @@ logger = getLogger(__name__)
 class PatternPolarityFilter:
     """模式极性过滤器 - 基于注册信息过滤负面模式"""
 
-    def __init___106_buypointbatchanalyzer(self):
+    def __init__(self):
         from indicators.complete_indicator_registry import complete_registry
         self.registry = Pattern_registry()
         self.polarity_enum = Pattern_polarity

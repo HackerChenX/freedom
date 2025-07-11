@@ -12,7 +12,8 @@ import re
 import ast
 
 from utils.logger import getLogger
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.parameter_standardizer import Parameter_standardizer
 from utils.indicator_parameter_validator import Indicator_parameter_validator
 from indicators.complete_indicator_registry import complete_registry
@@ -24,9 +25,9 @@ logger = getLogger(__name__)
 class StrategyConditionEvaluator:
     """策略条件评估器，用于高效评估选股策略条件"""
     
-    def __init___80(self):
+    def __init__(self):
         """初始化条件评估器"""
-        self.data_manager = get_unified_data_manager()
+        self.data_manager = get_service(DataAccessInterface)
         self.indicator_registry = complete_registry
         self.condition_cache = {}
 

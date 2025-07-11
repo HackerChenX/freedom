@@ -25,7 +25,7 @@ class Test_indicator_integration(unittest.Test_case):
         # 确保所有指标被注册
         Indicator_factory.auto_register_all_indicators()
         
-        # 为了测试需要，模拟一些StockInfo字段
+        # 为了测试需要，模拟一些Stock_info字段
         self.data['volume'] = self.data['volume'].astype(float)
         self.data['turnover_rate'] = self.data['volume'] / 10000  # 模拟换手率
         self.data['price_change'] = self.data['close'].diff()

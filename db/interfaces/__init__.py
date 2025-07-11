@@ -7,11 +7,11 @@
 from db.interfaces.data_access_interface import DataAccessInterface
 from db.interfaces.indicator_calculator_interface import IindicatorCalculator as IIndicatorCalculator
 from db.interfaces.cache_interface import IcacheService as ICacheService
-from db.interfaces.connection_interface import IConnectionManager
+from db.interfaces.connection_interface import IconnectionManager
 
 __all__ = [
     'DataAccessInterface',
     'IIndicatorCalculator', 
     'ICacheService',
-    'IConnectionManager'
+    'IconnectionManager'
 ] 

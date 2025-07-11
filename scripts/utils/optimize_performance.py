@@ -24,7 +24,7 @@ from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import Strategy_executor
 from utils.logger import get_logger, setup_logger
 from utils.path_utils import get_log_dir, get_cache_dir
-from utils.exceptions import Data_access_error
+from utils.exceptions import DataAccessError
 
 logger = get_logger(__name__)
 

@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
 """
@@ -25,7 +25,7 @@ class Test_pattern_recognition(unittest.Test_case):
     @classmethod
     def set_up_class_Recognition(cls):
         """在所有测试开始前执行"""
-        cls.data_access = get_container().resolve(IData_access)
+        cls.data_access = get_container().resolve(DataAccessInterface)
         cls.indicator_factory = Indicator_factory()
         
         # 获取测试股票列表

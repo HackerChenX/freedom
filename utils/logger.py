@@ -268,7 +268,10 @@ def setup_sync_logger() -> logging.Logger:
 
 def setup_stock_logger() -> logging.Logger:
     """设置股票数据日志记录器"""
-    return getLogger('stock', log_file='stock.log')
+    return get_logger('stock', log_file='stock.log')
+
+# 创建全局stock_logger实例
+stock_logger = setup_stock_logger()
 
 
 # 全局日志方法（兼容性）

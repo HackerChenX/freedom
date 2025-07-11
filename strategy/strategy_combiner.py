@@ -11,8 +11,9 @@ import concurrent.futures
 from datetime import datetime, timedelta
 
 from strategy.strategy_executor import Strategy_executor
-from strategy.strategy_manager import Strategy_manager
-from db.unified_data_manager import get_unified_data_manager
+from strategy.strategy_manager import StrategyManager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
@@ -26,7 +27,7 @@ class StrategyCombiner:
     负责执行多个策略并合并结果，支持并行执行和加权评分
     """
     
-    def __init__(self, strategy_manager: Optional[Strategy_manager] = None,
+    def __init__(self, strategy_manager: Optional[StrategyManager] = None,
                  strategy_executor: Optional[Strategy_executor] = None,
                  data_manager: Optional[Data_manager] = None):
         """
@@ -37,9 +38,9 @@ class StrategyCombiner:
             strategy_executor: 策略执行器实例
             data_manager: 数据管理器实例
         """
-        self.strategy_manager = strategy_manager or Strategy_manager()
+        self.strategy_manager = strategy_manager or StrategyManager()
         self.strategy_executor = strategy_executor or Strategy_executor()
-        self.data_manager = data_manager or get_unified_data_manager()
+        self.data_manager = data_manager or get_service(DataAccessInterface)
         
     @performance_monitor(threshold=10.0)
     @log_calls(level="info")
@@ -299,8 +300,8 @@ class StrategyCombiner:
         # 获取所有股票的基本信息
         stock_info_dict = {}
         for stock_code in all_stocks:
-            stock_info WHERE 1=1 = self.data_manager.get_stock_info(stock_code, 'day')
-            if stock_info WHERE 1=1 and stock_info.name:
+            stock_info = self.data_manager.get_stock_info(stock_code, 'day')
+            if stock_info and stock_info.name:
                 stock_info_dict[stock_code] = {
                     "stock_code": stock_code,
                     "stock_name": stock_info.name,

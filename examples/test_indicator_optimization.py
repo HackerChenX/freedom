@@ -24,14 +24,14 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 
 
 def load_test_data_Optimization_Test_Indicator_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
     """加载测试数据"""
     print(f"加载测试数据: {stock_code} 从 {start_date} 到 {end_date}")
     
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     sql = f"""
     SELECT 
         trade_date,

@@ -13,7 +13,7 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 import warnings
 
 from strategy.base_strategy import BaseStrategy
-from indicators.institutional_behavior import Institutional_behavior
+from indicators.institutional_behavior import InstitutionalBehavior as Institutional_behavior
 from utils.logger import getLogger
 
 # 静默警告
@@ -28,7 +28,7 @@ class InstitutionalStrategy(BaseStrategy):
     基于主力行为模式分析，识别主力资金吸筹、控盘、拉升等行为，捕捉主力建仓完成和启动初期的机会
     """
     
-    def __init___83(self, params: Dict[str, Any] = None):
+    def __init__(self, params: Dict[str, Any] = None):
         """
         初始化主力行为选股策略
         
@@ -51,11 +51,13 @@ class InstitutionalStrategy(BaseStrategy):
         if params:
             default_params.update(params)
         
-        super().__init___83(
+        super().__init__(
             name="InstitutionalStrategy",
-            description="主力行为模式选股策略",
-            params=default_params
+            description="主力行为模式选股策略"
         )
+        
+        # 设置策略参数
+        self.set_parameters_Strategy(default_params)
         
         self.institutional_behavior = Institutional_behavior()
     
@@ -362,3 +364,29 @@ class InstitutionalStrategy(BaseStrategy):
             result["error"] = str(e)
         
         return result 
+    
+    def select_Strategy_Base_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+        """
+        实现基类抽象方法，适配现有的选股策略方法
+        
+        Args:
+            universe: 股票代码列表，表示选股范围
+            args: 位置参数
+            kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        # 由于原方法需要data_dict，这里需要获取股票数据
+        # 暂时返回空DataFrame，实际使用时需要提供数据
+        logger.warning("InstitutionalStrategy需要股票数据字典，请使用select_Strategy_Institutional_Strategy方法")
+        
+        # 如果kwargs中提供了data_dict，则使用它
+        if 'data_dict' in kwargs:
+            selected_codes = self.select_Strategy_Institutional_Strategy(kwargs['data_dict'])
+            # 转换为DataFrame格式
+            result_df = pd.DataFrame([{'code': code} for code in selected_codes])
+            return result_df
+        else:
+            # 返回空DataFrame
+            return pd.DataFrame(columns=['code']) 

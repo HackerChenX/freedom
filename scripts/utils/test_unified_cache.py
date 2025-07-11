@@ -19,7 +19,7 @@ from db.cache_layer import Unified_cache_layer, Cache_level
 from db.services.cache_service import Cache_service, Cache_key_builder
 from config.cache_config import get_cache_config, Cache_profile
 from config.container_config import get_configured_container
-from db.interfaces.cache_interface import ICache_service
+from db.interfaces.cache_interface import IcacheService
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

@@ -57,7 +57,7 @@ class BatchIndicatorValidator:
         
         try:
             # 使用数据访问接口查询活跃股票
-            stock_info WHERE 1=1 = self.data_access.get_stock_info(
+            stock_info = self.data_access.get_stock_info(
                 level='日线',
                 start_date=self.validation_date,
                 end_date=self.validation_date,
@@ -103,7 +103,7 @@ class BatchIndicatorValidator:
             
             # 使用数据访问接口一次性查询所有需要的股票数据
             test_codes = stock_codes[:self.test_stock_count]
-            stock_info WHERE 1=1 = self.data_access.get_stock_info(
+            stock_info = self.data_access.get_stock_info(
                 stock_code=test_codes,
                 level='日线',
                 start_date=start_date,

@@ -17,7 +17,8 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import getLogger
 from utils.period_manager import Period_manager
 from enums.kline_period import Kline_period
@@ -29,7 +30,7 @@ class PeriodDataProcessor:
     
     def __init__(self):
         """初始化数据处理器"""
-        self.db = get_unified_data_manager()
+        self.db = get_service(DataAccessInterface)
         self.period_manager = Period_manager()
         self.data_cache = {}
     
@@ -126,7 +127,7 @@ class PeriodDataProcessor:
         """
         try:
             # 使用增强数据管理器获取股票数据
-            stock_info WHERE 1=1 = self.db.get_stock_info(
+            stock_info = self.db.get_stock_info(
                 stock_code=stock_code,
                 level=period,
                 end_date=end_date,
@@ -282,7 +283,7 @@ class PeriodDataProcessor:
         try:
             # 使用增强数据管理器获取最早日期
             try:
-                stock_info WHERE 1=1 = self.db.get_stock_info(
+                stock_info = self.db.get_stock_info(
                     stock_code=stock_code,
                     level=period,
                     limit=1,
@@ -371,7 +372,7 @@ class PeriodDataProcessor:
                 order_by="date"
             )
             
-            # 如果返回的是StockInfo对象，转换为DataFrame
+            # 如果返回的是Stock_info对象，转换为DataFrame
             if hasattr(data, 'to_dataframe'):
                 data = data.to_dataframe()
             
@@ -395,7 +396,7 @@ class PeriodDataProcessor:
         try:
             # 使用增强数据管理器获取最早日期
             try:
-                stock_info WHERE 1=1 = self.db.get_stock_info(
+                stock_info = self.db.get_stock_info(
                     stock_code=stock_code,
                     limit=1,
                     order_by="date ASC"

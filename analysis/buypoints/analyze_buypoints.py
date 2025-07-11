@@ -4,7 +4,7 @@
 import pandas as pd
 import numpy as np
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from enums.kline_period import Kline_period
 from enums.indicators import IndicatorType_Indicators, CrossType, TrendType, VolumePattern_Indicators, PatternType_Indicators
 import json
@@ -22,7 +22,7 @@ class BuyPointAnalyzer:
     买点分析器 - 分析指定股票在指定日期的技术指标特征
     """
     
-    def __init___105(self, data_access: Optional[IData_access] = None):
+    def __init__(self, data_access: Optional[DataAccessInterface] = None):
         """
         初始化买点分析器
         
@@ -30,12 +30,11 @@ class BuyPointAnalyzer:
             data_access: 数据访问接口实例，如果为None则从容器获取
         """
         logger.info("初始化买点分析器")
-        container = get_container()
-        self.data_access = data_access or get_service(Data_access_interface)
+        self.data_access = data_access or get_service(DataAccessInterface)
         logger.info("成功连接到数据服务")
     
     @exception_handler(reraise=False, default_return=None)
-    @performance_monitor(threshold_seconds=3.0)
+    @performance_monitor(threshold=3.0)
     def analyze_stock(self, stock_code: str, buy_date: str, stock_name: str = "") -> Optional[Dict[str, Any]]:
         """
         分析指定股票在指定日期的买点特征
@@ -114,7 +113,7 @@ class BuyPointAnalyzer:
             return None
     
     @exception_handler(reraise=False, default_return={})
-    @performance_monitor(threshold_seconds=2.0)
+    @performance_monitor(threshold=2.0)
     def calculate_buy_point_indicators(self, df: pd.DataFrame, buy_date_idx: int) -> Dict[str, Any]:
         """
         计算企稳反弹买点的技术指标
@@ -139,7 +138,7 @@ class BuyPointAnalyzer:
             volume = df['volume'].values
             
             # 导入指标计算函数
-            from indicators.common import ma, macd, kdj, sma, llv, hhv
+            from indicators.common import ma, macd, kdj, sma, llv, hhv, rsi
             
             # 计算移动平均线
             ma5 = ma(close, 5)
@@ -223,8 +222,8 @@ class BuyPointAnalyzer:
                          (dif[buy_date_idx] > dea[buy_date_idx] and dif[buy_date_idx-1] <= dea[buy_date_idx-1]))
             
             # RSI指标
-            rsi = RSI(close, 14)
-            rsi_oversold = rsi[buy_date_idx] < 30
+            rsi_values = rsi(close, 14)
+            rsi_oversold = rsi_values[buy_date_idx] < 30
             
             # 计算综合评分
             score = 0
@@ -270,7 +269,7 @@ class BuyPointAnalyzer:
                 'kdj_k': kdj_k[buy_date_idx],
                 'kdj_d': kdj_d[buy_date_idx],
                 'kdj_j': kdj_j[buy_date_idx],
-                'rsi': rsi[buy_date_idx],
+                'rsi': rsi_values[buy_date_idx],
                 'wvad': wvad[buy_date_idx]
             }
             
@@ -281,7 +280,7 @@ class BuyPointAnalyzer:
             return {}
     
     @exception_handler(reraise=False, default_return=[])
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     def analyze_multiple_buypoints(self, buypoints_list: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         """
         批量分析多个买点

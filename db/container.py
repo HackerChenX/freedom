@@ -5,7 +5,7 @@
 """
 
 import threading
-from typing import Dict, Any, Type_var, Type, Optional, Callable, Union
+from typing import Dict, Any, TypeVar, Type, Optional, Callable, Union
 from abc import ABC, abstractmethod
 from enum import Enum
 
@@ -23,15 +23,15 @@ class LifecycleType(Enum):
     SCOPED = "scoped"       # 作用域
 
 
-class ServicedescriptorContainer:
+class ServiceDescriptor:
     """服务描述符"""
     
-    def __init___26_container(self, 
+    def __init__(self, 
                  service_type: Type[T],
                  implementation_type: Optional[Type[T]] = None,
                  factory: Optional[Callable[[], T]] = None,
                  instance: Optional[T] = None,
-                 lifecycle: lifecycle_type = Lifecycle_type.TRANSIENT):
+                 lifecycle: LifecycleType = LifecycleType.TRANSIENT):
         """
         初始化服务描述符
         
@@ -201,30 +201,30 @@ class ServiceContainer(IService_container):
         获取数据访问服务的便利方法
         
         Returns:
-            IData_access: 数据访问接口实例
+            DataAccessInterface: 数据访问接口实例
         """
-        from db.interfaces.data_access_interface import IData_access
-        return self.resolve_Container_Container_Container_1_container(IData_access)
+        from db.interfaces.data_access_interface import DataAccessInterface
+        return self.resolve_Container_Container_Container_1_container(DataAccessInterface)
     
     def get_cache_manager(self):
         """
         获取缓存管理器的便利方法
         
         Returns:
-            ICache_service: 缓存服务接口实例
+            IcacheService: 缓存服务接口实例
         """
-        from db.interfaces.cache_interface import ICache_service
-        return self.resolve_Container_Container_Container_1_container(ICache_service)
+        from db.interfaces.cache_interface import IcacheService
+        return self.resolve_Container_Container_Container_1_container(IcacheService)
     
     def get_connection_manager(self):
         """
         获取连接管理器的便利方法
         
         Returns:
-            IConnection_manager: 连接管理器接口实例
+            IconnectionManager: 连接管理器接口实例
         """
-        from db.interfaces.connection_interface import IConnection_manager
-        return self.resolve_Container_Container_Container_1_container(IConnection_manager)
+        from db.interfaces.connection_interface import IconnectionManager
+        return self.resolve_Container_Container_Container_1_container(IconnectionManager)
 
 
 # 全局容器实例
@@ -261,9 +261,9 @@ def _setup_default_services(container: Service_container) -> None:
     
     try:
         # 延迟导入避免循环依赖
-        from db.interfaces.data_access_interface import IData_access
-        from db.interfaces.cache_interface import ICache_service
-        from db.interfaces.connection_interface import IConnection_manager
+        from db.interfaces.data_access_interface import DataAccessInterface
+        from db.interfaces.cache_interface import IcacheService
+        from db.interfaces.connection_interface import IconnectionManager
         from db.managers.data_access_manager import Data_access_manager
         from db.services.cache_service import Cache_service
         from db.managers.connection_manager import Connection_manager
@@ -277,17 +277,17 @@ def _setup_default_services(container: Service_container) -> None:
             return Cache_service(cache_layer)
         
         container.register_singleton_Container(
-            ICache_service,
+            IcacheService,
             factory=cache_service_factory
         )
         
         container.register_singleton_Container(
-            IConnection_manager,
+            IconnectionManager,
             Connection_manager
         )
         
         container.register_singleton_Container(
-            IData_access,
+            DataAccessInterface,
             Data_access_manager
         )
         

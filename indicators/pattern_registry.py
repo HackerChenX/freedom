@@ -680,6 +680,14 @@ except Exception as e:
     logger.warning(f"注册PatternRegistry到依赖注入容器失败: {e}")
 
 
+# ===== 兼容性别名 =====
+# 为了向后兼容，提供下划线命名的别名
+Pattern_registry = PatternRegistry
+Pattern_type = PatternTypePatternRegistry
+Pattern_strength = PatternStrengthPatternRegistry
+Pattern_polarity = PatternPolarity
+Pattern_info = PatternInfo
+
 if __name__ == "__main__":
     print("Pattern Registry Utility")
     print("使用方法: 在代码中导入并使用 PatternRegistry 类来管理技术形态")

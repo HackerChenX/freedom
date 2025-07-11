@@ -1304,10 +1304,10 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin):
 
     def _register_trix_patterns(self):
         """注册TRIX特有的形态检测方法"""
-        from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
+        from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
         
         # 获取PatternRegistry实例
-        registry = Pattern_registry()
+        registry = PatternRegistry()
         
         # 注册TRIX零轴穿越形态
         registry.register(

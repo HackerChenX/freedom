@@ -18,97 +18,97 @@ class BaseError(Exception):
 
 
 # 策略相关异常
-class StrategyError(Base_error):
+class StrategyError(BaseError):
     """策略相关错误的基类"""
     pass
 
-class StrategyParseError(Strategy_error):
+class StrategyParseError(StrategyError):
     """策略解析错误"""
     pass
 
-class StrategyExecutionError(Strategy_error):
+class StrategyExecutionError(StrategyError):
     """策略执行错误"""
     pass
 
-class StrategyValidationError(Strategy_error):
+class StrategyValidationError(StrategyError):
     """策略验证错误"""
     pass
 
-class StrategyNotFoundError(Strategy_error):
+class StrategyNotFoundError(StrategyError):
     """策略不存在错误"""
     pass
 
 
 # 数据相关异常
-class DataError(Base_error):
+class DataError(BaseError):
     """数据相关错误的基类"""
     pass
 
-class DataAccessError(Data_error):
+class DataAccessError(DataError):
     """数据访问错误"""
     pass
 
-class DataValidationError(Data_error):
+class DataValidationError(DataError):
     """数据验证错误"""
     pass
 
-class DataNotFoundError(Data_error):
+class DataNotFoundError(DataError):
     """数据不存在错误"""
     pass
 
 
 # 指标相关异常
-class IndicatorError(Base_error):
+class IndicatorError(BaseError):
     """指标相关错误的基类"""
     pass
 
-class IndicatorCalculationError(Indicator_error):
+class IndicatorCalculationError(IndicatorError):
     """指标计算错误"""
     pass
 
-class IndicatorExecutionError(Indicator_error):
+class IndicatorExecutionError(IndicatorError):
     """指标执行错误"""
     pass
 
-class IndicatorParameterError(Indicator_error):
+class IndicatorParameterError(IndicatorError):
     """指标参数错误"""
     pass
 
-class IndicatorNotFoundError(Indicator_error):
+class IndicatorNotFoundError(IndicatorError):
     """指标不存在错误"""
     pass
 
 
 # 配置相关异常
-class ConfigerrorExceptions(Base_error):
+class ConfigerrorExceptions(BaseError):
     """配置相关错误的基类"""
     pass
 
-class ConfigValidationError(Config_error_Exceptions):
+class ConfigValidationError(ConfigerrorExceptions):
     """配置验证错误"""
     pass
 
-class ConfigFileError(Config_error_Exceptions):
+class ConfigFileError(ConfigerrorExceptions):
     """配置文件错误"""
     pass
 
 
 # 资源相关异常
-class ResourceError(Base_error):
+class ResourceError(BaseError):
     """资源相关错误的基类"""
     pass
 
-class ResourceNotFoundError(Resource_error):
+class ResourceNotFoundError(ResourceError):
     """资源不存在错误"""
     pass
 
-class ResourceExhaustedError(Resource_error):
+class ResourceExhaustedError(ResourceError):
     """资源耗尽错误"""
     pass
 
 
 # 权限相关异常
-class PermissionError(Base_error):
+class PermissionError(BaseError):
     """权限相关错误的基类"""
     pass
 

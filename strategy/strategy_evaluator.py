@@ -10,7 +10,8 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime, timedelta
 
 from utils.logger import getLogger
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.decorators import performance_monitor
 
 logger = getLogger(__name__)
@@ -18,9 +19,9 @@ logger = getLogger(__name__)
 class StrategyEvaluator:
     """策略评估器，提供多维度评分和评估功能"""
     
-    def __init___65(self):
+    def __init__(self):
         """初始化策略评估器"""
-        self.data_manager = get_unified_data_manager()
+        self.data_manager = get_service(DataAccessInterface)
         self.evaluation_cache = {}
     
     @performance_monitor()

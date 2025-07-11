@@ -44,11 +44,11 @@ class DatabaseDependencyRefactor:
         # 重构模式定义
         self.import_patterns = [
             r'from db\.clickhouse_db from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
             r'from db\.clickhouse_db from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
             r'from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
         ]
         
         self.call_patterns = [
@@ -145,10 +145,10 @@ from db.interfaces.data_access_interface import IData_access
         # 替换clickhouse_db导入
         patterns_replacements = [
             (r'from db\.clickhouse_db from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
              'from utils.dependency_injection import get_service\nfrom db.interfaces.data_access_interface import IDataAccess'),
             (r'from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
              'from utils.dependency_injection import get_service\nfrom db.interfaces.data_access_interface import IDataAccess')
         ]
         
@@ -294,11 +294,11 @@ from db.interfaces.data_access_interface import IData_access
 ```python
 # 替换前
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 
 # 替换后
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 ```
 
 ### 数据库调用替换
@@ -308,18 +308,18 @@ db = get_service(Data_access_interface)
 result = db.query(sql)
 
 # 替换后
-data_access = get_container().resolve(IData_access)
+data_access = get_container().resolve(DataAccessInterface)
 result = data_access.execute_query(sql)
 ```
 
 ### 类中的数据库调用替换
 ```python
 # 替换前
-self.data_access = get_container().resolve(IData_access)
+self.data_access = get_container().resolve(DataAccessInterface)
 data = self.data_access.execute_query(sql)
 
 # 替换后
-self.data_access = get_container().resolve(IData_access)
+self.data_access = get_container().resolve(DataAccessInterface)
 data = self.data_access.execute_query(sql)
 ```
 

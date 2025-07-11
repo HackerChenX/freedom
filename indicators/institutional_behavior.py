@@ -218,4 +218,5 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-institutional_behavior = INSTITUTIONAL_BEHAVIOR
+INSTITUTIONAL_BEHAVIOR = InstitutionalBehavior
+institutional_behavior = InstitutionalBehavior

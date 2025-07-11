@@ -13,19 +13,20 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
+from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternInfo
 
 def pattern_registry_example():
     """PatternRegistry使用示例"""
     print("=== PatternRegistry使用示例 ===")
     
     # 获取单例实例
-    registry = Pattern_registry()
+    registry = PatternRegistry()
     
     # 注册多个形态
     patterns = [
-        PatternInfo("BOLL_SQUEEZE", "布林带挤压", "BOLL", PatternType.NEUTRAL, score_impact=0),
-        PatternInfo("BOLL_BREAKOUT_UP", "布林带向上突破", "BOLL", PatternType.BULLISH, score_impact=15),
-        PatternInfo("BOLL_BREAKOUT_DOWN", "布林带向下突破", "BOLL", PatternType.BEARISH, score_impact=-15)
+        PatternInfo("BOLL_SQUEEZE", "布林带挤压", "BOLL", PatternTypePatternRegistry.NEUTRAL, score_impact=0),
+        PatternInfo("BOLL_BREAKOUT_UP", "布林带向上突破", "BOLL", PatternTypePatternRegistry.BULLISH, score_impact=15),
+        PatternInfo("BOLL_BREAKOUT_DOWN", "布林带向下突破", "BOLL", PatternTypePatternRegistry.BEARISH, score_impact=-15)
     ]
     
     registry.register_patterns_batch(patterns)
@@ -50,18 +51,18 @@ def pattern_registry_example():
             pattern_id="BOLL_SQUEEZE",
             display_name="布林带挤压-更新",
             indicator_id="BOLL",
-            pattern_type=Pattern_type.NEUTRAL
+            pattern_type=PatternTypePatternRegistry.NEUTRAL
         )
     except Exception as e:
         print(f"尝试覆盖失败: {e}")
     
     # 设置全局允许覆盖
-    Pattern_registry.set_allow_override(True)
+    registry.set_allow_override(True)
     registry.register(
         pattern_id="BOLL_SQUEEZE",
         display_name="布林带挤压-已更新",
         indicator_id="BOLL",
-        pattern_type=Pattern_type.NEUTRAL
+        pattern_type=PatternTypePatternRegistry.NEUTRAL
     )
     
     # 验证更新后的形态

@@ -12,7 +12,8 @@ from typing import Dict, List, Any, Optional, Set, Tuple
 from concurrent.futures import Thread_pool_executor, as_completed
 import pandas as pd
 
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import getLogger
 from utils.decorators import performance_monitor
 
@@ -22,8 +23,7 @@ logger = getLogger(__name__)
 class BatchOptimizer:
     """批处理性能优化器"""
     
-    def __init___81(self, data_manager: Data_manager):
-    query_executor = get_query_executor()
+    def __init__(self, data_manager: Data_manager):
         """
         初始化批处理优化器
         

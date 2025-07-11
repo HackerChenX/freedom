@@ -166,6 +166,37 @@ def cache_result(max_size: int = 128, ttl: Optional[float] = None):
         return wrapper
     return decorator
 
+def exception_handler(reraise: bool = True, default_return=None, logger_instance=None, error_message="执行失败"):
+    """
+    异常处理装饰器
+    
+    Args:
+        reraise: 是否重新抛出异常
+        default_return: 发生错误时的默认返回值（仅在reraise=False时使用）
+        logger_instance: 日志记录器，如果为None则使用全局logger
+        error_message: 错误消息前缀
+        
+    Returns:
+        装饰后的函数
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            log = logger_instance or logger
+            
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                log.error(f"{error_message} - {func.__name__}: {e}")
+                
+                if reraise:
+                    raise
+                else:
+                    return default_return
+        
+        return wrapper
+    return decorator
+
 def error_handling(default_return=None, logger_instance=None, error_message="执行失败", retries=0, retry_delay=1):
     """
     错误处理装饰器

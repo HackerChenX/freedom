@@ -25,7 +25,7 @@ from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
 from indicators.complete_indicator_registry import complete_registry
 from indicators.base_indicator import Pattern_result
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir
 from enums.kline_period import Kline_period
@@ -70,7 +70,7 @@ class PatternBacktester:
         }
         
         # 初始化数据库连接
-        self.data_access = get_container().resolve(IData_access)
+        self.data_access = get_container().resolve(DataAccessInterface)
         
         logger.info(f"初始化形态回测器，指标: {self.indicators}，周期: {self.periods}")
 

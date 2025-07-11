@@ -217,7 +217,7 @@ class SingletonOptimizer:
 """
 
 from utils.dependency_injection import get_service_Optimize_Global_Singletons_Optimize_Global_Singletons
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from db.managers.data_access_manager import Data_access_manager
 
 # 导入需要注册的服务类
@@ -236,7 +236,7 @@ def configure_container_Optimize_Global_Singletons():
     container = get_container()
     
     # 注册核心服务
-    container.register_singleton(IData_access, Data_access_manager)
+    container.register_singleton(DataAccessInterface, Data_access_manager)
     
     # 注册原全局单例服务
     container.register_singleton(Strategy_format_converter, Strategy_format_converter)

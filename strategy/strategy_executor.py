@@ -12,15 +12,16 @@ import os
 from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime
 
-from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_manager import Strategy_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
+from strategy.strategy_manager import StrategyManager
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, safe_run, cache_result
 from utils.exceptions import (
     Strategy_execution_error,
     Strategy_validation_error,
-    Data_access_error,
+    DataAccessError,
     Indicator_execution_error
 )
 
@@ -32,7 +33,7 @@ class StrategyExecutor:
     策略执行器，负责执行策略，对股票列表进行筛选和评分
     """
     
-    def __init___70(self, max_workers: int = None, cache_enabled: bool = True):
+    def __init__(self, max_workers: int = None, cache_enabled: bool = True):
         """
         初始化策略执行器
 
@@ -40,7 +41,7 @@ class StrategyExecutor:
             max_workers: 最大线程数，None表示使用默认值（CPU核心数 * 5）
             cache_enabled: 是否启用结果缓存
         """
-        self.data_manager = get_unified_data_manager()
+        self.data_access = get_service(DataAccessInterface)
         self.max_workers = max_workers or min(50, os.cpu_count() * 8)  # 优化：增加并发数
         self.cache_enabled = cache_enabled
         self.cache = {}
@@ -63,7 +64,7 @@ class StrategyExecutor:
     def execute_strategy_by_id(
         self, 
         strategy_id: str, 
-        strategy_manager: Strategy_manager,
+        strategy_manager: StrategyManager,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         progress_callback: Optional[Callable[[float, str], None]] = None
@@ -330,15 +331,15 @@ class StrategyExecutor:
         """
         try:
             # 预加载行业数据
-            self.data_manager.preload_industry_data()
+            self.data_access.preload_industry_data()
             
             # 预加载指数数据
             index_codes = ['000001.SH', '399001.SZ', '399006.SZ']  # 上证指数、深证成指、创业板指
             for index_code in index_codes:
-                self.data_manager.get_index_data(index_code, date)
+                self.data_access.get_index_data(index_code, date)
                 
             # 预加载市场整体状态
-            self.data_manager.get_market_status(date)
+            self.data_access.get_market_status(date)
             
             logger.info("预加载通用数据完成")
         except Exception as e:
@@ -408,10 +409,10 @@ class StrategyExecutor:
                 # 获取股票的最近数据
                 try:
                     # 计算开始日期（往前120个交易日）
-                    start_date = self.data_manager.get_previous_trade_date(end_date, 120)
+                    start_date = self.data_access.get_previous_trade_date(end_date, 120)
                     
                     # 获取K线数据 - 明确指定日线数据
-                    data = self.data_manager.get_stock_data(
+                    data = self.data_access.get_stock_data(
                         stock_code=stock_code,
                         start_date=start_date,
                         end_date=end_date,
@@ -422,7 +423,7 @@ class StrategyExecutor:
                     if self.cache_enabled:
                         self.cache[cache_key] = data
                         
-                except Data_access_error as e:
+                except DataAccessError as e:
                     logger.warning(f"获取股票 {stock_code} 数据失败: {e}")
                     return None
                 
@@ -520,7 +521,7 @@ class StrategyExecutor:
                 score = self._calculate_stock_score_Strategy_Executor(stock_code, data, condition_details)
                 
                 # 获取行业信息
-                industry = self.data_manager.get_stock_industry(stock_code)
+                industry = self.data_access.get_stock_industry(stock_code)
                 
                 return {
                     'stock_code': stock_code,
@@ -1096,7 +1097,7 @@ class StrategyExecutor:
             start_date = data.index[0].strftime("%Y-%m-%d") if isinstance(data.index[0], pd.Timestamp) else data.index[0]
             
             try:
-                index_data = self.data_manager.get_index_data(index_code, start_date=start_date, end_date=end_date)
+                index_data = self.data_access.get_index_data(index_code, start_date=start_date, end_date=end_date)
                 if index_data is None or len(index_data) < 10:
                     return 50.0  # 无法获取指数数据，返回中性分数
             except:
@@ -1185,7 +1186,7 @@ class StrategyExecutor:
         limit = filters.get('limit')
 
         # 调用DataManagerAdapter的get_stock_list方法
-        stock_list = self.data_manager.get_stock_list(
+        stock_list = self.data_access.get_stock_list(
             market=market,
             industry=industry,
             limit=limit
@@ -1203,7 +1204,7 @@ class StrategyExecutor:
             return stock_list
         else:
             # 备用方案：获取所有股票
-            all_stocks = self.data_manager.get_all_stock_list()
+            all_stocks = self.data_access.get_all_stock_list()
             return pd.DataFrame(all_stocks)
     
     def _validate_strategy_plan(self, strategy_plan: Dict[str, Any]) -> bool:

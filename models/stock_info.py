@@ -50,7 +50,7 @@ class Stock_info:
         
         # 多条数据支持
         self._is_collection: bool = False  # 是否为数据集合
-        self._collection: List['StockInfo'] = []  # 数据集合
+        self._collection: List['Stock_info'] = []  # 数据集合
         self._data_frame: Optional[pd.DataFrame] = None  # 原始Data_frame
         
         # 初始化数据
@@ -72,9 +72,9 @@ class Stock_info:
             self._is_collection = True
             self._data_frame = data
             
-            # 将DataFrame转换为StockInfo对象列表
+            # 将DataFrame转换为Stock_info对象列表
             for _, row in data.iterrows():
-                stock_info WHERE 1=1 = Stock_info(row.to_dict_Info())
+                stock_info = Stock_info(row.to_dict_Info())
                 self._collection.append(stock_info)
         else:
             raise TypeError(f"不支持的数据类型: {type(data)}")
@@ -119,7 +119,7 @@ class Stock_info:
                                     value = datetime.datetime.strptime(value, '%Y-%m-%d').date()
                                 else:
                                     value = datetime.datetime.strptime(value, '%Y%m%d').date()
-                            except Value_error:
+                            except ValueError:
                                 pass
                         elif isinstance(value, datetime.datetime):
                             value = value.date()
@@ -128,20 +128,20 @@ class Stock_info:
                         if isinstance(value, str):
                             try:
                                 value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-                            except Value_error:
+                            except ValueError:
                                 pass
                     
                     # 数值类型转换
                     if attr in ['open', 'high', 'low', 'close', 'volume', 'turnover_rate', 'price_change', 'price_range']:
                         try:
                             value = float(value) if value is not None else 0.0
-                        except (Value_error, Type_error):
+                        except (ValueError, TypeError):
                             value = 0.0
                     
                     if attr == 'seq':
                         try:
                             value = int(value) if value is not None else 0
-                        except (Value_error, Type_error):
+                        except (ValueError, TypeError):
                             value = 0
                     
                     # 设置属性
@@ -190,7 +190,7 @@ class Stock_info:
                     self._date = datetime.datetime.strptime(value, '%Y-%m-%d').date()
                 else:
                     self._date = datetime.datetime.strptime(value, '%Y%m%d').date()
-            except Value_error:
+            except ValueError:
                 self._date = None
         elif isinstance(value, datetime.datetime):
             self._date = value.date()
@@ -222,7 +222,7 @@ class Stock_info:
         """设置开盘价"""
         try:
             self._open = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._open = 0.0
     
     @property
@@ -235,7 +235,7 @@ class Stock_info:
         """设置最高价"""
         try:
             self._high = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._high = 0.0
     
     @property
@@ -248,7 +248,7 @@ class Stock_info:
         """设置最低价"""
         try:
             self._low = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._low = 0.0
     
     @property
@@ -261,7 +261,7 @@ class Stock_info:
         """设置收盘价"""
         try:
             self._close = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._close = 0.0
     
     @property
@@ -274,7 +274,7 @@ class Stock_info:
         """设置成交量"""
         try:
             self._volume = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._volume = 0.0
     
     @property
@@ -287,7 +287,7 @@ class Stock_info:
         """设置换手率"""
         try:
             self._turnover_rate = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._turnover_rate = 0.0
     
     @property
@@ -300,7 +300,7 @@ class Stock_info:
         """设置价格变动"""
         try:
             self._price_change = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._price_change = 0.0
     
     @property
@@ -313,7 +313,7 @@ class Stock_info:
         """设置价格区间"""
         try:
             self._price_range = float(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._price_range = 0.0
     
     @property
@@ -337,7 +337,7 @@ class Stock_info:
         if isinstance(value, str):
             try:
                 self._datetime = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            except Value_error:
+            except ValueError:
                 self._datetime = None
         elif isinstance(value, datetime.datetime):
             self._datetime = value
@@ -354,7 +354,7 @@ class Stock_info:
         """设置序号"""
         try:
             self._seq = int(value)
-        except (Value_error, Type_error):
+        except (ValueError, TypeError):
             self._seq = 0
     
     @property
@@ -398,7 +398,7 @@ class Stock_info:
             List[Dict[str, Any]]: 字典列表
             
         Raises:
-            Value_error: 如果不是集合对象
+            ValueError: 如果不是集合对象
         """
         if not self._is_collection:
             return [self.to_dict_Info()]
@@ -420,7 +420,7 @@ class Stock_info:
         
         return pd.DataFrame(self.to_dicts())
     
-    def __getitem__(self, index: int) -> 'StockInfo':
+    def __getitem__(self, index: int) -> 'Stock_info':
         """
         获取集合中的某一项
         
@@ -431,7 +431,7 @@ class Stock_info:
             Stock_info: 指定索引的股票信息对象
             
         Raises:
-            Value_error: 如果不是集合对象
+            ValueError: 如果不是集合对象
             Index_error: 如果索引超出范围
         """
         if not self._is_collection:
@@ -474,9 +474,9 @@ class Stock_info:
             str: 字符串表示
         """
         if self._is_collection:
-            return f"StockInfoCollection(size={len(self._collection)})"
+            return f"Stock_infoCollection(size={len(self._collection)})"
         
-        return f"StockInfo(code={self._code}, name={self._name}, date={self._date}, close={self._close})"
+        return f"Stock_info(code={self._code}, name={self._name}, date={self._date}, close={self._close})"
     
     def __repr___Stock_Info(self) -> str:
         """
@@ -485,4 +485,8 @@ class Stock_info:
         Returns:
             str: 表示
         """
-        return self.__str___Stock_Info() 
+        return self.__str___Stock_Info()
+
+
+# 为了兼容性，添加别名
+StockInfo = Stock_info 

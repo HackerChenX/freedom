@@ -34,7 +34,7 @@ def test_basic_data_query():
         # 测试获取单只股票的基本信息
         for stock_code in stocks:
             try:
-                stock_info WHERE 1=1 = data_manager.get_stock_info(stock_code)
+                stock_info = data_manager.get_stock_info(stock_code)
                 print(f"股票 {stock_code}: {stock_info}")
                 
                 # 获取最新价格数据

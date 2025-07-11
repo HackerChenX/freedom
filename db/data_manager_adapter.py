@@ -20,9 +20,9 @@ from db.enhanced_connection_pool import initialize_connection_pool
 from monitoring.performance_monitor import get_performance_monitor
 from utils.stability_enhancer import get_stability_manager, retry
 from utils.logger import getLogger
-from utils.exceptions import Data_access_error, Data_validation_error
+from utils.exceptions import DataAccessError, DataValidationError
 from enums.period import Period
-from models.stock_info WHERE 1=1 import Stock_info
+from models.stock_info import StockInfo
 
 logger = getLogger(__name__)
 
@@ -98,7 +98,7 @@ class DatamanageradapterAdapter:
         def fallback_get_stock_data(stock_code: str, **kwargs):
             """数据获取降级服务"""
             logger.warning(f"使用降级服务获取股票数据: {stock_code}")
-            # 返回空的StockInfo对象
+            # 返回空的Stock_info对象
             empty_df = pd.DataFrame()
             return Stock_info(empty_df)
         
@@ -146,7 +146,7 @@ class DatamanageradapterAdapter:
             )
 
             # 使用增强数据管理器获取数据
-            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
+            stock_info = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 level=level,
                 start_date=optimized_start_date,
@@ -161,7 +161,7 @@ class DatamanageradapterAdapter:
             if not df.empty and len(df) < self._get_min_data_requirement(period):
                 logger.warning(f"数据不足({len(df)}条)，尝试扩大查询范围")
                 extended_start_date = self._extend_start_date(optimized_start_date, period)
-                stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
+                stock_info = self.enhanced_manager.get_stock_info_Adapter(
                     stock_code=stock_code,
                     level=level,
                     start_date=extended_start_date,
@@ -184,7 +184,7 @@ class DatamanageradapterAdapter:
                       end_date: Optional[str] = None,
                       filters: Optional[Dict[str, Any]] = None,
                       limit: Optional[int] = None,
-                      order_by: str = "date DESC") -> StockInfo:
+                                             order_by: str = "date DESC") -> StockInfo:
         """
         获取股票信息（增强API）
         
@@ -240,7 +240,7 @@ class DatamanageradapterAdapter:
 
                 # 查询不重复的股票代码
                 query = f"""
-                query_executor.get_stock_list() WHERE 1=1
+                query_executor.get_stock_list()
                 WHERE {where_clause}
                 ORDER BY code
                 """
@@ -271,7 +271,7 @@ class DatamanageradapterAdapter:
             Optional[str]: 行业名称
         """
         try:
-            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
+            stock_info = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 limit=1
             )
@@ -297,7 +297,7 @@ class DatamanageradapterAdapter:
             Optional[str]: 股票名称
         """
         try:
-            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
+            stock_info = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 limit=1
             )
@@ -415,7 +415,7 @@ class DatamanageradapterAdapter:
             bool: 存在返回True，否则返回False
         """
         try:
-            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
+            stock_info = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 level='30分钟',
                 start_date=start_date,
@@ -456,7 +456,7 @@ class DatamanageradapterAdapter:
                 extended_start_date = start_date
 
             # 获取15分钟数据
-            stock_info WHERE 1=1 = self.enhanced_manager.get_stock_info_Adapter(
+            stock_info = self.enhanced_manager.get_stock_info_Adapter(
                 stock_code=stock_code,
                 level='15分钟',
                 start_date=extended_start_date,

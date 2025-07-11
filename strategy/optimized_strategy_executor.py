@@ -18,8 +18,9 @@ from datetime import datetime
 
 from strategy.strategy_executor import Strategy_executor
 from strategy.batch_data_optimizer import get_batch_optimizer
-from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_manager import Strategy_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
+from strategy.strategy_manager import StrategyManager
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, safe_run

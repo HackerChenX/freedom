@@ -18,7 +18,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 
 
 class Test_architecture_refactoring(unittest.Test_case):
@@ -27,7 +27,7 @@ class Test_architecture_refactoring(unittest.Test_case):
     def set_up_Test_Architecture_Refactoring(self):
         """设置测试环境"""
         # 创建具有所有必要方法的Mock
-        self.mock_data_access = Mock(spec=IData_access)
+        self.mock_data_access = Mock(spec=DataAccessInterface)
         
         # 配置Mock的方法
         self.mock_data_access.get_stock_data = Mock()
@@ -87,7 +87,7 @@ class Test_architecture_refactoring(unittest.Test_case):
     def test_multi_dimension_analyzer_uses_dependency_injection(self):
         """测试多维度分析器使用依赖注入"""
         # 导入并测试
-        from analysis.market.multi_dimension_analyzer import Multi_dimension_analyzer
+        from analysis.multi_dimension_analyzer import Multi_dimension_analyzer
         
         analyzer = Multi_dimension_analyzer()
         

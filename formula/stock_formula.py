@@ -1,6 +1,6 @@
 import numpy as np
 from enums.indicators import IndicatorType_Indicators, CrossType, TrendType, VolumePattern_Indicators, PatternType_Indicators
-from enums.kline_period import Kline_period
+from enums.kline_period import KlinePeriod
 from formula.utils import merge_List, merge_And_get_last, count_list_any_match_Utils as count_List_any_match, ltn, gt, count_True, ge
 from db.db_manager import DBManager
 from utils.logger import stock_logger
@@ -627,9 +627,9 @@ class StockFormula:
     def 大于boll中轨(self):
         return self.data_Day.close[-1] > self.boll_Formula()[1][-1]
 
-    def get_Level_data(self, level) -> Stock_data:
+    def get_Level_data(self, level) -> StockData:
         # 如果已经是KlinePeriod类型，直接使用
-        if isinstance(level, Kline_period):
+        if isinstance(level, KlinePeriod):
             period = level
         else:
             # 否则尝试将字符串转换为KlinePeriod枚举
@@ -644,19 +644,19 @@ class StockFormula:
                 "60": KlinePeriod.MIN_60,
                 "60分钟": KlinePeriod.MIN_60
             }
-            period = period_map.get(level, Kline_period.DAILY)
+            period = period_map.get(level, KlinePeriod.DAILY)
         
-        if period == Kline_period.DAILY:
+        if period == KlinePeriod.DAILY:
             return self.data_Day
-        elif period == Kline_period.WEEKLY:
+        elif period == KlinePeriod.WEEKLY:
             return self.data_Week
-        elif period == Kline_period.MONTHLY:
+        elif period == KlinePeriod.MONTHLY:
             return self.data_Month
-        elif period == Kline_period.MIN_15:
+        elif period == KlinePeriod.MIN_15:
             return self.data15
-        elif period == Kline_period.MIN_30:
+        elif period == KlinePeriod.MIN_30:
             return self.data30
-        elif period == Kline_period.MIN_60:
+        elif period == KlinePeriod.MIN_60:
             return self.data60
 
 
@@ -669,8 +669,8 @@ def 主线():
                   '农药兽药', '旅游酒店', '软件服务', '机场航运', '石油行业', '食品饮料', '装修装饰', '园林工程', '安防设备', '公用事业', '电子商务',
                   '船舶制造', '环保工程']
     for industry in industries:
-        industry_data = Industry_data(industry)
-        if industry_Data.吸筹_Formula_Stock_Formula_Stock_Formula_stockformula():
+        industry_data = IndustryData(industry)
+        if industry_data.吸筹_Formula_Stock_Formula_Stock_Formula_stockformula():
             print(industry)
 
 
@@ -684,7 +684,7 @@ def 吸筹板块():
                   '船舶制造', '环保工程']
     result = []
     for industry in industries:
-        industry_data = Industry_data(industry)
-        if industry_Data.吸筹_Formula_Stock_Formula_Stock_Formula_stockformula():
+        industry_data = IndustryData(industry)
+        if industry_data.吸筹_Formula_Stock_Formula_Stock_Formula_stockformula():
             result.append(industry)
     return result 

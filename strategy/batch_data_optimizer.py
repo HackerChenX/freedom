@@ -15,14 +15,15 @@ from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 import logging
 
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import getLogger
 from utils.decorators import performance_monitor
 
 logger = getLogger(__name__)
 
 
-class BatchdataoptimizerOptimizer:
+class BatchDataOptimizer:
     """
     批量数据查询优化器
     
@@ -43,7 +44,7 @@ class BatchdataoptimizerOptimizer:
         """
         self.batch_size = batch_size
         self.cache_enabled = cache_enabled
-        self.data_manager = get_unified_data_manager()
+        self.data_manager = get_service(DataAccessInterface)
         self.cache = {} if cache_enabled else None
         
         logger.info(f"批量数据优化器初始化完成，批次大小: {batch_size}, 缓存: {cache_enabled}")
@@ -110,7 +111,7 @@ class BatchdataoptimizerOptimizer:
         """
         try:
             # 使用统一数据管理器的方法获取批量股票数据
-            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
+            stock_info = self.data_manager.get_stock_info(
                 stock_code=stock_codes,
                 level='日线',
                 start_date=start_date,

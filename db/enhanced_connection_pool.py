@@ -332,19 +332,19 @@ _connection_pool = None
 _pool_lock = threading.Lock()
 
 
-def get_connection_pool() -> Click_house_connection_pool:
+def get_connection_pool() -> ClickHouseConnectionPool:
     """获取全局连接池实例"""
     global _connection_pool
     
     if _connection_pool is None:
         with _pool_lock:
             if _connection_pool is None:
-                _connection_pool = Click_house_connection_pool()
+                _connection_pool = ClickHouseConnectionPool()
     
     return _connection_pool
 
 
-def initialize_connection_pool(**kwargs) -> Click_house_connection_pool:
+def initialize_connection_pool(**kwargs) -> ClickHouseConnectionPool:
     """
     初始化连接池
     
@@ -352,7 +352,7 @@ def initialize_connection_pool(**kwargs) -> Click_house_connection_pool:
         **kwargs: 连接池配置参数
         
     Returns:
-        Click_house_connection_pool: 连接池实例
+        ClickHouseConnectionPool: 连接池实例
     """
     global _connection_pool
     
@@ -360,7 +360,7 @@ def initialize_connection_pool(**kwargs) -> Click_house_connection_pool:
         if _connection_pool is not None:
             _connection_pool.close_Pool()
         
-        _connection_pool = Click_house_connection_pool(**kwargs)
+        _connection_pool = ClickHouseConnectionPool(**kwargs)
         logger.info("全局ClickHouse连接池已初始化")
     
     return _connection_pool

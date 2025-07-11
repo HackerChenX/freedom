@@ -39,7 +39,7 @@ import threading
 import queue
 from logging.handlers import Rotating_file_handler
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 import random
 from dataclasses import dataclass
 from enum import Enum
@@ -55,7 +55,7 @@ from utils.dependency_injection import get_service
 
 class DataType(Enum):
     """数据类型枚举"""
-    stock_info WHERE 1=1 = "stock_info"
+    stock_info = "stock_info"
     STOCK_LIST = "stock_list"
     INDEX_DATA = "index_data"
     CONCEPT_DATA = "concept_data"

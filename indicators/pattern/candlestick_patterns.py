@@ -102,7 +102,7 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         result = self._calculate_complex_patterns(data, result)
 
         # 确保所有形态列都存在（即使数据不足）
-        all_pattern_names = [pattern.name.lower() for pattern in Pattern_type]
+        all_pattern_names = [pattern.name.lower() for pattern in PatterntypePatterns]
         for pattern_name in all_pattern_names:
             if pattern_name not in result.columns:
                 result[pattern_name] = False
@@ -139,35 +139,35 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         
         # 十字星：开盘价与收盘价接近，上下影线明显
         doji = body_to_range_ratio < 0.1
-        result[Pattern_type.DOJI.name.lower()] = doji
+        result[PatterntypePatterns.DOJI.name.lower()] = doji
         
         # 锤头线：小实体，长下影线，几乎无上影线
         hammer = (body_to_range_ratio < 0.3) & \
                 (lower_shadow > 2 * body_size) & \
                 (upper_shadow < 0.1 * (high_prices - low_prices))
-        result[Pattern_type.HAMMER.name.lower()] = hammer
+        result[PatterntypePatterns.HAMMER.name.lower()] = hammer
         
         # 吊颈线：小实体，长上影线，几乎无下影线
         hanging_man = (body_to_range_ratio < 0.3) & \
                       (upper_shadow > 2 * body_size) & \
                       (lower_shadow < 0.1 * (high_prices - low_prices))
-        result[Pattern_type.HANGING_MAN.name.lower()] = hanging_man
+        result[PatterntypePatterns.HANGING_MAN.name.lower()] = hanging_man
         
         # 长腿十字：十字星带长下影线
         long_legged_doji = doji & (lower_shadow > 2 * upper_shadow) & \
                            (lower_shadow > 0.3 * (high_prices - low_prices))
-        result[Pattern_type.LONG_LEGGED_DOJI.name.lower()] = long_legged_doji
+        result[PatterntypePatterns.LONG_LEGGED_DOJI.name.lower()] = long_legged_doji
         
         # 墓碑线：十字星带长上影线
         gravestone_doji = doji & (upper_shadow > 2 * lower_shadow) & \
                          (upper_shadow > 0.3 * (high_prices - low_prices))
-        result[Pattern_type.GRAVESTONE_DOJI.name.lower()] = gravestone_doji
+        result[PatterntypePatterns.GRAVESTONE_DOJI.name.lower()] = gravestone_doji
         
         # 射击之星：小实体，长上影线，短下影线
         shooting_star = (body_to_range_ratio < 0.3) & \
                         (upper_shadow > 2 * body_size) & \
                         (upper_shadow > 2 * lower_shadow)
-        result[Pattern_type.SHOOTING_STAR.name.lower()] = shooting_star
+        result[PatterntypePatterns.SHOOTING_STAR.name.lower()] = shooting_star
         
         return result
     
@@ -261,14 +261,14 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
                 single_needle_bottom[i] = True
         
         # 添加到结果
-        result[Pattern_type.ENGULFING_BULLISH.name.lower()] = engulfing_bullish
-        result[Pattern_type.ENGULFING_BEARISH.name.lower()] = engulfing_bearish
-        result[Pattern_type.DARK_CLOUD_COVER.name.lower()] = dark_cloud_cover
-        result[Pattern_type.PIERCING_LINE.name.lower()] = piercing_line
-        result[Pattern_type.MORNING_STAR.name.lower()] = morning_star
-        result[Pattern_type.EVENING_STAR.name.lower()] = evening_star
-        result[Pattern_type.HARAMI_BULLISH.name.lower()] = harami_bullish
-        result[Pattern_type.SINGLE_NEEDLE_BOTTOM.name.lower()] = single_needle_bottom
+        result[PatterntypePatterns.ENGULFING_BULLISH.name.lower()] = engulfing_bullish
+        result[PatterntypePatterns.ENGULFING_BEARISH.name.lower()] = engulfing_bearish
+        result[PatterntypePatterns.DARK_CLOUD_COVER.name.lower()] = dark_cloud_cover
+        result[PatterntypePatterns.PIERCING_LINE.name.lower()] = piercing_line
+        result[PatterntypePatterns.MORNING_STAR.name.lower()] = morning_star
+        result[PatterntypePatterns.EVENING_STAR.name.lower()] = evening_star
+        result[PatterntypePatterns.HARAMI_BULLISH.name.lower()] = harami_bullish
+        result[PatterntypePatterns.SINGLE_NEEDLE_BOTTOM.name.lower()] = single_needle_bottom
         
         return result
     
@@ -1260,3 +1260,8 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+# ===== 兼容性别名 =====
+# 为了向后兼容，提供下划线命名的别名
+Pattern_type = PatterntypePatterns
+Candlestick_patterns = CandlestickPatterns

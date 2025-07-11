@@ -44,7 +44,7 @@ def test_ma_indicator_with_daily_data():
             print(f"\n--- 测试股票: {stock_code} ---")
             
             # 获取股票信息
-            stock_info WHERE 1=1 = data_manager.get_stock_info(stock_code)
+            stock_info = data_manager.get_stock_info(stock_code)
             df = stock_info.to_dataframe()
             
             # 过滤日线数据
@@ -110,7 +110,7 @@ def test_strategy_condition_with_daily_data():
         print(f"测试股票: {stock_code}")
         
         # 获取股票信息并过滤日线数据
-        stock_info WHERE 1=1 = data_manager.get_stock_info(stock_code)
+        stock_info = data_manager.get_stock_info(stock_code)
         df = stock_info.to_dataframe()
         daily_data = df[df['level'] == '日线'].copy()
         

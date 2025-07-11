@@ -22,9 +22,9 @@ from monitoring.performance_monitor import get_performance_monitor
 from utils.stability_enhancer import get_stability_manager, retry
 from utils.logger import getLogger
 from utils.decorators import singleton, performance_monitor
-from utils.exceptions import Data_access_error, Data_validation_error, Data_not_found_error
+from utils.exceptions import DataAccessError, DataValidationError, DataNotFoundError
 from enums.period import Period
-from models.stock_info WHERE 1=1 import Stock_info
+from models.stock_info import StockInfo
 
 logger = getLogger(__name__)
 
@@ -160,7 +160,7 @@ class UnifiedDataManager:
             bool: 连接成功返回True，否则抛出异常
             
         Raises:
-            Data_access_error: 数据库连接失败时抛出
+            DataAccessError: 数据库连接失败时抛出
         """
         try:
             with self.connection_pool.get_connection() as conn:
@@ -201,7 +201,7 @@ class UnifiedDataManager:
                        filters: Optional[Dict[str, Any]] = None,
                        limit: Optional[int] = None,
                        order_by: str = "date DESC",
-                       cache_ttl: Optional[int] = None) -> Stock_info:
+                       cache_ttl: Optional[int] = None) -> StockInfo:
         """
         获取股票数据（核心API，支持并发查询和优化）
         
@@ -216,7 +216,7 @@ class UnifiedDataManager:
             cache_ttl: 缓存有效期
             
         Returns:
-            Stock_info: 股票数据对象
+            StockInfo: 股票数据对象
         """
         query_start_time = time.time()
         
@@ -255,12 +255,13 @@ class UnifiedDataManager:
             result_df = self._execute_query_with_retry(query, params)
             
             # 创建StockInfo对象
-            stock_info WHERE 1=1 = Stock_info(result_df)
+            stock_info = StockInfo(result_df)
             
             # 缓存结果
             self._set_cache(cache_key, stock_info, ttl)
             
-            return stock_info WHERE 1=1 except Exception as e:
+            return stock_info
+        except Exception as e:
             with self.stats_lock:
                 self.stats['query_errors'] += 1
             logger.error(f"获取股票数据失败: {e}")
@@ -311,7 +312,7 @@ class UnifiedDataManager:
             )
 
             # 使用核心API获取数据
-            stock_info WHERE 1=1 = self.get_stock_info(
+            stock_info = self.get_stock_info(
                 stock_code=stock_code,
                 level=level,
                 start_date=optimized_start_date,
@@ -326,7 +327,7 @@ class UnifiedDataManager:
             if not df.empty and len(df) < self._get_min_data_requirement(period):
                 logger.warning(f"数据不足({len(df)}条)，尝试扩大查询范围")
                 extended_start_date = self._extend_start_date(optimized_start_date, period)
-                stock_info WHERE 1=1 = self.get_stock_info(
+                stock_info = self.get_stock_info(
                     stock_code=stock_code,
                     level=level,
                     start_date=extended_start_date,
@@ -373,7 +374,7 @@ class UnifiedDataManager:
                 # 查询不重复的股票代码
                 query = f"""
                 SELECT DISTINCT code
-                FROM stock_info WHERE 1=1
+                FROM stock_info
                 WHERE {where_clause}
                 ORDER BY code
                 """
@@ -422,7 +423,7 @@ class UnifiedDataManager:
             Optional[str]: 行业名称
         """
         try:
-            stock_info WHERE 1=1 = self.get_stock_info(
+            stock_info = self.get_stock_info(
                 stock_code=stock_code,
                 limit=1
             )
@@ -448,7 +449,7 @@ class UnifiedDataManager:
             Optional[str]: 股票名称
         """
         try:
-            stock_info WHERE 1=1 = self.get_stock_info(
+            stock_info = self.get_stock_info(
                 stock_code=stock_code,
                 limit=1
             )
@@ -506,7 +507,7 @@ class UnifiedDataManager:
                        end_date: Optional[str] = None) -> bool:
         """检查数据库中是否存在30分钟数据"""
         try:
-            stock_info WHERE 1=1 = self.get_stock_info(
+            stock_info = self.get_stock_info(
                 stock_code=stock_code,
                 level='30分钟',
                 start_date=start_date,
@@ -535,7 +536,7 @@ class UnifiedDataManager:
                 extended_start_date = start_date
 
             # 获取15分钟数据
-            stock_info WHERE 1=1 = self.get_stock_info(
+            stock_info = self.get_stock_info(
                 stock_code=stock_code,
                 level='15分钟',
                 start_date=extended_start_date,
@@ -735,7 +736,7 @@ class UnifiedDataManager:
         """构建优化的查询语句"""
 
         # 获取字段列表
-        fields = Stock_info.get_fields()
+        fields = StockInfo.get_fields()
         field_str = ", ".join(fields)
 
         # 构建WHERE条件
@@ -889,7 +890,7 @@ class UnifiedDataManager:
         cache_str = json.dumps(params, sort_keys=True, default=str)
         return f"stock_info_{hashlib.md5(cache_str.encode()).hexdigest()}"
 
-    def _get_from_cache(self, key: str, ttl: int) -> Optional[Stock_info]:
+    def _get_from_cache(self, key: str, ttl: int) -> Optional[StockInfo]:
         """从缓存获取数据"""
         if not self.cache_enabled:
             return None
@@ -914,7 +915,7 @@ class UnifiedDataManager:
 
             return self.query_cache[key]
 
-    def _set_cache(self, key: str, value: Stock_info, ttl: int):
+    def _set_cache(self, key: str, value: StockInfo, ttl: int):
         """设置缓存"""
         if not self.cache_enabled:
             return
@@ -999,7 +1000,7 @@ class UnifiedDataManager:
 
     def get_kline_data_Manager(self, stock_code: str, start_date: Optional[str] = None,
                          end_date: Optional[str] = None, level: str = 'day',
-                         **kwargs) -> Stock_info:
+                         **kwargs) -> StockInfo:
         """
         获取K线数据的兼容性接口（别名）
         内部直接调用 get_stock_info WHERE 1=1 并返回其结果
@@ -1029,7 +1030,7 @@ class UnifiedDataManager:
                 return pd.DataFrame(columns=['stock_code', 'stock_name', 'industry'])
 
             # 使用核心API获取数据
-            stock_info WHERE 1=1 = self.get_stock_info(
+            stock_info = self.get_stock_info(
                 stock_code=stock_codes,
                 level='日线',
                 order_by="date DESC",
@@ -1172,7 +1173,7 @@ _unified_data_manager = None
 _manager_lock = threading.Lock()
 
 
-def get_unified_data_manager() -> Unified_data_manager:
+def get_unified_data_manager() -> UnifiedDataManager:
     """获取全局统一数据管理器实例"""
     global _unified_data_manager
 
@@ -1187,28 +1188,28 @@ def get_unified_data_manager() -> Unified_data_manager:
 # ==================== 向后兼容别名 ====================
 
 # 为了向后兼容，提供所有现有类的别名
-class DataManager(Unified_data_manager):
+class DataManager(UnifiedDataManager):
     """向后兼容的DataManager类"""
     pass
 
-class EnhancedDataManager(Unified_data_manager):
+class EnhancedDataManager(UnifiedDataManager):
     """向后兼容的EnhancedDataManager类"""
     pass
 
-class DataManagerAdapter(Unified_data_manager):
+class DataManagerAdapter(UnifiedDataManager):
     """向后兼容的DataManagerAdapter类"""
     pass
 
 
 # 向后兼容的获取函数
-def get_data_manager() -> Unified_data_manager:
+def get_data_manager() -> UnifiedDataManager:
     """获取数据管理器（向后兼容）"""
     return get_unified_data_manager()
 
-def get_enhanced_data_manager() -> Unified_data_manager:
+def get_enhanced_data_manager() -> UnifiedDataManager:
     """获取增强数据管理器（向后兼容）"""
     return get_unified_data_manager()
 
-def get_data_manager_adapter() -> Unified_data_manager:
+def get_data_manager_adapter() -> UnifiedDataManager:
     """获取数据管理器适配器（向后兼容）"""
     return get_unified_data_manager()

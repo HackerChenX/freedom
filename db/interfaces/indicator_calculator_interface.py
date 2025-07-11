@@ -248,3 +248,10 @@ class IindicatorFactory(ABC):
             category: 指标分类
         """
         pass 
+
+
+# 兼容性别名
+IIndicator_calculator = IindicatorCalculator
+
+# 兼容性别名
+IIndicatorCalculator = IindicatorCalculator

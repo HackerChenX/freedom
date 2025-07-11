@@ -20,7 +20,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, root_dir)
 
 from utils.logger import getLogger
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_service
 
 logger = getLogger(__name__)
@@ -31,7 +32,7 @@ class UnifiedDataAdapter:
     
     def __init__(self):
         """初始化适配器"""
-        self.data_manager = get_unified_data_manager()
+        self.data_manager = get_service(DataAccessInterface)
         
         # 定义标准数据格式规范
         self.standard_format = {

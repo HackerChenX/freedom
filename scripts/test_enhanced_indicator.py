@@ -47,7 +47,7 @@ def get_test_data_Indicator(stock_code: str, start_date: str, end_date: str) -> 
     
     try:
         # 使用数据访问接口获取股票数据
-        stock_info WHERE 1=1 = data_access.get_stock_info(
+        stock_info = data_access.get_stock_info(
             stock_code=stock_code,
             start_date=start_date,
             end_date=end_date,

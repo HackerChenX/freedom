@@ -37,7 +37,7 @@
       "SMA", "WMA", "TEMA", "KAMA", "VWMA", "HMA", "ZLEMA", "T3", "MESA", "FRAMA"
     ],
     "enhanced_indicators": [
-      "ENHANCED_CCI", "ENHANCED_DMI", "ENHANCED_STOCH", "ENHANCED_WILLIAMS", 
+      "CCI", "DMI", "STOCH", "WILLIAMS", 
       "ENHANCED_AROON", "ENHANCED_STOCHF", "ENHANCED_ULTOSC", "ENHANCED_MFI",
       "ENHANCED_ADOSC", "ENHANCED_OBV", "ENHANCED_CMF"
     ],
@@ -192,11 +192,11 @@
     },
     
     "enhanced_conditions": {
-      "ENHANCED_CCI": [
+      "CCI": [
         {
           "name": "增强CCI超卖",
           "conditions": [
-            {"type": "indicator", "indicator_id": "ENHANCED_CCI", "operator": "<", "value": -100},
+            {"type": "indicator", "indicator_id": "CCI", "operator": "<", "value": -100},
             {"logic": "AND"},
             {"type": "price", "field": "close", "operator": ">", "value": 3.0}
           ]

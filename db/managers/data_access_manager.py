@@ -1,9 +1,7 @@
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 """
 数据访问管理器实现
 
-实现IData_access接口，提供统一的数据访问服务
+实现DataAccessInterface接口，提供统一的数据访问服务
 """
 
 import time
@@ -11,20 +9,17 @@ from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 import pandas as pd
 
-from db.interfaces.data_access_interface import IData_access
-from db.interfaces.cache_interface import ICache_service
-from db.interfaces.connection_interface import IConnection_manager
-from utils.dependency_injection import get_service
-from models.stock_info WHERE 1=1 import Stock_info
+from db.interfaces.data_access_interface import DataAccessInterface
+from utils.dependency_injection import get_container
+from models.stock_info import StockInfo
 from enums.period import Period
-from utils.logger import getLogger
-from utils.decorators import performance_monitor
-from utils.exceptions import Data_access_error, Data_validation_error
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
-class DataAccessManager(IData_access):
+class DataAccessManager(DataAccessInterface):
     """
     数据访问管理器
     
@@ -32,8 +27,8 @@ class DataAccessManager(IData_access):
     """
     
     def __init__(self, 
-                 connection_manager: Optional[IConnection_manager] = None,
-                 cache_service: Optional[ICache_service] = None):
+                 connection_manager=None,
+                 cache_service=None):
         """
         初始化数据访问管理器
         
@@ -41,11 +36,8 @@ class DataAccessManager(IData_access):
             connection_manager: 连接管理器
             cache_service: 缓存服务
         """
-        # 使用依赖注入容器获取依赖
-        container = get_container()
-        
-        self.connection_manager = connection_manager or get_service(Data_access_interface)
-        self.cache_service = cache_service or get_service(Data_access_interface)
+        self.connection_manager = connection_manager
+        self.cache_service = cache_service
         
         logger.info("数据访问管理器初始化完成")
     
@@ -99,13 +91,15 @@ class DataAccessManager(IData_access):
             # 执行查询
             result_df = self.query_Manager_Data_Access_Manager(query, params)
             
-            # 创建StockInfo对象
-            stock_info WHERE 1=1 = Stock_info(result_df)
+            # 创建Stock_info对象
+            stock_info = Stock_info(result_df)
             
             # 缓存结果
             self.cache_service.set(cache_key, stock_info, ttl=300)  # 5分钟缓存
             
-            return stock_info WHERE 1=1 except Exception as e:
+            return stock_info
+            
+        except Exception as e:
             logger.error(f"获取股票数据失败: {e}")
             raise DataAccessError(f"获取股票数据失败: {e}")
     
@@ -341,7 +335,7 @@ class DataAccessManager(IData_access):
         Returns:
             pd.DataFrame: K线数据
         """
-        stock_info WHERE 1=1 = self.get_stock_info_Manager_Data_Access_Manager(
+        stock_info = self.get_stock_info_Manager_Data_Access_Manager(
             stock_code=code,
             level=level,
             start_date=start_date,
@@ -539,7 +533,7 @@ class DataAccessManager(IData_access):
             tuple: (query, params)
         """
         query = """
-        query_executor.get_stock_list() WHERE 1=1
+        query_executor.get_stock_list()
         WHERE 1=1
         """
         
@@ -601,7 +595,7 @@ class DataAccessManager(IData_access):
             level = self._convert_period_to_level_Data_Access_Manager(period)
             
             # 获取股票数据
-            stock_info WHERE 1=1 = self.get_stock_info_Manager_Data_Access_Manager(
+            stock_info = self.get_stock_info_Manager_Data_Access_Manager(
                 stock_code=stock_code,
                 level=level,
                 start_date=start_date,
@@ -848,7 +842,7 @@ class DataAccessManager(IData_access):
             pd.DataFrame: 查询结果
             
         Raises:
-            Data_access_error: 查询执行失败
+            DataAccessError: 查询执行失败
         """
         return self.query_Manager_Data_Access_Manager(query, params)
     

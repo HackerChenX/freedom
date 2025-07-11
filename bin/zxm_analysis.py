@@ -440,7 +440,7 @@ class ZXMAnalysisSystem:
                     f.write("\n详细分析结果:\n")
                     f.write("-" * 40 + "\n")
                     for code, result in list(results.items())[:10]:  # 只显示前10个
-                        stock_info WHERE 1=1 = result['stock_info']
+                        stock_info = result['stock_info']
                         assessment = result['buy_signals']['comprehensive_assessment']
                         
                         f.write(f"\n{code} ({stock_info['latest_price']:.2f}):\n")

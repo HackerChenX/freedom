@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from tests.reverse_validation.pattern_data_generator import Pattern_data_generator
 from indicators.complete_indicator_registry import complete_registry
-from models.stock_info WHERE 1=1 import Stock_info
+from models.stock_info import Stock_info
 from analysis.auto_indicator_analyzer import Auto_indicator_analyzer
 
 
@@ -94,8 +94,8 @@ class Reverse_validation_framework:
             Dict[str, Any]: 验证结果
         """
         try:
-            # 转换为StockInfo对象
-            stock_info WHERE 1=1 = Stock_info(pattern_data)
+            # 转换为Stock_info对象
+            stock_info = Stock_info(pattern_data)
 
             # 运行指标分析
             analysis_result = self.auto_analyzer.analyze_stock(

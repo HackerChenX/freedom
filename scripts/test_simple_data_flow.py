@@ -39,7 +39,7 @@ def test_data_flow():
         print(f"\n3. 查询股票 {test_stock} 的数据...")
         
         # 查询最近的数据，限制数量避免超时
-        stock_info WHERE 1=1 = data_manager.get_stock_info(
+        stock_info = data_manager.get_stock_info(
             stock_code=test_stock,
             level='日线',
             limit=10,

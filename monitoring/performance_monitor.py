@@ -396,7 +396,7 @@ class Performancemonitor_monitor:
             history = self.metrics_history.get(name, deque())
             return [m for m in history if m.timestamp >= cutoff_time]
     
-    def add_alert_rule(self, rule: Alert_rule):
+    def add_alert_rule(self, rule: Alertrule_monitor):
         """添加告警规则"""
         with self.alerts_lock:
             self.alert_rules.append(rule)
@@ -527,7 +527,7 @@ _performance_monitor = None
 _monitor_lock = threading.Lock()
 
 
-def get_performance_monitor() -> Performance_monitor:
+def get_performance_monitor() -> Performancemonitor_monitor:
     """获取全局性能监控实例"""
     global _performance_monitor
     
@@ -702,7 +702,7 @@ def system_health_check() -> Dict[str, Any]:
 _health_checker = None
 
 
-def get_health_checker() -> Health_checker:
+def get_health_checker() -> Healthchecker_monitor:
     """获取全局健康检查器"""
     global _health_checker
 

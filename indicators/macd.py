@@ -12,7 +12,7 @@ from utils.logger import getLogger
 from utils.technical_utils import calculate_macd, crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.pattern_registry import Pattern_registry
+from indicators.pattern_registry import PatternRegistry
 
 logger = getLogger(__name__)
 
@@ -86,13 +86,13 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         self._registered_patterns = False
         
         # 设置形态注册表允许覆盖，避免警告
-        Pattern_registry.set_allow_override(True)
+        PatternRegistry.set_allow_override(True)
         
         # 初始化基类（会自动调用register_patterns方法）
         super().__init__()
         
         # 重置形态注册表为不允许覆盖
-        Pattern_registry.set_allow_override(False)
+        PatternRegistry.set_allow_override(False)
         
         self.is_available = True
     

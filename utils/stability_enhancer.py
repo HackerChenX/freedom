@@ -61,7 +61,7 @@ class CircuitBreaker:
         
         self.failure_count = 0
         self.last_failure_time = None
-        self.state = Circuit_breaker_state.CLOSED
+        self.state = CircuitBreakerState.CLOSED
         
         self.lock = threading.Lock()
         
@@ -77,9 +77,9 @@ class CircuitBreaker:
     def call(self, func, *args, **kwargs):
         """执行函数调用"""
         with self.lock:
-            if self.state == Circuit_breaker_state.OPEN:
+            if self.state == CircuitBreakerState.OPEN:
                 if self._should_attempt_reset():
-                    self.state = Circuit_breaker_state.HALF_OPEN
+                    self.state = CircuitBreakerState.HALF_OPEN
                     logger.info("熔断器进入半开状态，尝试恢复")
                 else:
                     raise StabilityError("熔断器开启，拒绝执行")
@@ -102,8 +102,8 @@ class CircuitBreaker:
     
     def _on_success(self):
         """成功时的处理"""
-        if self.state == Circuit_breaker_state.HALF_OPEN:
-            self.state = Circuit_breaker_state.CLOSED
+        if self.state == CircuitBreakerState.HALF_OPEN:
+            self.state = CircuitBreakerState.CLOSED
             logger.info("熔断器恢复到关闭状态")
         
         self.failure_count = 0
@@ -114,7 +114,7 @@ class CircuitBreaker:
         self.last_failure_time = datetime.now()
         
         if self.failure_count >= self.failure_threshold:
-            self.state = Circuit_breaker_state.OPEN
+            self.state = CircuitBreakerState.OPEN
             logger.warning(f"熔断器开启，失败次数: {self.failure_count}")
     
     def get_state(self) -> Dict[str, Any]:
@@ -129,7 +129,7 @@ class CircuitBreaker:
 
 def retry(max_attempts: int = 3,
           delay: float = 1.0,
-          strategy: retry_strategy = Retry_strategy.EXPONENTIAL,
+          strategy: RetryStrategy = RetryStrategy.EXPONENTIAL,
           backoff_factor: float = 2.0,
           exceptions: Union[Exception, tuple] = Exception,
           on_retry: Optional[Callable] = None):
@@ -144,10 +144,57 @@ def retry(max_attempts: int = 3,
         exceptions: 需要重试的异常类型
         on_retry: 重试时的回调函数
     """
-    def decorator_Enhancer_Stability_Enhancer_Stability_Enhancer_1_stabilityenhancer(func):
+    def decorator(func):
         @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            current_delay = delay
+            
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    last_exception = e
+                    
+                    if attempt == max_attempts - 1:
+                        # 最后一次尝试，直接抛出异常
+                        break
+                    
+                    # 调用重试回调
+                    if on_retry:
+                        on_retry(e, attempt + 1, max_attempts)
+                    
+                    logger.warning(f"函数 {func.__name__} 第 {attempt + 1} 次执行失败，{current_delay}秒后重试: {e}")
+                    
+                    # 等待重试
+                    time.sleep(current_delay)
+                    
+                    # 计算下次延迟
+                    if strategy == RetryStrategy.EXPONENTIAL:
+                        current_delay *= backoff_factor
+                    elif strategy == RetryStrategy.LINEAR:
+                        current_delay += delay
+                    # FIXED 策略保持不变
+            
+            # 所有重试都失败了
+            logger.error(f"函数 {func.__name__} 在 {max_attempts} 次尝试后仍然失败")
+            raise last_exception
+        
+        return wrapper
+    return decorator
+
+
 class GracefulDegradation:
     """优雅降级管理器"""
+    
+    def __init__(self):
+        """初始化优雅降级管理器"""
+        self.fallback_functions = {}
+        self.degradation_rules = {}
+        self.active_degradations = set()
+        self.lock = threading.Lock()
+        
+        logger.debug("优雅降级管理器初始化完成")
     
     def register_fallback(self, service_name: str, fallback_func: Callable):
         """注册降级函数"""
@@ -230,6 +277,14 @@ class GracefulDegradation:
 class ErrorhandlerEnhancer:
     """错误处理器"""
     
+    def __init__(self):
+        """初始化错误处理器"""
+        self.error_handlers = {}
+        self.error_stats = {}
+        self.lock = threading.Lock()
+        
+        logger.debug("错误处理器初始化完成")
+    
     def register_handler(self, exception_type: type, handler: Callable):
         """注册错误处理器"""
         with self.lock:
@@ -300,6 +355,12 @@ class ErrorhandlerEnhancer:
 
 def timeout(seconds: float):
     """超时装饰器"""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = [None]
+            exception = [None]
+            
             def target():
                 try:
                     result[0] = func(*args, **kwargs)
@@ -327,15 +388,28 @@ def timeout(seconds: float):
 class StabilityManager:
     """稳定性管理器"""
     
-    def create_circuit_breaker(self, name: str, **kwargs) -> Circuit_breaker:
+    def __init__(self):
+        """初始化稳定性管理器"""
+        self.circuit_breakers = {}
+        self.degradation_manager = GracefulDegradation()
+        self.error_handler = ErrorhandlerEnhancer()
+        self.stats = {
+            'errors_handled': 0,
+            'circuit_breaker_trips': 0,
+            'degradations_activated': 0
+        }
+        
+        logger.debug("稳定性管理器初始化完成")
+    
+    def create_circuit_breaker(self, name: str, **kwargs) -> CircuitBreaker:
         """创建熔断器"""
-        breaker = Circuit_breaker(**kwargs)
+        breaker = CircuitBreaker(**kwargs)
         self.circuit_breakers[name] = breaker
         
         logger.info(f"创建熔断器: {name}")
         return breaker
     
-    def get_circuit_breaker(self, name: str) -> Optional[Circuit_breaker]:
+    def get_circuit_breaker(self, name: str) -> Optional[CircuitBreaker]:
         """获取熔断器"""
         return self.circuit_breakers.get(name)
     
@@ -381,13 +455,13 @@ _stability_manager = None
 _manager_lock = threading.Lock()
 
 
-def get_stability_manager() -> Stability_manager:
+def get_stability_manager() -> StabilityManager:
     """获取全局稳定性管理器"""
     global _stability_manager
     
     if _stability_manager is None:
         with _manager_lock:
             if _stability_manager is None:
-                _stability_manager = Stability_manager()
+                _stability_manager = StabilityManager()
     
     return _stability_manager

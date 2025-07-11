@@ -13,7 +13,7 @@ from datetime import datetime
 from utils.logger import getLogger
 from enums.period import Period
 from indicators.indicator_factory import Indicator_factory
-from formula.stock_formula import Stock_formula
+from formula.stock_formula import StockFormula
 
 logger = getLogger(__name__)
 
@@ -552,7 +552,7 @@ class FormulaEditor:
                 return {"success": False, "message": error_msg}
             
             # 创建StockFormula实例
-            formula = Stock_formula(stock_code, start=start_date, end=end_date)
+            formula = StockFormula(stock_code, start=start_date, end=end_date)
             
             # 预处理公式
             formula_text = self.converter._preprocess_formula(formula_text)

@@ -15,7 +15,7 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from indicators.trend.enhanced_macd import Enhanced_mACD
 
 def test_enhanced_macd():
@@ -25,7 +25,7 @@ def test_enhanced_macd():
     print("=" * 60)
     
     # 获取数据库连接
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     
     # 测试股票代码
     test_codes = ['000001', '000002', '000858']

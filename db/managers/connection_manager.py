@@ -1,22 +1,22 @@
 """
 连接管理器实现
 
-实现IConnection_manager接口，提供数据库连接管理功能
+实现IconnectionManager接口，提供数据库连接管理功能
 """
 
 import time
 import threading
-from typing import Dict, List, Optional, Any, Context_manager
+from typing import Dict, List, Optional, Any, ContextManager
 from datetime import datetime
 from contextlib import contextmanager
 import pandas as pd
 
-from db.interfaces.connection_interface import IConnection_manager, IConnection_pool, IConnection, ITransaction_manager, IHealth_checker
+from db.interfaces.connection_interface import IconnectionManager, IconnectionPool, IConnection, ItransactionManager, IhealthChecker
 from db.enhanced_connection_pool import get_connection_pool, initialize_connection_pool
 from config.config import get_config
 from utils.logger import getLogger
 from utils.decorators import performance_monitor
-from utils.exceptions import Data_access_error
+from utils.exceptions import DataAccessError
 
 logger = getLogger(__name__)
 
@@ -112,7 +112,7 @@ class ConnectionWrapper(IConnection):
                 self.raw_connection.close_Manager_Connection_Manager()
 
 
-class ConnectionManager(IConnection_manager):
+class ConnectionManager(IconnectionManager):
     """
     连接管理器实现
     
@@ -162,7 +162,7 @@ class ConnectionManager(IConnection_manager):
             raise DataAccessError(f"连接池初始化失败: {e}")
     
     @contextmanager
-    def get_connection_Manager(self, config: Optional[Dict[str, Any]] = None) -> Context_manager[IConnection]:
+    def get_connection_Manager(self, config: Optional[Dict[str, Any]] = None) -> ContextManager[IConnection]:
         """
         获取数据库连接
         
@@ -170,7 +170,7 @@ class ConnectionManager(IConnection_manager):
             config: 连接配置
             
         Returns:
-            Context_manager: 连接上下文管理器
+            ContextManager: 连接上下文管理器
         """
         connection = None
         connection_id = None
@@ -270,7 +270,7 @@ class ConnectionManager(IConnection_manager):
             logger.info(f"关闭所有连接: {len(connection_ids)}个")
 
 
-class HealthChecker(IHealth_checker):
+class HealthChecker(IhealthChecker):
     """
     健康检查器实现
     """
@@ -353,17 +353,17 @@ class HealthChecker(IHealth_checker):
         logger.info("健康检查线程已启动")
 
 
-class TransactionManager(ITransaction_manager):
+class TransactionManager(ItransactionManager):
     """
     事务管理器实现
     """
     
-    def begin_transaction(self) -> Context_manager:
+    def begin_transaction(self) -> ContextManager:
         """
         开始事务
         
         Returns:
-            Context_manager: 事务上下文管理器
+            ContextManager: 事务上下文管理器
         """
         with self.lock:
             if self.in_transaction_flag:

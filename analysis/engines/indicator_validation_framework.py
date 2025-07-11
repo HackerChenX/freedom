@@ -23,7 +23,8 @@ from enum import Enum
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.unified_data_manager import get_unified_data_manager
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_manager import Strategy_manager
 from indicators.complete_indicator_registry import complete_registry
@@ -91,7 +92,7 @@ class IndicatorValidationFramework:
         
         # 初始化数据管理器和策略执行器
         try:
-            self.data_manager = get_unified_data_manager()
+            self.data_manager = get_service(DataAccessInterface)
             self.strategy_executor = Strategy_executor()
             
             logger.info("✅ 指标验证框架初始化完成")

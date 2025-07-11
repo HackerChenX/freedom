@@ -17,7 +17,7 @@ sys.path.append(root_dir)
 from analysis.pattern_recognition_analyzer import Pattern_recognition_analyzer
 from scripts.backtest.pattern_backtest import Pattern_backtester
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 from utils.path_utils import get_result_path, ensure_dir
 

@@ -382,7 +382,7 @@ class RealDataReverseValidator:
             for stock_code in selected_stocks:
                 try:
                     # 获取股票基本信息
-                    stock_info WHERE 1=1 = self.data_manager.get_stock_basic_info(stock_code)
+                    stock_info = self.data_manager.get_stock_basic_info(stock_code)
                     if stock_info:
                         details[stock_code] = {
                             "stock_name": stock_info.get("stock_name", "未知"),

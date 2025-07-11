@@ -16,7 +16,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.logger import getLogger
-from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength, Pattern_polarity
+from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
 
 logger = getLogger(__name__)
 
@@ -509,7 +509,7 @@ class WrWr(BaseIndicator, PatternSignalMixin):
         注册WR指标相关形态
         """
         # 获取PatternRegistry实例
-        registry = Pattern_registry()
+        registry = PatternRegistry()
         
         # 注册WR超买超卖形态
         registry.register(

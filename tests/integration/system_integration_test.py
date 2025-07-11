@@ -68,7 +68,7 @@ class System_integration_test:
             start_time = time.time()
             
             # 测试单股票查询
-            stock_info WHERE 1=1 = self.data_manager.get_stock_info(
+            stock_info = self.data_manager.get_stock_info(
                 stock_code='000001',
                 level='DAILY',
                 limit=100

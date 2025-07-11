@@ -23,7 +23,7 @@ from indicators.boll_score import BOLLScore
 from indicators.volume_score import Volume_score
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -34,7 +34,7 @@ def test_single_indicator_scoring():
     logger.info("开始测试单个指标评分")
     
     # 获取测试数据
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1
@@ -86,7 +86,7 @@ def test_comprehensive_scoring_Scoring():
     logger.info("开始测试综合评分系统")
     
     # 获取测试数据
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1
@@ -194,7 +194,7 @@ def test_indicator_registry():
         logger.info("成功通过注册机制创建评分管理器")
         
         # 获取测试数据
-        data_access = get_container().resolve(IData_access)
+        data_access = get_container().resolve(DataAccessInterface)
         sql = """
         SELECT date, open, high, low, close, volume
         FROM stock_info WHERE 1=1
@@ -223,7 +223,7 @@ def test_pattern_recognition_Scoring():
     logger.info("开始测试形态识别功能")
     
     # 获取更多测试数据用于形态识别
-    data_access = get_container().resolve(IData_access)
+    data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1

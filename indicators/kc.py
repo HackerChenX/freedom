@@ -14,7 +14,7 @@ from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 
-logger = logging.get_Logger(__name__)
+logger = logging.getLogger(__name__)
 
 class KeltnerChannel(BaseIndicator, PatternSignalMixin):
     """

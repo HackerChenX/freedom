@@ -11,6 +11,7 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.complete_indicator_registry import complete_registry
 from utils.logger import getLogger
 
 logger = getLogger(__name__)

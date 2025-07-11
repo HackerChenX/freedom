@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from indicators.pattern_registry import Pattern_type
+from indicators.pattern_registry import PatternTypePatternRegistry
 from utils.logger import getLogger
 
 logger = getLogger(__name__)

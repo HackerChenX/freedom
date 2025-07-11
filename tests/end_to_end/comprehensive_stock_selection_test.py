@@ -346,7 +346,7 @@ class Comprehensive_stock_selection_test:
 
             # 尝试获取真实股票数据
             try:
-                stock_info WHERE 1=1 = self.data_manager.get_stock_info(
+                stock_info = self.data_manager.get_stock_info(
                     level='DAILY',
                     start_date=start_date,
                     end_date=end_date,

@@ -19,7 +19,7 @@ from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
 from utils.logger import getLogger
 
-logger = logging.get_Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class EmvEmv(BaseIndicator, PatternSignalMixin):

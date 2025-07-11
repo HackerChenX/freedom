@@ -19,7 +19,7 @@ sys.path.insert(0, root_dir)
 
 from indicators.vortex import VORTEX
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IData_access
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 def get_test_data(code: str = "000001.SZ", limit: int = 100) -> pd.DataFrame:
     """获取测试数据"""
     try:
-        data_access = get_container().resolve(IData_access)
+        data_access = get_container().resolve(DataAccessInterface)
         
         # 获取股票数据
         query = f"""
