@@ -10,7 +10,7 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import Unified_data_manager
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from indicators.complete_indicator_registry import Complete_indicator_registry
 from utils.logger import get_logger
 
@@ -22,7 +22,7 @@ def debug_single_stock_condition():
         # 初始化组件
         data_manager = Unified_data_manager()
         indicator_registry = Complete_indicator_registry()
-        evaluator = Strategy_condition_evaluator(data_manager, indicator_registry)
+        evaluator = StrategyConditionEvaluator(data_manager, indicator_registry)
         
         # 测试股票
         test_stock = "000001"

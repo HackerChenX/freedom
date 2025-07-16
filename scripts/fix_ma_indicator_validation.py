@@ -21,7 +21,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from strategy.strategy_executor import Strategy_executor
 from utils.logger import get_logger
 
@@ -101,7 +101,7 @@ def test_strategy_condition_with_daily_data():
     
     try:
         # 初始化条件评估器
-        evaluator = Strategy_condition_evaluator()
+        evaluator = StrategyConditionEvaluator()
         data_manager = get_unified_data_manager()
         
         # 获取一只股票的日线数据

@@ -22,7 +22,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from strategy.strategy_parser import Strategy_parser
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
 from db.unified_data_manager import get_unified_data_manager
@@ -148,7 +148,7 @@ def run_backtest_Integrated(stock_list_file, start_date, end_date, indicator_lis
         # 初始化
         init_logging(level="INFO")
         data_manager = get_unified_data_manager()
-        evaluator = Strategy_condition_evaluator()
+        evaluator = StrategyConditionEvaluator()
         
         # 加载股票列表
         stocks = pd.read_csv(stock_list_file)

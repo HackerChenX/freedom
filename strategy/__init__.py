@@ -26,6 +26,6 @@ __all__ = [
     'MultiPeriodStrategy',
     'StrategyFactory',
     'StrategyGenerator',
-    'Strategy_executor',
+    'StrategyExecutor',
     'StrategyManager'
 ] 

@@ -1,17 +1,15 @@
 """
-数据服务接口层
+数据库接口模块初始化文件
 
-定义系统核心数据访问接口，实现分层架构的接口规范
+集中导出所有数据库接口
 """
 
 from db.interfaces.data_access_interface import DataAccessInterface
-from db.interfaces.indicator_calculator_interface import IindicatorCalculator as IIndicatorCalculator
-from db.interfaces.cache_interface import IcacheService as ICacheService
+from db.interfaces.cache_interface import ICacheService
 from db.interfaces.connection_interface import IconnectionManager
 
 __all__ = [
     'DataAccessInterface',
-    'IIndicatorCalculator', 
-    'ICacheService',
+    'ICacheService', 
     'IconnectionManager'
 ] 

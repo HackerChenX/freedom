@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from db.interfaces.data_access_interface import DataAccessInterface, Indicator_result
-from db.interfaces.cache_interface import IcacheService
+from db.interfaces.cache_interface import ICacheService
 from utils.logger import getLogger
 
 logger = getLogger(__name__)
@@ -77,7 +77,7 @@ class ParallelProcessor:
     - 进度监控和性能统计
     """
     
-    def __init___23(self, data_access: DataAccessInterface, cache_service: IcacheService,
+    def __init___23(self, data_access: DataAccessInterface, cache_service: ICacheService,
                  config: Optional[Processing_config] = None):
         self.data_access = data_access
         self.cache_service = cache_service

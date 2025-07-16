@@ -377,104 +377,116 @@ class AutoIndicatorAnalyzer:
                         else:
                             return hit_patterns
 
-                    # 创建数据副本并重置索引以确保连续性
-                    patterns_result_safe = patterns_result.copy()
-                    patterns_result_safe = patterns_result_safe.reset_index(drop=True)
-
-                    # 只处理布尔类型的列，过滤掉非形态数据列
+                    # 安全的DataFrame操作 - 避免Pandas内部错误
+                    patterns_result_safe = patterns_result.copy(deep=True)
+                    
+                    # 确保索引是连续的整数索引
+                    if not isinstance(patterns_result_safe.index, pd.RangeIndex):
+                        patterns_result_safe = patterns_result_safe.reset_index(drop=True)
+                    
+                    # 安全的列类型检查
                     pattern_columns = []
                     for col in patterns_result_safe.columns:
-                        # 检查列是否是形态列（布尔类型或可转换为布尔类型）
                         try:
-                            # 尝试检查列的数据类型和内容
-                            col_data = patterns_result_safe[col]
-                            if col_data.dtype == bool:
+                            # 安全地获取列数据副本
+                            col_series = patterns_result_safe[col].copy()
+                            
+                            # 检查是否是布尔类型或可转换为布尔类型
+                            if col_series.dtype == bool:
                                 pattern_columns.append(col)
-                            elif col_data.dtype in ['int64', 'float64'] and col_data.isin([0, 1, True, False]).all():
-                                # 如果是0/1的数值列，转换为布尔类型
-                                patterns_result_safe[col] = col_data.astype(bool)
-                                pattern_columns.append(col)
+                            elif col_series.dtype in ['int64', 'float64', 'int32', 'float32']:
+                                # 检查是否是0/1值
+                                unique_vals = col_series.dropna().unique()
+                                if len(unique_vals) <= 2 and all(val in [0, 1, True, False] for val in unique_vals):
+                                    # 安全地转换为布尔类型
+                                    patterns_result_safe.loc[:, col] = col_series.astype(bool)
+                                    pattern_columns.append(col)
+                                else:
+                                    logger.debug(f"指标 {indicator_name} 跳过非布尔数值列: {col}")
                             else:
-                                # 跳过非布尔类型的列（如stockInfo字段、价格数据等）
-                                logger.debug(f"指标 {indicator_name} 跳过非形态列: {col} (类型: {col_data.dtype})")
+                                logger.debug(f"指标 {indicator_name} 跳过非形态列: {col} (类型: {col_series.dtype})")
                         except Exception as e:
                             logger.debug(f"指标 {indicator_name} 检查列 {col} 时出错: {e}")
+                            continue
 
-                    # 只保留形态列
-                    if pattern_columns:
-                        patterns_result_safe = patterns_result_safe[pattern_columns]
-                    else:
-                        logger.debug(f"指标 {indicator_name} 没有找到有效的形态列")
-                        return hit_patterns
+                    # 安全地处理每个形态列
+                    for col in pattern_columns:
+                        try:
+                            # 使用安全的索引访问方式
+                            if target_idx < len(patterns_result_safe):
+                                # 使用.iloc而不是.loc来避免索引对齐问题
+                                pattern_value = patterns_result_safe.iloc[target_idx][col]
+                                
+                                # 确保是布尔值
+                                if pd.isna(pattern_value):
+                                    pattern_detected = False
+                                else:
+                                    pattern_detected = bool(pattern_value)
+                                
+                                if pattern_detected:
+                                    pattern_id = col
 
-                    # 安全地提取目标行的形态
-                    if target_idx < len(patterns_result_safe):
-                        target_patterns = patterns_result_safe.iloc[target_idx].copy()
-                        # 筛选出值为True的形态
-                        hit_pattern_ids = target_patterns[target_patterns == True].index.tolist()
-                    else:
-                        hit_pattern_ids = []
+                        except Exception as e:
+                            logger.debug(f"指标 {indicator_name} 处理形态列 {col} 时出错: {e}")
+                            continue
 
-                except Exception as e:
-                    logger.warning(f"处理指标 {indicator_name} 的形态数据时出错: {e}，尝试备用方法")
-                    # 备用方法：使用最安全的方式访问数据
-                    try:
-                        hit_pattern_ids = []
-                        if target_idx < len(patterns_result):
-                            # 使用最安全的.iat方法逐列检查，避免pandas内部索引问题
-                            for i, col in enumerate(patterns_result.columns):
-                                try:
-                                    # 使用.iat进行最安全的单元格访问
-                                    cell_value = patterns_result.iat[target_idx, i]
-                                    if pd.notna(cell_value) and bool(cell_value):
-                                        hit_pattern_ids.append(col)
-                                except (IndexError, ValueError) as e:
-                                    logger.debug(f"指标 {indicator_name} 访问列 {col} 时出错: {e}")
-                                    continue
-                    except Exception as e2:
-                        logger.error(f"指标 {indicator_name} 形态数据处理完全失败: {e2}")
-                        return hit_patterns
-                
-                # 获取命中的形态信息
-                for pattern_id in hit_pattern_ids:
-                    # 获取形态的详细信息
-                    try:
-                        pattern_info = indicator.get_pattern_info(pattern_id)
+                    # 获取命中的形态信息
+                    if pattern_id:
+                        try:
+                            pattern_info = indicator.get_pattern_info(pattern_id)
 
-                        # 确保pattern_info是字典类型
-                        if isinstance(pattern_info, dict):
-                            pattern_name = pattern_info.get('name', pattern_id)
-                            description = pattern_info.get('description', '')
-                            pattern_type = pattern_info.get('type', 'UNKNOWN')
-                        else:
-                            # 如果返回的不是字典，使用默认值
-                            pattern_name = str(pattern_info) if pattern_info else pattern_id
-                            description = ''
-                            pattern_type = 'UNKNOWN'
-                    except Exception as e:
-                        logger.warning(f"获取指标 {indicator_name} 形态 {pattern_id} 信息时出错: {e}")
-                        pattern_name = pattern_id
-                        description = ''
-                        pattern_type = 'UNKNOWN'
+                            # 确保pattern_info是字典类型
+                            if isinstance(pattern_info, dict):
+                                pattern_name = pattern_info.get('name', pattern_id)
+                                description = pattern_info.get('description', '')
+                                pattern_type = pattern_info.get('type', 'UNKNOWN')
+                            elif isinstance(pattern_info, str):
+                                # 如果返回的是字符串，解析为简单格式
+                                pattern_name = pattern_info
+                                description = f"形态: {pattern_info}"
+                                pattern_type = 'STRING_PATTERN'
+                                logger.debug(f"指标 {indicator_name} 的get_pattern_info返回字符串: {pattern_info}")
+                            elif pattern_info is None:
+                                # 如果返回None，使用默认值
+                                pattern_name = pattern_id
+                                description = ''
+                                pattern_type = 'UNKNOWN'
+                            else:
+                                # 其他类型，尝试转换为字符串
+                                pattern_name = str(pattern_info) if pattern_info else pattern_id
+                                description = f"非标准形态信息: {type(pattern_info).__name__}"
+                                pattern_type = 'NON_STANDARD'
+                                logger.warning(f"指标 {indicator_name} 的get_pattern_info返回非标准类型: {type(pattern_info)}")
+                        except AttributeError as e:
+                            # 如果指标没有get_pattern_info方法
+                            logger.debug(f"指标 {indicator_name} 没有get_pattern_info方法: {e}")
+                            pattern_name = pattern_id
+                            description = f"指标: {indicator_name}, 形态: {pattern_id}"
+                            pattern_type = 'NO_INFO_METHOD'
+                        except Exception as e:
+                            logger.warning(f"获取指标 {indicator_name} 形态 {pattern_id} 信息时出错: {e}")
+                            pattern_name = pattern_id
+                            description = f"获取信息失败: {str(e)}"
+                            pattern_type = 'ERROR'
 
-                    # 使用评分框架计算该形态的评分
-                    pattern_score = self.score_manager.score_pattern(pattern_id, {
-                        "name": pattern_name,
-                        "type": pattern_type,
-                        "indicator": indicator_name
-                    })
-                    
-                    hit_patterns.append({
-                        "type": "indicator",
-                        "indicator_name": indicator_name,
-                        "pattern_id": pattern_id,
-                        "pattern_name": pattern_name,
-                        "description": description,
-                        "pattern_type": pattern_type,
-                        "score_impact": pattern_score,  # 使用评分框架计算的评分
-                        "score": pattern_score,  # 使用评分框架计算的评分
-                        "strength_score": pattern_score  # 使用评分框架计算的评分
-                    })
+                        # 使用评分框架计算该形态的评分
+                        pattern_score = self.score_manager.score_pattern(pattern_id, {
+                            "name": pattern_name,
+                            "type": pattern_type,
+                            "indicator": indicator_name
+                        })
+                        
+                        hit_patterns.append({
+                            "type": "indicator",
+                            "indicator_name": indicator_name,
+                            "pattern_id": pattern_id,
+                            "pattern_name": pattern_name,
+                            "description": description,
+                            "pattern_type": pattern_type,
+                            "score_impact": pattern_score,  # 使用评分框架计算的评分
+                            "score": pattern_score,  # 使用评分框架计算的评分
+                            "strength_score": pattern_score  # 使用评分框架计算的评分
+                        })
 
             # 如果返回的是列表（已弃用的旧格式）
             elif isinstance(patterns_result, list) and patterns_result:

@@ -50,8 +50,8 @@ class MaMa(BaseIndicator, PatternSignalMixin):
                 - price_field: 价格字段选择
         """
         # 验证参数
-        from utils.indicator_parameter_validator import Indicator_parameter_validator
-        validator = Indicator_parameter_validator()
+        from utils.indicator_parameter_validator import IndicatorParameterValidator
+        validator = IndicatorParameterValidator()
 
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()

@@ -9,7 +9,7 @@ from utils.logger import getLogger
 logger = getLogger(__name__)
 
 
-class EnhancedStochrsi(BaseIndicator, PatternSignalMixin):
+class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin):
     """
     增强型Stoch_rSI指标
 
@@ -77,8 +77,8 @@ class EnhancedStochrsi(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
 
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -522,4 +522,4 @@ class EnhancedStochrsi(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-enhanced_stochastic_rsi = ENHANCED_STOCHRSI
+enhanced_stochastic_rsi = EnhancedStochasticRSI

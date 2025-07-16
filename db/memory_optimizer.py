@@ -18,9 +18,9 @@ import time
 from dataclasses import dataclass
 from contextlib import contextmanager
 
-from utils.logger import getLogger
+from utils.logger import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -42,7 +42,7 @@ class MemoryStats:
     memory_usage_percent: float
     process_memory_mb: float
     
-    def to_dict_Optimizer(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         return {
             'total_memory_gb': self.total_memory_gb,
             'available_memory_gb': self.available_memory_gb,
@@ -60,22 +60,22 @@ class MemoryOptimizer:
     - 实时内存监控
     - 数据分块处理
     - 自动内存优化
-    - Data_frame内存优化
+    - DataFrame内存优化
     - 垃圾回收管理
     """
     
-    def __init___31(self, config: Optional[Memory_config] = None):
-        self.config = config or Memory_config()
+    def __init__(self, config: Optional[MemoryConfig] = None):
+        self.config = config or MemoryConfig()
         self.process = psutil.Process()
         self.gc_counter = 0
         self.optimization_history = []
         
-    def get_memory_stats(self) -> Memory_stats:
+    def get_memory_stats(self) -> MemoryStats:
         """
         获取当前内存统计信息
         
         Returns:
-            Memory_stats: 内存统计信息
+            MemoryStats: 内存统计信息
         """
         # 系统内存信息
         memory = psutil.virtual_memory()
@@ -83,7 +83,7 @@ class MemoryOptimizer:
         # 进程内存信息
         process_memory = self.process.memory_info()
         
-        return Memory_stats(
+        return MemoryStats(
             total_memory_gb=memory.total / (1024**3),
             available_memory_gb=memory.available / (1024**3),
             used_memory_gb=memory.used / (1024**3),
@@ -109,200 +109,146 @@ class MemoryOptimizer:
         return True
     
     @contextmanager
-    def memory_monitor(self, operation_name: str = "操作"):
+    def memory_monitor(self, operation_name: str = "operation"):
         """
         内存监控上下文管理器
         
         Args:
             operation_name: 操作名称
         """
-        start_stats = self.get_memory_stats()
         start_time = time.time()
-        
-        logger.info(f"开始{operation_name} - 内存使用: {start_stats.process_memory_mb:.1f}MB")
+        start_memory = self.get_memory_stats()
         
         try:
-            yield start_stats
+            logger.debug(f"开始监控操作: {operation_name}")
+            yield
         finally:
-            end_stats = self.get_memory_stats()
+            end_memory = self.get_memory_stats()
             duration = time.time() - start_time
             
-            memory_diff = end_stats.process_memory_mb - start_stats.process_memory_mb
+            memory_change = end_memory.memory_usage_percent - start_memory.memory_usage_percent
             
-            logger.info(f"完成{operation_name} - 耗时: {duration:.2f}秒, "
-                       f"内存变化: {memory_diff:+.1f}MB, "
-                       f"当前内存: {end_stats.process_memory_mb:.1f}MB")
-            
-            # 自动优化
-            if self.config.auto_optimize and memory_diff > 0:
-                self.auto_optimize_memory()
+            logger.debug(
+                f"操作完成: {operation_name}, "
+                f"耗时: {duration:.2f}s, "
+                f"内存变化: {memory_change:+.1f}%"
+            )
     
-    def optimize_dataframe(self, df: pd.DataFrame, 
-                          optimize_categories: bool = True) -> pd.DataFrame:
+    def optimize_dataframe(self, df: pd.DataFrame, inplace: bool = False) -> pd.DataFrame:
         """
-        优化Data_frame内存使用
+        优化DataFrame内存使用
         
         Args:
-            df: 原始Data_frame
-            optimize_categories: 是否优化分类数据
+            df: 原始DataFrame
+            inplace: 是否就地修改
             
         Returns:
-            pd.DataFrame: 优化后的Data_frame
+            pd.DataFrame: 优化后的DataFrame
         """
         if df.empty:
             return df
         
-        original_memory = df.memory_usage(deep=True).sum() / 1024**2
+        result_df = df if inplace else df.copy()
+        original_memory = df.memory_usage(deep=True).sum()
         
-        # 优化数值类型
-        df = self._optimize_numeric_columns(df)
+        # 优化数值列的数据类型
+        for col in result_df.select_dtypes(include=[np.number]).columns:
+            col_data = result_df[col]
+            
+            # 检查是否可以使用更小的数据类型
+            if col_data.dtype == 'float64':
+                if col_data.min() >= np.finfo(np.float32).min and col_data.max() <= np.finfo(np.float32).max:
+                    result_df[col] = col_data.astype(np.float32)
+            
+            elif col_data.dtype == 'int64':
+                if col_data.min() >= np.iinfo(np.int32).min and col_data.max() <= np.iinfo(np.int32).max:
+                    result_df[col] = col_data.astype(np.int32)
         
-        # 优化字符串类型
-        if optimize_categories:
-            df = self._optimize_string_columns(df)
+        # 优化字符串列
+        for col in result_df.select_dtypes(include=['object']).columns:
+            if result_df[col].dtype == 'object':
+                try:
+                    result_df[col] = result_df[col].astype('category')
+                except:
+                    pass  # 如果转换失败，保持原始类型
         
-        # 优化日期时间类型
-        df = self._optimize_datetime_columns(df)
-        
-        optimized_memory = df.memory_usage(deep=True).sum() / 1024**2
+        optimized_memory = result_df.memory_usage(deep=True).sum()
         memory_saved = original_memory - optimized_memory
         
         if memory_saved > 0:
-            logger.debug(f"DataFrame内存优化: {original_memory:.1f}MB -> {optimized_memory:.1f}MB "
-                        f"(节省 {memory_saved:.1f}MB, {memory_saved/original_memory*100:.1f}%)")
+            logger.debug(f"DataFrame内存优化: 节省 {memory_saved / 1024**2:.1f}MB")
         
-        return df
+        return result_df
     
-    def _optimize_numeric_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """优化数值列"""
-        # 优化整数类型
-        for col in df.select_dtypes(include=['int64']).columns:
-            col_min = df[col].min()
-            col_max = df[col].max()
-            
-            if col_min >= -128 and col_max <= 127:
-                df[col] = df[col].astype('int8')
-            elif col_min >= -32768 and col_max <= 32767:
-                df[col] = df[col].astype('int16')
-            elif col_min >= -2147483648 and col_max <= 2147483647:
-                df[col] = df[col].astype('int32')
-        
-        # 优化浮点类型
-        for col in df.select_dtypes(include=['float64']).columns:
-            # 检查是否可以转换为float32而不丢失精度
-            if self._can_downcast_float(df[col]):
-                df[col] = df[col].astype('float32')
-        
-        return df
-    
-    def _optimize_string_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """优化字符串列"""
-        for col in df.select_dtypes(include=['object']).columns:
-            if df[col].dtype == 'object':
-                # 检查是否适合转换为分类数据
-                unique_ratio = df[col].nunique() / len(df)
-                if unique_ratio < 0.5:  # 如果唯一值比例小于50%，转换为分类
-                    df[col] = df[col].astype('category')
-        
-        return df
-    
-    def _optimize_datetime_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """优化日期时间列"""
-        for col in df.columns:
-            if df[col].dtype == 'object':
-                # 尝试转换为日期时间类型
-                try:
-                    if df[col].str.match(r'\d{4}-\d{2}-\d{2}').all():
-                        df[col] = pd.to_datetime(df[col])
-                except:
-                    pass
-        
-        return df
-    
-    def _can_downcast_float(self, series: pd.Series) -> bool:
-        """检查浮点数是否可以安全转换为float32"""
-        try:
-            # 转换为float32并检查是否有精度损失
-            float32_series = series.astype('float32')
-            return np.allclose(series, float32_series, equal_nan=True)
-        except:
-            return False
-    
-    def chunk_dataframe(self, df: pd.DataFrame, 
-                       chunk_size_mb: Optional[int] = None) -> Generator[pd.DataFrame, None, None]:
+    def create_chunked_iterator(
+        self, 
+        data: List[Any], 
+        chunk_size: Optional[int] = None
+    ) -> Generator[List[Any], None, None]:
         """
-        将Data_frame分块处理
+        创建分块迭代器
         
         Args:
-            df: 原始Data_frame
-            chunk_size_mb: 块大小(MB)
+            data: 数据列表
+            chunk_size: 块大小
             
         Yields:
-            pd.DataFrame: 数据块
+            List[Any]: 数据块
         """
-        chunk_size_mb = chunk_size_mb or self.config.chunk_size_mb
+        if chunk_size is None:
+            # 根据内存使用情况动态计算块大小
+            memory_stats = self.get_memory_stats()
+            if memory_stats.memory_usage_percent > 70:
+                chunk_size = max(10, len(data) // 100)
+            else:
+                chunk_size = max(50, len(data) // 20)
         
-        if df.empty:
-            yield df
-            return
-        
-        # 计算每个块的行数
-        row_memory_mb = df.memory_usage(deep=True).sum() / len(df) / 1024**2
-        rows_per_chunk = max(1, int(chunk_size_mb / row_memory_mb))
-        
-        logger.info(f"数据分块处理: {len(df)}行 -> 每块{rows_per_chunk}行 "
-                   f"(目标大小: {chunk_size_mb}MB)")
-        
-        for i in range(0, len(df), rows_per_chunk):
-            chunk = df.iloc[i:i + rows_per_chunk].copy()
-            yield self.optimize_dataframe(chunk)
+        for i in range(0, len(data), chunk_size):
+            yield data[i:i + chunk_size]
     
-    def process_large_dataset(self, data_source: Any, 
-                             processing_func: callable,
-                             chunk_size_mb: Optional[int] = None) -> List[Any]:
+    def process_dataframe_chunks(
+        self,
+        df: pd.DataFrame,
+        processing_func: callable,
+        chunk_size: Optional[int] = None,
+        **kwargs
+    ) -> List[Any]:
         """
-        处理大型数据集
+        分块处理DataFrame
         
         Args:
-            data_source: 数据源
+            df: 输入DataFrame
             processing_func: 处理函数
-            chunk_size_mb: 块大小(MB)
+            chunk_size: 块大小
+            **kwargs: 额外参数
             
         Returns:
             List[Any]: 处理结果列表
         """
-        chunk_size_mb = chunk_size_mb or self.config.chunk_size_mb
+        if chunk_size is None:
+            # 根据内存和数据大小动态计算
+            memory_mb = df.memory_usage(deep=True).sum() / 1024**2
+            if memory_mb > self.config.chunk_size_mb:
+                chunk_size = max(100, len(df) // int(memory_mb / self.config.chunk_size_mb))
+            else:
+                chunk_size = len(df)
+        
         results = []
         
-        with self.memory_monitor("大型数据集处理"):
-            if isinstance(data_source, pd.DataFrame):
-                # DataFrame分块处理
-                for chunk in self.chunk_dataframe(data_source, chunk_size_mb):
-                    with self.memory_monitor(f"处理数据块({len(chunk)}行)"):
-                        result = processing_func(chunk)
-                        results.append(result)
-                        
-                        # 检查内存并清理
-                        self._check_and_cleanup()
-            
-            elif isinstance(data_source, dict):
-                # 字典数据分块处理
-                items = list(data_source.items())
-                chunk_size = max(1, chunk_size_mb * 1024 // 10)  # 估算项目数量
+        with self.memory_monitor(f"分块处理DataFrame({len(df)}行)"):
+            for i in range(0, len(df), chunk_size):
+                chunk = df.iloc[i:i + chunk_size]
                 
-                for i in range(0, len(items), chunk_size):
-                    chunk_dict = dict(items[i:i + chunk_size])
-                    with self.memory_monitor(f"处理数据块({len(chunk_dict)}项)"):
-                        result = processing_func(chunk_dict)
+                try:
+                    result = processing_func(chunk, **kwargs)
+                    if result is not None:
                         results.append(result)
-                        
-                        # 检查内存并清理
-                        self._check_and_cleanup()
-            
-            else:
-                # 其他类型直接处理
-                result = processing_func(data_source)
-                results.append(result)
+                except Exception as e:
+                    logger.error(f"处理数据块失败 [{i}:{i+chunk_size}]: {e}")
+                
+                # 定期检查内存
+                if i % (chunk_size * 10) == 0:
+                    self.auto_optimize_memory()
         
         return results
     
@@ -383,7 +329,7 @@ class MemoryOptimizer:
         stats = self.get_memory_stats()
         
         return {
-            "current_memory_stats": stats.to_dict_Optimizer(),
+            "current_memory_stats": stats.to_dict(),
             "optimization_config": {
                 "max_memory_usage_percent": self.config.max_memory_usage_percent,
                 "chunk_size_mb": self.config.chunk_size_mb,
@@ -392,33 +338,4 @@ class MemoryOptimizer:
             },
             "gc_counter": self.gc_counter,
             "optimization_count": len(self.optimization_history)
-        }
-    
-    def suggest_optimal_batch_size(self, single_item_memory_mb: float) -> int:
-        """
-        建议最优批次大小
-        
-        Args:
-            single_item_memory_mb: 单个项目的内存使用(MB)
-            
-        Returns:
-            int: 建议的批次大小
-        """
-        stats = self.get_memory_stats()
-        available_memory_mb = stats.available_memory_gb * 1024
-        
-        # 保留30%的内存作为缓冲
-        usable_memory_mb = available_memory_mb * 0.7
-        
-        # 计算建议的批次大小
-        suggested_batch_size = max(1, int(usable_memory_mb / single_item_memory_mb))
-        
-        # 限制最大批次大小
-        max_batch_size = 1000
-        suggested_batch_size = min(suggested_batch_size, max_batch_size)
-        
-        logger.info(f"建议批次大小: {suggested_batch_size} "
-                   f"(单项内存: {single_item_memory_mb:.1f}MB, "
-                   f"可用内存: {available_memory_mb:.1f}MB)")
-        
-        return suggested_batch_size 
+        } 

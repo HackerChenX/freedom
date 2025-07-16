@@ -157,11 +157,11 @@ class SimplifiedIntegrationTester:
     def _test_cache_config(self) -> bool:
         """测试缓存配置"""
         try:
-            from config.cache_config import get_cache_config, Cache_profile
+            from config.cache_config import get_cache_config, CacheProfile
             
             # 测试不同配置文件
-            dev_config = get_cache_config(Cache_profile.DEVELOPMENT)
-            prod_config = get_cache_config(Cache_profile.PRODUCTION)
+            dev_config = get_cache_config(CacheProfile.DEVELOPMENT)
+            prod_config = get_cache_config(CacheProfile.PRODUCTION)
             
             assert dev_config is not None
             assert prod_config is not None
@@ -176,12 +176,12 @@ class SimplifiedIntegrationTester:
     def _test_cache_operations(self) -> bool:
         """测试缓存基本操作"""
         try:
-            from db.cache_layer import Unified_cache_layer
-            from config.cache_config import get_cache_config, Cache_profile
+            from db.cache_layer import UnifiedCacheLayer
+            from config.cache_config import get_cache_config, CacheProfile
             
             # 创建缓存实例
-            cache_config = get_cache_config(Cache_profile.DEVELOPMENT)
-            cache = Unified_cache_layer(cache_config)
+            cache_config = get_cache_config(CacheProfile.DEVELOPMENT)
+            cache = UnifiedCacheLayer(cache_config)
             
             # 测试基本操作
             test_key = "test_key"

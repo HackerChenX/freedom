@@ -18,7 +18,7 @@ sys.path.append(root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from strategy.strategy_parser import Strategy_parser
 from utils.logger import get_logger, init_logging
 

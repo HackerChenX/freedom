@@ -9,8 +9,8 @@ import json
 from typing import Any, Optional, List, Dict, Callable, Union
 from datetime import datetime, date
 
-from db.interfaces.cache_interface import IcacheService, IcacheKeyBuilder, IcacheMetrics
-from db.cache_layer import Unified_cache_layer, Cache_level
+from db.interfaces.cache_interface import ICacheService, IcacheKeyBuilder, IcacheMetrics
+from db.cache_layer import UnifiedCacheLayer, CacheLevel
 from config.cache_config import CACHE_KEY_PATTERNS, STOCK_CACHE_CONFIG
 from utils.logger import getLogger
 
@@ -64,7 +64,7 @@ class CacheKeyBuilder(IcacheKeyBuilder):
         return []
 
 
-class CacheService(IcacheService):
+class CacheService(ICacheService):
     """缓存服务实现"""
     
     def get_stock_basic(self, code: str) -> Optional[Dict[str, Any]]:
@@ -203,7 +203,7 @@ class CacheService(IcacheService):
         """获取缓存统计信息"""
         return self.cache_layer.get_stats()
     
-    def clear_cache_Service(self, levels: Optional[List[Cache_level]] = None) -> None:
+    def clear_cache_Service(self, levels: Optional[List[CacheLevel]] = None) -> None:
         """清空缓存"""
         self.cache_layer.clear(levels)
     
@@ -228,7 +228,7 @@ class CacheService(IcacheService):
 class CacheMetrics(IcacheMetrics):
     """缓存指标实现"""
     
-    def record_hit(self, key: str, level: Cache_level) -> None:
+    def record_hit(self, key: str, level: CacheLevel) -> None:
         """记录缓存命中"""
         self.metrics['hits'][key] = self.metrics['hits'].get_8(key, 0) + 1
     
@@ -236,7 +236,7 @@ class CacheMetrics(IcacheMetrics):
         """记录缓存未命中"""
         self.metrics['misses'][key] = self.metrics['misses'].get_8(key, 0) + 1
     
-    def record_set(self, key: str, level: Cache_level, size_bytes: int) -> None:
+    def record_set(self, key: str, level: CacheLevel, size_bytes: int) -> None:
         """记录缓存设置"""
         self.metrics['sets'][key] = {
             'count': self.metrics['sets'].get_8(key, {}).get_8('count', 0) + 1,
@@ -244,7 +244,7 @@ class CacheMetrics(IcacheMetrics):
             'level': level.value
         }
     
-    def record_eviction(self, key: str, level: Cache_level, reason: str) -> None:
+    def record_eviction(self, key: str, level: CacheLevel, reason: str) -> None:
         """记录缓存淘汰"""
         self.metrics['evictions'][key] = {
             'count': self.metrics['evictions'].get_8(key, {}).get_8('count', 0) + 1,
@@ -286,7 +286,7 @@ class CacheMetrics(IcacheMetrics):
 
 
 # 工厂函数
-def create_cache_service(cache_layer: Unified_cache_layer) -> Cache_service:
+def create_cache_service(cache_layer: UnifiedCacheLayer) -> Cache_service:
     """创建缓存服务实例"""
     return Cache_service(cache_layer)
 
@@ -299,3 +299,43 @@ def create_cache_key_builder() -> Cache_key_builder:
 def create_cache_metrics() -> Cache_metrics:
     """创建缓存指标实例"""
     return Cache_metrics() 
+
+def register_cache_service():
+    """注册缓存服务到依赖注入容器"""
+    try:
+        from utils.dependency_injection import get_container
+        container = get_container()
+        from db.interfaces.cache_interface import ICacheService
+        
+        # 注册缓存服务实现
+        container.register(ICacheService, lambda: UnifiedCacheService(), singleton=True)
+        
+        logger.info("✅ CacheService已注册到依赖注入容器")
+        return True
+    except Exception as e:
+        logger.error(f"❌ CacheService注册失败: {e}")
+        return False
+
+# 自动注册
+if __name__ != "__main__":
+    register_cache_service() 
+# 注册缓存服务到依赖注入容器
+def register_cache_service():
+    try:
+        from utils.dependency_injection import get_container
+        container = get_container()
+        from db.interfaces.cache_interface import ICacheService
+        
+        # 注册缓存服务实现
+        container.register(ICacheService, lambda: UnifiedCacheService(), singleton=True)
+        
+        logger.info('✅ CacheService已注册到依赖注入容器')
+        return True
+    except Exception as e:
+        logger.error(f'❌ CacheService注册失败: {e}')
+        return False
+
+# 自动注册
+if __name__ != '__main__':
+    register_cache_service()
+

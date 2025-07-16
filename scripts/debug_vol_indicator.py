@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.data_manager_adapter import Data_manager_adapter
 from indicators.complete_indicator_registry import complete_registry
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 import pandas as pd
 import numpy as np
 
@@ -89,7 +89,7 @@ def debug_vol_indicator():
         
         # 4. 使用策略条件评估器测试
         print("🧪 使用策略条件评估器测试...")
-        evaluator = Strategy_condition_evaluator()
+        evaluator = StrategyConditionEvaluator()
         
         # 构造测试条件
         test_condition = {

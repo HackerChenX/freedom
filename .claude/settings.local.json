@@ -9,7 +9,8 @@
       "Bash(ls:*)",
       "Bash(diff:*)",
       "Bash(sed:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(find /Users/hacker/PycharmProjects/freedom -name \"*.py\" -exec grep -l \"global\\|_global\" {})"
     ],
     "deny": []
   }

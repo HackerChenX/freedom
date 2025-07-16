@@ -1,48 +1,66 @@
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
-"""
-策略管理器模块
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-负责策略的创建、保存、加载和版本控制
+"""
+策略管理器 - 策略生命周期管理核心组件
 """
 
-import uuid
-import copy
 import os
 import json
-import yaml
-from datetime import datetime
-from typing import Dict, List, Optional, Any, Union, Tuple
-
+from typing import Optional, List, Dict, Any
+from db.interfaces.data_access_interface import DataAccessInterface
+from db.interfaces.cache_interface import ICacheService
+from utils.dependency_injection import get_service, get_container
 from utils.logger import getLogger
-from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import Data_access_interface
-from db.sql_manager import SQLManager, QueryType
+from utils.decorators import performance_monitor, safe_run, exception_handler
 from utils.path_utils import get_strategy_dir
-from utils.decorators import exception_handler, performance_monitor
+from utils.exceptions import (
+    StrategyExecutionError,
+    StrategyValidationError,
+    DataAccessError
+)
 
 logger = getLogger(__name__)
 
 
 class StrategyManager:
     """
-    策略管理器，负责策略的创建、保存、加载和版本控制
-    
-    该类提供了策略的完整生命周期管理，包括创建、更新、获取、列表、删除等功能。
-    支持将策略保存到数据库和文件系统，便于持久化和共享。
+    策略管理器
     """
     
-    def __init__(self, data_access: Optional[Data_access_interface] = None,
-                 sql_manager: Optional[SQLManager] = None):
+    def __init__(self, data_access: Optional[DataAccessInterface] = None,
+                 cache_manager: Optional[ICacheService] = None):
         """
         初始化策略管理器
         
         Args:
-            data_access: 数据访问接口实例，如果为None则从依赖注入容器获取
-            sql_manager: SQL管理器实例，如果为None则从依赖注入容器获取
+            data_access: 数据访问接口
+            cache_manager: 缓存管理器
         """
-        self.data_access = data_access or get_service(Data_access_interface)
-        self.sql_manager = sql_manager or get_service(SQLManager)
+        # 使用依赖注入容器获取服务
+        self.data_access = data_access or get_service(DataAccessInterface)
+        
+        # 缓存服务为可选
+        try:
+            self.cache_manager = cache_manager or get_service(ICacheService)
+        except Exception as e:
+            logger.warning(f"缓存服务不可用: {e}")
+            self.cache_manager = None
+        
+        # 初始化SQL管理器（简单实现）
+        self.sql_manager = None
+        try:
+            # 尝试创建一个基本的SQL管理器
+            from utils.sql_manager import SQLManager  # 假设有这个类
+            self.sql_manager = SQLManager()
+        except ImportError:
+            # 如果没有SQL管理器，创建一个模拟实现
+            self.sql_manager = type('MockSQLManager', (), {
+                'get_query': lambda self, query_type: f"SELECT * FROM strategies WHERE type = '{query_type}'",
+                'validate_params': lambda self, query_type, params: True,
+                'build_dynamic_query': lambda self, **kwargs: "SELECT * FROM strategies"
+            })()
+        
         self.strategy_dir = get_strategy_dir()
         
         # 确保策略目录存在

@@ -39,7 +39,7 @@ from utils.decorators import performance_monitor, time_it
 from db.db_manager import DBManager
 from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import Pattern_registry
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -85,7 +85,7 @@ class OptimizedBacktest:
         self.indicator_factory = Indicator_factory()
         
         # 策略条件评估器
-        self.condition_evaluator = Strategy_condition_evaluator()
+        self.condition_evaluator = StrategyConditionEvaluator()
         
         # 回测性能统计
         self.performance_stats = {

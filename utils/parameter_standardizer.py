@@ -6,7 +6,7 @@
 """
 
 from typing import Dict, List, Any, Optional
-from utils.indicator_parameter_validator import Indicator_parameter_validator
+from utils.indicator_parameter_validator import IndicatorParameterValidator
 from utils.logger import getLogger
 
 logger = getLogger(__name__)
@@ -17,7 +17,7 @@ class ParameterStandardizer:
     
     def __init___58(self):
         """初始化标准化器"""
-        self.validator = Indicator_parameter_validator(silent_mode=True)
+        self.validator = IndicatorParameterValidator(silent_mode=True)
 
     def standardize_condition(self, condition: Dict[str, Any]) -> Dict[str, Any]:
         """

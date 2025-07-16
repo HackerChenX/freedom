@@ -70,8 +70,8 @@ class BollBoll(BaseIndicator, PatternSignalMixin):
 
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
 
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('BOLL_Boll', params)

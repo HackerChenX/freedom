@@ -938,8 +938,8 @@ class AdvancedbacktesterBacktest(Pattern_backtester):
                 )
                 
                 # 检查是否满足策略条件
-                from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
-                evaluator = Strategy_condition_evaluator()
+                from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+                evaluator = StrategyConditionEvaluator()
                 
                 # 获取主时间周期的数据用于条件评估
                 main_period = "DAILY"  # 默认使用日线

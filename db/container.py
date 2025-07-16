@@ -211,10 +211,10 @@ class ServiceContainer(IService_container):
         获取缓存管理器的便利方法
         
         Returns:
-            IcacheService: 缓存服务接口实例
+            ICacheService: 缓存服务接口实例
         """
-        from db.interfaces.cache_interface import IcacheService
-        return self.resolve_Container_Container_Container_1_container(IcacheService)
+        from db.interfaces.cache_interface import ICacheService
+        return self.resolve_Container_Container_Container_1_container(ICacheService)
     
     def get_connection_manager(self):
         """
@@ -262,7 +262,7 @@ def _setup_default_services(container: Service_container) -> None:
     try:
         # 延迟导入避免循环依赖
         from db.interfaces.data_access_interface import DataAccessInterface
-        from db.interfaces.cache_interface import IcacheService
+        from db.interfaces.cache_interface import ICacheService
         from db.interfaces.connection_interface import IconnectionManager
         from db.managers.data_access_manager import Data_access_manager
         from db.services.cache_service import Cache_service
@@ -270,14 +270,14 @@ def _setup_default_services(container: Service_container) -> None:
         
         # 注册核心服务  
         def cache_service_factory_Container():
-            from db.cache_layer import Unified_cache_layer
-            from config.cache_config import get_cache_config, Cache_profile
-            cache_config = get_cache_config(Cache_profile.PRODUCTION)
-            cache_layer = Unified_cache_layer(cache_config)
+            from db.cache_layer import UnifiedCacheLayer
+            from config.cache_config import get_cache_config, CacheProfile
+            cache_config = get_cache_config(CacheProfile.PRODUCTION)
+            cache_layer = UnifiedCacheLayer(cache_config)
             return Cache_service(cache_layer)
         
         container.register_singleton_Container(
-            IcacheService,
+            ICacheService,
             factory=cache_service_factory
         )
         

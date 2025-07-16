@@ -152,7 +152,7 @@ class ClickHouseDbmanager:
 
             self._connections.clear()
 
-    def get_connection_Db(self, config: Optional[Dict[str, Any]] = None) -> 'ClickHouseDBConnection':
+    def get_connection_Db(self, config: Optional[Dict[str, Any]] = None) -> 'ClickHouseDbConnection':
         """
         获取数据库连接
         
@@ -160,7 +160,7 @@ class ClickHouseDbmanager:
             config: 连接配置，如果为None则使用默认配置
             
         Returns:
-            ClickHouseDBConnection: 数据库连接对象
+            ClickHouseDbConnection: 数据库连接对象
             
         Raises:
             Exception: 连接失败时抛出
@@ -243,7 +243,7 @@ class ClickHouseDbconnection:
     Click_house数据库连接包装类，支持上下文管理器模式
     """
 
-    def __init__(self, manager: Click_house_dBManager, conn_key: str):
+    def __init__(self, manager: 'ClickHouseDatabaseManager', conn_key: str):
         """
         初始化连接对象
         
@@ -256,12 +256,12 @@ class ClickHouseDbconnection:
         self.client = manager._connections[conn_key]['client']
         self._database_created = False # 用于确保数据库只创建一次
 
-    def __enter___Clickhouse_Db_Clickhouse_Db(self) -> 'ClickHouseDBConnection':
+    def __enter___Clickhouse_Db_Clickhouse_Db(self) -> 'ClickHouseDbConnection':
         """
         上下文管理器入口
         
         Returns:
-            Click_house_dBConnection: 连接对象自身
+            ClickHouseDbConnection: 连接对象自身
         """
         return self
 
@@ -406,6 +406,30 @@ class ClickHouseDb:
     """
     Click_house数据库操作类，提供SQL执行和数据查询功能
     """
+    
+    def __init__(self, config=None):
+        """
+        初始化ClickHouseDb实例
+        
+        Args:
+            config: 数据库连接配置，如果为None则使用默认配置
+        """
+        self.config = config or get_default_config()
+        self._manager = ClickHouseDbmanager()
+        
+    def execute(self, query: str, params: Optional[Dict[str, Any]] = None):
+        """
+        执行SQL语句
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            查询结果
+        """
+        with self._manager.get_connection_Db(self.config) as conn:
+            return conn.execute(query, params)
 
     def get_stock_info_Db(self,
                        stock_code: Union[str, List[str]] = None,
@@ -1217,7 +1241,7 @@ class ClickHouseDb:
         fields = ", ".join(data.columns)
 
         # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
-        with self.manager.get_connection_Db(self.config) as conn:
+        with self._manager.get_connection_Db(self.config) as conn:
             for _, row in data.iterrows():
                 values = ", ".join([f"%(f{i})s" for i in range(len(row))])
 
@@ -1259,7 +1283,7 @@ class ClickHouseDb:
         fields = ", ".join(data.columns)
 
         # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
-        with self.manager.get_connection_Db(self.config) as conn:
+        with self._manager.get_connection_Db(self.config) as conn:
             for _, row in data.iterrows():
                 values = ", ".join([f"%(f{i})s" for i in range(len(row))])
 
@@ -1572,7 +1596,7 @@ class ClickHouseDb:
         """
         如果数据库不存在，则创建它
         """
-        database_name = self.db_connection.client.database
+        database_name = self.config['database'] # 使用self.config获取数据库名称
         if not database_name:
             logger.warning("未配置数据库名称，跳过数据库创建。")
             return
@@ -1638,18 +1662,32 @@ class ClickHouseDb:
             self._execute_sql_from_file(file_path)
 
 
-def get_service_Clickhouse_Db(Data_access_interface) -> Click_house_dB:
+def get_service_Clickhouse_Db(config=None) -> ClickHouseDb:
     """
-    获取Click_house_dB实例
+    获取ClickHouseDb实例
     
     Args:
         config: 数据库连接配置，如果为None则使用默认配置
         
     Returns:
-        Click_house_dB: 数据库操作对象
+        ClickHouseDb: 数据库操作对象
     """
-    return Click_house_dB(config)
+    return ClickHouseDb(config)
 
-# 注意：ClickHouseDB现在通过依赖注入容器管理
+# 注意：ClickHouseDb现在通过依赖注入容器管理
 # 可以在应用启动时预注册：
-# container.register_singleton(ClickHouseDB, ClickHouseDB)
+# container.register_singleton(ClickHouseDb, ClickHouseDb)
+
+
+def get_clickhouse_db(config=None) -> ClickHouseDb:
+    """
+    获取ClickHouse数据库实例
+    
+    Args:
+        config: 数据库连接配置，如果为None则使用默认配置
+        
+    Returns:
+        ClickHouseDb: 数据库操作对象
+    """
+    return ClickHouseDb(config)
+

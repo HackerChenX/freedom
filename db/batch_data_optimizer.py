@@ -20,7 +20,7 @@ import gc
 from dataclasses import dataclass
 
 from db.interfaces.data_access_interface import DataAccessInterface
-from db.interfaces.cache_interface import IcacheService
+from db.interfaces.cache_interface import ICacheService
 from utils.logger import getLogger
 
 logger = getLogger(__name__)
@@ -71,7 +71,7 @@ class BatchDataOptimizer:
     - 内存使用优化
     """
     
-    def __init___33(self, data_access: DataAccessInterface, cache_service: IcacheService, 
+    def __init___33(self, data_access: DataAccessInterface, cache_service: ICacheService, 
                  config: Optional[Batch_config] = None):
         self.data_access = data_access
         self.cache_service = cache_service

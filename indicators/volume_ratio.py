@@ -63,8 +63,8 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -109,20 +109,58 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin):
         """
         df = data.copy()
         
-        # 获取成交量数据
-        if 'volume' in df.columns:
-            volume = df['volume']
-        elif 'Volume' in df.columns:
-            volume = df['Volume']
-        else:
-            # 如果没有成交量数据，返回默认值
+        # 扩展支持的成交量列名格式
+        volume_columns = ['volume', 'Volume', 'VOLUME', 'vol', 'Vol', 'VOL', 'turnover', 'Turnover', 'TURNOVER']
+        volume = None
+        found_column = None
+        
+        # 按优先级查找成交量列
+        for col in volume_columns:
+            if col in df.columns:
+                volume = df[col]
+                found_column = col
+                logger.debug(f"VOLUME_RATIO: 找到成交量列 '{col}'")
+                break
+        
+        if volume is None:
+            # 详细日志记录可用列
+            available_columns = list(df.columns)
+            logger.warning(f"VOLUME_RATIO: 未找到成交量列。可用列: {available_columns}")
+            logger.warning(f"VOLUME_RATIO: 支持的成交量列名: {volume_columns}")
+            
+            # 尝试从列名中查找包含'volume'或'vol'的列
+            potential_columns = [col for col in available_columns 
+                               if any(vol_name.lower() in col.lower() 
+                                     for vol_name in ['volume', 'vol', 'turnover'])]
+            
+            if potential_columns:
+                volume = df[potential_columns[0]]
+                found_column = potential_columns[0]
+                logger.info(f"VOLUME_RATIO: 使用潜在成交量列 '{potential_columns[0]}'")
+            else:
+                # 如果没有成交量数据，返回默认值
+                logger.warning("VOLUME_RATIO: 无成交量数据，使用默认值1.0")
+                df['VOLUME_RATIO_VALUE'] = 1.0
+                return df
+        
+        # 验证成交量数据
+        if volume.isna().all():
+            logger.warning(f"VOLUME_RATIO: 成交量列 '{found_column}' 全部为空值")
             df['VOLUME_RATIO_VALUE'] = 1.0
             return df
         
         # 计算量比
-        volume_avg = volume.rolling(window=self.period).mean()
-        volume_ratio = volume / volume_avg
-        df['VOLUME_RATIO_VALUE'] = volume_ratio.fillna(1.0)
+        try:
+            volume_avg = volume.rolling(window=self.period).mean()
+            volume_ratio = volume / volume_avg
+            df['VOLUME_RATIO_VALUE'] = volume_ratio.fillna(1.0)
+            
+            logger.debug(f"VOLUME_RATIO: 计算完成，使用列 '{found_column}'，周期 {self.period}")
+            
+        except Exception as e:
+            logger.error(f"VOLUME_RATIO: 计算量比失败: {e}")
+            df['VOLUME_RATIO_VALUE'] = 1.0
+            return df
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)

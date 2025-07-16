@@ -26,7 +26,7 @@ class CacheProfile(Enum):
     HIGH_PERFORMANCE = "high_performance"  # 高性能模式
 
 
-def get_cache_config(profile: cache_profile = Cache_profile.PRODUCTION) -> Dict[str, Any]:
+def get_cache_config(profile: CacheProfile = CacheProfile.PRODUCTION) -> Dict[str, Any]:
     """
     获取缓存配置
     
@@ -46,7 +46,7 @@ def get_cache_config(profile: cache_profile = Cache_profile.PRODUCTION) -> Dict[
         'encryption_enabled': False
     }
     
-    if profile == Cache_profile.DEVELOPMENT:
+    if profile == CacheProfile.DEVELOPMENT:
         return {
             **base_config,
             'memory': {
@@ -66,7 +66,7 @@ def get_cache_config(profile: cache_profile = Cache_profile.PRODUCTION) -> Dict[
             'debug_enabled': True
         }
     
-    elif profile == Cache_profile.TESTING:
+    elif profile == CacheProfile.TESTING:
         return {
             **base_config,
             'memory': {
@@ -83,7 +83,7 @@ def get_cache_config(profile: cache_profile = Cache_profile.PRODUCTION) -> Dict[
             'debug_enabled': True
         }
     
-    elif profile == Cache_profile.HIGH_PERFORMANCE:
+    elif profile == CacheProfile.HIGH_PERFORMANCE:
         return {
             **base_config,
             'memory': {
@@ -206,7 +206,7 @@ def get_cache_cleanup_rules() -> Dict[str, Any]:
 
 
 # 默认配置
-DEFAULT_CACHE_CONFIG = get_cache_config(Cache_profile.PRODUCTION)
+DEFAULT_CACHE_CONFIG = get_cache_config(CacheProfile.PRODUCTION)
 STOCK_CACHE_CONFIG = get_stock_cache_config()
 CACHE_KEY_PATTERNS = get_cache_key_patterns()
 PRELOAD_KEYS = get_preload_keys()

@@ -132,10 +132,10 @@ def test_strategy_condition_Data():
     print("\n=== 测试策略条件评估 ===")
     
     try:
-        from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+        from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
         
         # 初始化条件评估器
-        evaluator = Strategy_condition_evaluator()
+        evaluator = StrategyConditionEvaluator()
         
         # 初始化数据管理器
         data_manager = Unified_data_manager()

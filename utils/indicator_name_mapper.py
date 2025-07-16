@@ -238,4 +238,4 @@ class IndicatorNameMapper:
 
 
 # 创建全局实例
-indicator_name_mapper = Indicator_name_mapper()
+indicator_name_mapper = IndicatorNameMapper()

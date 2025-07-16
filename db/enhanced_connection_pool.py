@@ -334,7 +334,16 @@ class PooledConnection:
     def query_dataframe_Pool(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """执行查询并返回DataFrame"""
         try:
-            return self.client.query_dataframe_Pool(query, params or {})
+            # 使用正确的clickhouse_driver方法
+            result = self.client.execute(query, params or {}, with_column_types=True)
+            
+            if not result:
+                return pd.DataFrame()
+            
+            data, columns = result
+            column_names = [col[0] for col in columns]
+            
+            return pd.DataFrame(data, columns=column_names)
         except Exception as e:
             logger.error(f"查询DataFrame失败 [{self.connection_id}]: {query}, 错误: {e}")
             return pd.DataFrame()
@@ -342,7 +351,16 @@ class PooledConnection:
     def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """执行查询并返回DataFrame (标准接口)"""
         try:
-            return self.client.query_dataframe(query, params or {})
+            # 使用正确的clickhouse_driver方法
+            result = self.client.execute(query, params or {}, with_column_types=True)
+            
+            if not result:
+                return pd.DataFrame()
+            
+            data, columns = result
+            column_names = [col[0] for col in columns]
+            
+            return pd.DataFrame(data, columns=column_names)
         except Exception as e:
             logger.error(f"查询DataFrame失败 [{self.connection_id}]: {query}, 错误: {e}")
             return pd.DataFrame()

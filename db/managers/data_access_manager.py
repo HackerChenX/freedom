@@ -41,6 +41,185 @@ class DataAccessManager(DataAccessInterface):
         
         logger.info("数据访问管理器初始化完成")
     
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_stock_data(self, code: str, start_date: str, end_date: str, 
+                      columns: Optional[List[str]] = None) -> pd.DataFrame:
+        """
+        获取股票数据
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            columns: 需要的列名列表，None表示所有列
+            
+        Returns:
+            股票数据DataFrame
+        """
+        try:
+            from db.unified_data_manager import get_unified_data_manager
+            data_manager = get_unified_data_manager()
+            return data_manager.get_stock_daily_data(code, start_date, end_date)
+        except Exception as e:
+            logger.error(f"获取股票数据失败: {e}")
+            return pd.DataFrame()
+    
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_stocks_data_batch(self, codes: List[str], start_date: str, end_date: str,
+                             columns: Optional[List[str]] = None) -> pd.DataFrame:
+        """
+        批量获取多只股票数据
+        
+        Args:
+            codes: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            columns: 需要的列名列表
+            
+        Returns:
+            股票数据DataFrame
+        """
+        try:
+            from db.unified_data_manager import get_unified_data_manager
+            data_manager = get_unified_data_manager()
+            return data_manager.get_stocks_data_batch(codes, start_date, end_date)
+        except Exception as e:
+            logger.error(f"批量获取股票数据失败: {e}")
+            return pd.DataFrame()
+    
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_indicator_data(self, code: str, indicator: str, start_date: str, end_date: str,
+                          params: Optional[Dict] = None) -> pd.DataFrame:
+        """
+        获取指标数据
+        
+        Args:
+            code: 股票代码
+            indicator: 指标名称
+            start_date: 开始日期
+            end_date: 结束日期
+            params: 指标参数
+            
+        Returns:
+            指标数据DataFrame
+        """
+        try:
+            # 这里可以集成指标计算系统
+            logger.info(f"获取指标数据: {indicator} for {code}")
+            return pd.DataFrame()  # 暂时返回空DataFrame
+        except Exception as e:
+            logger.error(f"获取指标数据失败: {e}")
+            return pd.DataFrame()
+    
+    @exception_handler(reraise=False, default_return=[])
+    def get_stock_list(self, industry: Optional[str] = None, 
+                      market: Optional[str] = None) -> List[str]:
+        """
+        获取股票列表
+        
+        Args:
+            industry: 行业筛选
+            market: 市场筛选
+            
+        Returns:
+            股票代码列表
+        """
+        try:
+            from db.unified_data_manager import get_unified_data_manager
+            data_manager = get_unified_data_manager()
+            return data_manager.get_stock_list()
+        except Exception as e:
+            logger.error(f"获取股票列表失败: {e}")
+            return []
+    
+    @exception_handler(reraise=False, default_return=[])
+    def get_industry_list(self) -> List[str]:
+        """
+        获取行业列表
+        
+        Returns:
+            行业列表
+        """
+        try:
+            from db.unified_data_manager import get_unified_data_manager
+            data_manager = get_unified_data_manager()
+            return data_manager.get_industry_list()
+        except Exception as e:
+            logger.error(f"获取行业列表失败: {e}")
+            return []
+    
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def execute_query(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """
+        执行查询
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            查询结果DataFrame
+        """
+        try:
+            from db.unified_data_manager import get_unified_data_manager
+            data_manager = get_unified_data_manager()
+            return data_manager.execute_query(query, params)
+        except Exception as e:
+            logger.error(f"执行查询失败: {e}")
+            return pd.DataFrame()
+    
+    @exception_handler(reraise=False, default_return=False)
+    def check_data_exists(self, table: str, conditions: Dict) -> bool:
+        """
+        检查数据是否存在
+        
+        Args:
+            table: 表名
+            conditions: 检查条件
+            
+        Returns:
+            数据是否存在
+        """
+        try:
+            # 构建查询来检查数据是否存在
+            where_clauses = []
+            for key, value in conditions.items():
+                where_clauses.append(f"{key} = '{value}'")
+            
+            where_sql = " AND ".join(where_clauses)
+            query = f"SELECT COUNT(*) as count FROM {table} WHERE {where_sql} LIMIT 1"
+            
+            result = self.execute_query(query)
+            return len(result) > 0 and result.iloc[0]['count'] > 0
+        except Exception as e:
+            logger.error(f"检查数据存在性失败: {e}")
+            return False
+    
+    @exception_handler(reraise=False, default_return=None)
+    def get_latest_data(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
+        """
+        获取最新数据
+        
+        Args:
+            table: 表名
+            code: 股票代码
+            columns: 需要的列名
+            
+        Returns:
+            最新数据字典
+        """
+        try:
+            col_str = "*" if not columns else ", ".join(columns)
+            query = f"SELECT {col_str} FROM {table} WHERE code = '{code}' ORDER BY date DESC LIMIT 1"
+            
+            result = self.execute_query(query)
+            if len(result) > 0:
+                return result.iloc[0].to_dict()
+            return None
+        except Exception as e:
+            logger.error(f"获取最新数据失败: {e}")
+            return None
+    
     @performance_monitor(threshold=1.0)
     def get_stock_info_Manager_Data_Access_Manager(self, 
                        stock_code: Union[str, List[str]] = None,

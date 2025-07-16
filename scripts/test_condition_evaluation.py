@@ -14,7 +14,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 import pandas as pd
 
 def test_condition_evaluation():
@@ -24,7 +24,7 @@ def test_condition_evaluation():
         # 1. 初始化组件
         print("\n1. 初始化组件...")
         data_manager = get_unified_data_manager()
-        evaluator = Strategy_condition_evaluator()
+        evaluator = StrategyConditionEvaluator()
         print("✅ 组件初始化成功")
         
         # 2. 获取测试股票数据

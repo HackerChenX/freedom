@@ -72,8 +72,8 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -420,6 +420,101 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
+    def get_pattern_info(self) -> Dict[str, Any]:
+        """
+        获取指标模式信息
+        
+        Returns:
+            Dict[str, Any]: 模式信息字典
+        """
+        return {
+            'name': self.name,
+            'type': 'ENHANCED_RSI',
+            'period': self.period,
+            'overbought': self.overbought,
+            'oversold': self.oversold,
+            'multi_periods': self.multi_periods,
+            'adaptive_thresholds': self.adaptive_thresholds,
+            'category': 'oscillator',
+            'description': '增强型RSI指标，包含多周期分析和背离检测'
+        }
+    
+    def ensure_columns(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        确保数据包含必要的列
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            pd.DataFrame: 验证后的数据
+            
+        Raises:
+            ValueError: 如果缺少必要的列
+        """
+        required_columns = ['close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        
+        if missing_columns:
+            raise ValueError(f"EnhancedRSI缺少必需列: {missing_columns}")
+        
+        # 检查数据长度
+        min_length = max(self.multi_periods) + 10
+        if len(data) < min_length:
+            raise ValueError(f"EnhancedRSI需要至少{min_length}行数据，当前只有{len(data)}行")
+        
+        return data
+    
+    def get_market_environment(self) -> str:
+        """
+        获取当前市场环境
+        
+        Returns:
+            str: 市场环境类型
+        """
+        return getattr(self, 'market_environment', 'normal')
+    
+    def set_market_environment(self, environment: str) -> None:
+        """
+        设置市场环境
+        
+        Args:
+            environment: 市场环境类型
+                - 'bull_market': 牛市
+                - 'bear_market': 熊市  
+                - 'sideways_market': 震荡市
+                - 'volatile_market': 高波动市
+                - 'normal': 正常市场
+        """
+        valid_environments = ['bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal']
+        if environment not in valid_environments:
+            raise ValueError(f"无效的市场环境类型: {environment}。有效类型: {valid_environments}")
+        
+        self.market_environment = environment
+        
+        # 根据市场环境调整超买超卖阈值
+        if environment == 'bull_market':
+            self.overbought = 80.0
+            self.oversold = 40.0
+        elif environment == 'bear_market':
+            self.overbought = 60.0
+            self.oversold = 20.0
+        elif environment == 'volatile_market':
+            self.overbought = 75.0
+            self.oversold = 25.0
+        else:
+            self.overbought = 70.0
+            self.oversold = 30.0
+    
+    def get_indicator_type(self) -> str:
+        """
+        获取指标类型
+        
+        Returns:
+            str: 指标类型
+        """
+        return 'ENHANCED_RSI'
+
 
 # 为了向后兼容，创建别名
-enhanced_rsi = ENHANCED_RSI
+enhanced_rsi = EnhancedRsi

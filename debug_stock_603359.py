@@ -18,7 +18,7 @@ from db.unified_data_manager import get_unified_data_manager
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
 from indicators.complete_indicator_registry import complete_registry
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from strategy.strategy_parser import Strategy_parser
 from utils.logger import get_logger, init_logging
 
@@ -250,7 +250,7 @@ def analyze_stock_603359():
         strategy_plan = parser.parse_from_file('config/strategies/zxm_absorb_volume_shrink_strategy.yaml')
         
         # 创建条件评估器
-        evaluator = Strategy_condition_evaluator()
+        evaluator = StrategyConditionEvaluator()
         
         # 准备股票数据
         stock_data = {

@@ -28,6 +28,7 @@ from strategy.strategy_manager import StrategyManager
 from strategy.signal_watcher import SignalWatcher
 from strategy.result_filter import ResultFilter
 from indicators.complete_indicator_registry import complete_registry
+from utils.path_utils import get_strategy_dir
 from db.unified_data_manager import get_unified_data_manager
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
@@ -129,14 +130,20 @@ class FreedomSelect:
         return result
     
     def _initialize_components(self, args) -> None:
-        """初始化组件"""
+        """初始化Freedom选股组件"""
         logger.info("🔧 初始化Freedom选股组件...")
         
-        # 数据库连接检查
-        if self.config["database"]["strict_mode"]:
-            self._check_database_connection()
+        # 首先初始化依赖注入服务
+        logger.info("🔧 初始化依赖注入服务...")
+        try:
+            from config.service_initializer import initialize_all_services
+            initialize_all_services()
+            logger.info("✅ 依赖注入服务初始化成功")
+        except Exception as e:
+            logger.warning(f"⚠️ 依赖注入服务初始化失败: {e}")
+            logger.info("继续使用默认组件初始化...")
         
-        # 初始化核心组件
+        # 然后初始化各个组件
         self.strategy_manager = StrategyManager()
         self.strategy_executor = StrategyExecutor(
             max_workers=args.threads or self.config["execution"]["max_threads"]

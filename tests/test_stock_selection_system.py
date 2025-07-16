@@ -108,10 +108,10 @@ def test_strategy_condition_evaluator():
     print("\n=== 测试策略条件评估器 ===")
     
     try:
-        from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+        from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
         
         # 创建评估器
-        evaluator = Strategy_condition_evaluator()
+        evaluator = StrategyConditionEvaluator()
         
         # 创建测试数据
         dates = pd.date_range('2023-01-01', periods=30)

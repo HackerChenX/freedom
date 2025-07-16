@@ -58,8 +58,8 @@ class ElliottWave(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -488,4 +488,4 @@ class ElliottWave(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-elliott_wave = ELLIOTT_WAVE
+elliott_wave = ElliottWave

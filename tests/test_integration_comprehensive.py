@@ -25,7 +25,7 @@ from db.unified_data_manager import get_unified_data_manager
 from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_parser import Strategy_parser
 from strategy.strategy_manager import Strategy_manager
-from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from indicators.complete_indicator_registry import complete_registry
 from indicators.indicator_manager import Indicator_manager
 from utils.logger import get_logger
@@ -43,7 +43,7 @@ class Integration_test_suite(unittest.Test_case):
         cls.strategy_executor = Strategy_executor()
         cls.strategy_parser = Strategy_parser()
         cls.strategy_manager = Strategy_manager()
-        cls.condition_evaluator = Strategy_condition_evaluator()
+        cls.condition_evaluator = StrategyConditionEvaluator()
         cls.indicator_manager = Indicator_manager()
         
         # 测试数据

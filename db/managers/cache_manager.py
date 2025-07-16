@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from collections import OrderedDict
 
-from db.interfaces.cache_interface import IcacheService, ImultiLevelCache, IcacheStrategy, IcacheEventListener
+from db.interfaces.cache_interface import ICacheService, ImultiLevelCache, IcacheStrategy, IcacheEventListener
 from utils.logger import getLogger
 from utils.decorators import performance_monitor
 

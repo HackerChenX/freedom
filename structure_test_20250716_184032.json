@@ -1,0 +1,363 @@
+{
+  "test_time": "2025-07-16 18:40:32",
+  "results": {
+    "指标模块导入": {
+      "status": "SUCCESS",
+      "execution_time": 0.0074689388275146484,
+      "details": {
+        "successful_imports": [
+          "indicators/intraday_volatility.py",
+          "indicators/vix.py",
+          "indicators/bias.py",
+          "indicators/pvt.py",
+          "indicators/zxm_absorb.py",
+          "indicators/kdj_score.py",
+          "indicators/island_reversal.py",
+          "indicators/score_manager.py",
+          "indicators/platform_breakout.py",
+          "indicators/boll_score.py",
+          "indicators/sar.py",
+          "indicators/indicator_calculator.py",
+          "indicators/adx.py",
+          "indicators/wma.py",
+          "indicators/vortex.py",
+          "indicators/ma.py",
+          "indicators/fibonacci_tools.py",
+          "indicators/kdj.py",
+          "indicators/emv.py",
+          "indicators/zxm_washplate.py",
+          "indicators/advanced_vectorized_calculator.py",
+          "indicators/composite_indicator.py",
+          "indicators/vosc.py",
+          "indicators/macd.py",
+          "indicators/stochrsi.py",
+          "indicators/adapter.py",
+          "indicators/unified_calculator.py",
+          "indicators/volume_score.py",
+          "indicators/ema.py",
+          "indicators/synergy.py",
+          "indicators/cmo.py",
+          "indicators/enhanced_wr.py",
+          "indicators/atr.py",
+          "indicators/technical_indicators.py",
+          "indicators/boll.py",
+          "indicators/roc.py",
+          "indicators/rsi_score.py",
+          "indicators/time_cycle_analysis.py",
+          "indicators/complete_indicator_registry.py",
+          "indicators/scoring_framework.py",
+          "indicators/rsima.py",
+          "indicators/enhanced_factory.py",
+          "indicators/dma.py",
+          "indicators/enhanced_macd.py",
+          "indicators/enhanced_stochrsi.py",
+          "indicators/indicator_manager.py",
+          "indicators/v_shaped_reversal.py",
+          "indicators/enhanced_rsi.py",
+          "indicators/gann_tools.py",
+          "indicators/cci.py",
+          "indicators/factory.py",
+          "indicators/service_registry.py",
+          "indicators/sentiment_analysis.py",
+          "indicators/institutional_behavior.py",
+          "indicators/psy.py",
+          "indicators/pattern_detector.py",
+          "indicators/chip_distribution.py",
+          "indicators/divergence.py",
+          "indicators/mfi.py",
+          "indicators/pattern_manager.py",
+          "indicators/ichimoku.py",
+          "indicators/obv.py",
+          "indicators/common.py",
+          "indicators/vol.py",
+          "indicators/chaikin.py",
+          "indicators/pattern_recognition.py",
+          "indicators/unified_ma.py",
+          "indicators/volume_ratio.py",
+          "indicators/wr.py",
+          "indicators/mtm.py",
+          "indicators/macd_score.py",
+          "indicators/composite.py",
+          "indicators/trend_classification.py",
+          "indicators/vr.py",
+          "indicators/stock_vix.py",
+          "indicators/base_indicator.py",
+          "indicators/kc.py",
+          "indicators/elliott_wave.py",
+          "indicators/rsi.py",
+          "indicators/trix.py",
+          "indicators/pattern_registry.py",
+          "indicators/market_env.py",
+          "indicators/aroon.py",
+          "indicators/ad.py",
+          "indicators/momentum.py",
+          "indicators/formula_indicators.py",
+          "indicators/fibonacci.py",
+          "indicators/multi_period_resonance.py",
+          "indicators/rsi_derivatives.py",
+          "indicators/dmi.py",
+          "indicators/trend/enhanced_dmi.py",
+          "indicators/trend/enhanced_macd.py",
+          "indicators/trend/trend_strength.py",
+          "indicators/trend/enhanced_cci.py",
+          "indicators/trend/enhanced_trix.py",
+          "indicators/oscillator/enhanced_kdj.py",
+          "indicators/zxm/buy_point_indicators.py",
+          "indicators/zxm/selection_model.py",
+          "indicators/zxm/elasticity_indicators.py",
+          "indicators/zxm/base_zxm_indicator.py",
+          "indicators/zxm/diagnostics.py",
+          "indicators/zxm/zxm_daily_macd.py",
+          "indicators/zxm/trend_indicators.py",
+          "indicators/zxm/score_indicators.py",
+          "indicators/zxm/buy_point_indicators_original.py",
+          "indicators/zxm/market_breadth.py",
+          "indicators/zxm/zxm_bs_absorb.py",
+          "indicators/pattern/pattern_combination.py",
+          "indicators/pattern/pattern_confirmation.py",
+          "indicators/pattern/candlestick_patterns.py",
+          "indicators/pattern/zxm_patterns.py",
+          "indicators/pattern/advanced_candlestick_patterns.py",
+          "indicators/pattern/pattern_quality_evaluator.py",
+          "indicators/volume/enhanced_mfi.py",
+          "indicators/volume/enhanced_obv.py",
+          "indicators/base/pattern_signal_mixin.py"
+        ],
+        "failed_imports": [],
+        "total_files": 116,
+        "success_rate": 100.0
+      }
+    },
+    "指标分类结构": {
+      "status": "SUCCESS",
+      "execution_time": 0.00013780593872070312,
+      "details": {
+        "categories": {
+          "trend": {
+            "exists": true,
+            "file_count": 5,
+            "files": [
+              "enhanced_dmi.py",
+              "enhanced_macd.py",
+              "trend_strength.py",
+              "enhanced_cci.py",
+              "enhanced_trix.py"
+            ]
+          },
+          "oscillator": {
+            "exists": true,
+            "file_count": 1,
+            "files": [
+              "enhanced_kdj.py"
+            ]
+          },
+          "volume": {
+            "exists": true,
+            "file_count": 2,
+            "files": [
+              "enhanced_mfi.py",
+              "enhanced_obv.py"
+            ]
+          },
+          "pattern": {
+            "exists": true,
+            "file_count": 6,
+            "files": [
+              "pattern_combination.py",
+              "pattern_confirmation.py",
+              "candlestick_patterns.py",
+              "zxm_patterns.py",
+              "advanced_candlestick_patterns.py",
+              "pattern_quality_evaluator.py"
+            ]
+          },
+          "zxm": {
+            "exists": true,
+            "file_count": 11,
+            "files": [
+              "buy_point_indicators.py",
+              "selection_model.py",
+              "elasticity_indicators.py",
+              "base_zxm_indicator.py",
+              "diagnostics.py",
+              "zxm_daily_macd.py",
+              "trend_indicators.py",
+              "score_indicators.py",
+              "buy_point_indicators_original.py",
+              "market_breadth.py",
+              "zxm_bs_absorb.py"
+            ]
+          }
+        },
+        "total_categories": 5,
+        "total_indicators": 25
+      }
+    },
+    "ZXM指标系列": {
+      "status": "SUCCESS",
+      "execution_time": 3.886222839355469e-05,
+      "details": {
+        "zxm_files": [
+          "buy_point_indicators.py",
+          "selection_model.py",
+          "elasticity_indicators.py",
+          "base_zxm_indicator.py",
+          "diagnostics.py",
+          "zxm_daily_macd.py",
+          "trend_indicators.py",
+          "score_indicators.py",
+          "buy_point_indicators_original.py",
+          "market_breadth.py",
+          "zxm_bs_absorb.py"
+        ],
+        "zxm_categories": {
+          "buy_point": [
+            "buy_point_indicators.py",
+            "buy_point_indicators_original.py"
+          ],
+          "elasticity": [
+            "elasticity_indicators.py"
+          ],
+          "trend": [
+            "trend_indicators.py"
+          ],
+          "volume": [],
+          "score": [
+            "score_indicators.py"
+          ],
+          "other": [
+            "selection_model.py",
+            "base_zxm_indicator.py",
+            "diagnostics.py",
+            "zxm_daily_macd.py",
+            "market_breadth.py",
+            "zxm_bs_absorb.py"
+          ]
+        },
+        "total_zxm": 11
+      }
+    },
+    "策略模块": {
+      "status": "SUCCESS",
+      "execution_time": 8.916854858398438e-05,
+      "details": {
+        "strategy_files": [
+          "strategy_evaluator.py",
+          "strategy_combiner.py",
+          "enhanced_base_strategy.py",
+          "result_filter.py",
+          "breakout_strategy.py",
+          "base_strategy.py",
+          "strategy_factory.py",
+          "selector.py",
+          "strategy_optimizer.py",
+          "signal_watcher.py",
+          "strategy_generator.py",
+          "rebound_strategy.py",
+          "momentum_strategy.py",
+          "unified_base_strategy.py",
+          "multi_period_strategy.py",
+          "strategy_parser.py",
+          "backtester.py",
+          "execution_template.py",
+          "strategy_format_converter.py",
+          "strategy_condition_evaluator.py",
+          "batch_optimizer.py",
+          "institutional_strategy.py",
+          "large_scale_memory_optimizer.py",
+          "strategy_manager.py",
+          "dual_ma_strategy.py",
+          "batch_data_optimizer.py"
+        ],
+        "executor_files": [
+          "optimized_strategy_executor.py",
+          "memory_aware_strategy_executor.py",
+          "strategy_executor.py",
+          "enhanced_strategy_executor.py"
+        ],
+        "config_files": [
+          "zxm_absorb_volume_shrink_strategy.yaml",
+          "zxm_kdj_strategy_20250512.yaml",
+          "upgraded_sample_strategy.yaml",
+          "test_simple_strategy.yaml",
+          "trend_reversal.yaml",
+          "backtest_strategy.yaml",
+          "complete_backtest_strategy.yaml"
+        ],
+        "total_strategies": 30
+      }
+    },
+    "分析模块": {
+      "status": "SUCCESS",
+      "execution_time": 8.678436279296875e-05,
+      "details": {
+        "buypoint_files": [
+          "auto_indicator_analyzer.py",
+          "analyze_buypoints.py",
+          "buypoint_strategy_adapter.py",
+          "period_data_processor.py",
+          "buypoint_batch_analyzer.py",
+          "buypoint_dimension_analyzer.py"
+        ],
+        "engine_files": [
+          "complex_logic_processor.py",
+          "indicator_validation_framework.py",
+          "date_manager.py",
+          "unified_indicator_engine.py",
+          "shared_condition_evaluator.py"
+        ],
+        "market_files": [
+          "a_stock_market_analysis.py",
+          "market_dimension_analyzer.py"
+        ],
+        "total_analysis": 13
+      }
+    },
+    "数据库模块": {
+      "status": "SUCCESS",
+      "execution_time": 0.00010919570922851562,
+      "details": {
+        "db_files": [
+          "intelligent_query_optimizer.py",
+          "query_cache.py",
+          "parallel_processor.py",
+          "clickhouse_db.py",
+          "service_registry.py",
+          "container.py",
+          "db_refactoring.py",
+          "cache_layer.py",
+          "query_executor.py",
+          "memory_optimizer.py",
+          "performance_optimizer.py",
+          "batch_data_optimizer.py"
+        ],
+        "sql_files": [
+          "sql/ddl/01_create_stock_info_table.sql"
+        ],
+        "connection_files": [
+          "sql_manager.py",
+          "db_manager.py",
+          "enhanced_connection_pool.py",
+          "unified_data_manager.py",
+          "advanced_data_quality_manager.py",
+          "data_access_manager.py",
+          "data_manager.py",
+          "enhanced_data_manager.py",
+          "data_manager_adapter.py"
+        ],
+        "total_db": 21
+      }
+    }
+  },
+  "summary": {
+    "total_tests": 6,
+    "successful_tests": 6,
+    "success_rate": 100.0,
+    "module_counts": {
+      "indicators": 116,
+      "strategies": 30,
+      "analysis": 13,
+      "database": 21
+    }
+  }
+}

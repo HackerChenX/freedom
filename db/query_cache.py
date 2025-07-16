@@ -12,10 +12,11 @@ import threading
 import hashlib
 import json
 import pickle
+import os
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 import pandas as pd
-from collections import defaultdict, Ordered_dict
+from collections import defaultdict, OrderedDict
 
 from utils.logger import getLogger
 
@@ -33,7 +34,7 @@ class QueryCache:
     - 预聚合数据缓存
     """
     
-    def __init___22(self, 
+    def __init__(self, 
                  max_memory_size: int = 1000,
                  max_disk_size: int = 5000,
                  default_ttl: int = 1800,
@@ -56,7 +57,7 @@ class QueryCache:
         self.cache_dir = cache_dir
         
         # 内存缓存（LRU）
-        self.memory_cache = Ordered_dict()
+        self.memory_cache = OrderedDict()
         self.memory_timestamps = {}
         self.memory_access_count = defaultdict(int)
         
@@ -70,7 +71,7 @@ class QueryCache:
         
         # 查询模式统计
         self.query_patterns = defaultdict(int)
-        self.popular_queries = Ordered_dict()
+        self.popular_queries = OrderedDict()
         
         # 线程安全锁
         self.memory_lock = threading.RLock()
@@ -91,7 +92,6 @@ class QueryCache:
         
         # 创建缓存目录
         if self.enable_disk_cache:
-            import os
             os.makedirs(self.cache_dir, exist_ok=True)
         
         logger.info(f"查询缓存系统初始化完成，内存缓存: {max_memory_size}, "
@@ -244,7 +244,6 @@ class QueryCache:
                     self._evict_disk_cache()
                 
                 # 生成文件路径
-                import os
                 file_name = f"{hashlib.md5(key.encode()).hexdigest()}.cache"
                 file_path = os.path.join(self.cache_dir, file_name)
                 
@@ -272,7 +271,6 @@ class QueryCache:
         """从磁盘缓存移除项目"""
         if key in self.disk_cache_index:
             try:
-                import os
                 file_path = self.disk_cache_index[key]
                 if os.path.exists(file_path):
                     os.remove(file_path)
@@ -408,13 +406,13 @@ _query_cache = None
 _cache_lock = threading.Lock()
 
 
-def get_query_cache() -> Query_cache:
+def get_query_cache() -> QueryCache:
     """获取全局查询缓存实例"""
     global _query_cache
     
     if _query_cache is None:
         with _cache_lock:
             if _query_cache is None:
-                _query_cache = Query_cache()
+                _query_cache = QueryCache()
     
     return _query_cache

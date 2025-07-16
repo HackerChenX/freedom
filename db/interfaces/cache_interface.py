@@ -8,10 +8,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional, List, Dict, Callable, Union
 from datetime import datetime, date
 
-from db.cache_layer import CacheLevel
 
-
-class IcacheService(ABC):
+class ICacheService(ABC):
     """缓存服务接口"""
     
     @abstractmethod
@@ -112,7 +110,7 @@ class IcacheService(ABC):
         pass
     
     @abstractmethod
-    def clear_cache_Interface(self, levels: Optional[List[CacheLevel]] = None) -> None:
+    def clear_cache_Interface(self, levels: Optional[List[str]] = None) -> None:
         """清空缓存"""
         pass
     
@@ -198,7 +196,7 @@ class IcacheMetrics(ABC):
     """缓存指标接口"""
     
     @abstractmethod
-    def record_hit_Interface(self, key: str, level: CacheLevel) -> None:
+    def record_hit_Interface(self, key: str, level: str) -> None:
         """记录缓存命中"""
         pass
     
@@ -208,12 +206,12 @@ class IcacheMetrics(ABC):
         pass
     
     @abstractmethod
-    def record_set_Interface(self, key: str, level: CacheLevel, size_bytes: int) -> None:
+    def record_set_Interface(self, key: str, level: str, size_bytes: int) -> None:
         """记录缓存设置"""
         pass
     
     @abstractmethod
-    def record_eviction_Interface(self, key: str, level: CacheLevel, reason: str) -> None:
+    def record_eviction_Interface(self, key: str, level: str, reason: str) -> None:
         """记录缓存淘汰"""
         pass
     

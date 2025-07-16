@@ -58,15 +58,15 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):
                 - adx_threshold: ADX趋势强度阈值
         """
         # 验证参数
-        from utils.indicator_parameter_validator import Indicator_parameter_validator
-        validator = Indicator_parameter_validator()
+        from utils.indicator_parameter_validator import IndicatorParameterValidator
+        validator = IndicatorParameterValidator()
 
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)        # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
             
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DMI', params)

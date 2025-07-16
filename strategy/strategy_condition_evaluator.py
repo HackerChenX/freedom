@@ -14,8 +14,8 @@ import ast
 from utils.logger import getLogger
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.parameter_standardizer import Parameter_standardizer
-from utils.indicator_parameter_validator import Indicator_parameter_validator
+from utils.parameter_standardizer import ParameterStandardizer
+from utils.indicator_parameter_validator import IndicatorParameterValidator
 from indicators.complete_indicator_registry import complete_registry
 from utils.indicator_name_mapper import indicator_name_mapper
 from utils.decorators import performance_monitor, cache_result
@@ -32,8 +32,8 @@ class StrategyConditionEvaluator:
         self.condition_cache = {}
 
         # 初始化参数标准化器和验证器
-        self.parameter_standardizer = Parameter_standardizer()
-        self.parameter_validator = Indicator_parameter_validator()
+        self.parameter_standardizer = ParameterStandardizer()
+        self.parameter_validator = IndicatorParameterValidator()
 
         logger.info("策略条件评估器已初始化，支持参数标准化和验证")
         
@@ -188,7 +188,7 @@ class StrategyConditionEvaluator:
         return series < threshold
     
     @performance_monitor()
-    @cache_result(cache_size=100)
+    @cache_result(max_size=100)
     def evaluate_condition_Evaluator(self, condition: Dict[str, Any], 
                          stock_data: pd.DataFrame,
                          date: str) -> bool:

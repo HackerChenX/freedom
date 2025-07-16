@@ -9,7 +9,7 @@ from utils.logger import getLogger
 logger = getLogger(__name__)
 
 
-class EnhancedMacd(BaseIndicator, PatternSignalMixin):
+class EnhancedMACD(BaseIndicator, PatternSignalMixin):
     """
     ENHANCED_MACD 指标
     
@@ -45,8 +45,8 @@ class EnhancedMacd(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
@@ -174,4 +174,4 @@ class EnhancedMacd(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-enhanced_macd = ENHANCED_MACD
+enhanced_macd = EnhancedMACD

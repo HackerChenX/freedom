@@ -115,11 +115,11 @@ class SystemIntegrationTester:
     def _test_cache_basic_operations(self) -> bool:
         """测试缓存基本操作"""
         try:
-            from db.cache_layer import Unified_cache_layer
+            from db.cache_layer import UnifiedCacheLayer
             from config.cache_config import get_cache_config
             
             cache_config = get_cache_config()
-            cache = Unified_cache_layer(cache_config)
+            cache = UnifiedCacheLayer(cache_config)
             
             # 测试设置和获取
             test_key = "test_key_integration"
@@ -145,11 +145,11 @@ class SystemIntegrationTester:
     def _test_cache_performance(self) -> bool:
         """测试缓存性能"""
         try:
-            from db.cache_layer import Unified_cache_layer
+            from db.cache_layer import UnifiedCacheLayer
             from config.cache_config import get_cache_config
             
             cache_config = get_cache_config()
-            cache = Unified_cache_layer(cache_config)
+            cache = UnifiedCacheLayer(cache_config)
             
             # 测试缓存访问时间
             test_key = "perf_test_key"

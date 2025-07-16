@@ -55,8 +55,8 @@ class StrategyExecutor:
             logger.error(f"❌ 初始化指标注册系统失败: {e}")
 
         # 初始化条件评估器，确保所有线程共享同一个实例
-        from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
-        self._evaluator = Strategy_condition_evaluator()
+        from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+        self._evaluator = StrategyConditionEvaluator()
 
         logger.info(f"策略执行器初始化完成，最大线程数: {self.max_workers}, 缓存{'启用' if cache_enabled else '禁用'}")
     

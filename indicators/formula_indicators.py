@@ -31,8 +31,8 @@ class FormulaIndicators(BaseIndicator, PatternSignalMixin):
     
     def set_parameters_Indicators_formulaindicators(self, **kwargs):
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator()
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
             params = self._default_parameters.copy()
             params.update(kwargs)
             is_valid, errors = validator.validate_indicator_parameters('FORMULA_INDICATORS', params)

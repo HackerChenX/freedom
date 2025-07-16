@@ -93,7 +93,7 @@ def test_strategy_evaluation():
     print("\n=== 测试策略评估 ===\n")
     
     # 模拟策略条件评估器的逻辑
-    from strategy.strategy_condition_evaluator import Strategy_condition_evaluator
+    from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
     
     # 获取数据管理器
     data_manager = get_unified_data_manager()
@@ -122,7 +122,7 @@ def test_strategy_evaluation():
     print(f"日线数据: {len(daily_data)} 条")
     
     # 创建条件评估器
-    evaluator = Strategy_condition_evaluator()
+    evaluator = StrategyConditionEvaluator()
     
     # 模拟策略条件
     conditions = [

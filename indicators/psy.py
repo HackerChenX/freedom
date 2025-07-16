@@ -83,8 +83,8 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin):
         """
         # 验证参数
         try:
-            from utils.indicator_parameter_validator import Indicator_parameter_validator
-            validator = Indicator_parameter_validator(silent_mode=True)
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator(silent_mode=True)
 
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()

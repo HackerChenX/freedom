@@ -15,11 +15,11 @@ from typing import Dict, Any
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.cache_layer import Unified_cache_layer, Cache_level
+from db.cache_layer import UnifiedCacheLayer, CacheLevel
 from db.services.cache_service import Cache_service, Cache_key_builder
-from config.cache_config import get_cache_config, Cache_profile
+from config.cache_config import get_cache_config, CacheProfile
 from config.container_config import get_configured_container
-from db.interfaces.cache_interface import IcacheService
+from db.interfaces.cache_interface import ICacheService
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -30,8 +30,8 @@ def test_basic_cache_operations():
     print("\n=== 测试基本缓存操作 ===")
     
     # 创建缓存层
-    config = get_cache_config(Cache_profile.TESTING)
-    cache_layer = Unified_cache_layer(config)
+    config = get_cache_config(CacheProfile.TESTING)
+    cache_layer = UnifiedCacheLayer(config)
     
     # 测试设置和获取
     test_data = {"name": "测试股票", "code": "000001", "price": 10.5}
@@ -69,8 +69,8 @@ def test_multi_level_cache():
     """测试多级缓存"""
     print("\n=== 测试多级缓存 ===")
     
-    config = get_cache_config(Cache_profile.DEVELOPMENT)
-    cache_layer = Unified_cache_layer(config)
+    config = get_cache_config(CacheProfile.DEVELOPMENT)
+    cache_layer = UnifiedCacheLayer(config)
     
     # 测试数据
     test_data = {"symbol": "AAPL", "price": 150.0, "volume": 1000000}
@@ -89,7 +89,7 @@ def test_multi_level_cache():
     print(f"获取时间: {memory_time:.6f}秒")
     
     # 清空内存缓存，测试从磁盘缓存获取
-    cache_layer.clear([Cache_level.MEMORY])
+    cache_layer.clear([CacheLevel.MEMORY])
     
     start_time = time.time()
     cached_data_from_disk = cache_layer.get(key)
@@ -169,8 +169,8 @@ def test_cache_performance_Cache():
     """测试缓存性能"""
     print("\n=== 测试缓存性能 ===")
     
-    config = get_cache_config(Cache_profile.HIGH_PERFORMANCE)
-    cache_layer = Unified_cache_layer(config)
+    config = get_cache_config(CacheProfile.HIGH_PERFORMANCE)
+    cache_layer = UnifiedCacheLayer(config)
     
     # 准备测试数据
     test_count = 1000
@@ -252,8 +252,8 @@ def test_cache_expiration():
     """测试缓存过期"""
     print("\n=== 测试缓存过期 ===")
     
-    config = get_cache_config(Cache_profile.TESTING)
-    cache_layer = Unified_cache_layer(config)
+    config = get_cache_config(CacheProfile.TESTING)
+    cache_layer = UnifiedCacheLayer(config)
     
     # 设置短期缓存
     key = "test:expiration"
