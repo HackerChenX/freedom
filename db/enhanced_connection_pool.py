@@ -33,12 +33,12 @@ class ClickHouseConnectionPool:
     - 性能监控
     """
     
-    def __init___24_enhancedconnectionpool(self,
+    def __init__(self,
                  host: str = 'localhost',
                  port: int = 9000,
                  database: str = 'stock',
                  user: str = 'default',
-                 password: str = '',
+                 password: str = '123456',  # 修改默认密码
                  max_connections: int = 20,
                  min_connections: int = 5,
                  max_idle_time: int = 300,
@@ -99,7 +99,7 @@ class ClickHouseConnectionPool:
         self._start_health_check_thread()
         
         # 注册清理函数
-        atexit.register(self.close)
+        atexit.register(self.close_Pool)
         
         logger.info(f"ClickHouse连接池初始化完成，配置: {self.config}, "
                    f"连接数范围: {min_connections}-{max_connections}")
@@ -119,14 +119,14 @@ class ClickHouseConnectionPool:
             client = Client(**self.config)
             
             # 测试连接
-            client.execute_1("SELECT 1")
+            client.execute("SELECT 1")
             
             conn_id = f"conn_{int(time.time() * 1000)}_{threading.current_thread().ident}"
             
             with self.lock:
                 self.stats['total_created'] += 1
                 
-                pooled_conn = Pooled_connection(
+                pooled_conn = PooledConnection(
                     client=client,
                     pool=self,
                     connection_id=conn_id
@@ -172,7 +172,7 @@ class ClickHouseConnectionPool:
             for conn_id, conn_info in self.all_connections.items():
                 try:
                     # 简单的健康检查查询
-                    conn_info['connection'].client.execute_1("SELECT 1")
+                    conn_info['connection'].client.execute("SELECT 1")
                     conn_info['is_healthy'] = True
                 except Exception as e:
                     logger.warning(f"连接 {conn_id} 健康检查失败: {e}")
@@ -212,12 +212,12 @@ class ClickHouseConnectionPool:
                 self.stats['total_destroyed'] += 1
     
     @contextmanager
-    def get_connection_Pool(self):
+    def get_connection(self):
         """
         获取连接的上下文管理器
         
         Returns:
-            Pooled_connection: 池化连接对象
+            PooledConnection: 池化连接对象
         """
         if self.is_closed:
             raise RuntimeError("连接池已关闭")
@@ -310,10 +310,23 @@ class ClickHouseConnectionPool:
 class PooledConnection:
     """池化连接包装器"""
     
-    def execute_1(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def __init__(self, client, pool, connection_id):
+        """
+        初始化池化连接
+        
+        Args:
+            client: ClickHouse客户端
+            pool: 连接池实例
+            connection_id: 连接ID
+        """
+        self.client = client
+        self.pool = pool
+        self.connection_id = connection_id
+    
+    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """执行SQL语句"""
         try:
-            return self.client.execute_1(query, params or {})
+            return self.client.execute(query, params or {})
         except Exception as e:
             logger.error(f"执行SQL失败 [{self.connection_id}]: {query}, 错误: {e}")
             raise
@@ -322,6 +335,14 @@ class PooledConnection:
         """执行查询并返回DataFrame"""
         try:
             return self.client.query_dataframe_Pool(query, params or {})
+        except Exception as e:
+            logger.error(f"查询DataFrame失败 [{self.connection_id}]: {query}, 错误: {e}")
+            return pd.DataFrame()
+    
+    def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """执行查询并返回DataFrame (标准接口)"""
+        try:
+            return self.client.query_dataframe(query, params or {})
         except Exception as e:
             logger.error(f"查询DataFrame失败 [{self.connection_id}]: {query}, 错误: {e}")
             return pd.DataFrame()

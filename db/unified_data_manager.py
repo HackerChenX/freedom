@@ -173,6 +173,12 @@ class UnifiedDataManager:
             logger.error("🛑 严格数据库依赖模式：数据库不可用，系统无法继续运行")
             raise DataAccessError(f"数据库连接失败: {e}")
     
+    def test_connection(self) -> bool:
+        """
+        测试数据库连接 (标准接口)
+        """
+        return self.test_connection_Manager()
+    
     def query_Manager_Unified_Data_Manager(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         执行SQL查询并返回Data_frame
@@ -1180,7 +1186,7 @@ def get_unified_data_manager() -> UnifiedDataManager:
     if _unified_data_manager is None:
         with _manager_lock:
             if _unified_data_manager is None:
-                _unified_data_manager = Unified_data_manager()
+                _unified_data_manager = UnifiedDataManager()
 
     return _unified_data_manager
 

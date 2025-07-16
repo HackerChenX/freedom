@@ -13,7 +13,7 @@ import json
 from indicators.factory import IndicatorFactory as Indicator_factory
 from enums.period import Period
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface, Unified_data_manager
+from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
@@ -27,7 +27,7 @@ class SignalWatcher:
     识别接近触发条件但尚未满足的股票，提供趋势预测和信号强度梯度评估
     """
     
-    def __init__(self, data_manager: Optional[Unified_data_manager] = None,
+    def __init__(self, data_manager: Optional[DataAccessInterface] = None,
                  indicator_factory: Optional[Indicator_factory] = None):
         """
         初始化观察信号处理器
