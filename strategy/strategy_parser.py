@@ -14,11 +14,11 @@ from indicators.complete_indicator_registry import complete_registry
 from utils.logger import getLogger
 from enums.period import Period
 from utils.exceptions import (
-    Strategy_parse_error, 
-    Strategy_validation_error, 
-    Config_file_error,
-    Indicator_not_found_error,
-    Indicator_parameter_error
+    StrategyParseError, 
+    StrategyValidationError, 
+    ConfigFileError,
+    IndicatorNotFoundError,
+    IndicatorParameterError
 )
 
 logger = getLogger(__name__)
@@ -45,8 +45,8 @@ class StrategyParser:
             Dict[str, Any]: 解析后的策略执行计划
         
         Raises:
-            Config_file_error: 文件不存在或格式不支持
-            Strategy_parse_error: 解析失败
+            ConfigFileError: 文件不存在或格式不支持
+            StrategyParseError: 解析失败
         """
         if not os.path.exists(file_path):
             raise ConfigFileError(f"策略配置文件不存在: {file_path}")
@@ -86,7 +86,7 @@ class StrategyParser:
             Dict[str, Any]: 解析后的策略执行计划
             
         Raises:
-            Strategy_parse_error: 解析失败
+            StrategyParseError: 解析失败
         """
         try:
             if format_type.lower() == 'json':
@@ -117,8 +117,8 @@ class StrategyParser:
             Dict[str, Any]: 解析后的策略执行计划
             
         Raises:
-            Strategy_validation_error: 配置验证失败
-            Strategy_parse_error: 解析过程中发生错误
+            StrategyValidationError: 配置验证失败
+            StrategyParseError: 解析过程中发生错误
         """
         # 检查配置格式
         if "strategy" not in config:
@@ -131,7 +131,7 @@ class StrategyParser:
         required_fields = ["id", "name", "conditions"]
         missing_fields = [field for field in required_fields if field not in strategy]
         if missing_fields:
-            raise Strategy_validation_error(
+            raise StrategyValidationError(
                 f"策略配置缺少必要字段: {', '.join(missing_fields)}", 
                 {"required_fields": required_fields, "strategy_id": strategy.get("id", "unknown")}
             )
@@ -164,7 +164,7 @@ class StrategyParser:
             
             return execution_plan
         except Exception as e:
-            if isinstance(e, (Strategy_validation_error, Strategy_parse_error)):
+            if isinstance(e, (StrategyValidationError, StrategyParseError)):
                 raise
             logger.error(f"解析策略时发生错误: {e}")
             raise StrategyParseError(f"解析策略时发生错误: {str(e)}", {"strategy_id": strategy.get("id", "unknown")})
@@ -180,7 +180,7 @@ class StrategyParser:
             List[Dict[str, Any]]: 解析后的条件列表
             
         Raises:
-            Strategy_validation_error: 条件配置验证失败
+            StrategyValidationError: 条件配置验证失败
         """
         parsed_conditions = []
         
@@ -204,7 +204,7 @@ class StrategyParser:
                 if "logic" not in condition:
                     # 这是一个指标条件
                     if "indicator_id" not in condition:
-                        raise Strategy_validation_error(
+                        raise StrategyValidationError(
                             "条件缺少 indicator_id 字段", 
                             {"condition": condition}
                         )
@@ -236,7 +236,7 @@ class StrategyParser:
                 # 逻辑运算符
                 logic_op = condition["logic"].upper()
                 if logic_op not in ["AND", "OR", "NOT"]:
-                    raise Strategy_validation_error(
+                    raise StrategyValidationError(
                         f"不支持的逻辑运算符: {logic_op}", 
                         {"supported_operators": ["AND", "OR", "NOT"], "condition_index": condition_index}
                     )
@@ -261,7 +261,7 @@ class StrategyParser:
             elif "end_group" in condition:
                 # 条件分组结束
                 if len(logic_stack) <= 1:
-                    raise Strategy_validation_error(
+                    raise StrategyValidationError(
                         "条件分组不匹配: 多余的结束分组", 
                         {"condition_index": condition_index}
                     )
@@ -275,12 +275,12 @@ class StrategyParser:
             else:
                 # 指标条件
                 if "indicator_id" not in condition:
-                    raise Strategy_validation_error(
+                    raise StrategyValidationError(
                         "条件缺少 indicator_id 字段", 
                         {"condition_index": condition_index}
                     )
                 if "period" not in condition:
-                    raise Strategy_validation_error(
+                    raise StrategyValidationError(
                         "条件缺少 period 字段", 
                         {"condition_index": condition_index, "indicator_id": condition.get("indicator_id", "unknown")}
                     )
@@ -292,7 +292,7 @@ class StrategyParser:
                 try:
                     period = Period.from_string(period_str)
                 except ValueError:
-                    raise Strategy_validation_error(
+                    raise StrategyValidationError(
                         f"不支持的周期类型: {period_str}", 
                         {"supported_periods": [p.value for p in Period], "condition_index": condition_index}
                     )
@@ -304,14 +304,14 @@ class StrategyParser:
                 try:
                     indicator = self.indicator_factory.create_indicator(indicator_id, **parameters)
                     if indicator is None:
-                        raise Strategy_validation_error(
+                        raise StrategyValidationError(
                             f"指标不存在或创建失败: {indicator_id}", 
                             {"condition_index": condition_index}
                         )
                 except Exception as e:
-                    if isinstance(e, Strategy_validation_error):
+                    if isinstance(e, StrategyValidationError):
                         raise
-                    raise Strategy_validation_error(
+                    raise StrategyValidationError(
                         f"创建指标实例失败: {indicator_id}, 错误: {str(e)}", 
                         {"condition_index": condition_index, "parameters": parameters}
                     )
@@ -319,7 +319,7 @@ class StrategyParser:
                 # 获取信号类型
                 signal_type = condition.get("signal_type", "BUY")
                 if signal_type not in ["BUY", "SELL", "OBSERVE"]:
-                    raise Strategy_validation_error(
+                    raise StrategyValidationError(
                         f"不支持的信号类型: {signal_type}", 
                         {"supported_signal_types": ["BUY", "SELL", "OBSERVE"], "condition_index": condition_index}
                     )
@@ -404,13 +404,13 @@ class StrategyParser:
             bool: 是否验证通过
             
         Raises:
-            Strategy_validation_error: 验证失败
+            StrategyValidationError: 验证失败
         """
         try:
             self.parse_strategy(config)
             return True
         except Exception as e:
-            raise Strategy_validation_error(
+            raise StrategyValidationError(
                 f"策略配置验证失败: {str(e)}", 
                 {"config": config.get("strategy", {}).get("id", "unknown")}
             ) 

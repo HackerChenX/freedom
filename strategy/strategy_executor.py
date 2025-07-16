@@ -19,10 +19,10 @@ from indicators.complete_indicator_registry import complete_registry
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, safe_run, cache_result
 from utils.exceptions import (
-    Strategy_execution_error,
-    Strategy_validation_error,
+    StrategyExecutionError,
+    StrategyValidationError,
     DataAccessError,
-    Indicator_execution_error
+    IndicatorExecutionError
 )
 
 logger = getLogger(__name__)
@@ -83,7 +83,7 @@ class StrategyExecutor:
             选股结果Data_frame
             
         Raises:
-            Strategy_execution_error: 策略执行错误
+            StrategyExecutionError: 策略执行错误
         """
         try:
             # 检查缓存
@@ -150,7 +150,7 @@ class StrategyExecutor:
             选股结果Data_frame
             
         Raises:
-            Strategy_execution_error: 策略执行错误
+            StrategyExecutionError: 策略执行错误
         """
         try:
             # 1. 验证策略计划
@@ -1218,7 +1218,7 @@ class StrategyExecutor:
             验证通过返回True
             
         Raises:
-            Strategy_validation_error: 策略验证错误
+            StrategyValidationError: 策略验证错误
         """
         # 检查必要字段
         required_fields = ['strategy_id', 'name', 'conditions']

@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 from utils.logger import getLogger
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import Data_access_interface
-from db.sql_manager import SQLManager, Query_type
+from db.sql_manager import SQLManager, QueryType
 from utils.path_utils import get_strategy_dir
 from utils.decorators import exception_handler, performance_monitor
 
@@ -49,7 +49,7 @@ class StrategyManager:
         os.makedirs(self.strategy_dir, exist_ok=True)
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=1.0)
+    @performance_monitor(threshold=1.0)
     def create_strategy_Strategy_Manager(self, strategy_config: Dict[str, Any], save_to_file: bool = True) -> str:
         """
         创建新策略
@@ -96,7 +96,7 @@ class StrategyManager:
         return strategy_id
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=1.0)
+    @performance_monitor(threshold=1.0)
     def update_strategy(self, strategy_id: str, strategy_config: Dict[str, Any], 
                         save_to_file: bool = True) -> str:
         """
@@ -136,7 +136,7 @@ class StrategyManager:
         return strategy_id
     
     @exception_handler(reraise=False, default_return=None)
-    @performance_monitor(threshold_seconds=0.5)
+    @performance_monitor(threshold=0.5)
     def get_strategy(self, strategy_id: str) -> Optional[Dict[str, Any]]:
         """
         获取策略配置
@@ -156,7 +156,7 @@ class StrategyManager:
         return self._get_strategy_from_file(strategy_id)
     
     @exception_handler(reraise=False, default_return=[])
-    @performance_monitor(threshold_seconds=2.0)
+    @performance_monitor(threshold=2.0)
     def list_strategies(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         列出策略
@@ -181,7 +181,7 @@ class StrategyManager:
         return list(strategy_dict.values())
     
     @exception_handler(reraise=False, default_return=False)
-    @performance_monitor(threshold_seconds=1.0)
+    @performance_monitor(threshold=1.0)
     def delete_strategy(self, strategy_id: str) -> bool:
         """
         删除策略
@@ -285,7 +285,7 @@ class StrategyManager:
             strategy = strategy_config["strategy"]
             
             # 使用SQL管理器获取查询语句
-            query = self.sql_manager.get_query(Query_type.SAVE_STRATEGY_CONFIG.value)
+            query = self.sql_manager.get_query(QueryType.SAVE_STRATEGY_CONFIG.value)
             
             params = {
                 'strategy_id': strategy.get('id'),
@@ -293,7 +293,7 @@ class StrategyManager:
             }
             
             # 验证参数
-            if not self.sql_manager.validate_params(Query_type.SAVE_STRATEGY_CONFIG.value, params):
+            if not self.sql_manager.validate_params(QueryType.SAVE_STRATEGY_CONFIG.value, params):
                 logger.error("策略保存参数验证失败")
                 return False
             
@@ -342,11 +342,11 @@ class StrategyManager:
         """
         try:
             # 使用SQL管理器获取查询语句
-            query = self.sql_manager.get_query(Query_type.GET_STRATEGY_CONFIG.value)
+            query = self.sql_manager.get_query(QueryType.GET_STRATEGY_CONFIG.value)
             params = {'strategy_id': strategy_id}
             
             # 验证参数
-            if not self.sql_manager.validate_params(Query_type.GET_STRATEGY_CONFIG.value, params):
+            if not self.sql_manager.validate_params(QueryType.GET_STRATEGY_CONFIG.value, params):
                 logger.error("策略获取参数验证失败")
                 return None
             

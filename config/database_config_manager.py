@@ -66,7 +66,7 @@ class DatabaseConfigManager:
         'timeout': 'CLICKHOUSE_TIMEOUT'
     }
     
-    def __init___18(self, config_dir: str = None):
+    def __init__(self, config_dir: str = None):
         """
         初始化配置管理器
         
@@ -383,11 +383,11 @@ class DatabaseConfigManager:
 # 全局配置管理器实例
 _db_config_manager = None
 
-def get_database_config_manager() -> Database_config_manager:
+def get_database_config_manager() -> DatabaseConfigManager:
     """获取全局数据库配置管理器实例"""
     global _db_config_manager
     if _db_config_manager is None:
-        _db_config_manager = Database_config_manager()
+        _db_config_manager = DatabaseConfigManager()
     return _db_config_manager
 
 def get_clickhouse_config() -> Dict[str, Any]:

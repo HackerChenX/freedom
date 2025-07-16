@@ -12,7 +12,7 @@ from strategy.rebound_strategy import ReboundStrategy
 from strategy.multi_period_strategy import MultiPeriodStrategy
 from strategy.strategy_factory import StrategyFactory
 from strategy.strategy_generator import StrategyGenerator
-from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
 
 __all__ = [

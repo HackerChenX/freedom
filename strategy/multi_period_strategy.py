@@ -325,7 +325,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"计算{period}周期评分时出错: {e}")
             return 0.0
     
-    def _evaluate_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
+    def _evaluate_condition(self, condition: Dict[str, Any], data: pd.DataFrame) -> float:
         """
         评估单个条件
         
@@ -361,7 +361,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"评估条件 {condition.indicator_name} 时出错: {e}")
             return 0.0
     
-    def _evaluate_ma_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
+    def _evaluate_ma_condition(self, condition: Dict[str, Any], data: pd.DataFrame) -> float:
         """评估MA条件"""
         try:
             period = condition.parameters.get('period', 20)
@@ -387,7 +387,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"评估MA条件时出错: {e}")
             return 0.0
     
-    def _evaluate_rsi_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
+    def _evaluate_rsi_condition(self, condition: Dict[str, Any], data: pd.DataFrame) -> float:
         """评估RSI条件"""
         try:
             period = condition.parameters.get('period', 14)
@@ -418,7 +418,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"评估RSI条件时出错: {e}")
             return 0.0
     
-    def _evaluate_macd_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
+    def _evaluate_macd_condition(self, condition: Dict[str, Any], data: pd.DataFrame) -> float:
         """评估MACD条件"""
         try:
             fast = condition.parameters.get('fast', 12)
@@ -450,7 +450,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"评估MACD条件时出错: {e}")
             return 0.0
     
-    def _evaluate_boll_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
+    def _evaluate_boll_condition(self, condition: Dict[str, Any], data: pd.DataFrame) -> float:
         """评估布林带条件"""
         try:
             period = condition.parameters.get('period', 20)
@@ -488,7 +488,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"评估BOLL条件时出错: {e}")
             return 0.0
     
-    def _evaluate_volume_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
+    def _evaluate_volume_condition(self, condition: Dict[str, Any], data: pd.DataFrame) -> float:
         """评估成交量条件"""
         try:
             ma_period = condition.parameters.get('ma_period', 20)
@@ -518,7 +518,7 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
             logger.error(f"评估VOL条件时出错: {e}")
             return 0.0
     
-    def _evaluate_kdj_condition(self, condition: Indicator_condition, data: pd.DataFrame) -> float:
+    def _evaluate_kdj_condition(self, condition: Dict[str, Any], data: pd.DataFrame) -> float:
         """评估KDJ条件"""
         try:
             period = condition.parameters.get('period', 9)
