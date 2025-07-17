@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import get_config
 """
 指标验证框架演示脚本
 
@@ -31,7 +32,7 @@ def demo_quick_validation():
     # 配置快速验证
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=200,
+        stock_get_config('performance.pool_size'),
         max_selection_ratio=0.08,
         parallel_workers=1,
         output_format="json",
@@ -85,7 +86,7 @@ def demo_single_indicator_validation():
     
     # 配置验证
     config = Indicator_validation_config(
-        stock_pool_size=500,
+        stock_get_config('performance.pool_size'),
         max_selection_ratio=0.05,
         save_details=False
     )
@@ -128,7 +129,7 @@ def demo_category_validation():
     # 配置分类验证
     config = Indicator_validation_config(
         mode=Validation_mode.CATEGORY,
-        stock_pool_size=300,
+        stock_get_config('performance.pool_size'),
         max_selection_ratio=0.06,
         parallel_workers=2,
         output_format="txt",
@@ -191,7 +192,7 @@ def demo_priority_validation():
     # 配置优先级验证
     config = Indicator_validation_config(
         mode=Validation_mode.PRIORITY,
-        stock_pool_size=400,
+        stock_get_config('performance.pool_size'),
         max_selection_ratio=0.07,
         parallel_workers=1,
         save_details=False

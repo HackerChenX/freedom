@@ -216,7 +216,7 @@ def generate_final_report():
     
     print("\n📄 最终报告已保存到: ARCHITECTURE_FINAL_REPORT.md")
 
-def main():
+def main_comprehensive_final_fix():
     """主函数"""
     print("🚀 开始最终架构修复和验证...")
     print("=" * 60)

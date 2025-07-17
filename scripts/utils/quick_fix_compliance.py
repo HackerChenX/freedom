@@ -125,7 +125,7 @@ def remove_duplicate_functions(content: str) -> str:
             
     return '\n'.join(result_lines)
 
-def main():
+def main_quick_fix_compliance():
     """主函数"""
     print("开始快速修复项目文件...")
     
@@ -135,5 +135,5 @@ def main():
     print(f"修复文件数量: {fixes_count}")
     print("\n现在可以尝试运行合规性检查")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_quick_fix_compliance() 

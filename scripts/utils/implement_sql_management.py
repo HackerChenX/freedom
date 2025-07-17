@@ -286,7 +286,7 @@ class SQLMigrationTool:
             logger.error(f"生成迁移报告失败: {e}")
             return None
 
-def main():
+def main_implement_sql_management():
     """主函数"""
     logger.info("开始SQL查询管理器实施...")
     
@@ -314,4 +314,4 @@ def main():
     os.system("python simple_architecture_check.py")
 
 if __name__ == "__main__":
-    main() 
+    main_implement_sql_management() 

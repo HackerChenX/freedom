@@ -42,7 +42,7 @@ class MemoryStats:
     memory_usage_percent: float
     process_memory_mb: float
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_memory_optimizer(self) -> Dict[str, Any]:
         return {
             'total_memory_gb': self.total_memory_gb,
             'available_memory_gb': self.available_memory_gb,

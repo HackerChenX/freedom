@@ -73,7 +73,7 @@ class SQLQueryFixer:
                 'executor.get_latest_data(code, limit, level)',
         }
     
-    def scan_file(self, file_path: str) -> List[Tuple[int, str]]:
+    def scan_file_fix_sql_queries(self, file_path: str) -> List[Tuple[int, str]]:
         """扫描文件中的SQL语句
         
         Args:
@@ -134,7 +134,7 @@ class SQLQueryFixer:
         
         return sql_text
     
-    def fix_file(self, file_path: str) -> bool:
+    def fix_file_fix_sql_queries(self, file_path: str) -> bool:
         """修复文件中的SQL语句
         
         Args:
@@ -247,7 +247,7 @@ class SQLQueryFixer:
         # 如果没有找到import语句，在文件开头插入
         return 0
     
-    def scan_directory(self, directory: str, extensions: Set[str] = None) -> Dict[str, List[Tuple[int, str]]]:
+    def scan_directory_fix_sql_queries(self, directory: str, extensions: Set[str] = None) -> Dict[str, List[Tuple[int, str]]]:
         """扫描目录中的SQL语句
         
         Args:
@@ -275,7 +275,7 @@ class SQLQueryFixer:
         
         return sql_files
     
-    def generate_report(self, sql_files: Dict[str, List[Tuple[int, str]]]) -> str:
+    def generate_report_fix_sql_queries(self, sql_files: Dict[str, List[Tuple[int, str]]]) -> str:
         """生成扫描报告
         
         Args:
@@ -302,7 +302,7 @@ class SQLQueryFixer:
         
         return "\n".join(report)
 
-def main():
+def main_fix_sql_queries():
     """主函数"""
     if len(sys.argv) < 2:
         print("用法: python fix_sql_queries.py <scan|fix> [directory]")
@@ -362,5 +362,5 @@ def main():
         print("无效的操作，请使用 'scan' 或 'fix'")
         sys.exit(1)
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_fix_sql_queries() 

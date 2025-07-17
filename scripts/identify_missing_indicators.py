@@ -297,7 +297,7 @@ def generate_fix_recommendations(missing_indicators):
     print(f"    except Exception as e:")
     print(f"        logger.debug(f'注册失败 {{indicator_name}}: {{e}}')")
 
-def main():
+def main_identify_missing_indicators():
     """主函数"""
     missing_indicators, unavailable_indicators = identify_missing_indicators()
     

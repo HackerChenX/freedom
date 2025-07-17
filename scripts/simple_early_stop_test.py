@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import get_config
 """
 简单的早停测试脚本
 
@@ -34,7 +35,7 @@ def test_early_stop_success():
     # 创建配置，使用更宽松的条件确保能选出股票
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=50,          # 更小的股票池
+        stock_get_config('performance.pool_size'),          # 更小的股票池
         max_selection_ratio=0.5,     # 更宽松的选股比例
         min_selection_count=1,       # 最少1只股票
         parallel_workers=1,          # 单线程，便于观察
@@ -108,7 +109,7 @@ def test_early_stop_error():
     # 创建配置，故意使用会出错的设置
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=10,          # 很小的股票池
+        stock_get_config('performance.pool_size'),          # 很小的股票池
         max_selection_ratio=0.01,    # 很严格的选股比例
         min_selection_count=1,
         parallel_workers=1,          # 单线程

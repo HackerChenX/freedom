@@ -213,7 +213,7 @@ class RemainingSQLViolationFixer:
         
         return content, fixed_count
     
-    def fix_file(self, file_path: str) -> Tuple[bool, str]:
+    def fix_file_fix_remaining_sql_violations(self, file_path: str) -> Tuple[bool, str]:
         """修复单个文件"""
         if not os.path.exists(file_path):
             return False, f"文件不存在: {file_path}"
@@ -274,7 +274,7 @@ class RemainingSQLViolationFixer:
         
         return results
     
-    def generate_fix_report(self, results: Dict[str, List[Tuple[str, bool, str]]]) -> str:
+    def generate_fix_report_fix_remaining_sql_violations(self, results: Dict[str, List[Tuple[str, bool, str]]]) -> str:
         """生成修复报告"""
         report = []
         report.append("# 剩余SQL违规修复报告")
@@ -347,7 +347,7 @@ class RemainingSQLViolationFixer:
         
         return '\n'.join(report)
 
-def main():
+def main_fix_remaining_sql_violations():
     """主函数"""
     fixer = RemainingSQLViolationFixer()
     results = fixer.run_fixes()
@@ -371,4 +371,4 @@ def main():
     print(f"成功率: {fixer.stats['successful_fixes']/fixer.stats['total_files']*100:.1f}%")
 
 if __name__ == "__main__":
-    main() 
+    main_fix_remaining_sql_violations() 

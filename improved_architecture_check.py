@@ -430,11 +430,11 @@ class ImprovedArchitectureChecker:
         else:
             print("❌ SQL迁移仍需大量工作")
 
-def main():
+def main_improved_architecture_check():
     """主函数"""
     checker = ImprovedArchitectureChecker()
     checker.run_all_checks()
     checker.print_results()
 
 if __name__ == "__main__":
-    main() 
+    main_improved_architecture_check() 

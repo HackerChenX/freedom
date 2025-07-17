@@ -99,7 +99,7 @@ class IndicatorCalculator(IindicatorCalculator):
         
         return True
     
-    def calculate_ma(self, data: pd.DataFrame, period: int = 20) -> pd.Series:
+    def calculate_ma_indicator_calculator(self, data: pd.DataFrame, period: int = 20) -> pd.Series:
         """
         计算移动平均线
         
@@ -115,7 +115,7 @@ class IndicatorCalculator(IindicatorCalculator):
         
         return data['close'].rolling(window=period).mean()
     
-    def calculate_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def calculate_rsi_indicator_calculator(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
         """
         计算RSI指标
         
@@ -139,7 +139,7 @@ class IndicatorCalculator(IindicatorCalculator):
         
         return rsi
     
-    def calculate_macd(self, data: pd.DataFrame, 
+    def calculate_macd_indicator_calculator(self, data: pd.DataFrame, 
                       fast_period: int = 12, 
                       slow_period: int = 26, 
                       signal_period: int = 9) -> Dict[str, pd.Series]:

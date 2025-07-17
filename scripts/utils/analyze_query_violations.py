@@ -68,7 +68,7 @@ def get_line_content(content: str, position: int) -> str:
         return lines[line_num].strip()
     return ""
 
-def main():
+def main_analyze_query_violations():
     """主函数"""
     print("开始分析查询违规...")
     
@@ -91,5 +91,5 @@ def main():
         if len(items) > 5:
             print(f"  ... 还有 {len(items) - 5} 个")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_analyze_query_violations() 

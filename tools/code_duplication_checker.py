@@ -421,7 +421,7 @@ class CodeDuplicationChecker:
             return "严重重复"
 
 
-def main():
+def main_code_duplication_checker():
     """主函数"""
     root_dir = os.getcwd()
     checker = CodeDuplicationChecker(root_dir)

@@ -51,7 +51,7 @@ def final_cleanup():
                 
     return fixes
 
-def fix_code_duplications(content: str, fixes: dict) -> str:
+def fix_code_duplications_final_cleanup(content: str, fixes: dict) -> str:
     """修复代码重复问题"""
     
     # 移除重复的函数定义
@@ -164,7 +164,7 @@ def fix_remaining_queries(content: str, file_path: str, fixes: dict) -> str:
     
     return '\n'.join(new_lines)
 
-def main():
+def main_final_cleanup():
     """主函数"""
     print("开始最终清理...")
     
@@ -180,5 +180,5 @@ def main():
     
     print("\n重新检查合规性...")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_final_cleanup() 

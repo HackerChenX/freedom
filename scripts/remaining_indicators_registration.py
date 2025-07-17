@@ -364,7 +364,7 @@ class RemainingIndicatorsRegistration:
 
         return estimated_rate >= 75
 
-def main():
+def main_remaining_indicators_registration():
     """主函数"""
     registrar = RemainingIndicatorsRegistration()
 

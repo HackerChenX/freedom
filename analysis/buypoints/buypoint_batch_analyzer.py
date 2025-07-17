@@ -785,7 +785,7 @@ class BuyPointBatchAnalyzer:
         
         return {'name': pattern, 'description': description}
 
-    def generate_strategy(self, 
+    def generate_strategy_buypoint_batch_analyzer(self, 
                        common_indicators: Dict[str, List[Dict[str, Any]]],
                        strategy_name: str = "BuyPointCommonStrategy") -> Dict[str, Any]:
         """

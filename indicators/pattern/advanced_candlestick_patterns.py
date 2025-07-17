@@ -77,7 +77,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         # 高级K线形态识别通常没有可变参数，但为了符合接口要求，提供此方法
         pass
     
-    def ensure_columns(self, data: pd.DataFrame, required_columns: List[str]) -> None:
+    def ensure_columns_advanced_candlestick_patterns(self, data: pd.DataFrame, required_columns: List[str]) -> None:
         """
         确保数据包含必要的列
         

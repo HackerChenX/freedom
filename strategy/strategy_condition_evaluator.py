@@ -188,7 +188,7 @@ class StrategyConditionEvaluator:
         return series < threshold
     
     @performance_monitor()
-    @cache_result(max_size=100)
+    @cache_result(max_size=get_config('cache.max_size', 100))
     def evaluate_condition_Evaluator(self, condition: Dict[str, Any], 
                          stock_data: pd.DataFrame,
                          date: str) -> bool:

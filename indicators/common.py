@@ -10,7 +10,7 @@ from typing import Union, Tuple, List, Optional, Any
 
 # 类型别名
 numeric_array = Union[List[float], np.ndarray, pd.Series]
-Numeric_array = numeric_array  # 添加大写别名以保持兼容性
+NUMERIC_ARRAY = numeric_array  # 添加大写别名以保持兼容性
 
 
 def ma(series: Numeric_array, periods: int) -> np.ndarray:

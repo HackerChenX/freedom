@@ -149,7 +149,7 @@ class FinalSQLMigrator:
         else:
             return 'business_layer'
     
-    def backup_file(self, file_path: str) -> str:
+    def backup_file_final_sql_migration(self, file_path: str) -> str:
         """备份文件"""
         backup_path = f"{file_path}.final_migration_backup"
         if os.path.exists(file_path):
@@ -214,7 +214,7 @@ except Exception as e:
         
         return content
     
-    def migrate_file(self, file_path: str) -> Tuple[bool, str]:
+    def migrate_file_final_sql_migration(self, file_path: str) -> Tuple[bool, str]:
         """迁移单个文件"""
         if not os.path.exists(file_path):
             return False, f"文件不存在: {file_path}"
@@ -276,7 +276,7 @@ except Exception as e:
         
         return results
     
-    def generate_migration_report(self, results: Dict[str, List[Tuple[str, bool, str]]]) -> str:
+    def generate_migration_report_final_sql_migration(self, results: Dict[str, List[Tuple[str, bool, str]]]) -> str:
         """生成迁移报告"""
         report = []
         report.append("# 最终SQL迁移报告")
@@ -337,7 +337,7 @@ except Exception as e:
         
         return results
 
-def main():
+def main_final_sql_migration():
     """主函数"""
     migrator = FinalSQLMigrator()
     results = migrator.run_migration()
@@ -354,4 +354,4 @@ def main():
     print(f"成功率: {total_success/total_files*100:.1f}%")
 
 if __name__ == "__main__":
-    main() 
+    main_final_sql_migration() 

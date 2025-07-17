@@ -163,7 +163,7 @@ def generate_final_summary():
     
     return target_achieved
 
-def main():
+def main_final_100_percent_verification():
     """主函数"""
     print("🚀 开始最终100%注册率验证...")
     

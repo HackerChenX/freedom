@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import get_config
 """
 指标验证框架测试
 
@@ -32,7 +33,7 @@ class Test_indicator_validation_framework(unittest.Test_case):
         """测试前准备"""
         self.config = Indicator_validation_config(
             mode=Validation_mode.QUICK,
-            stock_pool_size=100,
+            stock_get_config('performance.pool_size'),
             max_selection_ratio=0.1,
             parallel_workers=1,
             save_details=False
@@ -390,7 +391,7 @@ class Test_validation_config(unittest.Test_case):
         """测试自定义配置"""
         config = Indicator_validation_config(
             mode=Validation_mode.QUICK,
-            stock_pool_size=500,
+            stock_get_config('performance.pool_size'),
             max_selection_ratio=0.05,
             parallel_workers=2,
             output_format="csv"

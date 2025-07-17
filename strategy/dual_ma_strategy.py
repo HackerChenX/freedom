@@ -157,7 +157,7 @@ class DualMAStrategy(BaseStrategy):
         
         return result_df 
     
-    def select_Strategy_Base_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+    def select_Strategy_Base_Strategy_dual_ma_strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
         实现基类抽象方法，调用具体的选股策略方法
         

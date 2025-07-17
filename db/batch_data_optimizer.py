@@ -60,7 +60,7 @@ class PerformancemetricsOptimizer:
         }
 
 
-class BatchDataOptimizer:
+class BatchDataOptimizerBatch_Data_Optimizer:
     """
     批量数据优化器
     
@@ -78,7 +78,7 @@ class BatchDataOptimizer:
         self.config = config or Batch_config()
         self.performance_history: List[Performance_metrics] = []
         
-    def get_stocks_data_batch(self, stock_codes: List[str], 
+    def get_stocks_data_batch_batch_data_optimizer(self, stock_codes: List[str], 
                              start_date: str, end_date: str,
                              level: str = '日线') -> Dict[str, pd.DataFrame]:
         """
@@ -381,7 +381,7 @@ class BatchDataOptimizer:
             if not df.empty:
                 cache_key = f"stock_data_{code}_{level}_{start_date}_{end_date}"
                 # 缓存1小时
-                self.cache_service.set(cache_key, df, ttl=3600)
+                self.cache_service.set(cache_key, df, ttl=get_config('cache.ttl', 3600))
     
     def get_performance_summary(self) -> Dict[str, Any]:
         """

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from config import get_config
 """
 统一数据管理器
 
@@ -64,10 +65,10 @@ class UnifiedDataManager:
         except ImportError:
             logger.warning("统一配置管理器不可用，使用默认配置")
             db_config = {
-                'host': 'localhost',
-                'port': 9000,
-                'database': 'stock',
-                'user': 'default',
+                get_config('database.host'),
+                get_config('database.port'),
+                get_config('database.name'),
+                get_config('database.user'),
                 'password': ''
             }
 
@@ -78,7 +79,7 @@ class UnifiedDataManager:
             database=db_config.get('database', 'stock'),
             user=db_config.get('user', 'default'),
             password=db_config.get('password', ''),
-            max_connections=20,
+            get_config('performance.max_connections'),
             min_connections=5
         )
         

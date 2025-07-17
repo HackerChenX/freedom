@@ -350,7 +350,7 @@ def generate_integration_report(results: Dict[str, bool]):
     print(report)
     print("\n📄 集成测试报告已保存到: INTEGRATION_TEST_REPORT.md")
 
-def main():
+def main_system_integration_test():
     """主函数"""
     print("🚀 开始完整系统集成测试...")
     print("=" * 60)

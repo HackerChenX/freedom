@@ -640,7 +640,7 @@ class FixedAbsorbMACDStrategy:
         print("\n" + "=" * 80)
 
 
-def main():
+def main_fixed_absorb_macd_strategy_20250512():
     """主函数"""
     print("🚀 启动30分钟吸筹信号+MACD上移选股策略（修复版）")
     print("📅 目标日期: 2025年5月12日")

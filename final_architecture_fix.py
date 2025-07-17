@@ -237,7 +237,7 @@ def test_unified_base_strategy():
         print(f"❌ 统一基类测试失败: {e}")
         return False
 
-def main():
+def main_final_architecture_fix():
     """主函数"""
     print("🚀 开始简化架构验证...\\n")
     
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     
     print("✅ 创建简化验证脚本")
 
-def main():
+def main_final_architecture_fix():
     """主函数"""
     print("🚀 开始最终架构修复...")
     print("=" * 50)

@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 """
 测试统一评分系统
 
@@ -17,10 +15,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from indicators.complete_indicator_registry import complete_registry
-from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,10 +26,10 @@ def test_unified_scoring():
     logger.info("开始测试统一评分系统")
     
     # 获取测试数据
-    data_access = get_container().resolve(DataAccessInterface)
+    data_access = get_service("IDataAccess")
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info WHERE 1=1
+    FROM stock_info 
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
@@ -53,9 +48,9 @@ def test_unified_scoring():
     
     # 测试各个指标的评分功能
     indicators = [
-        ("MACD", MACD()),
-        ("KDJ", KDJ()),
-        ("RSI", RSI())
+        ("MACD", "MACD"),
+        ("KDJ", "KDJ"),
+        ("RSI", "RSI")
     ]
     
     for name, indicator in indicators:
@@ -100,7 +95,7 @@ def test_market_environment_detection():
     logger.info("\n=== 测试市场环境检测 ===")
     
     # 获取更长期的数据
-    data_access = get_container().resolve(DataAccessInterface)
+    data_access = get_service("IDataAccess")
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1
@@ -149,7 +144,7 @@ def test_scoring_consistency_Scoring():
     logger.info("\n=== 测试评分一致性 ===")
     
     # 获取测试数据
-    data_access = get_container().resolve(DataAccessInterface)
+    data_access = get_service("IDataAccess")
     sql = """
     SELECT date, open, high, low, close, volume
     FROM stock_info WHERE 1=1

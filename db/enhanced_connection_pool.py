@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from config import get_config
 """
 增强的Click_house连接池管理器
 
@@ -212,7 +213,7 @@ class ClickHouseConnectionPool:
                 self.stats['total_destroyed'] += 1
     
     @contextmanager
-    def get_connection(self):
+    def get_connection_enhanced_connection_pool(self):
         """
         获取连接的上下文管理器
         
@@ -240,7 +241,7 @@ class ClickHouseConnectionPool:
                     logger.debug(f"创建新连接: {connection.connection_id}")
                 else:
                     # 达到最大连接数，等待可用连接
-                    connection = self.available_connections.get(timeout=30)
+                    connection = self.available_connections.get(get_config('performance.timeout'))
                     logger.debug(f"等待获取连接: {connection.connection_id}")
             
             # 更新连接统计
@@ -348,7 +349,7 @@ class PooledConnection:
             logger.error(f"查询DataFrame失败 [{self.connection_id}]: {query}, 错误: {e}")
             return pd.DataFrame()
     
-    def query_dataframe(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def query_dataframe_enhanced_connection_pool(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """执行查询并返回DataFrame (标准接口)"""
         try:
             # 使用正确的clickhouse_driver方法

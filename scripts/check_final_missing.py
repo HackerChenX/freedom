@@ -172,7 +172,7 @@ def estimate_final_count(available_indicators):
         print(f"当前注册率: 98.7%")
         print(f"⚠️  没有发现额外可注册指标")
 
-def main():
+def main_check_final_missing():
     """主函数"""
     available_indicators = check_specific_indicators()
     

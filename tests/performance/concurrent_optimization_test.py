@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from config import get_config
 """
 并发优化性能测试
 
@@ -38,7 +39,7 @@ class Concurrent_optimization_test:
             host=os.getenv('DB_HOST', 'localhost'),
             port=int(os.getenv('DB_PORT', '9000')),
             database=os.getenv('DB_DATABASE', 'stock'),
-            max_connections=20,
+            get_config('performance.max_connections'),
             min_connections=5
         )
         

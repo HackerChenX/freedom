@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from config import get_config
 """
 批量指标验证器
 只查询一次股票数据，然后用同一份数据验证多个指标
@@ -36,7 +37,7 @@ class BatchIndicatorValidator:
         
         # 验证配置
         self.validation_date = "2024-12-28"
-        self.stock_pool_size = 100  # 扩大到100个股票
+        self.stock_get_config('performance.pool_size')  # 扩大到100个股票
         self.test_stock_count = 20   # 增加测试用的股票数量到20个
         
         # 数据缓存

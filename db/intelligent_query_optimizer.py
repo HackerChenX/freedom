@@ -373,7 +373,7 @@ class IntelligentQueryOptimizer:
         if expired_keys:
             logger.debug(f"清理 {len(expired_keys)} 个过期缓存条目")
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats_intelligent_query_optimizer(self) -> Dict[str, Any]:
         """获取缓存统计信息"""
         with self.cache_lock:
             cache_size = len(self.query_cache)
@@ -396,7 +396,7 @@ class IntelligentQueryOptimizer:
             'pattern_matches': stats['pattern_matches']
         }
     
-    def clear_cache(self):
+    def clear_cache_intelligent_query_optimizer(self):
         """清空所有缓存"""
         with self.cache_lock:
             self.query_cache.clear()

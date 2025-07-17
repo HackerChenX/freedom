@@ -350,7 +350,7 @@ class PeriodDataProcessor:
             logger.error(f"日期格式转换错误: {e}")
             return datetime.now().strftime('%Y-%m-%d')
 
-    def get_stock_data(self, stock_code, start_date, end_date, period='daily'):
+    def get_stock_data_period_data_processor(self, stock_code, start_date, end_date, period='daily'):
         """获取股票数据"""
         try:
             # 格式化日期

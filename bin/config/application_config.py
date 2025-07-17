@@ -1,4 +1,5 @@
 """
+from config import get_config
 应用级配置器
 
 负责按照分层架构原则配置所有服务
@@ -85,7 +86,7 @@ def configure_test_application(container: ServiceContainer = None) -> ServiceCon
         from utils.period_manager import PeriodManager
         container.register_singleton(
             PeriodManager,
-            factory=lambda: PeriodManager(cache_size=10)
+            factory=lambda: PeriodManager(get_config('cache.size'))
         )
         
         logger.info("测试应用服务配置完成")

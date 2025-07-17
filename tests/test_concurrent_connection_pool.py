@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from config import get_config
 """
 并发连接池测试脚本
 
@@ -35,12 +36,12 @@ class ConcurrentConnectionPoolTester:
         
         # 初始化连接池
         self.pool = initialize_connection_pool(
-            host='localhost',
-            port=9000,
-            database='stock',
-            user='default',
-            password='123456',
-            max_connections=20,
+            host=get_config('database.host', 'localhost'),
+            port=get_config('database.port', 9000),
+            database=get_config('database.name', 'stock'),
+            user=get_config('database.user', 'default'),
+            password=get_config('database.password', ''),
+            get_config('performance.max_connections'),
             min_connections=5
         )
         
@@ -300,7 +301,7 @@ class ConcurrentConnectionPoolTester:
         print("\n" + "="*80)
 
 
-def main():
+def main_test_concurrent_connection_pool():
     """主测试函数"""
     tester = ConcurrentConnectionPoolTester()
     
@@ -331,4 +332,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_test_concurrent_connection_pool() 

@@ -45,7 +45,7 @@ class IndicatormanagerManagerIndicatorManagerIndicatorManagerindicatormanager:
             self.cache[cache_key] = indicator
         return indicator
 
-    def get_available_indicators(self) -> List[str]:
+    def get_available_indicators_indicator_manager(self) -> List[str]:
         """获取可用指标列表"""
         return self._registry.get_indicator_names()
 

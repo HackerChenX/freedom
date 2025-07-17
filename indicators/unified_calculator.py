@@ -49,7 +49,7 @@ class IndicatorResult:
     success: bool
     error_message: Optional[str] = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_unified_calculator(self) -> Dict[str, Any]:
         return {
             'name': self.name,
             'data_shape': self.data.shape if hasattr(self.data, 'shape') else None,
@@ -95,7 +95,7 @@ class UnifiedIndicatorCalculator(abc.ABC):
         pass
     
     @abc.abstractmethod
-    def get_required_columns(self) -> List[str]:
+    def get_required_columns_unified_calculator(self) -> List[str]:
         """
         获取计算所需的数据列
         
@@ -105,7 +105,7 @@ class UnifiedIndicatorCalculator(abc.ABC):
         pass
     
     @abc.abstractmethod
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params_unified_calculator(self) -> Dict[str, Any]:
         """
         获取默认参数
         
@@ -115,7 +115,7 @@ class UnifiedIndicatorCalculator(abc.ABC):
         pass
     
     @abc.abstractmethod
-    def validate_params(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate_params_unified_calculator(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
         """
         验证参数有效性
         
@@ -273,7 +273,7 @@ class UnifiedIndicatorCalculator(abc.ABC):
         self.total_calculation_time += calculation_time
         self.last_calculation_time = datetime.now()
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_unified_calculator(self) -> Dict[str, Any]:
         """获取统计信息"""
         avg_time = self.total_calculation_time / self.calculation_count if self.calculation_count > 0 else 0
         
@@ -285,7 +285,7 @@ class UnifiedIndicatorCalculator(abc.ABC):
             'last_calculation_time': self.last_calculation_time
         }
     
-    def clear_cache(self) -> None:
+    def clear_cache_unified_calculator(self) -> None:
         """清除缓存"""
         CacheUtils.clear()
     
@@ -364,7 +364,7 @@ class VolumeIndicatorBase(UnifiedIndicatorCalculator):
     def __init__(self, name: str):
         super().__init__(name, IndicatorType.VOLUME)
     
-    def get_required_columns(self) -> List[str]:
+    def get_required_columns_unified_calculator(self) -> List[str]:
         """成交量指标通常需要volume列"""
         return ['volume']
     
@@ -455,7 +455,7 @@ class CompositeIndicatorBase(UnifiedIndicatorCalculator):
         
         return results
     
-    def get_required_columns(self) -> List[str]:
+    def get_required_columns_unified_calculator(self) -> List[str]:
         """获取所有组成指标需要的列"""
         all_columns = []
         for indicator in self.component_indicators:
@@ -516,13 +516,13 @@ class SimpleMovingAverageCalculator(TrendIndicatorBase):
         period = params.get('period', 20)
         return data['close'].rolling(window=period).mean()
     
-    def get_required_columns(self) -> List[str]:
+    def get_required_columns_unified_calculator(self) -> List[str]:
         return ['close']
     
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params_unified_calculator(self) -> Dict[str, Any]:
         return {'period': 20}
     
-    def validate_params(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate_params_unified_calculator(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors = []
         
         period = params.get('period', 20)

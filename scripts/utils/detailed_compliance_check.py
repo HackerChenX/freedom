@@ -166,7 +166,7 @@ class DetailedComplianceChecker:
                     'context': self.get_line_context(content, line_num)
                 })
     
-    def check_naming_violations(self, file_path: Path, content: str):
+    def check_naming_violations_detailed_compliance_check(self, file_path: Path, content: str):
         """检查命名规范违规"""
         relative_path = file_path.relative_to(self.root_dir)
         
@@ -236,7 +236,7 @@ class DetailedComplianceChecker:
                     'suggestion': self.get_query_suggestion(pattern)
                 })
     
-    def check_code_duplications(self, file_path: Path, content: str):
+    def check_code_duplications_detailed_compliance_check(self, file_path: Path, content: str):
         """检查代码重复"""
         relative_path = file_path.relative_to(self.root_dir)
         
@@ -273,7 +273,7 @@ class DetailedComplianceChecker:
         except Syntax_error:
             pass
     
-    def check_import_violations(self, file_path: Path, content: str):
+    def check_import_violations_detailed_compliance_check(self, file_path: Path, content: str):
         """检查导入违规"""
         relative_path = file_path.relative_to(self.root_dir)
         

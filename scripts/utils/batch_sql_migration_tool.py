@@ -299,7 +299,7 @@ class BatchSQLMigrator:
         print(f"迁移报告已生成: {output_file}")
         return output_file
 
-def main():
+def main_batch_sql_migration_tool():
     """主函数"""
     print("=== 批量SQL迁移工具 ===")
     
@@ -314,4 +314,4 @@ def main():
     print("\n批量迁移完成!")
 
 if __name__ == "__main__":
-    main() 
+    main_batch_sql_migration_tool() 

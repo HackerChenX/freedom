@@ -111,7 +111,7 @@ def fix_queries_without_where(content: str) -> str:
     
     return content
 
-def main():
+def main_final_query_fix():
     """主函数"""
     print("开始最终查询修复...")
     
@@ -122,5 +122,5 @@ def main():
     
     print("\n重新检查合规性...")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_final_query_fix() 

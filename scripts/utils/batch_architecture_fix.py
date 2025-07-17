@@ -197,7 +197,7 @@ class BatchArchitectureFix:
                 # 查找所有类定义
                 class_pattern = r"class\s+([a-z][a-zA-Z0-9_]*)\s*[\(:]"
                 
-                def fix_class_name(match):
+                def fix_class_name_batch_architecture_fix(match):
                     class_name = match.group(1)
                     # 转换为大驼峰命名法
                     fixed_name = self._to_pascal_case(class_name)

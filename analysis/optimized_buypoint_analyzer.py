@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from config import get_config
 """
 优化后的买点分析器
 
@@ -40,7 +41,7 @@ class OptimizedBuyPointAnalyzer(Buy_point_batch_analyzer):
         
         if self.enable_cache:
             self.cache_system = Intelligent_cache_system(
-                max_memory_cache_size=500,
+                max_memory_get_config('cache.size'),
                 enable_disk_cache=True,
                 cache_dir="data/cache/indicators"
             )

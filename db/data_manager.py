@@ -1,4 +1,5 @@
 """
+from config import get_config
 数据管理器模块
 
 负责从数据库获取数据，并提供高效的缓存机制
@@ -32,7 +33,7 @@ class DatamanagerManager:
     使用依赖注入模式获取数据访问接口
     """
     
-    def __init__(self, cache_enabled=True, max_cache_size=1000, default_ttl=3600):
+    def __init__(self, cache_enabled=True, max_get_config('cache.size'), default_ttl=get_config('cache.ttl', 3600)):
         """
         初始化数据管理器
         

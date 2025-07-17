@@ -524,7 +524,7 @@ class MemoryOptimizationTester:
         return recommendations
 
 
-def main():
+def main_test_memory_optimization():
     """主函数"""
     tester = MemoryOptimizationTester()
     
@@ -576,4 +576,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_test_memory_optimization() 

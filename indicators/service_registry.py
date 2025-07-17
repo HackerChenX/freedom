@@ -1,4 +1,5 @@
 """
+from config import get_config
 核心服务层服务注册配置
 
 负责注册L4（核心服务层）的服务
@@ -45,7 +46,7 @@ def register_core_services(container: ServiceContainer = None) -> ServiceContain
         container.register_singleton(
             PeriodManager,
             factory=lambda: PeriodManager(
-                cache_size=100,
+                get_config('cache.size'),
                 data_access=_get_data_access_from_container(container)
             )
         )

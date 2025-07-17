@@ -128,7 +128,7 @@ from db.sql_manager import QueryType''',
         
         return templates.get(file_type, templates['script'])
     
-    def detect_file_type(self, file_path: str) -> str:
+    def detect_file_type_focused_sql_migration(self, file_path: str) -> str:
         """检测文件类型"""
         if file_path.startswith('analysis/'):
             return 'analysis'
@@ -139,7 +139,7 @@ from db.sql_manager import QueryType''',
         else:
             return 'script'
     
-    def migrate_file(self, file_path: str) -> Dict[str, any]:
+    def migrate_file_focused_sql_migration(self, file_path: str) -> Dict[str, any]:
         """迁移单个文件"""
         result = {
             'file': file_path,
@@ -275,7 +275,7 @@ from db.sql_manager import QueryType''',
         
         return '\n'.join(lines)
     
-    def migrate_by_priority(self) -> Dict[str, any]:
+    def migrate_by_priority_focused_sql_migration(self) -> Dict[str, any]:
         """按优先级迁移文件"""
         results = {
             'high': [],
@@ -316,7 +316,7 @@ from db.sql_manager import QueryType''',
         
         return results
     
-    def create_migration_report(self, results: Dict[str, any]):
+    def create_migration_report_focused_sql_migration(self, results: Dict[str, any]):
         """创建迁移报告"""
         report_file = "focused_sql_migration_report.md"
         
@@ -379,7 +379,7 @@ SQL查询迁移到统一管理系统后的优势：
         print(f"迁移报告已生成: {report_file}")
         return report_file
 
-def main():
+def main_focused_sql_migration():
     """主函数"""
     migrator = FocusedSQLMigrator()
     
@@ -393,4 +393,4 @@ def main():
     print("建议运行 'python simple_architecture_check.py' 验证迁移效果")
 
 if __name__ == "__main__":
-    main() 
+    main_focused_sql_migration() 

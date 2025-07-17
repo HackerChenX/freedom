@@ -460,7 +460,7 @@ class ZXMAnalysisSystem:
 
 @exception_handler(reraise=True)
 @performance_monitor(threshold_seconds=120.0)
-def main():
+def main_zxm_analysis():
     """主函数"""
     parser = argparse.ArgumentParser(description='ZXM指标分析系统')
     parser.add_argument('--codes', type=str, nargs='+', 
@@ -529,4 +529,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    main() 
+    main_zxm_analysis() 

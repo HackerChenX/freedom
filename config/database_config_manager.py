@@ -3,6 +3,7 @@ from db.sql_manager import QueryType
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from config import get_config
 """
 统一的数据库配置管理器
 
@@ -31,11 +32,11 @@ class DatabaseConfigManager:
     
     # 默认配置
     DEFAULT_CONFIG = {
-        'host': 'localhost',
-        'port': 9000,
-        'database': 'stock',
-        'user': 'default',
-        'password': '123456',
+        get_config('database.host'),
+        get_config('database.port'),
+        get_config('database.name'),
+        get_config('database.user'),
+        get_config('database.password'),
         'timeout': 30,
         'compression': True,
         'pool': {

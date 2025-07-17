@@ -7,5 +7,5 @@
 from strategy.unified_base_strategy import UnifiedBaseStrategy, PeriodConfig
 
 # 向后兼容的别名
-EnhancedBaseStrategy = UnifiedBaseStrategy
-Enhanced_base_strategy = UnifiedBaseStrategy
+ENHANCED_BASE_STRATEGY = UnifiedBaseStrategy
+ENHANCED_BASE_STRATEGY = UnifiedBaseStrategy

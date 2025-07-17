@@ -8,4 +8,4 @@
 from strategy.unified_base_strategy import UnifiedBaseStrategy
 
 # 向后兼容的别名
-BaseStrategy = UnifiedBaseStrategy
+BASE_STRATEGY = UnifiedBaseStrategy

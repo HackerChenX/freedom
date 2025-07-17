@@ -28,7 +28,7 @@ class Test_data_manager_performance(unittest.Test_case):
     def set_up_class_Performance(cls):
         """测试类初始化（仅运行一次）"""
         # 设置日志级别
-        setup_logger(level="INFO")
+        setup_logger(level=get_config('logging.level', 'INFO'))
         
         # 生成模拟K线数据
         cls.create_mock_kline_data()

@@ -27,7 +27,7 @@ class DataAccessManager(DataAccessInterface):
         logger.info("数据访问管理器初始化完成")
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def get_stock_data(self, code: str, start_date: str, end_date: str, 
+    def get_stock_data_data_access_manager(self, code: str, start_date: str, end_date: str, 
                       columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         获取股票数据
@@ -93,7 +93,7 @@ class DataAccessManager(DataAccessInterface):
             return pd.DataFrame()
     
     @exception_handler(reraise=False, default_return=[])
-    def get_stock_info(self, code: str, level: str, start_date: str, end_date: str) -> List[List]:
+    def get_stock_info_data_access_manager(self, code: str, level: str, start_date: str, end_date: str) -> List[List]:
         """
         获取股票信息（兼容现有接口）
         
@@ -140,7 +140,7 @@ class DataAccessManager(DataAccessInterface):
         return rows
 
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def get_indicator_data(self, code: str, indicator: str, start_date: str, end_date: str,
+    def get_indicator_data_data_access_manager(self, code: str, indicator: str, start_date: str, end_date: str,
                           params: Optional[Dict] = None) -> pd.DataFrame:
         """
         获取指标数据
@@ -172,7 +172,7 @@ class DataAccessManager(DataAccessInterface):
         return base_data
     
     @exception_handler(reraise=False, default_return=[])
-    def get_stock_list(self, industry: Optional[str] = None, 
+    def get_stock_list_data_access_manager(self, industry: Optional[str] = None, 
                       market: Optional[str] = None) -> List[str]:
         """
         获取股票列表
@@ -195,7 +195,7 @@ class DataAccessManager(DataAccessInterface):
         return mock_stocks
     
     @exception_handler(reraise=False, default_return=[])
-    def get_industry_list(self) -> List[str]:
+    def get_industry_list_data_access_manager(self) -> List[str]:
         """
         获取行业列表
         
@@ -213,7 +213,7 @@ class DataAccessManager(DataAccessInterface):
         return mock_industries
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def execute_query(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+    def execute_query_data_access_manager(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
         """
         执行查询
         
@@ -247,7 +247,7 @@ class DataAccessManager(DataAccessInterface):
         return True
     
     @exception_handler(reraise=False, default_return=None)
-    def get_latest_data(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
+    def get_latest_data_data_access_manager(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
         """
         获取最新数据
         

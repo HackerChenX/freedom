@@ -185,7 +185,7 @@ class SQLManager:
         
         return self.queries[query_type].strip()
     
-    def validate_params(self, query_type: QueryType, params: Dict[str, Any]) -> bool:
+    def validate_params_sql_manager(self, query_type: QueryType, params: Dict[str, Any]) -> bool:
         """验证查询参数
         
         Args:

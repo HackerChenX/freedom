@@ -621,7 +621,7 @@ class RealDataIndicatorTester:
             logger.error(f"生成Markdown报告失败: {e}")
 
 
-def main():
+def main_comprehensive_109_indicator_real_data_test():
     """主函数"""
     print("🚀 启动109指标ClickHouse真实数据全覆盖测试")
     print("=" * 80)

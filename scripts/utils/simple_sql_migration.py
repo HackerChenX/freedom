@@ -201,7 +201,7 @@ class SimpleSQLScanner:
         print(f"迁移报告已生成: {output_file}")
         return output_file
 
-def main():
+def main_simple_sql_migration():
     """主函数"""
     print("=== 简化SQL迁移工具 ===")
     
@@ -240,4 +240,4 @@ def main():
             print(f"  {category}: {len(items)} 个")
 
 if __name__ == "__main__":
-    main() 
+    main_simple_sql_migration() 

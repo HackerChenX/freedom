@@ -77,7 +77,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM日线MACD指标的原始评分
         
@@ -119,7 +119,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM日线MACD指标相关的技术形态
 
@@ -188,7 +188,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def generate_signals_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成标准化的信号输出
 
@@ -233,7 +233,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
 
         return signals
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -268,7 +268,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -310,7 +310,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_buy_point_indicators(self):
         """
         注册ZXMDailyMACD指标的形态到全局形态注册表
         """
@@ -440,7 +440,7 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_buy_point_indicators(self, **kwargs):
         """
         设置指标参数
 
@@ -461,19 +461,19 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         """抽象基类要求的计算方法"""
         return self._calculate(data, *args, **kwargs)
     
-    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """抽象基类要求的评分方法"""
         return self.calculate_raw_score(data, **kwargs)
     
-    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicator_Base_Indicator_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """抽象基类要求的置信度方法"""
         return self.calculate_confidence(score, patterns, signals)
     
-    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """抽象基类要求的形态方法"""
         return self.get_patterns(data, **kwargs)
     
-    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+    def set_parameters_Indicator_Base_Indicator_buy_point_indicators(self, **kwargs):
         """抽象基类要求的参数设置方法"""
         return self.set_parameters(**kwargs)
 
@@ -542,7 +542,7 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM换手率指标的原始评分
         
@@ -585,7 +585,7 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM换手率指标相关的技术形态
 
@@ -641,7 +641,7 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -676,7 +676,7 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -719,7 +719,7 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_buy_point_indicators(self):
         """
         注册ZXMTurnover指标的形态到全局形态注册表
         """
@@ -837,7 +837,7 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
             polarity="NEGATIVE"
         )
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_buy_point_indicators(self, **kwargs):
         """
         设置指标参数
 
@@ -852,19 +852,19 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
         """抽象基类要求的计算方法"""
         return self._calculate(data, *args, **kwargs)
     
-    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """抽象基类要求的评分方法"""
         return self.calculate_raw_score(data, **kwargs)
     
-    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicator_Base_Indicator_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """抽象基类要求的置信度方法"""
         return self.calculate_confidence(score, patterns, signals)
     
-    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """抽象基类要求的形态方法"""
         return self.get_patterns(data, **kwargs)
     
-    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+    def set_parameters_Indicator_Base_Indicator_buy_point_indicators(self, **kwargs):
         """抽象基类要求的参数设置方法"""
         return self.set_parameters(**kwargs)
 
@@ -933,7 +933,7 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
 
         return result
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM缩量指标的原始评分
         
@@ -981,7 +981,7 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM缩量指标相关的技术形态
 
@@ -1028,7 +1028,7 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -1063,7 +1063,7 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -1105,7 +1105,7 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_buy_point_indicators(self):
         """
         注册ZXMVolumeShrink指标的形态到全局形态注册表
         """
@@ -1183,7 +1183,7 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
             polarity="POSITIVE"
         )
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_buy_point_indicators(self, **kwargs):
         """
         设置指标参数
 
@@ -1200,19 +1200,19 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
         """抽象基类要求的计算方法"""
         return self._calculate(data, *args, **kwargs)
     
-    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """抽象基类要求的评分方法"""
         return self.calculate_raw_score(data, **kwargs)
     
-    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicator_Base_Indicator_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """抽象基类要求的置信度方法"""
         return self.calculate_confidence(score, patterns, signals)
     
-    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """抽象基类要求的形态方法"""
         return self.get_patterns(data, **kwargs)
     
-    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+    def set_parameters_Indicator_Base_Indicator_buy_point_indicators(self, **kwargs):
         """抽象基类要求的参数设置方法"""
         return self.set_parameters(**kwargs)
 
@@ -1303,7 +1303,7 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
 
         return result
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM均线回调指标的原始评分
         
@@ -1351,7 +1351,7 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM均线回调指标相关的技术形态
 
@@ -1407,7 +1407,7 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -1450,7 +1450,7 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -1492,7 +1492,7 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_buy_point_indicators(self):
         """
         注册ZXMMACallback指标的形态到全局形态注册表
         """
@@ -1620,7 +1620,7 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
             polarity="POSITIVE"
         )
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_buy_point_indicators(self, **kwargs):
         """
         设置指标参数
 
@@ -1635,19 +1635,19 @@ class ZXMMACallback(BaseIndicator, PatternSignalMixin):
         """抽象基类要求的计算方法"""
         return self._calculate(data, *args, **kwargs)
     
-    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """抽象基类要求的评分方法"""
         return self.calculate_raw_score(data, **kwargs)
     
-    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicator_Base_Indicator_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """抽象基类要求的置信度方法"""
         return self.calculate_confidence(score, patterns, signals)
     
-    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """抽象基类要求的形态方法"""
         return self.get_patterns(data, **kwargs)
     
-    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+    def set_parameters_Indicator_Base_Indicator_buy_point_indicators(self, **kwargs):
         """抽象基类要求的参数设置方法"""
         return self.set_parameters(**kwargs)
 
@@ -1779,7 +1779,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
         
         return result
 
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM庄家吸筹指标的原始评分
         
@@ -1834,7 +1834,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
         
         return score
 
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM BS吸筹指标相关的技术形态
 
@@ -1900,7 +1900,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
 
         return patterns
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 
@@ -1948,7 +1948,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取技术形态
 
@@ -1990,7 +1990,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def set_parameters(self, **kwargs):
+    def set_parameters_buy_point_indicators(self, **kwargs):
         """
         设置指标参数
 
@@ -2008,7 +2008,7 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
         self.bb_filter_period = kwargs.get('bb_filter_period', 10)
         self.count_period = kwargs.get('count_period', 6)
 
-    def register_patterns(self):
+    def register_patterns_buy_point_indicators(self):
         """
         注册ZXMBSAbsorb指标的形态到全局形态注册表
         """
@@ -2141,19 +2141,19 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
         """抽象基类要求的计算方法"""
         return self._calculate(data, *args, **kwargs)
     
-    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """抽象基类要求的评分方法"""
         return self.calculate_raw_score(data, **kwargs)
     
-    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_Indicator_Base_Indicator_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """抽象基类要求的置信度方法"""
         return self.calculate_confidence(score, patterns, signals)
     
-    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_Indicator_Base_Indicator_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """抽象基类要求的形态方法"""
         return self.get_patterns(data, **kwargs)
     
-    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+    def set_parameters_Indicator_Base_Indicator_buy_point_indicators(self, **kwargs):
         """抽象基类要求的参数设置方法"""
         return self.set_parameters(**kwargs)
 
@@ -2176,14 +2176,14 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
         self.name = "BuyPointDetector"
         self.description = "ZXM买点检测指标，检测多种买点形态"
         
-    def set_parameters(self, **kwargs):
+    def set_parameters_buy_point_indicators(self, **kwargs):
         """
         设置指标参数
         """
         # 买点侦测器通常没有可变参数，但为了符合接口要求，提供此方法
         pass
 
-    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         获取买点侦测器的技术形态
 
@@ -2223,7 +2223,7 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
 
         return patterns_df
 
-    def register_patterns(self):
+    def register_patterns_buy_point_indicators(self):
         """
         注册BuyPointDetector指标的形态到全局形态注册表
         """
@@ -2613,7 +2613,7 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
         
         return result
     
-    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+    def calculate_raw_score_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算ZXM买点指标的原始评分
         
@@ -2694,7 +2694,7 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
         
         return score
     
-    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> List[str]:
+    def identify_patterns_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
         识别ZXM买点指标相关的技术形态
         
@@ -2742,7 +2742,7 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
         
         return patterns
     
-    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def generate_signals_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成标准化的信号输出
         
@@ -2882,7 +2882,7 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
             signals.loc[:, 'volume_confirmation'] = False
         
         return signals
-    def get_pattern_info(self, pattern_id: str) -> dict:
+    def get_pattern_info_buy_point_indicators(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
         
@@ -2968,7 +2968,7 @@ class BuyPointDetector(BaseIndicator, PatternSignalMixin):
         return pattern_info_map.get(pattern_id, default_pattern)
 
 
-    def calculate_confidence(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+    def calculate_confidence_buy_point_indicators(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """
         计算置信度
 

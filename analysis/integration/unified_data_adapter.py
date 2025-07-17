@@ -573,7 +573,7 @@ def create_unified_data_adapter() -> UnifiedDataAdapter:
     return UnifiedDataAdapter()
 
 
-def get_unified_data_adapter() -> UnifiedDataAdapter:
+def get_unified_data_adapter_unified_data_adapter() -> UnifiedDataAdapter:
     """
     获取统一数据适配器实例（依赖注入方式）
     

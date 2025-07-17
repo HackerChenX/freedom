@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import get_config
 """
 指标调试验证器
 
@@ -40,7 +41,7 @@ def create_debug_config(mode='quick', stop_on_success=True, stop_on_error=True):
     
     return Indicator_validation_config(
         mode=mode_mapping.get(mode, Validation_mode.QUICK),  # 支持动态模式
-        stock_pool_size=100,              # 较小的股票池，加快验证速度
+        stock_get_config('performance.pool_size'),              # 较小的股票池，加快验证速度
         max_selection_ratio=0.2,          # 较宽松的选股比例限制
         min_selection_count=1,            # 最少选出1只股票就算成功
         parallel_workers=1,               # 单线程，确保顺序执行

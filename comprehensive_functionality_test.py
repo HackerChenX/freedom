@@ -473,7 +473,7 @@ class ComprehensiveTester:
         return report
 
 
-def main():
+def main_comprehensive_functionality_test():
     """主函数"""
     print("🚀 启动综合功能测试")
     print("测试内容:")

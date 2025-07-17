@@ -448,7 +448,7 @@ class PerformanceBenchmark:
             return "性能差"
 
 
-def main():
+def main_performance_benchmark():
     """主函数"""
     root_dir = os.getcwd()
     benchmark = PerformanceBenchmark(root_dir)

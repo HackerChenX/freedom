@@ -505,7 +505,7 @@ def collect_performance_results():
 
 if __name__ == '__main__':
     # 设置日志级别
-    setup_logger(level="INFO")
+    setup_logger(level=get_config('logging.level', 'INFO'))
     
     # 运行测试并生成报告
     summary_file = run_tests_with_coverage()

@@ -145,7 +145,7 @@ class PatternRegistry:
         # 否则添加指标前缀
         return f"{indicator_id}_{pattern_id}".upper()
     
-    def register(self,
+    def register_pattern_registry(self,
                 pattern_id: str,
                 display_name: str,
                 indicator_id: str,
@@ -682,11 +682,11 @@ except Exception as e:
 
 # ===== 兼容性别名 =====
 # 为了向后兼容，提供下划线命名的别名
-Pattern_registry = PatternRegistry
-Pattern_type = PatternTypePatternRegistry
-Pattern_strength = PatternStrengthPatternRegistry
-Pattern_polarity = PatternPolarity
-Pattern_info = PatternInfo
+PATTERN_REGISTRY = PatternRegistry
+PATTERN_TYPE = PatternTypePatternRegistry
+PATTERN_STRENGTH = PatternStrengthPatternRegistry
+PATTERN_POLARITY = PatternPolarity
+PATTERN_INFO = PatternInfo
 
 if __name__ == "__main__":
     print("Pattern Registry Utility")

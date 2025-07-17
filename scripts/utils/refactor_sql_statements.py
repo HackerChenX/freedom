@@ -1,5 +1,3 @@
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 #!/usr/bin/env python3
 """
 SQL语句重构脚本 - 简化版
@@ -16,6 +14,7 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.path_utils import get_project_root
+from utils.dependency_injection import get_service
 
 logger = get_logger(__name__)
 

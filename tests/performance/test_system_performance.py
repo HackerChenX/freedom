@@ -20,7 +20,7 @@ from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger, init_logging
 
 # 初始化日志
-init_logging(level="INFO")
+init_logging(level=get_config('logging.level', 'INFO'))
 logger = get_logger(__name__)
 
 

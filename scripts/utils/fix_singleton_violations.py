@@ -29,7 +29,7 @@ class SingletonViolationFixer:
             'decorators_removed': 0
         }
     
-    def backup_file(self, file_path: str) -> str:
+    def backup_file_fix_singleton_violations(self, file_path: str) -> str:
         """备份文件"""
         backup_path = f"{file_path}.singleton_fix_backup"
         if os.path.exists(file_path):
@@ -167,7 +167,7 @@ def get_dmi_indicator(**kwargs):
         # 测试文件中的单例通常不是必需的
         return content
     
-    def fix_file(self, file_path: str) -> Tuple[bool, str]:
+    def fix_file_fix_singleton_violations(self, file_path: str) -> Tuple[bool, str]:
         """修复单个文件"""
         if not os.path.exists(file_path):
             return False, f"文件不存在: {file_path}"
@@ -214,7 +214,7 @@ def get_dmi_indicator(**kwargs):
         except Exception as e:
             return False, f"修复失败 {file_path}: {str(e)}"
     
-    def run_fixes(self) -> Dict[str, List[Tuple[str, bool, str]]]:
+    def run_fixes_fix_singleton_violations(self) -> Dict[str, List[Tuple[str, bool, str]]]:
         """运行所有修复"""
         print("开始修复单例违规问题...")
         
@@ -233,7 +233,7 @@ def get_dmi_indicator(**kwargs):
         
         return results
     
-    def generate_fix_report(self, results: Dict[str, List[Tuple[str, bool, str]]]) -> str:
+    def generate_fix_report_fix_singleton_violations(self, results: Dict[str, List[Tuple[str, bool, str]]]) -> str:
         """生成修复报告"""
         report = []
         report.append("# 单例违规修复报告")
@@ -277,7 +277,7 @@ def get_dmi_indicator(**kwargs):
         
         return '\n'.join(report)
 
-def main():
+def main_fix_singleton_violations():
     """主函数"""
     fixer = SingletonViolationFixer()
     results = fixer.run_fixes()
@@ -301,4 +301,4 @@ def main():
     print(f"成功率: {fixer.stats['successful_fixes']/fixer.stats['total_files']*100:.1f}%")
 
 if __name__ == "__main__":
-    main() 
+    main_fix_singleton_violations() 

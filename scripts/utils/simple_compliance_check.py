@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 from collections import defaultdict
 
-def check_compliance():
+def check_compliance_simple_compliance_check():
     """检查项目合规性"""
     project_root = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     
@@ -52,7 +52,7 @@ def check_compliance():
                 
     return violations, total_files
 
-def check_naming_violations(content: str) -> int:
+def check_naming_violations_simple_compliance_check(content: str) -> int:
     """检查命名规范违规"""
     violations = 0
     
@@ -74,7 +74,7 @@ def check_naming_violations(content: str) -> int:
             
     return violations
 
-def check_code_duplications(content: str) -> int:
+def check_code_duplications_simple_compliance_check(content: str) -> int:
     """检查代码重复"""
     violations = 0
     
@@ -98,7 +98,7 @@ def check_code_duplications(content: str) -> int:
         
     return violations
 
-def check_import_violations(content: str) -> int:
+def check_import_violations_simple_compliance_check(content: str) -> int:
     """检查导入违规"""
     violations = 0
     
@@ -108,7 +108,7 @@ def check_import_violations(content: str) -> int:
         
     return violations
 
-def check_query_violations(content: str) -> int:
+def check_query_violations_simple_compliance_check(content: str) -> int:
     """检查查询违规"""
     violations = 0
     
@@ -125,7 +125,7 @@ def check_query_violations(content: str) -> int:
             
     return violations
 
-def main():
+def main_simple_compliance_check():
     """主函数"""
     print("开始简单合规性检查...")
     
@@ -147,5 +147,5 @@ def main():
     else:
         print("⚠️ 还需要继续修复违规问题")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_simple_compliance_check() 

@@ -38,7 +38,7 @@ def test_basic_cache_operations():
     key = "test:stock:000001"
     
     # 设置缓存
-    success = cache_layer.set(key, test_data, ttl=300)
+    success = cache_layer.set(key, test_data, ttl=get_config('cache.ttl', 300))
     print(f"设置缓存: {success}")
     
     # 获取缓存
@@ -77,7 +77,7 @@ def test_multi_level_cache():
     key = "test:multi:level"
     
     # 设置到所有级别
-    success = cache_layer.set(key, test_data, ttl=600)
+    success = cache_layer.set(key, test_data, ttl=get_config('cache.ttl', 600))
     print(f"多级缓存设置: {success}")
     
     # 从缓存获取（应该从内存缓存获取）
@@ -185,7 +185,7 @@ def test_cache_performance_Cache():
     
     for i in range(test_count):
         key = f"perf:test:{i}"
-        cache_layer.set(key, test_data, ttl=3600)
+        cache_layer.set(key, test_data, ttl=get_config('cache.ttl', 3600))
     
     write_time = time.time() - start_time
     write_rate = test_count / write_time
@@ -258,7 +258,7 @@ def test_cache_expiration():
     # 设置短期缓存
     key = "test:expiration"
     data = {"message": "这是一个测试数据"}
-    ttl = 2  # 2秒过期
+    ttl=get_config('cache.ttl', 2)  # 2秒过期
     
     success = cache_layer.set(key, data, ttl=ttl)
     print(f"设置短期缓存: {success}, TTL: {ttl}秒")

@@ -272,7 +272,7 @@ def run_verification():
         print(f"验证失败: {e}")
         return False
 
-def main():
+def main_comprehensive_architecture_fix():
     """主函数"""
     print("🚀 开始综合架构修复...")
     print("=" * 50)

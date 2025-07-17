@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from config import get_config
 """
 智能日期管理器单元测试
 
@@ -35,7 +36,7 @@ class Test_date_manager(unittest.Test_case):
         # 模拟ClickHouse数据库连接
         with patch('analysis.engines.date_manager.get_clickhouse_db') as mock_db:
             mock_db.return_value = Mock()
-            self.date_manager = Date_manager(cache_size=100, cache_ttl=3600)
+            self.date_manager = Date_manager(get_config('cache.size'), cache_ttl=get_config('cache.ttl', 3600))
     
     def test_current_datetime_and_date(self):
         """测试获取当前日期时间"""

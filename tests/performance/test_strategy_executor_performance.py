@@ -39,7 +39,7 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
     def setUpClass_Performance_Test_Strategy_Executor_Performance(cls):
         """测试类初始化（仅运行一次）"""
         # 设置日志级别
-        setup_logger(level="INFO")
+        setup_logger(level=get_config('logging.level', 'INFO'))
         
         # 创建测试用的策略配置
         cls.strategy_config = {

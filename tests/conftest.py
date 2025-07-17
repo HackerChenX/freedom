@@ -20,7 +20,7 @@ from utils.path_utils import get_config_dir
 
 
 # 设置测试日志级别
-setup_logger(log_level="INFO")
+setup_logger(log_level=get_config('logging.level', 'INFO'))
 
 
 @pytest.fixture(scope="session")

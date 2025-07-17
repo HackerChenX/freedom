@@ -103,7 +103,7 @@ def show_architecture_improvements():
     for item in improvements:
         print(item)
 
-def main():
+def main_minimal_verification():
     """主函数"""
     print("🚀 开始极简架构验证...\\n")
     

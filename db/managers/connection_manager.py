@@ -1,4 +1,5 @@
 """
+from config import get_config
 连接管理器实现
 
 实现IconnectionManager接口，提供数据库连接管理功能
@@ -135,10 +136,10 @@ class ConnectionManager(IconnectionManager):
         except Exception as e:
             logger.warning(f"获取配置失败，使用默认配置: {e}")
             return {
-                'host': 'localhost',
-                'port': 9000,
-                'database': 'stock',
-                'user': 'default',
+                get_config('database.host'),
+                get_config('database.port'),
+                get_config('database.name'),
+                get_config('database.user'),
                 'password': '',
                 'max_connections': 20,
                 'min_connections': 5

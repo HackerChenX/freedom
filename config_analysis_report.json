@@ -1,0 +1,559 @@
+{
+  "summary": {
+    "files_scanned": 831,
+    "configs_found": 102,
+    "hardcoded_configs": 78
+  },
+  "issues": {
+    "hardcoded_configs": [
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/test_freedom_select.py",
+        "category": "performance",
+        "pattern": "timeout[\\s]*=[\\s]*30",
+        "config_key": "performance.timeout",
+        "matches": 3
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/test_database_connection.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/test_database_connection.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/test_database_connection.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/test_database_connection.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/test_database_connection.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/tools/continuous_quality_assurance.py",
+        "category": "performance",
+        "pattern": "timeout[\\s]*=[\\s]*30",
+        "config_key": "performance.timeout",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/analysis/optimized_buypoint_analyzer.py",
+        "category": "cache",
+        "pattern": "cache_size[\\s]*=[\\s]*\\d+",
+        "config_key": "cache.size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/analysis/intelligent_cache_system.py",
+        "category": "cache",
+        "pattern": "cache_size[\\s]*=[\\s]*\\d+",
+        "config_key": "cache.size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/analysis/engines/indicator_validation_framework.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/analysis/engines/date_manager.py",
+        "category": "cache",
+        "pattern": "cache_size[\\s]*=[\\s]*\\d+",
+        "config_key": "cache.size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/bin/config/application_config.py",
+        "category": "cache",
+        "pattern": "cache_size[\\s]*=[\\s]*\\d+",
+        "config_key": "cache.size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/config.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/config.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/config.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/config.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/database_config_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/database_config_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/database_config_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/database_config_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/config/database_config_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/indicators/service_registry.py",
+        "category": "cache",
+        "pattern": "cache_size[\\s]*=[\\s]*\\d+",
+        "config_key": "cache.size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/crawler/spiders/base_spider.py",
+        "category": "performance",
+        "pattern": "timeout[\\s]*=[\\s]*30",
+        "config_key": "performance.timeout",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/tests/test_concurrent_connection_pool.py",
+        "category": "performance",
+        "pattern": "max_connections[\\s]*=[\\s]*20",
+        "config_key": "performance.max_connections",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/tests/test_date_manager.py",
+        "category": "cache",
+        "pattern": "cache_size[\\s]*=[\\s]*\\d+",
+        "config_key": "cache.size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/tests/test_indicator_validation_framework.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/tests/test_unified_analysis_engine_integration.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/tests/optimization/comprehensive_optimization_test.py",
+        "category": "performance",
+        "pattern": "max_connections[\\s]*=[\\s]*20",
+        "config_key": "performance.max_connections",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/tests/performance/concurrent_optimization_test.py",
+        "category": "performance",
+        "pattern": "max_connections[\\s]*=[\\s]*20",
+        "config_key": "performance.max_connections",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/clickhouse_connection_summary.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/clickhouse_connection_summary.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/clickhouse_connection_summary.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/clickhouse_connection_summary.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/clickhouse_connection_summary.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/simple_early_stop_test.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/enhanced_batch_indicator_validator.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/batch_test_phase2_trend_indicators_fixed.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/manage_db_config.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/batch_test_phase2_trend_indicators.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/indicator_debug_validator.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/batch_indicator_validator.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/simple_clickhouse_test.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 3
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/simple_clickhouse_test.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 3
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/simple_clickhouse_test.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 3
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/simple_clickhouse_test.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 3
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/simple_clickhouse_test.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/production_database_test.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/production_database_test.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/production_database_test.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/indicator_validation_demo.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 4
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/run_all_tests.py",
+        "category": "performance",
+        "pattern": "timeout[\\s]*=[\\s]*30",
+        "config_key": "performance.timeout",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/test_early_stop_functionality.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 3
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/test_early_stop_success.py",
+        "category": "performance",
+        "pattern": "pool_size[\\s]*=[\\s]*\\d+",
+        "config_key": "performance.pool_size",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/utils/fix_hardcoded_config.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/utils/unified_config_migration.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/utils/unified_config_migration.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/utils/unified_config_migration.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/scripts/utils/unified_config_migration.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/enhanced_connection_pool.py",
+        "category": "performance",
+        "pattern": "timeout[\\s]*=[\\s]*30",
+        "config_key": "performance.timeout",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/unified_data_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/unified_data_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/unified_data_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/unified_data_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/unified_data_manager.py",
+        "category": "performance",
+        "pattern": "max_connections[\\s]*=[\\s]*20",
+        "config_key": "performance.max_connections",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/clickhouse_db.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/clickhouse_db.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/clickhouse_db.py",
+        "category": "database",
+        "pattern": "['\\\"]password['\\\"][\\s]*[:=][\\s]*['\\\"]123456['\\\"]",
+        "config_key": "database.password",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/clickhouse_db.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/clickhouse_db.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 2
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/data_manager.py",
+        "category": "cache",
+        "pattern": "cache_size[\\s]*=[\\s]*\\d+",
+        "config_key": "cache.size",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/data_manager_adapter.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/data_manager_adapter.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/data_manager_adapter.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/data_manager_adapter.py",
+        "category": "performance",
+        "pattern": "max_connections[\\s]*=[\\s]*20",
+        "config_key": "performance.max_connections",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/managers/connection_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]host['\\\"][\\s]*[:=][\\s]*['\\\"]localhost['\\\"]",
+        "config_key": "database.host",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/managers/connection_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]port['\\\"][\\s]*[:=][\\s]*9000",
+        "config_key": "database.port",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/managers/connection_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]user['\\\"][\\s]*[:=][\\s]*['\\\"]default['\\\"]",
+        "config_key": "database.user",
+        "matches": 1
+      },
+      {
+        "file": "/Users/hacker/PycharmProjects/freedom/db/managers/connection_manager.py",
+        "category": "database",
+        "pattern": "['\\\"]database['\\\"][\\s]*[:=][\\s]*['\\\"]stock['\\\"]",
+        "config_key": "database.name",
+        "matches": 1
+      }
+    ],
+    "duplicate_configs": [],
+    "missing_defaults": []
+  }
+}

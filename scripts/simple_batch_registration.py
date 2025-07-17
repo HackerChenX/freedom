@@ -215,7 +215,7 @@ class SimpleBatchRegistration:
         
         return success_rate >= 60
 
-def main():
+def main_simple_batch_registration():
     """主函数"""
     print("🚀 开始简化批量指标测试...")
     

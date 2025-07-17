@@ -1,5 +1,3 @@
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -21,14 +19,13 @@ sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface
 
 
 def load_test_data_Optimization_Test_Basic_Optimization(stock_code='000001.SZ', start_date='2022-01-01', end_date='2023-01-01'):
     """加载测试数据"""
     print(f"加载测试数据: {stock_code} 从 {start_date} 到 {end_date}")
     
-    data_access = get_container().resolve(DataAccessInterface)
+    data_access = get_service("IDataAccess")
     sql = f"""
     SELECT 
         trade_date,

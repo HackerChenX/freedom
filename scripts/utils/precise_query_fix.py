@@ -155,7 +155,7 @@ def fix_no_where_queries(content: str, file_path: str) -> Tuple[str, int]:
     
     return content, fixes
 
-def main():
+def main_precise_query_fix():
     """主函数"""
     print("开始精准查询修复...")
     
@@ -172,5 +172,5 @@ def main():
     
     print("\n重新检查合规性...")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_precise_query_fix() 

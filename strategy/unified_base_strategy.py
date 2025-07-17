@@ -212,7 +212,7 @@ class UnifiedBaseStrategy(abc.ABC):
             raise
     
     @abc.abstractmethod
-    def select_stocks(self, universe: List[str], 
+    def select_stocks_unified_base_strategy(self, universe: List[str], 
                      start_date: str, end_date: str, 
                      **kwargs) -> pd.DataFrame:
         """
@@ -416,5 +416,5 @@ class UnifiedBaseStrategy(abc.ABC):
 
 
 # 为了向后兼容，创建别名
-BaseStrategy = UnifiedBaseStrategy
-EnhancedBaseStrategy = UnifiedBaseStrategy
+BASE_STRATEGY = UnifiedBaseStrategy
+ENHANCED_BASE_STRATEGY = UnifiedBaseStrategy

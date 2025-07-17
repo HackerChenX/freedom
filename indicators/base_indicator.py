@@ -198,7 +198,7 @@ class BaseIndicator(abc.ABC):
         )
     
     @property
-    def result(self) -> Optional[pd.DataFrame]:
+    def result_base_indicator(self) -> Optional[pd.DataFrame]:
         """
         获取指标计算结果
         
@@ -208,7 +208,7 @@ class BaseIndicator(abc.ABC):
         return self._result
     
     @property
-    def error(self) -> Optional[Exception]:
+    def error_base_indicator(self) -> Optional[Exception]:
         """获取指标计算错误"""
         return self._error
     

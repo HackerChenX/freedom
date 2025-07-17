@@ -499,7 +499,7 @@ class Enhanced_real_data_test:
         return recommendations
 
 
-def main():
+def main_enhanced_real_data_test():
     """主函数"""
     print("=" * 80)
     print("增强版真实数据环境全面性能测试")

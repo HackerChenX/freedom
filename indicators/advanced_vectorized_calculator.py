@@ -23,12 +23,12 @@ except ImportError:
     NUMBA_AVAILABLE = False
     # 如果numba不可用，创建空装饰器
     def jit(*args, **kwargs):
-        def decorator(func):
+        def decorator_advanced_vectorized_calculator(func):
             return func
         return decorator
     
     def njit(*args, **kwargs):
-        def decorator(func):
+        def decorator_advanced_vectorized_calculator(func):
             return func
         return decorator
 
@@ -141,7 +141,7 @@ class AdvancedVectorizedCalculator:
         })
     
     @performance_monitor(threshold=1.0)
-    def calculate_indicator(
+    def calculate_indicator_advanced_vectorized_calculator(
         self, 
         indicator_name: str, 
         data: pd.DataFrame, 
@@ -955,7 +955,7 @@ class AdvancedVectorizedCalculator:
             average_speedup=estimated_speedup
         )
     
-    def get_performance_report(self) -> Dict[str, Any]:
+    def get_performance_report_advanced_vectorized_calculator(self) -> Dict[str, Any]:
         """获取性能报告"""
         stats = self.get_vectorization_stats()
         

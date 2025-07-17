@@ -245,7 +245,7 @@ class AdvancedComplianceFixer:
             
         return '\n'.join(lines)
         
-    def fix_layer_violations(self) -> int:
+    def fix_layer_violations_advanced_compliance_fix(self) -> int:
         """修复分层架构违规"""
         logger.info("开始修复分层架构违规...")
         fixes = 0
@@ -396,7 +396,7 @@ class AdvancedComplianceFixer:
         
         return self.fixes_applied
         
-    def generate_report(self) -> None:
+    def generate_report_advanced_compliance_fix(self) -> None:
         """生成修复报告"""
         report = {
             'timestamp': str(self.root_dir),
@@ -419,7 +419,7 @@ class AdvancedComplianceFixer:
             
         logger.info(f"高级修复报告已保存: {report_file}")
 
-def main():
+def main_advanced_compliance_fix():
     """主函数"""
     fixer = Advanced_compliance_fixer()
     
@@ -436,5 +436,5 @@ def main():
     
     print("\n✅ 高级修复完成，建议运行合规性检查验证结果")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_advanced_compliance_fix() 

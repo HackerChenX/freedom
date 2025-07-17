@@ -256,7 +256,7 @@ def demonstrate_roc_behavior():
             print(f"    ROC范围: {roc_range}")
             print(f"    平均评分: {avg_score:.2f}")
 
-def main():
+def main_test_roc_fix():
     """主函数"""
     print("ROC指标修复验证测试")
     print("=" * 50)
@@ -280,4 +280,4 @@ def main():
     print("测试完成")
 
 if __name__ == "__main__":
-    main() 
+    main_test_roc_fix() 

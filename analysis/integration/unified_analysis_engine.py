@@ -524,7 +524,7 @@ def create_unified_analysis_engine(max_workers: int = 4) -> UnifiedAnalysisEngin
     return UnifiedAnalysisEngine(max_workers)
 
 
-def get_unified_analysis_engine() -> UnifiedAnalysisEngine:
+def get_unified_analysis_engine_unified_analysis_engine() -> UnifiedAnalysisEngine:
     """
     获取统一分析引擎实例（依赖注入方式）
     

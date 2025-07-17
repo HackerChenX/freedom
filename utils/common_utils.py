@@ -225,7 +225,7 @@ class DateTimeUtils:
         return start.strftime('%Y-%m-%d')
     
     @staticmethod
-    def is_trading_day(date: str) -> bool:
+    def is_trading_day_common_utils(date: str) -> bool:
         """
         判断是否为交易日
         
@@ -445,7 +445,7 @@ class CacheUtils:
         return True
     
     @classmethod
-    def clear(cls) -> None:
+    def clear_common_utils(cls) -> None:
         """清空缓存"""
         cls._cache.clear()
     
@@ -457,9 +457,9 @@ class CacheUtils:
         Args:
             ttl: 过期时间（秒）
         """
-        def decorator(func):
+        def decorator_common_utils(func):
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper_common_utils(*args, **kwargs):
                 # 生成缓存键
                 cache_key = f"{func.__name__}_{hash(str(args) + str(kwargs))}"
                 

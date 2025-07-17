@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import get_config
 """
 数据库连接测试脚本
 用于诊断ClickHouse连接问题
@@ -22,11 +23,11 @@ def test_basic_connection():
         
         # 基础配置
         config = {
-            'host': 'localhost',
-            'port': 9000,
-            'user': 'default',
-            'password': '123456',
-            'database': 'stock'
+            get_config('database.host'),
+            get_config('database.port'),
+            get_config('database.user'),
+            get_config('database.password'),
+            get_config('database.name')
         }
         
         print(f"连接配置: {config}")
@@ -149,7 +150,7 @@ def test_connection_pool():
         print(f"错误详情: {traceback.format_exc()}")
         return False
 
-def main():
+def main_test_database_connection():
     """主测试函数"""
     print("🚀 开始数据库连接诊断...")
     print("=" * 50)
@@ -191,4 +192,4 @@ def main():
         return False
 
 if __name__ == "__main__":
-    main()
+    main_test_database_connection()

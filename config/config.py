@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from config import get_config
 """
 配置文件，集中管理项目的所有配置项
 提供配置加密和环境变量支持
@@ -18,11 +19,11 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 # 默认配置
 DEFAULT_CONFIG = {
     'db': {
-        'host': 'localhost',
+        get_config('database.host'),
         'port': 8123, 
-        'user': 'default',
-        'password': '123456',  # 密码已隐藏，将从环境变量或用户输入获取
-        'database': 'stock'
+        get_config('database.user'),
+        get_config('database.password'),  # 密码已隐藏，将从环境变量或用户输入获取
+        get_config('database.name')
     },
     'paths': {
         'output': os.path.expanduser('~/Documents/StockResults/'),

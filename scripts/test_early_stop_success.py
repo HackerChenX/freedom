@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import get_config
 """
 测试成功后早停功能
 
@@ -32,7 +33,7 @@ def test_early_stop_with_loose_conditions():
     # 创建非常宽松的配置，确保能选出股票
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=20,           # 很小的股票池，加快速度
+        stock_get_config('performance.pool_size'),           # 很小的股票池，加快速度
         max_selection_ratio=0.8,      # 非常宽松的选股比例（80%）
         min_selection_count=1,        # 最少1只股票
         stop_on_success=True,         # 成功后立即停止
@@ -114,7 +115,7 @@ def test_framework_early_stop():
     # 创建宽松配置
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=10,           # 更小的股票池
+        stock_get_config('performance.pool_size'),           # 更小的股票池
         max_selection_ratio=0.9,      # 90%选股比例
         min_selection_count=1,        # 最少1只
         stop_on_success=True,         # 成功后停止

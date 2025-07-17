@@ -95,7 +95,7 @@ def fix_precise_duplications(content: str, file_path: str, fixes: dict) -> str:
     
     return '\n'.join(new_lines)
 
-def main():
+def main_perfect_cleanup():
     """主函数"""
     print("开始完美清理...")
     
@@ -111,5 +111,5 @@ def main():
     
     print("\n重新检查合规性...")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_perfect_cleanup() 

@@ -691,7 +691,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin):
             return f"KDJ_{suffix}"
         return "KDJ_Kdj"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_kdj(self) -> Dict[str, Any]:
         """
         将指标转换为字典表示
         

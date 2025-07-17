@@ -68,7 +68,7 @@ def _create_file_handler(log_file: str) -> logging.Handler:
         return _handlers_cache[log_file]
     
     max_size = get_config('log.max_size_mb', 10) * 1024 * 1024  # 默认10MB
-    backupCount = get_config('log.backupCount', 5)  # 默认5个备份
+    backup_count = get_config('log.backupCount', 5)  # 默认5个备份
     
     # 确保日志文件目录存在
     log_dir = os.path.dirname(log_file)
@@ -78,7 +78,7 @@ def _create_file_handler(log_file: str) -> logging.Handler:
     handler = RotatingFileHandler(
         log_file,
         maxBytes=max_size,
-        backupCount=backupCount,
+        backupCount=backup_count,
         encoding='utf-8'
     )
     
@@ -290,7 +290,7 @@ def warning(msg: Any, *args: Any, **kwargs: Any) -> None:
     logging.warning(msg, *args, **kwargs)
 
 
-def error(msg: Any, *args: Any, **kwargs: Any) -> None:
+def error_logger(msg: Any, *args: Any, **kwargs: Any) -> None:
     """记录错误"""
     logging.error(msg, *args, **kwargs)
 
@@ -300,4 +300,4 @@ def critical(msg: Any, *args: Any, **kwargs: Any) -> None:
     logging.critical(msg, *args, **kwargs)
 
 # 添加向后兼容的别名
-getLogger = get_logger 
+get_logger = get_logger 

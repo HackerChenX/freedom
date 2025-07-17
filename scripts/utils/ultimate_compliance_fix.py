@@ -251,7 +251,7 @@ class UltimateComplianceFixer:
         
     def _fix_class_names(self, content: str) -> str:
         """修复类名"""
-        def fix_class_name(match):
+        def fix_class_name_ultimate_compliance_fix(match):
             class_name = match.group(1)
             if self._is_valid_class_name(class_name):
                 return match.group(0)
@@ -265,7 +265,7 @@ class UltimateComplianceFixer:
         
     def _fix_function_names(self, content: str) -> str:
         """修复函数名"""
-        def fix_function_name(match):
+        def fix_function_name_ultimate_compliance_fix(match):
             func_name = match.group(1)
             if self._is_valid_function_name(func_name) or func_name in self.protected_names:
                 return match.group(0)
@@ -291,7 +291,7 @@ class UltimateComplianceFixer:
             # 修复变量赋值
             var_pattern = r'([a-zA-Z_][a-zA-Z0-9_]*)\s*='
             
-            def fix_var_name(match):
+            def fix_var_name_ultimate_compliance_fix(match):
                 var_name = match.group(1)
                 if self._is_valid_variable_name(var_name) or var_name in self.protected_names:
                     return match.group(0)
@@ -481,7 +481,7 @@ class UltimateComplianceFixer:
         
         return self.fixes_applied
         
-    def generate_report(self) -> None:
+    def generate_report_ultimate_compliance_fix(self) -> None:
         """生成修复报告"""
         report = {
             'timestamp': str(self.root_dir),
@@ -504,7 +504,7 @@ class UltimateComplianceFixer:
             
         logger.info(f"终极修复报告已保存: {report_file}")
 
-def main():
+def main_ultimate_compliance_fix():
     """主函数"""
     fixer = Ultimate_compliance_fixer()
     
@@ -521,5 +521,5 @@ def main():
     
     print("\n✅ 终极修复完成，建议运行最终合规性检查")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_ultimate_compliance_fix() 

@@ -19,7 +19,7 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-class HardcodedConfigFixer:
+class HardcodedConfigFixerFix_Hardcoded_Configs:
     """硬编码配置修复器"""
     
     def __init__(self):
@@ -88,7 +88,7 @@ class HardcodedConfigFixer:
         
         return issues
     
-    def fix_file(self, file_path: str) -> bool:
+    def fix_file_fix_hardcoded_configs(self, file_path: str) -> bool:
         """修复文件中的硬编码配置
         
         Args:
@@ -169,7 +169,7 @@ class HardcodedConfigFixer:
         # 如果没有找到import语句，在文件开头插入
         return 0
     
-    def scan_directory(self, directory: str, extensions: Set[str] = None) -> Dict[str, List[Tuple[str, int, str]]]:
+    def scan_directory_fix_hardcoded_configs(self, directory: str, extensions: Set[str] = None) -> Dict[str, List[Tuple[str, int, str]]]:
         """扫描目录中的硬编码配置
         
         Args:
@@ -224,7 +224,7 @@ class HardcodedConfigFixer:
         
         return fixed_count
     
-    def generate_report(self, issues: Dict[str, List[Tuple[str, int, str]]]) -> str:
+    def generate_report_fix_hardcoded_configs(self, issues: Dict[str, List[Tuple[str, int, str]]]) -> str:
         """生成扫描报告
         
         Args:
@@ -252,7 +252,7 @@ class HardcodedConfigFixer:
         
         return "\n".join(report)
 
-def main():
+def main_fix_hardcoded_configs():
     """主函数"""
     if len(sys.argv) < 2:
         print("用法: python fix_hardcoded_configs.py <scan|fix> [directory]")
@@ -295,5 +295,5 @@ def main():
         print("无效的操作，请使用 'scan' 或 'fix'")
         sys.exit(1)
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_fix_hardcoded_configs() 

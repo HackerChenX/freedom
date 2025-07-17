@@ -1263,5 +1263,5 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
 
 # ===== 兼容性别名 =====
 # 为了向后兼容，提供下划线命名的别名
-Pattern_type = PatterntypePatterns
-Candlestick_patterns = CandlestickPatterns
+PATTERN_TYPE = PatterntypePatterns
+CANDLESTICK_PATTERNS = CandlestickPatterns

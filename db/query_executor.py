@@ -111,7 +111,7 @@ class QueryExecutor:
             logger.error(f"自定义查询执行失败 {query_type}: {e}")
             raise
     
-    def get_stock_data(self, code: str, start_date: str, end_date: str, 
+    def get_stock_data_query_executor(self, code: str, start_date: str, end_date: str, 
                       level: str = '日线') -> pd.DataFrame:
         """获取股票数据
         
@@ -211,7 +211,7 @@ class QueryExecutor:
         params = {'level': level}
         return self.execute_query(QueryType.INDUSTRY_LIST, params)
     
-    def get_date_range(self, code: str, level: str = '日线') -> pd.DataFrame:
+    def get_date_range_query_executor(self, code: str, level: str = '日线') -> pd.DataFrame:
         """获取股票数据日期范围
         
         Args:
@@ -281,7 +281,7 @@ class QueryExecutor:
         }
         return self.execute_query(QueryType.PERFORMANCE_DATA, params)
     
-    def validate_data(self, code: str, date: str, level: str = '日线') -> bool:
+    def validate_data_query_executor(self, code: str, date: str, level: str = '日线') -> bool:
         """验证数据存在性
         
         Args:

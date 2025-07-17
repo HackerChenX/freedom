@@ -1160,7 +1160,7 @@ class PatternRecognitionAnalyzer:
         return bullish[0] if bullish[0]["score"] >= bearish[0]["score"] else bearish[0]
 
     @performance_monitor()
-    @cache_result(max_size=100)
+    @cache_result(max_size=get_config('cache.max_size', 100))
     def recognize_patterns(self, stock_data: pd.DataFrame, 
                          patterns: Optional[List[str]] = None) -> pd.DataFrame:
         """

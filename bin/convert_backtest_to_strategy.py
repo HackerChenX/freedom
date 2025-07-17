@@ -885,7 +885,7 @@ if __name__ == "__main__":
         logger.error(f"生成策略文件失败: {e}")
         return False
 
-def main():
+def main_convert_backtest_to_strategy():
     parser = argparse.ArgumentParser(description="将回测结果转换为选股策略")
     parser.add_argument("-b", "--backtest", required=True, help="回测结果文件路径")
     parser.add_argument("-s", "--source", help="源策略文件路径，用于提取参数")
@@ -954,4 +954,4 @@ def main():
         logger.info("策略包含所有必要的ZXM指标")
 
 if __name__ == "__main__":
-    main() 
+    main_convert_backtest_to_strategy() 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from config import get_config
 """
 智能缓存系统
 
@@ -275,7 +276,7 @@ def benchmark_cache_performance():
     print("="*60)
     
     # 创建缓存系统
-    cache_system = Intelligent_cache_system(max_memory_cache_size=100)
+    cache_system = Intelligent_cache_system(max_memory_get_config('cache.size'))
     calculator = Cached_indicator_calculator(cache_system)
     
     # 创建测试数据

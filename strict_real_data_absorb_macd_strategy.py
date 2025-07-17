@@ -602,7 +602,7 @@ class StrictRealDataAbsorbMACDStrategy:
         print("\n" + "=" * 80)
 
 
-def main():
+def main_strict_real_data_absorb_macd_strategy():
     """主函数"""
     print("🚀 启动严格禁止模拟数据的30分钟吸筹信号+MACD上移选股策略")
     print("📅 目标日期: 2025年5月12日")

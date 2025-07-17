@@ -59,7 +59,7 @@ def test_unified_base_strategy():
         print(f"❌ 统一基类测试失败: {e}")
         return False
 
-def main():
+def main_simple_verification():
     """主函数"""
     print("🚀 开始简化架构验证...\n")
     

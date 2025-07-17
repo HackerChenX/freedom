@@ -57,7 +57,7 @@ class ExecutionContext:
     execution_id: str
     created_at: datetime
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_execution_template(self) -> Dict[str, Any]:
         return {
             'strategy_name': self.strategy.name,
             'universe_size': len(self.universe),
@@ -84,7 +84,7 @@ class ExecutionResult:
     errors: List[str]
     completed_at: datetime
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict_execution_template(self) -> Dict[str, Any]:
         return {
             'execution_id': self.execution_id,
             'strategy_name': self.strategy_name,

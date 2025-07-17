@@ -1,5 +1,3 @@
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
@@ -19,7 +17,6 @@ sys.path.append(root_dir)
 from indicators.zxm.score_indicators import ZXMElasticityScore, ZXMBuyPointScore
 from utils.logger import get_logger, init_logging
 from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IDataAccess
 
 logger = get_logger(__name__)
 
@@ -32,7 +29,7 @@ def test_zxm_elasticity_score_Indicators():
     elasticity_score = ZXMElasticityScore(threshold=75)
     
     # 获取测试数据
-    data_access = get_container().resolve(IDataAccess)
+    data_access = get_service("IDataAccess")
     stock_code = "600585"  # 海螺水泥
     end_date = "2025-04-15"
     sql = f"""
@@ -73,7 +70,7 @@ def test_zxm_buypoint_score():
     buypoint_score = ZXMBuyPointScore(threshold=75)
     
     # 获取测试数据
-    data_access = get_container().resolve(IDataAccess)
+    data_access = get_service("IDataAccess")
     stock_code = "600585"  # 海螺水泥
     end_date = "2025-04-15"
     sql = f"""

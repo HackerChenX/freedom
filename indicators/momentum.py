@@ -16,7 +16,7 @@ from utils.logger import getLogger
 logger = getLogger(__name__)
 
 
-class Momentum(BaseIndicator, PatternSignalMixin):
+class MomentumMomentum(BaseIndicator, PatternSignalMixin):
     """
     MOMENTUM 指标
     

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from config import get_config
 """
 测试 freedom_select.py 的基本功能
 """
@@ -32,7 +33,7 @@ def test_freedom_select():
     try:
         result = subprocess.run([
             sys.executable, str(freedom_select_path), "--help"
-        ], capture_output=True, text=True, timeout=30)
+        ], capture_output=True, text=True, get_config('performance.timeout'))
         
         if result.returncode == 0:
             print("✅ 帮助信息显示成功")
@@ -48,7 +49,7 @@ def test_freedom_select():
     try:
         result = subprocess.run([
             sys.executable, str(freedom_select_path), "--list-strategies"
-        ], capture_output=True, text=True, timeout=30)
+        ], capture_output=True, text=True, get_config('performance.timeout'))
         
         if result.returncode == 0:
             print("✅ 策略列表获取成功")
@@ -90,7 +91,7 @@ def test_freedom_select():
         result = subprocess.run([
             sys.executable, str(freedom_select_path), 
             "--validate-strategy", "--strategy", str(temp_file)
-        ], capture_output=True, text=True, timeout=30)
+        ], capture_output=True, text=True, get_config('performance.timeout'))
         
         if result.returncode == 0:
             print("✅ 策略验证成功")

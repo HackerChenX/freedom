@@ -96,12 +96,12 @@ class MemoryCache:
                 return True
             return False
     
-    def clear(self) -> None:
+    def clear_cache(self) -> None:
         """清空缓存"""
         with self._lock:
             self._cache.clear()
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats_cache(self) -> Dict[str, Any]:
         """
         获取缓存统计信息
         
@@ -195,7 +195,7 @@ class DiskCache:
             return count
 
 
-class LRUCache:
+class LRUCacheCache:
     """
     LRU (Least Recently Used) 缓存实现
     """
@@ -255,9 +255,9 @@ def cache_result(ttl: Optional[float] = None,
     Returns:
         装饰器函数
     """
-    def decorator(func):
+    def decorator_cache(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_cache(*args, **kwargs):
             # 生成缓存键
             key = f"{key_prefix}{func.__name__}_{hash(str(args) + str(sorted(kwargs.items())))}"
             
@@ -287,7 +287,7 @@ _legacy_disk_cache = None
 _legacy_lock = threading.Lock()
 
 
-def get_memory_cache() -> MemoryCache:
+def get_memory_cache_cache() -> MemoryCache:
     """获取内存缓存实例（向后兼容）"""
     global _legacy_memory_cache
     if _legacy_memory_cache is None:

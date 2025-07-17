@@ -178,7 +178,7 @@ def check_real_no_where(content: str, file_path: str) -> int:
                     
     return violations
 
-def main():
+def main_smart_compliance_check():
     """主函数"""
     print("开始智能合规性检查...")
     
@@ -202,5 +202,5 @@ def main():
     else:
         print("⚠️ 还需要继续修复违规问题")
 
-if __name__ == '__main__':
-    main() 
+if __name__ == "__main__":
+    main_smart_compliance_check() 

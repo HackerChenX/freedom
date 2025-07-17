@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 """
 数据库性能优化脚本
 
@@ -20,6 +18,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from utils.logger import get_logger
+from utils.dependency_injection import get_service
 
 logger = get_logger(__name__)
 
@@ -28,7 +27,7 @@ class DatabaseOptimizer:
     """数据库优化器"""
     
     def __init__(self):
-        self.client = None
+        self.data_access = None
         self.optimization_results = {
             'indexes_created': [],
             'optimizations_applied': [],
@@ -36,70 +35,55 @@ class DatabaseOptimizer:
             'errors': []
         }
         
-        # 初始化ClickHouse连接
-        self._init_clickhouse_connection_Database_Optimization()
+        # 初始化数据访问服务
+        self._init_data_access()
     
-    def _init_clickhouse_connection_Database_Optimization(self):
-        """初始化ClickHouse连接"""
+    def _init_data_access(self):
+        """初始化数据访问服务"""
         try:
-            import clickhouse_connect
-            self.client = clickhouse_connect.get_client(
-                host=os.getenv('DB_HOST', 'localhost'), 
-                port=int(os.getenv('DB_PORT', '8123')), 
-                database=os.getenv('DB_DATABASE', 'stock')
-            )
-            logger.info("ClickHouse连接初始化成功")
+            self.data_access = get_service("IDataAccess")
+            logger.info("数据访问服务初始化成功")
         except Exception as e:
-            logger.error(f"ClickHouse连接初始化失败: {e}")
-            self.client = None
+            logger.error(f"数据访问服务初始化失败: {e}")
+            self.data_access = None
     
     def analyze_current_performance(self) -> Dict[str, Any]:
         """分析当前数据库性能"""
         logger.info("开始分析当前数据库性能...")
         
-        if not self.client:
-            return {'error': 'ClickHouse连接未建立'}
+        if not self.data_access:
+            return {'error': '数据访问服务未建立'}
         
         performance_baseline = {}
         
         try:
             # 1. 检查表结构
             logger.info("检查表结构...")
-            table_info = self.client.query("DESCRIBE stock_info")
+            table_info = self.data_access.get_table_structure("stock_info")
             performance_baseline['table_structure'] = [
-                {'name': row[0], 'type': row[1]} for row in table_info.result_rows
+                {'name': row[0], 'type': row[1]} for row in table_info
             ]
             
             # 2. 检查现有索引
             logger.info("检查现有索引...")
             try:
-                indexes_info = self.client.query("SHOW CREATE TABLE stock_info")
-                performance_baseline['current_indexes'] = indexes_info.result_rows[0][1] if indexes_info.result_rows else "No indexes found"
+                indexes_info = self.data_access.get_table_create_statement("stock_info")
+                performance_baseline['current_indexes'] = indexes_info[0][1] if indexes_info else "No indexes found"
             except Exception as e:
                 performance_baseline['current_indexes'] = f"Error checking indexes: {e}"
             
             # 3. 分析数据分布
             logger.info("分析数据分布...")
-            data_stats = self.client.query("""
-                SELECT 
-                    COUNT(*) as total_records,
-                    COUNT(DISTINCT code) as unique_stocks,
-                    MIN(date) as earliest_date,
-                    MAX(date) as latest_date,
-                    AVG(volume) as avg_volume,
-                    AVG(close) as avg_price
-                FROM stock_info WHERE date >= '2020-01-01'
-            """)
+            data_stats = self.data_access.get_data_statistics("stock_info", "2020-01-01")
             
-            if data_stats.result_rows:
-                row = data_stats.result_rows[0]
+            if data_stats:
                 performance_baseline['data_statistics'] = {
-                    'total_records': row[0],
-                    'unique_stocks': row[1],
-                    'earliest_date': str(row[2]),
-                    'latest_date': str(row[3]),
-                    'avg_volume': float(row[4]) if row[4] else 0,
-                    'avg_price': float(row[5]) if row[5] else 0
+                    'total_records': data_stats['total_records'],
+                    'unique_stocks': data_stats['unique_stocks'],
+                    'earliest_date': str(data_stats['earliest_date']),
+                    'latest_date': str(data_stats['latest_date']),
+                    'avg_volume': float(data_stats['avg_volume']) if data_stats['avg_volume'] else 0,
+                    'avg_price': float(data_stats['avg_price']) if data_stats['avg_price'] else 0
                 }
             
             # 4. 测试查询性能基线
@@ -135,12 +119,12 @@ class DatabaseOptimizer:
         for query_info in queries:
             try:
                 start_time = time.time()
-                result = self.client.query(query_info['query'])
+                result = self.data_access.execute_query(query_info['query'])
                 duration = time.time() - start_time
                 
                 performance[query_info['name']] = {
                     'duration': duration,
-                    'records': len(result.result_rows)
+                    'records': len(result)
                 }
                 
                 logger.info(f"查询 {query_info['name']} 耗时: {duration:.3f}秒")
@@ -155,8 +139,8 @@ class DatabaseOptimizer:
         """创建性能优化索引"""
         logger.info("开始创建性能优化索引...")
         
-        if not self.client:
-            return {'error': 'ClickHouse连接未建立'}
+        if not self.data_access:
+            return {'error': '数据访问服务未建立'}
         
         # 定义要创建的索引
         indexes_to_create = [
@@ -195,7 +179,7 @@ class DatabaseOptimizer:
                 logger.info(f"创建索引: {index_info['name']}")
                 
                 index_start = time.time()
-                self.client.command(index_info['sql'])
+                self.data_access.execute_command(index_info['sql'])
                 index_duration = time.time() - index_start
                 
                 results['successful_indexes'].append({
@@ -237,8 +221,8 @@ class DatabaseOptimizer:
         """优化表设置"""
         logger.info("开始优化表设置...")
         
-        if not self.client:
-            return {'error': 'ClickHouse连接未建立'}
+        if not self.data_access:
+            return {'error': '数据访问服务未建立'}
         
         optimizations = []
         
@@ -248,9 +232,9 @@ class DatabaseOptimizer:
             
             # 获取当前表设置
             db_name = os.getenv('DB_DATABASE', 'stock')
-            table_settings = self.client.query(f"SELECT code, name, date, level, open, close, high, low, volume FROM system.tables WHERE name = 'stock_info' AND database = '{db_name}'")
+            table_settings = self.data_access.get_table_settings("stock_info", db_name)
             
-            if table_settings.result_rows:
+            if table_settings:
                 optimizations.append({
                     'type': 'table_analysis',
                     'description': '表存储设置已检查',
@@ -261,10 +245,10 @@ class DatabaseOptimizer:
             logger.info("分析分区策略...")
             
             # 检查是否需要分区
-            date_range = self.client.query("SELECT MIN(date) as min_date, MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01'")
+            date_range = self.data_access.get_date_range("stock_info", "2020-01-01")
             
-            if date_range.result_rows:
-                min_date, max_date = date_range.result_rows[0]
+            if date_range:
+                min_date, max_date = date_range
                 
                 # 计算日期跨度
                 from datetime import datetime
@@ -293,16 +277,10 @@ class DatabaseOptimizer:
             logger.info("检查数据压缩设置...")
             
             db_name = os.getenv('DB_DATABASE', 'stock')
-            table_size = self.client.query(f"""
-                SELECT 
-                    format_readable_size(sum(bytes)) as size,
-                    sum(rows) as rows
-                FROM system.parts 
-                WHERE table = 'stock_info' AND database = '{db_name}'
-            """)
+            table_size = self.data_access.get_table_size("stock_info", db_name)
             
-            if table_size.result_rows:
-                size, rows = table_size.result_rows[0]
+            if table_size:
+                size, rows = table_size
                 optimizations.append({
                     'type': 'storage_analysis',
                     'description': f'表大小: {size}，记录数: {rows}',
@@ -322,8 +300,8 @@ class DatabaseOptimizer:
         """测量性能改进效果"""
         logger.info("开始测量性能改进效果...")
         
-        if not self.client:
-            return {'error': 'ClickHouse连接未建立'}
+        if not self.data_access:
+            return {'error': '数据访问服务未建立'}
         
         try:
             # 重新测量查询性能

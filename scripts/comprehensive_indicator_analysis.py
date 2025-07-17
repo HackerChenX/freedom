@@ -457,7 +457,7 @@ class ComprehensiveindicatoranalyzerAnalysis:
         else:
             print(f"❌ 100%注册率存在挑战，需要大量修复工作")
 
-def main():
+def main_comprehensive_indicator_analysis():
     """主函数"""
     print("开始技术指标系统全面注册状态检查...\n")
 

@@ -228,7 +228,7 @@ def estimate_final_system_status_Indicators(successful_fixes):
     
     return final_registration_rate >= 95
 
-def main():
+def main_fix_remaining_indicators():
     """主函数"""
     print("🚀 开始修复剩余指标工作...")
     

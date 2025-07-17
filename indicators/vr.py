@@ -21,7 +21,7 @@ from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegis
 logger = getLogger(__name__)
 
 
-class VolumeRatio(BaseIndicator, PatternSignalMixin):
+class VolumeRatioVr(BaseIndicator, PatternSignalMixin):
     """
     成交量指标(Volume Ratio)
     

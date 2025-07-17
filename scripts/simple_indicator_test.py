@@ -187,7 +187,7 @@ def test_composite_indicators():
     print(f"\n复合指标测试结果: {successful} 成功, {failed} 失败")
     return successful, failed
 
-def main():
+def main_simple_indicator_test():
     """主函数"""
     print("开始简化指标测试...\n")
     

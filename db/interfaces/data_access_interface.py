@@ -14,7 +14,7 @@ class DataAccessInterface(ABC):
     """统一数据访问接口"""
     
     @abstractmethod
-    def get_stock_data(self, code: str, start_date: str, end_date: str, 
+    def get_stock_data_data_access_interface(self, code: str, start_date: str, end_date: str, 
                       columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         获取股票数据
@@ -31,7 +31,7 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def get_stocks_data_batch(self, codes: List[str], start_date: str, end_date: str,
+    def get_stocks_data_batch_data_access_interface(self, codes: List[str], start_date: str, end_date: str,
                              columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         批量获取多只股票数据
@@ -48,7 +48,7 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def get_indicator_data(self, code: str, indicator: str, start_date: str, end_date: str,
+    def get_indicator_data_data_access_interface(self, code: str, indicator: str, start_date: str, end_date: str,
                           params: Optional[Dict] = None) -> pd.DataFrame:
         """
         获取指标数据
@@ -66,7 +66,7 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def get_stock_list(self, industry: Optional[str] = None, 
+    def get_stock_list_data_access_interface(self, industry: Optional[str] = None, 
                       market: Optional[str] = None) -> List[str]:
         """
         获取股票列表
@@ -81,7 +81,7 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def get_industry_list(self) -> List[str]:
+    def get_industry_list_data_access_interface(self) -> List[str]:
         """
         获取行业列表
         
@@ -91,7 +91,7 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def execute_query(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+    def execute_query_data_access_interface(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
         """
         执行查询
         
@@ -105,7 +105,7 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def check_data_exists(self, table: str, conditions: Dict) -> bool:
+    def check_data_exists_data_access_interface(self, table: str, conditions: Dict) -> bool:
         """
         检查数据是否存在
         
@@ -119,7 +119,7 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def get_latest_data(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
+    def get_latest_data_data_access_interface(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
         """
         获取最新数据
         
@@ -176,5 +176,5 @@ class DataAccessFactory:
 
 
 # 兼容性别名
-Data_access_interface = DataAccessInterface
+DATA_ACCESS_INTERFACE = DataAccessInterface
 IDataAccess = DataAccessInterface

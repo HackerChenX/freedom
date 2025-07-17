@@ -23,7 +23,7 @@ from db.sql_manager import QueryType, get_sql_manager
 
 logger = get_logger(__name__)
 
-class SQLMigrationTool:
+class SQLMigrationToolBatch_Sql_Migration:
     """SQL迁移工具"""
     
     def __init__(self):
@@ -338,7 +338,7 @@ if __name__ == "__main__":
         logger.info(f"迁移脚本已生成: {output_file}")
         return output_file
 
-def main():
+def main_batch_sql_migration():
     """主函数"""
     print("=== SQL迁移工具 ===")
     
@@ -366,4 +366,4 @@ def main():
     print("请审查脚本内容，然后执行迁移")
 
 if __name__ == "__main__":
-    main() 
+    main_batch_sql_migration() 

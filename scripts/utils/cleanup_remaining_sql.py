@@ -228,7 +228,7 @@ class SQLCleanupProcessor:
         
         return '\n'.join(report)
 
-def main():
+def main_cleanup_remaining_sql():
     """主函数"""
     processor = SQLCleanupProcessor()
     results = processor.run_cleanup()
@@ -255,4 +255,4 @@ def main():
     print(f"成功率: {success_count/total_count*100:.1f}%")
 
 if __name__ == "__main__":
-    main() 
+    main_cleanup_remaining_sql() 

@@ -1,4 +1,5 @@
 """
+from config import get_config
 智能日期管理器模块
 
 统一处理系统中的日期管理需求，包括：
@@ -86,7 +87,7 @@ class DateManager:
         self.date_cache = {}
         self.trading_calendar = None
         self.last_cache_update = None
-        self.cache_ttl = 3600  # 缓存1小时
+        self.cache_ttl=get_config('cache.ttl', 3600)  # 缓存1小时
         self.statistics = {
             'cache_hits': 0,
             'cache_misses': 0,
@@ -720,7 +721,7 @@ class DateManager:
                 removed_count += 1
             
             # 如果缓存仍然很大，移除最老的项目
-            max_cache_size = 1000
+            max_get_config('cache.size')
             if len(self.date_cache) > max_cache_size:
                 # 按时间戳排序，移除最老的项目
                 sorted_items = sorted(

@@ -411,7 +411,7 @@ class ParallelProcessor:
                 results[indicator_name] = indicator_result
                 
                 # 缓存结果
-                self.cache_service.set(cache_key, indicator_result, ttl=1800)  # 30分钟缓存
+                self.cache_service.set(cache_key, indicator_result, ttl=get_config('cache.ttl', 1800))  # 30分钟缓存
                 
             except Exception as e:
                 logger.error(f"指标计算失败 {task.stock_code}.{indicator_name}: {e}")

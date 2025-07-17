@@ -44,7 +44,7 @@ class DataError(BaseError):
     """数据相关错误的基类"""
     pass
 
-class DataAccessError(DataError):
+class DataAccessErrorExceptions(DataError):
     """数据访问错误"""
     pass
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from config import get_config
 """
 早停功能测试脚本
 
@@ -37,7 +38,7 @@ def test_database_connection_error_early_stop():
     # 创建配置，启用错误后早停
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=50,
+        stock_get_config('performance.pool_size'),
         stop_on_success=False,
         stop_on_error=True,  # 🔑 启用错误后早停
         debug_mode=True,
@@ -100,7 +101,7 @@ def test_success_early_stop():
     # 创建配置，启用成功后早停
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=50,
+        stock_get_config('performance.pool_size'),
         stop_on_success=True,  # 🔑 启用成功后早停
         stop_on_error=False,
         debug_mode=True,
@@ -162,7 +163,7 @@ def test_no_early_stop():
     # 创建配置，禁用所有早停
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=50,
+        stock_get_config('performance.pool_size'),
         stop_on_success=False,  # 🔑 禁用成功后早停
         stop_on_error=False,    # 🔑 禁用错误后早停
         debug_mode=True,

@@ -23,7 +23,7 @@ class ServiceLifetime(Enum):
     TRANSIENT = "transient"
 
 
-class ServiceDescriptor:
+class ServiceDescriptorDependency_Injection:
     """服务描述符"""
     
     def __init__(self, service_type: Type, implementation: Type = None, 
@@ -34,7 +34,7 @@ class ServiceDescriptor:
         self.lifetime = lifetime
 
 
-class ServiceContainer:
+class ServiceContainerDependency_Injection:
     """优化后的依赖注入容器"""
     
     def __init__(self):
@@ -160,14 +160,14 @@ class ServiceContainer:
         finally:
             self._building.discard(interface)
     
-    def clear(self):
+    def clear_dependency_injection(self):
         """清空容器"""
         with self._lock:
             self._services.clear()
             self._instances.clear()
             self._building.clear()
     
-    def get_registered_services(self) -> Dict[Type, ServiceDescriptor]:
+    def get_registered_services(self) -> Dict[Type, ServiceDescriptorDependency_Injection]:
         """获取已注册的服务列表"""
         return self._services.copy()
 

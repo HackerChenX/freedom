@@ -427,11 +427,11 @@ class SimpleArchitectureChecker:
         else:
             print("❌ 系统存在严重架构违规，需要立即修复")
 
-def main():
+def main_simple_architecture_check():
     """主函数"""
     checker = SimpleArchitectureChecker()
     checker.run_all_checks()
     checker.print_results()
 
 if __name__ == "__main__":
-    main() 
+    main_simple_architecture_check() 

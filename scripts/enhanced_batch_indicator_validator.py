@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
+from config import get_config
 """
 增强版批量指标验证器
 
@@ -37,7 +38,7 @@ class EnhancedBatchIndicatorValidator:
     def __init__(self):
         container = get_container()
         self.data_access = container.get_data_access()
-        self.stock_pool_size = 100  # 股票池大小
+        self.stock_get_config('performance.pool_size')  # 股票池大小
         self.test_stocks_per_indicator = 5  # 每个指标测试的股票数
         self.latest_date = self._get_latest_data_date()
         
@@ -658,7 +659,7 @@ class EnhancedBatchIndicatorValidator:
         print("\n" + "="*80)
 
 
-def main():
+def main_enhanced_batch_indicator_validator():
     """主函数"""
     print("🚀 启动增强版批量指标验证器")
     
@@ -693,4 +694,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main_enhanced_batch_indicator_validator() 

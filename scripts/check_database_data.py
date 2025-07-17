@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 """
 检查数据库数据
-检查Click_house数据库中是否有股票价格数据
+检查ClickHouse数据库中是否有股票价格数据
 """
 
 import os
@@ -22,8 +20,8 @@ def check_database_tables():
     print("=== 检查数据库表结构 ===")
     
     try:
-        container = get_container()
-        data_access = container.get_data_access()
+        # 使用依赖注入获取数据访问服务
+        data_access = get_service("IDataAccess")
         
         # 查看所有表
         tables_query = "SHOW TABLES"
@@ -69,8 +67,8 @@ def check_stock_data():
     print("\n=== 检查具体股票数据 ===")
     
     try:
-        container = get_container()
-        data_access = container.get_data_access()
+        # 使用依赖注入获取数据访问服务
+        data_access = get_service("IDataAccess")
         
         # 尝试常见的股票数据表名
         possible_tables = [
@@ -104,8 +102,8 @@ def check_date_range():
     print("\n=== 检查数据时间范围 ===")
     
     try:
-        container = get_container()
-        data_access = container.get_data_access()
+        # 使用依赖注入获取数据访问服务
+        data_access = get_service("IDataAccess")
         
         # 尝试查找有日期字段的表
         tables_with_data = []

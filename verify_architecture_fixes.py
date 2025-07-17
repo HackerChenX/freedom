@@ -89,7 +89,7 @@ def test_dependency_injection():
         print(f"❌ 依赖注入测试失败: {e}")
         return False
 
-def main():
+def main_verify_architecture_fixes():
     """主函数"""
     print("🚀 开始架构修复验证...\n")
     

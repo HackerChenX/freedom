@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from config import get_config
 """
 数据库配置管理工具
 
@@ -149,7 +150,7 @@ def migrate_config(args):
     if clickhouse_db_file.exists():
         with open(clickhouse_db_file, 'r', encoding='utf-8') as f:
             content = f.read()
-            if "'password': '123456'" in content:
+            if "get_config('database.password')" in content:
                 old_configs.append("db/data_access.py 中发现硬编码密码 '123456'")
     
     # 检查测试脚本中的硬编码配置
@@ -157,7 +158,7 @@ def migrate_config(args):
     if test_script_file.exists():
         with open(test_script_file, 'r', encoding='utf-8') as f:
             content = f.read()
-            if "'password': '123456'" in content:
+            if "get_config('database.password')" in content:
                 old_configs.append("scripts/simple_clickhouse_test.py 中发现硬编码密码 '123456'")
     
     if old_configs:

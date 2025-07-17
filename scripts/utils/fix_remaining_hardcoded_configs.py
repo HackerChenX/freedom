@@ -182,7 +182,7 @@ class HardcodedConfigFixer:
         logger.info(f"修复完成，共修复 {self.fixes_applied} 个文件")
         logger.info(f"修改的文件: {list(self.files_modified)}")
 
-def main():
+def main_fix_remaining_hardcoded_configs():
     """主函数"""
     logger.info("开始硬编码配置修复...")
     
@@ -196,4 +196,4 @@ def main():
     os.system("python simple_architecture_check.py")
 
 if __name__ == "__main__":
-    main() 
+    main_fix_remaining_hardcoded_configs() 

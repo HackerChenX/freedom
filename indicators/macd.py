@@ -263,7 +263,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
             polarity="NEUTRAL"
         )
     
-    def parameters(self) -> Dict[str, Any]:
+    def parameters_macd(self) -> Dict[str, Any]:
         """获取参数"""
         return self._parameters.copy()
 

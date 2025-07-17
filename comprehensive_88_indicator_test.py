@@ -502,7 +502,7 @@ class IndicatorTestFramework:
             logger.error(f"生成Markdown报告失败: {e}")
 
 
-def main():
+def main_comprehensive_88_indicator_test():
     """主函数"""
     print("🚀 启动88+指标全覆盖测试")
     print("=" * 80)

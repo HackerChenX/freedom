@@ -157,7 +157,7 @@ class CacheService(ICacheService):
         """设置策略执行结果"""
         key = self.key_builder.build_strategy_key(strategy_name, params, date_param)
         # 策略结果使用较短的TTL
-        ttl = 3600  # 1小时
+        ttl=get_config('cache.ttl', 3600)  # 1小时
         return self.cache_layer.set_8(key, result, ttl)
     
     def invalidate_stock_data(self, code: str) -> bool:
@@ -300,7 +300,7 @@ def create_cache_metrics() -> Cache_metrics:
     """创建缓存指标实例"""
     return Cache_metrics() 
 
-def register_cache_service():
+def register_cache_service_cache_service():
     """注册缓存服务到依赖注入容器"""
     try:
         from utils.dependency_injection import get_container
@@ -320,7 +320,7 @@ def register_cache_service():
 if __name__ != "__main__":
     register_cache_service() 
 # 注册缓存服务到依赖注入容器
-def register_cache_service():
+def register_cache_service_cache_service():
     try:
         from utils.dependency_injection import get_container
         container = get_container()

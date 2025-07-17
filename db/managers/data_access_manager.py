@@ -19,7 +19,7 @@ from utils.decorators import performance_monitor, exception_handler
 logger = get_logger(__name__)
 
 
-class DataAccessManager(DataAccessInterface):
+class DataAccessManagerData_Access_Manager(DataAccessInterface):
     """
     数据访问管理器
     
@@ -42,7 +42,7 @@ class DataAccessManager(DataAccessInterface):
         logger.info("数据访问管理器初始化完成")
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def get_stock_data(self, code: str, start_date: str, end_date: str, 
+    def get_stock_data_data_access_manager(self, code: str, start_date: str, end_date: str, 
                       columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         获取股票数据
@@ -65,7 +65,7 @@ class DataAccessManager(DataAccessInterface):
             return pd.DataFrame()
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def get_stocks_data_batch(self, codes: List[str], start_date: str, end_date: str,
+    def get_stocks_data_batch_data_access_manager(self, codes: List[str], start_date: str, end_date: str,
                              columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         批量获取多只股票数据
@@ -88,7 +88,7 @@ class DataAccessManager(DataAccessInterface):
             return pd.DataFrame()
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def get_indicator_data(self, code: str, indicator: str, start_date: str, end_date: str,
+    def get_indicator_data_data_access_manager(self, code: str, indicator: str, start_date: str, end_date: str,
                           params: Optional[Dict] = None) -> pd.DataFrame:
         """
         获取指标数据
@@ -112,7 +112,7 @@ class DataAccessManager(DataAccessInterface):
             return pd.DataFrame()
     
     @exception_handler(reraise=False, default_return=[])
-    def get_stock_list(self, industry: Optional[str] = None, 
+    def get_stock_list_data_access_manager(self, industry: Optional[str] = None, 
                       market: Optional[str] = None) -> List[str]:
         """
         获取股票列表
@@ -133,7 +133,7 @@ class DataAccessManager(DataAccessInterface):
             return []
     
     @exception_handler(reraise=False, default_return=[])
-    def get_industry_list(self) -> List[str]:
+    def get_industry_list_data_access_manager(self) -> List[str]:
         """
         获取行业列表
         
@@ -149,7 +149,7 @@ class DataAccessManager(DataAccessInterface):
             return []
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def execute_query(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+    def execute_query_data_access_manager(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
         """
         执行查询
         
@@ -169,7 +169,7 @@ class DataAccessManager(DataAccessInterface):
             return pd.DataFrame()
     
     @exception_handler(reraise=False, default_return=False)
-    def check_data_exists(self, table: str, conditions: Dict) -> bool:
+    def check_data_exists_data_access_manager(self, table: str, conditions: Dict) -> bool:
         """
         检查数据是否存在
         
@@ -196,7 +196,7 @@ class DataAccessManager(DataAccessInterface):
             return False
     
     @exception_handler(reraise=False, default_return=None)
-    def get_latest_data(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
+    def get_latest_data_data_access_manager(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
         """
         获取最新数据
         
@@ -274,7 +274,7 @@ class DataAccessManager(DataAccessInterface):
             stock_info = Stock_info(result_df)
             
             # 缓存结果
-            self.cache_service.set(cache_key, stock_info, ttl=300)  # 5分钟缓存
+            self.cache_service.set(cache_key, stock_info, ttl=get_config('cache.ttl', 300))  # 5分钟缓存
             
             return stock_info
             
@@ -320,7 +320,7 @@ class DataAccessManager(DataAccessInterface):
             stock_list = result_df['code'].unique().tolist() if not result_df.empty else []
             
             # 缓存结果
-            self.cache_service.set(cache_key, stock_list, ttl=600)  # 10分钟缓存
+            self.cache_service.set(cache_key, stock_list, ttl=get_config('cache.ttl', 600))  # 10分钟缓存
             
             return stock_list
             
@@ -355,7 +355,7 @@ class DataAccessManager(DataAccessInterface):
             result_df = self.query_Manager_Data_Access_Manager(query)
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_df, ttl=3600)  # 1小时缓存
+            self.cache_service.set(cache_key, result_df, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
             
             return result_df
             
@@ -785,7 +785,7 @@ class DataAccessManager(DataAccessInterface):
             result_df = stock_info.to_dataframe()
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_df, ttl=300)  # 5分钟缓存
+            self.cache_service.set(cache_key, result_df, ttl=get_config('cache.ttl', 300))  # 5分钟缓存
             
             return result_df
             
@@ -816,7 +816,7 @@ class DataAccessManager(DataAccessInterface):
             market_overview = self.get_market_overview_Manager(date)
             
             # 缓存结果
-            self.cache_service.set(cache_key, market_overview, ttl=600)  # 10分钟缓存
+            self.cache_service.set(cache_key, market_overview, ttl=get_config('cache.ttl', 600))  # 10分钟缓存
             
             return market_overview
             
@@ -845,7 +845,7 @@ class DataAccessManager(DataAccessInterface):
             last_trade_date = max_date.strftime('%Y-%m-%d')
             
             # 缓存结果
-            self.cache_service.set(cache_key, last_trade_date, ttl=3600)  # 1小时缓存
+            self.cache_service.set(cache_key, last_trade_date, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
             
             return last_trade_date
             
@@ -887,7 +887,7 @@ class DataAccessManager(DataAccessInterface):
             stock_list = result_df['stock_code'].tolist() if not result_df.empty else []
             
             # 缓存结果
-            self.cache_service.set(cache_key, stock_list, ttl=3600)  # 1小时缓存
+            self.cache_service.set(cache_key, stock_list, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
             
             return stock_list
             
@@ -1002,7 +1002,7 @@ class DataAccessManager(DataAccessInterface):
                     result_dict[code] = pd.DataFrame()
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_dict, ttl=300)  # 5分钟缓存
+            self.cache_service.set(cache_key, result_dict, ttl=get_config('cache.ttl', 300))  # 5分钟缓存
             
             return result_dict
             
@@ -1070,7 +1070,7 @@ class DataAccessManager(DataAccessInterface):
             result_df = self.query_Manager_Data_Access_Manager(query, params)
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_df, ttl=60)  # 1分钟缓存
+            self.cache_service.set(cache_key, result_df, ttl=get_config('cache.ttl', 60))  # 1分钟缓存
             
             return result_df
             
@@ -1078,7 +1078,7 @@ class DataAccessManager(DataAccessInterface):
             logger.error(f"获取最新数据失败: {e}")
             raise DataAccessError(f"获取最新数据失败: {e}")
     
-    def check_data_exists(self, code: str, date: str, level: str = '日线') -> bool:
+    def check_data_exists_data_access_manager(self, code: str, date: str, level: str = '日线') -> bool:
         """检查指定股票在指定日期的数据是否存在
         
         Args:
@@ -1124,7 +1124,7 @@ class DataAccessManager(DataAccessInterface):
             exists = not result_df.empty and result_df.iloc[0]['count'] > 0
             
             # 缓存结果
-            self.cache_service.set(cache_key, exists, ttl=3600)  # 1小时缓存
+            self.cache_service.set(cache_key, exists, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
             
             return exists
             

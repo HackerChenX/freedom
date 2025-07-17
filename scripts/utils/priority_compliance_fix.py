@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 """
 优先级架构合规性修复脚本
 分阶段处理最关键的违规问题，实现快速合规
@@ -46,12 +44,12 @@ class PriorityComplianceFixer:
             'analysis/'
         ]
         
-        # 数据库依赖替换模式
+        # 数据库依赖替换模式 - 使用依赖注入
         self.db_replacements = {
-            r'get_clickhouse_db\(\)': 'get_service(DataAccessInterface)',
-            r'from\s+db\.clickhouse_db\s+import\s+get_clickhouse_db': 'from utils.dependency_injection import get_service\nfrom db.interfaces.data_access_interface import DataAccessInterface',
+            r'get_clickhouse_db\(\)': 'get_service("IDataAccess")',
+            r'from\s+db\.clickhouse_db\s+import\s+get_clickhouse_db': 'from utils.dependency_injection import get_service\nfrom db.interfaces.data_access_interface import IDataAccess',
             r'clickhouse_db\.': 'data_access.',
-            r'ClickHouseDB\(\)': 'get_service(DataAccessInterface)'
+            r'ClickHouseDB\(\)': 'get_service("IDataAccess")'
         }
         
         # 查询修复模式
@@ -285,7 +283,7 @@ class PriorityComplianceFixer:
                     for node in ast.walk(tree):
                         if isinstance(node, (ast.Class_def, ast.Function_def)):
                             name_files[node.name].append(file_path)
-                except Syntax_error:
+                except SyntaxError:
                     continue
             
             except Exception as e:
@@ -365,7 +363,7 @@ class PriorityComplianceFixer:
 def main_prioritycompliancefix():
     """主函数"""
     try:
-        fixer = Priority_compliance_fixer()
+        fixer = PriorityComplianceFixer()
         fixer.fix_all_priority_violations()
         
         print(f"\n✅ 优先级修复完成，建议运行合规性检查验证结果")

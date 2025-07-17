@@ -202,7 +202,7 @@ except Exception as e:
 '''
     print(after_error)
 
-def main():
+def main_sql_migration_example():
     """主函数"""
     print("SQL迁移示例和指南")
     print("=" * 50)
@@ -233,4 +233,4 @@ def main():
     print("5. 集中管理便于性能优化")
 
 if __name__ == "__main__":
-    main() 
+    main_sql_migration_example() 

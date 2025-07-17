@@ -365,7 +365,7 @@ class InstitutionalStrategy(BaseStrategy):
         
         return result 
     
-    def select_Strategy_Base_Strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
+    def select_Strategy_Base_Strategy_institutional_strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
         实现基类抽象方法，适配现有的选股策略方法
         

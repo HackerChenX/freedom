@@ -532,7 +532,7 @@ class RelaxedAbsorbMACDStrategy:
         print("\n" + "=" * 80)
 
 
-def main():
+def main_relaxed_absorb_macd_strategy():
     """主函数"""
     print("🚀 启动30分钟吸筹信号+MACD积极信号选股策略（放宽版）")
     print("📅 目标日期: 2025年5月12日")

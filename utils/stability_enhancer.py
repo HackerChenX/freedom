@@ -144,9 +144,9 @@ def retry(max_attempts: int = 3,
         exceptions: 需要重试的异常类型
         on_retry: 重试时的回调函数
     """
-    def decorator(func):
+    def decorator_stability_enhancer(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_stability_enhancer(*args, **kwargs):
             last_exception = None
             current_delay = delay
             
@@ -292,7 +292,7 @@ class ErrorhandlerEnhancer:
         
         logger.info(f"注册错误处理器: {exception_type.__name__}")
     
-    def handle_error(self, exception: Exception, context: Optional[Dict[str, Any]] = None):
+    def handle_error_stability_enhancer(self, exception: Exception, context: Optional[Dict[str, Any]] = None):
         """处理错误"""
         exception_type = type(exception)
         
@@ -340,7 +340,7 @@ class ErrorhandlerEnhancer:
         
         # 可以在这里添加更多默认处理逻辑，如发送告警、记录到数据库等
     
-    def get_error_stats(self) -> Dict[str, Any]:
+    def get_error_stats_stability_enhancer(self) -> Dict[str, Any]:
         """获取错误统计"""
         with self.lock:
             stats = {}
@@ -355,9 +355,9 @@ class ErrorhandlerEnhancer:
 
 def timeout(seconds: float):
     """超时装饰器"""
-    def decorator(func):
+    def decorator_stability_enhancer(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_stability_enhancer(*args, **kwargs):
             result = [None]
             exception = [None]
             

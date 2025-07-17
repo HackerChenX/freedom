@@ -19,7 +19,7 @@ from utils.logger import get_logger
 # 获取日志记录器
 logger = get_logger("test_fixer")
 
-def fix_file(file_path):
+def fix_file_fix_tests_direct(file_path):
     """
     修复文件
     

@@ -50,7 +50,7 @@ def time_it(func):
         装饰后的函数
     """
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper_decorators(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
@@ -68,9 +68,9 @@ def performance_monitor(threshold: float = 0.1):
     Returns:
         装饰器函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             start_time = time.time()
             try:
                 result = func(*args, **kwargs)
@@ -91,7 +91,7 @@ def performance_monitor(threshold: float = 0.1):
         return wrapper
     return decorator
 
-def cache_result(max_size: int = 128, ttl: Optional[float] = None):
+def cache_result_decorators(max_size: int = 128, ttl: Optional[float] = None):
     """
     缓存装饰器，缓存函数返回结果
     
@@ -102,13 +102,13 @@ def cache_result(max_size: int = 128, ttl: Optional[float] = None):
     Returns:
         装饰器函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         cache = OrderedDict()
         cache_info = {"hits": 0, "misses": 0, "size": 0}
         cache_lock = threading.RLock()
         
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             # 创建缓存键
             key = str(args) + str(sorted(kwargs.items()))
             
@@ -144,7 +144,7 @@ def cache_result(max_size: int = 128, ttl: Optional[float] = None):
                 
                 return result
         
-        def clear_cache():
+        def clear_cache_decorators():
             with cache_lock:
                 cache.clear()
                 cache_info["size"] = 0
@@ -166,7 +166,7 @@ def cache_result(max_size: int = 128, ttl: Optional[float] = None):
         return wrapper
     return decorator
 
-def exception_handler(reraise: bool = True, default_return=None, logger_instance=None, error_message="执行失败"):
+def exception_handler_decorators(reraise: bool = True, default_return=None, logger_instance=None, error_message="执行失败"):
     """
     异常处理装饰器
     
@@ -179,9 +179,9 @@ def exception_handler(reraise: bool = True, default_return=None, logger_instance
     Returns:
         装饰后的函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             log = logger_instance or logger
             
             try:
@@ -211,9 +211,9 @@ def error_handling(default_return=None, logger_instance=None, error_message="执
     Returns:
         装饰后的函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             log = logger_instance or logger
             
             for attempt in range(retries + 1):
@@ -245,9 +245,9 @@ def safe_run(default_return=None, error_logger=None, max_retry=3, retry_delay=1.
     Returns:
         装饰后的函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             for attempt in range(max_retry):
                 try:
                     return func(*args, **kwargs)
@@ -261,7 +261,7 @@ def safe_run(default_return=None, error_logger=None, max_retry=3, retry_delay=1.
         return wrapper
     return decorator
 
-def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0, 
+def retry_decorators(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0, 
           exceptions: tuple = (Exception,)):
     """
     重试装饰器，在失败时自动重试
@@ -275,9 +275,9 @@ def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0,
     Returns:
         装饰器函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             current_delay = delay
             
             for attempt in range(max_attempts):
@@ -307,9 +307,9 @@ def validate_args(*arg_validators, **kwarg_validators):
     Returns:
         装饰器函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             for validator in arg_validators:
                 if not validator(*args):
                     raise ValueError(f"参数验证失败: {validator.__name__}")
@@ -332,9 +332,9 @@ def log_calls(level: int = logging.DEBUG, args: bool = True, result: bool = Fals
     Returns:
         装饰器函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             if args and args[0] is not None:
                 logger.log(level, f"调用函数 {func.__name__} 参数: {args[1:]}")
             result = func(*args, **kwargs)
@@ -357,7 +357,7 @@ def universal_method(func):
         装饰后的函数
     """
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper_decorators(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
             return result
@@ -377,7 +377,7 @@ def timing_decorator(func):
         装饰后的函数
     """
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper_decorators(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
@@ -397,9 +397,9 @@ def validate_dataframe(check_empty=True, required_columns=None):
     Returns:
         装饰器函数
     """
-    def decorator(func):
+    def decorator_decorators(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper_decorators(*args, **kwargs):
             # 假设第一个参数是DataFrame
             if args:
                 df = args[0]

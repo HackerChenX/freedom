@@ -412,7 +412,7 @@ _legacy_period_manager = None
 _legacy_lock = threading.Lock()
 
 
-def get_period_manager(cache_size: int = 100) -> PeriodManager:
+def get_period_manager_period_manager(cache_size: int = 100) -> PeriodManager:
     """获取周期管理器实例（向后兼容）"""
     global _legacy_period_manager
     if _legacy_period_manager is None:
@@ -441,7 +441,7 @@ def get_period_service() -> PeriodManager:
 
 
 # 兼容性别名
-def get_instance() -> PeriodManager:
+def get_instance_period_manager() -> PeriodManager:
     """向后兼容的获取实例方法"""
     return get_period_manager()
 

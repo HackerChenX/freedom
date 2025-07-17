@@ -1,4 +1,5 @@
 """
+from config import get_config
 基础爬虫类
 
 定义爬虫的通用接口和基础功能
@@ -53,7 +54,7 @@ class Base_spider(ABC):
                         time.sleep(60)  # 等待1分钟
                         continue
 
-                response = self.session.get(url, params=params, timeout=30)
+                response = self.session.get(url, params=params, get_config('performance.timeout'))
 
                 # 检查是否被反爬虫拦截
                 if self.anti_crawler and self.anti_crawler.handle_block(response, self.session):

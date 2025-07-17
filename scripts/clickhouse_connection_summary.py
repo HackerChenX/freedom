@@ -3,6 +3,7 @@
 
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
+from config import get_config
 """
 Click_house连接测试总结
 """
@@ -18,11 +19,11 @@ def test_clickhouse_connection():
     
     # 连接配置
     config = {
-        'host': 'localhost',
-        'port': 9000,
-        'user': 'default',
-        'password': '123456',
-        'database': 'stock'
+        get_config('database.host'),
+        get_config('database.port'),
+        get_config('database.user'),
+        get_config('database.password'),
+        get_config('database.name')
     }
     
     try:

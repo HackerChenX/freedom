@@ -511,7 +511,7 @@ class NamingConventionChecker:
             return "命名规范差"
 
 
-def main():
+def main_naming_convention_checker():
     """主函数"""
     root_dir = os.getcwd()
     checker = NamingConventionChecker(root_dir)

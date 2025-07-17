@@ -3,6 +3,7 @@
 
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
+from config import get_config
 """
 简单的Click_house连接测试
 """
@@ -15,25 +16,25 @@ import sys
 configs = [
     # 默认配置
     {
-        'host': 'localhost',
-        'port': 9000,
-        'user': 'default',
-        'password': '123456',  # 从Docker环境变量中获取的密码
-        'database': 'stock'
+        get_config('database.host'),
+        get_config('database.port'),
+        get_config('database.user'),
+        get_config('database.password'),  # 从Docker环境变量中获取的密码
+        get_config('database.name')
     },
     # 不指定数据库名
     {
-        'host': 'localhost',
-        'port': 9000,
-        'user': 'default',
-        'password': '123456'  # 从Docker环境变量中获取的密码
+        get_config('database.host'),
+        get_config('database.port'),
+        get_config('database.user'),
+        get_config('database.password')  # 从Docker环境变量中获取的密码
     },
     # 使用默认系统数据库
     {
-        'host': 'localhost',
-        'port': 9000,
-        'user': 'default',
-        'password': '123456',  # 从Docker环境变量中获取的密码
+        get_config('database.host'),
+        get_config('database.port'),
+        get_config('database.user'),
+        get_config('database.password'),  # 从Docker环境变量中获取的密码
         'database': 'default'
     }
 ]

@@ -20,7 +20,7 @@ class IindicatorCalculator(ABC):
     """
     
     @abstractmethod
-    def calculate_Indicator_Calculator_Interface(self, 
+    def calculate_Indicator_Calculator_Interface_indicator_calculator_interface(self, 
                   data: pd.DataFrame, 
                   params: Optional[Dict[str, Any]] = None) -> Union[pd.Series, pd.DataFrame]:
         """
@@ -36,7 +36,7 @@ class IindicatorCalculator(ABC):
         pass
     
     @abstractmethod
-    def get_indicator_type_Indicator_Calculator_Interface(self) -> IndicatorType:
+    def get_indicator_type_Indicator_Calculator_Interface_indicator_calculator_interface(self) -> IndicatorType:
         """
         获取指标类型
         
@@ -46,7 +46,7 @@ class IindicatorCalculator(ABC):
         pass
     
     @abstractmethod
-    def get_required_columns(self) -> List[str]:
+    def get_required_columns_indicator_calculator_interface(self) -> List[str]:
         """
         获取计算所需的数据列
         
@@ -56,7 +56,7 @@ class IindicatorCalculator(ABC):
         pass
     
     @abstractmethod
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params_indicator_calculator_interface(self) -> Dict[str, Any]:
         """
         获取默认参数
         
@@ -66,7 +66,7 @@ class IindicatorCalculator(ABC):
         pass
     
     @abstractmethod
-    def validate_data(self, data: pd.DataFrame) -> bool:
+    def validate_data_indicator_calculator_interface(self, data: pd.DataFrame) -> bool:
         """
         验证输入数据
         
@@ -85,7 +85,7 @@ class ItrendIndicator(IindicatorCalculator):
     """
     
     @abstractmethod
-    def get_trend_direction(self, data: pd.DataFrame) -> pd.Series:
+    def get_trend_direction_indicator_calculator_interface(self, data: pd.DataFrame) -> pd.Series:
         """
         获取趋势方向
         
@@ -104,7 +104,7 @@ class IvolatilityIndicator(IindicatorCalculator):
     """
     
     @abstractmethod
-    def get_volatility_level(self, data: pd.DataFrame) -> pd.Series:
+    def get_volatility_level_indicator_calculator_interface(self, data: pd.DataFrame) -> pd.Series:
         """
         获取波动率水平
         
@@ -123,7 +123,7 @@ class ImomentumIndicator(IindicatorCalculator):
     """
     
     @abstractmethod
-    def get_momentum_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+    def get_momentum_signals_indicator_calculator_interface(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         获取动量信号
         

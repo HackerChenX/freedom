@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
+from config import get_config
 """
 第二批测试：趋势指标扩展（10个）
 
@@ -38,7 +39,7 @@ class Phase2trendindicatortesterBatchTestPhase2TrendIndicators:
     
     def __init__(self):
         self.data_access = get_container().resolve(IDataAccess)
-        self.stock_pool_size = 100
+        self.stock_get_config('performance.pool_size')
         self.test_stocks_per_indicator = 5
         self.latest_date = self._get_latest_data_date_Batch_Test_Phase2_Trend_Indicators()
         
@@ -583,7 +584,7 @@ class Phase2trendindicatortesterBatchTestPhase2TrendIndicators:
             logger.info(f"  {complexity}: {stats['success']}/{stats['total']} ({success_rate:.1f}%)")
 
 
-def main():
+def main_batch_test_phase2_trend_indicators():
     """主函数"""
     try:
         tester = Phase2TrendIndicatorTester_Batch_Test_Phase2_Trend_Indicators()
@@ -607,4 +608,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_batch_test_phase2_trend_indicators()

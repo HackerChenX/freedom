@@ -15,7 +15,7 @@ from tools.automated_risk_detection import Automated_risk_detector, Indicator_ty
 from utils.logger import get_logger, init_logging
 
 # 初始化日志
-init_logging(level="INFO")
+init_logging(level=get_config('logging.level', 'INFO'))
 logger = get_logger(__name__)
 
 

@@ -62,7 +62,7 @@ class HardcodedConfigFixer:
                     'native_port': 9000,
                     'volumes': ['clickhouse_data:/var/lib/clickhouse'],
                     'database': 'stock_crawler',
-                    'user': 'default',
+                    get_config('database.user'),
                     'password': '',
                     'restart': 'unless-stopped'
                 },
@@ -290,7 +290,7 @@ class HardcodedConfigFixer:
         
         return '\n'.join(report)
 
-def main():
+def main_fix_hardcoded_config():
     """主函数"""
     fixer = HardcodedConfigFixer()
     results = fixer.run_fixes()
@@ -314,4 +314,4 @@ def main():
     print(f"成功率: {fixer.stats['successful_fixes']/fixer.stats['total_files']*100:.1f}%")
 
 if __name__ == "__main__":
-    main() 
+    main_fix_hardcoded_config() 

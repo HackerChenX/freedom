@@ -1,4 +1,5 @@
 """
+from config import get_config
 持续质量保证流程
 
 建立pre-commit hooks，在代码提交前自动执行质量检查
@@ -87,7 +88,7 @@ class Pre_commit_hooks:
                  "tools/", "tests/framework/"],
                 capture_output=True,
                 text=True,
-                timeout=30
+                get_config('performance.timeout')
             )
             
             execution_time = time.time() - start_time

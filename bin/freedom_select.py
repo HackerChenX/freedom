@@ -695,7 +695,7 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main():
+def main_freedom_select():
     """主函数"""
     parser = create_parser()
     args = parser.parse_args()
@@ -713,4 +713,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_freedom_select()

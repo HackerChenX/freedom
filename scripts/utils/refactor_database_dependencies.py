@@ -43,12 +43,9 @@ class DatabaseDependencyRefactor:
         
         # 重构模式定义
         self.import_patterns = [
-            r'from db\.clickhouse_db from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface
-            r'from db\.clickhouse_db from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface
-            r'from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface
+            r'from db\.clickhouse_db import get_clickhouse_db',
+            r'from db\.clickhouse_db import ClickHouseDB',
+            r'import db\.clickhouse_db'
         ]
         
         self.call_patterns = [
@@ -144,11 +141,9 @@ from db.interfaces.data_access_interface import DataAccessInterface
         
         # 替换clickhouse_db导入
         patterns_replacements = [
-            (r'from db\.clickhouse_db from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface
+            (r'from db\.clickhouse_db import get_clickhouse_db',
              'from utils.dependency_injection import get_service\nfrom db.interfaces.data_access_interface import IDataAccess'),
-            (r'from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import DataAccessInterface
+            (r'from db\.clickhouse_db import ClickHouseDB',
              'from utils.dependency_injection import get_service\nfrom db.interfaces.data_access_interface import IDataAccess')
         ]
         
@@ -335,7 +330,7 @@ data = self.data_access.execute_query(sql)
         return report
 
 
-def main():
+def main_refactor_database_dependencies():
     """主函数"""
     logger.info("启动数据库依赖重构脚本...")
     

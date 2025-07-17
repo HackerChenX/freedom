@@ -420,7 +420,7 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
-    def get_pattern_info(self) -> Dict[str, Any]:
+    def get_pattern_info_enhanced_rsi(self) -> Dict[str, Any]:
         """
         获取指标模式信息
         
@@ -465,7 +465,7 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin):
         
         return data
     
-    def get_market_environment(self) -> str:
+    def get_market_environment_enhanced_rsi(self) -> str:
         """
         获取当前市场环境
         
@@ -474,7 +474,7 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin):
         """
         return getattr(self, 'market_environment', 'normal')
     
-    def set_market_environment(self, environment: str) -> None:
+    def set_market_environment_enhanced_rsi(self, environment: str) -> None:
         """
         设置市场环境
         
@@ -506,7 +506,7 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin):
             self.overbought = 70.0
             self.oversold = 30.0
     
-    def get_indicator_type(self) -> str:
+    def get_indicator_type_enhanced_rsi(self) -> str:
         """
         获取指标类型
         

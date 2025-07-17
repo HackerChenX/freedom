@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
+from config import get_config
 """
 指标验证框架
 
@@ -898,7 +899,7 @@ def main_49():
     # 配置验证参数
     config = Indicator_validation_config(
         mode=Validation_mode.QUICK,
-        stock_pool_size=500,
+        stock_get_config('performance.pool_size'),
         max_selection_ratio=0.05,
         parallel_workers=2,
         output_format="json",

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
+from config import get_config
 """
 生产环境数据库连接测试工具
 
@@ -146,10 +147,10 @@ class ProductionDatabaseTester:
             
             # 尝试连接Docker容器中的ClickHouse
             docker_config = {
-                'host': 'localhost',
-                'port': 9000,
+                get_config('database.host'),
+                get_config('database.port'),
                 'database': 'default',
-                'user': 'default',
+                get_config('database.user'),
                 'password': '',
                 'compression': False
             }

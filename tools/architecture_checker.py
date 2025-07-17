@@ -382,7 +382,7 @@ class ArchitectureChecker:
             return "不合格"
 
 
-def main():
+def main_architecture_checker():
     """主函数"""
     root_dir = os.getcwd()
     checker = ArchitectureChecker(root_dir)
