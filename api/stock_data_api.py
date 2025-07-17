@@ -48,10 +48,10 @@ class Stock_data_aPI(abc.ABC):
         if isinstance(date, str):
             try:
                 return datetime.strptime(date, '%Y%m%d').strftime('%Y%m%d')
-            except Value_error:
+            except ValueError:
                 try:
                     return datetime.strptime(date, '%Y-%m-%d').strftime('%Y%m%d')
-                except Value_error:
+                except ValueError:
                     return datetime.now().strftime('%Y%m%d')
         elif isinstance(date, datetime):
             return date.strftime('%Y%m%d')
@@ -63,10 +63,10 @@ class Stock_data_aPI(abc.ABC):
         if isinstance(date, str):
             try:
                 return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
-            except Value_error:
+            except ValueError:
                 try:
                     return datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
-                except Value_error:
+                except ValueError:
                     return datetime.now().strftime('%Y-%m-%d')
         elif isinstance(date, datetime):
             return date.strftime('%Y-%m-%d')
@@ -358,7 +358,7 @@ class AKShare_aPI(Stock_data_aPI):
                     except json.JSONDecode_error as e:
                         print(f"JSON解析错误: {e}. API可能返回了非JSON响应")
                         continue
-                    except Value_error as e:
+                    except ValueError as e:
                         if "Can not decode value starting with character '<'" in str(e):
                             print(f"API返回了HTML而不是JSON: {e}")
                         else:
@@ -416,7 +416,7 @@ class AKShare_aPI(Stock_data_aPI):
                     except json.JSONDecode_error as e:
                         print(f"涨停数据JSON解析错误: {e}")
                         continue
-                    except Value_error as e:
+                    except ValueError as e:
                         if "Can not decode value starting with character '<'" in str(e):
                             print(f"涨停数据API返回了HTML而不是JSON: {e}")
                         else:
@@ -808,7 +808,7 @@ class Bao_stock_aPI(Stock_data_aPI):
                     stock_data = stock_data.copy()
                 else:
                     raise ValueError("通过get_data获取股票数据失败")
-            except (Value_error, Attribute_error) as e:
+            except (ValueError, Attribute_error) as e:
                 print(f"尝试get_data方法失败: {e}，使用传统方法获取")
                 # 传统获取方法：逐行读取
                 stock_data = pd.DataFrame()
@@ -854,7 +854,7 @@ class Bao_stock_aPI(Stock_data_aPI):
                         df = self.bs.get_data(rs_k)
                         if df is not None and not df.empty:
                             batch_data = pd.concat([batch_data, df], ignore_index=True)
-                    except (Value_error, Attribute_error):
+                    except (ValueError, Attribute_error):
                         # 传统获取方法：逐行读取
                         while (rs_k.error_code == '0') & rs_k.next():
                             data_list = rs_k.get_row_data()
@@ -890,7 +890,7 @@ class Bao_stock_aPI(Stock_data_aPI):
                             info_df = self.bs.get_data(rs_info)
                             if info_df is not None and not info_df.empty:
                                 all_stock_names = pd.concat([all_stock_names, info_df], ignore_index=True)
-                        except (Value_error, Attribute_error):
+                        except (ValueError, Attribute_error):
                             while (rs_info.error_code == '0') & rs_info.next():
                                 info_data = rs_info.get_row_data()
                                 all_stock_names = pd.concat([all_stock_names, pd.DataFrame([info_data])], ignore_index=True)
@@ -1161,7 +1161,7 @@ class Dual_source_aPI(Stock_data_aPI):
                 print(f"主数据源JSON解析错误: {e}，尝试使用备用数据源")
                 self.primary_error_count += 1
                 raise  # 重新抛出异常，将由外部catch块处理
-            except Value_error as e:
+            except ValueError as e:
                 # 特殊处理HTML响应错误
                 if "Can not decode value starting with character '<'" in str(e):
                     print(f"主数据源返回了HTML而不是JSON: {e}，尝试使用备用数据源")

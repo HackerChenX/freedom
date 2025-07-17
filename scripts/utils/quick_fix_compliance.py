@@ -61,8 +61,8 @@ def fix_standard_library_names(content: str) -> str:
     fixes = [
         ('User_warning', 'UserWarning'),
         ('Type_error', 'TypeError'),
-        ('Value_error', 'ValueError'),
-        ('Key_error', 'KeyError'),
+        ('ValueError', 'ValueError'),
+        ('KeyError', 'KeyError'),
         ('Index_error', 'IndexError'),
         ('Attribute_error', 'AttributeError'),
         ('Import_error', 'ImportError'),

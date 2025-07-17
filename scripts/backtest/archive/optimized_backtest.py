@@ -1167,7 +1167,7 @@ class OptimizedBacktest:
                     # 确定对应的周期类型
                     try:
                         period = Period(period_value)
-                    except Value_error:
+                    except ValueError:
                         logger.warning(f"无效的周期值: {period_value}")
                         continue
                     

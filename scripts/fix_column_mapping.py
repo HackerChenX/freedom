@@ -29,7 +29,7 @@ def _get_column_name(self, data: pd.DataFrame, column_type: str) -> str:
         str: 实际的列名
         
     Raises:
-        Value_error: 如果找不到对应的列
+        ValueError: 如果找不到对应的列
     """
     column_mappings = {
         'open': ['open', 'Open', 'OPEN', 'o', 'O'],

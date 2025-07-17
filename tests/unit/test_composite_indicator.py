@@ -252,7 +252,7 @@ class Testcompositeindicator_indicator(unittest.Test_case, Indicator_test_mixin,
             self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_composite_indicator_automatic_scoring(self):
@@ -321,7 +321,7 @@ class Testcompositeindicator_indicator(unittest.Test_case, Indicator_test_mixin,
         try:
             result = self.indicator.calculate(invalid_data)
             self.assert_is_instance(result, pd.DataFrame)
-        except Value_error:
+        except ValueError:
             # 如果子指标抛出异常也是可以接受的
             pass
     

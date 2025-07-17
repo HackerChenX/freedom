@@ -1,0 +1,171 @@
+# 股票选股策略系统综合测试配置文件
+
+# 数据库配置
+database:
+  host: "localhost"
+  port: 9000
+  database: "stock"
+  user: "default"
+  password: ""
+  timeout: 30
+  pool_size: 10
+  max_overflow: 20
+  pool_timeout: 30
+  pool_recycle: 3600
+
+# 性能阈值配置
+performance_thresholds:
+  single_stock_query: 2.0        # 单股查询时间限制（秒）
+  batch_100_stocks: 30.0         # 100股批量处理时间限制（秒）
+  batch_1000_stocks: 300.0       # 1000股批量处理时间限制（秒）
+  full_market_scan: 1200.0       # 全市场扫描时间限制（秒）
+  max_memory_usage: 8.0          # 最大内存使用限制（GB）
+  max_connections: 50            # 最大数据库连接数
+  cache_hit_rate_threshold: 0.8  # 缓存命中率阈值
+
+# 测试数据配置
+test_data:
+  sample_stock_codes:
+    - "000001"  # 平安银行
+    - "000002"  # 万科A
+    - "600000"  # 浦发银行
+    - "600036"  # 招商银行
+    - "000858"  # 五粮液
+    - "600519"  # 贵州茅台
+    - "000063"  # 中兴通讯
+    - "002415"  # 海康威视
+    - "300059"  # 东方财富
+    - "002594"  # 比亚迪
+  
+  test_date_range_start: "2023-01-01"
+  test_date_range_end: "2024-12-31"
+  
+  market_conditions:
+    - "bull_market"      # 牛市
+    - "bear_market"      # 熊市
+    - "sideways_market"  # 震荡市
+  
+  test_indicators:
+    - "MA"        # 移动平均线
+    - "MACD"      # 指数平滑移动平均线
+    - "RSI"       # 相对强弱指标
+    - "KDJ"       # 随机指标
+    - "BOLL"      # 布林带
+    - "DMI"       # 动向指标
+    - "TRIX"      # 三重指数平滑移动平均
+    - "AROON"     # 阿隆指标
+    - "ROC"       # 变动率指标
+    - "MOMENTUM"  # 动量指标
+  
+  test_strategies:
+    - "dual_ma_strategy"        # 双均线策略
+    - "institutional_strategy"  # 主力行为策略
+    - "rebound_strategy"        # 回踩反弹策略
+
+# 监控配置
+monitoring:
+  enable_real_time_monitoring: true
+  cpu_usage_threshold: 80.0      # CPU使用率告警阈值（%）
+  memory_usage_threshold: 6.0    # 内存使用告警阈值（GB）
+  query_timeout_threshold: 10.0  # 查询超时告警阈值（秒）
+  log_level: "INFO"
+  
+  # 性能监控间隔
+  monitoring_intervals:
+    cpu_memory: 1.0    # CPU和内存监控间隔（秒）
+    query_performance: 0.1  # 查询性能监控间隔（秒）
+    system_health: 5.0 # 系统健康检查间隔（秒）
+
+# 报告配置
+reporting:
+  output_directory: "test_results"
+  generate_html: true
+  generate_json: true
+  generate_charts: true
+  enable_email_notifications: false
+  
+  # 报告详细程度
+  report_detail_level: "comprehensive"  # basic, detailed, comprehensive
+  
+  # 图表配置
+  charts:
+    performance_trends: true
+    memory_usage: true
+    query_distribution: true
+    error_analysis: true
+    coverage_heatmap: true
+
+# 测试执行配置
+test_execution:
+  # 并发配置
+  max_concurrent_tests: 4
+  test_timeout: 3600  # 单个测试超时时间（秒）
+  
+  # 重试配置
+  max_retries: 3
+  retry_delay: 5.0    # 重试延迟（秒）
+  
+  # 测试数据清理
+  cleanup_test_data: true
+  preserve_failed_test_data: true
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # 日志文件配置
+  files:
+    main_log: "test_results/comprehensive_test.log"
+    performance_log: "test_results/performance.log"
+    error_log: "test_results/error.log"
+    
+  # 日志轮转配置
+  rotation:
+    max_size: "100MB"
+    backup_count: 5
+
+# 安全配置
+security:
+  enable_data_masking: true      # 启用数据脱敏
+  readonly_database_access: true # 只读数据库访问
+  audit_logging: true           # 审计日志
+  
+  # 数据访问权限
+  allowed_tables:
+    - "stock_info"
+    - "stock_daily"
+    - "stock_minute"
+    - "indicator_*"
+  
+  # 禁止的操作
+  forbidden_operations:
+    - "DROP"
+    - "DELETE"
+    - "UPDATE"
+    - "INSERT"
+    - "ALTER"
+
+# 环境特定配置
+environments:
+  development:
+    database:
+      host: "localhost"
+      port: 9000
+    performance_thresholds:
+      single_stock_query: 5.0  # 开发环境放宽限制
+  
+  testing:
+    database:
+      host: "test-clickhouse"
+      port: 9000
+    monitoring:
+      enable_real_time_monitoring: false
+  
+  production:
+    database:
+      host: "prod-clickhouse"
+      port: 9000
+    security:
+      enable_data_masking: true
+      readonly_database_access: true

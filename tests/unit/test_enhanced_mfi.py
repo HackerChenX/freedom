@@ -191,7 +191,7 @@ class Test_enhanced_mFI(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
             self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_mfi_price_structure_synergy(self):
@@ -367,7 +367,7 @@ class Test_enhanced_mFI(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['volume'], axis=1)
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.calculate(invalid_data)
 
 

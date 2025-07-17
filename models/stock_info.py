@@ -97,7 +97,7 @@ class Stock_info:
             'low': ['low', 'low_price'],
             'close': ['close', 'close_price'],
             'volume': ['volume', 'vol'],
-            'turnover_rate': ['turnover_rate', 'turnover'],
+            'turnover': ['turnover', 'turnover'],
             'price_change': ['price_change', 'change', 'pct_chg'],
             'price_range': ['price_range', 'range'],
             'industry': ['industry', 'sector'],
@@ -132,7 +132,7 @@ class Stock_info:
                                 pass
                     
                     # 数值类型转换
-                    if attr in ['open', 'high', 'low', 'close', 'volume', 'turnover_rate', 'price_change', 'price_range']:
+                    if attr in ['open', 'high', 'low', 'close', 'volume', 'turnover', 'price_change', 'price_range']:
                         try:
                             value = float(value) if value is not None else 0.0
                         except (ValueError, TypeError):
@@ -382,7 +382,7 @@ class Stock_info:
             'low': self._low,
             'close': self._close,
             'volume': self._volume,
-            'turnover_rate': self._turnover_rate,
+            'turnover': self._turnover,
             'price_change': self._price_change,
             'price_range': self._price_range,
             'industry': self._industry,

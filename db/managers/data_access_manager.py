@@ -5,21 +5,23 @@
 """
 
 import time
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Tuple
 from datetime import datetime
 import pandas as pd
 
+from config import get_config
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_container
 from models.stock_info import StockInfo
 from enums.period import Period
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
+from utils.exceptions import DataAccessError
 
 logger = get_logger(__name__)
 
 
-class DataAccessManagerData_Access_Manager(DataAccessInterface):
+class DataAccessManager(DataAccessInterface):
     """
     数据访问管理器
     
@@ -63,6 +65,25 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
         except Exception as e:
             logger.error(f"获取股票数据失败: {e}")
             return pd.DataFrame()
+    
+    # 添加标准接口方法 - 这是其他模块期望的方法名
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_stock_data(self, code: str = None, stock_code: str = None, 
+                      start_date: str = None, end_date: str = None, 
+                      columns: Optional[List[str]] = None, **kwargs) -> pd.DataFrame:
+        """
+        获取股票数据 - 标准接口方法
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            columns: 需要的列名列表，None表示所有列
+            
+        Returns:
+            股票数据DataFrame
+        """
+        return self.get_stock_data_data_access_manager(code, start_date, end_date, columns)
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
     def get_stocks_data_batch_data_access_manager(self, codes: List[str], start_date: str, end_date: str,
@@ -110,6 +131,26 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
         except Exception as e:
             logger.error(f"获取指标数据失败: {e}")
             return pd.DataFrame()
+    
+    @exception_handler(reraise=False, default_return=[])
+    def get_stock_list(self, industry: Optional[str] = None, 
+                      market: Optional[str] = None,
+                      limit: Optional[int] = None) -> List[str]:
+        """
+        获取股票列表（标准接口）
+        
+        Args:
+            industry: 行业筛选
+            market: 市场筛选
+            limit: 限制返回数量
+            
+        Returns:
+            股票代码列表
+        """
+        result = self.get_stock_list_data_access_manager(industry=industry, market=market)
+        if limit and len(result) > limit:
+            return result[:limit]
+        return result
     
     @exception_handler(reraise=False, default_return=[])
     def get_stock_list_data_access_manager(self, industry: Optional[str] = None, 
@@ -257,10 +298,11 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             })
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                logger.debug(f"从缓存获取股票数据: {cache_key}")
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    logger.debug(f"从缓存获取股票数据: {cache_key}")
+                    return cached_result
             
             # 构建查询
             query, params = self._build_stock_info_query(
@@ -271,10 +313,11 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             result_df = self.query_Manager_Data_Access_Manager(query, params)
             
             # 创建Stock_info对象
-            stock_info = Stock_info(result_df)
+            stock_info = StockInfo(result_df)
             
             # 缓存结果
-            self.cache_service.set(cache_key, stock_info, ttl=get_config('cache.ttl', 300))  # 5分钟缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, stock_info, ttl=300)  # 5分钟缓存
             
             return stock_info
             
@@ -285,14 +328,14 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
     def get_stock_list_Manager_Data_Access_Manager(self, 
                        industry: Optional[str] = None,
                        market: Optional[str] = None,
-                       filters: Optional[Dict[str, Any]] = None) -> List[str]:
+                       only_active: bool = True) -> List[str]:
         """
-        获取股票代码列表
+        获取股票列表
         
         Args:
             industry: 行业筛选
             market: 市场筛选
-            filters: 其他过滤条件
+            only_active: 是否只返回活跃股票
             
         Returns:
             List[str]: 股票代码列表
@@ -302,25 +345,44 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             cache_key = self._generate_cache_key_Data_Access_Manager('stock_list', {
                 'industry': industry,
                 'market': market,
-                'filters': filters
+                'only_active': only_active
             })
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    logger.debug(f"从缓存获取股票列表: {cache_key}")
+                    return cached_result
             
             # 构建查询
-            query, params = self._build_stock_list_query(industry, market, filters)
+            query = """
+            SELECT DISTINCT code
+            FROM stock_info
+            WHERE 1=1
+            """
+            
+            params = {}
+            
+            if industry:
+                query += " AND industry = %(industry)s"
+                params['industry'] = industry
+            
+            if only_active:
+                # 只返回最近有交易的股票
+                query += " AND date >= '2020-01-01'"
+            
+            query += " ORDER BY code"
             
             # 执行查询
             result_df = self.query_Manager_Data_Access_Manager(query, params)
             
             # 提取股票代码列表
-            stock_list = result_df['code'].unique().tolist() if not result_df.empty else []
+            stock_list = result_df['code'].tolist() if not result_df.empty else []
             
             # 缓存结果
-            self.cache_service.set(cache_key, stock_list, ttl=get_config('cache.ttl', 600))  # 10分钟缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, stock_list, ttl=600)  # 10分钟缓存
             
             return stock_list
             
@@ -339,9 +401,10 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             cache_key = "industry_list"
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    return cached_result
             
             # 构建查询
             query = """
@@ -355,7 +418,8 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             result_df = self.query_Manager_Data_Access_Manager(query)
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_df, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, result_df, ttl=3600)  # 1小时缓存
             
             return result_df
             
@@ -600,7 +664,7 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
                 industry,
                 COUNT(*) as stock_count,
                 AVG(price_change) as avg_change,
-                AVG(turnover_rate) as avg_turnover
+                AVG(turnover) as avg_turnover
             FROM stock_info WHERE 1=1
             WHERE date = %(date)s AND level = '日线' 
             AND industry != '' AND industry IS NOT NULL
@@ -638,24 +702,33 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
         return f"{prefix}:{hash_obj.hexdigest()}"
     
     def _build_stock_info_query(self, 
-                               stock_code: Union[str, List[str]],
+                               stock_code: Union[str, List[str]], 
                                level: Union[str, Period],
-                               start_date: Optional[str],
-                               end_date: Optional[str],
-                               filters: Optional[Dict[str, Any]],
-                               limit: Optional[int],
-                               order_by: str) -> tuple:
+                               start_date: Optional[str] = None,
+                               end_date: Optional[str] = None,
+                               filters: Optional[Dict[str, Any]] = None,
+                               limit: Optional[int] = None,
+                               order_by: str = "date DESC") -> Tuple[str, Dict[str, Any]]:
         """
-        构建股票信息查询
+        构建股票信息查询语句
         
+        Args:
+            stock_code: 股票代码或股票代码列表
+            level: K线周期
+            start_date: 开始日期
+            end_date: 结束日期
+            filters: 过滤条件
+            limit: 限制返回记录数
+            order_by: 排序规则
+            
         Returns:
-            tuple: (query, params)
+            Tuple[str, Dict[str, Any]]: 查询语句和参数
         """
         # 基础查询
         query = """
         SELECT code, name, date, level, open, high, low, close, volume, 
-               turnover_rate, price_change, price_range, industry
-        FROM stock_info WHERE 1=1
+               turnover, price_change, price_range, industry
+        FROM stock_info
         WHERE 1=1
         """
         
@@ -664,38 +737,43 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
         # 股票代码条件
         if stock_code:
             if isinstance(stock_code, str):
-                query += " AND code = %(code)s"
-                params['code'] = stock_code
-            else:
-                code_list = "', '".join(stock_code)
-                query += f" AND code IN ('{code_list}')"
+                query += " AND code = %(stock_code)s"
+                params['stock_code'] = stock_code
+            elif isinstance(stock_code, list):
+                placeholders = ", ".join([f"%(code_{i})s" for i in range(len(stock_code))])
+                query += f" AND code IN ({placeholders})"
+                for i, code in enumerate(stock_code):
+                    params[f'code_{i}'] = code
         
         # K线周期条件
         if level:
-            level_str = str(level) if isinstance(level, Period) else level
+            if isinstance(level, Period):
+                level_str = level.value
+            else:
+                level_str = str(level)
             query += " AND level = %(level)s"
             params['level'] = level_str
         
-        # 日期范围条件
+        # 日期条件
         if start_date:
             query += " AND date >= %(start_date)s"
             params['start_date'] = start_date
-        
+            
         if end_date:
             query += " AND date <= %(end_date)s"
             params['end_date'] = end_date
         
-        # 其他过滤条件
+        # 额外过滤条件
         if filters:
             for key, value in filters.items():
-                if key in ['industry', 'market']:
+                if value is not None:
                     query += f" AND {key} = %({key})s"
                     params[key] = value
         
         # 排序
         query += f" ORDER BY {order_by}"
         
-        # 限制条数
+        # 限制
         if limit:
             query += f" LIMIT {limit}"
         
@@ -765,10 +843,11 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             })
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                logger.debug(f"从缓存获取股票数据: {cache_key}")
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    logger.debug(f"从缓存获取股票数据: {cache_key}")
+                    return cached_result
             
             # 转换周期参数
             level = self._convert_period_to_level_Data_Access_Manager(period)
@@ -785,7 +864,8 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             result_df = stock_info.to_dataframe()
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_df, ttl=get_config('cache.ttl', 300))  # 5分钟缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, result_df, ttl=300)  # 5分钟缓存
             
             return result_df
             
@@ -808,15 +888,17 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             cache_key = self._generate_cache_key_Data_Access_Manager('market_data', {'date': date})
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    return cached_result
             
             # 获取市场概览数据
             market_overview = self.get_market_overview_Manager(date)
             
             # 缓存结果
-            self.cache_service.set(cache_key, market_overview, ttl=get_config('cache.ttl', 600))  # 10分钟缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, market_overview, ttl=600)  # 10分钟缓存
             
             return market_overview
             
@@ -836,16 +918,18 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             cache_key = "last_trade_date"
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    return cached_result
             
             # 获取最新股票数据的日期
             max_date = self.get_stock_max_date_Manager()
             last_trade_date = max_date.strftime('%Y-%m-%d')
             
             # 缓存结果
-            self.cache_service.set(cache_key, last_trade_date, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, last_trade_date, ttl=3600)  # 1小时缓存
             
             return last_trade_date
             
@@ -868,9 +952,10 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             cache_key = self._generate_cache_key_Data_Access_Manager('index_stocks', {'index_code': index_code})
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    return cached_result
             
             # 构建查询SQL
             query = """
@@ -887,7 +972,8 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             stock_list = result_df['stock_code'].tolist() if not result_df.empty else []
             
             # 缓存结果
-            self.cache_service.set(cache_key, stock_list, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, stock_list, ttl=3600)  # 1小时缓存
             
             return stock_list
             
@@ -963,10 +1049,11 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             })
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                logger.debug(f"从缓存获取批量股票数据: {cache_key}")
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    logger.debug(f"从缓存获取批量股票数据: {cache_key}")
+                    return cached_result
             
             # 构建批量查询
             code_list = "', '".join(codes)
@@ -1002,7 +1089,8 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
                     result_dict[code] = pd.DataFrame()
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_dict, ttl=get_config('cache.ttl', 300))  # 5分钟缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, result_dict, ttl=300)  # 5分钟缓存
             
             return result_dict
             
@@ -1045,10 +1133,11 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             })
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                logger.debug(f"从缓存获取最新数据: {cache_key}")
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    logger.debug(f"从缓存获取最新数据: {cache_key}")
+                    return cached_result
             
             # 构建查询
             query = """
@@ -1070,7 +1159,8 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             result_df = self.query_Manager_Data_Access_Manager(query, params)
             
             # 缓存结果
-            self.cache_service.set(cache_key, result_df, ttl=get_config('cache.ttl', 60))  # 1分钟缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, result_df, ttl=60)  # 1分钟缓存
             
             return result_df
             
@@ -1098,9 +1188,10 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             })
             
             # 尝试从缓存获取
-            cached_result = self.cache_service.get(cache_key)
-            if cached_result is not None:
-                return cached_result
+            if self.cache_service:
+                cached_result = self.cache_service.get(cache_key)
+                if cached_result is not None:
+                    return cached_result
             
             # 构建查询
             query = """
@@ -1124,7 +1215,8 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             exists = not result_df.empty and result_df.iloc[0]['count'] > 0
             
             # 缓存结果
-            self.cache_service.set(cache_key, exists, ttl=get_config('cache.ttl', 3600))  # 1小时缓存
+            if self.cache_service:
+                self.cache_service.set(cache_key, exists, ttl=3600)  # 1小时缓存
             
             return exists
             
@@ -1152,4 +1244,89 @@ class DataAccessManagerData_Access_Manager(DataAccessInterface):
             logger.error(f"获取行业列表失败: {e}")
             return []
     
+    # 实现DataAccessInterface的所有抽象方法
+    def get_stock_data_data_access_interface(self, code: str, start_date: str, end_date: str, 
+                      columns: Optional[List[str]] = None) -> pd.DataFrame:
+        """实现抽象接口方法"""
+        return self.get_stock_data_data_access_manager(code, start_date, end_date, columns)
+    
+    def get_stocks_data_batch_data_access_interface(self, codes: List[str], start_date: str, end_date: str,
+                             columns: Optional[List[str]] = None) -> pd.DataFrame:
+        """实现抽象接口方法"""
+        return self.get_stocks_data_batch_data_access_manager(codes, start_date, end_date, columns)
+    
+    def get_indicator_data_data_access_interface(self, code: str, indicator: str, start_date: str, end_date: str,
+                          params: Optional[Dict] = None) -> pd.DataFrame:
+        """实现抽象接口方法"""
+        return self.get_indicator_data_data_access_manager(code, indicator, start_date, end_date, params)
+    
+    def get_stock_list_data_access_interface(self, industry: Optional[str] = None, 
+                      market: Optional[str] = None) -> List[str]:
+        """实现抽象接口方法"""
+        return self.get_stock_list_data_access_manager(industry, market)
+    
+    def get_industry_list_data_access_interface(self) -> List[str]:
+        """实现抽象接口方法"""
+        return self.get_industry_list_data_access_manager()
+    
+    def execute_query_data_access_interface(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """实现抽象接口方法"""
+        return self.execute_query_data_access_manager(query, params)
+    
+    def check_data_exists_data_access_interface(self, table: str, conditions: Dict) -> bool:
+        """实现抽象接口方法"""
+        return self.check_data_exists_data_access_manager(table, conditions)
+    
+    def get_latest_data_data_access_interface(self, table: str, code: str, columns: Optional[List[str]] = None) -> Optional[Dict]:
+        """实现抽象接口方法"""
+        return self.get_latest_data_data_access_manager(table, code, columns)
+    
+    @exception_handler(reraise=False, default_return=None)
+    def get_previous_trade_date(self, date: str, days_back: int) -> str:
+        """
+        获取指定日期往前N个交易日的日期
+        
+        Args:
+            date: 基准日期 (YYYY-MM-DD格式)
+            days_back: 往前推的交易日天数
+            
+        Returns:
+            str: 往前N个交易日的日期
+        """
+        try:
+            # 构建查询SQL，获取往前N个交易日的日期
+            query = f"""
+            SELECT DISTINCT date 
+            FROM stock_info 
+            WHERE date <= '{date}'
+            AND level = '日线'
+            ORDER BY date DESC
+            LIMIT 1 OFFSET {days_back - 1}
+            """
+            
+            # 使用统一数据管理器执行查询
+            with get_container().get('connection_manager').get_connection() as connection:
+                cursor = connection.execute(query)
+                results = list(cursor) if hasattr(cursor, '__iter__') else []
+                
+                if results:
+                    return results[0][0]  # 返回日期字符串
+                else:
+                    # 如果找不到，返回一个合理的默认值（往前推120天）
+                    from datetime import datetime, timedelta
+                    base_date = datetime.strptime(date, '%Y-%m-%d')
+                    previous_date = base_date - timedelta(days=days_back + 30)  # 加一些缓冲
+                    return previous_date.strftime('%Y-%m-%d')
+                    
+        except Exception as e:
+            logger.error(f"获取前置交易日期失败: {e}")
+            # 返回一个合理的默认值
+            from datetime import datetime, timedelta
+            try:
+                base_date = datetime.strptime(date, '%Y-%m-%d')
+                previous_date = base_date - timedelta(days=days_back + 30)
+                return previous_date.strftime('%Y-%m-%d')
+            except:
+                return '2025-01-01'  # 最后的保底日期
+
  

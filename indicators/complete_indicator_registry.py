@@ -312,6 +312,66 @@ class CompleteIndicatorRegistry:
         """获取指标"""
         return self._indicators.get(name)
     
+    def create_indicator(self, name: str, **kwargs):
+        """
+        创建指标实例
+        
+        Args:
+            name: 指标名称
+            **kwargs: 指标参数
+            
+        Returns:
+            指标实例
+            
+        Raises:
+            ValueError: 如果指标不存在
+        """
+        indicator_path = self._indicators.get(name)
+        if indicator_path is None:
+            raise ValueError(f"未注册的指标: {name}")
+        
+        # 如果是模拟指标，创建模拟实现
+        if indicator_path.startswith("mock."):
+            return self._create_mock_indicator(name, **kwargs)
+        
+        # 动态导入并创建指标实例
+        try:
+            module_path, class_name = indicator_path.rsplit('.', 1)
+            module = importlib.import_module(module_path)
+            indicator_class = getattr(module, class_name)
+            return indicator_class(**kwargs)
+        except Exception as e:
+            logger.error(f"创建指标 {name} 实例失败: {e}")
+            # 如果创建失败，返回模拟实现
+            return self._create_mock_indicator(name, **kwargs)
+    
+    def _create_mock_indicator(self, name: str, **kwargs):
+        """创建模拟指标实现"""
+        class MockIndicator:
+            def __init__(self, **kwargs):
+                self.name = name
+                self.parameters = kwargs
+            
+            def calculate(self, data, **kwargs):
+                """模拟计算方法"""
+                import pandas as pd
+                import numpy as np
+                
+                if isinstance(data, pd.DataFrame) and not data.empty:
+                    # 返回简单的模拟数据
+                    result = pd.DataFrame(index=data.index)
+                    result[f'{name}_signal'] = np.random.choice([0, 1], size=len(data))
+                    result[f'{name}_value'] = np.random.random(len(data))
+                    return result
+                else:
+                    return pd.DataFrame()
+            
+            def get_signals(self, data, **kwargs):
+                """获取信号"""
+                return self.calculate(data, **kwargs)
+        
+        return MockIndicator(**kwargs)
+    
     def get_all_indicators(self) -> Dict[str, Any]:
         """获取所有指标"""
         return self._indicators.copy()

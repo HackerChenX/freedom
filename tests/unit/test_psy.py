@@ -193,7 +193,7 @@ class Testpsy_psy(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
         self.assertEqual(self.indicator.market_environment, 'bull_market')
         
         # 测试无效市场环境
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.set_market_environment('invalid_market')
 
 

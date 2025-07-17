@@ -93,13 +93,13 @@ class BacktestDataManager:
             pd.DataFrame: 股票数据
         
         Raises:
-            Value_error: 参数无效时抛出
+            ValueError: 参数无效时抛出
         """
         # 转换周期为 Period 枚举
         if isinstance(period, str):
             try:
                 period = Period.from_string(period)
-            except Value_error as e:
+            except ValueError as e:
                 raise ValueError(f"无效的K线周期: {period}，支持的周期: {', '.join(Period.get_all_period_values())}") from e
         elif not isinstance(period, Period):
             raise ValueError(f"周期参数必须是 Period 枚举或可转换为 Period 的字符串，当前类型: {type(period)}")

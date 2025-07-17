@@ -25,7 +25,7 @@ def validate_date(date_str):
     try:
         datetime.strptime(date_str, "%Y%m%d")
         return date_str
-    except Value_error:
+    except ValueError:
         raise argparse.ArgumentTypeError(f"日期格式错误: {date_str}，应为YYYYMMDD格式")
 
 def validate_strategy_list(strategy_str):
@@ -54,7 +54,7 @@ def validate_weight_list(weight_str):
             raise argparse.ArgumentTypeError("策略权重不能为负")
             
         return weights
-    except Value_error:
+    except ValueError:
         raise argparse.ArgumentTypeError("权重格式错误，应为逗号分隔的数字")
 
 def validate_dimension_list(dimension_str):
@@ -145,7 +145,7 @@ def main_32():
                         try:
                             datetime.strptime(parts[1], "%Y%m%d")
                             datetime.strptime(parts[2], "%Y%m%d")
-                        except Value_error:
+                        except ValueError:
                             logger.warning(f"时间周期 {period_str} 的日期格式错误，将被跳过")
                             continue
                             

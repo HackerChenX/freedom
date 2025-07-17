@@ -274,7 +274,7 @@ class Indicator_test_mixin:
             result = self.indicator.calculate(minimal_data)
             # 如果没有异常，结果应该是有效的DataFrame
             assert isinstance(result, pd.DataFrame), "计算结果应为DataFrame"
-        except Value_error as e:
+        except ValueError as e:
             # 如果有异常，应该提到缺少的列
             assert col_to_remove in str(e), f"错误信息应包含缺少的列名: {col_to_remove}"
     

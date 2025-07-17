@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
+"""
+测试OBV指标修复效果
+"""
+
+import os
+import sys
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+
+# 添加项目根目录到Python路径
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
+
+from indicators.obv import OBV
+from utils.dependency_injection import get_service
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+def test_obv_indicator():
+    """测试OBV指标功能"""
+    print("=" * 60)
+    print("OBV指标测试")
+    print("=" * 60)
+    
+    # 获取测试数据
+    container = get_container()
+    data_access = container.get_data_access()
+    
+    # 查询股票数据
+    sql = """
+    SELECT 
+        date as trade_date,
+        code as ts_code,
+        open,
+        high,
+        low,
+        close,
+        volume,
+        turnover as amount
+    FROM stock_info WHERE 1=1
+    WHERE code = '000001'
+    AND date >= '2025-03-25'
+    AND date <= '2025-07-03'
+    ORDER BY date
+    """
+    
+    df = data_access.query_dataframe(sql)
+    if df.empty:
+        print("未获取到测试数据")
+        return False
+    
+    print(f"获取到 {len(df)} 条数据")
+    
+    # 创建OBV指标实例
+    obv = OBV(signal_period=10)
+    
+    # 计算指标
+    result = obv.calculate(df)
+    
+    # 检查计算结果
+    print("\n1. 计算结果检查:")
+    print(f"   数据长度: {len(result)}")
+    print(f"   OBV列存在: {'OBV' in result.columns}")
+    print(f"   OBV非空数量: {result['OBV'].notna().sum()}")
+    
+    if 'OBV' in result.columns:
+        obv_values = result['OBV'].dropna()
+        print(f"   OBV值范围: {obv_values.min():.2f} ~ {obv_values.max():.2f}")
+        print(f"   OBV平均值: {obv_values.mean():.2f}")
+        print(f"   OBV标准差: {obv_values.std():.2f}")
+        
+        # 检查OBV计算逻辑
+        print("\n2. OBV计算逻辑检查:")
+        # 检查前几天的OBV计算
+        for i in range(min(5, len(result))):
+            if i > 0:
+                price_change = result['close'].iloc[i] - result['close'].iloc[i-1]
+                volume = result['volume'].iloc[i]
+                obv_change = result['OBV'].iloc[i] - result['OBV'].iloc[i-1]
+                
+                expected_change = 0
+                if price_change > 0:
+                    expected_change = volume
+                elif price_change < 0:
+                    expected_change = -volume
+                
+                print(f"   第{i+1}天: 价格变化={price_change:.2f}, 成交量={volume:.0f}, OBV变化={obv_change:.0f}, 预期变化={expected_change:.0f}")
+    
+    # 计算评分
+    print("\n3. 评分功能检查:")
+    scores = obv.calculate_raw_score(df)
+    
+    if scores is not None and len(scores) > 0:
+        valid_scores = scores.dropna()
+        print(f"   评分数量: {len(valid_scores)}")
+        print(f"   评分范围: {valid_scores.min():.2f} ~ {valid_scores.max():.2f}")
+        print(f"   评分平均值: {valid_scores.mean():.2f}")
+        print(f"   评分标准差: {valid_scores.std():.2f}")
+        print(f"   唯一评分数: {len(valid_scores.unique())}")
+        
+        # 检查评分分布
+        score_ranges = [
+            (0, 40, "低分"),
+            (40, 60, "中分"),
+            (60, 100, "高分")
+        ]
+        
+        for min_score, max_score, label in score_ranges:
+            count = len(valid_scores[(valid_scores >= min_score) & (valid_scores < max_score)])
+            percentage = count / len(valid_scores) * 100
+            print(f"   {label}({min_score}-{max_score}): {count}个 ({percentage:.1f}%)")
+    
+    # 检查形态识别
+    print("\n4. 形态识别检查:")
+    patterns = obv.get_patterns(df)
+    
+    if not patterns.empty:
+        pattern_counts = {}
+        for col in patterns.columns:
+            if patterns[col].dtype == bool:
+                count = patterns[col].sum()
+                pattern_counts[col] = count
+        
+        # 显示主要形态
+        sorted_patterns = sorted(pattern_counts.items(), key=lambda x: x[1], reverse=True)
+        print("   主要形态出现次数:")
+        for pattern, count in sorted_patterns[:10]:
+            print(f"   {pattern}: {count}次")
+    
+    # 检查信号生成
+    print("\n5. 信号生成检查:")
+    if 'buy_signal' in result.columns and 'sell_signal' in result.columns:
+        buy_signals = result['buy_signal'].sum()
+        sell_signals = result['sell_signal'].sum()
+        hold_signals = result['hold_signal'].sum()
+        
+        print(f"   买入信号: {buy_signals}个")
+        print(f"   卖出信号: {sell_signals}个")
+        print(f"   持有信号: {hold_signals}个")
+        
+        # 显示最近的信号
+        recent_signals = result[['trade_date', 'close', 'OBV', 'buy_signal', 'sell_signal']].tail(10)
+        print("\n   最近10天的信号:")
+        for _, row in recent_signals.iterrows():
+            signal_type = "买入" if row['buy_signal'] else ("卖出" if row['sell_signal'] else "持有")
+            print(f"   {row['trade_date']}: 价格={row['close']:.2f}, OBV={row['OBV']:.0f}, 信号={signal_type}")
+    
+    # 计算置信度
+    print("\n6. 置信度检查:")
+    confidence = obv.calculate_confidence(scores, patterns, {})
+    print(f"   置信度: {confidence:.3f}")
+    
+    # 检查OBV与价格的关系
+    print("\n7. OBV与价格关系检查:")
+    if 'OBV' in result.columns and 'close' in result.columns:
+        # 计算相关性
+        correlation = result['OBV'].corr(result['close'])
+        print(f"   OBV与价格相关性: {correlation:.3f}")
+        
+        # 检查量价关系
+        price_up = result['close'] > result['close'].shift(1)
+        obv_up = result['OBV'] > result['OBV'].shift(1)
+        
+        # 量价齐升
+        volume_price_up = (price_up & obv_up).sum()
+        # 量价齐跌  
+        volume_price_down = (~price_up & ~obv_up).sum()
+        # 量价背离
+        volume_price_diverge = (price_up & ~obv_up).sum() + (~price_up & obv_up).sum()
+        
+        total_valid = len(result) - 1  # 减去第一天
+        print(f"   量价齐升: {volume_price_up}天 ({volume_price_up/total_valid*100:.1f}%)")
+        print(f"   量价齐跌: {volume_price_down}天 ({volume_price_down/total_valid*100:.1f}%)")
+        print(f"   量价背离: {volume_price_diverge}天 ({volume_price_diverge/total_valid*100:.1f}%)")
+    
+    print("\n" + "=" * 60)
+    print("OBV指标测试完成")
+    print("=" * 60)
+    
+    return True
+
+def test_obv_multiple_stocks():
+    """测试多只股票的OBV指标"""
+    print("\n" + "=" * 60)
+    print("多股票OBV指标测试")
+    print("=" * 60)
+    
+    # 获取测试数据
+    container = get_container()
+    data_access = container.get_data_access()
+    
+    # 测试多只股票
+    test_stocks = ['000001', '000002', '600000', '600036', '000858']
+    
+    obv = OBV(signal_period=10)
+    
+    for stock_code in test_stocks:
+        print(f"\n测试股票: {stock_code}")
+        
+        # 查询股票数据
+        query = f"""
+        SELECT date, open, high, low, close, volume
+        FROM stock_info WHERE 1=1
+        WHERE code = '{stock_code}'
+          AND level = '日线'
+          AND date >= '2025-03-25'
+          AND date <= '2025-07-03'
+        ORDER BY date
+        """
+        
+        data = data_access.query_dataframe(query)
+        if data.empty:
+            print(f"  未获取到{stock_code}的数据")
+            continue
+        
+        try:
+            # 计算指标
+            result = obv.calculate(data)
+            
+            # 计算评分
+            scores = obv.calculate_raw_score(data)
+            
+            if scores is not None and len(scores) > 0:
+                valid_scores = scores.dropna()
+                if len(valid_scores) > 0:
+                    print(f"  评分范围: {valid_scores.min():.2f} ~ {valid_scores.max():.2f}")
+                    print(f"  评分均值: {valid_scores.mean():.2f}")
+                    print(f"  最新评分: {valid_scores.iloc[-1]:.2f}")
+                    
+                    # 检查OBV值
+                    if 'OBV' in result.columns:
+                        obv_values = result['OBV'].dropna()
+                        if len(obv_values) > 0:
+                            print(f"  OBV范围: {obv_values.min():.0f} ~ {obv_values.max():.0f}")
+                            print(f"  最新OBV: {obv_values.iloc[-1]:.0f}")
+                else:
+                    print(f"  无有效评分")
+            else:
+                print(f"  评分计算失败")
+                
+        except Exception as e:
+            print(f"  计算失败: {e}")
+    
+    print("\n" + "=" * 60)
+    print("多股票OBV指标测试完成")
+    print("=" * 60)
+
+if __name__ == "__main__":
+    # 测试单只股票
+    test_obv_indicator()
+    
+    # 测试多只股票
+    test_obv_multiple_stocks() 

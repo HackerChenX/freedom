@@ -186,7 +186,7 @@ class Testmomentum_momentum(unittest.Test_case):
         try:
             result = self.momentum.calculate(empty_data)
             self.assert_true(result.empty)
-        except Value_error:
+        except ValueError:
             # 如果抛出异常，说明正确处理了空数据情况
             logger.info("空数据正确抛出异常")
 
@@ -198,7 +198,7 @@ class Testmomentum_momentum(unittest.Test_case):
             if not result.empty and 'mtm' in result.columns:
                 # 验证所有Momentum值为NaN（因为数据不足）
                 self.assertTrue(result['mtm'].isna().all())
-        except Value_error:
+        except ValueError:
             # 如果抛出异常，说明正确处理了数据不足的情况
             logger.info("数据不足正确抛出异常")
 

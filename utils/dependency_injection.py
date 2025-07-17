@@ -23,7 +23,7 @@ class ServiceLifetime(Enum):
     TRANSIENT = "transient"
 
 
-class ServiceDescriptorDependency_Injection:
+class ServiceDescriptor:
     """服务描述符"""
     
     def __init__(self, service_type: Type, implementation: Type = None, 
@@ -34,8 +34,8 @@ class ServiceDescriptorDependency_Injection:
         self.lifetime = lifetime
 
 
-class ServiceContainerDependency_Injection:
-    """优化后的依赖注入容器"""
+class ServiceContainer:
+    """依赖注入容器"""
     
     def __init__(self):
         self._services: Dict[Type, ServiceDescriptor] = {}
@@ -160,6 +160,32 @@ class ServiceContainerDependency_Injection:
         finally:
             self._building.discard(interface)
     
+    def get(self, key: str, default=None):
+        """
+        获取服务实例（兼容旧的get方法调用）
+        
+        Args:
+            key: 服务键名
+            default: 默认值
+            
+        Returns:
+            服务实例或默认值
+        """
+        try:
+            # 如果key是字符串，尝试转换为类型
+            if isinstance(key, str):
+                # 对于常见的服务名称，直接返回相应实例
+                if key == 'data_access':
+                    from db.interfaces.data_access_interface import DataAccessInterface
+                    return self.resolve(DataAccessInterface)
+                else:
+                    return default
+            else:
+                # 如果是类型，直接resolve
+                return self.resolve(key)
+        except Exception:
+            return default
+    
     def clear_dependency_injection(self):
         """清空容器"""
         with self._lock:
@@ -167,7 +193,7 @@ class ServiceContainerDependency_Injection:
             self._instances.clear()
             self._building.clear()
     
-    def get_registered_services(self) -> Dict[Type, ServiceDescriptorDependency_Injection]:
+    def get_registered_services(self) -> Dict[Type, ServiceDescriptor]:
         """获取已注册的服务列表"""
         return self._services.copy()
 
@@ -218,10 +244,21 @@ def _setup_default_services(container: ServiceContainer) -> None:
         from db.managers.data_access_manager import DataAccessManager
         
         if not container.is_registered(DataAccessInterface):
+            def create_data_access_manager():
+                """创建DataAccessManager实例的工厂方法"""
+                try:
+                    # 首先尝试获取连接管理器
+                    from db.connection_manager import get_connection_manager
+                    connection_manager = get_connection_manager()
+                    return DataAccessManager(connection_manager=connection_manager)
+                except Exception as e:
+                    logger.warning(f"无法获取连接管理器，使用默认配置: {e}")
+                    return DataAccessManager()
+            
             container.register_singleton(
                 DataAccessInterface, 
                 DataAccessManager,
-                factory=lambda: DataAccessManager()
+                factory=create_data_access_manager
             )
             logger.info("✅ DataAccessInterface已自动注册到依赖注入容器")
         

@@ -245,7 +245,7 @@ class Test_chip_distribution(unittest.Test_case, Indicator_test_mixin, Log_captu
             self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_chip_distribution_cost_deviation(self):

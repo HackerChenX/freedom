@@ -235,7 +235,7 @@ class Test_enhanced_dMI(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
             self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_dmi_adaptive_period(self):
@@ -320,7 +320,7 @@ class Test_enhanced_dMI(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
             result = self.indicator.calculate(invalid_data)
             # 如果没有抛出异常，验证结果是否为空或合理
             self.assert_is_instance(result, pd.DataFrame)
-        except (Key_error, Value_error):
+        except (KeyError, ValueError):
             # 如果抛出异常，这是预期的行为
             pass
     

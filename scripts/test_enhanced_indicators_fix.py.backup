@@ -1,0 +1,270 @@
+#!/usr/bin/env python3
+from db.query_executor import get_query_executor
+from db.sql_manager import QueryType
+"""
+测试修复后的增强指标选股能力
+
+验证 enhanced_rsi, enhanced_stochrsi, enhanced_wr 等指标是否能正常选股
+"""
+
+import os
+import sys
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import json
+
+# 添加项目根目录到Python路径
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
+
+from utils.dependency_injection import get_service
+from indicators.enhanced_rsi import ENHANCED_RSI
+from indicators.enhanced_stochrsi import ENHANCED_STOCHRSI
+from indicators.enhanced_wr import ENHANCED_WR
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def get_test_stocks():
+    """获取测试股票池"""
+    return ['000001', '000002', '000858', '002415', '603359']
+
+
+def get_stock_data_Fix(code: str, days: int = 100):
+    """
+    获取股票数据
+    
+    Args:
+        code: 股票代码
+        days: 获取天数
+        
+    Returns:
+        股票数据DataFrame
+    """
+    try:
+        container = get_container()
+        data_access = container.get_data_access()
+        
+        # 计算日期范围
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        
+        # 获取股票数据
+        sql = f"""
+        SELECT date, open, high, low, close, volume
+        FROM stock_info WHERE 1=1
+        WHERE code = '{code}'
+          AND level = '日线'
+          AND date >= '{start_date}'
+          AND date <= '{end_date}'
+        ORDER BY date
+        """
+        
+        data = data_access.query_dataframe(sql)
+        if data is not None and len(data) > 0:
+            data['date'] = pd.to_datetime(data['date'])
+            data = data.sort_values('date').reset_index(drop=True)
+            
+            # 确保数据类型正确
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                if col in data.columns:
+                    data[col] = pd.to_numeric(data[col], errors='coerce')
+            
+            return data
+        else:
+            logger.warning(f"未找到股票 {code} 的数据")
+            return None
+            
+    except Exception as e:
+        logger.error(f"获取股票 {code} 数据失败: {e}")
+        return None
+
+
+def test_indicator(indicator_class, indicator_name, stock_data):
+    """
+    测试单个指标
+    
+    Args:
+        indicator_class: 指标类
+        indicator_name: 指标名称
+        stock_data: 股票数据
+        
+    Returns:
+        测试结果字典
+    """
+    try:
+        # 创建指标实例
+        indicator = indicator_class()
+        
+        # 计算指标
+        result = indicator.calculate(stock_data)
+        
+        # 检查买入信号
+        buy_signals = result['buy_signal'].sum() if 'buy_signal' in result.columns else 0
+        
+        # 检查评分范围
+        score_col = f'{indicator_name}_VALUE'
+        if score_col in result.columns:
+            scores = result[score_col].dropna()
+            score_min = scores.min() if len(scores) > 0 else 0
+            score_max = scores.max() if len(scores) > 0 else 0
+            score_mean = scores.mean() if len(scores) > 0 else 0
+            score_std = scores.std() if len(scores) > 0 else 0
+        else:
+            score_min = score_max = score_mean = score_std = 0
+        
+        # 计算置信度
+        try:
+            patterns = indicator.get_patterns(stock_data)
+            signals = {'buy': buy_signals}
+            confidence = indicator.calculate_confidence(
+                result[score_col] if score_col in result.columns else pd.Series([50.0]), 
+                patterns, 
+                signals
+            )
+        except:
+            confidence = 0.5
+        
+        return {
+            'indicator': indicator_name,
+            'success': True,
+            'buy_signals': int(buy_signals),
+            'total_days': len(result),
+            'signal_rate': buy_signals / len(result) if len(result) > 0 else 0,
+            'score_min': float(score_min),
+            'score_max': float(score_max),
+            'score_mean': float(score_mean),
+            'score_std': float(score_std),
+            'confidence': float(confidence),
+            'has_valid_scores': bool(score_std > 0.1),  # 评分是否有变化
+            'error': None
+        }
+        
+    except Exception as e:
+        logger.error(f"测试指标 {indicator_name} 失败: {e}")
+        return {
+            'indicator': indicator_name,
+            'success': False,
+            'buy_signals': 0,
+            'total_days': 0,
+            'signal_rate': 0,
+            'score_min': 0,
+            'score_max': 0,
+            'score_mean': 0,
+            'score_std': 0,
+            'confidence': 0,
+            'has_valid_scores': False,
+            'error': str(e)
+        }
+
+
+def main_testenhancedindicatorsfix():
+    """主函数"""
+    print("=" * 80)
+    print("测试修复后的增强指标选股能力")
+    print("=" * 80)
+    
+    # 定义要测试的指标
+    indicators_to_test = [
+        (ENHANCED_RSI, 'ENHANCED_RSI'),
+        (ENHANCED_STOCHRSI, 'ENHANCED_STOCHRSI'),
+        (ENHANCED_WR, 'ENHANCED_WR')
+    ]
+    
+    # 获取测试股票
+    test_stocks = get_test_stocks()
+    
+    all_results = []
+    
+    for stock_code in test_stocks:
+        print(f"\n正在测试股票: {stock_code}")
+        
+        # 获取股票数据
+        stock_data = get_stock_data_Fix(stock_code)
+        if stock_data is None or len(stock_data) < 50:
+            print(f"  跳过股票 {stock_code}：数据不足")
+            continue
+        
+        print(f"  获取到 {len(stock_data)} 天的数据")
+        
+        # 测试每个指标
+        for indicator_class, indicator_name in indicators_to_test:
+            print(f"  测试指标: {indicator_name}")
+            
+            result = test_indicator(indicator_class, indicator_name, stock_data)
+            result['stock_code'] = stock_code
+            all_results.append(result)
+            
+            if result['success']:
+                print(f"    ✓ 成功 - 买入信号: {result['buy_signals']}, "
+                      f"信号率: {result['signal_rate']:.3f}, "
+                      f"评分变化: {result['has_valid_scores']}")
+            else:
+                print(f"    ✗ 失败 - {result['error']}")
+    
+    # 汇总结果
+    print("\n" + "=" * 80)
+    print("测试结果汇总")
+    print("=" * 80)
+    
+    for indicator_class, indicator_name in indicators_to_test:
+        indicator_results = [r for r in all_results if r['indicator'] == indicator_name]
+        
+        if not indicator_results:
+            continue
+        
+        success_count = sum(1 for r in indicator_results if r['success'])
+        total_signals = sum(r['buy_signals'] for r in indicator_results if r['success'])
+        valid_scores_count = sum(1 for r in indicator_results if r['has_valid_scores'])
+        
+        print(f"\n{indicator_name}:")
+        print(f"  成功测试: {success_count}/{len(indicator_results)} 只股票")
+        print(f"  总买入信号: {total_signals}")
+        print(f"  有效评分变化: {valid_scores_count}/{len(indicator_results)} 只股票")
+        
+        if success_count > 0:
+            avg_signal_rate = np.mean([r['signal_rate'] for r in indicator_results if r['success']])
+            avg_confidence = np.mean([r['confidence'] for r in indicator_results if r['success']])
+            print(f"  平均信号率: {avg_signal_rate:.3f}")
+            print(f"  平均置信度: {avg_confidence:.3f}")
+        
+        # 显示失败的情况
+        failed_results = [r for r in indicator_results if not r['success']]
+        if failed_results:
+            print(f"  失败原因:")
+            for r in failed_results:
+                print(f"    {r['stock_code']}: {r['error']}")
+    
+    # 保存详细结果
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    result_file = f"results/validation/enhanced_indicators_test_{timestamp}.json"
+    
+    os.makedirs(os.path.dirname(result_file), exist_ok=True)
+    with open(result_file, 'w', encoding='utf-8') as f:
+        json.dump(all_results, f, ensure_ascii=False, indent=2)
+    
+    print(f"\n详细结果已保存到: {result_file}")
+    
+    # 检查是否有改进
+    successful_indicators = set()
+    for result in all_results:
+        if result['success'] and result['buy_signals'] > 0:
+            successful_indicators.add(result['indicator'])
+    
+    print(f"\n✓ 成功修复的指标: {len(successful_indicators)} 个")
+    for indicator in successful_indicators:
+        print(f"  - {indicator}")
+    
+    if len(successful_indicators) == len(indicators_to_test):
+        print("\n🎉 所有测试的增强指标都已成功修复！")
+    else:
+        failed_indicators = set(ind[1] for ind in indicators_to_test) - successful_indicators
+        print(f"\n⚠️  仍需修复的指标: {len(failed_indicators)} 个")
+        for indicator in failed_indicators:
+            print(f"  - {indicator}")
+
+
+if __name__ == "__main__":
+    mainTestenhancedindicatorsfix() 

@@ -1,0 +1,22 @@
+{
+  "database_connection_test": {
+    "status": "failed",
+    "error": "HTTPDriver for http://localhost:8123 received ClickHouse error code 194\n Code: 194. DB::Exception: default: Authentication failed: password is incorrect, or there is no user with such name.\n\nIf you use ClickHouse Cloud, the password can be reset at https://clickhouse.cloud/\non the settings page for the corresponding service.\n\nIf you have installed ClickHouse and forgot password you can reset it in the configuration file.\nThe password for default user is typically located at /etc/clickhouse-server/users.d/default-password.xml\nand deleting this file will reset the password.\nSee also /etc/clickhouse-server/users.xml on the server where ClickHouse is installed.\n\n. (REQUIRED_PASSWORD) (version 25.5.1.2782 (official build))\n",
+    "message": "ClickHouse服务器未运行或配置错误"
+  },
+  "real_data_verification": {},
+  "performance_with_real_data": {
+    "status": "skipped",
+    "reason": "数据库连接失败",
+    "database_available": false
+  },
+  "mock_data_detection": {
+    "mock_indicators_found": 3,
+    "indicators": [
+      "unittest.mock可用",
+      "发现空DataFrame创建模式",
+      "发现Mock模块: ['unittest.mock']"
+    ],
+    "likely_using_mocks": true
+  }
+}

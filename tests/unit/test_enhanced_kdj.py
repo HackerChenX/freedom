@@ -351,7 +351,7 @@ class Test_enhanced_kDJ(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['high', 'low'], axis=1)
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_kdj_indicator_type(self):

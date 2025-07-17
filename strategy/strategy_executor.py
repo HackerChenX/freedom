@@ -112,7 +112,7 @@ class StrategyExecutor:
             if progress_callback:
                 progress_callback(0.3, "开始执行策略")
                 
-            result = self.execute_strategy_Executor_Strategy_Executor(
+            result = self.execute_strategy(
                 strategy_plan=strategy_plan,
                 start_date=start_date,
                 end_date=end_date,
@@ -129,7 +129,7 @@ class StrategyExecutor:
             raise StrategyExecutionError(f"执行策略失败: {str(e)}")
     
     @performance_monitor(threshold=1.0)
-    def execute_strategy_Executor_Strategy_Executor(
+    def execute_strategy(
         self, 
         strategy_plan: Dict[str, Any],
         start_date: Optional[str] = None,
@@ -201,7 +201,7 @@ class StrategyExecutor:
             self._preload_common_data(end_date)
             
             # 创建共享的线程池，而不是每个批次单独创建
-            with concurrent.futures.Thread_pool_executor(max_workers=self.max_workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 # 批次处理循环
                 for batch_idx in range(0, total_stocks, batch_size):
                     batch_end = min(batch_idx + batch_size, total_stocks)
@@ -412,8 +412,7 @@ class StrategyExecutor:
                     start_date = self.data_access.get_previous_trade_date(end_date, 120)
                     
                     # 获取K线数据 - 明确指定日线数据
-                    data = self.data_access.get_stock_data(
-                        stock_code=stock_code,
+                    data = self.data_access.get_stock_data(code=stock_code,
                         start_date=start_date,
                         end_date=end_date,
                         period='daily'  # 明确指定获取日线数据

@@ -398,7 +398,7 @@ class Test_shared_condition_evaluator(unittest.Test_case):
         try:
             result = self.evaluator.evaluate_condition(condition, self.test_data)
             self.assert_false(result)
-        except Value_error:
+        except ValueError:
             pass  # 预期的错误
         
         # 不存在的字段

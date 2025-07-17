@@ -222,7 +222,7 @@ class Test_enhanced_cCI(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
             self.assert_equal(self.indicator.market_environment, env)
         
         # 测试无效环境
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.set_market_environment('invalid_environment')
     
     def test_enhanced_cci_adaptive_period(self):
@@ -295,7 +295,7 @@ class Test_enhanced_cCI(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['high', 'low'], axis=1)
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_cci_state_classification(self):

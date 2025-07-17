@@ -293,7 +293,7 @@ class Testvosc_vosc(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin)
         # 测试缺少volume列的情况
         invalid_data = self.data.drop('volume', axis=1)
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.calculate(invalid_data)
     
     def test_vosc_signal_line_relationship(self):

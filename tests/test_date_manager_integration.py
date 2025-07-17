@@ -162,7 +162,7 @@ class Test_date_manager_integration(unittest.Test_case):
             try:
                 parsed_date = self.date_manager.parse_date(date_str)
                 parsed_dates.append(parsed_date)
-            except Value_error:
+            except ValueError:
                 # 跳过无效日期（如2月30日）
                 pass
         
@@ -170,7 +170,7 @@ class Test_date_manager_integration(unittest.Test_case):
         for date_str in test_dates[:10]:  # 重复解析前10个日期
             try:
                 self.date_manager.parse_date(date_str)
-            except Value_error:
+            except ValueError:
                 pass
         
         end_time = datetime.datetime.now()

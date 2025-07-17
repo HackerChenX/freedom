@@ -82,7 +82,7 @@ def get_custom_parameters():
                 break
             else:
                 print("❌ 股票数量应在1-5000之间")
-        except Value_error:
+        except ValueError:
             print("❌ 请输入有效的数字")
     
     # 并发数
@@ -97,7 +97,7 @@ def get_custom_parameters():
                 break
             else:
                 print("❌ 并发数应在1-10之间")
-        except Value_error:
+        except ValueError:
             print("❌ 请输入有效的数字")
     
     # 早停机制

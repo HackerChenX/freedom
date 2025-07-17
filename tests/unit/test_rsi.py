@@ -260,7 +260,7 @@ class Testrsi_rsi(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
         try:
             result = self.indicator.calculate(empty_data)
             self.assertIsInstance(result, pd.DataFrame, "空数据计算结果应为DataFrame")
-        except Value_error:
+        except ValueError:
             # 空数据抛出异常是可以接受的
             pass
 

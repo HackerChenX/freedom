@@ -129,7 +129,7 @@ class Test_service_container(unittest.Test_case):
             pass
         
         # 验证抛出异常
-        with self.assert_raises(Value_error) as context:
+        with self.assert_raises(ValueError) as context:
             self.get_service(Data_access_interface)
         
         self.assertIn("服务未注册", str(context.exception))

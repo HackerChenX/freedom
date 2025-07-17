@@ -154,7 +154,7 @@ class ArchitectureComplianceChecker:
             
             # 低层不能依赖高层
             return from_index < to_index
-        except Value_error:
+        except ValueError:
             return False
     
     def _check_direct_db_dependencies(self, files: List[str]) -> List[Violation_info]:

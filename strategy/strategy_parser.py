@@ -66,10 +66,12 @@ class StrategyParser:
                                      {"supported_formats": [".json", ".yml", ".yaml"]})
                 
             return self.parse_strategy(config)
-        except json.JSONDecode_error as e:
+        except json.JSONDecodeError as e:
             raise StrategyParseError(f"JSON解析错误: {str(e)}", {"file": file_path, "position": f"行 {e.lineno}, 列 {e.colno}"})
         except yaml.YAMLError as e:
             raise StrategyParseError(f"YAML解析错误: {str(e)}", {"file": file_path})
+        except KeyError as e:
+            raise StrategyParseError(f"配置文件缺少必需字段: {str(e)}", {"file": file_path})
         except Exception as e:
             logger.error(f"解析策略配置文件失败: {e}")
             raise StrategyParseError(f"解析策略配置文件失败: {str(e)}", {"file": file_path})
@@ -98,7 +100,7 @@ class StrategyParser:
                                         {"supported_formats": ["json", "yaml", "yml"]})
                 
             return self.parse_strategy(config)
-        except json.JSONDecode_error as e:
+        except json.JSONDecodeError as e:
             raise StrategyParseError(f"JSON解析错误: {str(e)}", {"position": f"行 {e.lineno}, 列 {e.colno}"})
         except yaml.YAMLError as e:
             raise StrategyParseError(f"YAML解析错误: {str(e)}")
@@ -352,7 +354,7 @@ class StrategyParser:
         # 支持的过滤器类型
         supported_filters = [
             "market", "industry", "market_cap", "price",
-            "volume", "turnover_rate", "pe_ratio", "pb_ratio"
+            "volume", "turnover", "pe_ratio", "pb_ratio"
         ]
         
         for key, value in filters.items():

@@ -115,7 +115,7 @@ class Period(Enum):
         # 直接匹配枚举名称
         try:
             return cls[period_str]
-        except (Key_error, Value_error):
+        except (KeyError, ValueError):
             pass
         
         # 匹配值

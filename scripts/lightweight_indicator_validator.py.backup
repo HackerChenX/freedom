@@ -1,0 +1,238 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+轻量级指标验证器
+用于快速验证指标的正确性
+"""
+
+import sys
+import os
+import argparse
+import logging
+from typing import Dict, List, Optional, Tuple
+from datetime import datetime, timedelta
+import traceback
+
+# 添加项目根目录到Python路径
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
+
+from config.config_manager import get_config
+from utils.logger import get_logger
+from utils.date_utils import get_last_trade_date, parse_date
+from utils.dependency_injection import get_service
+from indicators.indicator_factory import Indicator_factory
+from enums.indicators import Indicator_type
+
+class LightweightIndicatorValidator:
+    """轻量级指标验证器"""
+    
+    def __init__(self):
+        self.logger = get_logger(__name__)
+        self.config = get_config()
+        
+        # 使用依赖注入获取数据访问接口
+        container = get_container()
+        self.data_access = container.get_data_access()
+        
+        self.indicator_factory = Indicator_factory()
+        
+        # 测试配置
+        self.test_stocks = ['000001', '000002', '600000', '600036']
+        self.test_periods = ['1d', '1w', '1m']
+        
+    def validate_indicator_Lightweight_Indicator_Validator(self, indicator_name: str, stock_code: str = '000001', 
+                          period: str = '1d', days: int = 30) -> Dict:
+        """验证单个指标"""
+        try:
+            # 获取测试数据
+            end_date = get_last_trade_date()
+            start_date = end_date - timedelta(days=days)
+            
+            # 获取K线数据
+            kline_data = self.data_access.get_stock_data(
+                stock_code, 
+                start_date.strftime('%Y-%m-%d'), 
+                end_date.strftime('%Y-%m-%d'), 
+                period
+            )
+            
+            if kline_data.empty:
+                return {
+                    'indicator': indicator_name,
+                    'stock_code': stock_code,
+                    'period': period,
+                    'status': 'failed',
+                    'error': 'No data available'
+                }
+            
+            # 创建指标实例
+            try:
+                indicator_type = Indicator_type[indicator_name.upper()]
+                indicator = self.indicator_factory.create_indicator(indicator_type)
+            except (KeyError, Value_error) as e:
+                return {
+                    'indicator': indicator_name,
+                    'stock_code': stock_code,
+                    'period': period,
+                    'status': 'failed',
+                    'error': f'Invalid indicator type: {e}'
+                }
+            
+            # 计算指标
+            try:
+                result = indicator.calculate(kline_data)
+                
+                # 验证结果
+                if result is None or result.empty:
+                    status = 'failed'
+                    error = 'Empty result'
+                elif result.isnull().all().all():
+                    status = 'failed'
+                    error = 'All values are null'
+                else:
+                    status = 'success'
+                    error = None
+                
+                return {
+                    'indicator': indicator_name,
+                    'stock_code': stock_code,
+                    'period': period,
+                    'status': status,
+                    'error': error,
+                    'result_shape': result.shape if result is not None else None,
+                    'result_columns': list(result.columns) if result is not None else None
+                }
+                
+            except Exception as e:
+                return {
+                    'indicator': indicator_name,
+                    'stock_code': stock_code,
+                    'period': period,
+                    'status': 'failed',
+                    'error': f'Calculation error: {str(e)}'
+                }
+                
+        except Exception as e:
+            self.logger.error(f"验证指标 {indicator_name} 失败: {e}")
+            return {
+                'indicator': indicator_name,
+                'stock_code': stock_code,
+                'period': period,
+                'status': 'failed',
+                'error': f'Validation error: {str(e)}'
+            }
+    
+    def validate_multiple_indicators_Validator(self, indicators: List[str], 
+                                   stock_code: str = '000001', 
+                                   period: str = '1d') -> List[Dict]:
+        """验证多个指标"""
+        results = []
+        
+        for indicator_name in indicators:
+            self.logger.info(f"验证指标: {indicator_name}")
+            result = self.validate_indicator_Lightweight_Indicator_Validator(indicator_name, stock_code, period)
+            results.append(result)
+            
+        return results
+    
+    def get_available_indicators_Validator(self) -> List[str]:
+        """获取可用的指标列表"""
+        return [indicator.name.lower() for indicator in Indicator_type]
+    
+    def run_quick_validation(self, indicators: Optional[List[str]] = None) -> Dict:
+        """运行快速验证"""
+        if indicators is None:
+            # 选择一些常用指标进行快速验证
+            indicators = ['ma', 'ema', 'rsi', 'macd', 'kdj', 'boll']
+        
+        results = []
+        summary = {
+            'total': 0,
+            'success': 0,
+            'failed': 0,
+            'error_indicators': []
+        }
+        
+        for indicator in indicators:
+            try:
+                result = self.validate_indicator_Lightweight_Indicator_Validator(indicator)
+                results.append(result)
+                
+                summary['total'] += 1
+                if result['status'] == 'success':
+                    summary['success'] += 1
+                else:
+                    summary['failed'] += 1
+                    summary['error_indicators'].append({
+                        'indicator': indicator,
+                        'error': result.get('error', 'Unknown error')
+                    })
+                    
+            except Exception as e:
+                self.logger.error(f"验证指标 {indicator} 时发生异常: {e}")
+                summary['failed'] += 1
+                summary['error_indicators'].append({
+                    'indicator': indicator,
+                    'error': str(e)
+                })
+        
+        return {
+            'results': results,
+            'summary': summary
+        }
+
+def main_lightweightindicatorvalidator():
+    """主函数"""
+    parser = argparse.ArgumentParser(description='轻量级指标验证器')
+    parser.add_argument('--indicator', '-i', type=str, help='指标名称')
+    parser.add_argument('--stock', '-s', type=str, default='000001', help='股票代码')
+    parser.add_argument('--period', '-p', type=str, default='1d', help='周期')
+    parser.add_argument('--days', '-d', type=int, default=30, help='数据天数')
+    parser.add_argument('--list', '-l', action='store_true', help='列出所有可用指标')
+    parser.add_argument('--quick', '-q', action='store_true', help='快速验证常用指标')
+    
+    args = parser.parse_args()
+    
+    validator = Lightweight_indicator_validator()
+    
+    if args.list:
+        print("可用指标列表:")
+        indicators = validator.get_available_indicators_Validator()
+        for indicator in indicators:
+            print(f"  - {indicator}")
+        return
+    
+    if args.quick:
+        print("运行快速验证...")
+        result = validator.run_quick_validation()
+        
+        print(f"\n验证结果:")
+        print(f"总计: {result['summary']['total']}")
+        print(f"成功: {result['summary']['success']}")
+        print(f"失败: {result['summary']['failed']}")
+        
+        if result['summary']['error_indicators']:
+            print("\n失败的指标:")
+            for error in result['summary']['error_indicators']:
+                print(f"  - {error['indicator']}: {error['error']}")
+        
+        return
+    
+    if args.indicator:
+        print(f"验证指标: {args.indicator}")
+        result = validator.validate_indicator_Lightweight_Indicator_Validator(
+            args.indicator, 
+            args.stock, 
+            args.period, 
+            args.days
+        )
+        
+        print(f"结果: {result}")
+    else:
+        print("请指定要验证的指标，或使用 --quick 进行快速验证")
+        print("使用 --list 查看所有可用指标")
+
+if __name__ == "__main__":
+    main_lightweightindicatorvalidator()

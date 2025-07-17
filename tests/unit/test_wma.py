@@ -259,7 +259,7 @@ class Test_wMA(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['close'], axis=1)
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.calculate(invalid_data)
     
     def test_wma_weight_calculation(self):

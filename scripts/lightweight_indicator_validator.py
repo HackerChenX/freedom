@@ -71,7 +71,7 @@ class LightweightIndicatorValidator:
             try:
                 indicator_type = Indicator_type[indicator_name.upper()]
                 indicator = self.indicator_factory.create_indicator(indicator_type)
-            except (Key_error, Value_error) as e:
+            except (KeyError, ValueError) as e:
                 return {
                     'indicator': indicator_name,
                     'stock_code': stock_code,

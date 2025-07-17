@@ -328,7 +328,7 @@ class Testenhancedmacd_macd(unittest.Test_case, Indicator_test_mixin, Log_captur
         # 测试缺少必需列的情况
         invalid_data = self.data.drop(['close'], axis=1)
         
-        with self.assert_raises((Value_error, Key_error)):
+        with self.assert_raises((ValueError, KeyError)):
             self.indicator.calculate(invalid_data)
     
     def test_enhanced_macd_indicator_type(self):

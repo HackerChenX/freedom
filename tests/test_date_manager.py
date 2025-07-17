@@ -127,13 +127,13 @@ class Test_date_manager(unittest.Test_case):
     
     def test_parse_date_invalid_input(self):
         """测试解析无效日期输入"""
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.date_manager.parse_date("invalid_date")
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.date_manager.parse_date(None)
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.date_manager.parse_date([])
     
     def test_format_date(self):
@@ -270,7 +270,7 @@ class Test_date_manager(unittest.Test_case):
         start_date = "2024-01-15"
         end_date = "2024-01-10"
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.date_manager.get_date_range(start_date, end_date)
     
     def test_get_predefined_date_range(self):

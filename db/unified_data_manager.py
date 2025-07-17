@@ -65,10 +65,10 @@ class UnifiedDataManager:
         except ImportError:
             logger.warning("统一配置管理器不可用，使用默认配置")
             db_config = {
-                get_config('database.host'),
-                get_config('database.port'),
-                get_config('database.name'),
-                get_config('database.user'),
+                'host': get_config('database.host'),
+                'port': get_config('database.port'),
+                'database': get_config('database.name'),
+                'user': get_config('database.user'),
                 'password': ''
             }
 
@@ -79,7 +79,7 @@ class UnifiedDataManager:
             database=db_config.get('database', 'stock'),
             user=db_config.get('user', 'default'),
             password=db_config.get('password', ''),
-            get_config('performance.max_connections'),
+            max_connections=get_config('performance.max_connections'),
             min_connections=5
         )
         
@@ -308,10 +308,14 @@ class UnifiedDataManager:
             # 转换周期参数
             level = self._convert_period_to_level(period)
 
-            # 如果是30分钟数据且数据库中不存在，尝试从15分钟数据计算
-            if period in ['30min', 'min30'] and not self._has_30min_data(stock_code, start_date, end_date):
+            # 如果是计算周期数据且数据库中不存在，尝试从基础周期数据转换
+            if period in ['30min', 'min30'] and not self._has_period_data(stock_code, '30min', start_date, end_date):
                 logger.info(f"数据库中没有{stock_code}的30分钟数据，尝试从15分钟数据计算")
-                return self._generate_30min_from_15min(stock_code, start_date, end_date, lookback_days)
+                return self._generate_period_from_base(stock_code, '15min', '30min', start_date, end_date, lookback_days)
+            
+            elif period in ['60min', 'min60'] and not self._has_period_data(stock_code, '60min', start_date, end_date):
+                logger.info(f"数据库中没有{stock_code}的60分钟数据，尝试从基础周期数据计算")
+                return self.get_period_data(stock_code, '60min', start_date, end_date, lookback_days)
 
             # 优化历史数据查询：根据周期和指标需求调整查询范围
             optimized_start_date, optimized_limit = self._optimize_data_query(
@@ -397,6 +401,52 @@ class UnifiedDataManager:
                 else:
                     return []
 
+        except Exception as e:
+            logger.error(f"获取股票列表失败: {e}")
+            return []
+
+    def get_stock_list(self, 
+                       industry: Optional[str] = None, 
+                       market: Optional[str] = None,
+                       limit: Optional[int] = None) -> List[str]:
+        """
+        获取股票列表
+        
+        Args:
+            industry: 行业筛选条件
+            market: 市场筛选条件  
+            limit: 限制返回数量
+            
+        Returns:
+            List[str]: 股票代码列表
+        """
+        try:
+            # 构建查询条件
+            conditions = ["1=1"]  # 基础条件
+            
+            if industry:
+                conditions.append(f"industry = '{industry}'")
+            
+            if market:
+                conditions.append(f"market = '{market}'")
+            
+            # 构建查询SQL
+            query = f"""
+            SELECT DISTINCT code 
+            FROM stock_info 
+            WHERE {' AND '.join(conditions)}
+            ORDER BY code
+            """
+            
+            if limit:
+                query += f" LIMIT {limit}"
+            
+            # 使用连接池的上下文管理器
+            with get_connection_pool().get_connection() as connection:
+                cursor = connection.execute(query)
+                results = cursor if hasattr(cursor, '__iter__') else []
+                return [row[0] for row in results]
+                
         except Exception as e:
             logger.error(f"获取股票列表失败: {e}")
             return []
@@ -499,6 +549,8 @@ class UnifiedDataManager:
 
     # ==================== 30分钟数据计算和历史数据优化 ====================
 
+    # ==================== 通用时间周期转换系统 ====================
+
     def _convert_period_to_level(self, period: str) -> str:
         """转换周期参数到level参数"""
         period_mapping = {
@@ -510,13 +562,14 @@ class UnifiedDataManager:
         }
         return period_mapping.get(period.lower(), '日线')
 
-    def _has_30min_data(self, stock_code: str, start_date: Optional[str] = None,
+    def _has_period_data(self, stock_code: str, period: str, start_date: Optional[str] = None,
                        end_date: Optional[str] = None) -> bool:
-        """检查数据库中是否存在30分钟数据"""
+        """检查数据库中是否存在指定周期的数据"""
         try:
+            level = self._convert_period_to_level(period)
             stock_info = self.get_stock_info(
                 stock_code=stock_code,
-                level='30分钟',
+                level=level,
                 start_date=start_date,
                 end_date=end_date,
                 limit=1
@@ -524,14 +577,43 @@ class UnifiedDataManager:
             df = stock_info.to_dataframe()
             return not df.empty
         except Exception as e:
-            logger.debug(f"检查30分钟数据存在性失败: {e}")
+            logger.debug(f"检查{period}数据存在性失败: {e}")
             return False
 
-    def _generate_30min_from_15min(self, stock_code: str, start_date: Optional[str] = None,
-                                  end_date: Optional[str] = None, lookback_days: Optional[int] = None) -> pd.DataFrame:
-        """从15分钟数据生成30分钟数据"""
+    def _generate_period_from_base(self, stock_code: str, base_period: str, target_period: str,
+                              start_date: Optional[str] = None, end_date: Optional[str] = None, 
+                              lookback_days: Optional[int] = None) -> pd.DataFrame:
+        """
+        通用时间周期转换方法
+        从基础周期数据生成目标周期数据
+        
+        Args:
+            stock_code: 股票代码
+            base_period: 基础周期（如'15min'）
+            target_period: 目标周期（如'30min', '60min'）
+            start_date: 开始日期
+            end_date: 结束日期
+            lookback_days: 向前获取的天数
+            
+        Returns:
+            pd.DataFrame: 转换后的数据
+        """
         try:
-            # 扩大查询范围以获取足够的15分钟数据
+            # 定义转换规则
+            conversion_rules = {
+                ('15min', '30min'): '30min',
+                ('15min', '60min'): '60min',
+                ('30min', '60min'): '60min'
+            }
+            
+            rule_key = (base_period, target_period)
+            if rule_key not in conversion_rules:
+                logger.error(f"不支持从{base_period}转换到{target_period}")
+                return pd.DataFrame()
+            
+            resample_freq = conversion_rules[rule_key]
+            
+            # 扩大查询范围以获取足够的基础数据
             if lookback_days:
                 if start_date:
                     start_dt = datetime.strptime(start_date, '%Y-%m-%d')
@@ -542,35 +624,37 @@ class UnifiedDataManager:
             else:
                 extended_start_date = start_date
 
-            # 获取15分钟数据
+            # 获取基础周期数据
+            base_level = self._convert_period_to_level(base_period)
             stock_info = self.get_stock_info(
                 stock_code=stock_code,
-                level='15分钟',
+                level=base_level,
                 start_date=extended_start_date,
                 end_date=end_date
             )
 
-            df_15min = stock_info.to_dataframe()
+            df_base = stock_info.to_dataframe()
 
-            if df_15min.empty:
-                logger.warning(f"没有找到{stock_code}的15分钟数据")
+            if df_base.empty:
+                logger.warning(f"没有找到{stock_code}的{base_period}数据")
                 return pd.DataFrame()
 
             # 确保有datetime列
-            if 'datetime' not in df_15min.columns:
-                if 'date' in df_15min.columns and 'time' in df_15min.columns:
-                    df_15min['datetime'] = pd.to_datetime(df_15min['date'].astype(str) + ' ' + df_15min['time'].astype(str))
-                elif 'date' in df_15min.columns:
-                    df_15min['datetime'] = pd.to_datetime(df_15min['date'])
+            if 'datetime' not in df_base.columns:
+                if 'date' in df_base.columns and 'time' in df_base.columns:
+                    df_base['datetime'] = pd.to_datetime(df_base['date'].astype(str) + ' ' + df_base['time'].astype(str))
+                elif 'date' in df_base.columns:
+                    df_base['datetime'] = pd.to_datetime(df_base['date'])
                 else:
                     logger.error("无法构建datetime列")
                     return pd.DataFrame()
 
             # 设置datetime为索引
-            df_15min = df_15min.set_index('datetime')
-            df_15min.index = pd.to_datetime(df_15min.index)
+            df_base = df_base.set_index('datetime')
+            df_base.index = pd.to_datetime(df_base.index)
+            df_base = df_base.sort_index()
 
-            # 按30分钟重采样
+            # 聚合规则
             agg_dict = {
                 'open': 'first',
                 'high': 'max',
@@ -579,41 +663,112 @@ class UnifiedDataManager:
                 'volume': 'sum'
             }
 
-            # 添加其他可能的字段
-            for col in ['amount', 'turnover_rate', 'pe_ratio', 'pb_ratio']:
-                if col in df_15min.columns:
-                    if col == 'amount':
+            # 添加其他字段的聚合规则
+            for col in ['amount', 'turnover', 'pe_ratio', 'pb_ratio', 'price_change', 'price_range']:
+                if col in df_base.columns:
+                    if col in ['amount', 'volume']:
                         agg_dict[col] = 'sum'
                     else:
                         agg_dict[col] = 'last'
 
-            # 重采样为30分钟
-            df_30min = df_15min.resample('30min').agg(agg_dict)
+            # 重采样
+            df_target = df_base.resample(resample_freq).agg(agg_dict)
 
             # 删除空值行
-            df_30min = df_30min.dropna()
+            df_target = df_target.dropna()
 
-            # 重置索引，添加date和datetime列
-            df_30min = df_30min.reset_index()
-            df_30min['date'] = df_30min['datetime'].dt.date.astype(str)
-            df_30min['time'] = df_30min['datetime'].dt.time.astype(str)
+            if df_target.empty:
+                logger.warning(f"重采样后数据为空: {stock_code} {base_period}->{target_period}")
+                return pd.DataFrame()
 
-            # 添加股票代码
-            df_30min['code'] = stock_code
+            # 重置索引，添加date和time列
+            df_target = df_target.reset_index()
+            df_target['date'] = df_target['datetime'].dt.date.astype(str)
+            df_target['time'] = df_target['datetime'].dt.time.astype(str)
+
+            # 添加其他必要字段
+            df_target['code'] = stock_code
+            df_target['level'] = self._convert_period_to_level(target_period)
+            
+            # 从原数据获取name和industry（取第一条记录的值）
+            if not df_base.empty:
+                first_row = df_base.iloc[0]
+                df_target['name'] = first_row.get('name', '')
+                df_target['industry'] = first_row.get('industry', '')
 
             # 重新排列列顺序
-            columns_order = ['code', 'date', 'datetime', 'time', 'open', 'high', 'low', 'close', 'volume']
-            for col in df_30min.columns:
-                if col not in columns_order:
-                    columns_order.append(col)
+            expected_columns = ['code', 'name', 'date', 'level', 'open', 'high', 'low', 'close', 
+                               'volume', 'turnover', 'price_change', 'price_range', 
+                               'industry', 'datetime', 'time']
+            
+            # 只保留存在的列
+            df_target = df_target[[col for col in expected_columns if col in df_target.columns]]
 
-            df_30min = df_30min[columns_order]
-
-            logger.info(f"成功从15分钟数据生成30分钟数据: {stock_code}, 记录数: {len(df_30min)}")
-            return df_30min
+            logger.info(f"成功从{base_period}数据生成{target_period}数据: {stock_code}, 记录数: {len(df_target)}")
+            return df_target
 
         except Exception as e:
-            logger.error(f"从15分钟数据生成30分钟数据失败: {e}")
+            logger.error(f"从{base_period}数据生成{target_period}数据失败: {e}")
+            return pd.DataFrame()
+
+    def _generate_30min_from_15min(self, stock_code: str, start_date: Optional[str] = None,
+                              end_date: Optional[str] = None, lookback_days: Optional[int] = None) -> pd.DataFrame:
+        """从15分钟数据生成30分钟数据（保持向后兼容）"""
+        return self._generate_period_from_base(stock_code, '15min', '30min', start_date, end_date, lookback_days)
+
+    def _generate_60min_from_15min(self, stock_code: str, start_date: Optional[str] = None,
+                              end_date: Optional[str] = None, lookback_days: Optional[int] = None) -> pd.DataFrame:
+        """从15分钟数据生成60分钟数据"""
+        return self._generate_period_from_base(stock_code, '15min', '60min', start_date, end_date, lookback_days)
+
+    def get_period_data(self, stock_code: str, period: str, start_date: Optional[str] = None,
+                       end_date: Optional[str] = None, lookback_days: Optional[int] = None) -> pd.DataFrame:
+        """
+        通用的周期数据获取方法
+        优先从数据库获取，如果不存在则从基础周期转换
+        
+        Args:
+            stock_code: 股票代码
+            period: 周期（'15min', '30min', '60min', 'daily'等）
+            start_date: 开始日期
+            end_date: 结束日期
+            lookback_days: 向前获取的天数
+            
+        Returns:
+            pd.DataFrame: 周期数据
+        """
+        try:
+            # 首先尝试直接从数据库获取
+            if self._has_period_data(stock_code, period, start_date, end_date):
+                level = self._convert_period_to_level(period)
+                stock_info = self.get_stock_info(
+                    stock_code=stock_code,
+                    level=level,
+                    start_date=start_date,
+                    end_date=end_date
+                )
+                return stock_info.to_dataframe()
+            
+            # 如果数据库中不存在，则尝试从基础周期转换
+            if period in ['30min', 'min30']:
+                if self._has_period_data(stock_code, '15min', start_date, end_date):
+                    logger.info(f"数据库中没有{stock_code}的30分钟数据，从15分钟数据转换")
+                    return self._generate_period_from_base(stock_code, '15min', '30min', start_date, end_date, lookback_days)
+                    
+            elif period in ['60min', 'min60']:
+                # 优先从15分钟转换，如果15分钟不存在则从30分钟转换
+                if self._has_period_data(stock_code, '15min', start_date, end_date):
+                    logger.info(f"数据库中没有{stock_code}的60分钟数据，从15分钟数据转换")
+                    return self._generate_period_from_base(stock_code, '15min', '60min', start_date, end_date, lookback_days)
+                elif self._has_period_data(stock_code, '30min', start_date, end_date):
+                    logger.info(f"数据库中没有{stock_code}的60分钟数据，从30分钟数据转换")
+                    return self._generate_period_from_base(stock_code, '30min', '60min', start_date, end_date, lookback_days)
+            
+            logger.warning(f"无法获取{stock_code}的{period}数据")
+            return pd.DataFrame()
+            
+        except Exception as e:
+            logger.error(f"获取{period}数据失败: {e}")
             return pd.DataFrame()
 
     def _optimize_data_query(self, period: str, start_date: Optional[str], end_date: Optional[str],
@@ -798,7 +953,7 @@ class UnifiedDataManager:
         query = f"""
         {query_hints}
         SELECT {field_str}
-        FROM stock_info WHERE 1=1
+        FROM stock_info
         WHERE {where_clause}
         ORDER BY {order_by}
         """
@@ -1171,6 +1326,116 @@ class UnifiedDataManager:
 
         except Exception as e:
             logger.error(f"关闭数据管理器时出错: {e}")
+
+    def get_stock_data(self, 
+                       code: str, 
+                       start_date: str, 
+                       end_date: str,
+                       level: str = '日线') -> pd.DataFrame:
+        """
+        获取股票数据（统一接口）
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期  
+            level: 数据级别（日线、15分钟、30分钟、60分钟等）
+            
+        Returns:
+            pd.DataFrame: 股票数据
+        """
+        try:
+            # 构建查询SQL
+            query = f"""
+            SELECT code, name, date, level, open, high, low, close, volume, turnover
+            FROM stock_info 
+            WHERE code = '{code}'
+            AND level = '{level}'
+            AND date >= '{start_date}' AND date <= '{end_date}'
+            ORDER BY date ASC
+            """
+            
+            # 执行查询
+            with self.connection_pool.get_connection() as connection:
+                cursor = connection.execute(query)
+                results = list(cursor) if hasattr(cursor, '__iter__') else []
+                
+                if results:
+                    # 转换为DataFrame
+                    df = pd.DataFrame(results, columns=[
+                        'code', 'name', 'date', 'level', 'open', 'high', 'low', 'close', 'volume', 'turnover'
+                    ])
+                    
+                    # 数据类型转换
+                    for col in ['open', 'high', 'low', 'close', 'volume', 'turnover']:
+                        if col in df.columns:
+                            df[col] = pd.to_numeric(df[col], errors='coerce')
+                    
+                    # 日期转换
+                    if 'date' in df.columns:
+                        df['date'] = pd.to_datetime(df['date'])
+                    
+                    # 检查数据完整性
+                    for col in ['amount', 'turnover', 'pe_ratio', 'pb_ratio', 'price_change', 'price_range']:
+                        if col not in df.columns:
+                            df[col] = 0.0
+
+                    logger.debug(f"获取股票 {code} {level}数据: {len(df)} 条记录")
+                    return df
+                else:
+                    logger.warning(f"未找到股票 {code} 在 {start_date} 到 {end_date} 的 {level}数据")
+                    return pd.DataFrame()
+                    
+        except Exception as e:
+            logger.error(f"获取股票数据失败: {e}")
+            return pd.DataFrame()
+
+    def get_stock_daily_data(self, stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+        """
+        获取股票日线数据
+        
+        Args:
+            stock_code: 股票代码
+            start_date: 开始日期 
+            end_date: 结束日期
+            
+        Returns:
+            pd.DataFrame: 股票日线数据
+        """
+        try:
+            return self.get_stock_info(
+                stock_code=stock_code,
+                level="日线",
+                start_date=start_date,
+                end_date=end_date
+            )
+        except Exception as e:
+            logger.error(f"获取股票{stock_code}日线数据失败: {e}")
+            return pd.DataFrame()
+
+    def get_stock_period_data(self, stock_code: str, start_date: str, end_date: str, period: str) -> pd.DataFrame:
+        """
+        获取股票指定周期数据
+        
+        Args:
+            stock_code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            period: 时间周期 (如 '日线', '15分钟', '30分钟', '60分钟')
+            
+        Returns:
+            pd.DataFrame: 股票指定周期数据
+        """
+        try:
+            return self.get_period_data(
+                stock_code=stock_code,
+                start_date=start_date,
+                end_date=end_date,
+                period=period
+            )
+        except Exception as e:
+            logger.error(f"获取股票{stock_code} {period}数据失败: {e}")
+            return pd.DataFrame()
 
 
 # ==================== 全局实例管理 ====================

@@ -321,14 +321,14 @@ class Test_volume_ratio(unittest.Test_case, Indicator_test_mixin, Log_capture_mi
         # 测试缺少volume列的情况
         invalid_data = self.data.drop('volume', axis=1)
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.calculate(invalid_data)
         
         # 测试所有volume都是NaN的情况
         nan_vol_data = self.data.copy()
         nan_vol_data['volume'] = np.nan
         
-        with self.assert_raises(Value_error):
+        with self.assert_raises(ValueError):
             self.indicator.calculate(nan_vol_data)
 
 
