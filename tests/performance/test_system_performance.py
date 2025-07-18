@@ -24,7 +24,7 @@ init_logging(level=get_config('logging.level', 'INFO'))
 logger = get_logger(__name__)
 
 
-class Test_system_performance(unittest.Test_case):
+class Test_system_performance(unittest.TestCase):
     """系统性能测试类"""
     
     def set_up_Performance(self):

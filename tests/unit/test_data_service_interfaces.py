@@ -19,7 +19,7 @@ from db.interfaces.connection_interface import IconnectionManager
 from db.container import Service_container, Lifecycle_type, get_container, reset_container
 
 
-class Test_service_container(unittest.Test_case):
+class Test_service_container(unittest.TestCase):
     """测试服务容器"""
     
     def set_up_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
@@ -151,7 +151,7 @@ class Test_service_container(unittest.Test_case):
         self.assert_true(self.container.is_registered(ITest_service))
 
 
-class Test_data_access_interface(unittest.Test_case):
+class Test_data_access_interface(unittest.TestCase):
     """测试数据访问接口"""
     
     def test_interface_methods_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
@@ -175,7 +175,7 @@ class Test_data_access_interface(unittest.Test_case):
                           f"IDataAccess接口缺少方法: {method_name}")
 
 
-class Test_cache_interface(unittest.Test_case):
+class Test_cache_interface(unittest.TestCase):
     """测试缓存接口"""
     
     def test_interface_methods_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
@@ -196,7 +196,7 @@ class Test_cache_interface(unittest.Test_case):
                           f"ICacheManager接口缺少方法: {method_name}")
 
 
-class Test_connection_interface(unittest.Test_case):
+class Test_connection_interface(unittest.TestCase):
     """测试连接接口"""
     
     def test_interface_methods_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
@@ -216,7 +216,7 @@ class Test_connection_interface(unittest.Test_case):
                           f"IConnectionManager接口缺少方法: {method_name}")
 
 
-class Test_global_container(unittest.Test_case):
+class Test_global_container(unittest.TestCase):
     """测试全局容器"""
     
     def set_up_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):

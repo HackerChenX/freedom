@@ -1,0 +1,1088 @@
+{
+  "timestamp": "20250718_134624",
+  "selection_results": {
+    "MACD金叉": [
+      {
+        "code": "300485",
+        "name": "赛升药业",
+        "close": 9.61,
+        "volume": "382484",
+        "pattern_info": {
+          "strategy": "MACD金叉",
+          "macd_value": 0.5260437708615076,
+          "signal_value": 0.34941184108898976,
+          "golden_cross": "False",
+          "macd_positive": "True",
+          "volume_surge": "True"
+        }
+      },
+      {
+        "code": "600085",
+        "name": "同仁堂",
+        "close": 37.59,
+        "volume": "88124",
+        "pattern_info": {
+          "strategy": "MACD金叉",
+          "macd_value": 0.28861656389299384,
+          "signal_value": 0.18620533235627845,
+          "golden_cross": "False",
+          "macd_positive": "True",
+          "volume_surge": "True"
+        }
+      },
+      {
+        "code": "603825",
+        "name": "华扬联众",
+        "close": 12.14,
+        "volume": "147355",
+        "pattern_info": {
+          "strategy": "MACD金叉",
+          "macd_value": 0.007075223269378483,
+          "signal_value": -0.07500725366463315,
+          "golden_cross": "False",
+          "macd_positive": "True",
+          "volume_surge": "True"
+        }
+      },
+      {
+        "code": "603886",
+        "name": "元祖股份",
+        "close": 12.9,
+        "volume": "63822",
+        "pattern_info": {
+          "strategy": "MACD金叉",
+          "macd_value": 0.03578855067059905,
+          "signal_value": -0.022029783001132997,
+          "golden_cross": "False",
+          "macd_positive": "True",
+          "volume_surge": "True"
+        }
+      },
+      {
+        "code": "300418",
+        "name": "昆仑万维",
+        "close": 36.57,
+        "volume": "1397517",
+        "pattern_info": {
+          "strategy": "MACD金叉",
+          "macd_value": 0.4790618966874831,
+          "signal_value": -0.1266246763984227,
+          "golden_cross": "False",
+          "macd_positive": "True",
+          "volume_surge": "True"
+        }
+      }
+    ],
+    "KDJ低位金叉": [
+      {
+        "code": "603121",
+        "name": "华培动力",
+        "close": 23.89,
+        "volume": "130843",
+        "pattern_info": {
+          "strategy": "KDJ低位金叉",
+          "k_value": 44.34477561752474,
+          "d_value": 48.41265202295154,
+          "j_value": 36.20902280667114,
+          "golden_cross": "False",
+          "low_position": "True",
+          "j_upward": "True"
+        }
+      }
+    ],
+    "RSI超卖反弹": [
+      {
+        "code": "002492",
+        "name": "恒基达鑫",
+        "close": 5.51,
+        "volume": "107648",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 8.860759493670912,
+          "prev_rsi": 8.860759493670912,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "002578",
+        "name": "股票002578",
+        "close": 3.11,
+        "volume": "138447",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 53.33333333333333,
+          "prev_rsi": 53.33333333333333,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "300485",
+        "name": "赛升药业",
+        "close": 9.61,
+        "volume": "382484",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 64.9402390438247,
+          "prev_rsi": 67.69547325102883,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "300766",
+        "name": "每日互动",
+        "close": 36.41,
+        "volume": "400191",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 36.05805958747132,
+          "prev_rsi": 50.03977724741448,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "603121",
+        "name": "华培动力",
+        "close": 23.89,
+        "volume": "130843",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 48.23815309842041,
+          "prev_rsi": 49.04306220095693,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "300072",
+        "name": "海新能科",
+        "close": 2.96,
+        "volume": "158836",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 54.385964912280684,
+          "prev_rsi": 59.615384615384585,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "600085",
+        "name": "同仁堂",
+        "close": 37.59,
+        "volume": "88124",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 66.86390532544374,
+          "prev_rsi": 73.83177570093453,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "000723",
+        "name": "美锦能源",
+        "close": 4.18,
+        "volume": "366104",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 48.52941176470585,
+          "prev_rsi": 54.99999999999997,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "600026",
+        "name": "中远海能",
+        "close": 10.1,
+        "volume": "182642",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 45.85152838427948,
+          "prev_rsi": 45.258620689655196,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "603589",
+        "name": "口子窖",
+        "close": 36.07,
+        "volume": "26828",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 57.77027027027028,
+          "prev_rsi": 57.19063545150501,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "600981",
+        "name": "汇鸿集团",
+        "close": 2.6,
+        "volume": "234791",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 59.67741935483872,
+          "prev_rsi": 67.27272727272725,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "603825",
+        "name": "华扬联众",
+        "close": 12.14,
+        "volume": "147355",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 63.320463320463325,
+          "prev_rsi": 63.74045801526715,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "002609",
+        "name": "捷顺科技",
+        "close": 9.81,
+        "volume": "63567",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 35.393258426966284,
+          "prev_rsi": 41.954022988505706,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "002202",
+        "name": "金风科技",
+        "close": 9.06,
+        "volume": "256035",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 60.83916083916087,
+          "prev_rsi": 58.78378378378378,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "603886",
+        "name": "元祖股份",
+        "close": 12.9,
+        "volume": "63822",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 62.135922330097095,
+          "prev_rsi": 77.5757575757576,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "002201",
+        "name": "九鼎新材",
+        "close": 6.3,
+        "volume": "188860",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 44.67005076142132,
+          "prev_rsi": 61.76470588235296,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "603885",
+        "name": "吉祥航空",
+        "close": 13.37,
+        "volume": "94637",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 66.00660066006598,
+          "prev_rsi": 68.25938566552901,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "600982",
+        "name": "宁波能源",
+        "close": 4.78,
+        "volume": "518952",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 53.741496598639465,
+          "prev_rsi": 60.76923076923078,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "601008",
+        "name": "连云港",
+        "close": 6.69,
+        "volume": "1550579",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 62.79926335174955,
+          "prev_rsi": 64.58333333333334,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "603826",
+        "name": "坤彩科技",
+        "close": 19.38,
+        "volume": "16836",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 35.17241379310346,
+          "prev_rsi": 37.09090909090907,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "600025",
+        "name": "华能水电",
+        "close": 9.99,
+        "volume": "316751",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 70.37037037037035,
+          "prev_rsi": 79.59183673469381,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "300388",
+        "name": "节能国祯",
+        "close": 6.81,
+        "volume": "40067",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 50.515463917525764,
+          "prev_rsi": 53.26086956521742,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "603181",
+        "name": "皇马科技",
+        "close": 12.45,
+        "volume": "73704",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 58.40707964601769,
+          "prev_rsi": 62.1621621621622,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "000783",
+        "name": "长江证券",
+        "close": 6.53,
+        "volume": "310050",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 54.40000000000002,
+          "prev_rsi": 63.636363636363654,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "600018",
+        "name": "上港集团",
+        "close": 5.75,
+        "volume": "222944",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 69.13580246913578,
+          "prev_rsi": 72.72727272727272,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "000034",
+        "name": "神州数码",
+        "close": 37.76,
+        "volume": "251000",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 39.66565349544073,
+          "prev_rsi": 54.31034482758623,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "000720",
+        "name": "新能泰山",
+        "close": 3.29,
+        "volume": "178653",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 64.51612903225806,
+          "prev_rsi": 68.96551724137926,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "600339",
+        "name": "中油工程",
+        "close": 3.09,
+        "volume": "295040",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 54.28571428571425,
+          "prev_rsi": 54.28571428571425,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "000037",
+        "name": "深南电A",
+        "close": 8.37,
+        "volume": "83587",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 56.66666666666664,
+          "prev_rsi": 58.62068965517242,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      },
+      {
+        "code": "300418",
+        "name": "昆仑万维",
+        "close": 36.57,
+        "volume": "1397517",
+        "pattern_info": {
+          "strategy": "RSI超卖反弹",
+          "rsi_value": 67.89272030651341,
+          "prev_rsi": 73.75886524822695,
+          "oversold_rebound": "False",
+          "price_support": "True"
+        }
+      }
+    ],
+    "布林带下轨反弹": [
+      {
+        "code": "300766",
+        "name": "每日互动",
+        "close": 36.41,
+        "volume": "400191",
+        "pattern_info": {
+          "strategy": "布林带下轨反弹",
+          "close_price": 36.41,
+          "lower_band": 35.084489614623145,
+          "middle_band": 38.5205,
+          "touched_lower": "True",
+          "bounce_up": "False",
+          "volume_increase": "True"
+        }
+      },
+      {
+        "code": "603121",
+        "name": "华培动力",
+        "close": 23.89,
+        "volume": "130843",
+        "pattern_info": {
+          "strategy": "布林带下轨反弹",
+          "close_price": 23.89,
+          "lower_band": 21.790123857917127,
+          "middle_band": 23.8945,
+          "touched_lower": "True",
+          "bounce_up": "True",
+          "volume_increase": "True"
+        }
+      },
+      {
+        "code": "603589",
+        "name": "口子窖",
+        "close": 36.07,
+        "volume": "26828",
+        "pattern_info": {
+          "strategy": "布林带下轨反弹",
+          "close_price": 36.07,
+          "lower_band": 34.86365520870687,
+          "middle_band": 35.99550000000001,
+          "touched_lower": "True",
+          "bounce_up": "False",
+          "volume_increase": "True"
+        }
+      },
+      {
+        "code": "002609",
+        "name": "捷顺科技",
+        "close": 9.81,
+        "volume": "63567",
+        "pattern_info": {
+          "strategy": "布林带下轨反弹",
+          "close_price": 9.81,
+          "lower_band": 9.614437883373537,
+          "middle_band": 10.07,
+          "touched_lower": "True",
+          "bounce_up": "False",
+          "volume_increase": "True"
+        }
+      },
+      {
+        "code": "603886",
+        "name": "元祖股份",
+        "close": 12.9,
+        "volume": "63822",
+        "pattern_info": {
+          "strategy": "布林带下轨反弹",
+          "close_price": 12.9,
+          "lower_band": 12.020806056204128,
+          "middle_band": 12.9025,
+          "touched_lower": "True",
+          "bounce_up": "False",
+          "volume_increase": "True"
+        }
+      }
+    ],
+    "双均线突破": [
+      {
+        "code": "300485",
+        "name": "赛升药业",
+        "close": 9.61,
+        "volume": "382484",
+        "pattern_info": {
+          "strategy": "双均线突破",
+          "ma5_value": 9.756,
+          "ma20_value": 8.5785,
+          "golden_cross": "False",
+          "ma5_upward": "True",
+          "ma20_upward": "True",
+          "price_above": "True"
+        }
+      },
+      {
+        "code": "600085",
+        "name": "同仁堂",
+        "close": 37.59,
+        "volume": "88124",
+        "pattern_info": {
+          "strategy": "双均线突破",
+          "ma5_value": 37.524,
+          "ma20_value": 36.836,
+          "golden_cross": "False",
+          "ma5_upward": "True",
+          "ma20_upward": "True",
+          "price_above": "True"
+        }
+      },
+      {
+        "code": "603825",
+        "name": "华扬联众",
+        "close": 12.14,
+        "volume": "147355",
+        "pattern_info": {
+          "strategy": "双均线突破",
+          "ma5_value": 12.038,
+          "ma20_value": 11.752,
+          "golden_cross": "False",
+          "ma5_upward": "True",
+          "ma20_upward": "True",
+          "price_above": "True"
+        }
+      },
+      {
+        "code": "603885",
+        "name": "吉祥航空",
+        "close": 13.37,
+        "volume": "94637",
+        "pattern_info": {
+          "strategy": "双均线突破",
+          "ma5_value": 13.27,
+          "ma20_value": 12.963,
+          "golden_cross": "False",
+          "ma5_upward": "True",
+          "ma20_upward": "True",
+          "price_above": "True"
+        }
+      },
+      {
+        "code": "600025",
+        "name": "华能水电",
+        "close": 9.99,
+        "volume": "316751",
+        "pattern_info": {
+          "strategy": "双均线突破",
+          "ma5_value": 10.004000000000001,
+          "ma20_value": 9.6875,
+          "golden_cross": "False",
+          "ma5_upward": "True",
+          "ma20_upward": "True",
+          "price_above": "True"
+        }
+      },
+      {
+        "code": "603181",
+        "name": "皇马科技",
+        "close": 12.45,
+        "volume": "73704",
+        "pattern_info": {
+          "strategy": "双均线突破",
+          "ma5_value": 12.646,
+          "ma20_value": 12.374500000000001,
+          "golden_cross": "False",
+          "ma5_upward": "True",
+          "ma20_upward": "True",
+          "price_above": "True"
+        }
+      },
+      {
+        "code": "300418",
+        "name": "昆仑万维",
+        "close": 36.57,
+        "volume": "1397517",
+        "pattern_info": {
+          "strategy": "双均线突破",
+          "ma5_value": 33.598,
+          "ma20_value": 32.209,
+          "golden_cross": "False",
+          "ma5_upward": "True",
+          "ma20_upward": "True",
+          "price_above": "True"
+        }
+      }
+    ]
+  },
+  "verification_results": {
+    "MACD金叉": [
+      {
+        "stock_code": "300485",
+        "original_strategy": "MACD金叉",
+        "pattern_match": true,
+        "verification_score": 0.9,
+        "details": {
+          "macd_verified": true,
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "600085",
+        "original_strategy": "MACD金叉",
+        "pattern_match": true,
+        "verification_score": 0.8,
+        "details": {
+          "macd_verified": true
+        }
+      },
+      {
+        "stock_code": "603825",
+        "original_strategy": "MACD金叉",
+        "pattern_match": true,
+        "verification_score": 0.9,
+        "details": {
+          "macd_verified": true,
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "603886",
+        "original_strategy": "MACD金叉",
+        "pattern_match": true,
+        "verification_score": 0.9,
+        "details": {
+          "macd_verified": true,
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "300418",
+        "original_strategy": "MACD金叉",
+        "pattern_match": true,
+        "verification_score": 0.8,
+        "details": {
+          "macd_verified": true
+        }
+      }
+    ],
+    "KDJ低位金叉": [
+      {
+        "stock_code": "603121",
+        "original_strategy": "KDJ低位金叉",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      }
+    ],
+    "RSI超卖反弹": [
+      {
+        "stock_code": "002492",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "002578",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "300485",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "300766",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "603121",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "300072",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "600085",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "000723",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "600026",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "603589",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "600981",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "603825",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "002609",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "002202",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "603886",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "002201",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": true,
+        "verification_score": 0.7,
+        "details": {
+          "rsi_verified": true,
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "603885",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "600982",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": true,
+        "verification_score": 0.6,
+        "details": {
+          "rsi_verified": true
+        }
+      },
+      {
+        "stock_code": "601008",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "603826",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "600025",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "300388",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "603181",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "000783",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "600018",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "000034",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "000720",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "600339",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": true,
+        "verification_score": 0.6,
+        "details": {
+          "rsi_verified": true
+        }
+      },
+      {
+        "stock_code": "000037",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": true,
+        "verification_score": 0.7,
+        "details": {
+          "rsi_verified": true,
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "300418",
+        "original_strategy": "RSI超卖反弹",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      }
+    ],
+    "布林带下轨反弹": [
+      {
+        "stock_code": "300766",
+        "original_strategy": "布林带下轨反弹",
+        "pattern_match": true,
+        "verification_score": 0.7,
+        "details": {
+          "boll_verified": true
+        }
+      },
+      {
+        "stock_code": "603121",
+        "original_strategy": "布林带下轨反弹",
+        "pattern_match": true,
+        "verification_score": 0.7,
+        "details": {
+          "boll_verified": true
+        }
+      },
+      {
+        "stock_code": "603589",
+        "original_strategy": "布林带下轨反弹",
+        "pattern_match": true,
+        "verification_score": 0.7,
+        "details": {
+          "boll_verified": true
+        }
+      },
+      {
+        "stock_code": "002609",
+        "original_strategy": "布林带下轨反弹",
+        "pattern_match": true,
+        "verification_score": 0.7,
+        "details": {
+          "boll_verified": true
+        }
+      },
+      {
+        "stock_code": "603886",
+        "original_strategy": "布林带下轨反弹",
+        "pattern_match": true,
+        "verification_score": 0.7999999999999999,
+        "details": {
+          "boll_verified": true,
+          "volume_price_healthy": true
+        }
+      }
+    ],
+    "双均线突破": [
+      {
+        "stock_code": "300485",
+        "original_strategy": "双均线突破",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "600085",
+        "original_strategy": "双均线突破",
+        "pattern_match": true,
+        "verification_score": 0.8,
+        "details": {
+          "ma_verified": true
+        }
+      },
+      {
+        "stock_code": "603825",
+        "original_strategy": "双均线突破",
+        "pattern_match": true,
+        "verification_score": 0.9,
+        "details": {
+          "ma_verified": true,
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "603885",
+        "original_strategy": "双均线突破",
+        "pattern_match": true,
+        "verification_score": 0.8,
+        "details": {
+          "ma_verified": true
+        }
+      },
+      {
+        "stock_code": "600025",
+        "original_strategy": "双均线突破",
+        "pattern_match": false,
+        "verification_score": 0.1,
+        "details": {
+          "volume_price_healthy": true
+        }
+      },
+      {
+        "stock_code": "603181",
+        "original_strategy": "双均线突破",
+        "pattern_match": false,
+        "verification_score": 0.0,
+        "details": {}
+      },
+      {
+        "stock_code": "300418",
+        "original_strategy": "双均线突破",
+        "pattern_match": true,
+        "verification_score": 0.8,
+        "details": {
+          "ma_verified": true
+        }
+      }
+    ]
+  },
+  "summary": {
+    "total_selected": 48,
+    "total_verified": 18,
+    "overall_verification_rate": 37.5
+  }
+}

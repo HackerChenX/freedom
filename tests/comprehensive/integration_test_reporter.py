@@ -391,7 +391,7 @@ class IntegrationTestReporter:
         self.quality_assessor = QualityAssessor()
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     def generate_comprehensive_report(self, test_results: Dict[str, Any], report_name: str = "comprehensive_test_report") -> ComprehensiveTestReport:
         """生成综合测试报告"""
         start_time = time.time()

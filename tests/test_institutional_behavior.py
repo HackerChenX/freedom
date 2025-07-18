@@ -19,7 +19,7 @@ from indicators.complete_indicator_registry import complete_registry
 from strategy.institutional_strategy import Institutional_strategy
 
 
-class Test_institutional_behavior(unittest.Test_case):
+class Test_institutional_behavior(unittest.TestCase):
     """测试主力行为模式分析功能"""
     
     def set_up_Behavior(self):

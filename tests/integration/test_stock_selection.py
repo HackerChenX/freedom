@@ -8,7 +8,7 @@ import unittest
 import os
 import json
 import tempfile
-from unittest.mock import patch, Magic_mock
+from unittest.mock import patch, MagicMock
 
 import pandas as pd
 import numpy as np
@@ -21,7 +21,7 @@ from indicators.complete_indicator_registry import complete_registry
 from strategy.selector import Stock_selector
 
 
-class Test_stock_selection_workflow(unittest.Test_case):
+class Test_stock_selection_workflow(unittest.TestCase):
     """选股流程集成测试类"""
     
     def set_up_Selection(self):

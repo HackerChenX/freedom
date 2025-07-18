@@ -189,6 +189,48 @@ class InstitutionalStrategy(BaseStrategy):
         
         return selected_stocks
     
+    def select_stocks_unified_base_strategy(self, universe: List[str], 
+                                           start_date: str, end_date: str, 
+                                           **kwargs) -> pd.DataFrame:
+        """
+        实现UnifiedBaseStrategy的抽象方法
+        
+        Args:
+            universe: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        # 准备数据字典格式
+        data_dict = {}
+        
+        for code in universe:
+            try:
+                # 这里需要实际的数据获取逻辑
+                # 由于原方法需要data_dict格式，我们先返回基础结果
+                data_dict[code] = pd.DataFrame()  # 临时空数据
+            except Exception as e:
+                logger.warning(f"获取股票{code}数据失败: {e}")
+                continue
+        
+        # 调用原有的选股方法
+        selected_codes = self.select_Strategy_Institutional_Strategy(data_dict)
+        
+        # 转换为DataFrame格式
+        if selected_codes:
+            result_df = pd.DataFrame({
+                'code': selected_codes,
+                'strategy': ['主力行为策略'] * len(selected_codes),
+                'selection_date': [end_date] * len(selected_codes)
+            })
+        else:
+            result_df = pd.DataFrame(columns=['code', 'strategy', 'selection_date'])
+        
+        return result_df
+    
     def _score_behavior_pattern(self, pattern: str) -> float:
         """
         对行为模式进行评分

@@ -13,13 +13,14 @@ from datetime import datetime
 from db.unified_data_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger, init_logging
+from config.config import get_config
 
 # 初始化日志
 init_logging(level=get_config('logging.level', 'INFO'))
 logger = get_logger(__name__)
 
 
-class Test603359_real_data_validation(unittest.Test_case):
+class Test603359_real_data_validation(unittest.TestCase):
     """603359真实数据验证测试类"""
     
     def set_up_Validation_Test_603359_Real_Data_Validation(self):

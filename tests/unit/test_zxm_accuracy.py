@@ -11,7 +11,7 @@ from tests.helper.data_generator import Test_data_generator
 from tests.helper.log_capture import Log_capture_mixin
 
 
-class Test_zXMAccuracy(unittest.Test_case, Log_capture_mixin):
+class Test_zXMAccuracy(unittest.TestCase, Log_capture_mixin):
     """ZXM体系指标准确性测试类"""
     
     def set_up_Accuracy(self):

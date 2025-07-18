@@ -17,7 +17,7 @@ from indicators.zxm.elasticity_indicators import Amplitude_elasticity, ZXMRise_e
 from indicators.zxm.score_indicators import ZXMElasticity_score, ZXMBuy_point_score, Stock_score_calculator
 
 
-class Test_zXMBoundary_conditions(unittest.Test_case):
+class Test_zXMBoundary_conditions(unittest.TestCase):
     """ZXM指标边界条件测试类"""
     
     def set_up_Conditions(self):

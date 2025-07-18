@@ -10,7 +10,7 @@ from tests.helper.data_generator import Test_data_generator
 from tests.helper.log_capture import Log_capture_mixin
 
 
-class Testinstitutionalbehavior_behavior(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
+class Testinstitutionalbehavior_behavior(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """InstitutionalBehavior指标测试类"""
     
     def set_up_Behavior_Test_Institutional_Behavior(self):

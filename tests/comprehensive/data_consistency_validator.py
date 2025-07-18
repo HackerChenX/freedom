@@ -354,7 +354,7 @@ class DataConsistencyValidator:
         }
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     def test_data_query_consistency(self, test_case: ConsistencyTestCase, execution_count: int = 5) -> ConsistencyTestResult:
         """测试数据查询一致性"""
         test_start_time = time.time()
@@ -456,7 +456,7 @@ class DataConsistencyValidator:
         )
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=120.0)
+    @performance_monitor(threshold=120.0)
     def test_concurrent_consistency(self, test_case: ConsistencyTestCase, thread_count: int = 5) -> ConsistencyTestResult:
         """测试并发一致性"""
         test_start_time = time.time()
@@ -558,7 +558,7 @@ class DataConsistencyValidator:
         )
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=300.0)
+    @performance_monitor(threshold=300.0)
     def run_all_consistency_tests(self) -> DataConsistencyReport:
         """运行所有一致性测试"""
         report = DataConsistencyReport(

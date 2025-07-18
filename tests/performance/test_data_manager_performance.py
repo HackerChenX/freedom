@@ -21,7 +21,7 @@ from tests.helper.data_generator import Test_data_generator
 logger = get_logger(__name__)
 
 
-class Test_data_manager_performance(unittest.Test_case):
+class Test_data_manager_performance(unittest.TestCase):
     """测试数据管理器的性能"""
     
     @classmethod

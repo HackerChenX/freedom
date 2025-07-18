@@ -1,0 +1,22 @@
+{
+  "timestamp": "20250718_134412",
+  "selection_results": {
+    "MACD金叉": [],
+    "KDJ低位金叉": [],
+    "RSI超卖反弹": [],
+    "布林带下轨反弹": [],
+    "双均线突破": []
+  },
+  "verification_results": {
+    "MACD金叉": [],
+    "KDJ低位金叉": [],
+    "RSI超卖反弹": [],
+    "布林带下轨反弹": [],
+    "双均线突破": []
+  },
+  "summary": {
+    "total_selected": 0,
+    "total_verified": 0,
+    "overall_verification_rate": 0
+  }
+}

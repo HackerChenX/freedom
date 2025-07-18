@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from indicators.complete_indicator_registry import complete_registry
 
 
-class Test_zXMMarket_breadth(unittest.Test_case):
+class Test_zXMMarket_breadth(unittest.TestCase):
     """ZXM市场宽度指标测试类"""
     
     def set_up_Breadth(self):

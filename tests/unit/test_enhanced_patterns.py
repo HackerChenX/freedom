@@ -100,7 +100,7 @@ class Testrsi_patterns:
         return result
 
 
-class Test_pattern_combination(unittest.Test_case, Indicator_test_mixin):
+class Test_pattern_combination(unittest.TestCase, Indicator_test_mixin):
     """形态组合识别测试"""
     
     def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
@@ -164,7 +164,7 @@ class Test_pattern_combination(unittest.Test_case, Indicator_test_mixin):
                           "形态强度值超出0-100范围")
 
 
-class Test_pattern_confirmation(unittest.Test_case, Indicator_test_mixin):
+class Test_pattern_confirmation(unittest.TestCase, Indicator_test_mixin):
     """形态确认测试"""
     
     def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
@@ -234,7 +234,7 @@ class Test_pattern_confirmation(unittest.Test_case, Indicator_test_mixin):
                           "确认强度值超出0-100范围")
 
 
-class Testpatternqualityevaluator_patterns(unittest.Test_case, Indicator_test_mixin):
+class Testpatternqualityevaluator_patterns(unittest.TestCase, Indicator_test_mixin):
     """形态质量评估测试"""
     
     def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
@@ -320,7 +320,7 @@ class Testpatternqualityevaluator_patterns(unittest.Test_case, Indicator_test_mi
             self.assertTrue((profit_potential >= 0).all(), "盈利潜力含有负值")
 
 
-class Test_multi_indicator_pattern_analysis(unittest.Test_case, Log_capture_mixin):
+class Test_multi_indicator_pattern_analysis(unittest.TestCase, Log_capture_mixin):
     """多指标形态分析测试"""
     
     def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):

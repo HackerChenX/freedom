@@ -6,7 +6,7 @@ import logging
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
-class Test_eMA(unittest.Test_case):
+class Test_eMA(unittest.TestCase):
     def set_up_Ema(self):
         # Suppress all logging outputs during tests
         logging.disable(logging.CRITICAL)

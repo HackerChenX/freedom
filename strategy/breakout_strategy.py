@@ -15,6 +15,7 @@ from utils.logger import getLogger
 from indicators.complete_indicator_registry import complete_registry
 from indicators.ma import MaMa as MA
 from indicators.boll import BollBoll as BOLL
+from indicators.indicator_factory import IndicatorFactory
 
 logger = getLogger(__name__)
 
@@ -63,7 +64,7 @@ class BreakoutStrategy(BaseStrategy):
         """
         # 更新参数
         if kwargs:
-            self.set_parameters(kwargs)
+            self.set_parameters(**kwargs)
         
         result_list = []
         
@@ -250,4 +251,23 @@ class BreakoutStrategy(BaseStrategy):
         Returns:
             pd.DataFrame: 选股结果
         """
-        return self.select_Strategy(universe, *args, **kwargs) 
+        return self.select_Strategy(universe, *args, **kwargs)
+    
+    def select_stocks_unified_base_strategy(self, universe: List[str], 
+                                           start_date: str, end_date: str, 
+                                           **kwargs) -> pd.DataFrame:
+        """
+        实现UnifiedBaseStrategy的抽象方法
+        
+        Args:
+            universe: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        kwargs['start_date'] = start_date
+        kwargs['end_date'] = end_date
+        return self.select_Strategy(universe, **kwargs) 

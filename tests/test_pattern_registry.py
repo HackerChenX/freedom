@@ -15,7 +15,7 @@ from indicators.bias import BIAS
 from indicators.platform_breakout import Platform_breakout
 
 
-class Test_pattern_registry(unittest.Test_case):
+class Test_pattern_registry(unittest.TestCase):
     """测试形态注册表功能"""
     
     def set_up_Registry(self):

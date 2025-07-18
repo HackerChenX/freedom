@@ -1,696 +1,517 @@
-# 股票选股策略系统综合测试设计文档
+# Design Document
 
-## 概述
+## Overview
 
-本设计文档基于需求文档，详细描述了股票选股策略系统综合测试的技术实现方案。测试系统将采用分层测试架构，确保从单元测试到集成测试的全面覆盖，同时严格遵循系统的六层架构原则。
+The comprehensive stock selection testing system is designed to validate all technical indicators and their patterns through closed-loop verification using ClickHouse real data across all 4000+ stocks. The system ensures that every indicator pattern can successfully select corresponding stocks, and validates these selections through reverse buypoint analysis to confirm pattern consistency.
 
-## 架构设计
+The design follows a high-performance modular architecture that integrates with the existing indicator system, pattern registry, and buypoint analysis components while providing comprehensive testing coverage within a 5-minute execution window for complete stock selection across all patterns.
 
-### 测试架构分层
+## Architecture
 
-```
-L6: 测试应用层 (Test Application Layer)
-├── test_runners/          # 测试执行器和主程序
-├── test_suites/          # 测试套件管理
-└── reporting/            # 测试报告生成
+### High-Level Architecture
 
-L5: 测试业务层 (Test Business Layer)  
-├── strategy_tests/       # 选股策略测试
-├── performance_tests/    # 性能测试逻辑
-└── validation_tests/     # 数据验证测试
-
-L4: 测试服务层 (Test Service Layer)
-├── indicator_tests/      # 技术指标测试服务
-├── data_quality_tests/   # 数据质量测试服务
-└── monitoring_tests/     # 监控测试服务
-
-L3: 测试数据层 (Test Data Layer)
-├── test_data_manager/    # 测试数据管理
-├── mock_services/        # 模拟服务（仅用于单元测试）
-└── database_tests/       # 数据库连接测试
-
-L2: 测试基础设施层 (Test Infrastructure Layer)
-├── test_config/          # 测试配置管理
-├── test_utils/           # 测试工具
-└── test_fixtures/        # 测试夹具
-
-L1: 测试数据存储层 (Test Data Storage Layer)
-├── test_data/            # 测试数据文件
-└── test_results/         # 测试结果存储
+```mermaid
+graph TB
+    A[Test Controller] --> B[Indicator Discovery]
+    A --> C[Pattern Registry Manager]
+    A --> D[Stock Selection Engine]
+    A --> E[Buypoint Verification Engine]
+    A --> F[Report Generator]
+    
+    B --> G[Indicator Registry]
+    C --> H[Pattern Registry]
+    D --> I[Data Access Layer]
+    E --> J[BuyPoint Analyzer]
+    F --> K[Test Results Database]
+    
+    I --> L[ClickHouse Database]
+    J --> L
+    K --> M[JSON/CSV Reports]
 ```
 
-### 核心组件设计
+### Core Components
 
-#### 1. 测试执行引擎
+1. **Test Controller**: Orchestrates the entire testing workflow
+2. **Indicator Discovery**: Discovers and loads all available indicators
+3. **Pattern Registry Manager**: Manages pattern registration and retrieval
+4. **Stock Selection Engine**: Executes stock selection for each pattern
+5. **Buypoint Verification Engine**: Performs reverse verification through buypoint analysis
+6. **Report Generator**: Generates comprehensive test reports
+
+## Components and Interfaces
+
+### 1. Test Controller
+
 ```python
-class ComprehensiveTestEngine:
-    """综合测试执行引擎"""
+class ComprehensiveStockSelectionTester:
+    """Main controller for comprehensive stock selection testing"""
+    
+    def __init__(self, config: TestConfig):
+        self.config = config
+        self.indicator_discovery = IndicatorDiscovery()
+        self.pattern_manager = PatternRegistryManager()
+        self.selection_engine = StockSelectionEngine()
+        self.verification_engine = BuypointVerificationEngine()
+        self.report_generator = ReportGenerator()
+    
+    async def run_comprehensive_test(self) -> TestResults:
+        """Execute comprehensive testing workflow"""
+        pass
+    
+    async def test_all_indicators(self) -> Dict[str, IndicatorTestResult]:
+        """Test all available indicators"""
+        pass
+    
+    async def test_indicator_patterns(self, indicator_name: str) -> PatternTestResults:
+        """Test all patterns for a specific indicator"""
+        pass
+```
+
+### 2. Indicator Discovery
+
+```python
+class IndicatorDiscovery:
+    """Discovers and manages available indicators"""
+    
+    def discover_all_indicators(self) -> List[IndicatorInfo]:
+        """Discover all available indicators in the system"""
+        pass
+    
+    def load_indicator(self, indicator_name: str) -> Any:
+        """Load a specific indicator instance"""
+        pass
+    
+    def get_indicator_patterns(self, indicator_name: str) -> List[str]:
+        """Get all patterns for a specific indicator"""
+        pass
+```
+
+### 3. Pattern Registry Manager
+
+```python
+class PatternRegistryManager:
+    """Manages pattern registry operations for testing"""
     
     def __init__(self):
-        self.test_suites = []
-        self.performance_monitor = PerformanceMonitor()
-        self.report_generator = TestReportGenerator()
+        self.pattern_registry = get_pattern_registry()
     
-    def run_all_tests(self) -> TestResults:
-        """执行所有测试套件"""
+    def ensure_patterns_registered(self, indicator_name: str) -> None:
+        """Ensure all patterns for an indicator are registered"""
         pass
     
-    def run_specific_suite(self, suite_name: str) -> TestResults:
-        """执行特定测试套件"""
-        pass
-```
-
-#### 2. 真实数据验证器
-```python
-class RealDataValidator:
-    """真实数据验证器"""
-    
-    def __init__(self):
-        self.query_executor = get_query_executor()
-        self.data_quality_checker = DataQualityChecker()
-    
-    def validate_database_connection(self) -> bool:
-        """验证数据库连接"""
+    def get_all_patterns_by_indicator(self, indicator_name: str) -> List[PatternInfo]:
+        """Get all registered patterns for an indicator"""
         pass
     
-    def validate_data_integrity(self) -> DataIntegrityReport:
-        """验证数据完整性"""
-        pass
-    
-    def validate_data_quality(self) -> DataQualityReport:
-        """验证数据质量"""
+    def validate_pattern_registration(self) -> ValidationResult:
+        """Validate pattern registration completeness"""
         pass
 ```
 
-#### 3. 选股功能测试器
-```python
-class StockSelectionTester:
-    """选股功能测试器"""
-    
-    def __init__(self):
-        self.strategy_factory = StrategyFactory()
-        self.test_data_manager = TestDataManager()
-    
-    def test_dual_ma_strategy(self) -> StrategyTestResult:
-        """测试双均线策略"""
-        pass
-    
-    def test_main_force_strategy(self) -> StrategyTestResult:
-        """测试主力行为策略"""
-        pass
-    
-    def test_market_conditions(self) -> MarketConditionTestResult:
-        """测试不同市场条件"""
-        pass
-```
-
-#### 4. 性能基准测试器
-```python
-class PerformanceBenchmarkTester:
-    """性能基准测试器"""
-    
-    def __init__(self):
-        self.performance_monitor = PerformanceMonitor()
-        self.memory_profiler = MemoryProfiler()
-        self.query_analyzer = QueryAnalyzer()
-    
-    def test_single_stock_query_performance(self) -> PerformanceResult:
-        """测试单股查询性能"""
-        pass
-    
-    def test_batch_processing_performance(self) -> PerformanceResult:
-        """测试批量处理性能"""
-        pass
-    
-    def test_memory_usage(self) -> MemoryUsageReport:
-        """测试内存使用情况"""
-        pass
-```
-
-#### 5. 架构合规性检查器
-```python
-class ArchitectureComplianceChecker:
-    """架构合规性检查器"""
-    
-    def __init__(self):
-        self.dependency_analyzer = DependencyAnalyzer()
-        self.code_analyzer = CodeAnalyzer()
-    
-    def check_layer_dependencies(self) -> ComplianceReport:
-        """检查分层依赖关系"""
-        pass
-    
-    def check_database_access_patterns(self) -> AccessPatternReport:
-        """检查数据库访问模式"""
-        pass
-    
-    def check_configuration_usage(self) -> ConfigurationReport:
-        """检查配置使用情况"""
-        pass
-```
-
-## 组件和接口
-
-### 1. 测试数据管理接口
+### 4. Stock Selection Engine
 
 ```python
-class ITestDataManager:
-    """测试数据管理接口"""
+class StockSelectionEngine:
+    """Executes stock selection based on indicator patterns"""
     
-    def get_test_stock_codes(self, count: int) -> List[str]:
-        """获取测试股票代码"""
+    def __init__(self, data_access: DataAccessInterface):
+        self.data_access = data_access
+    
+    async def select_stocks_for_pattern(self, 
+                                      pattern_id: str, 
+                                      date_range: DateRange,
+                                      universe: List[str]) -> SelectionResult:
+        """Select stocks matching a specific pattern"""
         pass
     
-    def get_historical_data(self, code: str, start_date: str, end_date: str) -> pd.DataFrame:
-        """获取历史数据"""
-        pass
-    
-    def get_market_condition_data(self, condition: MarketCondition) -> pd.DataFrame:
-        """获取特定市场条件数据"""
+    async def batch_select_stocks(self, 
+                                patterns: List[str],
+                                date_range: DateRange) -> Dict[str, SelectionResult]:
+        """Batch select stocks for multiple patterns"""
         pass
 ```
 
-### 2. 性能监控接口
+### 5. Buypoint Verification Engine
 
 ```python
-class IPerformanceMonitor:
-    """性能监控接口"""
+class BuypointVerificationEngine:
+    """Performs closed-loop verification through buypoint analysis"""
     
-    def start_monitoring(self, test_name: str) -> None:
-        """开始监控"""
+    def __init__(self, buypoint_analyzer: BuyPointAnalyzer):
+        self.buypoint_analyzer = buypoint_analyzer
+    
+    async def verify_stock_selection(self, 
+                                   stock_code: str,
+                                   date: str,
+                                   expected_pattern: str) -> VerificationResult:
+        """Verify a single stock selection through buypoint analysis"""
         pass
     
-    def stop_monitoring(self) -> PerformanceMetrics:
-        """停止监控并返回指标"""
+    async def batch_verify_selections(self, 
+                                    selections: List[StockSelection]) -> List[VerificationResult]:
+        """Batch verify multiple stock selections"""
         pass
     
-    def get_memory_usage(self) -> MemoryMetrics:
-        """获取内存使用情况"""
-        pass
-    
-    def get_query_performance(self) -> QueryMetrics:
-        """获取查询性能指标"""
+    def compare_patterns(self, 
+                        expected_pattern: str,
+                        detected_patterns: List[str]) -> PatternMatchResult:
+        """Compare expected vs detected patterns"""
         pass
 ```
 
-### 3. 测试报告接口
+### 6. Report Generator
 
 ```python
-class ITestReportGenerator:
-    """测试报告生成接口"""
+class ReportGenerator:
+    """Generates comprehensive test reports"""
     
-    def generate_comprehensive_report(self, results: TestResults) -> str:
-        """生成综合测试报告"""
+    def generate_comprehensive_report(self, 
+                                    test_results: TestResults) -> ComprehensiveReport:
+        """Generate comprehensive test report"""
         pass
     
-    def generate_performance_report(self, metrics: PerformanceMetrics) -> str:
-        """生成性能测试报告"""
+    def generate_indicator_report(self, 
+                                indicator_results: IndicatorTestResult) -> IndicatorReport:
+        """Generate report for a specific indicator"""
         pass
     
-    def generate_coverage_report(self, coverage: CoverageData) -> str:
-        """生成覆盖率报告"""
+    def generate_pattern_report(self, 
+                              pattern_results: PatternTestResults) -> PatternReport:
+        """Generate report for pattern testing"""
         pass
 ```
 
-## 数据模型
+## Data Models
 
-### 1. 测试结果数据模型
+### Test Configuration
 
 ```python
 @dataclass
-class TestResult:
-    """单个测试结果"""
-    test_name: str
-    status: TestStatus
-    execution_time: float
-    error_message: Optional[str]
-    metrics: Dict[str, Any]
+class TestConfig:
+    """Test configuration parameters"""
+    date_range: DateRange
+    stock_universe: List[str]
+    indicators_to_test: Optional[List[str]]
+    patterns_to_test: Optional[List[str]]
+    verification_threshold: float
+    batch_size: int
+    parallel_workers: int
+    output_format: str
+    report_level: str
+```
 
-@dataclass
-class TestSuiteResult:
-    """测试套件结果"""
-    suite_name: str
-    total_tests: int
-    passed_tests: int
-    failed_tests: int
-    skipped_tests: int
-    execution_time: float
-    test_results: List[TestResult]
+### Test Results
 
+```python
 @dataclass
-class ComprehensiveTestResults:
-    """综合测试结果"""
+class TestResults:
+    """Comprehensive test results"""
+    test_id: str
     start_time: datetime
     end_time: datetime
-    total_execution_time: float
-    suite_results: List[TestSuiteResult]
+    total_indicators_tested: int
+    total_patterns_tested: int
+    total_stocks_selected: int
+    total_verifications_performed: int
+    overall_success_rate: float
+    indicator_results: Dict[str, IndicatorTestResult]
+    summary_statistics: SummaryStatistics
+```
+
+### Indicator Test Result
+
+```python
+@dataclass
+class IndicatorTestResult:
+    """Test results for a specific indicator"""
+    indicator_name: str
+    total_patterns: int
+    patterns_tested: int
+    patterns_with_selections: int
+    total_stocks_selected: int
+    verification_success_rate: float
+    pattern_results: Dict[str, PatternTestResult]
     performance_metrics: PerformanceMetrics
-    coverage_report: CoverageReport
-    compliance_report: ComplianceReport
 ```
 
-### 2. 性能指标数据模型
+### Pattern Test Result
 
 ```python
 @dataclass
-class PerformanceMetrics:
-    """性能指标"""
-    cpu_usage: float
-    memory_usage: float
-    disk_io: float
-    network_io: float
-    query_execution_times: List[float]
-    cache_hit_rate: float
-    connection_pool_usage: int
-
-@dataclass
-class QueryMetrics:
-    """查询指标"""
-    query_type: str
-    execution_time: float
-    rows_returned: int
-    memory_used: float
-    cache_hit: bool
-
-@dataclass
-class MemoryMetrics:
-    """内存指标"""
-    peak_memory: float
-    average_memory: float
-    memory_leaks: List[str]
-    gc_collections: int
+class PatternTestResult:
+    """Test results for a specific pattern"""
+    pattern_id: str
+    pattern_name: str
+    stocks_selected: int
+    verifications_attempted: int
+    verifications_successful: int
+    success_rate: float
+    selected_stocks: List[StockSelection]
+    verification_results: List[VerificationResult]
 ```
 
-### 3. 数据质量模型
+### Verification Result
 
 ```python
 @dataclass
-class DataQualityReport:
-    """数据质量报告"""
-    total_records: int
-    missing_values: Dict[str, int]
-    duplicate_records: int
-    data_type_errors: List[str]
-    value_range_errors: List[str]
-    time_continuity_issues: List[str]
-    quality_score: float
-
-@dataclass
-class DataIntegrityReport:
-    """数据完整性报告"""
-    required_fields_present: bool
-    data_volume_sufficient: bool
-    time_range_coverage: Dict[str, str]
-    data_freshness: Dict[str, datetime]
-    integrity_score: float
+class VerificationResult:
+    """Result of buypoint verification"""
+    stock_code: str
+    date: str
+    expected_pattern: str
+    detected_patterns: List[str]
+    pattern_match: bool
+    confidence_score: float
+    verification_details: Dict[str, Any]
 ```
 
-## 错误处理
+## Error Handling
 
-### 1. 测试异常层次结构
+### Error Categories
 
-```python
-class TestException(Exception):
-    """测试基础异常"""
-    pass
+1. **Configuration Errors**: Invalid test parameters or missing configuration
+2. **Data Access Errors**: Database connection issues or missing data
+3. **Indicator Errors**: Indicator loading or calculation failures
+4. **Pattern Errors**: Pattern registration or detection issues
+5. **Verification Errors**: Buypoint analysis failures
+6. **System Errors**: Resource constraints or timeout issues
 
-class DataValidationException(TestException):
-    """数据验证异常"""
-    pass
-
-class PerformanceTestException(TestException):
-    """性能测试异常"""
-    pass
-
-class ArchitectureComplianceException(TestException):
-    """架构合规性异常"""
-    pass
-
-class TestConfigurationException(TestException):
-    """测试配置异常"""
-    pass
-```
-
-### 2. 错误处理策略
+### Error Handling Strategy
 
 ```python
 class TestErrorHandler:
-    """测试错误处理器"""
+    """Centralized error handling for testing system"""
+    
+    def handle_indicator_error(self, indicator_name: str, error: Exception) -> ErrorResult:
+        """Handle indicator-specific errors"""
+        pass
+    
+    def handle_pattern_error(self, pattern_id: str, error: Exception) -> ErrorResult:
+        """Handle pattern-specific errors"""
+        pass
+    
+    def handle_verification_error(self, stock_code: str, error: Exception) -> ErrorResult:
+        """Handle verification errors"""
+        pass
+    
+    def should_continue_testing(self, error_count: int, total_tests: int) -> bool:
+        """Determine if testing should continue based on error rate"""
+        pass
+```
+
+## Testing Strategy
+
+### Test Execution Flow
+
+1. **Initialization Phase**
+   - Load test configuration
+   - Initialize system components
+   - Discover available indicators
+   - Validate pattern registry
+
+2. **Pattern Registration Phase**
+   - Ensure all indicator patterns are registered
+   - Validate pattern completeness
+   - Generate pattern inventory
+
+3. **Stock Selection Phase**
+   - For each indicator and pattern combination:
+     - Execute stock selection algorithm
+     - Record selection results
+     - Handle selection failures
+
+4. **Verification Phase**
+   - For each selected stock:
+     - Perform buypoint analysis
+     - Compare detected vs expected patterns
+     - Record verification results
+
+5. **Reporting Phase**
+   - Aggregate all test results
+   - Generate comprehensive reports
+   - Export results in multiple formats
+
+### Parallel Processing Strategy
+
+```python
+class ParallelTestExecutor:
+    """Manages parallel test execution"""
+    
+    def __init__(self, max_workers: int):
+        self.max_workers = max_workers
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
+    
+    async def execute_parallel_tests(self, test_tasks: List[TestTask]) -> List[TestResult]:
+        """Execute tests in parallel with proper resource management"""
+        pass
+    
+    def manage_resource_usage(self) -> None:
+        """Monitor and manage system resource usage"""
+        pass
+```
+
+### Memory Management
+
+- Implement batch processing for large datasets
+- Use data streaming for continuous processing
+- Implement garbage collection strategies
+- Monitor memory usage and implement early stopping if needed
+
+## Performance Optimization
+
+### 5-Minute Execution Target
+
+The system must complete comprehensive testing of all indicators and patterns across 4000+ stocks within 5 minutes. This requires aggressive optimization strategies:
+
+1. **Parallel Processing**: Maximum parallelization across indicators, patterns, and stocks
+2. **ClickHouse Optimization**: Leverage ClickHouse's columnar storage and parallel query execution
+3. **Memory Management**: Efficient memory usage to avoid garbage collection delays
+4. **Batch Processing**: Process stocks in optimized batches to maximize throughput
+
+### ClickHouse Database Optimization
+
+```python
+class ClickHouseOptimizer:
+    """Optimizes ClickHouse queries for maximum performance"""
     
     def __init__(self):
-        self.logger = get_logger(__name__)
-        self.error_recovery = ErrorRecoveryManager()
+        self.connection_pool_size = 50  # High concurrency
+        self.batch_size = 1000  # Optimal batch size for ClickHouse
+        self.query_timeout = 30  # Prevent hanging queries
     
-    def handle_test_failure(self, test_name: str, error: Exception) -> TestResult:
-        """处理测试失败"""
-        self.logger.error(f"测试失败: {test_name}, 错误: {error}")
-        
-        # 尝试错误恢复
-        if self.error_recovery.can_recover(error):
-            return self.error_recovery.recover_test(test_name, error)
-        
-        return TestResult(
-            test_name=test_name,
-            status=TestStatus.FAILED,
-            error_message=str(error),
-            execution_time=0.0,
-            metrics={}
-        )
-    
-    def handle_performance_degradation(self, metrics: PerformanceMetrics) -> None:
-        """处理性能下降"""
-        if metrics.query_execution_times and max(metrics.query_execution_times) > 10.0:
-            self.logger.warning("检测到慢查询，建议优化")
-        
-        if metrics.memory_usage > 8.0:  # 8GB
-            self.logger.warning("内存使用过高，可能存在内存泄漏")
-```
-
-## 测试策略
-
-### 1. 单元测试策略
-
-```python
-class UnitTestStrategy:
-    """单元测试策略"""
-    
-    def test_individual_indicators(self) -> List[TestResult]:
-        """测试单个技术指标"""
-        indicators = [
-            'MA', 'MACD', 'RSI', 'KDJ', 'BOLL', 
-            'DMI', 'TRIX', 'AROON', 'ROC', 'MOMENTUM'
-        ]
-        
-        results = []
-        for indicator in indicators:
-            result = self._test_single_indicator(indicator)
-            results.append(result)
-        
-        return results
-    
-    def test_strategy_components(self) -> List[TestResult]:
-        """测试策略组件"""
+    def optimize_stock_selection_query(self, pattern_conditions: Dict) -> str:
+        """Generate optimized ClickHouse query for stock selection"""
+        # Use PREWHERE for early filtering
+        # Leverage columnar storage advantages
+        # Use parallel processing hints
         pass
     
-    def test_data_access_components(self) -> List[TestResult]:
-        """测试数据访问组件"""
+    def batch_execute_queries(self, queries: List[str]) -> List[QueryResult]:
+        """Execute multiple queries in parallel with connection pooling"""
         pass
 ```
 
-### 2. 集成测试策略
+### Caching Strategy
+
+1. **Indicator Calculation Cache**: Cache calculated indicator values with Redis/Memory
+2. **Pattern Detection Cache**: Cache pattern detection results for reuse
+3. **Stock Data Cache**: Cache frequently accessed stock data with TTL
+4. **Verification Results Cache**: Cache buypoint analysis results
+5. **Query Result Cache**: Cache ClickHouse query results for identical patterns
+
+### Database Optimization
+
+1. **Connection Pooling**: 50+ concurrent ClickHouse connections
+2. **Query Optimization**: Use PREWHERE, parallel processing, and columnar advantages
+3. **Batch Operations**: Process 1000 stocks per batch for optimal throughput
+4. **Indexing Strategy**: Ensure proper ClickHouse table indexing
+5. **Compression**: Use ClickHouse compression for faster data transfer
+
+### Monitoring and Metrics
 
 ```python
-class IntegrationTestStrategy:
-    """集成测试策略"""
-    
-    def test_end_to_end_workflow(self) -> TestResult:
-        """测试端到端工作流"""
-        # 1. 数据获取
-        # 2. 指标计算
-        # 3. 策略执行
-        # 4. 结果输出
-        pass
-    
-    def test_database_integration(self) -> TestResult:
-        """测试数据库集成"""
-        pass
-    
-    def test_component_interactions(self) -> List[TestResult]:
-        """测试组件交互"""
-        pass
-```
-
-### 3. 性能测试策略
-
-```python
-class PerformanceTestStrategy:
-    """性能测试策略"""
-    
-    def test_load_performance(self) -> PerformanceResult:
-        """测试负载性能"""
-        test_cases = [
-            {'stock_count': 1, 'expected_time': 2.0},
-            {'stock_count': 100, 'expected_time': 30.0},
-            {'stock_count': 1000, 'expected_time': 300.0},
-            {'stock_count': 4000, 'expected_time': 1200.0}
-        ]
-        
-        results = []
-        for case in test_cases:
-            result = self._execute_load_test(case)
-            results.append(result)
-        
-        return PerformanceResult(results)
-    
-    def test_memory_performance(self) -> MemoryResult:
-        """测试内存性能"""
-        pass
-    
-    def test_concurrent_performance(self) -> ConcurrencyResult:
-        """测试并发性能"""
-        pass
-```
-
-## 监控和日志
-
-### 1. 测试监控系统
-
-```python
-class TestMonitoringSystem:
-    """测试监控系统"""
+class TestMonitor:
+    """Monitors test execution and performance with 5-minute timeout"""
     
     def __init__(self):
-        self.metrics_collector = MetricsCollector()
-        self.alert_manager = AlertManager()
-        self.dashboard = TestDashboard()
+        self.start_time = None
+        self.timeout_seconds = 300  # 5 minutes
+        self.performance_threshold = 0.8  # Stop at 80% of timeout for optimization
     
-    def start_monitoring(self) -> None:
-        """开始监控"""
-        self.metrics_collector.start()
-        self.dashboard.initialize()
-    
-    def collect_metrics(self) -> TestMetrics:
-        """收集测试指标"""
-        return self.metrics_collector.get_current_metrics()
-    
-    def check_alerts(self) -> List[Alert]:
-        """检查告警"""
-        return self.alert_manager.get_active_alerts()
-```
-
-### 2. 测试日志管理
-
-```python
-class TestLogManager:
-    """测试日志管理器"""
-    
-    def __init__(self):
-        self.logger = get_logger('test_system')
-        self.log_aggregator = LogAggregator()
-    
-    def log_test_start(self, test_name: str) -> None:
-        """记录测试开始"""
-        self.logger.info(f"开始执行测试: {test_name}")
-    
-    def log_test_result(self, result: TestResult) -> None:
-        """记录测试结果"""
-        if result.status == TestStatus.PASSED:
-            self.logger.info(f"测试通过: {result.test_name}")
-        else:
-            self.logger.error(f"测试失败: {result.test_name}, 错误: {result.error_message}")
-    
-    def log_performance_metrics(self, metrics: PerformanceMetrics) -> None:
-        """记录性能指标"""
-        self.logger.info(f"性能指标 - CPU: {metrics.cpu_usage}%, 内存: {metrics.memory_usage}GB")
-```
-
-## 报告生成
-
-### 1. 综合测试报告
-
-```python
-class ComprehensiveTestReportGenerator:
-    """综合测试报告生成器"""
-    
-    def generate_html_report(self, results: ComprehensiveTestResults) -> str:
-        """生成HTML格式报告"""
-        template = self._load_report_template()
-        return template.render(results=results)
-    
-    def generate_json_report(self, results: ComprehensiveTestResults) -> str:
-        """生成JSON格式报告"""
-        return json.dumps(results, cls=TestResultEncoder, indent=2)
-    
-    def generate_performance_charts(self, metrics: PerformanceMetrics) -> List[str]:
-        """生成性能图表"""
-        charts = []
-        
-        # CPU使用率图表
-        cpu_chart = self._create_cpu_chart(metrics)
-        charts.append(cpu_chart)
-        
-        # 内存使用图表
-        memory_chart = self._create_memory_chart(metrics)
-        charts.append(memory_chart)
-        
-        # 查询性能图表
-        query_chart = self._create_query_performance_chart(metrics)
-        charts.append(query_chart)
-        
-        return charts
-```
-
-### 2. 覆盖率报告
-
-```python
-class CoverageReportGenerator:
-    """覆盖率报告生成器"""
-    
-    def generate_code_coverage_report(self) -> CoverageReport:
-        """生成代码覆盖率报告"""
+    def track_test_progress(self, completed: int, total: int) -> None:
+        """Track and report test progress with timeout checking"""
         pass
     
-    def generate_functional_coverage_report(self) -> FunctionalCoverageReport:
-        """生成功能覆盖率报告"""
+    def check_timeout(self) -> bool:
+        """Check if execution time exceeds 5-minute limit"""
+        if self.start_time is None:
+            return False
+        elapsed = time.time() - self.start_time
+        return elapsed > self.timeout_seconds
+    
+    def should_optimize_performance(self) -> bool:
+        """Check if performance optimization is needed (at 80% of timeout)"""
+        if self.start_time is None:
+            return False
+        elapsed = time.time() - self.start_time
+        return elapsed > (self.timeout_seconds * self.performance_threshold)
+    
+    def monitor_resource_usage(self) -> ResourceMetrics:
+        """Monitor system resource usage"""
         pass
     
-    def generate_scenario_coverage_report(self) -> ScenarioCoverageReport:
-        """生成场景覆盖率报告"""
+    def detect_performance_issues(self) -> List[PerformanceIssue]:
+        """Detect and report performance issues"""
+        pass
+    
+    def trigger_early_stop(self, reason: str) -> None:
+        """Trigger early stop and performance optimization"""
         pass
 ```
 
-## 配置管理
-
-### 1. 测试配置
-
-```yaml
-# test_config.yaml
-test_configuration:
-  database:
-    host: "localhost"
-    port: 9000
-    database: "stock_test"
-    timeout: 30
-    
-  performance_thresholds:
-    single_stock_query: 2.0  # seconds
-    batch_100_stocks: 30.0   # seconds
-    batch_1000_stocks: 300.0 # seconds
-    full_market_scan: 1200.0 # seconds
-    max_memory_usage: 8.0    # GB
-    
-  test_data:
-    sample_stock_codes: ["000001", "000002", "600000", "600036"]
-    test_date_range:
-      start: "2023-01-01"
-      end: "2024-12-31"
-    
-  reporting:
-    output_directory: "test_results"
-    generate_html: true
-    generate_json: true
-    generate_charts: true
-    
-  monitoring:
-    enable_real_time_monitoring: true
-    alert_thresholds:
-      cpu_usage: 80.0
-      memory_usage: 6.0
-      query_timeout: 10.0
-```
-
-### 2. 环境配置
+### Early Stopping and Performance Optimization
 
 ```python
-class TestEnvironmentConfig:
-    """测试环境配置"""
+class PerformanceManager:
+    """Manages performance and implements early stopping"""
     
-    def __init__(self):
-        self.config = self._load_config()
+    def __init__(self, timeout_seconds: int = 300):
+        self.timeout_seconds = timeout_seconds
+        self.optimization_triggers = []
     
-    def get_database_config(self) -> Dict[str, Any]:
-        """获取数据库配置"""
-        return self.config['database']
+    def monitor_execution_time(self) -> None:
+        """Continuously monitor execution time"""
+        pass
     
-    def get_performance_thresholds(self) -> Dict[str, float]:
-        """获取性能阈值"""
-        return self.config['performance_thresholds']
+    def trigger_performance_optimization(self) -> None:
+        """Trigger performance optimization when approaching timeout"""
+        # Reduce batch sizes
+        # Increase parallelization
+        # Skip non-critical patterns
+        # Implement aggressive caching
+        pass
     
-    def get_test_data_config(self) -> Dict[str, Any]:
-        """获取测试数据配置"""
-        return self.config['test_data']
+    def implement_early_stop(self) -> TestResults:
+        """Implement early stop with partial results"""
+        pass
 ```
 
-## 部署和执行
+## Integration Points
 
-### 1. 测试执行流程
+### Existing System Integration
 
-```mermaid
-graph TD
-    A[开始测试] --> B[初始化测试环境]
-    B --> C[验证数据库连接]
-    C --> D[执行数据质量检查]
-    D --> E[运行单元测试]
-    E --> F[运行集成测试]
-    F --> G[执行性能测试]
-    G --> H[进行架构合规性检查]
-    H --> I[生成测试报告]
-    I --> J[清理测试环境]
-    J --> K[结束测试]
-```
+1. **Indicator System**: Integrates with existing indicator calculation framework
+2. **Pattern Registry**: Uses existing PatternRegistry for pattern management
+3. **Buypoint Analyzer**: Leverages existing BuyPointAnalyzer for verification
+4. **Data Access Layer**: Uses existing DataAccessInterface for data operations
+5. **Configuration System**: Integrates with existing configuration management
 
-### 2. 持续集成配置
+### External Dependencies
 
-```yaml
-# .github/workflows/comprehensive_test.yml
-name: Comprehensive Stock Selection Testing
+1. **ClickHouse Database**: Primary data source for stock information
+2. **Pandas/NumPy**: Data processing and analysis
+3. **AsyncIO**: Asynchronous processing support
+4. **Logging System**: Comprehensive logging and monitoring
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: '0 2 * * *'  # 每天凌晨2点执行
+## Security and Reliability
 
-jobs:
-  comprehensive-test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-html
-    
-    - name: Start ClickHouse
-      run: |
-        docker run -d --name clickhouse-server \
-          -p 8123:8123 -p 9000:9000 \
-          yandex/clickhouse-server
-    
-    - name: Run comprehensive tests
-      run: |
-        python -m pytest tests/comprehensive/ \
-          --cov=. \
-          --cov-report=html \
-          --html=test_report.html \
-          --self-contained-html
-    
-    - name: Upload test results
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results
-        path: |
-          test_report.html
-          htmlcov/
-```
+### Data Security
 
-这个设计文档提供了一个全面的测试系统架构，涵盖了所有需求中提到的测试方面。接下来我需要询问用户是否对这个设计满意，然后继续创建任务文档。
+- Implement secure database connections
+- Validate all input parameters
+- Sanitize data before processing
+- Implement audit logging
+
+### Reliability Features
+
+- Implement retry mechanisms for transient failures
+- Provide graceful degradation for partial failures
+- Implement circuit breaker patterns for external dependencies
+- Ensure data consistency across test runs
+
+### Backup and Recovery
+
+- Implement test result backup mechanisms
+- Provide test resumption capabilities
+- Implement rollback procedures for failed tests
+- Maintain test execution history

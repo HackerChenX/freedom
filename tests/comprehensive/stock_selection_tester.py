@@ -1,877 +1,751 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
-股票选股功能测试器
+综合选股测试系统 - 主控制器
 
-提供全面的选股功能测试，包括双均线突破策略、主力行为策略、多市场条件测试等。
-遵循L5业务应用层规范，验证选股策略的准确性和可靠性。
-
-测试内容：
-- 双均线突破策略测试
-- 主力行为策略测试  
-- 多市场条件适应性测试
-- 选股结果验证
-- 选股逻辑可追溯性测试
+测试所有技术指标的所有形态，通过闭环验证确保选股准确性
+要求：5分钟内完成4000+股票的全面测试
 """
 
-import os
-import sys
+import asyncio
+import time
+import yaml
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
-import pandas as pd
-import numpy as np
+from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass, field
+from pathlib import Path
+import json
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+import gc
 
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
-from strategy.strategy_executor import Strategy_executor
-from strategy.strategy_manager import Strategy_manager
-from strategy.strategy_parser import Strategy_parser
-from indicators.complete_indicator_registry import complete_registry
-from utils.logger import get_logger
-from utils.decorators import performance_monitor, exception_handler
-from .config import get_test_config
-from .logging_config import get_test_logger
+from utils.logger import getLogger
+from utils.dependency_injection import get_service
+from db.interfaces.data_access_interface import DataAccessInterface
+from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
+from indicators.pattern_registry import get_pattern_registry, PatternRegistry
+from .indicator_discovery import IndicatorDiscovery
+from .pattern_registry_manager import PatternRegistryManager
+from .stock_selection_engine import StockSelectionEngine, StockSelectionCriteria
+from .buypoint_verification_engine import BuypointVerificationEngine, BatchVerificationResult
+from .batch_verification_processor import BatchVerificationProcessor, BatchProcessingConfig
+from .test_result_models import (
+    TestResults, IndicatorTestResult, PatternTestResult, 
+    StockSelection, VerificationResult, TestResultSummary
+)
+from .enhanced_report_generator import EnhancedReportGenerator
+from .performance_monitor import PerformanceMonitor, PerformanceOptimizer, PerformanceConfig
+from .stock_selection_reporter import StockSelectionReporter
+from .cache_manager import get_cache_manager
+from .query_optimizer import ClickHouseOptimizer
+from .config_manager import get_config_manager, TestConfig
+from .error_handler import TestErrorHandler, ErrorCategory, with_error_handling, get_error_handler
+from .system_integration import get_system_integrator
 
-logger = get_test_logger('stock_selection_tester')
+logger = getLogger(__name__)
 
 
-class StockSelectionTester:
-    """选股功能测试器"""
+@dataclass
+class DateRange:
+    """日期范围"""
+    start_date: str
+    end_date: str
+
+
+@dataclass
+class TestConfig:
+    """测试配置参数"""
+    date_range: DateRange
+    stock_universe: List[str] = field(default_factory=list)
+    indicators_to_test: Optional[List[str]] = None
+    patterns_to_test: Optional[List[str]] = None
+    verification_threshold: float = 0.7
+    batch_size: int = 1000
+    parallel_workers: int = 20
+    output_format: str = "json"
+    report_level: str = "comprehensive"
+    timeout_seconds: int = 300  # 5分钟
+    performance_threshold: float = 0.8
+
+
+# 使用新的性能监控系统替代旧的TestMonitor和PerformanceManager
+
+
+class ComprehensiveStockSelectionTester:
+    """综合选股测试系统主控制器"""
     
-    def __init__(self):
-        """初始化选股功能测试器"""
-        self.config = get_test_config()
-        self.query_executor = get_query_executor()
-        self.strategy_executor = Strategy_executor()
-        self.strategy_manager = Strategy_manager()
-        self.strategy_parser = Strategy_parser()
+    def __init__(self, config_path: str = "tests/comprehensive/test_config.yaml"):
+        """初始化测试系统"""
+        logger.info("初始化综合选股测试系统...")
         
-        # 测试统计
-        self.test_stats = {
-            'total_strategies_tested': 0,
-            'successful_tests': 0,
-            'failed_tests': 0,
-            'total_stocks_selected': 0,
-            'selection_accuracy': 0.0
-        }
+        # 加载配置
+        self.config_manager = get_config_manager(config_path)
+        self.config = self.config_manager.get_config()
         
-        # 市场条件配置
-        self.market_conditions = {
-            'bull_market': {
-                'description': '牛市条件',
-                'date_range': ('2020-01-01', '2021-06-30'),
-                'expected_behavior': 'high_selection_rate'
-            },
-            'bear_market': {
-                'description': '熊市条件',
-                'date_range': ('2018-01-01', '2018-12-31'),
-                'expected_behavior': 'low_selection_rate'
-            },
-            'sideways_market': {
-                'description': '震荡市条件',
-                'date_range': ('2019-01-01', '2019-12-31'),
-                'expected_behavior': 'moderate_selection_rate'
-            }
-        }
+        # 验证配置
+        config_errors = self.config_manager.validate_config()
+        if config_errors:
+            logger.warning("配置验证发现以下问题:")
+            for error in config_errors:
+                logger.warning(f"  - {error}")
         
-        logger.info("选股功能测试器初始化完成")
+        # 初始化组件
+        self.data_access = get_service(DataAccessInterface)
+        self.pattern_registry = get_pattern_registry()
+        self.buypoint_analyzer = BuyPointAnalyzer(self.data_access)
+        
+        # 初始化新组件
+        self.indicator_discovery = IndicatorDiscovery()
+        self.pattern_manager = PatternRegistryManager(self.indicator_discovery)
+        self.selection_engine = StockSelectionEngine(
+            self.data_access, self.indicator_discovery, self.pattern_manager
+        )
+        self.verification_engine = BuypointVerificationEngine(self.buypoint_analyzer)
+        
+        # 初始化批量验证处理器
+        verification_config = BatchProcessingConfig(
+            max_workers=getattr(self.config, 'parallel_workers', 4),
+            batch_size=getattr(self.config, 'batch_size', 100),
+            timeout_seconds=getattr(self.config, 'timeout_seconds', 300),
+            retry_count=2,
+            enable_diagnostics=True
+        )
+        self.verification_processor = BatchVerificationProcessor(
+            self.verification_engine, verification_config
+        )
+        
+        # 初始化报告生成器
+        self.report_generator = EnhancedReportGenerator()
+        
+        # 初始化性能监控系统
+        performance_config = PerformanceConfig(
+            timeout_seconds=getattr(self.config, 'timeout_seconds', 300),
+            performance_threshold=getattr(self.config, 'performance_threshold', 0.8),
+            memory_threshold_gb=6.0,
+            cpu_threshold_percent=80.0,
+            enable_early_stopping=True,
+            enable_performance_optimization=True
+        )
+        self.performance_monitor = PerformanceMonitor(performance_config)
+        self.performance_optimizer = PerformanceOptimizer(self.performance_monitor)
+        
+        # 注册早停回调
+        self.performance_monitor.register_early_stop_callback(self._handle_early_stop)
+        self.performance_monitor.register_optimization_callback(self._handle_performance_optimization)
+        
+        # 测试结果
+        self.test_results = None
+        
+        # 测试结果
+        self.test_results = None
+        
+        logger.info("综合选股测试系统初始化完成")
+        
+    # 已删除_load_config方法，使用config_manager代替
     
-    @performance_monitor(threshold_seconds=5.0)
-    @exception_handler(reraise=True)
-    def test_dual_ma_strategy(self) -> Dict[str, Any]:
-        """
-        测试双均线突破策略
+    async def run_comprehensive_test(self) -> TestResults:
+        """执行综合测试"""
+        test_id = f"comprehensive_test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        start_time = datetime.now()
         
-        Returns:
-            Dict[str, Any]: 测试结果
-        """
-        logger.info("开始测试双均线突破策略")
+        logger.info(f"开始执行综合选股测试 - ID: {test_id}")
+        logger.info(f"测试配置: 超时{self.config.timeout_seconds}秒, 并行度{self.config.parallel_workers}, 批大小{self.config.batch_size}")
         
-        # 定义双均线策略配置
-        strategy_config = {
-            "strategy_name": "双均线突破策略",
-            "short_ma_period": 5,
-            "long_ma_period": 20,
-            "min_volume": 1000000,
-            "min_price": 5.0,
-            "max_price": 500.0
-        }
-        
-        # 构建策略条件
-        strategy_conditions = [
-            {
-                "indicator": "MA",
-                "params": {"period": strategy_config["short_ma_period"]},
-                "condition": "current > previous",
-                "description": "短期均线上涨"
-            },
-            {
-                "indicator": "MA", 
-                "params": {"period": strategy_config["long_ma_period"]},
-                "condition": "current < short_ma",
-                "description": "短期均线突破长期均线"
-            },
-            {
-                "field": "volume",
-                "condition": f"> {strategy_config['min_volume']}",
-                "description": "成交量充足"
-            },
-            {
-                "field": "close",
-                "condition": f"> {strategy_config['min_price']} and < {strategy_config['max_price']}",
-                "description": "价格在合理范围"
-            }
-        ]
+        # 初始化测试结果
+        self.test_results = TestResults(
+            test_id=test_id,
+            start_time=start_time,
+            end_time=start_time,  # 临时设置，完成时更新
+            total_indicators_tested=0,
+            total_patterns_tested=0,
+            total_stocks_selected=0,
+            total_verifications_performed=0,
+            overall_success_rate=0.0
+        )
         
         try:
-            # 执行策略测试
-            test_results = self._execute_strategy_test(
-                strategy_name="dual_ma_strategy",
-                strategy_conditions=strategy_conditions,
-                test_stocks=self.config.test_data.sample_stock_codes[:5],
-                test_date="2024-06-01"
-            )
+            # 第一阶段：发现和初始化指标
+            logger.info("第一阶段：发现和初始化所有指标...")
+            indicators = await self._discover_indicators()
             
-            # 验证结果
-            validation_results = self._validate_selection_results(
-                test_results["selected_stocks"],
-                strategy_conditions,
-                test_results["test_date"]
-            )
+            if not indicators:
+                logger.error("未发现任何指标，测试终止")
+                return self.test_results
             
-            # 计算策略效果指标
-            performance_metrics = self._calculate_strategy_performance(
-                test_results["selected_stocks"],
-                test_results["test_date"]
-            )
+            # 估算总任务数
+            total_tasks = sum(len(self._get_indicator_patterns(ind)) for ind in indicators)
+            self.performance_monitor.start_monitoring(total_tasks)
             
-            result = {
-                "test_name": "双均线突破策略测试",
-                "strategy_config": strategy_config,
-                "test_results": test_results,
-                "validation_results": validation_results,
-                "performance_metrics": performance_metrics,
-                "success": validation_results["validation_passed"],
-                "summary": {
-                    "selected_count": len(test_results["selected_stocks"]),
-                    "validation_accuracy": validation_results["accuracy"],
-                    "selection_quality": performance_metrics["quality_score"]
-                }
-            }
+            logger.info(f"发现 {len(indicators)} 个指标，总计 {total_tasks} 个形态需要测试")
             
-            if result["success"]:
-                logger.info(f"双均线突破策略测试通过，选中 {result['summary']['selected_count']} 只股票")
-            else:
-                logger.warning(f"双均线突破策略测试失败，验证准确率: {validation_results['accuracy']:.1%}")
+            # 第二阶段：并行测试所有指标
+            logger.info("第二阶段：开始并行测试所有指标...")
+            indicator_results = await self._test_all_indicators_parallel(indicators)
             
-            return result
+            # 检查是否需要早停
+            if self.performance_monitor.check_timeout():
+                logger.warning("检测到超时，触发早停机制")
+                self.performance_monitor.trigger_early_stop()
+                self.test_results.end_time = datetime.now()
+                self.test_results.summary_statistics['early_stop'] = True
+                self.test_results.summary_statistics['stop_reason'] = '超过5分钟执行时间限制'
+                self.test_results.summary_statistics['early_stop'] = True
+                self.test_results.summary_statistics['stop_reason'] = '超过5分钟执行时间限制'
+                return self.test_results
+            
+            # 第三阶段：汇总结果
+            logger.info("第三阶段：汇总测试结果...")
+            self._aggregate_results(indicator_results)
+            
+            # 完成测试
+            self.test_results.end_time = datetime.now()
+            execution_time = (self.test_results.end_time - self.test_results.start_time).total_seconds()
+            
+            logger.info(f"综合测试完成！")
+            logger.info(f"执行时间: {execution_time:.1f}秒")
+            logger.info(f"测试指标: {self.test_results.total_indicators_tested}")
+            logger.info(f"测试形态: {self.test_results.total_patterns_tested}")
+            logger.info(f"选出股票: {self.test_results.total_stocks_selected}")
+            logger.info(f"总体成功率: {self.test_results.overall_success_rate:.2%}")
+            
+            return self.test_results
             
         except Exception as e:
-            logger.error(f"双均线突破策略测试异常: {e}")
-            return {
-                "test_name": "双均线突破策略测试",
-                "success": False,
-                "error": str(e),
-                "summary": {
-                    "selected_count": 0,
-                    "validation_accuracy": 0.0,
-                    "selection_quality": 0.0
-                }
-            }
+            logger.error(f"综合测试执行失败: {e}")
+            self.test_results.end_time = datetime.now()
+            self.test_results.summary_statistics['error'] = str(e)
+            return self.test_results
     
-    @performance_monitor(threshold_seconds=8.0)
-    @exception_handler(reraise=True)
-    def test_main_force_strategy(self) -> Dict[str, Any]:
-        """
-        测试主力行为策略
+    async def _discover_indicators(self) -> List[str]:
+        """发现所有可用指标"""
+        logger.info("开始发现系统中的所有指标...")
         
-        Returns:
-            Dict[str, Any]: 测试结果
-        """
-        logger.info("开始测试主力行为策略")
+        # 使用指标发现系统
+        indicator_infos = self.indicator_discovery.discover_all_indicators()
         
-        # 定义主力行为策略配置
-        strategy_config = {
-            "strategy_name": "主力行为策略",
-            "volume_ma_period": 10,
-            "volume_amplification": 2.0,
-            "price_change_threshold": 0.03,
-            "turnover_threshold": 0.02
-        }
-        
-        # 构建策略条件
-        strategy_conditions = [
-            {
-                "indicator": "VOLUME_MA",
-                "params": {"period": strategy_config["volume_ma_period"]},
-                "condition": "current > average * 2.0",
-                "description": "成交量放大"
-            },
-            {
-                "field": "price_change",
-                "condition": f"> {strategy_config['price_change_threshold']}",
-                "description": "价格上涨幅度适中"
-            },
-            {
-                "field": "turnover_rate",
-                "condition": f"> {strategy_config['turnover_threshold']}",
-                "description": "换手率活跃"
-            },
-            {
-                "indicator": "RSI",
-                "params": {"period": 14},
-                "condition": "> 50 and < 80",
-                "description": "相对强度指标健康"
-            }
+        # 过滤出可加载的指标
+        loadable_indicators = [
+            info.name for info in indicator_infos 
+            if info.is_loadable and info.pattern_count > 0
         ]
         
-        try:
-            # 执行策略测试
-            test_results = self._execute_strategy_test(
-                strategy_name="main_force_strategy",
-                strategy_conditions=strategy_conditions,
-                test_stocks=self.config.test_data.sample_stock_codes[:5],
-                test_date="2024-06-01"
-            )
-            
-            # 验证主力行为特征
-            main_force_validation = self._validate_main_force_behavior(
-                test_results["selected_stocks"],
-                test_results["test_date"]
-            )
-            
-            # 计算策略效果指标
-            performance_metrics = self._calculate_strategy_performance(
-                test_results["selected_stocks"],
-                test_results["test_date"]
-            )
-            
-            result = {
-                "test_name": "主力行为策略测试",
-                "strategy_config": strategy_config,
-                "test_results": test_results,
-                "main_force_validation": main_force_validation,
-                "performance_metrics": performance_metrics,
-                "success": main_force_validation["validation_passed"],
-                "summary": {
-                    "selected_count": len(test_results["selected_stocks"]),
-                    "main_force_accuracy": main_force_validation["accuracy"],
-                    "selection_quality": performance_metrics["quality_score"]
-                }
-            }
-            
-            if result["success"]:
-                logger.info(f"主力行为策略测试通过，选中 {result['summary']['selected_count']} 只股票")
-            else:
-                logger.warning(f"主力行为策略测试失败，主力行为验证准确率: {main_force_validation['accuracy']:.1%}")
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"主力行为策略测试异常: {e}")
-            return {
-                "test_name": "主力行为策略测试",
-                "success": False,
-                "error": str(e),
-                "summary": {
-                    "selected_count": 0,
-                    "main_force_accuracy": 0.0,
-                    "selection_quality": 0.0
-                }
-            }
+        logger.info(f"发现 {len(indicator_infos)} 个指标，其中 {len(loadable_indicators)} 个可用于测试")
+        
+        # 如果没有发现指标，使用备用列表
+        if not loadable_indicators:
+            logger.warning("未发现可用指标，使用备用指标列表")
+            loadable_indicators = [
+                'MA', 'MACD', 'KDJ', 'RSI', 'BOLL', 'WR', 'CCI', 'ROC', 
+                'MTM', 'BIAS', 'PSY', 'VR', 'SAR', 'EMV', 'WVAD'
+            ]
+        
+        return loadable_indicators
     
-    @performance_monitor(threshold_seconds=15.0)
-    @exception_handler(reraise=True)
-    def test_market_conditions(self) -> Dict[str, Any]:
-        """
-        测试不同市场条件下的策略表现
+    def _get_indicator_patterns(self, indicator_name: str) -> List[str]:
+        """获取指标的所有形态"""
+        # 确保指标形态已注册
+        self.pattern_manager.ensure_patterns_registered(indicator_name)
         
-        Returns:
-            Dict[str, Any]: 测试结果
-        """
-        logger.info("开始测试不同市场条件")
+        # 从形态注册表获取指标的形态
+        patterns = self.pattern_registry.get_patterns_by_indicator(indicator_name)
         
-        market_test_results = {}
-        overall_success = True
+        if not patterns:
+            # 如果仍然没有形态，创建默认形态
+            logger.warning(f"指标 {indicator_name} 没有注册形态，创建默认形态")
+            patterns = [f"{indicator_name}_BULLISH", f"{indicator_name}_BEARISH", f"{indicator_name}_NEUTRAL"]
         
-        for condition_name, condition_config in self.market_conditions.items():
-            logger.info(f"测试市场条件: {condition_config['description']}")
+        return patterns
+    
+    async def _test_all_indicators_parallel(self, indicators: List[str]) -> Dict[str, IndicatorTestResult]:
+        """并行测试所有指标"""
+        results = {}
+        
+        # 使用线程池并行处理
+        with ThreadPoolExecutor(max_workers=self.config.parallel_workers) as executor:
+            # 提交所有指标测试任务
+            future_to_indicator = {
+                executor.submit(self._test_single_indicator, indicator): indicator 
+                for indicator in indicators
+            }
+            
+            # 收集结果
+            for future in as_completed(future_to_indicator):
+                indicator = future_to_indicator[future]
+                
+                # 检查超时
+                if self.performance_monitor.check_timeout():
+                    logger.warning(f"超时检测：取消剩余指标测试")
+                    break
+                
+                try:
+                    result = future.result(timeout=30)  # 单个指标30秒超时
+                    if result:
+                        results[indicator] = result
+                        self.performance_monitor.update_progress(1)
+                        logger.info(f"指标 {indicator} 测试完成")
+                    else:
+                        logger.warning(f"指标 {indicator} 测试失败")
+                        
+                except Exception as e:
+                    logger.error(f"指标 {indicator} 测试异常: {e}")
+                    continue
+        
+        return results
+    
+    @with_error_handling(get_error_handler(), ErrorCategory.INDICATOR)
+    def _test_single_indicator(self, indicator_name: str) -> Optional[IndicatorTestResult]:
+        """测试单个指标"""
+        logger.info(f"开始测试指标: {indicator_name}")
+        
+        # 获取指标的所有形态
+        patterns = self._get_indicator_patterns(indicator_name)
+        
+        if not patterns:
+            logger.warning(f"指标 {indicator_name} 没有可测试的形态")
+            return None
+        
+        # 初始化指标测试结果
+        indicator_result = IndicatorTestResult(
+            indicator_name=indicator_name,
+            total_patterns=len(patterns),
+            patterns_tested=0,
+            patterns_with_selections=0,
+            total_stocks_selected=0,
+            verification_success_rate=0.0
+        )
+        
+        # 测试每个形态
+        for pattern_id in patterns:
+            if self.performance_monitor.check_timeout():
+                logger.warning(f"超时检测：停止测试指标 {indicator_name} 的剩余形态")
+                break
             
             try:
-                # 基础策略条件
-                strategy_conditions = [
-                    {
-                        "indicator": "MA",
-                        "params": {"period": 5},
-                        "condition": "current > previous",
-                        "description": "短期趋势向上"
-                    },
-                    {
-                        "field": "volume",
-                        "condition": "> 500000",
-                        "description": "成交量充足"
-                    }
+                pattern_result = self._test_single_pattern(pattern_id, indicator_name)
+                if pattern_result:
+                    indicator_result.pattern_results[pattern_id] = pattern_result
+                    indicator_result.patterns_tested += 1
+                    
+                    if pattern_result.stocks_selected > 0:
+                        indicator_result.patterns_with_selections += 1
+                        indicator_result.total_stocks_selected += pattern_result.stocks_selected
+            except Exception as e:
+                # 使用错误处理器处理形态错误
+                self.error_handler.handle_pattern_error(pattern_id, e)
+                logger.error(f"测试形态 {pattern_id} 失败: {e}")
+                continue
+        
+        # 计算成功率
+        if indicator_result.patterns_tested > 0:
+            indicator_result.verification_success_rate = (
+                indicator_result.patterns_with_selections / indicator_result.patterns_tested
+            )
+        
+        logger.info(f"指标 {indicator_name} 测试完成: {indicator_result.patterns_with_selections}/{indicator_result.patterns_tested} 形态成功")
+        return indicator_result
+    
+    @with_error_handling(get_error_handler(), ErrorCategory.PATTERN)
+    def _test_single_pattern(self, pattern_id: str, indicator_name: str) -> Optional[PatternTestResult]:
+        """测试单个形态"""
+        logger.debug(f"开始测试形态: {pattern_id} ({indicator_name})")
+        
+        # 使用选股引擎进行真实选股
+        date_range = DateRange(
+            start_date=self.config.date_range.start_date,
+            end_date=self.config.date_range.end_date
+        )
+        
+        # 创建选股条件
+        criteria = StockSelectionCriteria(
+            min_volume=self.config.stock_selection.min_volume,
+            min_price=self.config.stock_selection.min_price,
+            max_price=self.config.stock_selection.max_price,
+            exclude_st=self.config.stock_selection.exclude_st,
+            exclude_suspended=self.config.stock_selection.exclude_suspended
+        )
+        
+        # 执行选股
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            selection_result = loop.run_until_complete(
+                self.selection_engine.select_stocks_for_pattern(
+                    pattern_id, indicator_name, date_range, criteria
+                )
+            )
+        except Exception as e:
+            # 使用错误处理器处理选股错误
+            self.error_handler.handle_pattern_error(pattern_id, e)
+            logger.error(f"形态 {pattern_id} 选股执行失败: {e}")
+            raise
+        finally:
+            loop.close()
+        
+        if not selection_result.success:
+            logger.warning(f"形态 {pattern_id} 选股失败: {selection_result.error_message}")
+            return PatternTestResult(
+                pattern_id=pattern_id,
+                pattern_name=f"{indicator_name}_{pattern_id}",
+                stocks_selected=0,
+                verifications_attempted=0,
+                verifications_successful=0,
+                success_rate=0.0
+            )
+        
+        # 转换选股结果格式
+        selected_stocks = []
+        for stock_sel in selection_result.selected_stocks:
+            selected_stocks.append(StockSelection(
+                stock_code=stock_sel.stock_code,
+                stock_name=stock_sel.stock_name,
+                date=stock_sel.date,
+                pattern_id=stock_sel.pattern_id,
+                confidence_score=stock_sel.confidence_score
+            ))
+        
+        if not selected_stocks:
+            logger.warning(f"形态 {pattern_id} 未选出任何股票")
+            return PatternTestResult(
+                pattern_id=pattern_id,
+                pattern_name=f"{indicator_name}_{pattern_id}",
+                stocks_selected=0,
+                verifications_attempted=0,
+                verifications_successful=0,
+                success_rate=0.0
+            )
+        
+        try:
+            # 执行买点验证
+            verification_results = self._perform_buypoint_verification(selected_stocks, pattern_id)
+            
+            successful_verifications = sum(1 for v in verification_results if v.pattern_match)
+            success_rate = successful_verifications / len(verification_results) if verification_results else 0.0
+            
+            logger.debug(f"形态 {pattern_id} 测试完成: 选出{len(selected_stocks)}只股票, 验证成功率{success_rate:.2%}")
+            
+            return PatternTestResult(
+                pattern_id=pattern_id,
+                pattern_name=f"{indicator_name}_{pattern_id}",
+                stocks_selected=len(selected_stocks),
+                verifications_attempted=len(verification_results),
+                verifications_successful=successful_verifications,
+                success_rate=success_rate,
+                selected_stocks=selected_stocks,
+                verification_results=verification_results
+            )
+        except Exception as e:
+            # 使用错误处理器处理验证错误
+            if selected_stocks:
+                self.error_handler.handle_verification_error(
+                    selected_stocks[0].stock_code, selected_stocks[0].date, e
+                )
+            logger.error(f"形态 {pattern_id} 验证失败: {e}")
+            raise
+    
+    def _simulate_stock_selection(self, pattern_id: str, indicator_name: str) -> List[StockSelection]:
+        """模拟股票选择（占位符实现）"""
+        # 这是临时的模拟实现，确保每个形态至少选出一只股票
+        import random
+        
+        sample_stocks = [
+            ("000001", "平安银行"), ("000002", "万科A"), ("000858", "五粮液"),
+            ("600036", "招商银行"), ("600519", "贵州茅台"), ("000725", "京东方A")
+        ]
+        
+        # 随机选择1-3只股票
+        num_stocks = random.randint(1, 3)
+        selected = random.sample(sample_stocks, min(num_stocks, len(sample_stocks)))
+        
+        results = []
+        for code, name in selected:
+            # 随机生成一个测试日期
+            test_date = "20241201"  # 固定测试日期
+            
+            results.append(StockSelection(
+                stock_code=code,
+                stock_name=name,
+                date=test_date,
+                pattern_id=pattern_id,
+                confidence_score=random.uniform(0.7, 0.95)
+            ))
+        
+        return results
+    
+    def _simulate_verification(self, selected_stocks: List[StockSelection], pattern_id: str) -> List[VerificationResult]:
+        """模拟验证过程（占位符实现）"""
+        import random
+        
+        results = []
+        for stock in selected_stocks:
+            # 模拟买点分析检测到的形态
+            detected_patterns = [pattern_id]  # 简化：假设检测到相同态
+            
+            # 随机决定是否匹配成功
+            pattern_match = random.random() > 0.2  # 80%成功率
+            
+            results.append(VerificationResult(
+                stock_code=stock.stock_code,
+                date=stock.date,
+                expected_pattern=pattern_id,
+                detected_patterns=detected_patterns,
+                pattern_match=pattern_match,
+                confidence_score=random.uniform(0.6, 0.9)
+            ))
+        
+        return results
+    
+    def _aggregate_results(self, indicator_results: Dict[str, IndicatorTestResult]):
+        """汇总测试结果"""
+        self.test_results.total_indicators_tested = len(indicator_results)
+        self.test_results.indicator_results = indicator_results
+        
+        # 统计总数
+        total_patterns = 0
+        total_stocks = 0
+        total_verifications = 0
+        successful_verifications = 0
+        
+        for result in indicator_results.values():
+            total_patterns += result.patterns_tested
+            total_stocks += result.total_stocks_selected
+            
+            for pattern_result in result.pattern_results.values():
+                total_verifications += pattern_result.verifications_attempted
+                successful_verifications += pattern_result.verifications_successful
+        
+        self.test_results.total_patterns_tested = total_patterns
+        self.test_results.total_stocks_selected = total_stocks
+        self.test_results.total_verifications_performed = total_verifications
+        
+        # 计算总体成功率
+        if total_verifications > 0:
+            self.test_results.overall_success_rate = successful_verifications / total_verifications
+        
+        # 添加汇总统计
+        self.test_results.summary_statistics = {
+            'indicators_with_successful_patterns': sum(
+                1 for r in indicator_results.values() if r.patterns_with_selections > 0
+            ),
+            'patterns_with_selections': sum(
+                r.patterns_with_selections for r in indicator_results.values()
+            ),
+            'average_stocks_per_pattern': (
+                total_stocks / total_patterns if total_patterns > 0 else 0
+            ),
+            'execution_time_seconds': (
+                (self.test_results.end_time - self.test_results.start_time).total_seconds()
+                if self.test_results.end_time > self.test_results.start_time else 0
+            )
+        }
+    
+    def _perform_buypoint_verification(self, selected_stocks: List[StockSelection], pattern_id: str) -> List[VerificationResult]:
+        """执行买点验证 - 使用批量验证处理器"""
+        try:
+            # 使用批量验证处理器进行验证
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                # 设置形态过滤器，只验证当前形态
+                pattern_filter = {pattern_id}
+                
+                batch_result = loop.run_until_complete(
+                    self.verification_processor.process_verification_batch(
+                        selected_stocks, pattern_filter
+                    )
+                )
+                verification_results = batch_result.verification_results
+                
+                logger.debug(f"批量验证完成: {batch_result.successful_verifications}/{batch_result.total_verifications} 成功 ({batch_result.success_rate:.1%})")
+                
+                # 获取验证统计信息
+                stats = self.verification_processor.get_verification_statistics()
+                logger.debug(f"验证统计: {stats}")
+                
+            finally:
+                loop.close()
+            
+            return verification_results
+            
+        except Exception as e:
+            logger.error(f"批量验证失败: {e}")
+            # 返回空结果
+            return [] 
+    
+    def _extract_patterns_from_buypoint_result(self, buypoint_result: Dict[str, Any], expected_pattern: str) -> List[str]:
+        """从买点分析结果中提取形态"""
+        detected_patterns = []
+        
+        try:
+            # 根据买点分析结果判断检测到的形态
+            pattern_upper = expected_pattern.upper()
+            
+            # 检查看涨形态
+            if 'BULLISH' in pattern_upper or 'GOLDEN' in pattern_upper:
+                if (buypoint_result.get('macd_gold', False) or 
+                    buypoint_result.get('ma_up', False) or
+                    buypoint_result.get('price_stable', False)):
+                    detected_patterns.append(expected_pattern)
+            
+            # 检查均线相关形态
+            elif 'MA' in pattern_upper:
+                if buypoint_result.get('touch_ma', False) or buypoint_result.get('ma_up', False):
+                    detected_patterns.append(expected_pattern)
+            
+            # 检查MACD相关形态
+            elif 'MACD' in pattern_upper:
+                if buypoint_result.get('macd_gold', False):
+                    detected_patterns.append(expected_pattern)
+            
+            # 检查RSI相关形态
+            elif 'RSI' in pattern_upper:
+                if buypoint_result.get('rsi_oversold', False):
+                    detected_patterns.append(expected_pattern)
+            
+            # 检查成交量相关形态
+            elif 'VOL' in pattern_upper or 'VOLUME' in pattern_upper:
+                if buypoint_result.get('money_in', False) or not buypoint_result.get('vol_shrink', True):
+                    detected_patterns.append(expected_pattern)
+            
+            # 默认检查：如果有任何正面信号，认为检测到形态
+            else:
+                positive_signals = [
+                    buypoint_result.get('touch_ma', False),
+                    buypoint_result.get('price_stable', False),
+                    buypoint_result.get('ma_up', False),
+                    buypoint_result.get('money_in', False),
+                    buypoint_result.get('macd_gold', False)
                 ]
                 
-                # 执行市场条件测试
-                start_date, end_date = condition_config['date_range']
-                test_date = self._get_valid_trading_date(start_date, end_date)
-                
-                test_results = self._execute_strategy_test(
-                    strategy_name=f"market_condition_{condition_name}",
-                    strategy_conditions=strategy_conditions,
-                    test_stocks=self.config.test_data.sample_stock_codes[:3],
-                    test_date=test_date
-                )
-                
-                # 验证市场条件适应性
-                adaptation_results = self._validate_market_adaptation(
-                    test_results["selected_stocks"],
-                    condition_config,
-                    test_date
-                )
-                
-                market_test_results[condition_name] = {
-                    "condition_config": condition_config,
-                    "test_results": test_results,
-                    "adaptation_results": adaptation_results,
-                    "success": adaptation_results["adaptation_passed"]
-                }
-                
-                if not adaptation_results["adaptation_passed"]:
-                    overall_success = False
-                    
-                logger.info(f"市场条件 {condition_name} 测试完成，适应性: {adaptation_results['adaptation_score']:.1%}")
-                
-            except Exception as e:
-                logger.error(f"市场条件 {condition_name} 测试异常: {e}")
-                market_test_results[condition_name] = {
-                    "condition_config": condition_config,
-                    "success": False,
-                    "error": str(e)
-                }
-                overall_success = False
-        
-        # 汇总结果
-        successful_conditions = sum(1 for result in market_test_results.values() if result.get("success", False))
-        total_conditions = len(market_test_results)
-        
-        result = {
-            "test_name": "市场条件适应性测试",
-            "market_test_results": market_test_results,
-            "success": overall_success,
-            "summary": {
-                "total_conditions": total_conditions,
-                "successful_conditions": successful_conditions,
-                "success_rate": successful_conditions / total_conditions if total_conditions > 0 else 0.0,
-                "overall_adaptation": overall_success
-            }
-        }
-        
-        if result["success"]:
-            logger.info(f"市场条件测试通过，成功率: {result['summary']['success_rate']:.1%}")
-        else:
-            logger.warning(f"市场条件测试失败，成功率: {result['summary']['success_rate']:.1%}")
-        
-        return result
-    
-    @performance_monitor(threshold_seconds=10.0)
-    @exception_handler(reraise=True)
-    def test_selection_traceability(self) -> Dict[str, Any]:
-        """
-        测试选股逻辑可追溯性
-        
-        Returns:
-            Dict[str, Any]: 测试结果
-        """
-        logger.info("开始测试选股逻辑可追溯性")
-        
-        try:
-            # 定义带详细理由的策略
-            strategy_conditions = [
-                {
-                    "indicator": "MA",
-                    "params": {"period": 5},
-                    "condition": "current > previous",
-                    "description": "短期均线上涨",
-                    "weight": 0.3,
-                    "reason_template": "5日均线呈上涨趋势，当前值{current}高于前值{previous}"
-                },
-                {
-                    "indicator": "MACD",
-                    "params": {},
-                    "condition": "signal > 0",
-                    "description": "MACD金叉信号",
-                    "weight": 0.4,
-                    "reason_template": "MACD信号线{signal}大于0，出现金叉信号"
-                },
-                {
-                    "field": "volume",
-                    "condition": "> 1000000",
-                    "description": "成交量充足",
-                    "weight": 0.3,
-                    "reason_template": "成交量{volume}超过100万手，资金关注度高"
-                }
-            ]
-            
-            # 执行可追溯性测试
-            test_results = self._execute_traceability_test(
-                strategy_conditions=strategy_conditions,
-                test_stocks=self.config.test_data.sample_stock_codes[:3],
-                test_date="2024-06-01"
-            )
-            
-            # 验证选股理由的完整性和准确性
-            traceability_validation = self._validate_selection_traceability(
-                test_results["detailed_results"]
-            )
-            
-            result = {
-                "test_name": "选股逻辑可追溯性测试",
-                "test_results": test_results,
-                "traceability_validation": traceability_validation,
-                "success": traceability_validation["traceability_passed"],
-                "summary": {
-                    "traced_selections": len(test_results["detailed_results"]),
-                    "reason_completeness": traceability_validation["reason_completeness"],
-                    "reason_accuracy": traceability_validation["reason_accuracy"]
-                }
-            }
-            
-            if result["success"]:
-                logger.info(f"选股逻辑可追溯性测试通过，理由完整性: {traceability_validation['reason_completeness']:.1%}")
-            else:
-                logger.warning(f"选股逻辑可追溯性测试失败，理由完整性: {traceability_validation['reason_completeness']:.1%}")
-            
-            return result
+                if any(positive_signals):
+                    detected_patterns.append(expected_pattern)
             
         except Exception as e:
-            logger.error(f"选股逻辑可追溯性测试异常: {e}")
-            return {
-                "test_name": "选股逻辑可追溯性测试",
-                "success": False,
-                "error": str(e),
-                "summary": {
-                    "traced_selections": 0,
-                    "reason_completeness": 0.0,
-                    "reason_accuracy": 0.0
-                }
-            }
+            logger.debug(f"提取形态失败: {e}")
+        
+        return detected_patterns
     
-    def _execute_strategy_test(self, strategy_name: str, strategy_conditions: List[Dict],
-                              test_stocks: List[str], test_date: str) -> Dict[str, Any]:
+    def _check_pattern_match(self, expected_pattern: str, detected_patterns: List[str], buypoint_result: Dict[str, Any]) -> bool:
+        """检查形态是否匹配"""
+        # 直接匹配
+        if expected_pattern in detected_patterns:
+            return True
+        
+        # 基于买点分析评分的匹配
+        score = buypoint_result.get('score', 0)
+        if score >= 50:  # 评分超过50分认为匹配
+            return True
+        
+        return False
+    
+    def _calculate_verification_confidence(self, buypoint_result: Dict[str, Any], pattern_match: bool) -> float:
+        """计算验证置信度"""
+        if not pattern_match:
+            return 0.0
+        
+        # 基于买点分析评分计算置信度
+        score = buypoint_result.get('score', 0)
+        confidence = min(score / 100.0, 1.0)  # 将评分转换为0-1的置信度
+        
+        return max(confidence, 0.1)  # 最低置信度0.1
+        
+    def generate_test_report(self, output_dir: str = "test_reports") -> Dict[str, str]:
         """
-        执行策略测试的核心逻辑
+        生成测试报告
         
         Args:
-            strategy_name: 策略名称
-            strategy_conditions: 策略条件列表
-            test_stocks: 测试股票列表
-            test_date: 测试日期
+            output_dir: 输出目录
             
         Returns:
-            Dict[str, Any]: 执行结果
+            Dict[str, str]: 报告文件路径
         """
-        selected_stocks = []
-        test_details = {}
+        if not self.test_results:
+            logger.error("没有测试结果可供生成报告")
+            return {}
         
-        for stock_code in test_stocks:
-            try:
-                # 获取股票数据
-                stock_data = self._get_stock_data(stock_code, test_date)
-                if stock_data.empty:
-                    continue
-                
-                # 检查策略条件
-                condition_results = []
-                meets_all_conditions = True
-                
-                for condition in strategy_conditions:
-                    condition_result = self._evaluate_condition(stock_data, condition, test_date)
-                    condition_results.append({
-                        "condition": condition["description"],
-                        "result": condition_result["meets_condition"],
-                        "details": condition_result["details"]
-                    })
-                    
-                    if not condition_result["meets_condition"]:
-                        meets_all_conditions = False
-                
-                test_details[stock_code] = {
-                    "stock_data": stock_data.iloc[-1].to_dict() if not stock_data.empty else {},
-                    "condition_results": condition_results,
-                    "meets_all_conditions": meets_all_conditions
-                }
-                
-                if meets_all_conditions:
-                    selected_stocks.append({
-                        "code": stock_code,
-                        "name": stock_data.iloc[-1].get("name", ""),
-                        "price": stock_data.iloc[-1].get("close", 0.0),
-                        "volume": stock_data.iloc[-1].get("volume", 0),
-                        "selection_reason": f"满足{strategy_name}的所有条件"
-                    })
-                    
-            except Exception as e:
-                logger.warning(f"处理股票 {stock_code} 时出错: {e}")
-                test_details[stock_code] = {
-                    "error": str(e),
-                    "meets_all_conditions": False
-                }
-        
-        return {
-            "strategy_name": strategy_name,
-            "test_date": test_date,
-            "selected_stocks": selected_stocks,
-            "test_details": test_details,
-            "total_tested": len(test_stocks),
-            "total_selected": len(selected_stocks)
-        }
-    
-    def _get_stock_data(self, stock_code: str, end_date: str, days: int = 30) -> pd.DataFrame:
-        """获取股票数据"""
-        start_date = (datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=days)).strftime('%Y-%m-%d')
-        
-        params = {
-            'code': stock_code,
-            'start_date': start_date,
-            'end_date': end_date,
-            'level': '日线'
-        }
-        
-        return self.query_executor.execute_query(QueryType.STOCK_DATA, params)
-    
-    def _evaluate_condition(self, stock_data: pd.DataFrame, condition: Dict, test_date: str) -> Dict[str, Any]:
-        """评估单个条件是否满足"""
-        # 这里应该实现具体的条件评估逻辑
-        # 简化实现，实际应该根据条件类型调用相应的指标计算
+        logger.info("开始生成测试报告...")
         
         try:
-            if condition.get("indicator"):
-                # 指标条件
-                indicator_name = condition["indicator"]
-                if indicator_name == "MA":
-                    period = condition["params"]["period"]
-                    if len(stock_data) >= period:
-                        ma_values = stock_data["close"].rolling(window=period).mean()
-                        current_ma = ma_values.iloc[-1]
-                        previous_ma = ma_values.iloc[-2] if len(ma_values) > 1 else current_ma
-                        
-                        meets_condition = current_ma > previous_ma
-                        return {
-                            "meets_condition": meets_condition,
-                            "details": {
-                                "current_ma": current_ma,
-                                "previous_ma": previous_ma,
-                                "condition": condition["condition"]
-                            }
-                        }
-                
-                elif indicator_name == "MACD":
-                    # 简化的MACD实现
-                    if len(stock_data) >= 26:
-                        ema12 = stock_data["close"].ewm(span=12).mean()
-                        ema26 = stock_data["close"].ewm(span=26).mean()
-                        macd_line = ema12 - ema26
-                        signal_line = macd_line.ewm(span=9).mean()
-                        
-                        current_signal = signal_line.iloc[-1]
-                        meets_condition = current_signal > 0
-                        
-                        return {
-                            "meets_condition": meets_condition,
-                            "details": {
-                                "signal": current_signal,
-                                "condition": condition["condition"]
-                            }
-                        }
-                
-                elif indicator_name == "RSI":
-                    # 简化的RSI实现
-                    period = condition["params"].get("period", 14)
-                    if len(stock_data) >= period + 1:
-                        delta = stock_data["close"].diff()
-                        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-                        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-                        rs = gain / loss
-                        rsi = 100 - (100 / (1 + rs))
-                        
-                        current_rsi = rsi.iloc[-1]
-                        meets_condition = 50 < current_rsi < 80  # 简化条件
-                        
-                        return {
-                            "meets_condition": meets_condition,
-                            "details": {
-                                "rsi": current_rsi,
-                                "condition": condition["condition"]
-                            }
-                        }
+            # 使用增强版报告生成器
+            formats = ["json", "csv", "html", "md"]
+            report_files = self.report_generator.generate_reports(
+                self.test_results, output_dir, formats
+            )
             
-            elif condition.get("field"):
-                # 字段条件
-                field_name = condition["field"]
-                if field_name in stock_data.columns:
-                    field_value = stock_data[field_name].iloc[-1]
-                    condition_text = condition["condition"]
-                    
-                    # 简单的条件评估
-                    if ">" in condition_text:
-                        threshold = float(condition_text.split(">")[1].strip())
-                        meets_condition = field_value > threshold
-                    elif "<" in condition_text:
-                        threshold = float(condition_text.split("<")[1].strip())
-                        meets_condition = field_value < threshold
-                    else:
-                        meets_condition = True
-                    
-                    return {
-                        "meets_condition": meets_condition,
-                        "details": {
-                            "field_value": field_value,
-                            "condition": condition_text
-                        }
-                    }
-            
-            # 默认返回
-            return {
-                "meets_condition": False,
-                "details": {"error": "未知条件类型"}
-            }
+            logger.info(f"测试报告生成完成，保存在: {output_dir}")
+            return report_files
             
         except Exception as e:
-            return {
-                "meets_condition": False,
-                "details": {"error": str(e)}
-            }
+            logger.error(f"生成测试报告失败: {e}")
+            return {}
     
-    def _validate_selection_results(self, selected_stocks: List[Dict], 
-                                   strategy_conditions: List[Dict], test_date: str) -> Dict[str, Any]:
-        """验证选股结果的准确性"""
-        total_selected = len(selected_stocks)
-        validated_count = 0
-        validation_details = []
-        
-        for stock in selected_stocks:
-            try:
-                # 重新验证每只选中的股票
-                stock_data = self._get_stock_data(stock["code"], test_date)
-                if stock_data.empty:
-                    continue
-                
-                all_conditions_met = True
-                for condition in strategy_conditions:
-                    condition_result = self._evaluate_condition(stock_data, condition, test_date)
-                    if not condition_result["meets_condition"]:
-                        all_conditions_met = False
-                        break
-                
-                if all_conditions_met:
-                    validated_count += 1
-                
-                validation_details.append({
-                    "stock_code": stock["code"],
-                    "validated": all_conditions_met
-                })
-                
-            except Exception as e:
-                logger.warning(f"验证股票 {stock['code']} 时出错: {e}")
-                validation_details.append({
-                    "stock_code": stock["code"],
-                    "validated": False,
-                    "error": str(e)
-                })
-        
-        accuracy = validated_count / total_selected if total_selected > 0 else 1.0
-        validation_passed = accuracy >= 0.8  # 80%以上准确率视为通过
-        
-        return {
-            "validation_passed": validation_passed,
-            "accuracy": accuracy,
-            "total_selected": total_selected,
-            "validated_count": validated_count,
-            "validation_details": validation_details
-        }
-    
-    def _validate_main_force_behavior(self, selected_stocks: List[Dict], test_date: str) -> Dict[str, Any]:
-        """验证主力行为特征"""
-        # 实现主力行为验证逻辑
-        total_stocks = len(selected_stocks)
-        valid_main_force_count = 0
-        
-        for stock in selected_stocks:
-            # 简化的主力行为验证
-            try:
-                stock_data = self._get_stock_data(stock["code"], test_date, days=20)
-                if len(stock_data) >= 10:
-                    # 检查成交量放大
-                    recent_volume = stock_data["volume"].iloc[-5:].mean()
-                    historical_volume = stock_data["volume"].iloc[-20:-5].mean()
-                    
-                    if recent_volume > historical_volume * 1.5:
-                        valid_main_force_count += 1
-                        
-            except Exception as e:
-                logger.warning(f"验证主力行为 {stock['code']} 时出错: {e}")
-        
-        accuracy = valid_main_force_count / total_stocks if total_stocks > 0 else 1.0
-        validation_passed = accuracy >= 0.7  # 70%以上准确率视为通过
-        
-        return {
-            "validation_passed": validation_passed,
-            "accuracy": accuracy,
-            "total_stocks": total_stocks,
-            "valid_main_force_count": valid_main_force_count
-        }
-    
-    def _validate_market_adaptation(self, selected_stocks: List[Dict], 
-                                   condition_config: Dict, test_date: str) -> Dict[str, Any]:
-        """验证市场条件适应性"""
-        expected_behavior = condition_config["expected_behavior"]
-        selected_count = len(selected_stocks)
-        
-        # 根据市场条件判断适应性
-        if expected_behavior == "high_selection_rate":
-            adaptation_passed = selected_count >= 2  # 牛市应该选中较多股票
-            adaptation_score = min(selected_count / 3.0, 1.0)
-        elif expected_behavior == "low_selection_rate":
-            adaptation_passed = selected_count <= 1  # 熊市应该选中较少股票
-            adaptation_score = 1.0 - min(selected_count / 3.0, 1.0)
-        else:  # moderate_selection_rate
-            adaptation_passed = 1 <= selected_count <= 2  # 震荡市适中
-            adaptation_score = 1.0 - abs(selected_count - 1.5) / 1.5
-        
-        return {
-            "adaptation_passed": adaptation_passed,
-            "adaptation_score": max(adaptation_score, 0.0),
-            "selected_count": selected_count,
-            "expected_behavior": expected_behavior
-        }
-    
-    def _calculate_strategy_performance(self, selected_stocks: List[Dict], test_date: str) -> Dict[str, Any]:
-        """计算策略性能指标"""
-        if not selected_stocks:
-            return {
-                "quality_score": 0.0,
-                "diversity_score": 0.0,
-                "risk_score": 0.0
-            }
-        
-        # 简化的性能计算
-        quality_score = min(len(selected_stocks) / 5.0, 1.0)  # 基于选中数量
-        diversity_score = 0.8  # 简化为固定值
-        risk_score = 0.7  # 简化为固定值
-        
-        return {
-            "quality_score": quality_score,
-            "diversity_score": diversity_score,
-            "risk_score": risk_score
-        }
-    
-    def _execute_traceability_test(self, strategy_conditions: List[Dict], 
-                                  test_stocks: List[str], test_date: str) -> Dict[str, Any]:
-        """执行可追溯性测试"""
-        detailed_results = []
-        
-        for stock_code in test_stocks:
-            try:
-                stock_data = self._get_stock_data(stock_code, test_date)
-                if stock_data.empty:
-                    continue
-                
-                selection_reasons = []
-                total_score = 0.0
-                
-                for condition in strategy_conditions:
-                    condition_result = self._evaluate_condition(stock_data, condition, test_date)
-                    weight = condition.get("weight", 1.0)
-                    
-                    if condition_result["meets_condition"]:
-                        reason_template = condition.get("reason_template", condition["description"])
-                        reason = self._format_selection_reason(reason_template, condition_result["details"])
-                        selection_reasons.append({
-                            "condition": condition["description"],
-                            "reason": reason,
-                            "weight": weight,
-                            "score": weight
-                        })
-                        total_score += weight
-                
-                detailed_results.append({
-                    "stock_code": stock_code,
-                    "selection_reasons": selection_reasons,
-                    "total_score": total_score,
-                    "selected": total_score >= 0.6  # 60%以上得分视为选中
-                })
-                
-            except Exception as e:
-                logger.warning(f"可追溯性测试处理股票 {stock_code} 时出错: {e}")
-        
-        return {
-            "detailed_results": detailed_results,
-            "total_tested": len(test_stocks)
-        }
-    
-    def _validate_selection_traceability(self, detailed_results: List[Dict]) -> Dict[str, Any]:
-        """验证选股理由的可追溯性"""
-        total_selections = len([r for r in detailed_results if r["selected"]])
-        complete_reason_count = 0
-        accurate_reason_count = 0
-        
-        for result in detailed_results:
-            if result["selected"]:
-                # 检查理由完整性
-                if len(result["selection_reasons"]) >= 2:  # 至少2个理由
-                    complete_reason_count += 1
-                
-                # 检查理由准确性（简化检查）
-                if result["total_score"] >= 0.6:
-                    accurate_reason_count += 1
-        
-        reason_completeness = complete_reason_count / total_selections if total_selections > 0 else 1.0
-        reason_accuracy = accurate_reason_count / total_selections if total_selections > 0 else 1.0
-        traceability_passed = reason_completeness >= 0.8 and reason_accuracy >= 0.8
-        
-        return {
-            "traceability_passed": traceability_passed,
-            "reason_completeness": reason_completeness,
-            "reason_accuracy": reason_accuracy,
-            "total_selections": total_selections
-        }
-    
-    def _format_selection_reason(self, template: str, details: Dict) -> str:
-        """格式化选股理由"""
+    def _perform_buypoint_verification(self, selected_stocks: List[StockSelection], pattern_id: str) -> List[VerificationResult]:
+        """执行买点验证 - 使用BuypointVerificationEngine"""
         try:
-            return template.format(**details)
-        except (KeyError, ValueError):
-            return template
+            # 使用验证引擎进行批量验证
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                batch_result = loop.run_until_complete(
+                    self.verification_engine.batch_verify_selections(selected_stocks)
+                )
+                verification_results = batch_result.verification_results
+                
+                logger.debug(f"批量验证完成: {batch_result.successful_verifications}/{batch_result.total_verifications} 成功 ({batch_result.success_rate:.1%})")
+                
+            finally:
+                loop.close()
+            
+            return verification_results
+            
+        except Exception as e:
+            logger.error(f"批量验证失败: {e}")
+            # 返回空结果
+            return []
     
-    def _get_valid_trading_date(self, start_date: str, end_date: str) -> str:
-        """获取有效的交易日期"""
-        # 简化实现，返回中间日期
-        start = datetime.strptime(start_date, '%Y-%m-%d')
-        end = datetime.strptime(end_date, '%Y-%m-%d')
-        middle = start + (end - start) / 2
-        return middle.strftime('%Y-%m-%d')
-
-
-if __name__ == "__main__":
-    # 测试选股功能测试器
-    tester = StockSelectionTester()
+    def _handle_early_stop(self) -> None:
+        """处理早停回调"""
+        logger.warning("执行早停处理：提前结束测试并返回部分结果")
+        
+        if self.test_results:
+            self.test_results.end_time = datetime.now()
+            self.test_results.summary_statistics['early_stop'] = True
+            self.test_results.summary_statistics['stop_reason'] = '超过5分钟执行时间限制'
+            self.test_results.summary_statistics['completion_percentage'] = (
+                self.performance_monitor.completed_tasks / self.performance_monitor.total_tasks * 100
+                if self.performance_monitor.total_tasks > 0 else 0
+            )
     
-    # 运行测试
-    print("运行双均线策略测试...")
-    result1 = tester.test_dual_ma_strategy()
-    print(f"结果: {result1['success']}, 选中: {result1['summary']['selected_count']}")
-    
-    print("\n运行主力行为策略测试...")
-    result2 = tester.test_main_force_strategy()
-    print(f"结果: {result2['success']}, 选中: {result2['summary']['selected_count']}")
-    
-    print("\n运行市场条件测试...")
-    result3 = tester.test_market_conditions()
-    print(f"结果: {result3['success']}, 成功率: {result3['summary']['success_rate']:.1%}")
-    
-    print("\n运行可追溯性测试...")
-    result4 = tester.test_selection_traceability()
-    print(f"结果: {result4['success']}, 理由完整性: {result4['summary']['reason_completeness']:.1%}")
+    def _handle_performance_optimization(self) -> None:
+        """处理性能优化回调"""
+        logger.warning("执行性能优化：调整批处理大小和并行度")
+        
+        # 减少批处理大小
+        self.config.batch_size = max(100, self.config.batch_size // 2)
+        
+        # 调整并行度
+        if self.config.parallel_workers > 5:
+            self.config.parallel_workers = max(5, self.config.parallel_workers // 2)
+        
+        # 更新验证处理器配置
+        verification_config = BatchProcessingConfig(
+            max_workers=getattr(self.config, 'parallel_workers', 4),
+            batch_size=getattr(self.config, 'batch_size', 100),
+            timeout_seconds=getattr(self.config, 'timeout_seconds', 300),
+            retry_count=1,  # 减少重试次数
+            enable_diagnostics=False  # 关闭诊断以提高性能
+        )
+        self.verification_processor = BatchVerificationProcessor(
+            self.verification_engine, verification_config
+        )
+        
+        # 强制垃圾回收
+        gc.collect()
+        
+        logger.info(f"性能优化完成：批处理大小={self.config.batch_size}, 并行度={self.config.parallel_workers}")

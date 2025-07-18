@@ -19,7 +19,7 @@ from analysis.engines.complex_logic_processor import (
 from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
 
 
-class Test_logic_expression_lexer(unittest.Test_case):
+class Test_logic_expression_lexer(unittest.TestCase):
     """逻辑表达式词法分析器测试"""
     
     def test_tokenize_simple_expression(self):
@@ -83,7 +83,7 @@ class Test_logic_expression_lexer(unittest.Test_case):
         self.assertEqual(string_tokens[1].value, "stock")
 
 
-class Test_logic_expression_parser(unittest.Test_case):
+class Test_logic_expression_parser(unittest.TestCase):
     """逻辑表达式语法分析器测试"""
     
     def test_parse_simple_comparison(self):
@@ -162,7 +162,7 @@ class Test_logic_expression_parser(unittest.Test_case):
         self.assertEqual(len(ast['left']['args']), 2)
 
 
-class Test_complex_logic_processor(unittest.Test_case):
+class Test_complex_logic_processor(unittest.TestCase):
     """复杂逻辑处理器测试"""
     
     def set_up_Processor(self):

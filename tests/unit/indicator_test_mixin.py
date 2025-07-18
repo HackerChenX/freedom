@@ -314,3 +314,7 @@ class Indicator_test_mixin:
             self.clear_logs()
         self.indicator.get_patterns(self.data)
         self.assert_no_logs('ERROR')
+
+
+# 为兼容性创建别名
+IndicatorTestMixin = Indicator_test_mixin

@@ -21,7 +21,7 @@ from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 
 
-class Test_architecture_refactoring(unittest.Test_case):
+class Test_architecture_refactoring(unittest.TestCase):
     """测试架构重构"""
     
     def set_up_Test_Architecture_Refactoring(self):
@@ -185,7 +185,7 @@ from db.interfaces.data_access_interface import IDataAccess', content,
         self.assert_greater(len(stock_list), 0)
 
 
-class Test_architecture_compliance(unittest.Test_case):
+class Test_architecture_compliance(unittest.TestCase):
     """测试架构合规性"""
     
     def test_no_layer_violations(self):

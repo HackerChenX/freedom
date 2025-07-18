@@ -18,7 +18,7 @@ from analysis.engines.shared_condition_evaluator import Shared_condition_evaluat
 from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
 
-class Test_shared_condition_evaluator(unittest.Test_case):
+class Test_shared_condition_evaluator(unittest.TestCase):
     """共享条件评估器测试类"""
     
     def set_up_Evaluator(self):

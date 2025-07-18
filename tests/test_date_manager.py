@@ -28,7 +28,7 @@ sys.path.insert(0, project_root)
 from analysis.engines.date_manager import Date_manager, Date_format, Date_range, Week_day
 
 
-class Test_date_manager(unittest.Test_case):
+class Test_date_manager(unittest.TestCase):
     """智能日期管理器测试类"""
     
     def set_up_Manager(self):

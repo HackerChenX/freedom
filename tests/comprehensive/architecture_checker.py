@@ -29,7 +29,7 @@ from collections import defaultdict, deque
 
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
-from .config import get_test_config
+from .config_manager import get_config_manager
 from .logging_config import get_test_logger
 
 logger = get_test_logger('architecture_checker')
@@ -73,7 +73,7 @@ class ArchitectureComplianceChecker:
     
     def __init__(self):
         """初始化架构合规性检查器"""
-        self.config = get_test_config()
+        self.config = get_config_manager().get_config()
         self.project_root = Path.cwd()
         
         # 定义六层架构
@@ -148,7 +148,7 @@ class ArchitectureComplianceChecker:
         
         logger.info("架构合规性检查器初始化完成")
     
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     @exception_handler(reraise=True)
     def test_layer_dependencies(self) -> Dict[str, Any]:
         """
@@ -215,7 +215,7 @@ class ArchitectureComplianceChecker:
                 }
             }
     
-    @performance_monitor(threshold_seconds=8.0)
+    @performance_monitor(threshold=8.0)
     @exception_handler(reraise=True)
     def test_database_access_patterns(self) -> Dict[str, Any]:
         """
@@ -277,7 +277,7 @@ class ArchitectureComplianceChecker:
                 }
             }
     
-    @performance_monitor(threshold_seconds=6.0)
+    @performance_monitor(threshold=6.0)
     @exception_handler(reraise=True)
     def test_code_quality_standards(self) -> Dict[str, Any]:
         """
@@ -351,7 +351,7 @@ class ArchitectureComplianceChecker:
                 }
             }
     
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     @exception_handler(reraise=True)
     def test_configuration_management(self) -> Dict[str, Any]:
         """

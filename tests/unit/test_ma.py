@@ -5,7 +5,7 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
-class Test_mAIndicator(unittest.Test_case):
+class Test_mAIndicator(unittest.TestCase):
     def set_up_Ma(self):
         """Set up test data and indicator."""
         # Longer data to avoid NaN issues with longer period MAs

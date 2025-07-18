@@ -229,6 +229,21 @@ class UnifiedBaseStrategy(abc.ABC):
         """
         pass
     
+    def select_stocks(self, universe: List[str], start_date: str, end_date: str, **kwargs) -> pd.DataFrame:
+        """
+        选股方法的通用实现
+        
+        Args:
+            universe: 股票池
+            start_date: 开始日期  
+            end_date: 结束日期
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        return self.select_stocks_unified_base_strategy(universe, start_date, end_date, **kwargs)
+    
     def get_stock_data(self, stock_code: str, 
                       start_date: str, end_date: str,
                       period: Optional[str] = None) -> pd.DataFrame:

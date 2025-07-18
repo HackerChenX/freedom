@@ -1,0 +1,47 @@
+{
+  "test_timestamp": "2025-07-18T11:05:27.642310",
+  "total_strategies": 3,
+  "successful_strategies": 0,
+  "results": [
+    {
+      "strategy_name": "双均线策略直接实现",
+      "success": false,
+      "execution_time": 0.011038064956665039,
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "error_message": "未选出任何股票",
+      "test_details": {
+        "tested_stocks": [],
+        "breakout_signals": [],
+        "data_quality": {},
+        "calculation_steps": []
+      }
+    },
+    {
+      "strategy_name": "成交量突破策略",
+      "success": false,
+      "execution_time": 0.0017848014831542969,
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "error_message": "未选出任何股票",
+      "test_details": {
+        "tested_stocks": [],
+        "volume_signals": [],
+        "data_quality": {}
+      }
+    },
+    {
+      "strategy_name": "价格动量策略",
+      "success": false,
+      "execution_time": 0.0019690990447998047,
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "error_message": "未选出任何股票",
+      "test_details": {
+        "tested_stocks": [],
+        "momentum_signals": [],
+        "data_quality": {}
+      }
+    }
+  ]
+}

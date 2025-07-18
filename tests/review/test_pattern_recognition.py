@@ -19,7 +19,7 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
-class Test_pattern_recognition(unittest.Test_case):
+class Test_pattern_recognition(unittest.TestCase):
     """测试形态识别功能"""
 
     @classmethod

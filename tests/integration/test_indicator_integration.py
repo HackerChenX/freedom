@@ -9,7 +9,7 @@ from indicators.complete_indicator_registry import complete_registry
 from tests.helper.data_generator import Test_data_generator
 from tests.unit.indicator_test_mixin import Indicator_test_mixin
 
-class Test_indicator_integration(unittest.Test_case):
+class Test_indicator_integration(unittest.TestCase):
     """测试不同指标之间的集成与协作"""
 
     def set_up_Integration_Test_Indicator_Integration(self):

@@ -16,7 +16,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Testmfi_mfi(unittest.Test_case):
+class Testmfi_mfi(unittest.TestCase):
     """MFI指标测试类"""
     
     def set_up_Mfi(self):

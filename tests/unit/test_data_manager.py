@@ -22,7 +22,7 @@ from enums.period import Period
 from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError
 
 
-class Test_data_manager(unittest.Test_case):
+class Test_data_manager(unittest.TestCase):
     """数据管理器单元测试类"""
     
     def set_up_Manager_Test_Data_Manager(self):

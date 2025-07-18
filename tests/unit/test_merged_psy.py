@@ -4,7 +4,7 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 
 
-class Test_merged_pSY(unittest.Test_case):
+class Test_merged_pSY(unittest.TestCase):
     """测试合并后的PSY指标功能"""
     
     def set_up_Psy(self):

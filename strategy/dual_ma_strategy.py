@@ -157,6 +157,26 @@ class DualMAStrategy(BaseStrategy):
         
         return result_df 
     
+    def select_stocks_unified_base_strategy(self, universe: List[str], 
+                                           start_date: str, end_date: str, 
+                                           **kwargs) -> pd.DataFrame:
+        """
+        实现UnifiedBaseStrategy的抽象方法
+        
+        Args:
+            universe: 股票代码列表，表示选股范围
+            start_date: 开始日期
+            end_date: 结束日期
+            **kwargs: 关键字参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        # 设置日期参数
+        kwargs['start_date'] = start_date
+        kwargs['end_date'] = end_date
+        return self.select_Strategy_Dual_Ma_Strategy(universe, **kwargs)
+    
     def select_Strategy_Base_Strategy_dual_ma_strategy(self, universe: List[str], *args, **kwargs) -> pd.DataFrame:
         """
         实现基类抽象方法，调用具体的选股策略方法

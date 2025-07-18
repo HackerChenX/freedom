@@ -134,4 +134,23 @@ class MomentumStrategy(BaseStrategy):
         Returns:
             pd.DataFrame: 选股结果
         """
-        return self.select_Strategy_Momentum_Strategy(universe, *args, **kwargs) 
+        return self.select_Strategy_Momentum_Strategy(universe, *args, **kwargs)
+    
+    def select_stocks_unified_base_strategy(self, universe: List[str], 
+                                           start_date: str, end_date: str, 
+                                           **kwargs) -> pd.DataFrame:
+        """
+        实现UnifiedBaseStrategy的抽象方法
+        
+        Args:
+            universe: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        kwargs['start_date'] = start_date
+        kwargs['end_date'] = end_date
+        return self.select_Strategy_Momentum_Strategy(universe, **kwargs) 

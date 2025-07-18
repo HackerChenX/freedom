@@ -18,7 +18,7 @@ from indicators.zxm.score_indicators import ZXMElasticity_score, ZXMBuy_point_sc
 from indicators.zxm.selection_model import Selection_model
 
 
-class Test_zXMSignal_semantic_validation(unittest.Test_case):
+class Test_zXMSignal_semantic_validation(unittest.TestCase):
     """ZXM指标信号语义验证测试类"""
     
     def set_up_Validation(self):

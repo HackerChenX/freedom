@@ -1,0 +1,928 @@
+{
+  "scan_start_time": "2025-07-18T10:37:22.038678",
+  "scan_end_time": "2025-07-18T10:49:14.628181",
+  "target_stock_count": 100,
+  "actual_stock_count": 100,
+  "configuration": {
+    "batch_size": 20,
+    "max_workers": 4,
+    "max_concurrent_batches": 8
+  },
+  "batch_results": [
+    {
+      "batch_id": 1,
+      "batch_size": 20,
+      "successful_stocks": 0,
+      "failed_stocks": 20,
+      "total_records": 0,
+      "processing_time": 0.06705617904663086,
+      "stock_results": [
+        {
+          "stock_code": "000001",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.016243934631347656,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000007",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.016876935958862305,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000006",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.017488718032836914,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000002",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.018011093139648438,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000008",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.01342010498046875,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000010",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.012244939804077148,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000009",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.014536857604980469,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000011",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.014475107192993164,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000016",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.006036996841430664,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000014",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.008545160293579102,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000012",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009729862213134766,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000017",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.00744175910949707,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000019",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009660959243774414,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000025",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009434938430786133,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000021",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.011329889297485352,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000026",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.010974884033203125,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000028",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.008416414260864258,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000020",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.020823955535888672,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000027",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.010491132736206055,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000029",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.007554054260253906,
+          "error_message": "无数据",
+          "basic_stats": {}
+        }
+      ],
+      "performance_stats": {
+        "avg_processing_time": 0.012186884880065918,
+        "max_processing_time": 0.020823955535888672,
+        "min_processing_time": 0.006036996841430664,
+        "total_processing_time": 0.24373769760131836
+      }
+    },
+    {
+      "batch_id": 2,
+      "batch_size": 20,
+      "successful_stocks": 0,
+      "failed_stocks": 20,
+      "total_records": 0,
+      "processing_time": 0.12738513946533203,
+      "stock_results": [
+        {
+          "stock_code": "000031",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.014613151550292969,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000032",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.015858888626098633,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000030",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.016724348068237305,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000034",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.017582178115844727,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000039",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.013002157211303711,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000037",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.014913082122802734,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000036",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.01594090461730957,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000035",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.017719268798828125,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000049",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.021851062774658203,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000048",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.026645898818969727,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000042",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.03133106231689453,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000045",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.03154611587524414,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000055",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.018507957458496094,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000050",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.023626089096069336,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000056",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.02997136116027832,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000058",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.029626846313476562,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000060",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.046636104583740234,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000059",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.04880785942077637,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000061",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.034272193908691406,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000062",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.03404998779296875,
+          "error_message": "无数据",
+          "basic_stats": {}
+        }
+      ],
+      "performance_stats": {
+        "avg_processing_time": 0.025161325931549072,
+        "max_processing_time": 0.04880785942077637,
+        "min_processing_time": 0.013002157211303711,
+        "total_processing_time": 0.5032265186309814
+      }
+    },
+    {
+      "batch_id": 3,
+      "batch_size": 20,
+      "successful_stocks": 0,
+      "failed_stocks": 20,
+      "total_records": 0,
+      "processing_time": 651.6969380378723,
+      "stock_results": [
+        {
+          "stock_code": "000068",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.0122222900390625,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000065",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.013167858123779297,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000063",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.0142822265625,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000066",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.013952016830444336,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000069",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.01252293586730957,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000088",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.01244211196899414,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000096",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.016354084014892578,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000078",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.04089188575744629,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000089",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.04806232452392578,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000099",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.019934892654418945,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000100",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.012910127639770508,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000090",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.04325413703918457,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000156",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 651.5871298313141,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000153",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 651.5946989059448,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000151",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 651.5954422950745,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000155",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 651.5910499095917,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000158",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.032978057861328125,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000157",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.03430914878845215,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000159",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.0333859920501709,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000166",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.03325390815734863,
+          "error_message": "无数据",
+          "basic_stats": {}
+        }
+      ],
+      "performance_stats": {
+        "avg_processing_time": 130.3381122469902,
+        "max_processing_time": 651.5954422950745,
+        "min_processing_time": 0.0122222900390625,
+        "total_processing_time": 2606.762244939804
+      }
+    },
+    {
+      "batch_id": 4,
+      "batch_size": 20,
+      "successful_stocks": 0,
+      "failed_stocks": 20,
+      "total_records": 0,
+      "processing_time": 59.977678298950195,
+      "stock_results": [
+        {
+          "stock_code": "000400",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.004370927810668945,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000301",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.0072841644287109375,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000333",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.007595062255859375,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000338",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.00786900520324707,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000401",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.008228063583374023,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000403",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.005570173263549805,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000402",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.0063669681549072266,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000404",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.005866050720214844,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000407",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.007591962814331055,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000410",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.006927967071533203,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000409",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.0077168941497802734,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000408",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.008265972137451172,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000411",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.00852203369140625,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000415",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.008455991744995117,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000419",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.00838470458984375,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000421",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 59.91778612136841,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000417",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 59.92844581604004,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000422",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 59.92217302322388,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000420",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 59.92334485054016,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000423",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.02571702003479004,
+          "error_message": "无数据",
+          "basic_stats": {}
+        }
+      ],
+      "performance_stats": {
+        "avg_processing_time": 11.991324138641357,
+        "max_processing_time": 59.92844581604004,
+        "min_processing_time": 0.004370927810668945,
+        "total_processing_time": 239.82648277282715
+      }
+    },
+    {
+      "batch_id": 5,
+      "batch_size": 20,
+      "successful_stocks": 0,
+      "failed_stocks": 20,
+      "total_records": 0,
+      "processing_time": 0.0500490665435791,
+      "stock_results": [
+        {
+          "stock_code": "000425",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009770870208740234,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000428",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009962797164916992,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000426",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.010789155960083008,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000429",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.010757923126220703,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000501",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.008308887481689453,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000498",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009428262710571289,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000503",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009062051773071289,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000505",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.009158849716186523,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000507",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.00674891471862793,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000509",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.00678706169128418,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000510",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.006852149963378906,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000513",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.00845479965209961,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000514",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.010612010955810547,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000516",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.011691093444824219,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000517",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.014519691467285156,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000519",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.01281285285949707,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000521",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.008366107940673828,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000520",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.010471105575561523,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000523",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.0068149566650390625,
+          "error_message": "无数据",
+          "basic_stats": {}
+        },
+        {
+          "stock_code": "000524",
+          "success": false,
+          "records_processed": 0,
+          "processing_time": 0.007731914520263672,
+          "error_message": "无数据",
+          "basic_stats": {}
+        }
+      ],
+      "performance_stats": {
+        "avg_processing_time": 0.009455072879791259,
+        "max_processing_time": 0.014519691467285156,
+        "min_processing_time": 0.00674891471862793,
+        "total_processing_time": 0.1891014575958252
+      }
+    }
+  ],
+  "performance_summary": {
+    "execution_time": 712.589503,
+    "total_stocks": 100,
+    "successful_stocks": 0,
+    "failed_stocks": 100,
+    "success_rate": 0.0,
+    "total_records": 0,
+    "stocks_per_second": 0.0,
+    "records_per_second": 0.0,
+    "query_performance": {},
+    "batch_performance": {
+      "count": 5,
+      "average": 142.3838213443756,
+      "median": 0.12738513946533203,
+      "min": 0.0500490665435791,
+      "max": 651.6969380378723,
+      "std": 255.71096232557153
+    },
+    "system_performance": {
+      "cpu_average": 14.916614906832297,
+      "cpu_max": 100.0,
+      "cpu_min": 0.0,
+      "memory_average": 82.5,
+      "memory_max": 84.2,
+      "memory_min": 80.3,
+      "samples_count": 644
+    },
+    "error_count": 0
+  },
+  "system_resources": {},
+  "recommendations": [
+    "成功率 0.0% 需要提升，检查数据库连接稳定性",
+    "处理速度较慢，建议增加并发数或优化查询"
+  ],
+  "scan_status": "Poor"
+}

@@ -21,7 +21,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Test_indicator_adapter(unittest.Test_case):
+class Test_indicator_adapter(unittest.TestCase):
     """测试指标适配器功能"""
     
     def set_up_Test_Indicator_Adapter_Test_Indicator_Adapter(self):
@@ -109,7 +109,7 @@ class Test_indicator_adapter(unittest.Test_case):
         self.assert_in(rsi_column, result.columns)
 
 
-class Test_composite_indicator(unittest.Test_case):
+class Test_composite_indicator(unittest.TestCase):
     """测试复合指标功能"""
     
     def set_up_Test_Indicator_Adapter_Test_Indicator_Adapter(self):

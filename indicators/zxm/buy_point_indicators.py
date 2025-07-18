@@ -2030,11 +2030,11 @@ class ZXMBSAbsorb(BaseIndicator, PatternSignalMixin):
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """抽象基类要求的形态方法"""
-        return self.get_patterns_buy_point_indicators(data, **kwargs)
+        return self.identify_patterns_buy_point_indicators(data, **kwargs)
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象基类要求的参数设置方法"""
-        return self.set_parameters_buy_point_indicators(**kwargs)
+        return self.set_parameters(**kwargs)
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """抽象基类要求的置信度方法"""

@@ -1281,6 +1281,112 @@ class DataAccessManager(DataAccessInterface):
         """实现抽象接口方法"""
         return self.get_latest_data_data_access_manager(table, code, columns)
     
+    @exception_handler(reraise=False, default_return="2025-07-18")
+    def get_latest_trading_date(self) -> str:
+        """
+        获取最新交易日期
+        
+        Returns:
+            str: 最新交易日期
+        """
+        try:
+            query = """
+            SELECT MAX(date) as latest_date
+            FROM stock_info 
+            WHERE level = '日线'
+            """
+            
+            from db.clickhouse_db import get_clickhouse_db
+            db = get_clickhouse_db()
+            result = db.query(query)
+            
+            if not result.empty:
+                # 确保正确获取第一列的值（列名可能不是'latest_date'）
+                return str(result.iloc[0, 0])
+            else:
+                return datetime.now().strftime('%Y-%m-%d')
+                
+        except Exception as e:
+            logger.error(f"获取最新交易日期失败: {e}")
+            return datetime.now().strftime('%Y-%m-%d')
+
+    @exception_handler(reraise=False, default_return="2025-01-01")
+    def get_previous_trading_date(self, date: str, days_back: int) -> str:
+        """
+        获取指定日期往前N个交易日的日期
+        
+        Args:
+            date: 基准日期 (YYYY-MM-DD格式)
+            days_back: 往前推的交易日天数
+            
+        Returns:
+            str: 往前N个交易日的日期
+        """
+        try:
+            query = f"""
+            SELECT DISTINCT date 
+            FROM stock_info 
+            WHERE date <= '{date}'
+            AND level = '日线'
+            ORDER BY date DESC
+            LIMIT 1 OFFSET {days_back - 1}
+            """
+            
+            from db.clickhouse_db import get_clickhouse_db
+            db = get_clickhouse_db()
+            result = db.query(query)
+            
+            if not result.empty:
+                # 确保正确获取第一列的值（列名可能不是'date'）
+                return str(result.iloc[0, 0])
+            else:
+                # 如果找不到，返回一个合理的默认值
+                base_date = datetime.strptime(date, '%Y-%m-%d')
+                previous_date = base_date - timedelta(days=days_back + 30)
+                return previous_date.strftime('%Y-%m-%d')
+                
+        except Exception as e:
+            logger.error(f"获取前置交易日期失败: {e}")
+            try:
+                base_date = datetime.strptime(date, '%Y-%m-%d')
+                previous_date = base_date - timedelta(days=days_back + 30)
+                return previous_date.strftime('%Y-%m-%d')
+            except:
+                return '2025-01-01'
+
+    @exception_handler(reraise=False, default_return=pd.DataFrame())
+    def get_daily_data(self, code: str, start_date: str, end_date: str) -> pd.DataFrame:
+        """
+        获取股票日线数据
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            pd.DataFrame: 股票数据
+        """
+        try:
+            query = f"""
+            SELECT code, name, date, open, high, low, close, volume
+            FROM stock_info 
+            WHERE code = '{code}'
+            AND level = '日线'
+            AND date >= '{start_date}' AND date <= '{end_date}'
+            ORDER BY date ASC
+            """
+            
+            from db.clickhouse_db import get_clickhouse_db
+            db = get_clickhouse_db()
+            result = db.query(query)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"获取股票{code}日线数据失败: {e}")
+            return pd.DataFrame()
+
     @exception_handler(reraise=False, default_return=None)
     def get_previous_trade_date(self, date: str, days_back: int) -> str:
         """

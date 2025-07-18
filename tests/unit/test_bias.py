@@ -10,7 +10,7 @@ from tests.helper.data_generator import Test_data_generator
 from tests.helper.log_capture import Log_capture_mixin
 
 
-class Test_bIAS(unittest.Test_case, Indicator_test_mixin, Log_capture_mixin):
+class Test_bIAS(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """BIAS指标测试类"""
     
     def set_up_Bias(self):

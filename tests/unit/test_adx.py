@@ -11,7 +11,7 @@ from tests.unit.indicator_test_mixin import Indicator_test_mixin
 from tests.helper.log_capture import Log_capture_mixin
 
 
-class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.Test_case):
+class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
     """ADX指标测试类"""
 
     def set_up_Adx(self):

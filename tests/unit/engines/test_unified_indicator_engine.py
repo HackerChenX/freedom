@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
 
-class Test_unified_indicator_engine(unittest.Test_case):
+class Test_unified_indicator_engine(unittest.TestCase):
     """统一指标计算引擎测试类"""
     
     def set_up_Engine(self):

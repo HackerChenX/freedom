@@ -12,9 +12,9 @@
 __version__ = "1.0.0"
 __author__ = "Stock Analysis System"
 
-from .stock_selection_tester import StockSelectionTester
+from .stock_selection_tester import ComprehensiveStockSelectionTester as StockSelectionTester
 from .performance_tester import PerformanceBenchmarkTester
-from .data_validator import RealDataValidator
+from .data_consistency_validator import DataConsistencyValidator as RealDataValidator
 from .architecture_checker import ArchitectureComplianceChecker
 
 __all__ = [

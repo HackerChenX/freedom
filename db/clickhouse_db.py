@@ -36,11 +36,11 @@ except ImportError:
     HAS_CONFIG_MANAGER = False
     # 备用默认配置
     DEFAULT_CONFIG = {
-        get_config('database.host'),
-        get_config('database.port'),
-        get_config('database.user'),
-        get_config('database.password'),
-        get_config('database.name')
+        'host': get_config('database.host', 'localhost'),
+        'port': get_config('database.port', 9000),
+        'user': get_config('database.user', 'default'),
+        'password': get_config('database.password', '123456'),
+        'database': get_config('database.name', 'stock')
     }
 
 
@@ -59,11 +59,11 @@ def get_default_config() -> Dict[str, Any]:
 
     # 备用配置
     return DEFAULT_CONFIG.copy() if not HAS_CONFIG_MANAGER else {
-        get_config('database.host'),
-        get_config('database.port'),
-        get_config('database.user'),
-        get_config('database.password'),
-        get_config('database.name')
+        'host': get_config('database.host', 'localhost'),
+        'port': get_config('database.port', 9000),
+        'user': get_config('database.user', 'default'),
+        'password': get_config('database.password', '123456'),
+        'database': get_config('database.name', 'stock')
     }
 
 
@@ -257,16 +257,16 @@ class ClickHouseDbconnection:
         self.client = manager._connections[conn_key]['client']
         self._database_created = False # 用于确保数据库只创建一次
 
-    def __enter___Clickhouse_Db_Clickhouse_Db(self) -> 'ClickHouseDbConnection':
+    def __enter__(self) -> 'ClickHouseDbconnection':
         """
         上下文管理器入口
         
         Returns:
-            ClickHouseDbConnection: 连接对象自身
+            ClickHouseDbconnection: 连接对象自身
         """
         return self
 
-    def __exit___Clickhouse_Db_Clickhouse_Db(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         上下文管理器退出，自动释放连接
         """
@@ -304,29 +304,23 @@ class ClickHouseDbconnection:
             Exception: 执行失败时抛出
         """
         try:
-            # 使用 query_dataframe 方法，它能正确返回列名
-            result_with_columns = self.client.query_dataframe_Db(query, params or {})
-            return result_with_columns
+            # 直接使用execute方法获取结果
+            result = self.client.execute(query, params or {})
+            if not result:
+                return pd.DataFrame()
+
+            # 尝试从查询语句中提取列名
+            column_names = self._extract_column_names_from_query(query)
+            
+            # 如果无法从查询中提取列名，使用默认列名
+            if not column_names and result:
+                column_names = [f"col_{i}" for i in range(len(result[0]))]
+
+            # 创建DataFrame
+            return pd.DataFrame(result, columns=column_names or [])
         except Exception as e:
             logger.error("执行查询失败: %s, 错误: %s", query, e)
-            # 如果 query_dataframe 失败，尝试使用 execute 方法
-            try:
-                result = self.client.execute(query, params or {})
-                if not result:
-                    return pd.DataFrame()
-
-                # 尝试从查询语句中提取列名
-                column_names = self._extract_column_names_from_query(query)
-                
-                # 如果无法从查询中提取列名，使用默认列名
-                if not column_names and result:
-                    column_names = [f"col_{i}" for i in range(len(result[0]))]
-
-                # 创建DataFrame
-                return pd.DataFrame(result, columns=column_names or [])
-            except Exception as e2:
-                logger.error(f"备用查询方法也失败: {e2}")
-                raise e
+            return pd.DataFrame()
 
     def _extract_column_names_from_query(self, query: str) -> List[str]:
         """
@@ -431,6 +425,20 @@ class ClickHouseDb:
         """
         with self._manager.get_connection_Db(self.config) as conn:
             return conn.execute(query, params)
+    
+    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        执行查询并返回DataFrame
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        with self._manager.get_connection_Db(self.config) as conn:
+            return conn.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
     def get_stock_info_Db(self,
                        stock_code: Union[str, List[str]] = None,

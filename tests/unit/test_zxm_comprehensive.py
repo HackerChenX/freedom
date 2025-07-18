@@ -27,7 +27,7 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.zxm.diagnostics import ZXMDiagnostics
 
 
-class Test_zXMComprehensive(unittest.Test_case):
+class Test_zXMComprehensive(unittest.TestCase):
     """ZXM指标综合测试类"""
     
     def set_up_Comprehensive(self):

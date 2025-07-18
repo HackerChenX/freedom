@@ -636,3 +636,8 @@ class Testdatagenerator_generator:
         result['volume'] = np.maximum(1, result['volume'] + volume_noise.astype(int))
         
         return result 
+
+
+# 为兼容性创建别名
+TestDataGenerator = Testdatagenerator_generator
+Test_data_generator = Testdatagenerator_generator

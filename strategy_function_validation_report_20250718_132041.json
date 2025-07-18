@@ -1,0 +1,107 @@
+{
+  "test_timestamp": "2025-07-18T13:20:41.333998",
+  "total_strategies_tested": 4,
+  "successful_strategies": 0,
+  "failed_strategies": 4,
+  "overall_status": "Poor",
+  "performance_summary": {
+    "total_execution_time": 0.44299793243408203,
+    "average_strategy_time": 0.11070013046264648,
+    "total_stocks_selected": 0,
+    "average_selection_count": 0.0,
+    "successful_strategies_count": 0,
+    "strategy_success_rate": 0.0,
+    "fastest_strategy": "反弹策略",
+    "most_selective_strategy": "双均线策略"
+  },
+  "recommendation": "❌ 所有策略都未能成功选出股票，需要检查:\n  - 数据库连接和数据可用性\n  - 策略逻辑实现\n  - 数据库字段映射问题",
+  "strategy_results": [
+    {
+      "strategy_name": "双均线策略",
+      "test_date": "2025-07-18T13:20:41.143871",
+      "execution_time": 0.2528412342071533,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "calculation_time": 0.04396390914916992,
+        "stocks_processed": 20,
+        "selection_rate": 0.0,
+        "avg_time_per_stock": 0.002198195457458496
+      },
+      "logic_validation": {
+        "strategy_parameters": {
+          "short_period": 5,
+          "long_period": 10,
+          "volume_ratio": 1.5,
+          "lookback_days": 3
+        },
+        "result_columns": [],
+        "result_shape": [
+          0,
+          0
+        ],
+        "has_breakout_signals": false,
+        "average_selection_ratio": 0.0
+      },
+      "data_coverage": {
+        "error": "'record_count'"
+      }
+    },
+    {
+      "strategy_name": "动量策略",
+      "test_date": "2025-07-18T13:20:41.205574",
+      "execution_time": 0.06165003776550293,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "error": "UnifiedBaseStrategy.select_stocks() missing 2 required positional arguments: 'start_date' and 'end_date'"
+      },
+      "logic_validation": {
+        "error": "UnifiedBaseStrategy.select_stocks() missing 2 required positional arguments: 'start_date' and 'end_date'"
+      },
+      "data_coverage": {
+        "error": "'record_count'"
+      }
+    },
+    {
+      "strategy_name": "突破策略",
+      "test_date": "2025-07-18T13:20:41.276229",
+      "execution_time": 0.0706179141998291,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "error": "UnifiedBaseStrategy.select_stocks() missing 2 required positional arguments: 'start_date' and 'end_date'"
+      },
+      "logic_validation": {
+        "error": "UnifiedBaseStrategy.select_stocks() missing 2 required positional arguments: 'start_date' and 'end_date'"
+      },
+      "data_coverage": {
+        "error": "'record_count'"
+      }
+    },
+    {
+      "strategy_name": "反弹策略",
+      "test_date": "2025-07-18T13:20:41.333958",
+      "execution_time": 0.057691335678100586,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "error": "UnifiedBaseStrategy.select_stocks() missing 2 required positional arguments: 'start_date' and 'end_date'"
+      },
+      "logic_validation": {
+        "error": "UnifiedBaseStrategy.select_stocks() missing 2 required positional arguments: 'start_date' and 'end_date'"
+      },
+      "data_coverage": {
+        "error": "'record_count'"
+      }
+    }
+  ]
+}

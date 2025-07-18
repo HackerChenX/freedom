@@ -33,7 +33,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Integration_test_suite(unittest.Test_case):
+class Integration_test_suite(unittest.TestCase):
     """全面集成测试套件"""
     
     @classmethod

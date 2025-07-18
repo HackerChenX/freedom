@@ -19,7 +19,7 @@ init_logging(level=get_config('logging.level', 'INFO'))
 logger = get_logger(__name__)
 
 
-class Test_layered_framework(unittest.Test_case):
+class Test_layered_framework(unittest.TestCase):
     """分层测试框架验证测试类"""
     
     def set_up_Framework_Test_Layered_Framework(self):

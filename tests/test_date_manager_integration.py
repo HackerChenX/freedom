@@ -16,7 +16,7 @@ from analysis.engines.date_manager import Date_manager, Date_format, Date_range,
 from utils.cache import LRUCache
 
 
-class Test_date_manager_integration(unittest.Test_case):
+class Test_date_manager_integration(unittest.TestCase):
     """日期管理器集成测试"""
     
     def set_up_Integration_Test_Date_Manager_Integration(self):

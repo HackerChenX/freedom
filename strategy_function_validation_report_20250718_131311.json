@@ -1,0 +1,104 @@
+{
+  "test_timestamp": "2025-07-18T13:13:11.126085",
+  "total_strategies_tested": 4,
+  "successful_strategies": 0,
+  "failed_strategies": 4,
+  "overall_status": "Poor",
+  "performance_summary": {
+    "total_execution_time": 0.3336336612701416,
+    "average_strategy_time": 0.08336150646209717,
+    "total_stocks_selected": 0,
+    "average_selection_count": 0.0,
+    "successful_strategies_count": 0,
+    "strategy_success_rate": 0.0,
+    "fastest_strategy": "动量策略",
+    "most_selective_strategy": "双均线策略"
+  },
+  "recommendation": "❌ 所有策略都未能成功选出股票，需要检查:\n  - 数据库连接和数据可用性\n  - 策略逻辑实现\n  - 数据库字段映射问题",
+  "strategy_results": [
+    {
+      "strategy_name": "双均线策略",
+      "test_date": "2025-07-18T13:13:10.962112",
+      "execution_time": 0.169647216796875,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "error": "'DataAccessManager' object has no attribute 'get_latest_trading_date'"
+      },
+      "logic_validation": {
+        "error": "'DataAccessManager' object has no attribute 'get_latest_trading_date'"
+      },
+      "data_coverage": {
+        "total_stocks_requested": 1,
+        "stocks_with_data": 0,
+        "data_coverage_ratio": 0.0,
+        "stocks_detail": {}
+      }
+    },
+    {
+      "strategy_name": "动量策略",
+      "test_date": "2025-07-18T13:13:10.972252",
+      "execution_time": 0.01008915901184082,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "error": "'MomentumStrategy' object has no attribute 'select_stocks'"
+      },
+      "logic_validation": {
+        "error": "'MomentumStrategy' object has no attribute 'select_stocks'"
+      },
+      "data_coverage": {
+        "total_stocks_requested": 1,
+        "stocks_with_data": 0,
+        "data_coverage_ratio": 0.0,
+        "stocks_detail": {}
+      }
+    },
+    {
+      "strategy_name": "突破策略",
+      "test_date": "2025-07-18T13:13:10.983265",
+      "execution_time": 0.010980844497680664,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "error": "'BreakoutStrategy' object has no attribute 'select_stocks'"
+      },
+      "logic_validation": {
+        "error": "'BreakoutStrategy' object has no attribute 'select_stocks'"
+      },
+      "data_coverage": {
+        "total_stocks_requested": 1,
+        "stocks_with_data": 0,
+        "data_coverage_ratio": 0.0,
+        "stocks_detail": {}
+      }
+    },
+    {
+      "strategy_name": "反弹策略",
+      "test_date": "2025-07-18T13:13:11.126037",
+      "execution_time": 0.1427288055419922,
+      "success": false,
+      "error_message": "策略未选出任何股票",
+      "selected_stocks_count": 0,
+      "selected_stocks": [],
+      "performance_metrics": {
+        "error": "'ReboundStrategy' object has no attribute 'select_stocks'"
+      },
+      "logic_validation": {
+        "error": "'ReboundStrategy' object has no attribute 'select_stocks'"
+      },
+      "data_coverage": {
+        "total_stocks_requested": 1,
+        "stocks_with_data": 0,
+        "data_coverage_ratio": 0.0,
+        "stocks_detail": {}
+      }
+    }
+  ]
+}

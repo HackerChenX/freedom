@@ -33,11 +33,11 @@ import tracemalloc
 
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
-from strategy.strategy_executor import Strategy_executor
+from strategy.strategy_executor import StrategyExecutor
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
-from .config import get_test_config
+from .config_manager import get_config_manager
 from .logging_config import get_test_logger
 
 logger = get_test_logger('performance_tester')
@@ -180,9 +180,9 @@ class PerformanceBenchmarkTester:
     
     def __init__(self):
         """初始化性能基准测试器"""
-        self.config = get_test_config()
+        self.config = get_config_manager().get_config()
         self.query_executor = get_query_executor()
-        self.strategy_executor = Strategy_executor()
+        self.strategy_executor = StrategyExecutor()
         self.thresholds = PerformanceThresholds()
         
         # 从配置加载阈值
@@ -201,7 +201,7 @@ class PerformanceBenchmarkTester:
         
         logger.info("性能基准测试器初始化完成")
     
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     @exception_handler(reraise=True)
     def test_single_stock_query_performance(self) -> Dict[str, Any]:
         """
@@ -311,7 +311,7 @@ class PerformanceBenchmarkTester:
                 }
             }
     
-    @performance_monitor(threshold_seconds=40.0)
+    @performance_monitor(threshold=40.0)
     @exception_handler(reraise=True)
     def test_batch_processing_performance(self) -> Dict[str, Any]:
         """
@@ -451,7 +451,7 @@ class PerformanceBenchmarkTester:
         
         return result
     
-    @performance_monitor(threshold_seconds=1300.0)
+    @performance_monitor(threshold=1300.0)
     @exception_handler(reraise=True)
     def test_full_market_scan_performance(self) -> Dict[str, Any]:
         """
@@ -593,7 +593,7 @@ class PerformanceBenchmarkTester:
                 }
             }
     
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     @exception_handler(reraise=True)
     def test_memory_usage_monitoring(self) -> Dict[str, Any]:
         """

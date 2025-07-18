@@ -1,0 +1,10 @@
+{
+  "test_timestamp": "2025-07-18T11:04:00.803567",
+  "total_strategies_tested": 0,
+  "successful_strategies": 0,
+  "failed_strategies": 0,
+  "overall_status": "Poor",
+  "performance_summary": {},
+  "recommendation": "无法生成建议：没有测试结果",
+  "strategy_results": []
+}

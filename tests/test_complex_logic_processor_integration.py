@@ -14,7 +14,7 @@ from analysis.engines.shared_condition_evaluator import Shared_condition_evaluat
 from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
 
-class Test_complex_logic_processor_integration(unittest.Test_case):
+class Test_complex_logic_processor_integration(unittest.TestCase):
     """复杂逻辑处理器集成测试"""
     
     def set_up_Integration_Test_Complex_Logic_Processor_Integration(self):

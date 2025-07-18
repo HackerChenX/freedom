@@ -15,7 +15,7 @@ from tests.helper.log_capture import Log_capture_mixin
 from utils.technical_utils import calculate_macd
 
 
-class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.Test_case):
+class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
     """
     MACD 指标单元测试
     

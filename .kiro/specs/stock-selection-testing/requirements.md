@@ -1,118 +1,91 @@
-# 股票选股策略系统综合测试需求文档
+# Requirements Document
 
-## 介绍
+## Introduction
 
-本文档定义了股票选股策略系统的综合测试需求，确保系统能够在真实数据环境下稳定运行，满足性能要求，并遵循既定的系统架构规范。测试将覆盖功能验证、性能评估、架构合规性检查和边界条件处理等多个维度。
+This document outlines the requirements for a comprehensive stock selection testing system that validates all technical indicators and their patterns through closed-loop verification. The system must ensure that every indicator pattern can successfully select corresponding stocks, and that these selections are validated through reverse buypoint analysis to confirm the same patterns are detected, creating a complete verification loop.
 
-## 需求
+## Requirements
 
-### 需求 1：真实数据验证
+### Requirement 1
 
-**用户故事：** 作为系统测试人员，我需要使用真实的ClickHouse数据库数据进行测试，以确保系统在生产环境中的可靠性。
+**User Story:** As a quantitative analyst, I want to test all technical indicators across all their patterns, so that I can ensure comprehensive coverage of the stock selection system.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 系统启动时 THEN 系统 SHALL 成功连接到ClickHouse数据库实例
-2. WHEN 执行数据查询时 THEN 系统 SHALL 返回真实的历史股票数据而非模拟数据
-3. WHEN 验证数据完整性时 THEN 系统 SHALL 确认数据包含必要的OHLCV字段且数据量充足
-4. WHEN 检查数据质量时 THEN 系统 SHALL 验证数据的时间连续性和数值合理性
-5. WHEN 测试数据访问时 THEN 系统 SHALL 通过统一的查询执行器访问数据库
+1. WHEN the system runs comprehensive testing THEN it SHALL test every registered technical indicator
+2. WHEN testing each indicator THEN the system SHALL test all available patterns for that indicator
+3. WHEN testing patterns THEN the system SHALL attempt to select stocks that match each specific pattern
+4. IF no stocks are found for a pattern THEN the system SHALL log this as a test failure with detailed diagnostics
 
-### 需求 2：选股功能验证
+### Requirement 2
 
-**用户故事：** 作为投资分析师，我需要验证选股策略能够正确识别和筛选股票，以确保策略逻辑的准确性。
+**User Story:** As a system validator, I want each selected stock to be verified through buypoint analysis, so that I can confirm the pattern detection is accurate and consistent.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 执行双均线突破策略时 THEN 系统 SHALL 正确识别短期均线突破长期均线的股票
-2. WHEN 执行主力行为策略时 THEN 系统 SHALL 基于主力资金行为模式筛选出符合条件的股票
-3. WHEN 应用选股条件时 THEN 系统 SHALL 返回包含股票代码、名称、行业等完整信息的结果
-4. WHEN 处理不同市场条件时 THEN 系统 SHALL 在牛市、熊市、震荡市等不同环境下正常工作
-5. WHEN 测试时间范围时 THEN 系统 SHALL 支持不同时间周期的历史数据分析
-6. WHEN 验证选股逻辑时 THEN 系统 SHALL 提供可追溯的选股理由和评分机制
+1. WHEN stocks are selected for a pattern THEN the system SHALL perform buypoint analysis on each selected stock
+2. WHEN performing buypoint analysis THEN the system SHALL check if the same indicator pattern is detected
+3. IF the buypoint analysis confirms the same pattern THEN the system SHALL mark this as a successful closed-loop verification
+4. IF the buypoint analysis does not confirm the pattern THEN the system SHALL mark this as a verification failure
+5. WHEN verification fails THEN the system SHALL log detailed information about the discrepancy
 
-### 需求 3：性能基准测试
+### Requirement 3
 
-**用户故事：** 作为系统运维人员，我需要确保系统在处理大量数据时保持良好的性能表现，以满足生产环境的响应时间要求。
+**User Story:** As a quality assurance engineer, I want comprehensive test reporting with detailed metrics, so that I can assess the overall health and accuracy of the stock selection system.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 查询单只股票数据时 THEN 系统 SHALL 在2秒内返回结果
-2. WHEN 批量处理100只股票时 THEN 系统 SHALL 在30秒内完成选股分析
-3. WHEN 处理1000只股票池时 THEN 系统 SHALL 在5分钟内完成全量分析
-4. WHEN 处理全市场4000+只股票时 THEN 系统 SHALL 在20分钟内完成全量分析
-5. WHEN 执行复杂策略计算时 THEN 系统 SHALL 监控并记录内存使用情况且峰值内存不超过8GB
-6. WHEN 并发执行多个查询时 THEN 系统 SHALL 通过连接池有效管理数据库连接且连接数不超过50个
-7. WHEN 识别性能瓶颈时 THEN 系统 SHALL 提供详细的性能分析报告包括CPU、内存、I/O和网络使用情况
-8. WHEN 执行长时间运行任务时 THEN 系统 SHALL 实现进度监控和任务中断恢复机制
-9. WHEN 处理大数据量查询时 THEN 系统 SHALL 使用分页查询和流式处理避免内存溢出
-10. WHEN 缓存命中率低于80%时 THEN 系统 SHALL 优化缓存策略提高查询效率
+1. WHEN testing completes THEN the system SHALL generate a comprehensive test report
+2. WHEN generating reports THEN the system SHALL include success/failure rates for each indicator
+3. WHEN generating reports THEN the system SHALL include success/failure rates for each pattern
+4. WHEN generating reports THEN the system SHALL include closed-loop verification statistics
+5. WHEN generating reports THEN the system SHALL include performance metrics (execution time, memory usage)
+6. WHEN failures occur THEN the system SHALL include detailed diagnostic information in the report
 
-### 需求 4：架构合规性验证
+### Requirement 4
 
-**用户故事：** 作为系统架构师，我需要确保所有代码实现都遵循既定的分层架构原则，以保证系统的可维护性和扩展性。
+**User Story:** As a system administrator, I want configurable test parameters and validation criteria, so that I can customize the testing process for different scenarios.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 访问数据库时 THEN 系统 SHALL 强制使用统一的查询执行器而非直接数据库连接
-2. WHEN 检查依赖关系时 THEN 系统 SHALL 遵循L6→L5→L4→L3→L2→L1的单向依赖原则
-3. WHEN 验证接口使用时 THEN 系统 SHALL 通过标准接口进行层间交互
-4. WHEN 检查配置管理时 THEN 系统 SHALL 使用统一的配置管理机制而非硬编码
-5. WHEN 验证错误处理时 THEN 系统 SHALL 实现统一的异常处理和日志记录机制
-6. WHEN 检查代码质量时 THEN 系统 SHALL 遵循命名规范、类型提示和文档字符串标准
+1. WHEN configuring tests THEN the system SHALL allow specification of date ranges for testing
+2. WHEN configuring tests THEN the system SHALL allow selection of specific indicators or patterns to test
+3. WHEN configuring tests THEN the system SHALL allow configuration of stock selection criteria (minimum volume, price range, etc.)
+4. WHEN configuring tests THEN the system SHALL allow configuration of verification thresholds and tolerances
+5. IF configuration is invalid THEN the system SHALL provide clear error messages and default to safe values
 
-### 需求 5：全面指标和形态测试覆盖
+### Requirement 5
 
-**用户故事：** 作为技术分析师，我需要确保系统中所有技术指标和形态识别功能都经过充分测试，以保证分析结果的准确性和可靠性。
+**User Story:** As a performance analyst, I want the testing system to handle large-scale data efficiently, so that comprehensive testing can be completed in reasonable time.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 测试技术指标时 THEN 系统 SHALL 覆盖所有已实现的技术指标包括MA、MACD、RSI、KDJ、BOLL、DMI、TRIX、AROON、ROC、MOMENTUM等
-2. WHEN 测试形态识别时 THEN 系统 SHALL 验证所有形态模式识别功能包括突破形态、反转形态、整理形态等
-3. WHEN 测试选股策略时 THEN 系统 SHALL 覆盖所有已实现的选股策略包括双均线策略、主力行为策略、回踩反弹策略等
-4. WHEN 验证指标计算精度时 THEN 系统 SHALL 使用标准测试数据集验证每个指标的计算准确性误差不超过0.01%
-5. WHEN 测试指标参数组合时 THEN 系统 SHALL 验证不同参数设置下指标的计算结果和性能表现
-6. WHEN 测试形态识别准确率时 THEN 系统 SHALL 使用历史数据验证形态识别的准确率不低于85%
-7. WHEN 测试多周期数据时 THEN 系统 SHALL 验证15分钟、30分钟、60分钟、日线、周线、月线等不同周期的数据处理
-8. WHEN 测试指标组合时 THEN 系统 SHALL 验证多个指标组合使用时的计算效率和结果一致性
-9. WHEN 测试边界数据时 THEN 系统 SHALL 使用极端市场数据验证指标和形态识别的稳定性
-10. WHEN 生成覆盖率报告时 THEN 系统 SHALL 提供详细的测试覆盖率报告包括代码覆盖率、功能覆盖率和场景覆盖率
+1. WHEN processing large datasets THEN the system SHALL use batch processing techniques
+2. WHEN running tests THEN the system SHALL support parallel processing where possible
+3. WHEN memory usage is high THEN the system SHALL implement memory optimization strategies
+4. WHEN tests run for extended periods THEN the system SHALL provide progress indicators
+5. IF system resources are constrained THEN the system SHALL gracefully handle resource limitations
 
-### 需求 6：集成测试覆盖
+### Requirement 6
 
-**用户故事：** 作为质量保证工程师，我需要全面的测试覆盖来确保系统各组件之间的正确集成和协作。
+**User Story:** As a data analyst, I want detailed logging and monitoring during test execution, so that I can troubleshoot issues and understand system behavior.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 执行单元测试时 THEN 系统 SHALL 为核心组件提供独立的单元测试用例
-2. WHEN 执行集成测试时 THEN 系统 SHALL 验证完整的选股工作流程端到端运行
-3. WHEN 处理边界条件时 THEN 系统 SHALL 正确处理空结果、数据异常、网络中断等情况
-4. WHEN 测试异常场景时 THEN 系统 SHALL 提供适当的错误信息和恢复机制
-5. WHEN 验证数据一致性时 THEN 系统 SHALL 确保多次执行相同查询返回一致结果
-6. WHEN 生成测试报告时 THEN 系统 SHALL 记录所有测试结果、性能指标和发现的问题
+1. WHEN tests execute THEN the system SHALL log all major operations with timestamps
+2. WHEN errors occur THEN the system SHALL log detailed error information including stack traces
+3. WHEN processing stocks THEN the system SHALL log stock codes and processing status
+4. WHEN verification fails THEN the system SHALL log the expected vs actual pattern details
+5. WHEN tests complete THEN the system SHALL log summary statistics and performance metrics
 
-### 需求 6：监控和可观测性
+### Requirement 7
 
-**用户故事：** 作为系统监控人员，我需要全面的监控和日志记录功能，以便及时发现和诊断系统问题。
+**User Story:** As a system integrator, I want the testing framework to integrate seamlessly with existing indicator and buypoint analysis systems, so that testing reflects real system behavior.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 执行选股操作时 THEN 系统 SHALL 记录详细的操作日志包括时间戳、参数和结果
-2. WHEN 监控系统性能时 THEN 系统 SHALL 收集查询执行时间、内存使用量等关键指标
-3. WHEN 发生异常时 THEN 系统 SHALL 记录完整的错误堆栈和上下文信息
-4. WHEN 分析系统健康状态时 THEN 系统 SHALL 提供数据库连接状态、缓存命中率等健康指标
-5. WHEN 生成性能报告时 THEN 系统 SHALL 输出可视化的性能分析图表和建议
-6. WHEN 设置告警阈值时 THEN 系统 SHALL 在性能指标超出预设范围时发出告警
-
-### 需求 7：数据安全和完整性
-
-**用户故事：** 作为数据管理员，我需要确保测试过程中数据的安全性和完整性，避免对生产数据造成影响。
-
-#### 验收标准
-
-1. WHEN 执行测试时 THEN 系统 SHALL 使用只读权限访问生产数据库
-2. WHEN 处理敏感数据时 THEN 系统 SHALL 遵循数据脱敏和隐私保护原则
-3. WHEN 验证数据访问时 THEN 系统 SHALL 记录所有数据访问操作的审计日志
-4. WHEN 测试数据备份时 THEN 系统 SHALL 验证数据备份和恢复机制的有效性
-5. WHEN 检查数据权限时 THEN 系统 SHALL 确保不同用户角色具有适当的数据访问权限
-6. WHEN 处理数据传输时 THEN 系统 SHALL 使用加密连接保护数据传输安全
+1. WHEN running tests THEN the system SHALL use the same indicator calculation methods as the production system
+2. WHEN performing buypoint analysis THEN the system SHALL use the same analysis engine as the production system
+3. WHEN accessing data THEN the system SHALL use the same data sources and connection methods as the production system
+4. IF system dependencies are unavailable THEN the system SHALL provide clear error messages and graceful degradation
+5. WHEN configuration changes THEN the system SHALL automatically adapt to use updated system components

@@ -10,7 +10,7 @@
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import re
@@ -19,7 +19,7 @@ from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
 from utils.logger import get_logger
 from .logging_config import get_test_logger
-from .config import get_test_config
+from .config_manager import get_config_manager
 
 logger = get_test_logger('data_validation')
 
@@ -66,7 +66,7 @@ class RealDataValidator:
     
     def __init__(self):
         """初始化真实数据验证器"""
-        self.config = get_test_config()
+        self.config = get_config_manager().get_config()
         self.query_executor = get_query_executor()
         
         # 必需的数据字段

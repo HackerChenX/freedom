@@ -19,7 +19,7 @@ init_logging(level=get_config('logging.level', 'INFO'))
 logger = get_logger(__name__)
 
 
-class Test_automated_risk_detection(unittest.Test_case):
+class Test_automated_risk_detection(unittest.TestCase):
     """自动化风险检测测试类"""
     
     def set_up_Detection(self):

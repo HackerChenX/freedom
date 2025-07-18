@@ -24,7 +24,7 @@ class ReboundStrategy(BaseStrategy):
     识别回踩均线然后反弹上行的买点形态
     """
     
-    def __init___74(self, name: str = "回踩反弹", description: str = "回踩均线反弹买点策略"):
+    def __init__(self, name: str = "回踩反弹", description: str = "回踩均线反弹买点策略"):
         """
         初始化回踩反弹买点策略
         
@@ -32,7 +32,7 @@ class ReboundStrategy(BaseStrategy):
             name: 策略名称
             description: 策略描述
         """
-        super().__init___74(name, description)
+        super().__init__(name, description)
         
         # 设置默认参数
         self._parameters = {
@@ -60,7 +60,7 @@ class ReboundStrategy(BaseStrategy):
         """
         # 更新参数
         if kwargs:
-            self.set_parameters(kwargs)
+            self.set_parameters(**kwargs)
         
         result_list = []
         
@@ -186,4 +186,23 @@ class ReboundStrategy(BaseStrategy):
             result_df = result_df.sort_values('bounce_pct', ascending=False)
             return result_df
         else:
-            return pd.DataFrame(columns=['code', 'name', 'industry', 'close', 'ma', 'touch_index', 'bounce_pct']) 
+            return pd.DataFrame(columns=['code', 'name', 'industry', 'close', 'ma', 'touch_index', 'bounce_pct'])
+    
+    def select_stocks_unified_base_strategy(self, universe: List[str], 
+                                           start_date: str, end_date: str, 
+                                           **kwargs) -> pd.DataFrame:
+        """
+        实现UnifiedBaseStrategy的抽象方法
+        
+        Args:
+            universe: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        kwargs['start_date'] = start_date
+        kwargs['end_date'] = end_date
+        return self.select_Strategy_Rebound_Strategy(universe, **kwargs) 

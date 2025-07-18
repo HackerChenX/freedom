@@ -26,7 +26,7 @@ from analysis.engines.indicator_validation_framework import (
 )
 
 
-class Test_indicator_validation_framework(unittest.Test_case):
+class Test_indicator_validation_framework(unittest.TestCase):
     """指标验证框架测试类"""
     
     def set_up_Framework(self):
@@ -371,7 +371,7 @@ class Test_indicator_validation_framework(unittest.Test_case):
             self.assertEqual(self.framework.validation_stats['failed_validations'], 2)
 
 
-class Test_validation_config(unittest.Test_case):
+class Test_validation_config(unittest.TestCase):
     """验证配置测试类"""
     
     def test_default_config(self):
@@ -404,7 +404,7 @@ class Test_validation_config(unittest.Test_case):
         self.assertEqual(config.output_format, "csv")
 
 
-class Test_validation_enums(unittest.Test_case):
+class Test_validation_enums(unittest.TestCase):
     """验证枚举测试类"""
     
     def test_validation_mode_enum(self):

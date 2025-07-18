@@ -254,15 +254,17 @@ class StockData:
         self.history = None
         
         if sync:
-            self.init_ef_Formula_Stock_Formula_Stock_Formula_stockformula(stock_code, level, sync, start, end)
+            self.init_ef_Formula_Stock_Formula_Stock_FormulaStockformula(stock_code, level, sync, start, end)
         else:
-            self.init_db_Formula_Stock_Formula_Stock_Formula_stockformula(stock_code, level, start, end)
+            self.init_db_Formula_Stock_Formula_Stock_FormulaStockformula(stock_code, level, start, end)
 
     def init_ef_Formula_Stock_Formula_Stock_FormulaStockformula(self, stock_code, level=KlinePeriod.DAILY, sync=False, start="20170101", end="20240101"):
         import efinance as ef
         
-        # 使用数据库管理器单例
-        db_manager = DBManager.get_instance()
+        # 使用数据库管理器
+        from utils.dependency_injection import get_container
+        container = get_container()
+        db_manager = container.get('DBManager')
         
         try:
             klt = Kline_period.get_klt_code(level)
@@ -290,8 +292,14 @@ class StockData:
     def init_db_Formula_Stock_Formula_Stock_FormulaStockformula(self, stock_code, level=KlinePeriod.DAILY, start="20170101", end="20240101"):
         import pandas as pd
         
-        # 使用数据库管理器单例
-        db_manager = DBManager.get_instance()
+        # 使用数据库管理器
+        from utils.dependency_injection import get_container
+        container = get_container()
+        try:
+            db_manager = container.get('DBManager')
+        except:
+            # 如果获取失败，跳过数据库初始化
+            return
         
         try:
             db_data = db_manager.get_stock_info(stock_code, str(level), start, end)
@@ -445,6 +453,36 @@ class StockFormula:
     """
     股票公式类，封装各种技术指标的计算和选股条件
     """
+    
+    def __init__(self, stock_code="", start="20170101", end="20240101"):
+        """
+        初始化股票公式
+        
+        Args:
+            stock_code: 股票代码
+            start: 开始日期
+            end: 结束日期
+        """
+        self.stock_code = stock_code
+        self.name = ""
+        self.industry = ""
+        
+        # 初始化各周期数据
+        if stock_code:
+            self.data_Day = StockData(stock_code, KlinePeriod.DAILY, start, end)
+            self.data_Week = StockData(stock_code, KlinePeriod.WEEKLY, start, end)
+            self.data_Month = StockData(stock_code, KlinePeriod.MONTHLY, start, end)
+            self.data15 = StockData(stock_code, KlinePeriod.MIN_15, start, end)
+            self.data30 = StockData(stock_code, KlinePeriod.MIN_30, start, end)
+            self.data60 = StockData(stock_code, KlinePeriod.MIN_60, start, end)
+        else:
+            # 创建空的数据对象
+            self.data_Day = StockData()
+            self.data_Week = StockData()
+            self.data_Month = StockData()
+            self.data15 = StockData()
+            self.data30 = StockData()
+            self.data60 = StockData()
     
     def get_code(self):
         return self.stock_code

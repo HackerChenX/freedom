@@ -50,7 +50,7 @@ def measure_memory(func):
         return result
     return wrapper
 
-class Test_indicator_performance(unittest.Test_case, Log_capture_mixin):
+class Test_indicator_performance(unittest.TestCase, Log_capture_mixin):
 
     def set_up_Performance_Test_Indicator_Performance(self):
         """准备测试数据"""
