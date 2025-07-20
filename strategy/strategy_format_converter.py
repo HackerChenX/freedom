@@ -7,10 +7,10 @@
 
 import copy
 from typing import Dict, List, Any, Optional
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.dependency_injection import get_container
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StrategyFormatConverter:

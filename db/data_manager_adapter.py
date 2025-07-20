@@ -62,7 +62,7 @@ class DatamanageradapterAdapter:
             database=db_config.get('database', 'stock'),
             user=db_config.get('user', 'default'),
             password=db_config.get('password', ''),
-            get_config('performance.max_connections'),
+            max_connections=get_config('performance.max_connections'),
             min_connections=5
         )
         

@@ -19,7 +19,7 @@ import logging
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.base_indicator import BaseIndicator

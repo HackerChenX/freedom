@@ -8,13 +8,13 @@ from typing import Dict, List, Any, Optional, Callable, Tuple
 from enum import Enum
 import pandas as pd
 import numpy as np
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.dependency_injection import get_container
 import os
 import json
 
 # 获取日志记录器
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PatternTypePatternRegistry(Enum):
@@ -654,7 +654,7 @@ def get_pattern_registry() -> PatternRegistry:
     """
     try:
         container = get_container()
-        return container.resolve(PatternRegistry)
+        return container.resolve(PatternRegistry())
     except Exception as e:
         logger.warning(f"从依赖注入容器获取PatternRegistry失败，创建新实例: {e}")
         return PatternRegistry()

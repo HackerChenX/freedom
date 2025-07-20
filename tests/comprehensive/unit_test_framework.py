@@ -535,7 +535,7 @@ class UnitTestFramework:
         }
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=300.0)
+    @performance_monitor(threshold=300.0)
     def run_unit_test_suite(self, suite_name: str, test_methods: Optional[List[str]] = None) -> UnitTestSuiteResult:
         """运行单元测试套件"""
         if suite_name not in self.test_suites:
@@ -605,7 +605,7 @@ class UnitTestFramework:
         )
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=600.0)
+    @performance_monitor(threshold=600.0)
     def run_all_unit_tests(self) -> Dict[str, UnitTestSuiteResult]:
         """运行所有单元测试"""
         results = {}

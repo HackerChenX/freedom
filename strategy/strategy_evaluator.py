@@ -9,12 +9,12 @@ import numpy as np
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime, timedelta
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.decorators import performance_monitor
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class StrategyEvaluator:
     """策略评估器，提供多维度评分和评估功能"""

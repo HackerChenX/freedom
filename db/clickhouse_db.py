@@ -77,14 +77,20 @@ class ClickHouseDbmanager:
         """初始化连接管理器"""
         self._connections: Dict[str, Dict[str, Any]] = {}  # 连接池
         self._lock = threading.RLock()  # 添加可重入锁，保护连接池
-        self._max_idle_time = 600  # 连接最大空闲时间（秒），延长到10分钟
-        self._cleanup_interval = 120  # 清理间隔（秒），延长到2分钟
+        self._max_idle_time = 300  # 连接最大空闲时间（秒），缩短到5分钟
+        self._cleanup_interval = 60  # 清理间隔（秒），缩短到1分钟
         self._cleanup_thread = None  # 清理线程
         self._shutting_down = False  # 关闭标志
-        
+        self._cleanup_registered = False  # 防止重复注册清理函数
+
         # 启动清理线程
         self._start_cleanup_thread()
-        atexit.register(self._cleanup_all_connections)
+
+        # 只注册一次清理函数
+        if not hasattr(ClickHouseDbmanager, '_global_cleanup_registered'):
+            atexit.register(self._cleanup_all_connections)
+            ClickHouseDbmanager._global_cleanup_registered = True
+            self._cleanup_registered = True
 
     def _start_cleanup_thread(self) -> None:
         """启动连接池清理线程"""
@@ -106,52 +112,79 @@ class ClickHouseDbmanager:
 
     def _cleanup_idle_connections_Clickhouse_Db(self) -> None:
         """清理空闲连接"""
+        if self._shutting_down:
+            return
+
         with self._lock:
             current_time = time.time()
             keys_to_remove = []
 
-            for key, conn_info in self._connections.items():
-                if conn_info['in_use']:
+            for key, conn_info in list(self._connections.items()):
+                if conn_info.get('in_use', False):
                     continue
 
                 # 检查连接是否超过空闲时间
-                if current_time - conn_info['last_used'] > self._max_idle_time:
+                idle_time = current_time - conn_info.get('last_used', 0)
+                if idle_time > self._max_idle_time:
                     try:
                         # 尝试健康检查
-                        try:
-                            conn_info['client'].execute('SELECT 1')
-                            logger.debug(f"连接健康检查通过: {key}")
-                            continue  # 连接正常，不清理
-                        except Exception:
-                            logger.debug(f"连接健康检查失败，准备清理: {key}")
-                        
-                        conn_info['client'].disconnect()
-                        logger.debug(f"关闭空闲连接: {key}")
+                        client = conn_info.get('client')
+                        if client:
+                            try:
+                                client.ping()
+                                logger.debug(f"连接健康检查通过: {key}")
+                                continue  # 连接正常，不清理
+                            except Exception:
+                                logger.debug(f"连接健康检查失败，准备清理: {key}")
+
+                        # 关闭连接
+                        if client:
+                            try:
+                                client.disconnect()
+                            except Exception as e:
+                                logger.debug(f"断开连接时出错: {e}")
+
+                        logger.debug(f"关闭空闲连接: {key} (空闲时间: {idle_time:.1f}秒)")
                     except Exception as e:
-                        logger.warning(f"关闭连接时出错: {key}, 错误: {e}")
+                        logger.warning(f"处理连接时出错: {key}, 错误: {e}")
 
                     keys_to_remove.append(key)
 
+            # 移除已关闭的连接
             for key in keys_to_remove:
-                del self._connections[key]
-                
+                if key in self._connections:
+                    del self._connections[key]
+
             if keys_to_remove:
-                logger.info(f"清理了 {len(keys_to_remove)} 个空闲连接")
+                logger.info(f"清理了 {len(keys_to_remove)} 个空闲连接，当前连接数: {len(self._connections)}")
 
     def _cleanup_all_connections(self) -> None:
         """清理所有连接（程序退出时调用）"""
+        if self._shutting_down:
+            return  # 避免重复清理
+
         logger.info("正在关闭所有数据库连接...")
         self._shutting_down = True
 
+        # 停止清理线程
+        if self._cleanup_thread and self._cleanup_thread.is_alive():
+            try:
+                self._cleanup_thread.join(timeout=2)
+            except Exception as e:
+                logger.warning(f"停止清理线程失败: {e}")
+
         with self._lock:
-            for key, conn_info in self._connections.items():
+            connection_count = len(self._connections)
+            for key, conn_info in list(self._connections.items()):
                 try:
-                    conn_info['client'].disconnect()
-                    logger.debug(f"关闭连接: {key}")
+                    if 'client' in conn_info and conn_info['client']:
+                        conn_info['client'].disconnect()
+                        logger.debug(f"关闭连接: {key}")
                 except Exception as e:
                     logger.warning(f"关闭连接时出错: {key}, 错误: {e}")
 
             self._connections.clear()
+            logger.info(f"已关闭 {connection_count} 个数据库连接")
 
     def get_connection_Db(self, config: Optional[Dict[str, Any]] = None) -> 'ClickHouseDbConnection':
         """
@@ -211,16 +244,44 @@ class ClickHouseDbmanager:
     def release_connection(self, conn_key: str) -> None:
         """
         释放连接（标记为未使用）
-        
+
         Args:
             conn_key: 连接键
         """
         with self._lock:
             if conn_key in self._connections:
-                self._connections[conn_key]['in_use'] = False
-                self._connections[conn_key]['last_used'] = time.time()
+                conn_info = self._connections[conn_key]
+                conn_info['in_use'] = False
+                conn_info['last_used'] = time.time()
+
+                # 增加查询计数
+                if 'query_count' not in conn_info:
+                    conn_info['query_count'] = 0
+                conn_info['query_count'] += 1
+
+                # 如果查询次数过多，关闭连接
+                if conn_info['query_count'] > 100:
+                    logger.debug(f"连接 {conn_key} 查询次数过多，关闭连接")
+                    self._remove_connection(conn_key)
+                else:
+                    logger.debug(f"释放连接: {conn_key}, 查询次数: {conn_info['query_count']}")
             else:
                 logger.warning(f"尝试释放不存在的连接: {conn_key}")
+
+    def _remove_connection(self, conn_key: str) -> None:
+        """移除并关闭连接"""
+        with self._lock:
+            if conn_key in self._connections:
+                conn_info = self._connections[conn_key]
+                try:
+                    client = conn_info.get('client')
+                    if client:
+                        client.disconnect()
+                    logger.debug(f"移除连接: {conn_key}")
+                except Exception as e:
+                    logger.warning(f"关闭连接时出错: {conn_key}, 错误: {e}")
+                finally:
+                    del self._connections[conn_key]
 
 
 # ===== 兼容性接口 =====

@@ -16,9 +16,9 @@ from typing import Dict, List, Any, Optional
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class StrategyGenerator:
     """策略生成器"""

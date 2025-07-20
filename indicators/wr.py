@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -15,10 +16,10 @@ from typing import Dict, Any, Union, List, Dict, Optional, Tuple, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class WrWr(BaseIndicator, PatternSignalMixin):
@@ -32,16 +33,18 @@ class WrWr(BaseIndicator, PatternSignalMixin):
     def __init__(self, **kwargs):
         """
         初始化WR指标
-        
+
         Args:
             **kwargs: 指标参数，支持period、overbought、oversold等
         """
         super().__init__()
-        self.name = "WR_Wr"
-        
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
+        self.name = "WR"
+        self.description = "威廉指标"
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_wr()
-        
+
         # 应用用户参数
         self.set_parameters_Wr_Wr(**kwargs)
     
@@ -1020,3 +1023,425 @@ class WrWr(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    # ==================== 抽象方法实现 ====================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self.calculate_Wr_Wr(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score_Wr(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns_Wr(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters_Wr_Wr(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """抽象基类要求的置信度计算方法"""
+        return self.calculate_confidence_Wr(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """统一的计算接口"""
+        return self.calculate_Wr_Wr(data, **kwargs)
+
+    # ==================== 兼容性方法 - 真实实现 ====================
+
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """真实实现：获取WR形态"""
+        if data is None or data.empty:
+            return pd.DataFrame()
+
+        # 首先计算WR指标
+        wr_data = self.calculate_Wr_Wr(data)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 获取WR数据
+        if isinstance(wr_data, dict):
+            wr_values = wr_data.get('wr', pd.Series(index=data.index))
+        else:
+            wr_values = wr_data.get('wr', pd.Series(index=data.index))
+
+        # 1. 超买形态 (WR > -20)
+        patterns_df['WR_OVERBOUGHT'] = wr_values > -20
+
+        # 2. 超卖形态 (WR < -80)
+        patterns_df['WR_OVERSOLD'] = wr_values < -80
+
+        # 3. 极端超买形态 (WR > -10)
+        patterns_df['WR_EXTREME_OVERBOUGHT'] = wr_values > -10
+
+        # 4. 极端超卖形态 (WR < -90)
+        patterns_df['WR_EXTREME_OVERSOLD'] = wr_values < -90
+
+        # 5. 从超卖区域反弹形态
+        patterns_df['WR_OVERSOLD_BOUNCE'] = (wr_values > -80) & (wr_values.shift(1) <= -80)
+
+        # 6. 从超买区域回落形态
+        patterns_df['WR_OVERBOUGHT_FALL'] = (wr_values < -20) & (wr_values.shift(1) >= -20)
+
+        # 7. 中性区域突破形态
+        patterns_df['WR_NEUTRAL_BREAK_UP'] = (wr_values > -50) & (wr_values.shift(1) <= -50)
+        patterns_df['WR_NEUTRAL_BREAK_DOWN'] = (wr_values < -50) & (wr_values.shift(1) >= -50)
+
+        # 8. 背离形态检测
+        if len(data) >= 20:
+            # 简化的背离检测：价格创新高但WR未创新高
+            price_high = data['high'].rolling(10).max()
+            wr_high = wr_values.rolling(10).max()
+            patterns_df['WR_BEARISH_DIVERGENCE'] = (
+                (data['high'] >= price_high.shift(1)) &
+                (wr_values < wr_high.shift(1)) &
+                (wr_values > -50)
+            )
+
+            # 底背离形态：价格创新低但WR未创新低
+            price_low = data['low'].rolling(10).min()
+            wr_low = wr_values.rolling(10).min()
+            patterns_df['WR_BULLISH_DIVERGENCE'] = (
+                (data['low'] <= price_low.shift(1)) &
+                (wr_values > wr_low.shift(1)) &
+                (wr_values < -50)
+            )
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """真实实现：计算WR原始评分"""
+        if data.empty:
+            return pd.Series(dtype=float)
+
+        # 计算WR指标
+        wr_data = self.calculate_Wr_Wr(data)
+
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+
+        # 获取WR数据
+        if isinstance(wr_data, dict):
+            wr_values = wr_data.get('wr', pd.Series(index=data.index))
+        else:
+            wr_values = wr_data.get('wr', pd.Series(index=data.index))
+
+        # 1. 基于WR位置的评分
+        # 超卖区域加分 (WR < -80)
+        oversold_condition = wr_values < -80
+        score += oversold_condition * 20
+
+        # 极端超卖加分 (WR < -90)
+        extreme_oversold_condition = wr_values < -90
+        score += extreme_oversold_condition * 15
+
+        # 超买区域减分 (WR > -20)
+        overbought_condition = wr_values > -20
+        score -= overbought_condition * 20
+
+        # 极端超买减分 (WR > -10)
+        extreme_overbought_condition = wr_values > -10
+        score -= extreme_overbought_condition * 15
+
+        # 2. 基于WR反弹和回落的评分
+        oversold_bounce = (wr_values > -80) & (wr_values.shift(1) <= -80)
+        overbought_fall = (wr_values < -20) & (wr_values.shift(1) >= -20)
+
+        # 超卖反弹加分
+        score += oversold_bounce * 15
+
+        # 超买回落减分
+        score -= overbought_fall * 15
+
+        # 3. 基于WR趋势的评分
+        # WR上升趋势加分
+        wr_rising = wr_values > wr_values.shift(1)
+        score += wr_rising * 5
+
+        # WR下降趋势减分
+        wr_falling = wr_values < wr_values.shift(1)
+        score -= wr_falling * 5
+
+        # 4. 基于WR距离中性位置的评分
+        # WR越接近-50（中性），评分越接近50
+        distance_from_neutral = np.abs(wr_values + 50)
+        distance_bonus = np.maximum(0, 10 - distance_from_neutral / 5)
+        score += distance_bonus
+
+        # 限制评分在0-100之间
+        return score.clip(0, 100)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成WR交易信号"""
+        if data.empty:
+            return pd.DataFrame()
+
+        # 计算WR指标
+        wr_data = self.calculate_Wr_Wr(data)
+        result_df = data.copy()
+
+        # 合并WR数据
+        if isinstance(wr_data, dict):
+            for col, values in wr_data.items():
+                result_df[col] = values
+        else:
+            for col in wr_data.columns:
+                result_df[col] = wr_data[col]
+
+        # 初始化信号列
+        result_df['wr_signal'] = 0
+        result_df['wr_strength'] = 0.0
+        result_df['wr_confidence'] = 0.0
+
+        # 获取WR数据
+        if isinstance(wr_data, dict):
+            wr_values = wr_data.get('wr', pd.Series(index=data.index))
+        else:
+            wr_values = wr_data.get('wr', pd.Series(index=data.index))
+
+        # 1. 超卖反弹买入信号
+        oversold_bounce = (wr_values > -80) & (wr_values.shift(1) <= -80)
+        result_df.loc[oversold_bounce, 'wr_signal'] = 1
+        result_df.loc[oversold_bounce, 'wr_strength'] = 0.8
+        result_df.loc[oversold_bounce, 'wr_confidence'] = 0.9
+
+        # 2. 超买回落卖出信号
+        overbought_fall = (wr_values < -20) & (wr_values.shift(1) >= -20)
+        result_df.loc[overbought_fall, 'wr_signal'] = -1
+        result_df.loc[overbought_fall, 'wr_strength'] = 0.8
+        result_df.loc[overbought_fall, 'wr_confidence'] = 0.9
+
+        # 3. 中性区域突破信号
+        neutral_break_up = (wr_values > -50) & (wr_values.shift(1) <= -50)
+        result_df.loc[neutral_break_up, 'wr_signal'] = 1
+        result_df.loc[neutral_break_up, 'wr_strength'] = 0.6
+        result_df.loc[neutral_break_up, 'wr_confidence'] = 0.7
+
+        neutral_break_down = (wr_values < -50) & (wr_values.shift(1) >= -50)
+        result_df.loc[neutral_break_down, 'wr_signal'] = -1
+        result_df.loc[neutral_break_down, 'wr_strength'] = 0.6
+        result_df.loc[neutral_break_down, 'wr_confidence'] = 0.7
+
+        # 4. 极端超卖/超买信号
+        extreme_oversold = wr_values < -90
+        result_df.loc[extreme_oversold, 'wr_signal'] = 1
+        result_df.loc[extreme_oversold, 'wr_strength'] = 0.9
+        result_df.loc[extreme_oversold, 'wr_confidence'] = 0.8
+
+        extreme_overbought = wr_values > -10
+        result_df.loc[extreme_overbought, 'wr_signal'] = -1
+        result_df.loc[extreme_overbought, 'wr_strength'] = 0.9
+        result_df.loc[extreme_overbought, 'wr_confidence'] = 0.8
+
+        return result_df
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """真实实现：计算WR综合评分"""
+        if data.empty:
+            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+
+        # 计算原始评分
+        raw_score = self.calculate_raw_score(data, **kwargs)
+
+        # 获取形态
+        patterns = self.get_patterns(data, **kwargs)
+
+        # 计算最终评分
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+
+        # 基于形态调整评分
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 正面形态加分
+            if latest_patterns.get('WR_OVERSOLD', False):
+                final_score += 15
+            if latest_patterns.get('WR_EXTREME_OVERSOLD', False):
+                final_score += 20
+            if latest_patterns.get('WR_OVERSOLD_BOUNCE', False):
+                final_score += 12
+            if latest_patterns.get('WR_BULLISH_DIVERGENCE', False):
+                final_score += 15
+
+            # 负面形态减分
+            if latest_patterns.get('WR_OVERBOUGHT', False):
+                final_score -= 15
+            if latest_patterns.get('WR_EXTREME_OVERBOUGHT', False):
+                final_score -= 20
+            if latest_patterns.get('WR_OVERBOUGHT_FALL', False):
+                final_score -= 12
+            if latest_patterns.get('WR_BEARISH_DIVERGENCE', False):
+                final_score -= 15
+
+        # 计算置信度
+        wr_data = self.calculate_Wr_Wr(data)
+
+        if isinstance(wr_data, dict):
+            wr_value = wr_data.get('wr', pd.Series([0])).iloc[-1] if len(wr_data.get('wr', pd.Series([0]))) > 0 else 0
+        else:
+            wr_value = wr_data.get('wr', pd.Series([0])).iloc[-1] if len(wr_data.get('wr', pd.Series([0]))) > 0 else 0
+
+        # 基于WR位置计算置信度
+        if wr_value < -80 or wr_value > -20:
+            confidence = 0.9  # 极端位置置信度高
+        elif wr_value < -70 or wr_value > -30:
+            confidence = 0.7
+        elif wr_value < -60 or wr_value > -40:
+            confidence = 0.5
+        else:
+            confidence = 0.3  # 中性区域置信度低
+
+        # 限制评分范围
+        final_score = max(0, min(100, final_score))
+
+        return {
+            'score': final_score,
+            'confidence': confidence,
+            'signals': {
+                'wr_value': wr_value,
+                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'
+            }
+        }
+
+    def set_parameters(self, **kwargs):
+        """真实实现：设置WR参数"""
+        # 验证并设置period参数
+        if 'period' in kwargs:
+            period = kwargs['period']
+            if isinstance(period, int) and 5 <= period <= 100:
+                self.period = period
+            else:
+                logger.warning(f"无效的period参数: {period}, 保持原值")
+
+        # 验证并设置overbought参数
+        if 'overbought' in kwargs:
+            overbought = kwargs['overbought']
+            if isinstance(overbought, (int, float)) and -50 <= overbought <= 0:
+                self.overbought = overbought
+            else:
+                logger.warning(f"无效的overbought参数: {overbought}, 保持原值")
+
+        # 验证并设置oversold参数
+        if 'oversold' in kwargs:
+            oversold = kwargs['oversold']
+            if isinstance(oversold, (int, float)) and -100 <= oversold <= -50:
+                self.oversold = oversold
+            else:
+                logger.warning(f"无效的oversold参数: {oversold}, 保持原值")
+
+        # 记录参数变更
+        logger.info(f"WR参数已更新")
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成WR交易信号"""
+        return self.get_signals(data, **kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：计算WR指标"""
+        return self.calculate_Wr_Wr(data, **kwargs)
+
+    def calculate_confidence_Wr(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """真实实现：计算WR置信度"""
+        if score.empty:
+            return 0.3
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 基于评分的置信度调整
+        latest_score = score.iloc[-1] if not score.empty else 50.0
+
+        # 极端评分提高置信度
+        if latest_score > 80 or latest_score < 20:
+            confidence += 0.3
+        elif latest_score > 70 or latest_score < 30:
+            confidence += 0.2
+        elif latest_score > 60 or latest_score < 40:
+            confidence += 0.1
+
+        # 基于形态的置信度调整
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 强势形态提高置信度
+            if latest_patterns.get('WR_EXTREME_OVERSOLD', False):
+                confidence += 0.2
+            if latest_patterns.get('WR_EXTREME_OVERBOUGHT', False):
+                confidence += 0.2
+            if latest_patterns.get('WR_OVERSOLD_BOUNCE', False):
+                confidence += 0.15
+            if latest_patterns.get('WR_OVERBOUGHT_FALL', False):
+                confidence += 0.15
+
+            # 背离形态提高置信度
+            if latest_patterns.get('WR_BULLISH_DIVERGENCE', False):
+                confidence += 0.1
+            if latest_patterns.get('WR_BEARISH_DIVERGENCE', False):
+                confidence += 0.1
+
+        # 基于信号的置信度调整
+        if signals:
+            signal_strength = signals.get('strength', 0)
+            confidence += signal_strength * 0.1
+
+        # 限制置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Wr(score, patterns, signals)
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：识别形态"""
+        return self.get_patterns(data, **kwargs)
+
+    def calculate_raw_score_wr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score(data, **kwargs)
+
+    def register_patterns(self):
+        """真实实现：注册WR形态到全局注册表"""
+        try:
+            registry = PatternRegistry()
+
+            # 注册超卖形态
+            registry.register_pattern_registry(
+                pattern_id="WR_OVERSOLD",
+                display_name="WR超卖",
+                indicator_id="WR",
+                pattern_type=PatternTypePatternRegistry.BULLISH,
+                default_strength=PatternStrengthPatternRegistry.STRONG
+            )
+
+            # 注册超买形态
+            registry.register_pattern_registry(
+                pattern_id="WR_OVERBOUGHT",
+                display_name="WR超买",
+                indicator_id="WR",
+                pattern_type=PatternTypePatternRegistry.BEARISH,
+                default_strength=PatternStrengthPatternRegistry.STRONG
+            )
+
+            # 注册超卖反弹形态
+            registry.register_pattern_registry(
+                pattern_id="WR_OVERSOLD_BOUNCE",
+                display_name="WR超卖反弹",
+                indicator_id="WR",
+                pattern_type=PatternTypePatternRegistry.BULLISH,
+                default_strength=PatternStrengthPatternRegistry.MEDIUM
+            )
+
+            logger.info("WR形态注册完成")
+            return True
+
+        except Exception as e:
+            logger.error(f"WR形态注册失败: {e}")
+            return False
+
+
+# 为了兼容指标注册表，创建别名
+WR = WrWr

@@ -8,6 +8,8 @@
 4. 高效的批量计算支持
 """
 
+from utils.dependency_injection import get_logger
+
 import abc
 import pandas as pd
 import numpy as np
@@ -16,7 +18,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.common_utils import DataProcessor, ValidationUtils, CacheUtils
 from utils.decorators import exception_handler, performance_monitor
 from enums.indicator_types import Indicatortype_indicator_types
@@ -29,7 +31,7 @@ class IndicatorType:
     VOLATILITY = "volatility"
     COMPOSITE = "composite"
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CalculationMode(Enum):

@@ -1,465 +1,406 @@
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
-
+#!/usr/bin/env python3
 """
-系统集成测试
+完整的系统集成测试
 
-验证选股系统和买点分析系统集成后的功能和性能
+测试整个系统的端到端功能，包括策略执行、指标计算、数据访问等
 """
 
 import sys
 import os
-import time
-import json
 import pandas as pd
-import concurrent.futures
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import List, Dict, Any
 
 # 添加项目根目录到路径
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(project_root)
+root_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, root_dir)
 
-from db.unified_data_manager import get_unified_data_manager
-from strategy.strategy_executor import Strategy_executor
-from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
-from monitoring.performance_monitor import get_performance_monitor
-from utils.stability_enhancer import get_stability_manager
-from utils.logger import get_logger
-
-logger = get_logger(__name__)
-
-
-class System_integration_test:
-    """系统集成测试器"""
-    
-    def __init__(self):
-        """初始化测试器"""
-        # 获取优化后的组件
-        self.data_manager = get_unified_data_manager()
-        self.strategy_executor = Strategy_executor(max_workers=8, cache_enabled=True)
-        self.buypoint_analyzer = Buy_point_batch_analyzer()
-        self.performance_monitor = get_performance_monitor()
-        self.stability_manager = get_stability_manager()
-        
-        # 测试结果
-        self.test_results = {
-            'integration_tests': {},
-            'performance_comparison': {},
-            'backward_compatibility': {},
-            'overall_assessment': {}
-        }
-        
-        logger.info("系统集成测试器初始化完成")
-    
-    def test_data_manager_integration(self) -> Dict[str, Any]:
-        """测试数据管理器集成"""
-        logger.info("开始测试数据管理器集成...")
-        
-        test_results = {
-            'basic_functionality': {},
-            'performance_metrics': {},
-            'cache_effectiveness': {},
-            'concurrent_access': {}
-        }
-        
-        # 1. 基础功能测试
-        try:
-            start_time = time.time()
-            
-            # 测试单股票查询
-            stock_info = self.data_manager.get_stock_info(
-                stock_code='000001',
-                level='DAILY',
-                limit=100
-            )
-            
-            single_query_time = time.time() - start_time
-            
-            test_results['basic_functionality'] = {
-                'single_query_success': True,
-                'single_query_time': single_query_time,
-                'records_returned': len(stock_info.data) if hasattr(stock_info, 'data') and not stock_info.data.empty else 0
-            }
-            
-        except Exception as e:
-            test_results['basic_functionality'] = {
-                'single_query_success': False,
-                'error': str(e)
-            }
-        
-        # 2. 缓存效果测试
-        try:
-            # 第一次查询
-            start_time = time.time()
-            self.data_manager.get_stock_info(stock_code='000002', level='DAILY', limit=50)
-            first_query_time = time.time() - start_time
-            
-            # 第二次相同查询（应该命中缓存）
-            start_time = time.time()
-            self.data_manager.get_stock_info(stock_code='000002', level='DAILY', limit=50)
-            second_query_time = time.time() - start_time
-            
-            cache_improvement = (first_query_time - second_query_time) / first_query_time if first_query_time > 0 else 0
-            
-            test_results['cache_effectiveness'] = {
-                'first_query_time': first_query_time,
-                'second_query_time': second_query_time,
-                'cache_improvement': cache_improvement,
-                'cache_effective': cache_improvement > 0.1
-            }
-            
-        except Exception as e:
-            test_results['cache_effectiveness'] = {
-                'cache_test_success': False,
-                'error': str(e)
-            }
-        
-        # 3. 并发访问测试
-        try:
-            def concurrent_query(thread_id):
-                """并发查询函数"""
-                try:
-                    start_time = time.time()
-                    result = self.data_manager.get_stock_info(
-                        stock_code=f'00000{(thread_id % 9) + 1}',
-                        level='DAILY',
-                        limit=50
-                    )
-                    duration = time.time() - start_time
-                    
-                    return {
-                        'thread_id': thread_id,
-                        'success': True,
-                        'duration': duration,
-                        'records': len(result.data) if hasattr(result, 'data') and not result.data.empty else 0
-                    }
-                except Exception as e:
-                    return {
-                        'thread_id': thread_id,
-                        'success': False,
-                        'error': str(e)
-                    }
-            
-            # 执行并发测试
-            start_time = time.time()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                futures = [executor.submit(concurrent_query, i) for i in range(10)]
-                concurrent_results = [future.result() for future in concurrent.futures.as_completed(futures)]
-            
-            total_time = time.time() - start_time
-            successful_queries = sum(1 for r in concurrent_results if r['success'])
-            
-            test_results['concurrent_access'] = {
-                'total_queries': len(concurrent_results),
-                'successful_queries': successful_queries,
-                'success_rate': successful_queries / len(concurrent_results),
-                'total_time': total_time,
-                'avg_query_time': sum(r.get('duration', 0) for r in concurrent_results if r['success']) / max(successful_queries, 1)
-            }
-            
-        except Exception as e:
-            test_results['concurrent_access'] = {
-                'concurrent_test_success': False,
-                'error': str(e)
-            }
-        
-        # 4. 性能指标
-        try:
-            performance_stats = self.data_manager.get_performance_stats()
-            test_results['performance_metrics'] = performance_stats
-        except Exception as e:
-            test_results['performance_metrics'] = {'error': str(e)}
-        
-        return test_results
-    
-    def test_strategy_executor_integration(self) -> Dict[str, Any]:
-        """测试策略执行器集成"""
-        logger.info("开始测试策略执行器集成...")
-        
-        test_results = {
-            'strategy_execution': {},
-            'performance_improvement': {},
-            'error_handling': {}
-        }
-        
-        # 创建简单的测试策略
-        test_strategy = {
-            'name': 'IntegrationTestStrategy',
-            'description': '集成测试策略',
-            'conditions': [
-                {
-                    'type': 'indicator',
-                    'indicator': 'MA',
-                    'pattern': 'MA5_ABOVE_MA20',
-                    'weight': 1.0
-                }
-            ]
-        }
-        
-        # 测试股票列表
-        test_stocks = ['000001', '000002', '600000', '600036', '000858']
-        
-        try:
-            # 执行策略
-            start_time = time.time()
-            
-            # 这里需要适配实际的策略执行器API
-            # 由于策略执行器的具体实现可能需要调整，我们先测试基础功能
-            execution_time = time.time() - start_time
-            
-            test_results['strategy_execution'] = {
-                'execution_success': True,
-                'execution_time': execution_time,
-                'stocks_processed': len(test_stocks)
-            }
-            
-        except Exception as e:
-            test_results['strategy_execution'] = {
-                'execution_success': False,
-                'error': str(e)
-            }
-        
-        return test_results
-    
-    def test_buypoint_analyzer_integration(self) -> Dict[str, Any]:
-        """测试买点分析器集成"""
-        logger.info("开始测试买点分析器集成...")
-        
-        test_results = {
-            'data_processing': {},
-            'analysis_performance': {},
-            'result_quality': {}
-        }
-        
-        # 创建测试买点数据
-        test_buypoints = pd.DataFrame({
-            'stock_code': ['000001', '000002', '600000'],
-            'buypoint_date': ['20240601', '20240602', '20240603']
-        })
-        
-        try:
-            # 测试数据处理
-            start_time = time.time()
-            
-            # 测试单个买点分析
-            single_result = self.buypoint_analyzer.analyze_single_buypoint(
-                stock_code='000001',
-                buypoint_date='20240601'
-            )
-            
-            single_analysis_time = time.time() - start_time
-            
-            test_results['data_processing'] = {
-                'single_analysis_success': bool(single_result),
-                'single_analysis_time': single_analysis_time,
-                'result_structure_valid': 'indicator_results' in single_result if single_result else False
-            }
-            
-        except Exception as e:
-            test_results['data_processing'] = {
-                'single_analysis_success': False,
-                'error': str(e)
-            }
-        
-        return test_results
-    
-    def test_backward_compatibility(self) -> Dict[str, Any]:
-        """测试向后兼容性"""
-        logger.info("开始测试向后兼容性...")
-        
-        compatibility_results = {
-            'api_compatibility': {},
-            'data_format_compatibility': {},
-            'performance_regression': {}
-        }
-        
-        try:
-            # 测试原有API是否仍然可用
-            start_time = time.time()
-            
-            # 测试get_stock_data方法（原有API）
-            stock_data = self.data_manager.get_stock_data(
-                stock_code='000001',
-                period='daily',
-                limit=100
-            )
-            
-            api_test_time = time.time() - start_time
-            
-            compatibility_results['api_compatibility'] = {
-                'old_api_works': isinstance(stock_data, pd.DataFrame),
-                'api_response_time': api_test_time,
-                'data_format_correct': not stock_data.empty and 'close' in stock_data.columns if isinstance(stock_data, pd.DataFrame) else False
-            }
-            
-        except Exception as e:
-            compatibility_results['api_compatibility'] = {
-                'old_api_works': False,
-                'error': str(e)
-            }
-        
-        return compatibility_results
-    
-    def run_comprehensive_integration_test(self) -> Dict[str, Any]:
-        """运行综合集成测试"""
-        logger.info("=" * 80)
-        logger.info("开始系统集成综合测试")
-        logger.info("=" * 80)
-        
-        # 启动性能监控
-        self.performance_monitor.start_monitoring()
-        
-        test_results = {
-            'test_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'data_manager_integration': {},
-            'strategy_executor_integration': {},
-            'buypoint_analyzer_integration': {},
-            'backward_compatibility': {},
-            'overall_assessment': {}
-        }
-        
-        try:
-            # 1. 数据管理器集成测试
-            logger.info("步骤 1: 数据管理器集成测试")
-            test_results['data_manager_integration'] = self.test_data_manager_integration()
-            
-            # 2. 策略执行器集成测试
-            logger.info("步骤 2: 策略执行器集成测试")
-            test_results['strategy_executor_integration'] = self.test_strategy_executor_integration()
-            
-            # 3. 买点分析器集成测试
-            logger.info("步骤 3: 买点分析器集成测试")
-            test_results['buypoint_analyzer_integration'] = self.test_buypoint_analyzer_integration()
-            
-            # 4. 向后兼容性测试
-            logger.info("步骤 4: 向后兼容性测试")
-            test_results['backward_compatibility'] = self.test_backward_compatibility()
-            
-            # 5. 整体评估
-            test_results['overall_assessment'] = self._generate_overall_assessment_System_Integration_Test(test_results)
-            
-            logger.info("系统集成综合测试完成")
-            
-        except Exception as e:
-            logger.error(f"测试过程中发生错误: {e}")
-            test_results['error'] = str(e)
-        finally:
-            # 停止性能监控
-            self.performance_monitor.stop_monitoring()
-        
-        return test_results
-    
-    def _generate_overall_assessment_System_Integration_Test(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
-        """生成整体评估"""
-        assessment = {
-            'integration_success': True,
-            'performance_improvement': 'good',
-            'compatibility_maintained': True,
-            'production_ready': True,
-            'issues_found': [],
-            'recommendations': []
-        }
-        
-        # 评估数据管理器集成
-        dm_results = test_results.get('data_manager_integration', {})
-        if not dm_results.get('basic_functionality', {}).get('single_query_success', False):
-            assessment['integration_success'] = False
-            assessment['issues_found'].append('数据管理器基础功能测试失败')
-        
-        # 评估并发性能
-        concurrent_results = dm_results.get('concurrent_access', {})
-        if concurrent_results.get('success_rate', 0) < 0.95:
-            assessment['performance_improvement'] = 'needs_improvement'
-            assessment['issues_found'].append(f"并发成功率较低: {concurrent_results.get('success_rate', 0):.2%}")
-        
-        # 评估向后兼容性
-        compat_results = test_results.get('backward_compatibility', {})
-        if not compat_results.get('api_compatibility', {}).get('old_api_works', False):
-            assessment['compatibility_maintained'] = False
-            assessment['issues_found'].append('向后兼容性测试失败')
-        
-        # 生成建议
-        if assessment['integration_success'] and assessment['compatibility_maintained']:
-            assessment['recommendations'].append('系统集成成功，建议部署到生产环境')
-        else:
-            assessment['recommendations'].append('发现集成问题，建议修复后重新测试')
-            assessment['production_ready'] = False
-        
-        return assessment
-
-
-def main_systemintegrationtest():
-    """主函数"""
-    print("=" * 80)
-    print("系统集成测试")
-    print("验证选股和买点分析系统集成效果")
-    print("=" * 80)
-    print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print()
+def test_complete_strategy_workflow():
+    """测试完整的策略工作流程"""
+    print("🔍 测试完整策略工作流程...")
     
     try:
-        # 创建测试实例
-        test_framework = System_integration_test()
+        # 初始化服务
+        from config.service_initializer import initialize_all_services
+        container = initialize_all_services()
         
-        # 运行综合测试
-        results = test_framework.run_comprehensive_integration_test()
+        # 创建测试策略
+        from strategy.unified_base_strategy import UnifiedBaseStrategy
         
-        # 显示结果摘要
-        print("=" * 80)
-        print("测试结果摘要")
-        print("=" * 80)
+        class IntegrationTestStrategy(UnifiedBaseStrategy):
+            def select_stocks(self, universe: List[str], start_date: str, end_date: str, **kwargs) -> pd.DataFrame:
+                """完整的选股逻辑测试"""
+                
+                # 模拟获取数据和计算指标
+                results = []
+                
+                for i, code in enumerate(universe[:5]):  # 只处理前5只股票
+                    # 模拟股票数据
+                    test_data = pd.DataFrame({
+                        'date': pd.date_range(start_date, end_date, freq='D')[:20],
+                        'open': [100 + i + j * 0.1 for j in range(20)],
+                        'high': [105 + i + j * 0.1 for j in range(20)],
+                        'low': [95 + i + j * 0.1 for j in range(20)],
+                        'close': [102 + i + j * 0.1 for j in range(20)],
+                        'volume': [10000 + j * 100 for j in range(20)]
+                    })
+                    
+                    # 计算简单指标
+                    ma5 = test_data['close'].rolling(5).mean()
+                    ma10 = test_data['close'].rolling(10).mean()
+                    
+                    # 生成信号
+                    current_price = test_data['close'].iloc[-1]
+                    ma5_current = ma5.iloc[-1] if not pd.isna(ma5.iloc[-1]) else current_price
+                    ma10_current = ma10.iloc[-1] if not pd.isna(ma10.iloc[-1]) else current_price
+                    
+                    # 简单的选股逻辑：MA5 > MA10
+                    if ma5_current > ma10_current:
+                        score = 100 - i * 5  # 简单评分
+                        results.append({
+                            'code': code,
+                            'name': f'股票{code}',
+                            'score': score,
+                            'reason': 'MA5 > MA10',
+                            'ma5': ma5_current,
+                            'ma10': ma10_current,
+                            'price': current_price
+                        })
+                
+                return pd.DataFrame(results)
         
-        if 'error' in results:
-            print(f"❌ 测试失败: {results['error']}")
-            return 1
+        # 执行策略
+        strategy = IntegrationTestStrategy(
+            name="集成测试策略",
+            description="用于测试完整工作流程的策略"
+        )
         
-        # 整体评估
-        assessment = results.get('overall_assessment', {})
-        print(f"🔗 集成成功: {'是' if assessment.get('integration_success', False) else '否'}")
-        print(f"📈 性能改进: {assessment.get('performance_improvement', 'N/A')}")
-        print(f"🔄 兼容性维护: {'是' if assessment.get('compatibility_maintained', False) else '否'}")
-        print(f"🚀 生产就绪: {'是' if assessment.get('production_ready', False) else '否'}")
+        # 设置参数
+        strategy.set_parameters(
+            lookback_days=30,
+            min_volume=100000
+        )
         
-        # 发现的问题
-        issues = assessment.get('issues_found', [])
-        if issues:
-            print(f"\n⚠️ 发现的问题:")
-            for i, issue in enumerate(issues, 1):
-                print(f"  {i}. {issue}")
+        # 执行选股
+        universe = ['000001', '000002', '000003', '600000', '600036']
+        start_date = '2023-01-01'
+        end_date = '2023-01-31'
         
-        # 建议
-        recommendations = assessment.get('recommendations', [])
-        if recommendations:
-            print(f"\n💡 建议:")
-            for i, rec in enumerate(recommendations, 1):
-                print(f"  {i}. {rec}")
+        result = strategy.execute(
+            universe=universe,
+            start_date=start_date,
+            end_date=end_date
+        )
         
-        # 保存详细结果
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = f"test_reports/system_integration_test_{timestamp}.json"
+        # 验证结果
+        assert not result.empty, "策略应该返回结果"
+        assert 'code' in result.columns, "结果应该包含code列"
+        assert 'score' in result.columns, "结果应该包含score列"
+        assert 'strategy' in result.columns, "结果应该包含strategy列"
         
-        os.makedirs("test_reports", exist_ok=True)
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, ensure_ascii=False, indent=2, default=str)
+        print(f"  ✅ 策略执行成功，选出 {len(result)} 只股票")
+        print(f"  📊 结果预览:\n{result.head()}")
         
-        print(f"\n📄 详细结果已保存: {output_file}")
+        return True
         
-        # 判断测试结果
-        if assessment.get('production_ready', False):
-            print("\n🎉 系统集成测试通过！系统已准备好部署到生产环境。")
-            return 0
-        else:
-            print("\n⚠️ 系统集成存在问题，建议修复后重新测试。")
-            return 1
-            
     except Exception as e:
-        print(f"❌ 测试过程中发生错误: {e}")
+        print(f"  ❌ 策略工作流程测试失败: {e}")
         import traceback
         traceback.print_exc()
-        return 1
+        return False
 
+def test_indicator_calculation_integration():
+    """测试指标计算集成"""
+    print("🔍 测试指标计算集成...")
+    
+    try:
+        from indicators.unified_calculator import SimpleMovingAverageCalculator, IndicatorCalculatorFactory
+        
+        # 创建测试数据
+        test_data = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=30),
+            'open': [100 + i * 0.5 for i in range(30)],
+            'high': [105 + i * 0.5 for i in range(30)],
+            'low': [95 + i * 0.5 for i in range(30)],
+            'close': [102 + i * 0.5 for i in range(30)],
+            'volume': [10000 + i * 100 for i in range(30)]
+        })
+        
+        # 测试SMA指标
+        sma_calculator = SimpleMovingAverageCalculator()
+        
+        # 单次计算
+        result = sma_calculator.calculate_with_validation(test_data, period=5)
+        assert result.success, "SMA计算应该成功"
+        assert not result.data.empty, "SMA结果不应为空"
+        
+        print(f"  ✅ SMA计算成功，用时 {result.calculation_time:.3f}秒")
+        
+        # 批量计算
+        data_list = [test_data.iloc[:10], test_data.iloc[10:20], test_data.iloc[20:]]
+        batch_results = sma_calculator.calculate_batch(data_list, period=3)
+        
+        success_count = sum(1 for r in batch_results if r.success)
+        print(f"  ✅ 批量计算完成，成功率 {success_count}/{len(batch_results)}")
+        
+        # 测试工厂模式
+        try:
+            factory_sma = IndicatorCalculatorFactory.create('SMA', period=10)
+            factory_result = factory_sma.calculate_with_validation(test_data)
+            print(f"  ✅ 工厂模式创建指标成功")
+        except Exception as e:
+            print(f"  ⚠️ 工厂模式测试跳过: {e}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"  ❌ 指标计算集成测试失败: {e}")
+        return False
 
-if __name__ == '__main__':
-    exit_code = main_systemintegrationtest()
-    sys.exit(exit_code)
+def test_execution_template_integration():
+    """测试执行模板集成"""
+    print("🔍 测试执行模板集成...")
+    
+    try:
+        from strategy.execution_template import (
+            create_execution_context, 
+            create_execution_template,
+            StandardStrategyExecutionTemplate
+        )
+        from strategy.unified_base_strategy import UnifiedBaseStrategy
+        
+        # 创建简单策略
+        class TemplateTestStrategy(UnifiedBaseStrategy):
+            def select_stocks(self, universe, start_date, end_date, **kwargs):
+                return pd.DataFrame({
+                    'code': universe[:3],
+                    'score': [90, 80, 70],
+                    'reason': ['测试1', '测试2', '测试3']
+                })
+        
+        strategy = TemplateTestStrategy("模板测试策略")
+        
+        # 创建执行上下文
+        context = create_execution_context(
+            strategy=strategy,
+            universe=['000001', '000002', '000003', '600000'],
+            start_date='2023-01-01',
+            end_date='2023-01-31',
+            parameters={'test_param': 'test_value'}
+        )
+        
+        # 创建执行模板
+        template = create_execution_template('standard')
+        
+        # 执行策略
+        execution_result = template.execute(context)
+        
+        # 验证结果
+        assert execution_result.status.value in ['success', 'warning'], "执行应该成功"
+        assert not execution_result.selected_stocks.empty, "应该有选股结果"
+        assert execution_result.execution_time > 0, "执行时间应该大于0"
+        
+        print(f"  ✅ 执行模板测试成功")
+        print(f"  📊 执行状态: {execution_result.status.value}")
+        print(f"  ⏱️ 执行时间: {execution_result.execution_time:.3f}秒")
+        print(f"  📈 选股数量: {len(execution_result.selected_stocks)}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"  ❌ 执行模板集成测试失败: {e}")
+        return False
+
+def test_quality_tools_integration():
+    """测试质量工具集成"""
+    print("🔍 测试质量工具集成...")
+    
+    try:
+        # 测试架构检查工具
+        from tools.architecture_checker import ArchitectureChecker
+        
+        checker = ArchitectureChecker(os.getcwd())
+        
+        # 只运行一个小范围的检查
+        violations = checker.check_direct_database_access()
+        print(f"  ✅ 架构检查工具运行正常，发现 {len(violations)} 个数据库访问违规")
+        
+        # 测试命名规范工具
+        from tools.naming_convention_checker import NamingConventionChecker
+        
+        naming_checker = NamingConventionChecker(os.getcwd())
+        
+        # 只检查一个简单的模块
+        test_file = 'utils/common_utils.py'
+        if os.path.exists(test_file):
+            print(f"  ✅ 命名规范检查工具可用")
+        
+        # 测试性能基准工具
+        from tools.performance_benchmark import PerformanceBenchmark
+        
+        benchmark = PerformanceBenchmark(os.getcwd())
+        print(f"  ✅ 性能基准工具可用")
+        
+        return True
+        
+    except Exception as e:
+        print(f"  ❌ 质量工具集成测试失败: {e}")
+        return False
+
+def test_data_flow_integration():
+    """测试数据流集成"""
+    print("🔍 测试数据流集成...")
+    
+    try:
+        from utils.common_utils import DataProcessor, DateTimeUtils, ValidationUtils
+        
+        # 测试数据处理流程
+        raw_data = pd.DataFrame({
+            'code': ['000001', '000002', '000001', '000003'],  # 包含重复
+            'date': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03'],
+            'price': [100.0, None, 100.0, 102.0],  # 包含空值
+            'volume': [10000, 20000, 10000, 15000]
+        })
+        
+        # 数据清理
+        cleaned_data = DataProcessor.clean_dataframe(
+            raw_data, 
+            drop_na=True, 
+            deduplicate=True
+        )
+        
+        assert len(cleaned_data) < len(raw_data), "清理后数据应该更少"
+        
+        # 数据验证
+        is_valid, missing = ValidationUtils.validate_dataframe_schema(
+            cleaned_data, 
+            ['code', 'date', 'price']
+        )
+        assert is_valid, "清理后数据应该有效"
+        
+        # 日期处理
+        trading_days = DateTimeUtils.get_trading_days('2023-01-01', '2023-01-10')
+        assert len(trading_days) > 0, "应该有交易日"
+        
+        print(f"  ✅ 数据流集成正常")
+        print(f"  📊 原始数据: {len(raw_data)} 行 -> 清理后: {len(cleaned_data)} 行")
+        print(f"  📅 交易日数量: {len(trading_days)}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"  ❌ 数据流集成测试失败: {e}")
+        return False
+
+def generate_integration_report(results: Dict[str, bool]):
+    """生成集成测试报告"""
+    print("\n📊 生成集成测试报告...")
+    
+    passed_tests = sum(results.values())
+    total_tests = len(results)
+    success_rate = (passed_tests / total_tests) * 100
+    
+    report = f"""
+# 系统集成测试报告
+
+## 测试概览
+- **测试时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+- **测试项目**: {total_tests}
+- **通过项目**: {passed_tests}
+- **成功率**: {success_rate:.1f}%
+
+## 详细结果
+
+"""
+    
+    for test_name, result in results.items():
+        status = "✅ 通过" if result else "❌ 失败"
+        report += f"- **{test_name}**: {status}\n"
+    
+    report += f"""
+
+## 测试说明
+
+### 1. 完整策略工作流程
+测试从策略创建、参数设置、执行选股到结果处理的完整流程。
+
+### 2. 指标计算集成  
+测试指标计算器的单次计算、批量计算和工厂模式创建。
+
+### 3. 执行模板集成
+测试标准化策略执行模板的上下文管理和执行流程。
+
+### 4. 质量工具集成
+测试架构检查、命名规范、性能基准等质量保证工具。
+
+### 5. 数据流集成
+测试数据处理、验证、格式化等数据流操作。
+
+## 结论
+
+{"🎉 系统集成测试全部通过！所有核心功能正常工作。" if success_rate == 100 
+ else f"⚠️ 系统集成测试通过率 {success_rate:.1f}%，部分功能需要优化。" if success_rate >= 80
+ else "❌ 系统集成测试未通过，需要进一步修复。"}
+"""
+    
+    # 保存报告
+    with open('INTEGRATION_TEST_REPORT.md', 'w', encoding='utf-8') as f:
+        f.write(report)
+    
+    print(report)
+    print("\n📄 集成测试报告已保存到: INTEGRATION_TEST_REPORT.md")
+
+def main_system_integration_test():
+    """主函数"""
+    print("🚀 开始完整系统集成测试...")
+    print("=" * 60)
+    
+    # 定义测试项目
+    tests = [
+        ("完整策略工作流程", test_complete_strategy_workflow),
+        ("指标计算集成", test_indicator_calculation_integration),
+        ("执行模板集成", test_execution_template_integration),
+        ("质量工具集成", test_quality_tools_integration),
+        ("数据流集成", test_data_flow_integration)
+    ]
+    
+    results = {}
+    
+    # 执行所有测试
+    for test_name, test_func in tests:
+        print(f"\n📋 {test_name}")
+        print("-" * 40)
+        
+        try:
+            result = test_func()
+            results[test_name] = result
+            
+            if result:
+                print(f"✅ {test_name} 通过")
+            else:
+                print(f"❌ {test_name} 失败")
+                
+        except Exception as e:
+            print(f"❌ {test_name} 执行出错: {e}")
+            results[test_name] = False
+    
+    # 生成报告
+    generate_integration_report(results)
+    
+    # 计算最终结果
+    passed_count = sum(results.values())
+    total_count = len(results)
+    success_rate = (passed_count / total_count) * 100
+    
+    print(f"\n📊 最终结果: {passed_count}/{total_count} ({success_rate:.1f}%)")
+    
+    if success_rate >= 80:
+        print("🎉 系统集成测试成功！")
+        return True
+    else:
+        print("⚠️ 系统集成测试部分成功")
+        return False
+
+if __name__ == "__main__":
+    success = main()
+    sys.exit(0 if success else 1)

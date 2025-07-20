@@ -4,6 +4,8 @@ ZXM体系评分指标模块
 实现ZXM体系的评分指标，包括弹性评分和买点评分
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
@@ -12,9 +14,9 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZxmriseElasticity
 from indicators.zxm.buy_point_indicators import ZXMDailyMACD, ZXMTurnover, ZXMMACallback
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ZxmelasticityScore(BaseIndicator, PatternSignalMixin):

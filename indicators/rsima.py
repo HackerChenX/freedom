@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -21,9 +22,9 @@ except ImportError:
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Rsima(BaseIndicator, PatternSignalMixin):
@@ -439,8 +440,8 @@ class Rsima(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('RSIMA', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"RSIMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

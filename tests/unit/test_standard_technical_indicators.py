@@ -16,9 +16,10 @@ def setUpModule_Indicators():
     pass
 
 class TestAroon(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         """测试初始化，并为Mixin测试提供self.data"""
-        super().setUp_IndicatorsTeststandardtechnicalindicators()
+        super().setUp()
         self.indicator_params = {'period': 5}
         self.indicator = complete_registry.create_indicator('AROON', **self.indicator_params)
         self.data_generator = TestDataGenerator()
@@ -69,7 +70,8 @@ class TestAroon(IndicatorTestMixin, LogCaptureMixin, unittest.TestCase):
         self.assertFalse(patterns.empty)
 
 class TestChaikin(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('CHAIKIN', short_period=3, long_period=10)
         except Exception as e:
@@ -86,7 +88,8 @@ class TestChaikin(unittest.TestCase, IndicatorTestMixin):
         self.assertTrue(result['chaikin_oscillator'].dtype == 'float64')
 
 class TestCMO_Indicators(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('CMO', period=14)
         except Exception as e:
@@ -103,7 +106,8 @@ class TestCMO_Indicators(unittest.TestCase, IndicatorTestMixin):
             self.assertTrue(((result['cmo'].dropna() >= -100) & (result['cmo'].dropna() <= 100)).all())
 
 class TestIchimoku(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('ICHIMOKU', conversion_period=9, base_period=26, leading_span_b_period=52)
         except Exception as e:
@@ -122,7 +126,8 @@ class TestIchimoku(unittest.TestCase, IndicatorTestMixin):
             pd_testing.assert_series_equal(result['chikou_span'].dropna(), self.data['close'].shift(-26).dropna(), check_names=False)
 
 class TestKC(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('KC', period=20, atr_period=10, multiplier=2)
         except Exception as e:
@@ -140,7 +145,8 @@ class TestKC(unittest.TestCase, IndicatorTestMixin):
             self.assertTrue((result['kc_middle'].dropna() >= result['kc_lower'].dropna()).all())
 
 class TestSAR(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('SAR', initial_af=0.02, max_af=0.2, af_increment=0.02)
         except Exception as e:
@@ -160,7 +166,8 @@ class TestSAR(unittest.TestCase, IndicatorTestMixin):
 
 
 class TestStochRSI(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('STOCHRSI', rsi_period=14, stochastic_period=14, k_period=3, d_period=3)
         except Exception as e:
@@ -178,7 +185,8 @@ class TestStochRSI(unittest.TestCase, IndicatorTestMixin):
             self.assertTrue(((result['stochrsi_d'].dropna() >= 0) & (result['stochrsi_d'].dropna() <= 100)).all())
 
 class TestTrix(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('TRIX', period=15, signal_period=9)
         except Exception as e:
@@ -195,7 +203,8 @@ class TestTrix(unittest.TestCase, IndicatorTestMixin):
         self.assertFalse(result['trix_signal'].dropna().empty, "Trix信号线不应全为空")
 
 class TestVortex(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('VORTEX', period=14)
         except Exception as e:
@@ -212,7 +221,8 @@ class TestVortex(unittest.TestCase, IndicatorTestMixin):
         self.assertFalse(result['vi_minus'].dropna().empty)
 
 class TestDMA(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('DMA', short_period=10, long_period=50, ama_period=10)
         except Exception as e:
@@ -232,7 +242,8 @@ class TestDMA(unittest.TestCase, IndicatorTestMixin):
             pd_testing.assert_series_equal(result['dma'].dropna(), expected_dma.dropna(), check_exact=False, rtol=1e-5)
 
 class TestEMV(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('EMV', period=14, ma_period=9)
         except Exception as e:
@@ -249,7 +260,8 @@ class TestEMV(unittest.TestCase, IndicatorTestMixin):
         self.assertFalse(result['emv_ma'].dropna().empty, "EMV移动平均线不应全为空")
 
 class TestPSY(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTeststandardtechnicalindicators(self):
+    def setUp(self):
+        super().setUp()
         try:
             self.indicator = complete_registry.create_indicator('PSY', period=12, ma_period=6)
         except Exception as e:

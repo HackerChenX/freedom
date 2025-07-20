@@ -1,0 +1,73 @@
+{
+  "total_tests": 8,
+  "passed_tests": 7,
+  "failed_tests": 1,
+  "test_details": [
+    {
+      "test_name": "简单条件数组",
+      "status": "passed",
+      "result": {
+        "conditions_count": 2,
+        "result": true,
+        "score": 1.0
+      }
+    },
+    {
+      "test_name": "AND逻辑组合",
+      "status": "passed",
+      "result": {
+        "pass_case": true,
+        "fail_case": false,
+        "logic_type": "logic_operator"
+      }
+    },
+    {
+      "test_name": "OR逻辑组合",
+      "status": "passed",
+      "result": {
+        "first_condition_pass": true,
+        "second_condition_pass": true,
+        "none_pass": false
+      }
+    },
+    {
+      "test_name": "NOT逻辑组合",
+      "status": "passed",
+      "result": {
+        "not_true_case": false,
+        "not_false_case": true
+      }
+    },
+    {
+      "test_name": "嵌套逻辑组合",
+      "status": "passed",
+      "result": {
+        "nested_result": true,
+        "nested_score": 1.0
+      }
+    },
+    {
+      "test_name": "表达式语法",
+      "status": "passed",
+      "result": {
+        "expression_1_result": true,
+        "expression_2_result": true,
+        "expression": "(MACD_UP AND RSI_OK) OR VOLUME_HIGH"
+      }
+    },
+    {
+      "test_name": "权重计算",
+      "status": "passed",
+      "result": {
+        "weighted_score": 0.8,
+        "expected_score": 0.8,
+        "weight_calculation_correct": true
+      }
+    },
+    {
+      "test_name": "集成测试",
+      "status": "failed",
+      "error": "解析统一策略配置失败: 'str' object has no attribute 'get'"
+    }
+  ]
+}

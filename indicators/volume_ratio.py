@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from utils.dependency_injection import get_logger
 # -*- coding: UTF-8 -*-
 
 """
@@ -12,9 +13,9 @@ from typing import Dict, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class VolumeRatio(BaseIndicator, PatternSignalMixin):

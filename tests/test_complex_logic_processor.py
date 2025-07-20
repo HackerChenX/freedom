@@ -165,7 +165,7 @@ class Test_logic_expression_parser(unittest.TestCase):
 class Test_complex_logic_processor(unittest.TestCase):
     """复杂逻辑处理器测试"""
     
-    def set_up_Processor(self):
+    def setUp(self):
         """测试设置"""
         self.processor = Complex_logic_processor()
         

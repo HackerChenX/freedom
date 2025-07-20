@@ -14,9 +14,9 @@ from tests.helper.log_capture import Log_capture_mixin
 class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
     """ADX指标测试类"""
 
-    def set_up_Adx(self):
+    def setUp(self):
         """准备测试数据和指标实例"""
-        Log_capture_mixin.set_up_Adx(self)  # 显式调用Mixin的set_up
+        Log_capture_mixin.setUp(self)  # 显式调用Mixin的set_up
         self.adx_indicator = complete_registry.create_indicator('ADX', params={"period": 14, "strong_trend": 25})
         self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 50},
@@ -38,9 +38,9 @@ class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
         # 确保指标实例不为None，以便后续测试使用
         self.assertIsNotNone(self.indicator, f"{self.indicator_name} indicator should not be None")
 
-    def tear_down_Adx(self):
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Adx(self)  # 显式调用Mixin的tear_down
+        Log_capture_mixin.tearDown(self)  # 显式调用Mixin的tear_down
 
     def test_pattern_detection_Adx(self):
         """测试形态识别功能"""

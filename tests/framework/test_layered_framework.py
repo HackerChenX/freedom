@@ -1,4 +1,4 @@
-"""
+from config.config import get_config\n"""
 分层测试框架验证测试
 
 验证分层测试框架的功能和性能
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 class Test_layered_framework(unittest.TestCase):
     """分层测试框架验证测试类"""
     
-    def set_up_Framework_Test_Layered_Framework(self):
+    def setUp(self):
         """设置测试环境"""
         self.framework = Layered_testing_framework()
         

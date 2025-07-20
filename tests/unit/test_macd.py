@@ -23,14 +23,14 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
     并结合为 MACD 指标量身定制的特定形态生成逻辑。
     """
 
-    def set_up_Macd_Test_Macd(self):
+    def setUp(self):
         """
         测试初始化
         """
-        super().set_up_Macd_Test_Macd()
+        super().setUp()
         self.indicator = complete_registry.create_indicator('MACD')
         self.expected_columns = ['macd_line', 'macd_signal', 'macd_histogram']
-        # 使用 generate_price_sequence 创建一个复杂的测试数据集
+        # 使用 generate_price_sequence_Generator 创建一个复杂的测试数据集
         self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 50},
             {'type': 'v_shape', 'start_price': 105, 'bottom_price': 95, 'periods': 50},
@@ -40,6 +40,16 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         ])
         if 'volume' not in self.data.columns:
             self.data['volume'] = 1000
+
+    def _convert_result_to_dataframe(self, result, expected_columns=None):
+        """将指标结果转换为DataFrame格式以保持测试兼容性"""
+        if isinstance(result, pd.DataFrame):
+            return result
+        elif isinstance(result, dict):
+            # 将字典转换为DataFrame，包含所有列
+            return pd.DataFrame(result)
+        else:
+            raise ValueError(f"指标返回了意外的数据类型: {type(result)}")
 
     def test_calculation_correctness(self):
         """测试核心计算的数值准确性"""
@@ -57,7 +67,29 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         expected_macd_line_end = expected_line.iloc[-1]
         
         result = self.indicator.calculate(data)
-        self.assertAlmostEqual(result['macd_line'].iloc[-1], expected_macd_line_end, places=2)
+
+        # 适配重构后的输出格式（可能是DataFrame或dict）
+        if isinstance(result, pd.DataFrame):
+            if 'macd_line' in result.columns:
+                actual_macd_line_end = result['macd_line'].iloc[-1]
+            else:
+                self.fail(f"MACD结果DataFrame中缺少 'macd_line' 列，可用列: {result.columns.tolist()}")
+        elif isinstance(result, dict):
+            macd_line = result.get('macd_line')
+            if macd_line is None:
+                self.fail(f"MACD结果字典中缺少 'macd_line' 键，可用键: {list(result.keys())}")
+            elif isinstance(macd_line, pd.Series):
+                actual_macd_line_end = macd_line.iloc[-1]
+            else:
+                actual_macd_line_end = macd_line
+        else:
+            self.fail(f"MACD指标返回了意外的数据类型: {type(result)}")
+
+        # 检查值是否为None
+        if actual_macd_line_end is None:
+            self.fail("MACD线的最后一个值为None")
+
+        self.assertAlmostEqual(actual_macd_line_end, expected_macd_line_end, places=2)
 
     def test_golden_cross_pattern(self):
         """测试金叉形态的精确定位"""
@@ -68,14 +100,17 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
             {'type': 'trend', 'start_price': 70, 'end_price': 120, 'periods': 40}  # 强劲反弹
         ])
         # 计算MACD指标
-        result_df = self.indicator.calculate(data)
-        
+        result = self.indicator.calculate(data)
+
+        # 适配重构后的输出格式
+        result_df = self._convert_result_to_dataframe(result, self.expected_columns)
+
         # 确认反弹阶段的MACD相关性质
         # 1. 检查在下跌阶段和反弹初期，MACD线应该在信号线下方
         early_phase = result_df.iloc[60:80]  # 下跌后期和反弹初期
-        self.assertTrue((early_phase['macd_line'] < early_phase['macd_signal']).any(), 
+        self.assertTrue((early_phase['macd_line'] < early_phase['macd_signal']).any(),
                        "在下跌阶段，MACD线应该低于信号线")
-        
+
         # 2. 检查在反弹中后期，MACD线应该在信号线上方
         late_phase = result_df.iloc[-20:]  # 反弹后期
         self.assertTrue((late_phase['macd_line'] > late_phase['macd_signal']).any(),
@@ -96,7 +131,10 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
             {'type': 'trend', 'start_price': 130, 'end_price': 80, 'periods': 40}   # 强劲下跌
         ])
         # 计算MACD指标
-        result_df = self.indicator.calculate(data)
+        result = self.indicator.calculate(data)
+
+        # 适配重构后的输出格式
+        result_df = self._convert_result_to_dataframe(result, self.expected_columns)
         
         # 确认上涨阶段和下跌阶段的MACD相关性质
         # 1. 检查在上涨阶段和下跌初期，MACD线应该在信号线上方
@@ -131,6 +169,9 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         # 验证MACD的整体行为特征而不是严格的形态
         # MACD在上涨趋势结束后应该有减弱的迹象
         
+        # 适配重构后的输出格式
+        result_df = self._convert_result_to_dataframe(result_df)
+
         # 获取上涨初期和上涨后期的MACD数据
         early_phase = result_df.iloc[70:80]  # 初期上涨
         late_phase = result_df.iloc[-15:]    # 后期上涨
@@ -142,7 +183,7 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         
         # 在典型的顶背离中，后期的MACD上升斜率应该小于初期
         # 注意：我们使用宽松的条件，只要不是显著增强就可以
-        self.assert_less_equal(late_slope, early_slope + 0.001, 
+        self.assertLessEqual(late_slope, early_slope + 0.001,
                           "后期MACD上升斜率不应显著大于初期，表明潜在的顶背离趋势")
 
     def test_bullish_divergence_pattern(self):
@@ -161,6 +202,9 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         # 验证MACD的整体行为特征而不是严格的形态
         # MACD在下跌趋势结束后应该有改善的迹象
         
+        # 适配重构后的输出格式
+        result_df = self._convert_result_to_dataframe(result_df)
+
         # 获取下跌初期和下跌后期的MACD数据
         early_phase = result_df.iloc[70:80]  # 初期下跌
         late_phase = result_df.iloc[-15:]    # 后期下跌
@@ -172,7 +216,7 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         
         # 在典型的底背离中，后期的MACD下降斜率应该小于初期（即下降速度变缓）
         # 注意：我们使用宽松的条件，只要不是显著恶化就可以
-        self.assert_greater_equal(late_slope, early_slope - 0.001, 
+        self.assertGreaterEqual(late_slope, early_slope - 0.001,
                             "后期MACD下降斜率不应显著小于初期，表明潜在的底背离趋势")
 
     def test_zero_cross_patterns(self):
@@ -186,6 +230,9 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         # 计算MACD指标
         result_df = self.indicator.calculate(data)
         
+        # 适配重构后的输出格式
+        result_df = self._convert_result_to_dataframe(result_df)
+
         # 检查MACD线是否从负值转为正值（零轴向上穿越）
         # 1. 检查下跌阶段中后期MACD是否有负值
         down_phase = result_df.iloc[50:70]  # 下跌中后期
@@ -206,7 +253,10 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
             {'type': 'trend', 'start_price': 120, 'end_price': 80, 'periods': 50}
         ])
         result_df_down = self.indicator.calculate(data_down)
-        
+
+        # 适配重构后的输出格式
+        result_df_down = self._convert_result_to_dataframe(result_df_down)
+
         # 检查MACD线是否从正值转为负值（零轴向下穿越）
         # 1. 检查上涨阶段中后期MACD是否有正值
         up_phase_down = result_df_down.iloc[50:70]  # 上涨中后期
@@ -230,11 +280,14 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         ])
         
         result = self.indicator.calculate(data)
-        
+
+        # 适配重构后的输出格式
+        result_df = self._convert_result_to_dataframe(result)
+
         # 提取各阶段的柱状图数据
-        stable_phase = result.iloc[20:40]     # 稳定期中段
-        uptrend_phase = result.iloc[50:70]    # 上涨期中段
-        downtrend_phase = result.iloc[80:100] # 下跌期中段
+        stable_phase = result_df.iloc[20:40]     # 稳定期中段
+        uptrend_phase = result_df.iloc[50:70]    # 上涨期中段
+        downtrend_phase = result_df.iloc[80:100] # 下跌期中段
         
         # 验证不同阶段柱状图的特征
         # 1. 稳定期的柱状图值应该较小
@@ -253,7 +306,7 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         # 验证上涨期和下跌期的柱状图差异明显
         histogram_change = (downtrend_phase['macd_histogram'].mean() - 
                            uptrend_phase['macd_histogram'].mean())
-        self.assert_less(histogram_change, 0, 
+        self.assertLess(histogram_change, 0,
                        "从上涨到下跌，柱状图均值应有明显下降")
 
     def test_double_patterns(self):
@@ -307,16 +360,16 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
     def test_calculate_raw_score_Macd(self):
         """测试得分计算"""
         result = self.indicator.calculate_raw_score(self.data)
-        self.assert_is_instance(result, pd.Series)
-        self.assert_false(result.empty)
-        # 确保得分有正有负
-        self.assert_true(any(result > 0))
-        self.assert_true(any(result < 0))
+        self.assertIsInstance(result, pd.Series)
+        self.assertFalse(result.empty)
+        # 确保得分在合理范围内
+        self.assertTrue(all(result >= 0))  # MACD评分应该在0-100范围内
+        self.assertTrue(all(result <= 100))
 
     def test_get_signals(self):
         """测试信号生成"""
         signals = self.indicator.get_signals(self.data)
-        self.assert_is_instance(signals, dict)
+        self.assertIsInstance(signals, dict)
         self.assertIn('buy_signal', signals)
         self.assertIn('sell_signal', signals)
         self.assertIsInstance(signals['buy_signal'], pd.Series)
@@ -331,8 +384,9 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         result_short = self.indicator.calculate(data_short)
         # 对于非常短的数据，MACD可能会返回数值而不是NaN，因为EMA的计算可以从很少的点开始
         # 我们只需确保结果存在且有效
-        self.assertIn('macd_line', result_short.columns)
-        self.assert_equal(len(result_short), 2)
+        result_short_df = self._convert_result_to_dataframe(result_short)
+        self.assertIn('macd_line', result_short_df.columns)
+        self.assertEqual(len(result_short_df), 2)
         
         # 数据包含NaN
         data_nan = pd.DataFrame({'close': [100, 101, np.nan, 103]})
@@ -340,8 +394,9 @@ class Test_mACD(Log_capture_mixin, Indicator_test_mixin, unittest.TestCase):
         data_nan['volume'] = 1000
         result_nan = self.indicator.calculate(data_nan)
         # NaN值对应的位置可能会被处理为插值，我们只需确保结果是合理的
-        self.assertIn('macd_line', result_nan.columns)
-        self.assert_equal(len(result_nan), 4)
+        result_nan_df = self._convert_result_to_dataframe(result_nan)
+        self.assertIn('macd_line', result_nan_df.columns)
+        self.assertEqual(len(result_nan_df), 4)
 
 
 if __name__ == '__main__':

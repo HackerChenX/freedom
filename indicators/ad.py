@@ -10,8 +10,9 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.signal_utils import crossover, crossunder
 from enums.signal_strength import Signal_strength
+from utils.dependency_injection import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class AccumulationDistribution(BaseIndicator, PatternSignalMixin):
     """
@@ -822,8 +823,8 @@ class AccumulationDistribution(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('AD', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"AD参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

@@ -5,18 +5,18 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testcompositeindicator_indicator(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testcompositeindicator_indicator(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """CompositeIndicator指标测试类"""
     
-    def set_up_Indicator(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Indicator(self)
+        super().setUp()
         
         # 创建子指标
         self.ma_indicator = complete_registry.create_indicator('MA', periods=[20])
@@ -26,7 +26,6 @@ class Testcompositeindicator_indicator(unittest.TestCase, Indicator_test_mixin, 
         # 创建组合指标
         self.indicator = complete_registry.create_indicator(
             'COMPOSITE',
-            name="TestComposite",
             description="测试组合指标",
             indicators=[self.ma_indicator, self.rsi_indicator, self.macd_indicator],
             weights={"MA": 0.4, "RSI": 0.3, "MACD": 0.3}
@@ -35,14 +34,10 @@ class Testcompositeindicator_indicator(unittest.TestCase, Indicator_test_mixin, 
         self.expected_columns = [
             'composite_score', 'MA_score', 'RSI_score', 'MACD_score'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Indicator(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Indicator(self)
-    
+
     def test_composite_indicator_initialization(self):
         """测试CompositeIndicator初始化"""
         # 验证指标数量

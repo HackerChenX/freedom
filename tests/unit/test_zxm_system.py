@@ -6,21 +6,22 @@ import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_zXMSystem(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_zXMSystem(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """ZXM体系指标测试类"""
     
-    def set_up_System(self):
+    def setUp(self):
+        super().setUp()
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_System(self)
+        super().setUp()
 
-        self.zxm_absorb = ZXMAbsorb()
-        self.zxm_washplate = ZXMWash_plate()
+        self.zxm_absorb = complete_registry.create_indicator('ZXM_BS_ABSORB')
+        self.zxm_washplate = complete_registry.create_indicator('COMPOSITE')
 
         # 为IndicatorTestMixin设置默认指标
         self.indicator = self.zxm_absorb
@@ -44,14 +45,10 @@ class Test_zXMSystem(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin)
             'ZXM_WASH_VOLUME_CONFIRM', 'ZXM_WASH_SUPPORT', 'ZXM_WASH_BREAKOUT'
         ]
         
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 80}
         ])
-    
-    def tear_down_System(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_System(self)
-    
+
     def test_zxm_absorb_initialization(self):
         """测试ZXMAbsorb初始化"""
         # 测试默认初始化
@@ -221,7 +218,7 @@ class Test_zXMSystem(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin)
     def test_zxm_absorb_v11_calculation(self):
         """测试ZXMAbsorb V11指标计算"""
         # 使用足够的数据进行V11计算测试
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -239,7 +236,7 @@ class Test_zXMSystem(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin)
     def test_zxm_absorb_xg_calculation(self):
         """测试ZXMAbsorb XG吸筹强度计算"""
         # 使用足够的数据进行XG计算测试
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -265,7 +262,7 @@ class Test_zXMSystem(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin)
     def test_zxm_washplate_recent_wash_plates(self):
         """测试ZXMWashPlate最近洗盘形态"""
         # 使用足够的数据进行洗盘形态测试
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         

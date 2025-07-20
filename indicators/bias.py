@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -14,9 +15,9 @@ from typing import List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BiasBias(BaseIndicator, PatternSignalMixin):
@@ -27,14 +28,16 @@ class BiasBias(BaseIndicator, PatternSignalMixin):
     描述：(收盘价-MA)/MA×100%
     """
 
-    def __init__(self, name: str = "BIAS_Bias", description: str = "均线多空指标",
-                 period: int = 14, periods: List[int] = None):
+    def __init__(self, name: str = "BIAS", description: str = "均线多空指标",
+                 period: int = 14, periods: List[int] = None, **kwargs):
         """
         初始化均线多空指标(BIAS_Bias)指标
         """
-        super().__init__(name, description)
-        self.periods = periods if periods is not None else [period]
-        self.indicator_type = "BIAS_Bias"
+        super().__init__()
+        self.name = name
+        self.description = description
+        self.periods = periods if periods is not None else [6, 12, 24]  # BIAS常用周期
+        self.indicator_type = "BIAS"
         self.REQUIRED_COLUMNS = ['close']  # 添加必需列定义
         
     def set_parameters_Bias_Bias_Bias_bias(self, period: int = 14, **kwargs):
@@ -60,7 +63,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin):
             return pd.DataFrame()
 
             
-        self._validate_dataframeBias(data, ['close'])
+        self._validate_dataframe_bias(data, ['close'])
         
         # 创建一个临时的DataFrame来存储新计算的列
         result_df = pd.DataFrame(index=data.index)
@@ -439,8 +442,8 @@ class BiasBias(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('BIAS_Bias', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"BIAS参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -453,3 +456,383 @@ class BiasBias(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    # ==================== 抽象方法实现 ====================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate_bias(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score_Bias(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns_Bias(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters_Bias_Bias_Bias_bias(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """抽象基类要求的置信度计算方法"""
+        return self.calculate_confidence_Bias(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """统一的计算接口"""
+        return self._calculate_bias(data, **kwargs)
+
+    # ==================== 兼容性方法 - 真实实现 ====================
+
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """真实实现：获取BIAS形态"""
+        if data is None or data.empty:
+            return pd.DataFrame()
+
+        # 首先计算BIAS指标
+        bias_data = self._calculate_bias(data)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 为每个周期检测形态
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in bias_data.columns:
+                bias_values = bias_data[bias_col]
+
+                # 1. 正偏离形态 (BIAS > 3%)
+                patterns_df[f'BIAS{period}_POSITIVE'] = bias_values > 3
+
+                # 2. 负偏离形态 (BIAS < -3%)
+                patterns_df[f'BIAS{period}_NEGATIVE'] = bias_values < -3
+
+                # 3. 强正偏离形态 (BIAS > 6%)
+                patterns_df[f'BIAS{period}_STRONG_POSITIVE'] = bias_values > 6
+
+                # 4. 强负偏离形态 (BIAS < -6%)
+                patterns_df[f'BIAS{period}_STRONG_NEGATIVE'] = bias_values < -6
+
+                # 5. 零轴上穿形态
+                patterns_df[f'BIAS{period}_ZERO_CROSS_UP'] = (bias_values > 0) & (bias_values.shift(1) <= 0)
+
+                # 6. 零轴下穿形态
+                patterns_df[f'BIAS{period}_ZERO_CROSS_DOWN'] = (bias_values < 0) & (bias_values.shift(1) >= 0)
+
+                # 7. 收敛形态（BIAS接近0）
+                patterns_df[f'BIAS{period}_CONVERGENCE'] = np.abs(bias_values) < 1
+
+                # 8. 发散形态（BIAS远离0）
+                patterns_df[f'BIAS{period}_DIVERGENCE'] = np.abs(bias_values) > 5
+
+        # 9. 多周期共振形态
+        if len(self.periods) >= 2:
+            # 所有周期都为正
+            all_positive = True
+            all_negative = True
+            for period in self.periods:
+                bias_col = f'BIAS{period}'
+                if bias_col in bias_data.columns:
+                    all_positive &= (bias_data[bias_col] > 0)
+                    all_negative &= (bias_data[bias_col] < 0)
+
+            patterns_df['BIAS_ALL_POSITIVE'] = all_positive
+            patterns_df['BIAS_ALL_NEGATIVE'] = all_negative
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """真实实现：计算BIAS原始评分"""
+        if data.empty:
+            return pd.Series(dtype=float)
+
+        # 计算BIAS指标
+        bias_data = self._calculate_bias(data)
+
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+
+        # 为每个周期计算评分
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in bias_data.columns:
+                bias_values = bias_data[bias_col]
+
+                # 1. 基于BIAS位置的评分
+                # 负偏离加分（超卖）
+                negative_condition = bias_values < -3
+                score += negative_condition * (10 / len(self.periods))
+
+                # 强负偏离加分
+                strong_negative_condition = bias_values < -6
+                score += strong_negative_condition * (15 / len(self.periods))
+
+                # 正偏离减分（超买）
+                positive_condition = bias_values > 3
+                score -= positive_condition * (10 / len(self.periods))
+
+                # 强正偏离减分
+                strong_positive_condition = bias_values > 6
+                score -= strong_positive_condition * (15 / len(self.periods))
+
+                # 2. 基于零轴交叉的评分
+                zero_cross_up = (bias_values > 0) & (bias_values.shift(1) <= 0)
+                zero_cross_down = (bias_values < 0) & (bias_values.shift(1) >= 0)
+
+                # 零轴上穿加分
+                score += zero_cross_up * (8 / len(self.periods))
+
+                # 零轴下穿减分
+                score -= zero_cross_down * (8 / len(self.periods))
+
+                # 3. 基于BIAS趋势的评分
+                # BIAS上升趋势加分
+                bias_rising = bias_values > bias_values.shift(1)
+                score += bias_rising * (3 / len(self.periods))
+
+                # BIAS下降趋势减分
+                bias_falling = bias_values < bias_values.shift(1)
+                score -= bias_falling * (3 / len(self.periods))
+
+        # 4. 多周期共振奖励
+        if len(self.periods) >= 2:
+            all_negative = True
+            all_positive = True
+            for period in self.periods:
+                bias_col = f'BIAS{period}'
+                if bias_col in bias_data.columns:
+                    all_negative &= (bias_data[bias_col] < 0)
+                    all_positive &= (bias_data[bias_col] > 0)
+
+            # 所有周期负偏离（强烈超卖）
+            score += all_negative * 20
+
+            # 所有周期正偏离（强烈超买）
+            score -= all_positive * 20
+
+        # 限制评分在0-100之间
+        return score.clip(0, 100)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成BIAS交易信号"""
+        if data.empty:
+            return pd.DataFrame()
+
+        # 计算BIAS指标
+        bias_data = self._calculate_bias(data)
+        result_df = data.copy()
+
+        # 合并BIAS数据
+        for col in bias_data.columns:
+            result_df[col] = bias_data[col]
+
+        # 初始化信号列
+        result_df['bias_signal'] = 0
+        result_df['bias_strength'] = 0.0
+        result_df['bias_confidence'] = 0.0
+
+        # 为每个周期生成信号
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in bias_data.columns:
+                bias_values = bias_data[bias_col]
+
+                # 1. 负偏离反弹买入信号
+                negative_bounce = (bias_values > -3) & (bias_values.shift(1) <= -3)
+                result_df.loc[negative_bounce, 'bias_signal'] = 1
+                result_df.loc[negative_bounce, 'bias_strength'] = 0.7
+                result_df.loc[negative_bounce, 'bias_confidence'] = 0.8
+
+                # 2. 正偏离回落卖出信号
+                positive_fall = (bias_values < 3) & (bias_values.shift(1) >= 3)
+                result_df.loc[positive_fall, 'bias_signal'] = -1
+                result_df.loc[positive_fall, 'bias_strength'] = 0.7
+                result_df.loc[positive_fall, 'bias_confidence'] = 0.8
+
+                # 3. 零轴突破信号
+                zero_cross_up = (bias_values > 0) & (bias_values.shift(1) <= 0)
+                result_df.loc[zero_cross_up, 'bias_signal'] = 1
+                result_df.loc[zero_cross_up, 'bias_strength'] = 0.5
+                result_df.loc[zero_cross_up, 'bias_confidence'] = 0.6
+
+                zero_cross_down = (bias_values < 0) & (bias_values.shift(1) >= 0)
+                result_df.loc[zero_cross_down, 'bias_signal'] = -1
+                result_df.loc[zero_cross_down, 'bias_strength'] = 0.5
+                result_df.loc[zero_cross_down, 'bias_confidence'] = 0.6
+
+                # 4. 强偏离信号
+                strong_negative = bias_values < -6
+                result_df.loc[strong_negative, 'bias_signal'] = 1
+                result_df.loc[strong_negative, 'bias_strength'] = 0.9
+                result_df.loc[strong_negative, 'bias_confidence'] = 0.9
+
+                strong_positive = bias_values > 6
+                result_df.loc[strong_positive, 'bias_signal'] = -1
+                result_df.loc[strong_positive, 'bias_strength'] = 0.9
+                result_df.loc[strong_positive, 'bias_confidence'] = 0.9
+
+        return result_df
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """真实实现：计算BIAS综合评分"""
+        if data.empty:
+            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+
+        # 计算原始评分
+        raw_score = self.calculate_raw_score(data, **kwargs)
+
+        # 获取形态
+        patterns = self.get_patterns(data, **kwargs)
+
+        # 计算最终评分
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+
+        # 基于形态调整评分
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 正面形态加分
+            for period in self.periods:
+                if latest_patterns.get(f'BIAS{period}_NEGATIVE', False):
+                    final_score += 10
+                if latest_patterns.get(f'BIAS{period}_STRONG_NEGATIVE', False):
+                    final_score += 15
+                if latest_patterns.get(f'BIAS{period}_ZERO_CROSS_UP', False):
+                    final_score += 8
+
+                # 负面形态减分
+                if latest_patterns.get(f'BIAS{period}_POSITIVE', False):
+                    final_score -= 10
+                if latest_patterns.get(f'BIAS{period}_STRONG_POSITIVE', False):
+                    final_score -= 15
+                if latest_patterns.get(f'BIAS{period}_ZERO_CROSS_DOWN', False):
+                    final_score -= 8
+
+            # 多周期共振
+            if latest_patterns.get('BIAS_ALL_NEGATIVE', False):
+                final_score += 20
+            if latest_patterns.get('BIAS_ALL_POSITIVE', False):
+                final_score -= 20
+
+        # 计算置信度
+        bias_data = self._calculate_bias(data)
+
+        # 基于BIAS值的分布计算置信度
+        confidence = 0.5
+        for period in self.periods:
+            bias_col = f'BIAS{period}'
+            if bias_col in bias_data.columns:
+                bias_value = bias_data[bias_col].iloc[-1] if len(bias_data[bias_col]) > 0 else 0
+                bias_abs = abs(bias_value)
+
+                if bias_abs > 6:
+                    confidence += 0.3 / len(self.periods)
+                elif bias_abs > 3:
+                    confidence += 0.2 / len(self.periods)
+                elif bias_abs > 1:
+                    confidence += 0.1 / len(self.periods)
+
+        # 限制评分范围
+        final_score = max(0, min(100, final_score))
+        confidence = max(0.0, min(1.0, confidence))
+
+        return {
+            'score': final_score,
+            'confidence': confidence,
+            'signals': {
+                'bias_values': {f'BIAS{period}': bias_data.get(f'BIAS{period}', pd.Series([0])).iloc[-1]
+                               if f'BIAS{period}' in bias_data.columns else 0 for period in self.periods},
+                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'
+            }
+        }
+
+    def set_parameters(self, **kwargs):
+        """真实实现：设置BIAS参数"""
+        # 验证并设置periods参数
+        if 'periods' in kwargs:
+            periods = kwargs['periods']
+            if isinstance(periods, list) and all(isinstance(p, int) and 1 <= p <= 100 for p in periods):
+                self.periods = periods
+            else:
+                logger.warning(f"无效的periods参数: {periods}, 保持原值")
+
+        # 验证并设置单个period参数
+        if 'period' in kwargs:
+            period = kwargs['period']
+            if isinstance(period, int) and 1 <= period <= 100:
+                if period not in self.periods:
+                    self.periods.append(period)
+            else:
+                logger.warning(f"无效的period参数: {period}, 保持原值")
+
+        # 记录参数变更
+        logger.info(f"BIAS参数已更新: periods={self.periods}")
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成BIAS交易信号"""
+        return self.get_signals(data, **kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：计算BIAS指标"""
+        return self._calculate_bias(data, **kwargs)
+
+    def calculate_confidence_Bias(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """真实实现：计算BIAS置信度"""
+        if score.empty:
+            return 0.3
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 基于评分的置信度调整
+        latest_score = score.iloc[-1] if not score.empty else 50.0
+
+        # 极端评分提高置信度
+        if latest_score > 80 or latest_score < 20:
+            confidence += 0.3
+        elif latest_score > 70 or latest_score < 30:
+            confidence += 0.2
+        elif latest_score > 60 or latest_score < 40:
+            confidence += 0.1
+
+        # 基于形态的置信度调整
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 强势形态提高置信度
+            for period in self.periods:
+                if latest_patterns.get(f'BIAS{period}_STRONG_NEGATIVE', False):
+                    confidence += 0.15 / len(self.periods)
+                if latest_patterns.get(f'BIAS{period}_STRONG_POSITIVE', False):
+                    confidence += 0.15 / len(self.periods)
+
+            # 多周期共振提高置信度
+            if latest_patterns.get('BIAS_ALL_NEGATIVE', False):
+                confidence += 0.2
+            if latest_patterns.get('BIAS_ALL_POSITIVE', False):
+                confidence += 0.2
+
+        # 基于信号的置信度调整
+        if signals:
+            signal_strength = signals.get('strength', 0)
+            confidence += signal_strength * 0.1
+
+        # 限制置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Bias(score, patterns, signals)
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：识别形态"""
+        return self.get_patterns(data, **kwargs)
+
+    def calculate_raw_score_bias(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score(data, **kwargs)
+
+
+# 为了兼容指标注册表，创建别名
+BIAS = BiasBias

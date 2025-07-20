@@ -524,7 +524,7 @@ class HTMLTest_runner(Template_mixin):
                 style = ne > 0 and 'errorClass' or nf > 0 and 'failClass' or 'passClass',
                 desc = desc,
                 count = np+nf+ne,
-                pass = np,
+                Pass = np,
                 fail = nf,
                 error = ne,
                 cid = 'c%s' % (cid+1),

@@ -1435,4 +1435,96 @@ class DataAccessManager(DataAccessInterface):
             except:
                 return '2025-01-01'  # 最后的保底日期
 
- 
+    @exception_handler(reraise=False, default_return=None)
+    def get_stock_info(self, code: str, level: Optional[str] = None,
+                      start_date: Optional[str] = None,
+                      end_date: Optional[str] = None) -> Optional[pd.DataFrame]:
+        """
+        获取股票数据信息（兼容buypoint分析器接口）
+
+        Args:
+            code: 股票代码
+            level: 数据级别（忽略，保持兼容性）
+            start_date: 开始日期
+            end_date: 结束日期
+
+        Returns:
+            Optional[pd.DataFrame]: 股票数据
+        """
+        try:
+            # 构建查询条件
+            conditions = [f"code = '{code}'"]
+
+            if start_date:
+                # 转换日期格式 YYYYMMDD -> YYYY-MM-DD
+                if len(start_date) == 8:
+                    formatted_start = f"{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]}"
+                else:
+                    formatted_start = start_date
+                conditions.append(f"date >= '{formatted_start}'")
+
+            if end_date:
+                # 转换日期格式 YYYYMMDD -> YYYY-MM-DD
+                if len(end_date) == 8:
+                    formatted_end = f"{end_date[:4]}-{end_date[4:6]}-{end_date[6:8]}"
+                else:
+                    formatted_end = end_date
+                conditions.append(f"date <= '{formatted_end}'")
+
+            query = f"""
+            SELECT code, name, date, open, close, high, low, volume,
+                   turnover_rate, price_change, price_range, industry
+            FROM stock.stock_info
+            WHERE {' AND '.join(conditions)}
+            ORDER BY date
+            """
+
+            from db.clickhouse_db import get_clickhouse_db
+            db = get_clickhouse_db()
+            result = db.query(query)
+
+            if result is not None and not result.empty:
+                logger.info(f"成功获取 {code} 的 {len(result)} 条数据")
+                return result
+            else:
+                logger.warning(f"未找到 {code} 的数据")
+                return None
+
+        except Exception as e:
+            logger.error(f"获取股票数据失败: {e}")
+            return None
+
+    @exception_handler(reraise=False, default_return=[])
+    def get_active_stock_codes(self) -> List[str]:
+        """
+        获取所有活跃股票代码
+
+        Returns:
+            List[str]: 股票代码列表
+        """
+        try:
+            query = """
+            SELECT DISTINCT code
+            FROM stock.stock_info
+            WHERE code IS NOT NULL
+            AND name IS NOT NULL
+            AND code != ''
+            ORDER BY code
+            """
+
+            from db.clickhouse_db import get_clickhouse_db
+            db = get_clickhouse_db()
+            result = db.query(query)
+
+            if result is not None and not result.empty:
+                stock_codes = result['code'].tolist()
+                logger.info(f"成功获取 {len(stock_codes)} 只活跃股票代码")
+                return stock_codes
+            else:
+                logger.warning("未获取到活跃股票代码")
+                return []
+
+        except Exception as e:
+            logger.error(f"获取活跃股票代码失败: {e}")
+            return []
+

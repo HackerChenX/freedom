@@ -1,0 +1,46 @@
+strategy:
+  author: system
+  conditions:
+  - indicator_id: MA_CONDITION
+    operator: '='
+    parameter: ma_condition_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: AND
+  - indicator_id: KDJ_CONDITION
+    operator: '='
+    parameter: kdj_condition_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: MACD_CONDITION
+    operator: '='
+    parameter: macd_condition_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  create_time: '2025-05-27 17:20:00'
+  description: 基于回测结果生成的趋势反弹策略
+  filters:
+    industry: []
+    market: []
+    market_cap:
+      max: 10000
+      min: 0
+    price:
+      max: 500
+      min: 0
+  id: TREND_REVERSAL_001
+  name: 趋势反弹策略
+  sort:
+  - direction: DESC
+    field: signal_strength
+  - direction: ASC
+    field: market_cap
+  update_time: '2025-05-27 17:20:00'
+  version: '1.0'

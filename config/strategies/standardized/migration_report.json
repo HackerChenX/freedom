@@ -1,0 +1,61 @@
+{
+  "total_files": 10,
+  "migrated_successfully": 10,
+  "migration_failed": 0,
+  "skipped_files": 0,
+  "failed_files": [],
+  "migrated_files": [
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/zxm_absorb_volume_shrink_strategy.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/zxm_absorb_volume_shrink_strategy_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/zxm_absorb_volume_shrink_strategy_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/kdj_all_lines_upward_strategy.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/kdj_all_lines_upward_strategy_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/kdj_all_lines_upward_strategy_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/zxm_kdj_strategy_20250512.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/zxm_kdj_strategy_20250512_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/zxm_kdj_strategy_20250512_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/upgraded_sample_strategy.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/upgraded_sample_strategy_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/upgraded_sample_strategy_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/test_simple_strategy.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/test_simple_strategy_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/test_simple_strategy_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/trend_reversal.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/trend_reversal_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/trend_reversal_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/backtest_strategy.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/backtest_strategy_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/backtest_strategy_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/zxm_60min_absorb_20250512.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/zxm_60min_absorb_20250512_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/zxm_60min_absorb_20250512_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/zxm_60min_absorb_relaxed.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/zxm_60min_absorb_relaxed_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/zxm_60min_absorb_relaxed_backup_20250720_142157.yaml"
+    },
+    {
+      "original_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/complete_backtest_strategy.yaml",
+      "unified_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/standardized/complete_backtest_strategy_unified.json",
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/config/strategies/legacy/complete_backtest_strategy_backup_20250720_142157.yaml"
+    }
+  ],
+  "start_time": "2025-07-20T14:21:57.039728",
+  "end_time": "2025-07-20T14:21:57.314629"
+}

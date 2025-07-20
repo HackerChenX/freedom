@@ -14,7 +14,7 @@ from datetime import datetime
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
 logger = getLogger(__name__)
 

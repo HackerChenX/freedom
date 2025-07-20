@@ -1,0 +1,63 @@
+strategy:
+  id: "ZXM_60MIN_ABSORB_20250512"
+  name: "ZXM 60分钟吸筹策略"
+  description: "基于60分钟ZXM吸筹信号的选股策略，针对2025年5月12日"
+  version: "1.0"
+  author: "system"
+  create_time: "2025-05-12 09:30:00"
+  update_time: "2025-05-12 09:30:00"
+
+  # 策略条件：60分钟ZXM吸筹信号
+  conditions:
+    # 60分钟时间框架下的ZXM吸筹信号
+    - type: indicator
+      indicator_id: ZXM_BS_ABSORB
+      period: "60min"
+      signal_type: BUY
+      parameter: "zxm_bs_absorb_signal"
+      operator: "="
+      value: 1
+      description: "60分钟时间框架下出现ZXM主力吸筹信号"
+
+  # 基础过滤条件
+  filters:
+    # 市场范围
+    market: ["主板", "创业板", "科创板"]
+    
+    # 行业过滤（空表示不限制）
+    industry: []
+    
+    # 市值范围（亿元）
+    market_cap:
+      min: 10
+      max: 5000
+    
+    # 价格范围（元）
+    price:
+      min: 3.0
+      max: 200.0
+    
+    # 成交量过滤（最小日均成交量）
+    volume:
+      min_avg_volume: 1000000
+
+  # 排序规则
+  sort:
+    - field: "zxm_absorb_strength"
+      direction: "DESC"
+    - field: "market_cap"
+      direction: "ASC"
+
+  # 策略参数
+  parameters:
+    # ZXM吸筹指标参数
+    zxm_absorb:
+      v11_threshold: 13
+      v12_threshold: 13
+      count_period: 6
+    
+    # 时间参数
+    target_date: "2025-05-12"
+    
+    # 结果限制
+    max_results: 100 

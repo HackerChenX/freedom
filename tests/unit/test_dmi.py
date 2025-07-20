@@ -5,29 +5,62 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testdmi_dmi(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """DMI指标测试类"""
     
-    def set_up_Dmi_Test_Dmi(self):
+    def setUp(self):
         """设置测试环境"""
-        # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Dmi_Test_Dmi(self)
-        
-        self.indicator = DMI(period=14, adx_period=14)
+        # 手动初始化日志处理器
+        import io
+        import logging
+        self.log_stream = io.StringIO()
+        self.log_handler = logging.StreamHandler(self.log_stream)
+        self.log_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+        self.log_handler.setFormatter(formatter)
+
+        # 添加到根日志记录器
+        root_logger = logging.getLogger()
+        root_logger.addHandler(self.log_handler)
+        root_logger.setLevel(logging.DEBUG)
+
+        # 显式调用LogCaptureMixin的setUp（如果存在）
+        try:
+            super().setUp()
+        except AttributeError:
+            pass
+
+        self.indicator = complete_registry.create_indicator('DMI', period=14, adx_period=14)
         self.expected_columns = ['PDI', 'MDI', 'ADX', 'ADXR']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 60}
         ])
-    
-    def tear_down_Dmi_Test_Dmi(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Dmi_Test_Dmi(self)
-    
+
+    def clear_logs(self):
+        """清除捕获的日志"""
+        if hasattr(self, 'log_stream') and hasattr(self, 'log_handler'):
+            import io
+            self.log_stream = io.StringIO()
+            self.log_handler.setStream(self.log_stream)
+
+    def assert_no_logs(self, level=None):
+        """断言没有日志输出"""
+        if hasattr(self, 'log_stream'):
+            log_content = self.log_stream.getvalue().strip()
+            if level:
+                # 检查特定级别的日志
+                lines = log_content.split('\n')
+                error_lines = [line for line in lines if level in line]
+                self.assertEqual(len(error_lines), 0, f"发现{level}级别日志: {error_lines}")
+            else:
+                # 检查是否有任何日志
+                self.assertEqual(log_content, '', f"发现意外日志: {log_content}")
+
     def test_dmi_calculation_accuracy(self):
         """测试DMI计算准确性"""
         result = self.indicator.calculate(self.data)
@@ -66,9 +99,9 @@ class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_dmi_parameter_update(self):
         """测试DMI参数更新"""
@@ -77,8 +110,8 @@ class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.indicator.set_parameters(period=new_period, adx_period=new_adx_period)
         
         # 验证参数更新
-        self.assert_equal(self.indicator.period, new_period)
-        self.assert_equal(self.indicator.adx_period, new_adx_period)
+        self.assertEqual(self.indicator.period, new_period)
+        self.assertEqual(self.indicator.adx_period, new_adx_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -91,13 +124,13 @@ class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_cols = ['high', 'low', 'close']
         for col in expected_cols:
-            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
+            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_dmi_comprehensive_score(self):
         """测试DMI综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
+        self.assertIsInstance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -110,15 +143,14 @@ class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
         
         # 验证预期的形态列存在
         expected_patterns = [
-            'DMI_GOLDEN_CROSS', 'DMI_DEATH_CROSS',
-            'ADX_STRONG_TREND', 'ADX_WEAK_TREND',
-            'ADX_RISING', 'ADX_FALLING'
+            'DMI_STRONG_TREND', 'DMI_WEAK_TREND', 'DMI_UPTREND', 'DMI_DOWNTREND',
+            'DMI_PDI_CROSS_UP', 'DMI_MDI_CROSS_UP', 'DMI_ADX_RISING', 'DMI_ADX_FALLING'
         ]
-        
+
         for pattern in expected_patterns:
             self.assertIn(pattern, patterns.columns, f"缺少形态列: {pattern}")
     
@@ -129,8 +161,10 @@ class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         
         for value in test_values:
             classification = self.indicator._classify_adx_strength(value)
-            self.assert_is_instance(classification, str)
-            self.assertIn("趋势", classification)
+            self.assertIsInstance(classification, str)
+            # 验证分类结果是有效的字符串
+            valid_classifications = ["no_trend", "weak", "medium", "strong", "very_strong"]
+            self.assertIn(classification, valid_classifications)
     
     def test_no_errors_during_calculation_Dmi_Test_Dmi(self):
         """测试计算过程中无ERROR日志"""
@@ -143,9 +177,9 @@ class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assert_in(col, result.columns)
+            self.assertIn(col, result.columns)
     
     def test_no_errors_during_pattern_detection_Dmi_Test_Dmi(self):
         """测试形态检测过程中无ERROR日志"""
@@ -158,7 +192,7 @@ class Testdmi_dmi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

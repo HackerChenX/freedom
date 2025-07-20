@@ -1,0 +1,145 @@
+{
+  "strategy": {
+    "id": "MACD_KDJ_GOLDEN_CROSS_V1",
+    "name": "MACD+KDJ双金叉策略",
+    "description": "基于MACD和KDJ指标的双金叉选股策略，适用于中短期趋势捕捉",
+    "version": "1.0.0",
+    "author": "system",
+    "category": "momentum",
+    "risk_level": "medium"
+  },
+  "technical_indicators": {
+    "primary_indicators": [
+      {
+        "indicator_id": "MACD",
+        "parameters": {
+          "fast_period": 12,
+          "slow_period": 26,
+          "signal_period": 9
+        },
+        "conditions": [
+          {
+            "field": "macd_cross_signal",
+            "operator": "cross_up",
+            "value": 0,
+            "lookback_days": 3
+          },
+          {
+            "field": "macd_histogram",
+            "operator": ">",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "indicator_id": "KDJ",
+        "parameters": {
+          "k_period": 9,
+          "d_period": 3,
+          "j_multiplier": 3
+        },
+        "conditions": [
+          {
+            "field": "k_cross_d",
+            "operator": "cross_up",
+            "value": 0,
+            "lookback_days": 2
+          },
+          {
+            "field": "k_value",
+            "operator": "between",
+            "value": [20, 80]
+          },
+          {
+            "field": "d_value",
+            "operator": "between",
+            "value": [20, 80]
+          }
+        ]
+      }
+    ],
+    "secondary_indicators": [
+      {
+        "indicator_id": "VOL",
+        "parameters": {
+          "ma_period": 5
+        },
+        "conditions": [
+          {
+            "field": "volume_ratio",
+            "operator": ">",
+            "value": 1.2
+          }
+        ]
+      }
+    ],
+    "combination_logic": "AND",
+    "weights": {
+      "MACD": 0.4,
+      "KDJ": 0.4,
+      "VOL": 0.2
+    }
+  },
+  "time_criteria": {
+    "time_frames": [
+      {
+        "level": "daily",
+        "priority": 1,
+        "required": true
+      },
+      {
+        "level": "60min",
+        "priority": 2,
+        "required": false
+      }
+    ],
+    "date_range": {
+      "target_date": "2025-07-20"
+    },
+    "market_timing": {
+      "trading_session": "full_day",
+      "exclude_holidays": true
+    }
+  },
+  "filters": {
+    "market_filters": {
+      "markets": ["主板", "创业板", "科创板"],
+      "exclude_st": true
+    },
+    "financial_filters": {
+      "market_cap": {
+        "min": 10,
+        "max": 5000
+      },
+      "price_range": {
+        "min": 3.0,
+        "max": 200.0
+      },
+      "volume_filter": {
+        "min_avg_volume": 1000000,
+        "min_turnover": 10000000
+      }
+    }
+  },
+  "selection_parameters": {
+    "max_selections": 50,
+    "min_score": 0.65,
+    "ranking_method": "composite",
+    "diversification": {
+      "max_per_industry": 5,
+      "max_concentration": 0.1
+    }
+  },
+  "validation": {
+    "enable_closed_loop": true,
+    "validation_method": "entry_point_analysis",
+    "validation_threshold": 0.8,
+    "sample_size": 10
+  },
+  "performance_config": {
+    "enable_cache": true,
+    "parallel_processing": true,
+    "max_workers": 4,
+    "timeout_seconds": 300
+  }
+}

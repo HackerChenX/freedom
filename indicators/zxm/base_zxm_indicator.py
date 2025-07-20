@@ -4,15 +4,17 @@
 提供ZXM系列指标的共同基类和通用方法
 """
 
+from utils.dependency_injection import get_logger
+
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 
 from indicators.base_indicator import BaseIndicator
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseZxmindicator(BaseIndicator, ABC):

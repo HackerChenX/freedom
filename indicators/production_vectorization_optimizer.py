@@ -40,7 +40,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.logger import get_logger
+from utils.dependency_injection import get_logger
 from utils.decorators import performance_monitor
 
 logger = get_logger(__name__)

@@ -14,12 +14,12 @@ import warnings
 
 from strategy.base_strategy import BaseStrategy
 from indicators.institutional_behavior import InstitutionalBehavior as Institutional_behavior
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class InstitutionalStrategy(BaseStrategy):

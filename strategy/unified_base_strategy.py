@@ -15,14 +15,15 @@ import pandas as pd
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from db.interfaces.indicator_calculator_interface import IindicatorCalculator
 from enums.kline_period import KlinePeriod
 from utils.decorators import exception_handler, performance_monitor
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

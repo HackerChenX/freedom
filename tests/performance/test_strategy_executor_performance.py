@@ -1,4 +1,4 @@
-"""
+from config.config import get_config\n"""
 策略执行器性能测试模块
 
 用于测试策略执行引擎在不同负载下的性能表现

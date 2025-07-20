@@ -8,8 +8,9 @@ import logging
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from utils.dependency_injection import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin):
     """

@@ -5,29 +5,25 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testkc_kc(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testkc_kc(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """KC指标测试类"""
     
-    def set_up_Kc(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Kc(self)
+        super().setUp()
         
-        self.indicator = KC(period=20, atr_period=10, multiplier=2.0)
+        self.indicator = complete_registry.create_indicator('KC', period=20, atr_period=10, multiplier=2.0)
         self.expected_columns = ['kc_middle', 'kc_upper', 'kc_lower', 'kc_position', 'kc_width', 'kc_width_chg']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 60}
         ])
-    
-    def tear_down_Kc(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Kc(self)
-    
+
     def test_kc_calculation_accuracy(self):
         """测试KC计算准确性"""
         result = self.indicator.calculate(self.data)
@@ -46,7 +42,7 @@ class Testkc_kc(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
             if not pd.isna(result['kc_upper'].iloc[i]):
                 self.assertGreater(result['kc_upper'].iloc[i], result['kc_middle'].iloc[i])
                 self.assertGreater(result['kc_middle'].iloc[i], result['kc_lower'].iloc[i])
-    
+
     def test_kc_score_range(self):
         """测试KC评分范围"""
         raw_score = self.indicator.calculate_raw_score(self.data)

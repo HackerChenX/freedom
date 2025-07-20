@@ -17,7 +17,7 @@ from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 class Test_unified_indicator_engine(unittest.TestCase):
     """统一指标计算引擎测试类"""
     
-    def set_up_Engine(self):
+    def setUp(self):
         """测试前准备"""
         self.engine = Unified_indicator_engine(enable_cache=False)
         
@@ -100,7 +100,7 @@ class Test_unified_indicator_engine(unittest.TestCase):
         
         # EMA应该是递增的趋势（基于我们的测试数据）
         self.assert_is_not_none(ema12.iloc[-1])
-    
+
     def test_calculate_sma(self):
         """测试平滑移动平均计算"""
         test_series = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -114,7 +114,7 @@ class Test_unified_indicator_engine(unittest.TestCase):
         
         # 第一个值应该等于输入的第一个值
         self.assert_equal(sma_result.iloc[0], test_series.iloc[0])
-    
+
     def test_calculate_macd(self):
         """测试MACD指标计算"""
         macd_result = self.engine.calculate_macd(self.test_data)

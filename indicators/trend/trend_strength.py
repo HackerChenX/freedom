@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -14,12 +15,12 @@ import warnings
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TrendStrength(BaseIndicator, PatternSignalMixin):

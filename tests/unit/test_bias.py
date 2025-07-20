@@ -7,26 +7,26 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import Indicator_test_mixin
 from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.helper.log_capture import Log_capture_mixin, LogCaptureMixin
 
 
 class Test_bIAS(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """BIAS指标测试类"""
     
-    def set_up_Bias(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Bias(self)
+        Log_capture_mixin.setUp(self)
 
         self.indicator = complete_registry.create_indicator('BIAS', periods=[6, 12, 24])
-        self.expected_columns = ['BIAS6', 'BIAS12', 'BIAS24', 'BIAS', 'BIAS_MA']
+        self.expected_columns = ['BIAS_Bias6', 'BIAS_Bias12', 'BIAS_Bias24', 'BIAS_Bias', 'BIAS_MA']
         self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
 
-    def tear_down_Bias(self):
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Bias(self)
+        Log_capture_mixin.tearDown(self)
     
     def test_bias_calculation_accuracy(self):
         """测试BIAS计算准确性"""
@@ -61,9 +61,9 @@ class Test_bIAS(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_bias_parameter_update(self):
         """测试BIAS参数更新"""
@@ -71,13 +71,13 @@ class Test_bIAS(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.indicator.set_parameters(periods=new_periods)
         
         # 验证参数更新
-        self.assert_equal(self.indicator.periods, new_periods)
+        self.assertEqual(self.indicator.periods, new_periods)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
-        self.assertIn('BIAS5', result.columns)
-        self.assertIn('BIAS10', result.columns)
-        self.assertIn('BIAS20', result.columns)
+        self.assertIn('BIAS_Bias5', result.columns)
+        self.assertIn('BIAS_Bias10', result.columns)
+        self.assertIn('BIAS_Bias20', result.columns)
     
     def test_bias_required_columns(self):
         """测试BIAS必需列"""
@@ -88,7 +88,7 @@ class Test_bIAS(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         """测试BIAS综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
+        self.assertIsInstance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         

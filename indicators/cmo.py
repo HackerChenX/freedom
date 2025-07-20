@@ -13,8 +13,9 @@ from enums.indicator_types import Trend_type, Cross_type
 from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from utils.dependency_injection import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin):
     """

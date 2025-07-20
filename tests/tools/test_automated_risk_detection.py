@@ -1,4 +1,4 @@
-"""
+from config.config import get_config\n"""
 自动化风险检测机制测试
 
 验证自动化风险检测工具的功能和准确性
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 class Test_automated_risk_detection(unittest.TestCase):
     """自动化风险检测测试类"""
     
-    def set_up_Detection(self):
+    def setUp(self):
         """设置测试环境"""
         self.detector = Automated_risk_detector()
     

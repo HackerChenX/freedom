@@ -32,7 +32,7 @@ except ImportError:
             return func
         return decorator
 
-from utils.logger import get_logger
+from utils.dependency_injection import get_logger
 from utils.decorators import exception_handler, performance_monitor
 
 logger = get_logger(__name__)

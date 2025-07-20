@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 class Test_indicator_adapter(unittest.TestCase):
     """测试指标适配器功能"""
     
-    def set_up_Test_Indicator_Adapter_Test_Indicator_Adapter(self):
+    def setUp(self):
         """初始化测试环境"""
         # 创建模拟数据
         self.create_mock_data_Test_Indicator_Adapter_Test_Indicator_Adapter()
@@ -112,7 +112,7 @@ class Test_indicator_adapter(unittest.TestCase):
 class Test_composite_indicator(unittest.TestCase):
     """测试复合指标功能"""
     
-    def set_up_Test_Indicator_Adapter_Test_Indicator_Adapter(self):
+    def setUp(self):
         """初始化测试环境"""
         # 创建模拟数据
         self.create_mock_data_Test_Indicator_Adapter_Test_Indicator_Adapter()
@@ -151,7 +151,7 @@ class Test_composite_indicator(unittest.TestCase):
     
     def register_indicators(self):
         """注册测试所需的指标"""
-from indicators.complete_indicator_registry import complete_registry
+        from indicators.complete_indicator_registry import complete_registry
         from indicators.rsi import RSI
         from indicators.atr import ATR
         from indicators.boll import BOLL

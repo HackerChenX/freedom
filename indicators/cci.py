@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from utils.dependency_injection import get_logger
 """
 CCI_Cci (Commodity Channel Index) 顺势指标
 
@@ -11,9 +12,9 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CciCci(BaseIndicator, PatternSignalMixin):
@@ -26,16 +27,18 @@ class CciCci(BaseIndicator, PatternSignalMixin):
     def __init__(self, **kwargs):
         """
         初始化CCI指标
-        
+
         Args:
             **kwargs: 指标参数
         """
         super().__init__()
-        self.name = "CCI_Cci"
-        
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
+        self.name = "CCI"
+        self.description = "顺势指标"
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_cci()
-        
+
         # 应用用户参数
         self.set_parameters_Cci(**kwargs)
     
@@ -104,9 +107,17 @@ class CciCci(BaseIndicator, PatternSignalMixin):
         # 确保数据有足够的长度
         if len(df) < self.period:
             logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period})，返回原始数据")
-            df[f'CCI_Cci{self.period}'] = np.nan
+            df['CCI'] = np.nan
             return df
             
+        # 检查必需列是否存在
+        required_cols = ['high', 'low', 'close']
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        if missing_cols:
+            logger.warning(f"缺少必需列: {missing_cols}，返回原始数据")
+            df['CCI'] = np.nan
+            return df
+
         # 计算典型价格
         df['TP'] = (df['high'] + df['low'] + df['close']) / 3
 
@@ -119,7 +130,7 @@ class CciCci(BaseIndicator, PatternSignalMixin):
         )
 
         # 计算CCI
-        df[f'CCI_Cci{self.period}'] = (df['TP'] - df['MA']) / (self.constant * df['MD'])
+        df['CCI'] = (df['TP'] - df['MA']) / (self.constant * df['MD'])
 
         # 清理中间计算列
         df.drop(['TP', 'MA', 'MD'], axis=1, inplace=True)
@@ -140,7 +151,7 @@ class CciCci(BaseIndicator, PatternSignalMixin):
         """
         try:
             # 获取CCI值
-            cci_col = f'CCI_Cci{self.period}'
+            cci_col = 'CCI'
             if cci_col not in df.columns:
                 # 如果没有CCI值，使用默认信号
                 return df
@@ -201,7 +212,7 @@ class CciCci(BaseIndicator, PatternSignalMixin):
             self.calculate_Cci(data, **kwargs)
         
         # 获取CCI指标值
-        cci_col = f'CCI_Cci{self.period}'
+        cci_col = 'CCI'
         if self._result is None or cci_col not in self._result.columns:
             return pd.Series(50.0, index=data.index)
 
@@ -243,3 +254,330 @@ class CciCci(BaseIndicator, PatternSignalMixin):
     def get_patterns_Cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    # ==================== 抽象方法实现 ====================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self.calculate_Cci(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score_Cci(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns_Cci(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters_Cci(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """抽象基类要求的置信度计算方法"""
+        return self.calculate_confidence_Cci(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """统一的计算接口"""
+        return self.calculate_Cci(data, **kwargs)
+
+    # ==================== 兼容性方法 - 真实实现 ====================
+
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """真实实现：获取CCI形态"""
+        if data is None or data.empty:
+            return pd.DataFrame()
+
+        # 首先计算CCI指标
+        cci_data = self.calculate_Cci(data)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 获取CCI数据
+        if isinstance(cci_data, dict):
+            cci_values = cci_data.get('CCI', pd.Series(index=data.index))
+        else:
+            cci_values = cci_data.get('CCI', pd.Series(index=data.index))
+
+        # 1. 超买形态 (CCI > 100)
+        patterns_df['CCI_OVERBOUGHT'] = cci_values > 100
+
+        # 2. 超卖形态 (CCI < -100)
+        patterns_df['CCI_OVERSOLD'] = cci_values < -100
+
+        # 3. 极端超买形态 (CCI > 200)
+        patterns_df['CCI_EXTREME_OVERBOUGHT'] = cci_values > 200
+
+        # 4. 极端超卖形态 (CCI < -200)
+        patterns_df['CCI_EXTREME_OVERSOLD'] = cci_values < -200
+
+        # 5. 零轴上穿形态
+        patterns_df['CCI_ZERO_CROSS_UP'] = (cci_values > 0) & (cci_values.shift(1) <= 0)
+
+        # 6. 零轴下穿形态
+        patterns_df['CCI_ZERO_CROSS_DOWN'] = (cci_values < 0) & (cci_values.shift(1) >= 0)
+
+        # 7. 背离形态检测
+        if len(data) >= 20:
+            # 简化的背离检测：价格创新高但CCI未创新高
+            price_high = data['high'].rolling(10).max()
+            cci_high = cci_values.rolling(10).max()
+            patterns_df['CCI_BEARISH_DIVERGENCE'] = (
+                (data['high'] >= price_high.shift(1)) &
+                (cci_values < cci_high.shift(1)) &
+                (cci_values > 50)
+            )
+
+            # 底背离形态：价格创新低但CCI未创新低
+            price_low = data['low'].rolling(10).min()
+            cci_low = cci_values.rolling(10).min()
+            patterns_df['CCI_BULLISH_DIVERGENCE'] = (
+                (data['low'] <= price_low.shift(1)) &
+                (cci_values > cci_low.shift(1)) &
+                (cci_values < -50)
+            )
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """真实实现：计算CCI原始评分"""
+        if data.empty:
+            return pd.Series(dtype=float)
+
+        # 计算CCI指标
+        cci_data = self.calculate_Cci(data)
+
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+
+        # 获取CCI数据
+        if isinstance(cci_data, dict):
+            cci_values = cci_data.get('CCI', pd.Series(index=data.index))
+        else:
+            cci_values = cci_data.get('CCI', pd.Series(index=data.index))
+
+        # 1. 基于CCI位置的评分
+        # 超卖区域加分 (CCI < -100)
+        oversold_condition = cci_values < -100
+        score += oversold_condition * 20
+
+        # 极端超卖加分 (CCI < -200)
+        extreme_oversold_condition = cci_values < -200
+        score += extreme_oversold_condition * 15
+
+        # 超买区域减分 (CCI > 100)
+        overbought_condition = cci_values > 100
+        score -= overbought_condition * 20
+
+        # 极端超买减分 (CCI > 200)
+        extreme_overbought_condition = cci_values > 200
+        score -= extreme_overbought_condition * 15
+
+        # 2. 基于零轴交叉的评分
+        zero_cross_up = (cci_values > 0) & (cci_values.shift(1) <= 0)
+        zero_cross_down = (cci_values < 0) & (cci_values.shift(1) >= 0)
+
+        # 零轴上穿加分
+        score += zero_cross_up * 15
+
+        # 零轴下穿减分
+        score -= zero_cross_down * 15
+
+        # 3. 基于CCI趋势的评分
+        # CCI上升趋势加分
+        cci_rising = cci_values > cci_values.shift(1)
+        score += cci_rising * 5
+
+        # CCI下降趋势减分
+        cci_falling = cci_values < cci_values.shift(1)
+        score -= cci_falling * 5
+
+        # 4. 基于CCI强度的评分
+        # CCI绝对值越大，信号越强
+        cci_strength = np.abs(cci_values) / 100
+        strength_bonus = np.minimum(cci_strength * 10, 15)  # 最大15分
+
+        # 根据CCI方向调整强度奖励
+        score += np.where(cci_values > 0, strength_bonus, -strength_bonus)
+
+        # 限制评分在0-100之间
+        return score.clip(0, 100)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成CCI交易信号"""
+        if data.empty:
+            return pd.DataFrame()
+
+        # 计算CCI指标
+        cci_data = self.calculate_Cci(data)
+        result_df = data.copy()
+
+        # 合并CCI数据
+        if isinstance(cci_data, dict):
+            for col, values in cci_data.items():
+                result_df[col] = values
+        else:
+            for col in cci_data.columns:
+                result_df[col] = cci_data[col]
+
+        # 初始化信号列
+        result_df['cci_signal'] = 0
+        result_df['cci_strength'] = 0.0
+        result_df['cci_confidence'] = 0.0
+
+        # 获取CCI数据
+        if isinstance(cci_data, dict):
+            cci_values = cci_data.get('CCI', pd.Series(index=data.index))
+        else:
+            cci_values = cci_data.get('CCI', pd.Series(index=data.index))
+
+        # 1. 超卖反弹买入信号
+        oversold_bounce = (cci_values > -100) & (cci_values.shift(1) <= -100)
+        result_df.loc[oversold_bounce, 'cci_signal'] = 1
+        result_df.loc[oversold_bounce, 'cci_strength'] = 0.8
+        result_df.loc[oversold_bounce, 'cci_confidence'] = 0.9
+
+        # 2. 超买回落卖出信号
+        overbought_fall = (cci_values < 100) & (cci_values.shift(1) >= 100)
+        result_df.loc[overbought_fall, 'cci_signal'] = -1
+        result_df.loc[overbought_fall, 'cci_strength'] = 0.8
+        result_df.loc[overbought_fall, 'cci_confidence'] = 0.9
+
+        # 3. 零轴突破信号
+        zero_cross_up = (cci_values > 0) & (cci_values.shift(1) <= 0)
+        result_df.loc[zero_cross_up, 'cci_signal'] = 1
+        result_df.loc[zero_cross_up, 'cci_strength'] = 0.6
+        result_df.loc[zero_cross_up, 'cci_confidence'] = 0.7
+
+        zero_cross_down = (cci_values < 0) & (cci_values.shift(1) >= 0)
+        result_df.loc[zero_cross_down, 'cci_signal'] = -1
+        result_df.loc[zero_cross_down, 'cci_strength'] = 0.6
+        result_df.loc[zero_cross_down, 'cci_confidence'] = 0.7
+
+        # 4. 极端超卖/超买信号
+        extreme_oversold = cci_values < -200
+        result_df.loc[extreme_oversold, 'cci_signal'] = 1
+        result_df.loc[extreme_oversold, 'cci_strength'] = 0.9
+        result_df.loc[extreme_oversold, 'cci_confidence'] = 0.8
+
+        extreme_overbought = cci_values > 200
+        result_df.loc[extreme_overbought, 'cci_signal'] = -1
+        result_df.loc[extreme_overbought, 'cci_strength'] = 0.9
+        result_df.loc[extreme_overbought, 'cci_confidence'] = 0.8
+
+        return result_df
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """真实实现：计算CCI综合评分"""
+        if data.empty:
+            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+
+        # 计算原始评分
+        raw_score = self.calculate_raw_score(data, **kwargs)
+
+        # 获取形态
+        patterns = self.get_patterns(data, **kwargs)
+
+        # 计算最终评分
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+
+        # 基于形态调整评分
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 正面形态加分
+            if latest_patterns.get('CCI_OVERSOLD', False):
+                final_score += 15
+            if latest_patterns.get('CCI_EXTREME_OVERSOLD', False):
+                final_score += 20
+            if latest_patterns.get('CCI_ZERO_CROSS_UP', False):
+                final_score += 12
+            if latest_patterns.get('CCI_BULLISH_DIVERGENCE', False):
+                final_score += 15
+
+            # 负面形态减分
+            if latest_patterns.get('CCI_OVERBOUGHT', False):
+                final_score -= 15
+            if latest_patterns.get('CCI_EXTREME_OVERBOUGHT', False):
+                final_score -= 20
+            if latest_patterns.get('CCI_ZERO_CROSS_DOWN', False):
+                final_score -= 12
+            if latest_patterns.get('CCI_BEARISH_DIVERGENCE', False):
+                final_score -= 15
+
+        # 计算置信度
+        cci_data = self.calculate_Cci(data)
+
+        if isinstance(cci_data, dict):
+            cci_value = cci_data.get('CCI', pd.Series([0])).iloc[-1] if len(cci_data.get('CCI', pd.Series([0]))) > 0 else 0
+        else:
+            cci_value = cci_data.get('CCI', pd.Series([0])).iloc[-1] if len(cci_data.get('CCI', pd.Series([0]))) > 0 else 0
+
+        # 基于CCI绝对值计算置信度
+        cci_abs = abs(cci_value)
+        if cci_abs > 200:
+            confidence = 0.9
+        elif cci_abs > 100:
+            confidence = 0.8
+        elif cci_abs > 50:
+            confidence = 0.6
+        else:
+            confidence = 0.4
+
+        # 限制评分范围
+        final_score = max(0, min(100, final_score))
+
+        return {
+            'score': final_score,
+            'confidence': confidence,
+            'signals': {
+                'cci_value': cci_value,
+                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'
+            }
+        }
+
+    def set_parameters(self, **kwargs):
+        """真实实现：设置CCI参数"""
+        # 验证并设置period参数
+        if 'period' in kwargs:
+            period = kwargs['period']
+            if isinstance(period, int) and 5 <= period <= 100:
+                self.period = period
+            else:
+                logger.warning(f"无效的period参数: {period}, 保持原值")
+
+        # 验证并设置constant参数
+        if 'constant' in kwargs:
+            constant = kwargs['constant']
+            if isinstance(constant, (int, float)) and 0.001 <= constant <= 0.1:
+                self.constant = constant
+            else:
+                logger.warning(f"无效的constant参数: {constant}, 保持原值")
+
+        # 记录参数变更
+        logger.info(f"CCI参数已更新")
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成CCI交易信号"""
+        return self.get_signals(data, **kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：计算CCI指标"""
+        return self.calculate_Cci(data, **kwargs)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Cci(score, patterns, signals)
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：识别形态"""
+        return self.get_patterns(data, **kwargs)
+
+    def calculate_raw_score_cci(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score(data, **kwargs)
+
+
+# 为了兼容指标注册表，创建别名
+CCI = CciCci

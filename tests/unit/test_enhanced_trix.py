@@ -5,32 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_enhanced_tRIX(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_enhanced_tRIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """EnhancedTRIX指标测试类"""
     
-    def set_up_Trix(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Trix(self)
+        super().setUp()
         
-        self.indicator = Enhanced_tRIX(n=12, m=9, secondary_n=24)
+        self.indicator = complete_registry.create_indicator('EnhancedTRIX', n=12, m=9, secondary_n=24)
         self.expected_columns = [
             'TRIX', 'MATRIX', 'trix_secondary', 'matrix_secondary',
             'trix_momentum', 'trix_slope', 'trix_accel', 'trix_volatility'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Trix(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Trix(self)
-    
+
     def test_enhanced_trix_calculation_accuracy(self):
         """测试EnhancedTRIX计算准确性"""
         result = self.indicator.calculate(self.data)

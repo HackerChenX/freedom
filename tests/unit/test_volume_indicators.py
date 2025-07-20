@@ -16,8 +16,9 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
 class TestVOL(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTestvolumeindicators(self):
-        self.indicator = VOL()
+    def setUp(self):
+        super().setUp()
+        self.indicator = complete_registry.create_indicator('VOL', )
         self.expected_columns = ['vol', 'vol_ma5', 'vol_ma10']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -26,10 +27,11 @@ class TestVOL(unittest.TestCase, IndicatorTestMixin):
 class TestOBV_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """OBV指标单元测试类"""
 
-    def setUp_IndicatorsTestvolumeindicators(self):
+    def setUp(self):
+        super().setUp()
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp_IndicatorsTestvolumeindicators(self)  # 显式调用Mixin的setUp
-        self.indicator = OBV(ma_period=30)
+
+        self.indicator = complete_registry.create_indicator('OBV', ma_period=30)
         self.expected_columns = ['obv', 'obv_ma']
         # 使用一个包含多种走势的数据进行通用测试
         self.data = TestDataGenerator.generate_price_sequence([
@@ -221,8 +223,9 @@ class TestOBV_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         self.assertTrue(all(np.isfinite(val) for val in obv_values), "OBV值应为有限数值")
 
 class TestMFI_Indicators(unittest.TestCase, IndicatorTestMixin):
-    def setUp_IndicatorsTestvolumeindicators(self):
-        self.indicator = MFI(period=14)
+    def setUp(self):
+        super().setUp()
+        self.indicator = complete_registry.create_indicator('MFI', period=14)
         self.expected_columns = ['mfi']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'm_shape', 'start_price': 100, 'top_price': 110, 'periods': 50}
@@ -231,10 +234,11 @@ class TestMFI_Indicators(unittest.TestCase, IndicatorTestMixin):
 class TestAD_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """AD指标单元测试类"""
 
-    def setUp_IndicatorsTestvolumeindicators(self):
+    def setUp(self):
+        super().setUp()
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp_IndicatorsTestvolumeindicators(self)  # 显式调用Mixin的setUp
-        self.indicator = AD()
+
+        self.indicator = complete_registry.create_indicator('AD', )
         self.expected_columns = ['AD', 'AD_MA']
         # 使用一个包含多种走势的数据进行通用测试
         self.data = TestDataGenerator.generate_price_sequence([

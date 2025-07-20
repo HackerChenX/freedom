@@ -1,0 +1,150 @@
+strategy:
+  author: system
+  conditions:
+  - indicator_id: ZXM_TURNOVER
+    operator: '='
+    parameter: zxm_turnover_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_DAILY_MACD
+    operator: '='
+    parameter: zxm_daily_macd_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_MA_CALLBACK
+    operator: '='
+    parameter: zxm_ma_callback_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_RISE_ELASTICITY
+    operator: '='
+    parameter: zxm_rise_elasticity_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_AMPLITUDE_ELASTICITY
+    operator: '='
+    parameter: zxm_amplitude_elasticity_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_ELASTICITY_SCORE
+    operator: '='
+    parameter: zxm_elasticity_score_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_BUYPOINT_SCORE
+    operator: '='
+    parameter: zxm_buypoint_score_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_DAILY_TREND_UP
+    operator: '='
+    parameter: zxm_daily_trend_up_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: DIVERGENCE
+    operator: '='
+    parameter: divergence_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: ZXM_ABSORB
+    operator: '='
+    parameter: zxm_absorb_buy_signal
+    period: MONTHLY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: KDJ
+    operator: '='
+    parameter: kdj_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: MA
+    operator: '='
+    parameter: ma_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: MA
+    operator: '='
+    parameter: ma_buy_signal
+    period: MIN_15
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: BOLL
+    operator: '='
+    parameter: boll_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: VR
+    operator: '='
+    parameter: vr_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  - logic: OR
+  - indicator_id: OBV
+    operator: '='
+    parameter: obv_buy_signal
+    period: DAILY
+    signal_type: BUY
+    type: indicator
+    value: 1
+  create_time: '2025-05-27 19:30:00'
+  description: 基于回测结果生成的完整策略 - 源自zxm_batch_backtest_20250525_223702
+  filters:
+    industry: []
+    market: []
+    market_cap:
+      max: 10000
+      min: 0
+    price:
+      max: 500
+      min: 0
+  id: COMPLETE_BACKTEST_STRATEGY_001
+  name: 完整回测策略
+  sort:
+  - direction: DESC
+    field: signal_strength
+  - direction: ASC
+    field: market_cap
+  update_time: '2025-05-27 19:30:00'
+  version: '1.0'

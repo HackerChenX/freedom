@@ -10,7 +10,7 @@ import logging
 
 from db.interfaces.indicator_calculator_interface import IindicatorCalculator, IIndicatorCalculator
 from enums.indicator_types import Indicatortype_indicator_types as IndicatorType
-from utils.logger import get_logger
+from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 

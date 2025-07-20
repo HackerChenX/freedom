@@ -5,16 +5,15 @@ MACD指标分析模块
 """
 
 from typing import Dict, List, Tuple, Optional, Any, Union
-from typing import Dict, Any
 import pandas as pd
 import numpy as np
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.technical_utils import calculate_macd, crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.pattern_registry import PatternRegistry
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class MacdMacd(BaseIndicator, PatternSignalMixin):
     """MACD指标"""
@@ -85,14 +84,16 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         # 记录已注册的形态，防止重复注册
         self._registered_patterns = False
         
-        # 设置形态注册表允许覆盖，避免警告
-        PatternRegistry.set_allow_override(True)
-        
+        # 获取形态注册表实例并设置允许覆盖，避免警告
+        from indicators.pattern_registry import get_pattern_registry
+        registry = get_pattern_registry()
+        registry.set_allow_override(True)
+
         # 初始化基类（会自动调用register_patterns方法）
         super().__init__()
-        
+
         # 重置形态注册表为不允许覆盖
-        PatternRegistry.set_allow_override(False)
+        registry.set_allow_override(False)
         
         self.is_available = True
     
@@ -1083,8 +1084,8 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('MACD_Macd', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"MACD参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -1097,3 +1098,177 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+
+    # ==================== 抽象方法实现 ====================
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        计算MACD指标
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            Dict[str, pd.Series]: 包含MACD线、信号线和柱状图的字典
+        """
+        result_df = self._calculate_macd(data, **kwargs)
+
+        # 转换为字典格式以适配重构后的接口
+        if isinstance(result_df, pd.DataFrame):
+            return {
+                'macd_line': result_df.get('macd_line', pd.Series([])),
+                'macd_signal': result_df.get('macd_signal', pd.Series([])),
+                'macd_histogram': result_df.get('macd_histogram', pd.Series([]))
+            }
+        else:
+            # 如果返回的不是DataFrame，创建空的结果
+            empty_series = pd.Series([], dtype=float)
+            return {
+                'macd_line': empty_series,
+                'macd_signal': empty_series,
+                'macd_histogram': empty_series
+            }
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        result_dict = self.calculate(data, *args, **kwargs)
+
+        # 将字典转换为DataFrame以满足基类要求
+        if isinstance(result_dict, dict):
+            return pd.DataFrame(result_dict)
+        else:
+            return result_dict
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        # 基于MACD信号计算评分
+        result = self.calculate(data)
+
+        # 处理不同的返回格式
+        if result is None:
+            return pd.Series([50.0] * len(data), index=data.index)
+
+        # 检查是否为空结果
+        if isinstance(result, pd.DataFrame) and result.empty:
+            return pd.Series([50.0] * len(data), index=data.index)
+        elif isinstance(result, dict) and len(result) == 0:
+            return pd.Series([50.0] * len(data), index=data.index)
+
+        # 基于MACD线和信号线的关系计算评分
+        if isinstance(result, dict):
+            macd_line = result.get('macd_line', pd.Series([0] * len(data)))
+            macd_signal = result.get('macd_signal', pd.Series([0] * len(data)))
+        else:  # DataFrame
+            macd_line = result.get('macd_line', pd.Series([0] * len(data))) if 'macd_line' in result.columns else pd.Series([0] * len(data))
+            macd_signal = result.get('macd_signal', pd.Series([0] * len(data))) if 'macd_signal' in result.columns else pd.Series([0] * len(data))
+
+        # 确保Series有正确的索引
+        if not isinstance(macd_line, pd.Series):
+            macd_line = pd.Series(macd_line, index=data.index)
+        if not isinstance(macd_signal, pd.Series):
+            macd_signal = pd.Series(macd_signal, index=data.index)
+
+        # MACD线在信号线上方为正面信号
+        score = pd.Series([50.0] * len(data), index=data.index)
+
+        # 确保索引对齐
+        if len(macd_line) == len(data) and len(macd_signal) == len(data):
+            bullish_mask = macd_line > macd_signal
+            bearish_mask = macd_line < macd_signal
+
+            score[bullish_mask] = 70.0  # 看涨信号
+            score[bearish_mask] = 30.0  # 看跌信号
+
+        return score
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """抽象基类要求的置信度方法"""
+        # 基于形态数量和信号强度计算置信度
+        base_confidence = 0.6
+
+        # 如果有形态识别，增加置信度
+        if patterns and len(patterns) > 0:
+            base_confidence += 0.2
+
+        # 基于评分的稳定性调整置信度
+        if len(score) > 1:
+            score_std = score.std()
+            if score_std < 10:  # 评分稳定
+                base_confidence += 0.1
+
+        return min(1.0, base_confidence)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        # 创建空的形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 计算MACD指标
+        result = self.calculate(data)
+
+        # 处理不同的返回格式
+        if result is None:
+            return patterns_df
+
+        # 检查是否为空结果
+        if isinstance(result, pd.DataFrame) and result.empty:
+            return patterns_df
+        elif isinstance(result, dict) and len(result) == 0:
+            return patterns_df
+
+        # 提取MACD数据，处理不同格式
+        if isinstance(result, dict):
+            macd_line = result.get('macd_line', pd.Series([0] * len(data)))
+            macd_signal = result.get('macd_signal', pd.Series([0] * len(data)))
+            macd_histogram = result.get('macd_histogram', pd.Series([0] * len(data)))
+        else:  # DataFrame
+            macd_line = result.get('macd_line', pd.Series([0] * len(data))) if 'macd_line' in result.columns else pd.Series([0] * len(data))
+            macd_signal = result.get('macd_signal', pd.Series([0] * len(data))) if 'macd_signal' in result.columns else pd.Series([0] * len(data))
+            macd_histogram = result.get('macd_histogram', pd.Series([0] * len(data))) if 'macd_histogram' in result.columns else pd.Series([0] * len(data))
+
+        # 识别MACD金叉形态
+        golden_cross = (macd_line > macd_signal) & (macd_line.shift(1) <= macd_signal.shift(1))
+        patterns_df['MACD_GOLDEN_CROSS'] = golden_cross
+
+        # 识别MACD死叉形态
+        death_cross = (macd_line < macd_signal) & (macd_line.shift(1) >= macd_signal.shift(1))
+        patterns_df['MACD_DEATH_CROSS'] = death_cross
+
+        # 识别MACD零轴上金叉
+        above_zero_golden = golden_cross & (macd_line > 0)
+        patterns_df['MACD_ABOVE_ZERO_GOLDEN'] = above_zero_golden
+
+        # 识别MACD柱状图背离
+        histogram_divergence = (macd_histogram.diff() > 0) & (macd_histogram.shift(1) < 0)
+        patterns_df['MACD_HISTOGRAM_DIVERGENCE'] = histogram_divergence
+
+        return patterns_df
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        # 设置MACD参数
+        if 'fast_period' in kwargs:
+            self.fast_period = kwargs['fast_period']
+        if 'slow_period' in kwargs:
+            self.slow_period = kwargs['slow_period']
+        if 'signal_period' in kwargs:
+            self.signal_period = kwargs['signal_period']
+
+    # ==================== 兼容性方法 ====================
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：获取形态"""
+        return self.get_patterns_Indicator_Base_Indicator(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score_Indicator_Base_Indicator(data, **kwargs)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：获取信号"""
+        return self.get_signals_Macd(data, **kwargs)
+
+
+# 为了兼容指标注册表，创建别名
+MACD = MacdMacd

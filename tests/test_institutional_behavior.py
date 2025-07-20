@@ -22,7 +22,7 @@ from strategy.institutional_strategy import Institutional_strategy
 class Test_institutional_behavior(unittest.TestCase):
     """测试主力行为模式分析功能"""
     
-    def set_up_Behavior(self):
+    def setUp(self):
         """初始化测试环境"""
         # 创建模拟数据
         self.create_mock_data()

@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 class Test603359_real_data_validation(unittest.TestCase):
     """603359真实数据验证测试类"""
     
-    def set_up_Validation_Test_603359_Real_Data_Validation(self):
+    def setUp(self):
         """设置测试环境"""
         self.data_manager = get_unified_data_manager()
         self.target_stock = "603359"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
-from config import get_config
+from utils.dependency_injection import get_config
 """
 指标验证框架
 
@@ -29,7 +29,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_manager import Strategy_manager
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.path_utils import get_result_dir
 from utils.decorators import performance_monitor, safe_run
 

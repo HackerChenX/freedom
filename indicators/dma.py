@@ -13,8 +13,9 @@ from enums.indicator_enum import Indicator_enum
 from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from utils.dependency_injection import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin):
     """
@@ -690,8 +691,8 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DMA', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"DMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

@@ -1,7 +1,9 @@
 """
-策略执行器模块
+统一策略执行器模块
 
 负责执行策略，对股票列表进行筛选和评分
+支持统一策略配置格式，整合多个执行器的优化功能
+遵循六层架构规范，提供闭环验证支持
 """
 
 import concurrent.futures
@@ -9,6 +11,7 @@ import pandas as pd
 import numpy as np
 import time
 import os
+import json
 from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime
 
@@ -16,8 +19,12 @@ from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.strategy_manager import StrategyManager
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.decorators import performance_monitor, safe_run, cache_result
+from utils.strategy_validator import UnifiedStrategyConfigValidator
+from utils.cache import get_unified_cache, cache_with_unified_layer
+from analysis.enhanced_closed_loop_validator import EnhancedClosedLoopValidator
+from strategy.condition_parser import ConditionParser
 from utils.exceptions import (
     StrategyExecutionError,
     StrategyValidationError,
@@ -25,29 +32,741 @@ from utils.exceptions import (
     IndicatorExecutionError
 )
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
-class StrategyExecutor:
+class UnifiedStrategyExecutor:
+    """
+    统一策略执行器，负责执行策略，对股票列表进行筛选和评分
+
+    整合了多个执行器的优化功能：
+    - 内存优化处理
+    - 批量数据获取
+    - 并行计算优化
+    - 统一配置格式支持
+    - 闭环验证机制
+    """
+
+    def __init__(self, max_workers: int = None, cache_enabled: bool = True,
+                 enable_memory_optimization: bool = True,
+                 enable_unified_config: bool = True):
+        """
+        初始化统一策略执行器
+
+        Args:
+            max_workers: 最大线程数，None表示使用默认值
+            cache_enabled: 是否启用结果缓存
+            enable_memory_optimization: 是否启用内存优化
+            enable_unified_config: 是否启用统一配置格式支持
+        """
+        self.data_access = get_service(DataAccessInterface)
+        self.max_workers = max_workers or min(50, os.cpu_count() * 8)
+        self.cache_enabled = cache_enabled
+        self.cache = {}
+
+        # 统一配置支持
+        self.enable_unified_config = enable_unified_config
+        if self.enable_unified_config:
+            self.config_validator = UnifiedStrategyConfigValidator()
+
+        # 内存优化支持
+        self.enable_memory_optimization = enable_memory_optimization
+        self.memory_threshold = 75.0  # 内存使用率阈值
+
+        # 初始化完整指标注册系统
+        self.indicator_registry = complete_registry
+
+        # 统一缓存层
+        self.unified_cache = get_unified_cache()
+
+        # 增强闭环验证器
+        self.enhanced_validator = EnhancedClosedLoopValidator(
+            enable_entry_point_analysis=True
+        )
+
+        # 条件解析器
+        self.condition_parser = ConditionParser()
+
+        # 性能统计
+        self.performance_stats = {
+            'total_executions': 0,
+            'total_stocks_processed': 0,
+            'total_time': 0,
+            'avg_time_per_execution': 0,
+            'cache_hit_rate': 0,
+            'memory_peak_usage': 0,
+            'unified_config_validations': 0
+        }
+
+        logger.info(f"统一策略执行器初始化完成，最大线程数: {self.max_workers}, "
+                   f"缓存: {'启用' if cache_enabled else '禁用'}, "
+                   f"内存优化: {'启用' if enable_memory_optimization else '禁用'}, "
+                   f"统一配置: {'启用' if enable_unified_config else '禁用'}")
+
+    @performance_monitor(threshold=5.0)
+    def execute_unified_strategy(
+        self,
+        strategy_config: Dict[str, Any],
+        enable_validation: bool = True,
+        enable_closed_loop: bool = True,
+        progress_callback: Optional[Callable[[float, str], None]] = None
+    ) -> Dict[str, Any]:
+        """
+        执行统一格式的策略配置
+
+        Args:
+            strategy_config: 统一格式的策略配置
+            enable_validation: 是否启用配置验证
+            enable_closed_loop: 是否启用闭环验证
+            progress_callback: 进度回调函数
+
+        Returns:
+            Dict[str, Any]: 执行结果，包含选股结果和验证信息
+        """
+        start_time = time.time()
+        execution_result = {
+            'strategy_id': strategy_config.get('strategy', {}).get('id', 'unknown'),
+            'execution_time': 0,
+            'selection_result': None,
+            'validation_result': None,
+            'performance_stats': {},
+            'errors': [],
+            'warnings': []
+        }
+
+        try:
+            # 1. 配置验证
+            if enable_validation and self.enable_unified_config:
+                if progress_callback:
+                    progress_callback(0.1, "验证策略配置")
+
+                validation_result = self.config_validator.validate_strategy_config(strategy_config)
+                if not validation_result['is_valid']:
+                    execution_result['errors'].extend(validation_result['errors'])
+                    raise StrategyValidationError(f"策略配置验证失败: {validation_result['errors']}")
+
+                execution_result['warnings'].extend(validation_result.get('warnings', []))
+                self.performance_stats['unified_config_validations'] += 1
+
+            # 2. 策略解析和执行
+            if progress_callback:
+                progress_callback(0.2, "解析策略配置")
+
+            parsed_strategy = self._parse_unified_strategy_config(strategy_config)
+
+            if progress_callback:
+                progress_callback(0.3, "开始执行选股")
+
+            # 3. 执行选股（使用优化的方法）
+            selection_result = self._execute_optimized_selection(
+                parsed_strategy,
+                progress_callback=lambda p, msg: progress_callback(0.3 + p * 0.5, msg) if progress_callback else None
+            )
+
+            execution_result['selection_result'] = selection_result
+
+            # 4. 闭环验证（使用增强验证器）
+            if enable_closed_loop and len(selection_result) > 0:
+                if progress_callback:
+                    progress_callback(0.8, "执行增强闭环验证")
+
+                validation_config = strategy_config.get('validation', {})
+                validation_method = validation_config.get('validation_method', 'entry_point_analysis')
+
+                validation_result = self.enhanced_validator.validate_strategy_selection(
+                    selection_results=selection_result,
+                    strategy_config=strategy_config,
+                    validation_method=validation_method
+                )
+                execution_result['validation_result'] = validation_result
+
+            # 5. 更新性能统计
+            execution_time = time.time() - start_time
+            execution_result['execution_time'] = execution_time
+            self._update_performance_stats(len(selection_result), execution_time)
+            execution_result['performance_stats'] = self.get_performance_stats()
+
+            if progress_callback:
+                progress_callback(1.0, "策略执行完成")
+
+            logger.info(f"统一策略执行完成: {execution_result['strategy_id']}, "
+                       f"选股数量: {len(selection_result)}, 耗时: {execution_time:.2f}秒")
+
+            return execution_result
+
+        except Exception as e:
+            execution_result['errors'].append(str(e))
+            execution_result['execution_time'] = time.time() - start_time
+            logger.error(f"统一策略执行失败: {e}")
+            raise StrategyExecutionError(f"统一策略执行失败: {e}")
+
+    def _parse_unified_strategy_config(self, strategy_config: Dict[str, Any]) -> Dict[str, Any]:
+        """解析统一格式的策略配置"""
+        try:
+            # 提取策略信息
+            strategy_info = strategy_config.get('strategy', {})
+
+            # 提取技术指标配置
+            tech_indicators = strategy_config.get('technical_indicators', {})
+            primary_indicators = tech_indicators.get('primary_indicators', [])
+
+            # 提取时间条件
+            time_criteria = strategy_config.get('time_criteria', {})
+            time_frames = time_criteria.get('time_frames', [])
+
+            # 提取过滤条件
+            filters = strategy_config.get('filters', {})
+
+            # 提取选股参数
+            selection_params = strategy_config.get('selection_parameters', {})
+
+            # 转换为内部执行格式
+            parsed_strategy = {
+                'strategy_id': strategy_info.get('id'),
+                'strategy_name': strategy_info.get('name'),
+                'indicators': self._convert_indicators_config(primary_indicators),
+                'time_frames': [frame.get('level') for frame in time_frames],
+                'filters': filters,
+                'max_selections': selection_params.get('max_selections', 50),
+                'min_score': selection_params.get('min_score', 0.6),
+                'ranking_method': selection_params.get('ranking_method', 'score'),
+                'target_date': time_criteria.get('date_range', {}).get('target_date',
+                                                datetime.now().strftime('%Y-%m-%d'))
+            }
+
+            return parsed_strategy
+
+        except Exception as e:
+            logger.error(f"解析统一策略配置失败: {e}")
+            raise StrategyValidationError(f"解析统一策略配置失败: {e}")
+
+    def _convert_indicators_config(self, indicators: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """转换指标配置为内部格式"""
+        converted_indicators = []
+
+        for indicator in indicators:
+            indicator_id = indicator.get('indicator_id')
+            parameters = indicator.get('parameters', {})
+            conditions = indicator.get('conditions', [])
+
+            converted_indicator = {
+                'type': indicator_id,
+                'params': parameters,
+                'conditions': []
+            }
+
+            # 转换条件格式
+            for condition in conditions:
+                converted_condition = {
+                    'field': condition.get('field'),
+                    'operator': condition.get('operator'),
+                    'value': condition.get('value'),
+                    'lookback_days': condition.get('lookback_days', 1)
+                }
+                converted_indicator['conditions'].append(converted_condition)
+
+            converted_indicators.append(converted_indicator)
+
+        return converted_indicators
+
+    def _execute_optimized_selection(
+        self,
+        parsed_strategy: Dict[str, Any],
+        progress_callback: Optional[Callable[[float, str], None]] = None
+    ) -> List[Dict[str, Any]]:
+        """执行优化的选股逻辑"""
+        try:
+            # 1. 获取股票列表
+            if progress_callback:
+                progress_callback(0.1, "获取股票列表")
+
+            stock_codes = self._get_filtered_stock_list(parsed_strategy.get('filters', {}))
+            total_stocks = len(stock_codes)
+
+            if total_stocks == 0:
+                logger.warning("过滤后的股票列表为空")
+                return []
+
+            logger.info(f"开始处理 {total_stocks} 只股票")
+
+            # 2. 批量获取股票数据（优化）
+            if progress_callback:
+                progress_callback(0.2, f"批量获取 {total_stocks} 只股票数据")
+
+            stocks_data = self._batch_load_stock_data(
+                stock_codes, parsed_strategy.get('target_date')
+            )
+
+            # 3. 并行计算指标和评估条件
+            if progress_callback:
+                progress_callback(0.4, "并行计算指标")
+
+            evaluation_results = self._parallel_evaluate_stocks(
+                stocks_data,
+                parsed_strategy,
+                progress_callback=lambda p, msg: progress_callback(0.4 + p * 0.4, msg) if progress_callback else None
+            )
+
+            # 4. 过滤和排序结果
+            if progress_callback:
+                progress_callback(0.8, "过滤和排序结果")
+
+            filtered_results = self._filter_and_rank_results(
+                evaluation_results, parsed_strategy
+            )
+
+            return filtered_results
+
+        except Exception as e:
+            logger.error(f"优化选股执行失败: {e}")
+            raise StrategyExecutionError(f"优化选股执行失败: {e}")
+
+    def _batch_load_stock_data(self, stock_codes: List[str], target_date: str) -> Dict[str, Any]:
+        """批量加载股票数据（优化方法）"""
+        try:
+            # 使用批量查询优化数据获取
+            batch_size = min(100, len(stock_codes))  # 动态调整批次大小
+            stocks_data = {}
+
+            for i in range(0, len(stock_codes), batch_size):
+                batch_codes = stock_codes[i:i + batch_size]
+
+                # 批量获取股票基础数据
+                batch_data = self.data_access.get_stocks_data_batch(
+                    stock_codes=batch_codes,
+                    start_date=target_date,
+                    end_date=target_date
+                )
+
+                stocks_data.update(batch_data)
+
+            logger.debug(f"批量加载完成: {len(stocks_data)} 只股票数据")
+            return stocks_data
+
+        except Exception as e:
+            logger.error(f"批量加载股票数据失败: {e}")
+            # 回退到单个获取
+            return self._fallback_load_stock_data(stock_codes, target_date)
+
+    def _fallback_load_stock_data(self, stock_codes: List[str], target_date: str) -> Dict[str, Any]:
+        """回退的股票数据加载方法"""
+        stocks_data = {}
+        for code in stock_codes:
+            try:
+                data = self.data_access.get_stock_data(code, target_date, target_date)
+                if data is not None and not data.empty:
+                    stocks_data[code] = data
+            except Exception as e:
+                logger.warning(f"获取股票数据失败: {code}, 错误: {e}")
+                continue
+
+        return stocks_data
+
+    def _parallel_evaluate_stocks(
+        self,
+        stocks_data: Dict[str, Any],
+        strategy: Dict[str, Any],
+        progress_callback: Optional[Callable[[float, str], None]] = None
+    ) -> List[Dict[str, Any]]:
+        """并行评估股票"""
+        try:
+            results = []
+            stock_items = list(stocks_data.items())
+            total_stocks = len(stock_items)
+
+            if total_stocks == 0:
+                return results
+
+            # 动态调整批次大小
+            batch_size = max(1, min(50, total_stocks // self.max_workers))
+            processed_count = 0
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                # 提交所有任务
+                future_to_stock = {}
+                for stock_code, stock_data in stock_items:
+                    future = executor.submit(
+                        self._evaluate_single_stock_unified,
+                        stock_code, stock_data, strategy
+                    )
+                    future_to_stock[future] = stock_code
+
+                # 收集结果
+                for future in concurrent.futures.as_completed(future_to_stock):
+                    stock_code = future_to_stock[future]
+                    try:
+                        result = future.result(timeout=30)  # 30秒超时
+                        if result:
+                            results.append(result)
+
+                        processed_count += 1
+                        if progress_callback and processed_count % 100 == 0:
+                            progress = processed_count / total_stocks
+                            progress_callback(progress, f"已处理 {processed_count}/{total_stocks} 只股票")
+
+                    except Exception as e:
+                        logger.warning(f"评估股票失败: {stock_code}, 错误: {e}")
+                        continue
+
+            logger.info(f"并行评估完成: {len(results)}/{total_stocks} 只股票通过筛选")
+            return results
+
+        except Exception as e:
+            logger.error(f"并行评估股票失败: {e}")
+            raise StrategyExecutionError(f"并行评估股票失败: {e}")
+
+    def _evaluate_single_stock_unified(
+        self,
+        stock_code: str,
+        stock_data: Any,
+        strategy: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """评估单只股票（统一格式）"""
+        try:
+            # 计算技术指标
+            indicators_data = {}
+            for indicator_config in strategy.get('indicators', []):
+                indicator_type = indicator_config.get('type')
+                params = indicator_config.get('params', {})
+
+                # 使用指标注册系统计算指标
+                if hasattr(self.indicator_registry, 'calculate_indicator'):
+                    indicator_result = self.indicator_registry.calculate_indicator(
+                        indicator_type, stock_data, **params
+                    )
+                    indicators_data[indicator_type] = indicator_result
+
+            # 评估条件（使用新的条件解析器）
+            total_score = 0
+            total_weight = 0
+            all_condition_results = {}
+
+            for indicator_config in strategy.get('indicators', []):
+                indicator_type = indicator_config.get('type')
+                conditions = indicator_config.get('conditions', [])
+                indicator_data = indicators_data.get(indicator_type)
+
+                if indicator_data is None:
+                    continue
+
+                # 使用条件解析器评估条件
+                evaluation_result = self.condition_parser.evaluate_conditions(
+                    conditions, indicator_data
+                )
+
+                if evaluation_result.get('success', False):
+                    condition_score = evaluation_result.get('score', 0)
+                    condition_weight = evaluation_result.get('total_weight', 1)
+
+                    total_score += condition_score * condition_weight
+                    total_weight += condition_weight
+
+                    # 记录详细结果
+                    all_condition_results[indicator_type] = evaluation_result
+
+            # 计算最终评分
+            final_score = total_score / total_weight if total_weight > 0 else 0
+            min_score = strategy.get('min_score', 0.6)
+
+            if final_score >= min_score:
+                return {
+                    'stock_code': stock_code,
+                    'score': final_score,
+                    'total_score': total_score,
+                    'total_weight': total_weight,
+                    'condition_results': all_condition_results,
+                    'indicators_data': indicators_data,
+                    'evaluation_method': 'complex_conditions'
+                }
+
+            return None
+
+        except Exception as e:
+            logger.warning(f"评估股票失败: {stock_code}, 错误: {e}")
+            return None
+
+    def _evaluate_condition(self, indicator_data: Any, condition: Dict[str, Any]) -> bool:
+        """评估单个条件"""
+        try:
+            if indicator_data is None:
+                return False
+
+            field = condition.get('field')
+            operator = condition.get('operator')
+            value = condition.get('value')
+
+            # 从指标数据中获取字段值
+            if isinstance(indicator_data, dict):
+                field_value = indicator_data.get(field)
+            elif hasattr(indicator_data, field):
+                field_value = getattr(indicator_data, field)
+            else:
+                return False
+
+            if field_value is None:
+                return False
+
+            # 执行比较操作
+            if operator == '>':
+                return field_value > value
+            elif operator == '<':
+                return field_value < value
+            elif operator == '>=':
+                return field_value >= value
+            elif operator == '<=':
+                return field_value <= value
+            elif operator == '=':
+                return field_value == value
+            elif operator == '!=':
+                return field_value != value
+            elif operator == 'between':
+                if isinstance(value, list) and len(value) == 2:
+                    return value[0] <= field_value <= value[1]
+            elif operator == 'cross_up':
+                # 简化的金叉判断
+                return field_value > value
+            elif operator == 'cross_down':
+                # 简化的死叉判断
+                return field_value < value
+
+            return False
+
+        except Exception as e:
+            logger.warning(f"评估条件失败: {condition}, 错误: {e}")
+            return False
+
+    def _filter_and_rank_results(
+        self,
+        results: List[Dict[str, Any]],
+        strategy: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """过滤和排序结果"""
+        try:
+            if not results:
+                return []
+
+            # 按评分排序
+            ranking_method = strategy.get('ranking_method', 'score')
+
+            if ranking_method == 'score':
+                sorted_results = sorted(results, key=lambda x: x.get('score', 0), reverse=True)
+            elif ranking_method == 'indicator_strength':
+                sorted_results = sorted(results, key=lambda x: x.get('conditions_met', 0), reverse=True)
+            else:  # composite
+                sorted_results = sorted(
+                    results,
+                    key=lambda x: (x.get('score', 0) * 0.7 + x.get('conditions_met', 0) * 0.3),
+                    reverse=True
+                )
+
+            # 限制结果数量
+            max_selections = strategy.get('max_selections', 50)
+            final_results = sorted_results[:max_selections]
+
+            logger.info(f"结果过滤完成: {len(final_results)}/{len(results)} 只股票入选")
+            return final_results
+
+        except Exception as e:
+            logger.error(f"过滤和排序结果失败: {e}")
+            return results[:strategy.get('max_selections', 50)]
+
+    def _get_filtered_stock_list(self, filters: Dict[str, Any]) -> List[str]:
+        """获取过滤后的股票列表"""
+        try:
+            # 获取所有股票列表
+            all_stocks = self.data_access.get_all_stock_codes()
+
+            if not filters:
+                return all_stocks
+
+            filtered_stocks = []
+            market_filters = filters.get('market_filters', {})
+            financial_filters = filters.get('financial_filters', {})
+
+            # 市场过滤
+            allowed_markets = market_filters.get('markets', [])
+            exclude_st = market_filters.get('exclude_st', True)
+
+            for stock_code in all_stocks:
+                # ST股票过滤
+                if exclude_st and ('ST' in stock_code or 'st' in stock_code):
+                    continue
+
+                # 市场过滤（简化实现）
+                if allowed_markets:
+                    market_matched = False
+                    for market in allowed_markets:
+                        if market == '主板' and (stock_code.endswith('.SH') or stock_code.endswith('.SZ')):
+                            market_matched = True
+                            break
+                        elif market == '创业板' and stock_code.startswith('3'):
+                            market_matched = True
+                            break
+                        elif market == '科创板' and stock_code.startswith('688'):
+                            market_matched = True
+                            break
+
+                    if not market_matched:
+                        continue
+
+                filtered_stocks.append(stock_code)
+
+            logger.info(f"股票过滤完成: {len(filtered_stocks)}/{len(all_stocks)} 只股票通过过滤")
+            return filtered_stocks
+
+        except Exception as e:
+            logger.error(f"获取过滤股票列表失败: {e}")
+            # 回退到获取所有股票
+            try:
+                return self.data_access.get_all_stock_codes()
+            except:
+                return []
+
+    def _perform_closed_loop_validation(
+        self,
+        selection_results: List[Dict[str, Any]],
+        strategy_config: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """执行闭环验证"""
+        try:
+            validation_config = strategy_config.get('validation', {})
+            validation_method = validation_config.get('validation_method', 'entry_point_analysis')
+            sample_size = min(validation_config.get('sample_size', 10), len(selection_results))
+
+            if sample_size == 0:
+                return {
+                    'validation_method': validation_method,
+                    'sample_size': 0,
+                    'consistency_rate': 0.0,
+                    'validation_passed': False,
+                    'details': []
+                }
+
+            # 选择验证样本
+            validation_sample = selection_results[:sample_size]
+            validation_details = []
+            consistent_count = 0
+
+            for result in validation_sample:
+                stock_code = result.get('stock_code')
+                original_score = result.get('score', 0)
+
+                # 重新验证该股票是否满足条件
+                revalidation_result = self._revalidate_stock_selection(
+                    stock_code, strategy_config
+                )
+
+                is_consistent = abs(revalidation_result.get('score', 0) - original_score) < 0.1
+                if is_consistent:
+                    consistent_count += 1
+
+                validation_details.append({
+                    'stock_code': stock_code,
+                    'original_score': original_score,
+                    'revalidation_score': revalidation_result.get('score', 0),
+                    'is_consistent': is_consistent,
+                    'revalidation_details': revalidation_result
+                })
+
+            consistency_rate = consistent_count / sample_size
+            validation_threshold = validation_config.get('validation_threshold', 0.8)
+            validation_passed = consistency_rate >= validation_threshold
+
+            validation_result = {
+                'validation_method': validation_method,
+                'sample_size': sample_size,
+                'consistent_count': consistent_count,
+                'consistency_rate': consistency_rate,
+                'validation_threshold': validation_threshold,
+                'validation_passed': validation_passed,
+                'details': validation_details
+            }
+
+            logger.info(f"闭环验证完成: 一致性率 {consistency_rate:.2%}, "
+                       f"验证{'通过' if validation_passed else '失败'}")
+
+            return validation_result
+
+        except Exception as e:
+            logger.error(f"闭环验证失败: {e}")
+            return {
+                'validation_method': 'error',
+                'error': str(e),
+                'validation_passed': False
+            }
+
+    def _revalidate_stock_selection(
+        self,
+        stock_code: str,
+        strategy_config: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """重新验证单只股票的选股结果"""
+        try:
+            # 重新获取股票数据
+            target_date = strategy_config.get('time_criteria', {}).get('date_range', {}).get('target_date')
+            if not target_date:
+                target_date = datetime.now().strftime('%Y-%m-%d')
+
+            stock_data = self.data_access.get_stock_data(stock_code, target_date, target_date)
+            if stock_data is None or stock_data.empty:
+                return {'score': 0, 'error': 'No data available'}
+
+            # 解析策略配置
+            parsed_strategy = self._parse_unified_strategy_config(strategy_config)
+
+            # 重新评估
+            result = self._evaluate_single_stock_unified(stock_code, stock_data, parsed_strategy)
+
+            if result:
+                return {
+                    'score': result.get('score', 0),
+                    'conditions_met': result.get('conditions_met', 0),
+                    'total_conditions': result.get('total_conditions', 0)
+                }
+            else:
+                return {'score': 0, 'conditions_met': 0}
+
+        except Exception as e:
+            logger.warning(f"重新验证股票失败: {stock_code}, 错误: {e}")
+            return {'score': 0, 'error': str(e)}
+
+    def _update_performance_stats(self, stocks_processed: int, execution_time: float):
+        """更新性能统计"""
+        self.performance_stats['total_executions'] += 1
+        self.performance_stats['total_stocks_processed'] += stocks_processed
+        self.performance_stats['total_time'] += execution_time
+
+        if self.performance_stats['total_executions'] > 0:
+            self.performance_stats['avg_time_per_execution'] = (
+                self.performance_stats['total_time'] / self.performance_stats['total_executions']
+            )
+
+    def get_performance_stats(self) -> Dict[str, Any]:
+        """获取性能统计信息"""
+        return self.performance_stats.copy()
+
+
+# 保持向后兼容性
+class StrategyExecutor(UnifiedStrategyExecutor):
     """
     策略执行器，负责执行策略，对股票列表进行筛选和评分
+    向后兼容的别名类
     """
-    
+
     def __init__(self, max_workers: int = None, cache_enabled: bool = True):
         """
-        初始化策略执行器
+        初始化策略执行器（向后兼容）
 
         Args:
             max_workers: 最大线程数，None表示使用默认值（CPU核心数 * 5）
             cache_enabled: 是否启用结果缓存
         """
-        self.data_access = get_service(DataAccessInterface)
-        self.max_workers = max_workers or min(50, os.cpu_count() * 8)  # 优化：增加并发数
-        self.cache_enabled = cache_enabled
-        self.cache = {}
-
-        # 初始化完整指标注册系统
-        self.indicator_registry = complete_registry
+        super().__init__(
+            max_workers=max_workers,
+            cache_enabled=cache_enabled,
+            enable_memory_optimization=False,  # 向后兼容，默认不启用新功能
+            enable_unified_config=False
+        )
         try:
             self.indicator_registry.register_all_indicators()
             logger.info("✅ 策略执行器已集成CompleteIndicatorRegistry")

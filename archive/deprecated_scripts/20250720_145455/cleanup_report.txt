@@ -1,0 +1,40 @@
+弃用脚本清理报告
+==================================================
+
+清理时间: 2025-07-20 14:54:59
+
+清理统计:
+- 弃用执行器: 6 个
+- 弃用脚本: 9 个
+- 备份文件: 912 个
+- 临时文件: 2 个
+- 总计: 929 个
+
+已删除的弃用执行器:
+- strategy/optimized_strategy_executor.py
+- strategy/memory_aware_strategy_executor.py
+- strategy/high_performance_executor.py
+- strategy/enhanced_strategy_executor.py
+- strategy/large_scale_memory_optimizer.py
+- strategy/batch_data_optimizer.py
+
+已删除的弃用脚本:
+- scripts/test_unified_executor.py
+- scripts/test_enhanced_validation.py
+- scripts/production_indicator_tester.py
+- scripts/utils/ultimate_compliance_fix.py
+- scripts/utils/advanced_quality_refactor.py
+- scripts/utils/fix_layer_violations.py
+- scripts/utils/final_query_fix.py
+- scripts/utils/massive_compliance_fix.py
+- scripts/utils/precise_query_fix.py
+
+保护的核心文件:
+- analysis/enhanced_closed_loop_validator.py
+- utils/strategy_validator.py
+- scripts/comprehensive_system_test.py
+- scripts/migrate_strategy_configs.py
+- strategy/strategy_executor.py
+- utils/strategy_config_migrator.py
+
+备份位置: /Users/hacker/PycharmProjects/freedom/archive/deprecated_scripts/20250720_145455

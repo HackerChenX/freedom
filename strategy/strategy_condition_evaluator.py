@@ -11,8 +11,8 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime, timedelta
 import logging
 
-from config import get_config
-from utils.logger import getLogger
+from utils.dependency_injection import get_config
+from utils.dependency_injection import get_logger
 from utils.decorators import performance_monitor, cache_result, exception_handler
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
@@ -25,7 +25,7 @@ from utils.exceptions import (
     DataValidationError
 )
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class StrategyConditionEvaluator:
     """策略条件评估器，用于高效评估选股策略条件"""

@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
 import logging
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.cache import Memory_cache
 
 logger = getLogger(__name__)

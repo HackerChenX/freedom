@@ -5,29 +5,25 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_volume_ratio(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_volume_ratio(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """Volume Ratio指标测试类"""
     
-    def set_up_Ratio(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Ratio(self)
+        super().setUp()
         
-        self.indicator = Volume_ratio(reference_period=5, ma_period=3)
+        self.indicator = complete_registry.create_indicator('VR', reference_period=5, ma_period=3)
         self.expected_columns = ['volume_ratio', 'volume_ratio_ma']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
-    
-    def tear_down_Ratio(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Ratio(self)
-    
+
     def test_volume_ratio_calculation_accuracy(self):
         """测试Volume Ratio计算准确性"""
         result = self.indicator.calculate(self.data)
@@ -190,7 +186,7 @@ class Test_volume_ratio(unittest.TestCase, Indicator_test_mixin, Log_capture_mix
     def test_volume_ratio_breakout_detection(self):
         """测试Volume Ratio突破检测"""
         # 创建包含突破的数据
-        breakout_data = Test_data_generator.generate_price_sequence([
+        breakout_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 30}
         ])
         
@@ -209,7 +205,7 @@ class Test_volume_ratio(unittest.TestCase, Indicator_test_mixin, Log_capture_mix
     def test_volume_ratio_cross_detection(self):
         """测试Volume Ratio交叉检测"""
         # 创建包含交叉的数据
-        cross_data = Test_data_generator.generate_price_sequence([
+        cross_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 30}
         ])
         
@@ -223,7 +219,7 @@ class Test_volume_ratio(unittest.TestCase, Indicator_test_mixin, Log_capture_mix
     def test_volume_ratio_peak_trough_detection(self):
         """测试Volume Ratio峰谷检测"""
         # 创建足够长的数据以计算峰谷
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 25}
         ])
         

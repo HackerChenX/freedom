@@ -234,7 +234,7 @@ class StrategyCoverageTester:
         # 测试结果存储
         self.test_results: List[StrategyTestResult] = []
     
-    @performance_monitor(threshold_seconds=120.0)
+    @performance_monitor(threshold=120.0)
     @exception_handler(reraise=True)
     def run_comprehensive_strategy_coverage_tests(self, 
                                                  strategy_types: Optional[List[StrategyType]] = None,

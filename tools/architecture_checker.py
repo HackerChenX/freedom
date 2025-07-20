@@ -419,4 +419,4 @@ def main_architecture_checker():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main_architecture_checker())

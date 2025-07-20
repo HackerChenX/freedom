@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from config import get_config
+from utils.dependency_injection import get_config
 """
 智能缓存系统
 
@@ -25,7 +25,7 @@ import threading
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
 logger = getLogger(__name__)
 

@@ -15,9 +15,9 @@ from datetime import datetime
 
 from strategy.enhanced_base_strategy import Enhanced_base_strategy
 # from strategy.enhanced_base_strategy import Indicator_condition  # 暂时注释掉不存在的导入
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MultiPeriodStrategy(Enhanced_base_strategy):

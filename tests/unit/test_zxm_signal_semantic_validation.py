@@ -21,7 +21,7 @@ from indicators.zxm.selection_model import Selection_model
 class Test_zXMSignal_semantic_validation(unittest.TestCase):
     """ZXM指标信号语义验证测试类"""
     
-    def set_up_Validation(self):
+    def setUp(self):
         """设置测试数据"""
         # 生成特定语义的测试数据，而不是随机数据
         self.test_scenarios = self._generate_semantic_test_scenarios()

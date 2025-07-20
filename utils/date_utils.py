@@ -166,6 +166,35 @@ def date_range(start_date: str, end_date: str,
     
     return date_list
 
+def get_latest_trading_date(format_str: str = "%Y%m%d") -> str:
+    """
+    获取最近的交易日期
+
+    Args:
+        format_str: 日期格式化字符串
+
+    Returns:
+        str: 最近交易日期字符串
+    """
+    now = datetime.datetime.now()
+
+    # 如果是周末，回退到上周五
+    if now.weekday() == 5:  # 周六
+        trading_day = now - datetime.timedelta(days=1)
+    elif now.weekday() == 6:  # 周日
+        trading_day = now - datetime.timedelta(days=2)
+    else:  # 工作日
+        # 如果当前时间在15点之前，使用前一个交易日
+        if now.hour < 15:
+            if now.weekday() == 0:  # 周一
+                trading_day = now - datetime.timedelta(days=3)  # 上周五
+            else:
+                trading_day = now - datetime.timedelta(days=1)  # 前一天
+        else:
+            trading_day = now  # 当天
+
+    return trading_day.strftime(format_str)
+
 def get_latest_trading_date_Utils(format_str: str = "%Y-%m-%d") -> str:
     """
     获取最近的交易日期

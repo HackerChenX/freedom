@@ -5,20 +5,20 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_gann_tools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """GannTools指标测试类"""
     
-    def set_up_Tools_Test_Gann_Tools(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Tools_Test_Gann_Tools(self)
+        super().setUp()
         
-        self.indicator = Gann_tools()
+        self.indicator = complete_registry.create_indicator('GANN', )
         self.expected_columns = [
             'GANN_1X1_SUPPORT', 'GANN_1X1_RESISTANCE',
             'GANN_1X2_SUPPORT', 'GANN_1X2_RESISTANCE',
@@ -30,14 +30,10 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
             'GANN_PRICE_TARGET_UP', 'GANN_PRICE_TARGET_DOWN',
             'GANN_VOLUME_CONFIRMATION', 'GANN_TREND_ALIGNMENT'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 80}
         ])
-    
-    def tear_down_Tools_Test_Gann_Tools(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Tools_Test_Gann_Tools(self)
-    
+
     def test_gann_tools_initialization(self):
         """测试GannTools初始化"""
         # 测试默认初始化
@@ -127,7 +123,7 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
     def test_gann_tools_angle_lines_calculation(self):
         """测试GannTools角度线计算"""
         # 使用足够的数据进行角度线计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -145,7 +141,7 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
     def test_gann_tools_time_cycles_calculation(self):
         """测试GannTools时间周期计算"""
         # 使用足够的数据进行时间周期计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 200}
         ])
         
@@ -161,7 +157,7 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
     def test_gann_tools_gann_square_calculation(self):
         """测试GannTools江恩方格计算"""
         # 使用足够的数据进行江恩方格计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -176,7 +172,7 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
     def test_gann_tools_pattern_identification(self):
         """测试GannTools形态识别"""
         # 使用足够的数据进行形态识别
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -224,7 +220,7 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
     def test_gann_tools_1x1_line_analysis(self):
         """测试GannTools 1x1线分析"""
         # 使用足够的数据进行1x1线分析
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -241,7 +237,7 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
     def test_gann_tools_angle_cluster_analysis(self):
         """测试GannTools角度线聚集分析"""
         # 使用足够的数据进行角度线聚集分析
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -253,7 +249,7 @@ class Test_gann_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
     def test_gann_tools_price_target_analysis(self):
         """测试GannTools价格目标分析"""
         # 使用足够的数据进行价格目标分析
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         

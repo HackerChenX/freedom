@@ -30,7 +30,7 @@ from indicators.zxm.diagnostics import ZXMDiagnostics
 class Test_zXMComprehensive(unittest.TestCase):
     """ZXM指标综合测试类"""
     
-    def set_up_Comprehensive(self):
+    def setUp(self):
         """设置测试数据"""
         # 生成测试数据
         dates = pd.date_range(start='2023-01-01', periods=150, freq='D')

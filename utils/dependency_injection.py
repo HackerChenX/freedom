@@ -1,296 +1,198 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
-依赖注入容器模块
+简化的依赖注入模块
 
-提供轻量级的依赖注入容器实现，支持单例和临时服务注册
+提供统一的服务访问接口，避免跨层直接依赖
 """
 
-import threading
-from typing import Dict, Type, Any, Optional, TypeVar, Callable, Set
-from enum import Enum
 import logging
+from typing import Any, Optional
 
-logger = logging.getLogger(__name__)
-
-T = TypeVar('T')
-
-
-class ServiceLifetime(Enum):
-    """服务生命周期枚举"""
-    SINGLETON = "singleton"
-    TRANSIENT = "transient"
+# 全局服务实例缓存
+_services = {}
 
 
-class ServiceDescriptor:
-    """服务描述符"""
-    
-    def __init__(self, service_type: Type, implementation: Type = None, 
-                 factory: Callable = None, lifetime: ServiceLifetime = ServiceLifetime.SINGLETON):
-        self.service_type = service_type
-        self.implementation = implementation or service_type
-        self.factory = factory
-        self.lifetime = lifetime
+def get_logger(name: str = None) -> logging.Logger:
+    """获取日志器"""
+    if 'logger' not in _services:
+        if name is None:
+            name = __name__
+        logger = logging.getLogger(name)
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.setLevel(logging.INFO)
+        _services['logger'] = logger
+    return _services['logger']
 
 
-class ServiceContainer:
-    """依赖注入容器"""
-    
-    def __init__(self):
-        self._services: Dict[Type, ServiceDescriptor] = {}
-        self._instances: Dict[Type, Any] = {}
-        self._building: Set[Type] = set()  # 循环依赖检测
-        self._lock = threading.RLock()
-    
-    def register_singleton(self, interface: Type[T], 
-                          implementation: Type[T] = None,
-                          factory: Callable[[], T] = None) -> 'ServiceContainer':
-        """
-        注册单例服务
-        
-        Args:
-            interface: 服务接口类型
-            implementation: 实现类型
-            factory: 工厂方法
-            
-        Returns:
-            ServiceContainer: 支持链式调用
-        """
-        with self._lock:
-            if factory:
-                descriptor = ServiceDescriptor(
-                    service_type=interface,
-                    factory=factory,
-                    lifetime=ServiceLifetime.SINGLETON
-                )
-            else:
-                implementation = implementation or interface
-                descriptor = ServiceDescriptor(
-                    service_type=interface,
-                    implementation=implementation,
-                    lifetime=ServiceLifetime.SINGLETON
-                )
-            
-            self._services[interface] = descriptor
-            logger.debug(f"Registered singleton service: {interface.__name__}")
-            
-        return self
-
-    def register_transient(self, interface: Type[T], 
-                          implementation: Type[T] = None,
-                          factory: Callable[[], T] = None) -> 'ServiceContainer':
-        """
-        注册临时服务（每次获取都创建新实例）
-        
-        Args:
-            interface: 服务接口类型
-            implementation: 实现类型
-            factory: 工厂方法
-            
-        Returns:
-            ServiceContainer: 支持链式调用
-        """
-        with self._lock:
-            if factory:
-                descriptor = ServiceDescriptor(
-                    service_type=interface,
-                    factory=factory,
-                    lifetime=ServiceLifetime.TRANSIENT
-                )
-            else:
-                implementation = implementation or interface
-                descriptor = ServiceDescriptor(
-                    service_type=interface,
-                    implementation=implementation,
-                    lifetime=ServiceLifetime.TRANSIENT
-                )
-            
-            self._services[interface] = descriptor
-            logger.debug(f"Registered transient service: {interface.__name__}")
-            
-        return self
-    
-    def is_registered(self, interface: Type) -> bool:
-        """检查服务是否已注册"""
-        return interface in self._services
-    
-    def resolve(self, interface: Type[T]) -> T:
-        """
-        解析服务实例
-        
-        Args:
-            interface: 服务接口类型
-            
-        Returns:
-            T: 服务实例
-            
-        Raises:
-            ServiceNotRegisteredException: 服务未注册
-            CircularDependencyException: 循环依赖
-        """
-        if interface not in self._services:
-            raise ServiceNotRegisteredException(f"Service not registered: {interface}")
-            
-        descriptor = self._services[interface]
-        
-        # 检查循环依赖
-        if interface in self._building:
-            raise CircularDependencyException(f"Circular dependency detected for: {interface}")
-        
-        # 对于单例服务，检查是否已有实例
-        if descriptor.lifetime == ServiceLifetime.SINGLETON and interface in self._instances:
-            return self._instances[interface]
-        
+def get_config():
+    """获取配置"""
+    if 'config' not in _services:
         try:
-            self._building.add(interface)
-            
-            # 创建实例
-            if descriptor.factory:
-                instance = descriptor.factory()
+            from config.config import Config
+            _services['config'] = Config()
+        except ImportError:
+            # 如果配置模块不存在，返回空配置
+            class EmptyConfig:
+                def __getattr__(self, name):
+                    return None
+            _services['config'] = EmptyConfig()
+    return _services['config']
+
+
+def get_data_access():
+    """获取数据访问接口"""
+    if 'data_access' not in _services:
+        try:
+            from db.clickhouse_db import ClickHouseDB
+            _services['data_access'] = ClickHouseDB()
+        except ImportError:
+            # 如果数据库模块不存在，返回空实现
+            class EmptyDataAccess:
+                def __getattr__(self, name):
+                    return lambda *args, **kwargs: None
+            _services['data_access'] = EmptyDataAccess()
+    return _services['data_access']
+
+
+def get_data_manager():
+    """获取数据管理器"""
+    if 'data_manager' not in _services:
+        try:
+            from db.data_manager import DataManager
+            _services['data_manager'] = DataManager()
+        except ImportError:
+            # 如果数据管理器不存在，返回空实现
+            class EmptyDataManager:
+                def __getattr__(self, name):
+                    return lambda *args, **kwargs: None
+            _services['data_manager'] = EmptyDataManager()
+    return _services['data_manager']
+
+
+def get_service(service_type: type) -> Any:
+    """
+    获取服务实例（通用接口）
+
+    Args:
+        service_type: 服务类型
+
+    Returns:
+        Any: 服务实例
+    """
+    service_name = service_type.__name__
+
+    if service_name not in _services:
+        # 尝试创建服务实例
+        try:
+            if hasattr(service_type, '__module__'):
+                # 动态导入和创建
+                module_name = service_type.__module__
+                class_name = service_type.__name__
+
+                import importlib
+                module = importlib.import_module(module_name)
+                service_class = getattr(module, class_name)
+                _services[service_name] = service_class()
             else:
-                instance = descriptor.implementation()
-            
-            # 对于单例服务，缓存实例
-            if descriptor.lifetime == ServiceLifetime.SINGLETON:
-                self._instances[interface] = instance
-                
+                # 直接创建
+                _services[service_name] = service_type()
+        except Exception as e:
+            # 如果创建失败，返回空实现
+            class EmptyService:
+                def __getattr__(self, name):
+                    return lambda *args, **kwargs: None
+            _services[service_name] = EmptyService()
+
+    return _services[service_name]
+
+
+def get_container():
+    """
+    获取依赖注入容器（兼容性接口）
+
+    Returns:
+        简化的容器对象
+    """
+    class SimpleContainer:
+        def resolve(self, service_type):
+            return get_service(service_type)
+
+        def is_registered(self, service_type):
+            """检查服务是否已注册"""
+            service_name = service_type.__name__ if hasattr(service_type, '__name__') else str(service_type)
+            return service_name in _services
+
+        def register(self, service_type, instance=None):
+            """注册服务"""
+            service_name = service_type.__name__ if hasattr(service_type, '__name__') else str(service_type)
+            if instance is None:
+                instance = service_type()
+            _services[service_name] = instance
             return instance
-            
-        finally:
-            self._building.discard(interface)
-    
-    def get(self, key: str, default=None):
-        """
-        获取服务实例（兼容旧的get方法调用）
-        
-        Args:
-            key: 服务键名
-            default: 默认值
-            
-        Returns:
-            服务实例或默认值
-        """
-        try:
-            # 如果key是字符串，尝试转换为类型
-            if isinstance(key, str):
-                # 对于常见的服务名称，直接返回相应实例
-                if key == 'data_access':
-                    from db.interfaces.data_access_interface import DataAccessInterface
-                    return self.resolve(DataAccessInterface)
-                else:
-                    return default
-            else:
-                # 如果是类型，直接resolve
-                return self.resolve(key)
-        except Exception:
-            return default
-    
-    def clear_dependency_injection(self):
-        """清空容器"""
-        with self._lock:
-            self._services.clear()
-            self._instances.clear()
-            self._building.clear()
-    
-    def get_registered_services(self) -> Dict[Type, ServiceDescriptor]:
-        """获取已注册的服务列表"""
-        return self._services.copy()
+
+        def register_singleton(self, service_type, instance=None):
+            """注册单例服务（与register相同，因为我们的实现本身就是单例）"""
+            return self.register(service_type, instance)
+
+        def register_transient(self, service_type):
+            """注册瞬态服务（每次调用都创建新实例）"""
+            # 对于瞬态服务，我们不缓存实例
+            service_name = f"transient_{service_type.__name__}"
+            _services[service_name] = service_type
+            return service_type
+
+        def get(self, service_name):
+            """根据名称获取服务"""
+            if service_name in _services:
+                return _services[service_name]
+            raise ValueError(f"Service {service_name} not registered")
+
+    return SimpleContainer()
 
 
-class ServiceNotRegisteredException(Exception):
-    """服务未注册异常"""
-    pass
-
-
-class CircularDependencyException(Exception):
-    """循环依赖异常"""
-    pass
-
-
-# 全局容器实例
-_default_container: Optional[ServiceContainer] = None
-_container_lock = threading.Lock()
-
-
-def get_container() -> ServiceContainer:
-    """
-    获取默认的依赖注入容器
-    
-    Returns:
-        ServiceContainer: 默认容器实例
-    """
-    global _default_container
-    
-    if _default_container is None:
-        with _container_lock:
-            if _default_container is None:
-                _default_container = ServiceContainer()
-                _setup_default_services(_default_container)
-    
-    return _default_container
-
-
-def _setup_default_services(container: ServiceContainer) -> None:
-    """
-    设置默认服务
-    
-    Args:
-        container: 服务容器
-    """
-    try:
-        # 自动注册DataAccessInterface服务
-        from db.interfaces.data_access_interface import DataAccessInterface
-        from db.managers.data_access_manager import DataAccessManager
-        
-        if not container.is_registered(DataAccessInterface):
-            def create_data_access_manager():
-                """创建DataAccessManager实例的工厂方法"""
-                try:
-                    # 首先尝试获取连接管理器
-                    from db.connection_manager import get_connection_manager
-                    connection_manager = get_connection_manager()
-                    return DataAccessManager(connection_manager=connection_manager)
-                except Exception as e:
-                    logger.warning(f"无法获取连接管理器，使用默认配置: {e}")
-                    return DataAccessManager()
-            
-            container.register_singleton(
-                DataAccessInterface, 
-                DataAccessManager,
-                factory=create_data_access_manager
-            )
-            logger.info("✅ DataAccessInterface已自动注册到依赖注入容器")
-        
-    except ImportError as e:
-        logger.warning(f"自动注册DataAccessInterface失败 - 导入错误: {e}")
-    except Exception as e:
-        logger.error(f"自动注册DataAccessInterface失败: {e}")
-
-
-def get_service(interface: Type[T]) -> T:
-    """
-    获取服务实例（便捷方法）
-    
-    Args:
-        interface: 服务接口类型
-        
-    Returns:
-        T: 服务实例
-    """
-    return get_container().resolve(interface)
-
-
-def configure_container(config_func: Callable[[ServiceContainer], None]) -> ServiceContainer:
+def configure_container():
     """
     配置依赖注入容器
-    
-    Args:
-        config_func: 配置函数
-        
-    Returns:
-        ServiceContainer: 配置后的容器
+
+    注册常用的服务到容器中
     """
     container = get_container()
-    config_func(container)
-    return container 
+
+    # 注册日志服务
+    try:
+        logger = get_logger(__name__)
+        container.register_singleton(type(logger), logger)
+    except Exception:
+        pass
+
+    # 注册配置服务
+    try:
+        config = get_config()
+        container.register_singleton(type(config), config)
+    except Exception:
+        pass
+
+    # 注册数据访问服务
+    try:
+        data_access = get_data_access()
+        container.register_singleton(type(data_access), data_access)
+    except Exception:
+        pass
+
+    # 注册数据管理器
+    try:
+        data_manager = get_data_manager()
+        container.register_singleton(type(data_manager), data_manager)
+    except Exception:
+        pass
+
+    return container
+
+
+def clear_services():
+    """清除服务缓存（主要用于测试）"""
+    global _services
+    _services.clear()

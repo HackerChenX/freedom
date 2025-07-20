@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -15,10 +16,10 @@ from typing import Dict, List, Union, Optional, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class VolumeRatioVr(BaseIndicator, PatternSignalMixin):

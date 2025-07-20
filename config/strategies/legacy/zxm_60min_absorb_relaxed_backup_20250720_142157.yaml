@@ -1,0 +1,58 @@
+strategy:
+  id: "ZXM_60MIN_ABSORB_RELAXED"
+  name: "ZXM 60分钟吸筹策略 (放宽版)"
+  description: "基于60分钟ZXM吸筹信号的选股策略，使用放宽的条件参数"
+  version: "1.0"
+  author: "system"
+  create_time: "2025-07-17 13:48:00"
+  update_time: "2025-07-17 13:48:00"
+
+  # 策略条件：60分钟ZXM吸筹信号（放宽条件）
+  conditions:
+    # 60分钟时间框架下的ZXM吸筹信号
+    - type: indicator
+      indicator_id: ZXM_BS_ABSORB
+      period: "60min"
+      signal_type: BUY
+      parameter: "zxm_bs_absorb_signal"
+      operator: "="
+      value: 1
+      description: "60分钟时间框架下出现ZXM主力吸筹信号（放宽版）"
+
+  # 基础过滤条件（更宽松）
+  filters:
+    # 市场范围
+    market: ["主板", "创业板", "科创板"]
+    
+    # 行业过滤（空表示不限制）
+    industry: []
+    
+    # 市值范围（亿元）- 放宽范围
+    market_cap:
+      min: 5      # 降低最小市值要求
+      max: 10000  # 提高最大市值要求
+    
+    # 价格范围（元）- 放宽范围
+    price:
+      min: 1.0    # 降低最小价格
+      max: 500.0  # 提高最大价格
+    
+    # 成交量过滤（最小日均成交量）- 放宽要求
+    volume:
+      min_avg_volume: 500000  # 降低成交量要求
+
+  # 排序规则
+  sort:
+    - field: "zxm_absorb_strength"
+      direction: "DESC"
+    - field: "market_cap"
+      direction: "ASC"
+
+  # 放宽参数设置
+  parameters:
+    # ZXM指标的内部参数调整
+    zxm_bs_absorb:
+      ema_v11_threshold: 25    # 放宽从13到25
+      v12_threshold: 3         # 放宽从13到3
+      xg_min_count: 1          # 保持最小要求
+      confidence_threshold: 0.4 # 降低置信度要求 

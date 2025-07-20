@@ -5,20 +5,20 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testzxmpatternindicator_patterns(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testzxmpatternindicator_patterns(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """ZXMPatternIndicator指标测试类"""
     
-    def set_up_Patterns_Test_Zxm_Patterns(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Patterns_Test_Zxm_Patterns(self)
+        super().setUp()
         
-        self.indicator = ZXMPattern_indicator()
+        self.indicator = complete_registry.create_indicator('ZXM_TECHNICAL_FORM')
         self.expected_columns = [
             'class_one_buy', 'class_two_buy', 'class_three_buy',
             'breakout_pullback_buy', 'volume_shrink_platform_buy',
@@ -28,14 +28,10 @@ class Testzxmpatternindicator_patterns(unittest.TestCase, Indicator_test_mixin, 
             'ma_convergence', 'macd_zero_hover', 'long_lower_shadow',
             'ma_precise_support', 'small_alternating'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Patterns_Test_Zxm_Patterns(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Patterns_Test_Zxm_Patterns(self)
-    
+
     def test_zxm_pattern_indicator_initialization(self):
         """测试ZXMPatternIndicator初始化"""
         # 测试默认初始化
@@ -182,7 +178,7 @@ class Testzxmpatternindicator_patterns(unittest.TestCase, Indicator_test_mixin, 
     def test_zxm_pattern_indicator_class_one_buy(self):
         """测试ZXMPatternIndicator一类买点"""
         # 需要足够的数据进行一类买点识别
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -201,7 +197,7 @@ class Testzxmpatternindicator_patterns(unittest.TestCase, Indicator_test_mixin, 
     def test_zxm_pattern_indicator_class_two_buy(self):
         """测试ZXMPatternIndicator二类买点"""
         # 需要足够的数据进行二类买点识别
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         

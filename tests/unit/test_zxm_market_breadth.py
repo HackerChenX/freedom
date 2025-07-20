@@ -13,7 +13,7 @@ from indicators.complete_indicator_registry import complete_registry
 class Test_zXMMarket_breadth(unittest.TestCase):
     """ZXM市场宽度指标测试类"""
     
-    def set_up_Breadth(self):
+    def setUp(self):
         """设置测试数据"""
         # 生成多股票测试数据
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')

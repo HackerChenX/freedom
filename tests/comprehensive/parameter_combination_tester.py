@@ -188,7 +188,7 @@ class ParameterCombinationTester:
             }
         }
     
-    @performance_monitor(threshold_seconds=180.0)
+    @performance_monitor(threshold=180.0)
     @exception_handler(reraise=True)
     def run_comprehensive_parameter_tests(self, 
                                          indicators: Optional[List[str]] = None,

@@ -19,7 +19,7 @@ sys.path.insert(0, root_dir)
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_service
 from enums.kline_period import Kline_period
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.path_utils import get_result_dir
 from indicators.complete_indicator_registry import complete_registry
 from analysis.market.market_dimension_analyzer import Market_dimension_analyzer

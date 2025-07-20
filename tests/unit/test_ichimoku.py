@@ -5,30 +5,26 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testichimoku_ichimoku(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testichimoku_ichimoku(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """Ichimoku指标测试类"""
     
-    def set_up_Ichimoku(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Ichimoku(self)
+        super().setUp()
         
-        self.indicator = Ichimoku(tenkan_period=9, kijun_period=26, senkou_b_period=52, chikou_period=26)
+        self.indicator = complete_registry.create_indicator('ICHIMOKU', tenkan_period=9, kijun_period=26, senkou_b_period=52, chikou_period=26)
         self.expected_columns = ['tenkan_sen', 'kijun_sen', 'senkou_span_a', 'senkou_span_b', 
                                 'chikou_span', 'kumo_top', 'kumo_bottom', 'kumo_thickness']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 120}
         ])
-    
-    def tear_down_Ichimoku(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Ichimoku(self)
-    
+
     def test_ichimoku_calculation_accuracy(self):
         """测试Ichimoku计算准确性"""
         result = self.indicator.calculate(self.data)

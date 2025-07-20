@@ -4,6 +4,8 @@ TRIX三重指数平滑移动平均线模块
 实现TRIX指标计算，用于过滤短期波动，捕捉中长期趋势
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, Dict, List, Union, Optional, Any, Tuple
@@ -11,9 +13,9 @@ import logging
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TripleExponentialAverage(BaseIndicator, PatternSignalMixin):

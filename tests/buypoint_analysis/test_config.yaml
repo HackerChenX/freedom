@@ -1,0 +1,250 @@
+# 买点分析测试配置文件
+
+# 测试基本配置
+test_config:
+  # 每个测试用例的数据点数量
+  data_points: 60
+  
+  # 准确率阈值（80%）
+  accuracy_threshold: 0.8
+  
+  # 最大执行时间（秒）
+  max_execution_time: 300
+  
+  # 每个形态的测试迭代次数
+  test_iterations: 3
+  
+  # 置信度阈值
+  confidence_threshold: 0.6
+
+# 形态测试配置
+pattern_config:
+  # 趋势指标形态
+  trend_patterns:
+    MA_GOLDEN_CROSS:
+      description: "移动平均线金叉"
+      expected_accuracy: 0.85
+      test_priority: "high"
+    
+    MA_DEATH_CROSS:
+      description: "移动平均线死叉"
+      expected_accuracy: 0.80
+      test_priority: "high"
+    
+    EMA_GOLDEN_CROSS:
+      description: "指数移动平均线金叉"
+      expected_accuracy: 0.85
+      test_priority: "medium"
+    
+    DMI_GOLDEN_CROSS:
+      description: "DMI金叉"
+      expected_accuracy: 0.75
+      test_priority: "medium"
+
+  # 振荡器指标形态
+  oscillator_patterns:
+    RSI_OVERBOUGHT:
+      description: "RSI超买"
+      expected_accuracy: 0.90
+      test_priority: "high"
+    
+    RSI_OVERSOLD:
+      description: "RSI超卖"
+      expected_accuracy: 0.90
+      test_priority: "high"
+    
+    KDJ_GOLDEN_CROSS:
+      description: "KDJ金叉"
+      expected_accuracy: 0.80
+      test_priority: "high"
+    
+    KDJ_OVERBOUGHT:
+      description: "KDJ超买"
+      expected_accuracy: 0.85
+      test_priority: "medium"
+
+  # 动量指标形态
+  momentum_patterns:
+    MACD_GOLDEN_CROSS:
+      description: "MACD金叉"
+      expected_accuracy: 0.85
+      test_priority: "high"
+    
+    MACD_DEATH_CROSS:
+      description: "MACD死叉"
+      expected_accuracy: 0.80
+      test_priority: "high"
+    
+    MACD_ABOVE_ZERO_GOLDEN:
+      description: "MACD零轴上金叉"
+      expected_accuracy: 0.75
+      test_priority: "medium"
+
+  # 成交量指标形态
+  volume_patterns:
+    OBV_GOLDEN_CROSS:
+      description: "OBV金叉"
+      expected_accuracy: 0.70
+      test_priority: "medium"
+    
+    PVT_GOLDEN_CROSS:
+      description: "PVT金叉"
+      expected_accuracy: 0.70
+      test_priority: "medium"
+    
+    MFI_OVERBOUGHT:
+      description: "MFI超买"
+      expected_accuracy: 0.75
+      test_priority: "medium"
+
+  # 波动性指标形态
+  volatility_patterns:
+    BOLL_UPPER_BREAKOUT:
+      description: "布林带上轨突破"
+      expected_accuracy: 0.80
+      test_priority: "high"
+    
+    BOLL_LOWER_BREAKOUT:
+      description: "布林带下轨突破"
+      expected_accuracy: 0.80
+      test_priority: "high"
+    
+    BOLL_SQUEEZE:
+      description: "布林带收口"
+      expected_accuracy: 0.70
+      test_priority: "medium"
+
+  # K线形态
+  candlestick_patterns:
+    DOJI:
+      description: "十字星"
+      expected_accuracy: 0.75
+      test_priority: "medium"
+    
+    HAMMER:
+      description: "锤头线"
+      expected_accuracy: 0.70
+      test_priority: "medium"
+    
+    ENGULFING:
+      description: "吞没形态"
+      expected_accuracy: 0.75
+      test_priority: "medium"
+
+# 性能测试配置
+performance_config:
+  # 单个测试最大执行时间（秒）
+  max_single_test_time: 5.0
+  
+  # 批量测试最大执行时间（秒）
+  max_batch_test_time: 300.0
+  
+  # 内存使用限制（MB）
+  max_memory_usage: 1024
+  
+  # 并发测试数量
+  concurrent_tests: 1
+
+# 数据生成配置
+data_generation:
+  # 基础价格范围
+  base_price_range:
+    min: 5.0
+    max: 50.0
+  
+  # 波动率范围
+  volatility_range:
+    min: 0.01
+    max: 0.05
+  
+  # 成交量范围
+  volume_range:
+    min: 1000000
+    max: 10000000
+  
+  # 趋势强度
+  trend_strength:
+    weak: 0.1
+    medium: 0.3
+    strong: 0.5
+
+# 报告配置
+report_config:
+  # 报告输出目录
+  output_directory: "tests/data/buypoint_analysis_reports"
+  
+  # 报告格式
+  formats:
+    - "json"
+    - "markdown"
+    - "csv"
+  
+  # 是否包含详细结果
+  include_detailed_results: true
+  
+  # 是否生成图表
+  generate_charts: false
+  
+  # 报告语言
+  language: "zh-CN"
+
+# 验证配置
+validation_config:
+  # 最小测试覆盖率
+  min_test_coverage: 0.8
+  
+  # 最小成功率
+  min_success_rate: 0.8
+  
+  # 是否启用严格模式
+  strict_mode: false
+  
+  # 是否跳过已知失败的测试
+  skip_known_failures: false
+
+# 日志配置
+logging_config:
+  # 日志级别
+  level: "INFO"
+  
+  # 日志格式
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # 日志文件
+  file: "tests/logs/buypoint_analysis_test.log"
+  
+  # 是否输出到控制台
+  console_output: true
+
+# 环境配置
+environment_config:
+  # 测试环境
+  test_environment: "development"
+  
+  # 数据库配置（如果需要）
+  database:
+    use_mock_data: true
+    connection_timeout: 30
+  
+  # 缓存配置
+  cache:
+    enabled: false
+    ttl: 3600
+
+# 集成测试配置
+integration_config:
+  # 多形态组合测试
+  pattern_combinations:
+    - ["MACD_GOLDEN_CROSS", "RSI_OVERSOLD"]
+    - ["KDJ_GOLDEN_CROSS", "BOLL_LOWER_BREAKOUT"]
+    - ["MA_GOLDEN_CROSS", "DOJI"]
+    - ["EMA_GOLDEN_CROSS", "HAMMER"]
+  
+  # 组合测试成功率阈值
+  combination_success_threshold: 0.5
+  
+  # 负面测试配置
+  negative_tests:
+    random_data_sets: 5
+    max_patterns_allowed: 2
+    success_threshold: 0.8

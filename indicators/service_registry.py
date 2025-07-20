@@ -1,9 +1,11 @@
 """
-from config import get_config
+from utils.dependency_injection import get_config
 核心服务层服务注册配置
 
 负责注册L4（核心服务层）的服务
 """
+
+from utils.dependency_injection import get_logger
 
 import logging
 from typing import TYPE_CHECKING
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
     from utils.period_manager import PeriodManager
     from indicators.pattern_registry import PatternRegistry
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def register_core_services(container: ServiceContainer = None) -> ServiceContainer:

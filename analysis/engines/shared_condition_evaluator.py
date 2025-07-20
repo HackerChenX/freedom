@@ -12,7 +12,7 @@ import re
 import ast
 from datetime import datetime
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.cache import Memory_cache
 from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 

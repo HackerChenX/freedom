@@ -19,7 +19,7 @@ import threading
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from analysis.integration.unified_data_adapter import get_unified_data_adapter
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from strategy.strategy_factory import Strategy_factory

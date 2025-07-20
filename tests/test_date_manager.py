@@ -17,7 +17,7 @@ import unittest
 import datetime
 import pandas as pd
 import numpy as np
-from unittest.mock import Mock, patch, Magic_mock
+from unittest.mock import MagicMock
 import sys
 import os
 
@@ -31,7 +31,7 @@ from analysis.engines.date_manager import Date_manager, Date_format, Date_range,
 class Test_date_manager(unittest.TestCase):
     """智能日期管理器测试类"""
     
-    def set_up_Manager(self):
+    def setUp(self):
         """测试前置设置"""
         # 模拟ClickHouse数据库连接
         with patch('analysis.engines.date_manager.get_clickhouse_db') as mock_db:

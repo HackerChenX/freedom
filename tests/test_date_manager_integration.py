@@ -10,7 +10,7 @@ import unittest
 import datetime
 import pandas as pd
 import numpy as np
-from unittest.mock import Mock, patch, Magic_mock
+from unittest.mock import MagicMock
 
 from analysis.engines.date_manager import Date_manager, Date_format, Date_range, Week_day
 from utils.cache import LRUCache
@@ -19,7 +19,7 @@ from utils.cache import LRUCache
 class Test_date_manager_integration(unittest.TestCase):
     """日期管理器集成测试"""
     
-    def set_up_Integration_Test_Date_Manager_Integration(self):
+    def setUp(self):
         """测试前准备"""
         # 创建模拟数据库
         self.mock_db = Mock()

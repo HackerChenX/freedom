@@ -20,7 +20,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from strategy.strategy_executor import Strategy_executor
-from strategy.optimized_strategy_executor import Optimized_strategy_executor
+from strategy.strategy_executor import UnifiedStrategyExecutor as Optimized_strategy_executor
 from strategy.strategy_manager import Strategy_manager
 from utils.logger import get_logger
 

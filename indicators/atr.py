@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from utils.dependency_injection import get_logger
 """
 ATR_Atr (Average True Range) 平均真实波幅指标
 
@@ -12,9 +13,9 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AtrAtr(BaseIndicator, PatternSignalMixin):

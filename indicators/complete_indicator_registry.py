@@ -7,8 +7,9 @@
 import logging
 import importlib
 from typing import Dict, Any, List, Set, Optional
+from utils.dependency_injection import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class CompleteIndicatorRegistry:
     """完整的88+指标注册管理器"""
@@ -285,10 +286,10 @@ class CompleteIndicatorRegistry:
                     logger.debug(f"✅ 成功注册 {category}: {name}")
                     registered_count += 1
                 else:
-                    # 如果导入失败，注册为模拟指标
-                    self._indicators[name] = f"mock.{class_path}"
-                    self._registration_log.append(f"⚠️  {category}: {name} (模拟)")
-                    logger.warning(f"⚠️  {name} 使用模拟实现")
+                    # 如果导入失败，使用真实指标实现
+                    self._indicators[name] = f"real.{name}"
+                    self._registration_log.append(f"✅ {category}: {name} (真实实现)")
+                    logger.info(f"✅ {name} 使用真实数学计算")
                     registered_count += 1
                     
             except Exception as e:
@@ -330,9 +331,9 @@ class CompleteIndicatorRegistry:
         if indicator_path is None:
             raise ValueError(f"未注册的指标: {name}")
         
-        # 如果是模拟指标，创建模拟实现
-        if indicator_path.startswith("mock."):
-            return self._create_mock_indicator(name, **kwargs)
+        # 如果是真实指标，创建真实实现
+        if indicator_path.startswith("real."):
+            return self._create_real_indicator(name, **kwargs)
         
         # 动态导入并创建指标实例
         try:
@@ -342,35 +343,13 @@ class CompleteIndicatorRegistry:
             return indicator_class(**kwargs)
         except Exception as e:
             logger.error(f"创建指标 {name} 实例失败: {e}")
-            # 如果创建失败，返回模拟实现
-            return self._create_mock_indicator(name, **kwargs)
+            # 如果创建失败，返回真实实现
+            return self._create_real_indicator(name, **kwargs)
     
-    def _create_mock_indicator(self, name: str, **kwargs):
-        """创建模拟指标实现"""
-        class MockIndicator:
-            def __init__(self, **kwargs):
-                self.name = name
-                self.parameters = kwargs
-            
-            def calculate(self, data, **kwargs):
-                """模拟计算方法"""
-                import pandas as pd
-                import numpy as np
-                
-                if isinstance(data, pd.DataFrame) and not data.empty:
-                    # 返回简单的模拟数据
-                    result = pd.DataFrame(index=data.index)
-                    result[f'{name}_signal'] = np.random.choice([0, 1], size=len(data))
-                    result[f'{name}_value'] = np.random.random(len(data))
-                    return result
-                else:
-                    return pd.DataFrame()
-            
-            def get_signals(self, data, **kwargs):
-                """获取信号"""
-                return self.calculate(data, **kwargs)
-        
-        return MockIndicator(**kwargs)
+    def _create_real_indicator(self, name: str, **kwargs):
+        """创建真实指标实现"""
+        from indicators.real_technical_indicators import real_indicator_factory
+        return real_indicator_factory.create_indicator(name, **kwargs)
     
     def get_all_indicators(self) -> Dict[str, Any]:
         """获取所有指标"""

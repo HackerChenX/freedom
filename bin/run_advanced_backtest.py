@@ -43,7 +43,7 @@ class AdvancedBacktestSystem:
         self.backtest_results = {}
         
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     def load_stock_universe(self, stock_codes: Optional[List[str]] = None,
                            start_date: str = None, end_date: str = None) -> Dict[str, pd.DataFrame]:
         """
@@ -94,7 +94,7 @@ class AdvancedBacktestSystem:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     def prepare_backtest_config(self, config_file: Optional[str] = None) -> Dict[str, Any]:
         """
         准备回测配置
@@ -132,7 +132,7 @@ class AdvancedBacktestSystem:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=30.0)
+    @performance_monitor(threshold=30.0)
     def run_single_strategy_backtest(self, strategy_name: str, 
                                    stock_data: Dict[str, pd.DataFrame],
                                    config: Dict[str, Any],
@@ -198,7 +198,7 @@ class AdvancedBacktestSystem:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     def run_multi_strategy_backtest(self, strategy_names: List[str],
                                   stock_data: Dict[str, pd.DataFrame],
                                   config: Dict[str, Any],
@@ -505,7 +505,7 @@ class AdvancedBacktestSystem:
             logger.error(f"生成回测汇总报告失败: {e}")
 
 @exception_handler(reraise=True)
-@performance_monitor(threshold_seconds=300.0)
+@performance_monitor(threshold=300.0)
 def main_28():
     """主函数"""
     parser = argparse.ArgumentParser(description='高级回测系统')

@@ -4,6 +4,8 @@ ZXM体系趋势识别指标模块
 实现ZXM体系的7个趋势识别指标
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
@@ -11,10 +13,10 @@ from scipy.stats import linregress
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.score_manager import IndicatorScoreManager
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin):

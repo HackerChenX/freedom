@@ -9,14 +9,14 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
 from formula.stock_formula import StockFormula
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from models.stock_info import StockInfo  # 导入Stock_info类
 from indicators.ma import MaMa as MA  # 导入MA指标
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class DualMAStrategy(BaseStrategy):

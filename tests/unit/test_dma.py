@@ -7,26 +7,26 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import Indicator_test_mixin
 from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.helper.log_capture import Log_capture_mixin, LogCaptureMixin
 
 
 class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """DMA指标测试类"""
     
-    def set_up_Dma(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Dma(self)
+        Log_capture_mixin.setUp(self)
         
         self.indicator = complete_registry.create_indicator('DMA', fast_period=10, slow_period=50, ama_period=10)
         self.expected_columns = ['DMA', 'AMA', 'DMA_PCT', 'FAST_MA_CHG']
         self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 60}
         ])
-    
-    def tear_down_Dma(self):
+
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Dma(self)
+        Log_capture_mixin.tearDown(self)
     
     def test_dma_calculation_accuracy(self):
         """测试DMA计算准确性"""

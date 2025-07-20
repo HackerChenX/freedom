@@ -17,7 +17,7 @@ from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 class Test_complex_logic_processor_integration(unittest.TestCase):
     """复杂逻辑处理器集成测试"""
     
-    def set_up_Integration_Test_Complex_Logic_Processor_Integration(self):
+    def setUp(self):
         """测试设置"""
         # 创建统一指标引擎
         self.indicator_engine = Unified_indicator_engine()

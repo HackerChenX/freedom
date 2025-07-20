@@ -10,11 +10,11 @@ import datetime
 from typing import List, Dict, Any, Union, Optional
 
 
-class Testdatagenerator_generator:
+class TestDataGenerator:
     """测试数据生成器类"""
     
     @staticmethod
-    def generate_price_sequence_Generator(sequence_specs: List[Dict[str, Any]], 
+    def generate_price_sequence(sequence_specs: List[Dict[str, Any]],
                                 base_date: str = '2023-01-01',
                                 base_volume: int = 10000,
                                 apply_noise: bool = True,
@@ -639,5 +639,4 @@ class Testdatagenerator_generator:
 
 
 # 为兼容性创建别名
-TestDataGenerator = Testdatagenerator_generator
-Test_data_generator = Testdatagenerator_generator
+Test_data_generator = TestDataGenerator

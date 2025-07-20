@@ -22,7 +22,7 @@ sys.path.insert(0, root_dir)
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.decorators import exception_handler, performance_monitor
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.date_utils import get_trading_day
 from analysis.engines.date_manager import Date_manager
 from analysis.engines.complex_logic_processor import Complex_logic_processor
@@ -41,7 +41,7 @@ class AstockMarketAnalyzer:
         self.analysis_cache = {}
         
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     def get_market_overview(self, date: Optional[str] = None) -> Dict[str, Any]:
         """
         获取市场概况
@@ -93,7 +93,7 @@ class AstockMarketAnalyzer:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     def _get_market_indices(self, date: str) -> Dict[str, Any]:
         """获取市场指数数据"""
         try:
@@ -155,7 +155,7 @@ class AstockMarketAnalyzer:
         return name_map.get(code, code)
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=8.0)
+    @performance_monitor(threshold=8.0)
     def _get_stock_statistics(self, date: str) -> Dict[str, Any]:
         """获取个股统计数据"""
         try:
@@ -207,7 +207,7 @@ class AstockMarketAnalyzer:
             return {}
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     def _get_industry_analysis(self, date: str) -> Dict[str, Any]:
         """获取行业分析数据"""
         try:
@@ -255,7 +255,7 @@ class AstockMarketAnalyzer:
             return {}
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=6.0)
+    @performance_monitor(threshold=6.0)
     def _get_capital_flow_analysis(self, date: str) -> Dict[str, Any]:
         """获取资金流向分析"""
         try:
@@ -299,7 +299,7 @@ class AstockMarketAnalyzer:
             return {}
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     def _get_market_sentiment(self, date: str) -> Dict[str, Any]:
         """获取市场情绪指标"""
         try:
@@ -444,7 +444,7 @@ class AstockMarketAnalyzer:
             return {}
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=15.0)
+    @performance_monitor(threshold=15.0)
     def analyze_stock_selection_opportunities(self, date: Optional[str] = None) -> Dict[str, Any]:
         """
         分析选股机会

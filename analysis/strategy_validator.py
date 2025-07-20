@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.path_utils import get_backtest_result_dir, get_strategies_dir
 from strategy.strategy_factory import Strategy_factory
 from strategy.strategy_manager import Strategy_manager

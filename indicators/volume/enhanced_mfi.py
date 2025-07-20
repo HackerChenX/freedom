@@ -4,6 +4,8 @@
 实现增强型MFI指标计算，提供自适应阈值、异常成交量滤波、价格结构协同分析和市场环境适应功能
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
@@ -11,9 +13,9 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.mfi import MFI
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EnhancedMfi(MFI):

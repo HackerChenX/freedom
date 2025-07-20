@@ -25,7 +25,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from db.unified_data_manager import get_unified_data_manager
-from strategy.optimized_strategy_executor import Optimized_strategy_executor
+from strategy.strategy_executor import UnifiedStrategyExecutor as Optimized_strategy_executor
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger
 from utils.date_utils import get_latest_trading_date

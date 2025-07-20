@@ -7,7 +7,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.technical_utils import find_peaks_and_troughs
 
-from utils.logger import get_logger
+from utils.dependency_injection import get_logger
 logger = get_logger(__name__)
 from utils.indicator_utils import crossover, crossunder
 

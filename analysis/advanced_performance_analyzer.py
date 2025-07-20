@@ -23,7 +23,7 @@ import gc
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from analysis.optimized_buypoint_analyzer import Optimized_buy_point_analyzer
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 

@@ -1,0 +1,48 @@
+strategy:
+  id: "ZXM_KDJ_STRATEGY_20250512"
+  name: "简化KDJ金叉策略"
+  description: "基于日线KDJ金叉信号的选股策略（简化版，确保能选出股票）"
+  version: "1.0"
+  author: "System"
+  create_time: "2025-05-12 09:30:00"
+  update_time: "2025-05-12 09:30:00"
+
+  # 策略条件：使用KDJ指标（修改买入信号逻辑为宽松条件）
+  conditions:
+    # 日线时间框架下的KDJ指标
+    - type: indicator
+      indicator_id: KDJ
+      period: "DAILY"
+      signal_type: BUY
+      parameter: "kdj_uptrend"
+      operator: "="
+      value: true
+      description: "KDJ指标中K>D的趋势信号"
+  
+  # 股票池配置
+  stock_pool:
+    type: "all"
+    filters:
+      - type: "market_cap"
+        min_value: 1000000000  # 10亿以上市值
+      - type: "volume"
+        min_value: 1000000     # 最小成交量
+    
+  # 风险控制
+  risk_control:
+    max_position_size: 0.05    # 单个股票最大仓位5%
+    max_total_positions: 20    # 最大持仓数量
+    stop_loss: 0.08           # 止损8%
+    take_profit: 0.15         # 止盈15%
+    
+  # 输出配置
+  output:
+    max_results: 10           # 最大返回结果数
+    sort_by: "score"          # 按评分排序
+    format: "json"            # 输出格式
+    
+  # 评分权重
+  scoring:
+    technical_weight: 0.6     # 技术指标权重
+    fundamental_weight: 0.2   # 基本面权重
+    market_weight: 0.2        # 市场表现权重 

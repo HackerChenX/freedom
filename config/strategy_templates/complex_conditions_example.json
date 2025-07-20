@@ -1,0 +1,262 @@
+{
+  "strategy": {
+    "id": "COMPLEX_CONDITIONS_DEMO",
+    "name": "复杂条件组合演示策略",
+    "description": "演示复杂条件组合逻辑的使用，包括AND、OR、NOT操作符和嵌套表达式",
+    "version": "1.0.0",
+    "author": "system",
+    "category": "composite",
+    "risk_level": "medium",
+    "created_date": "2025-07-20",
+    "updated_date": "2025-07-20"
+  },
+  "technical_indicators": {
+    "primary_indicators": [
+      {
+        "indicator_id": "MACD",
+        "parameters": {
+          "fast_period": 12,
+          "slow_period": 26,
+          "signal_period": 9
+        },
+        "conditions": {
+          "logic": "AND",
+          "conditions": [
+            {
+              "id": "MACD_POSITIVE",
+              "field": "macd",
+              "operator": ">",
+              "value": 0,
+              "weight": 0.4,
+              "lookback_days": 1
+            },
+            {
+              "id": "HISTOGRAM_POSITIVE",
+              "field": "histogram",
+              "operator": ">",
+              "value": 0,
+              "weight": 0.6,
+              "lookback_days": 1
+            }
+          ],
+          "weight": 0.4
+        }
+      },
+      {
+        "indicator_id": "KDJ",
+        "parameters": {
+          "k_period": 9,
+          "d_period": 3,
+          "j_multiplier": 3
+        },
+        "conditions": {
+          "expression": "(K_OVERSOLD OR D_OVERSOLD) AND NOT J_OVERBOUGHT",
+          "conditions": [
+            {
+              "id": "K_OVERSOLD",
+              "field": "k",
+              "operator": "between",
+              "value": [20, 50],
+              "weight": 0.3
+            },
+            {
+              "id": "D_OVERSOLD",
+              "field": "d",
+              "operator": "between",
+              "value": [20, 50],
+              "weight": 0.3
+            },
+            {
+              "id": "J_OVERBOUGHT",
+              "field": "j",
+              "operator": ">",
+              "value": 80,
+              "weight": 0.4
+            }
+          ],
+          "weight": 0.3
+        }
+      },
+      {
+        "indicator_id": "RSI",
+        "parameters": {
+          "period": 14
+        },
+        "conditions": [
+          {
+            "id": "RSI_MODERATE",
+            "field": "rsi",
+            "operator": "between",
+            "value": [30, 70],
+            "weight": 1.0
+          }
+        ]
+      },
+      {
+        "indicator_id": "VOL",
+        "parameters": {
+          "ma_period": 5
+        },
+        "conditions": {
+          "logic": "OR",
+          "conditions": [
+            {
+              "id": "VOLUME_SURGE",
+              "field": "volume_ratio",
+              "operator": ">",
+              "value": 1.5,
+              "weight": 0.7
+            },
+            {
+              "logic": "AND",
+              "conditions": [
+                {
+                  "id": "VOLUME_NORMAL",
+                  "field": "volume_ratio",
+                  "operator": "between",
+                  "value": [0.8, 1.2],
+                  "weight": 0.5
+                },
+                {
+                  "id": "PRICE_STABLE",
+                  "field": "price_change_pct",
+                  "operator": "between",
+                  "value": [-2, 2],
+                  "weight": 0.5
+                }
+              ],
+              "weight": 0.3
+            }
+          ],
+          "weight": 0.3
+        }
+      }
+    ],
+    "combination_logic": "WEIGHTED",
+    "weights": {
+      "MACD": 0.4,
+      "KDJ": 0.3,
+      "RSI": 0.2,
+      "VOL": 0.1
+    }
+  },
+  "time_criteria": {
+    "time_frames": [
+      {
+        "level": "daily",
+        "priority": 1,
+        "required": true
+      },
+      {
+        "level": "60min",
+        "priority": 2,
+        "required": false
+      }
+    ],
+    "date_range": {
+      "target_date": "2025-07-20"
+    },
+    "market_timing": {
+      "trading_session": "full_day",
+      "exclude_holidays": true
+    }
+  },
+  "filters": {
+    "market_filters": {
+      "markets": ["主板", "创业板", "科创板"],
+      "exclude_st": true
+    },
+    "financial_filters": {
+      "market_cap": {
+        "min": 10,
+        "max": 5000
+      },
+      "price_range": {
+        "min": 3.0,
+        "max": 200.0
+      },
+      "volume_filter": {
+        "min_avg_volume": 1000000,
+        "min_turnover": 10000000
+      }
+    }
+  },
+  "selection_parameters": {
+    "max_selections": 30,
+    "min_score": 0.65,
+    "ranking_method": "composite",
+    "diversification": {
+      "max_per_industry": 3,
+      "max_concentration": 0.15
+    }
+  },
+  "validation": {
+    "enable_closed_loop": true,
+    "validation_method": "entry_point_analysis",
+    "validation_threshold": 0.75,
+    "sample_size": 8
+  },
+  "performance_config": {
+    "enable_cache": true,
+    "parallel_processing": true,
+    "max_workers": 4,
+    "timeout_seconds": 300
+  },
+  "examples": {
+    "condition_combinations": {
+      "simple_and": {
+        "description": "简单AND组合：所有条件必须满足",
+        "example": {
+          "logic": "AND",
+          "conditions": [
+            {"field": "macd", "operator": ">", "value": 0},
+            {"field": "rsi", "operator": "between", "value": [30, 70]}
+          ]
+        }
+      },
+      "simple_or": {
+        "description": "简单OR组合：任一条件满足即可",
+        "example": {
+          "logic": "OR",
+          "conditions": [
+            {"field": "volume_ratio", "operator": ">", "value": 1.5},
+            {"field": "price_change_pct", "operator": ">", "value": 3}
+          ]
+        }
+      },
+      "nested_logic": {
+        "description": "嵌套逻辑：复杂的条件组合",
+        "example": {
+          "logic": "AND",
+          "conditions": [
+            {"field": "macd", "operator": ">", "value": 0},
+            {
+              "logic": "OR",
+              "conditions": [
+                {"field": "k", "operator": "<", "value": 30},
+                {"field": "rsi", "operator": "<", "value": 35}
+              ]
+            }
+          ]
+        }
+      },
+      "expression_syntax": {
+        "description": "表达式语法：使用字符串表达式",
+        "example": {
+          "expression": "(MACD_UP AND RSI_OK) OR (VOLUME_HIGH AND NOT OVERBOUGHT)",
+          "conditions": [
+            {"id": "MACD_UP", "field": "macd", "operator": ">", "value": 0},
+            {"id": "RSI_OK", "field": "rsi", "operator": "between", "value": [30, 70]},
+            {"id": "VOLUME_HIGH", "field": "volume_ratio", "operator": ">", "value": 1.5},
+            {"id": "OVERBOUGHT", "field": "rsi", "operator": ">", "value": 80}
+          ]
+        }
+      }
+    },
+    "operator_reference": {
+      "comparison_operators": [">", "<", ">=", "<=", "=", "!=", "between", "cross_up", "cross_down"],
+      "logical_operators": ["AND", "OR", "NOT"],
+      "expression_syntax": "支持括号分组和嵌套，如：(A AND B) OR (C AND NOT D)"
+    }
+  }
+}

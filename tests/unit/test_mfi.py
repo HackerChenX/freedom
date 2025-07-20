@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 class Testmfi_mfi(unittest.TestCase):
     """MFI指标测试类"""
     
-    def set_up_Mfi(self):
+    def setUp(self):
         """设置测试环境"""
         self.mfi = MFI(period=14)
         

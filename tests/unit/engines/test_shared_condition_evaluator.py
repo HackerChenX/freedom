@@ -21,7 +21,7 @@ from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 class Test_shared_condition_evaluator(unittest.TestCase):
     """共享条件评估器测试类"""
     
-    def set_up_Evaluator(self):
+    def setUp(self):
         """测试前准备"""
         self.evaluator = Shared_condition_evaluator()
         

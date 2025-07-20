@@ -11,10 +11,10 @@ import json
 import sys
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.decorators import exception_handler, performance_monitor
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BuyPointAnalyzer:
@@ -66,7 +66,12 @@ class BuyPointAnalyzer:
                 end_date=end_date
             )
             
-            if not stock_data or len(stock_data) == 0:
+            if stock_data is None or (hasattr(stock_data, '__len__') and len(stock_data) == 0):
+                logger.warning(f"未找到 {stock_code} 的数据")
+                return None
+
+            # 如果是DataFrame，检查是否为空
+            if hasattr(stock_data, 'empty') and stock_data.empty:
                 logger.warning(f"未找到 {stock_code} 的数据")
                 return None
             

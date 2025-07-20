@@ -5,36 +5,32 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testinstitutionalbehavior_behavior(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testinstitutionalbehavior_behavior(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """InstitutionalBehavior指标测试类"""
     
-    def set_up_Behavior_Test_Institutional_Behavior(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Behavior_Test_Institutional_Behavior(self)
+        super().setUp()
         
-        self.indicator = complete_registry.create_indicator('INSTITUTIONAL_BEHAVIOR')
+        self.indicator = complete_registry.create_indicator('COMPOSITE')
         self.expected_columns = [
             'inst_concentration', 'inst_profit_ratio', 'inst_cost', 'inst_activity_score',
             'inst_phase', 'behavior_pattern', 'phase_change', 'behavior_intensity', 'behavior_description'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Behavior(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Behavior(self)
-    
+
     def test_institutional_behavior_initialization(self):
         """测试InstitutionalBehavior初始化"""
         # 测试默认初始化
-        default_indicator = complete_registry.create_indicator('INSTITUTIONAL_BEHAVIOR')
+        default_indicator = complete_registry.create_indicator('COMPOSITE')
         self.assert_equal(default_indicator.volume_quantile, 0.85)
         
         # 测试参数设置
@@ -219,7 +215,7 @@ class Testinstitutionalbehavior_behavior(unittest.TestCase, Indicator_test_mixin
     def test_institutional_behavior_classify_behavior(self):
         """测试InstitutionalBehavior行为分类"""
         # 需要足够的数据进行分类
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -237,7 +233,7 @@ class Testinstitutionalbehavior_behavior(unittest.TestCase, Indicator_test_mixin
     def test_institutional_behavior_predict_absorption(self):
         """测试InstitutionalBehavior吸筹预测"""
         # 需要足够的数据进行预测
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 80}
         ])
         

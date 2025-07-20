@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -14,9 +15,9 @@ from typing import List, Dict, Any
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EmaEma(BaseIndicator, PatternSignalMixin):
@@ -36,7 +37,9 @@ class EmaEma(BaseIndicator, PatternSignalMixin):
         Args:
             **kwargs: 指标参数，支持period、price_field、alpha等
         """
-        super().__init__(name="EMA_Ema", description="指数移动平均线")
+        super().__init__()
+        self.name = "EMA"
+        self.description = "指数移动平均线"
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_ema()
@@ -370,4 +373,380 @@ class EmaEma(BaseIndicator, PatternSignalMixin):
         
         return pattern_info_map.get(pattern_id, default_pattern)
 
+    # ==================== 抽象方法实现 ====================
 
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate_ema(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score_Ema(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns_Ema(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters_Ema(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """抽象基类要求的置信度计算方法"""
+        return self.calculate_confidence_Ema(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """统一的计算接口"""
+        return self._calculate_ema(data, **kwargs)
+
+    # ==================== 兼容性方法 - 真实实现 ====================
+
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """真实实现：获取EMA形态"""
+        if data is None or data.empty:
+            return pd.DataFrame()
+
+        # 首先计算EMA指标
+        ema_data = self._calculate_ema(data)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 获取EMA数据和价格数据
+        ema_col = f'EMA{self.period}'
+        if ema_col in ema_data.columns:
+            ema_values = ema_data[ema_col]
+            close_prices = data['close']
+
+            # 1. 价格突破EMA形态
+            patterns_df['EMA_PRICE_ABOVE'] = close_prices > ema_values
+            patterns_df['EMA_PRICE_BELOW'] = close_prices < ema_values
+
+            # 2. 价格穿越EMA形态
+            patterns_df['EMA_PRICE_CROSS_UP'] = (close_prices > ema_values) & (close_prices.shift(1) <= ema_values.shift(1))
+            patterns_df['EMA_PRICE_CROSS_DOWN'] = (close_prices < ema_values) & (close_prices.shift(1) >= ema_values.shift(1))
+
+            # 3. EMA趋势形态
+            patterns_df['EMA_RISING'] = ema_values > ema_values.shift(1)
+            patterns_df['EMA_FALLING'] = ema_values < ema_values.shift(1)
+
+            # 4. EMA强势趋势形态（连续上升/下降）
+            patterns_df['EMA_STRONG_RISING'] = (
+                (ema_values > ema_values.shift(1)) &
+                (ema_values.shift(1) > ema_values.shift(2)) &
+                (ema_values.shift(2) > ema_values.shift(3))
+            )
+            patterns_df['EMA_STRONG_FALLING'] = (
+                (ema_values < ema_values.shift(1)) &
+                (ema_values.shift(1) < ema_values.shift(2)) &
+                (ema_values.shift(2) < ema_values.shift(3))
+            )
+
+            # 5. 价格与EMA距离形态
+            price_distance = (close_prices - ema_values) / ema_values * 100
+            patterns_df['EMA_PRICE_FAR_ABOVE'] = price_distance > 5  # 价格远高于EMA
+            patterns_df['EMA_PRICE_FAR_BELOW'] = price_distance < -5  # 价格远低于EMA
+            patterns_df['EMA_PRICE_NEAR'] = np.abs(price_distance) < 1  # 价格接近EMA
+
+            # 6. EMA支撑阻力形态
+            patterns_df['EMA_SUPPORT'] = (close_prices > ema_values) & (data['low'] <= ema_values)
+            patterns_df['EMA_RESISTANCE'] = (close_prices < ema_values) & (data['high'] >= ema_values)
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """真实实现：计算EMA原始评分"""
+        if data.empty:
+            return pd.Series(dtype=float)
+
+        # 计算EMA指标
+        ema_data = self._calculate_ema(data)
+
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+
+        # 获取EMA数据和价格数据
+        ema_col = f'EMA{self.period}'
+        if ema_col in ema_data.columns:
+            ema_values = ema_data[ema_col]
+            close_prices = data['close']
+
+            # 1. 基于价格与EMA位置的评分
+            # 价格在EMA上方加分
+            price_above = close_prices > ema_values
+            score += price_above * 10
+
+            # 价格在EMA下方减分
+            price_below = close_prices < ema_values
+            score -= price_below * 10
+
+            # 2. 基于价格穿越EMA的评分
+            # 价格上穿EMA加分
+            price_cross_up = (close_prices > ema_values) & (close_prices.shift(1) <= ema_values.shift(1))
+            score += price_cross_up * 15
+
+            # 价格下穿EMA减分
+            price_cross_down = (close_prices < ema_values) & (close_prices.shift(1) >= ema_values.shift(1))
+            score -= price_cross_down * 15
+
+            # 3. 基于EMA趋势的评分
+            # EMA上升趋势加分
+            ema_rising = ema_values > ema_values.shift(1)
+            score += ema_rising * 8
+
+            # EMA下降趋势减分
+            ema_falling = ema_values < ema_values.shift(1)
+            score -= ema_falling * 8
+
+            # 4. 基于强势趋势的评分
+            # EMA强势上升额外加分
+            ema_strong_rising = (
+                (ema_values > ema_values.shift(1)) &
+                (ema_values.shift(1) > ema_values.shift(2)) &
+                (ema_values.shift(2) > ema_values.shift(3))
+            )
+            score += ema_strong_rising * 12
+
+            # EMA强势下降额外减分
+            ema_strong_falling = (
+                (ema_values < ema_values.shift(1)) &
+                (ema_values.shift(1) < ema_values.shift(2)) &
+                (ema_values.shift(2) < ema_values.shift(3))
+            )
+            score -= ema_strong_falling * 12
+
+            # 5. 基于价格与EMA距离的评分
+            price_distance = (close_prices - ema_values) / ema_values * 100
+
+            # 价格远高于EMA（可能超买）
+            far_above = price_distance > 5
+            score -= far_above * 8
+
+            # 价格远低于EMA（可能超卖）
+            far_below = price_distance < -5
+            score += far_below * 8
+
+            # 价格接近EMA（趋势可能转换）
+            near_ema = np.abs(price_distance) < 1
+            score += near_ema * 3
+
+        # 限制评分在0-100之间
+        return score.clip(0, 100)
+
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成EMA交易信号"""
+        if data.empty:
+            return pd.DataFrame()
+
+        # 计算EMA指标
+        ema_data = self._calculate_ema(data)
+        result_df = data.copy()
+
+        # 合并EMA数据
+        for col in ema_data.columns:
+            result_df[col] = ema_data[col]
+
+        # 初始化信号列
+        result_df['ema_signal'] = 0
+        result_df['ema_strength'] = 0.0
+        result_df['ema_confidence'] = 0.0
+
+        # 获取EMA数据和价格数据
+        ema_col = f'EMA{self.period}'
+        if ema_col in ema_data.columns:
+            ema_values = ema_data[ema_col]
+            close_prices = data['close']
+
+            # 1. 价格上穿EMA买入信号
+            price_cross_up = (close_prices > ema_values) & (close_prices.shift(1) <= ema_values.shift(1))
+            ema_rising = ema_values > ema_values.shift(1)
+            strong_buy = price_cross_up & ema_rising
+
+            result_df.loc[strong_buy, 'ema_signal'] = 1
+            result_df.loc[strong_buy, 'ema_strength'] = 0.8
+            result_df.loc[strong_buy, 'ema_confidence'] = 0.9
+
+            # 2. 价格下穿EMA卖出信号
+            price_cross_down = (close_prices < ema_values) & (close_prices.shift(1) >= ema_values.shift(1))
+            ema_falling = ema_values < ema_values.shift(1)
+            strong_sell = price_cross_down & ema_falling
+
+            result_df.loc[strong_sell, 'ema_signal'] = -1
+            result_df.loc[strong_sell, 'ema_strength'] = 0.8
+            result_df.loc[strong_sell, 'ema_confidence'] = 0.9
+
+            # 3. 强势趋势确认信号
+            strong_uptrend = (close_prices > ema_values) & ema_rising
+            result_df.loc[strong_uptrend, 'ema_signal'] = 1
+            result_df.loc[strong_uptrend, 'ema_strength'] = 0.6
+            result_df.loc[strong_uptrend, 'ema_confidence'] = 0.7
+
+            strong_downtrend = (close_prices < ema_values) & ema_falling
+            result_df.loc[strong_downtrend, 'ema_signal'] = -1
+            result_df.loc[strong_downtrend, 'ema_strength'] = 0.6
+            result_df.loc[strong_downtrend, 'ema_confidence'] = 0.7
+
+        return result_df
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """真实实现：计算EMA综合评分"""
+        if data.empty:
+            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+
+        # 计算原始评分
+        raw_score = self.calculate_raw_score(data, **kwargs)
+
+        # 获取形态
+        patterns = self.get_patterns(data, **kwargs)
+
+        # 计算最终评分
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+
+        # 基于形态调整评分
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 正面形态加分
+            if latest_patterns.get('EMA_PRICE_CROSS_UP', False):
+                final_score += 15
+            if latest_patterns.get('EMA_STRONG_RISING', False):
+                final_score += 12
+            if latest_patterns.get('EMA_PRICE_ABOVE', False):
+                final_score += 8
+            if latest_patterns.get('EMA_SUPPORT', False):
+                final_score += 10
+
+            # 负面形态减分
+            if latest_patterns.get('EMA_PRICE_CROSS_DOWN', False):
+                final_score -= 15
+            if latest_patterns.get('EMA_STRONG_FALLING', False):
+                final_score -= 12
+            if latest_patterns.get('EMA_PRICE_BELOW', False):
+                final_score -= 8
+            if latest_patterns.get('EMA_RESISTANCE', False):
+                final_score -= 10
+
+        # 计算置信度
+        ema_data = self._calculate_ema(data)
+        ema_col = f'EMA{self.period}'
+
+        confidence = 0.5
+        if ema_col in ema_data.columns:
+            ema_values = ema_data[ema_col]
+            close_prices = data['close']
+
+            # 基于价格与EMA的关系计算置信度
+            price_distance = abs((close_prices.iloc[-1] - ema_values.iloc[-1]) / ema_values.iloc[-1] * 100)
+
+            if price_distance > 5:
+                confidence += 0.2  # 价格远离EMA，信号更可靠
+            elif price_distance > 2:
+                confidence += 0.1
+
+            # 基于EMA趋势强度调整置信度
+            ema_trend_strength = abs(ema_values.iloc[-1] - ema_values.iloc[-5]) / ema_values.iloc[-5] * 100
+            if ema_trend_strength > 3:
+                confidence += 0.2
+            elif ema_trend_strength > 1:
+                confidence += 0.1
+
+        # 限制评分和置信度范围
+        final_score = max(0, min(100, final_score))
+        confidence = max(0.0, min(1.0, confidence))
+
+        return {
+            'score': final_score,
+            'confidence': confidence,
+            'signals': {
+                'ema_value': ema_data.get(ema_col, pd.Series([0])).iloc[-1] if ema_col in ema_data.columns else 0,
+                'price': data['close'].iloc[-1],
+                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'
+            }
+        }
+
+    def set_parameters(self, **kwargs):
+        """真实实现：设置EMA参数"""
+        # 验证并设置period参数
+        if 'period' in kwargs:
+            period = kwargs['period']
+            if isinstance(period, int) and 1 <= period <= 200:
+                self.period = period
+            else:
+                logger.warning(f"无效的period参数: {period}, 保持原值")
+
+        # 验证并设置periods参数
+        if 'periods' in kwargs:
+            periods = kwargs['periods']
+            if isinstance(periods, list) and all(isinstance(p, int) and 1 <= p <= 200 for p in periods):
+                self.periods = periods
+            else:
+                logger.warning(f"无效的periods参数: {periods}, 保持原值")
+
+        # 记录参数变更
+        logger.info(f"EMA参数已更新")
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成EMA交易信号"""
+        return self.get_signals(data, **kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：计算EMA指标"""
+        return self._calculate_ema(data, **kwargs)
+
+    def calculate_confidence_Ema(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """真实实现：计算EMA置信度"""
+        if score.empty:
+            return 0.3
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 基于评分的置信度调整
+        latest_score = score.iloc[-1] if not score.empty else 50.0
+
+        # 极端评分提高置信度
+        if latest_score > 80 or latest_score < 20:
+            confidence += 0.3
+        elif latest_score > 70 or latest_score < 30:
+            confidence += 0.2
+        elif latest_score > 60 or latest_score < 40:
+            confidence += 0.1
+
+        # 基于形态的置信度调整
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 强势形态提高置信度
+            if latest_patterns.get('EMA_PRICE_CROSS_UP', False):
+                confidence += 0.2
+            if latest_patterns.get('EMA_PRICE_CROSS_DOWN', False):
+                confidence += 0.2
+            if latest_patterns.get('EMA_STRONG_RISING', False):
+                confidence += 0.15
+            if latest_patterns.get('EMA_STRONG_FALLING', False):
+                confidence += 0.15
+
+        # 基于信号的置信度调整
+        if signals:
+            signal_strength = signals.get('strength', 0)
+            confidence += signal_strength * 0.1
+
+        # 限制置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Ema(score, patterns, signals)
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：识别形态"""
+        return self.get_patterns(data, **kwargs)
+
+    def calculate_raw_score_ema(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score(data, **kwargs)
+
+
+# 为了兼容指标注册表，创建别名
+EMA = EmaEma

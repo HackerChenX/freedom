@@ -10,7 +10,7 @@
 import unittest
 import sys
 import os
-from unittest.mock import Mock, patch, Magic_mock
+from unittest.mock import MagicMock
 import pandas as pd
 
 # 添加项目根目录到路径
@@ -24,7 +24,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 class Test_architecture_refactoring(unittest.TestCase):
     """测试架构重构"""
     
-    def set_up_Test_Architecture_Refactoring(self):
+    def setUp(self):
         """设置测试环境"""
         # 创建具有所有必要方法的Mock
         self.mock_data_access = Mock(spec=DataAccessInterface)
@@ -128,8 +128,7 @@ class Test_architecture_refactoring(unittest.TestCase):
                             f"脚本 {script_path} 应该调用get_container()")
                 
                 # 验证不使用直接数据库导入
-                self.assertNotIn('from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IDataAccess', content,
+                self.assertNotIn('from db.clickhouse_db import get_clickhouse_db', content,
                                f"脚本 {script_path} 不应该使用直接数据库导入")
     
     def test_no_direct_database_imports_in_refactored_files(self):
@@ -149,8 +148,7 @@ from db.interfaces.data_access_interface import IDataAccess', content,
                     content = f.read()
                     
                 # 验证不包含直接数据库导入
-                self.assertNotIn('from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IDataAccess', content,
+                self.assertNotIn('from db.clickhouse_db import get_clickhouse_db', content,
                                f"文件 {file_path} 仍然包含直接数据库导入")
                 self.assertNotIn('get_service(DataAccessInterface)', content,
                                f"文件 {file_path} 仍然包含直接数据库调用")

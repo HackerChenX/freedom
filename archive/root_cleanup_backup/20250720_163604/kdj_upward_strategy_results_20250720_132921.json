@@ -1,0 +1,97 @@
+{
+  "strategy_config": {
+    "strategy": {
+      "id": "KDJ_ALL_LINES_UPWARD_strategy",
+      "name": "KDJ均上移策略",
+      "description": "选择KDJ指标的K、D、J三线均呈上升趋势的股票",
+      "version": "1.0",
+      "type": "technical_indicator",
+      "category": "momentum_oscillator",
+      "target_date": "2025-05-12",
+      "indicator": {
+        "name": "KDJ",
+        "type": "oscillator",
+        "parameters": {
+          "k_period": 9,
+          "d_period": 3,
+          "j_multiplier": 3
+        }
+      },
+      "conditions": {
+        "primary": {
+          "k_upward": {
+            "description": "K线呈上升趋势",
+            "formula": "K(today) > K(yesterday)",
+            "threshold": 0.0
+          },
+          "d_upward": {
+            "description": "D线呈上升趋势",
+            "formula": "D(today) > D(yesterday)",
+            "threshold": 0.0
+          },
+          "j_upward": {
+            "description": "J线呈上升趋势",
+            "formula": "J(today) > J(yesterday)",
+            "threshold": 0.0
+          }
+        },
+        "combination": {
+          "logic": "AND",
+          "description": "K、D、J三线均上升"
+        },
+        "filters": {
+          "kdj_range": {
+            "k_min": 20,
+            "k_max": 80,
+            "d_min": 20,
+            "d_max": 80,
+            "j_min": 0,
+            "j_max": 100
+          },
+          "volume": {
+            "min_volume": 1000000,
+            "volume_ratio": 1.0
+          },
+          "price": {
+            "min_price": 1.0,
+            "max_price": 1000.0
+          }
+        }
+      },
+      "scoring": {
+        "k_upward_strength": 0.35,
+        "d_upward_strength": 0.35,
+        "j_upward_strength": 0.3
+      },
+      "selection": {
+        "max_stocks": 50,
+        "min_score": 0.6,
+        "sort_by": "score",
+        "sort_order": "desc"
+      },
+      "risk_control": {
+        "max_concentration": 0.1,
+        "sector_limit": 5
+      },
+      "backtest": {
+        "lookback_days": 60,
+        "min_data_points": 30
+      },
+      "output": {
+        "include_details": true,
+        "export_format": [
+          "json",
+          "csv"
+        ],
+        "chart_indicators": [
+          "KDJ",
+          "Volume"
+        ]
+      }
+    }
+  },
+  "execution_time": "2025-07-20T13:29:21.856701",
+  "target_date": "2025-05-12",
+  "total_selected": 0,
+  "results": []
+}

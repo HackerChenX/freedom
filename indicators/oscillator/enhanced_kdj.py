@@ -4,6 +4,8 @@
 实现改进版的KDJ指标，优化计算方法和信号质量，增加多周期适应能力和市场环境感知
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
@@ -11,10 +13,10 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base_indicator import BaseIndicator
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.indicator_utils import crossover, crossunder
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EnhancedKdj(BaseIndicator, PatternSignalMixin):

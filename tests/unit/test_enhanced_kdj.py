@@ -5,33 +5,29 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_enhanced_kDJ(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_enhanced_kDJ(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """EnhancedKDJ指标测试类"""
     
-    def set_up_Kdj(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Kdj(self)
+        super().setUp()
         
-        self.indicator = Enhanced_kDJ(n=9, m1=3, m2=3, multi_periods=[5, 9, 14])
+        self.indicator = complete_registry.create_indicator('KDJ', n=9, m1=3, m2=3, multi_periods=[5, 9, 14])
         self.expected_columns = [
             'K', 'D', 'J', 'K_5', 'D_5', 'J_5', 'rsv_5',
             'K_14', 'D_14', 'J_14', 'rsv_14', 'j_acceleration',
             'kd_cross_angle', 'kd_distance', 'j_normalized'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Kdj(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Kdj(self)
-    
+
     def test_enhanced_kdj_calculation_accuracy(self):
         """测试EnhancedKDJ计算准确性"""
         result = self.indicator.calculate(self.data)

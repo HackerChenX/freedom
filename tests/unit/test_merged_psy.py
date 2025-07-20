@@ -7,7 +7,7 @@ from indicators.complete_indicator_registry import complete_registry
 class Test_merged_pSY(unittest.TestCase):
     """测试合并后的PSY指标功能"""
     
-    def set_up_Psy(self):
+    def setUp(self):
         """准备测试数据"""
         # 创建样本数据
         np.random.seed(42)

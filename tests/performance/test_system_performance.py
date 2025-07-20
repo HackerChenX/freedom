@@ -1,4 +1,4 @@
-"""
+from config.config import get_config\n"""
 系统性能测试
 
 验证P2级优化后的系统性能改进
@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 class Test_system_performance(unittest.TestCase):
     """系统性能测试类"""
     
-    def set_up_Performance(self):
+    def setUp(self):
         """设置测试环境"""
         self.test_indicators = [
             'ZXM_BS_ABSORB',

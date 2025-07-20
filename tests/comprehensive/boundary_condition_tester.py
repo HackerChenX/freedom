@@ -296,7 +296,7 @@ class BoundaryConditionTester:
         }
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=30.0)
+    @performance_monitor(threshold=30.0)
     def test_empty_data_handling(self) -> BoundaryTestResult:
         """测试空数据处理"""
         test_name = "empty_data_handling"
@@ -355,7 +355,7 @@ class BoundaryConditionTester:
             )
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=30.0)
+    @performance_monitor(threshold=30.0)
     def test_malformed_data_handling(self) -> BoundaryTestResult:
         """测试格式错误数据处理"""
         test_name = "malformed_data_handling"
@@ -417,7 +417,7 @@ class BoundaryConditionTester:
             )
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     def test_network_interruption_handling(self) -> BoundaryTestResult:
         """测试网络中断处理"""
         test_name = "network_interruption_handling"
@@ -483,7 +483,7 @@ class BoundaryConditionTester:
             self.network_simulator.restore_network()
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=45.0)
+    @performance_monitor(threshold=45.0)
     def test_high_latency_handling(self) -> BoundaryTestResult:
         """测试高延迟处理"""
         test_name = "high_latency_handling"
@@ -557,7 +557,7 @@ class BoundaryConditionTester:
             self.network_simulator.restore_network()
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     def test_memory_pressure_handling(self) -> BoundaryTestResult:
         """测试内存压力处理"""
         test_name = "memory_pressure_handling"
@@ -649,7 +649,7 @@ class BoundaryConditionTester:
             )
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=30.0)
+    @performance_monitor(threshold=30.0)
     def test_ohlc_inconsistency_handling(self) -> BoundaryTestResult:
         """测试OHLC不一致数据处理"""
         test_name = "ohlc_inconsistency_handling"
@@ -724,7 +724,7 @@ class BoundaryConditionTester:
             )
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=300.0)
+    @performance_monitor(threshold=300.0)
     def run_all_boundary_tests(self) -> BoundaryTestSuite:
         """运行所有边界测试"""
         test_methods = [

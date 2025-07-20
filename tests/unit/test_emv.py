@@ -7,16 +7,16 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import Indicator_test_mixin
 from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.helper.log_capture import Log_capture_mixin, LogCaptureMixin
 
 
 class Testemv_emv(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """EMV指标测试类"""
     
-    def set_up_Emv(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Emv(self)
+        Log_capture_mixin.setUp(self)
         
         self.indicator = complete_registry.create_indicator('EMV', volume_divisor=1000000, period=14)
         self.expected_columns = ['EMV', 'EMV_MA']
@@ -28,9 +28,9 @@ class Testemv_emv(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         np.random.seed(42)
         self.data['volume'] = np.random.randint(1000000, 10000000, len(self.data))
     
-    def tear_down_Emv(self):
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Emv(self)
+        Log_capture_mixin.tearDown(self)
     
     def test_emv_calculation_accuracy(self):
         """测试EMV计算准确性"""

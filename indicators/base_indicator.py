@@ -11,10 +11,10 @@ from typing import Dict, List, Union, Optional, Any, Tuple, Callable
 from enum import Enum
 import inspect
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 # 定义基础数据列
 BASE_COLUMNS = ['open', 'high', 'low', 'close', 'volume']

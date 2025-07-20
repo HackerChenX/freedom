@@ -74,7 +74,7 @@ def test_optimized_executor_Selection():
     print("\n🧪 测试优化的策略执行器")
     
     try:
-        from strategy.optimized_strategy_executor import Optimized_strategy_executor
+        from strategy.strategy_executor import UnifiedStrategyExecutor as Optimized_strategy_executor
         
         # 创建优化执行器
         executor = Optimized_strategy_executor(

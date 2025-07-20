@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from utils.dependency_injection import get_logger
 """
 SCORE_MANAGER 指标
 
@@ -11,7 +12,7 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
 # 导入IndicatorScoreManager以支持ZXM指标
 try:
@@ -25,7 +26,7 @@ except ImportError:
         def calculate_score_Manager(self, *args, **kwargs):
             return 50.0
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ScoreManager(BaseIndicator, PatternSignalMixin):

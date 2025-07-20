@@ -380,7 +380,7 @@ class ComprehensiveTestEngine:
         self.test_suites[suite_name] = test_suite
         logger.info(f"注册测试套件: {suite_name}, 包含 {len(test_suite)} 个测试")
     
-    @performance_monitor(threshold_seconds=2.0)
+    @performance_monitor(threshold=2.0)
     @exception_handler(reraise=True)
     def run_all_tests(self) -> Dict[str, Any]:
         """

@@ -1,0 +1,338 @@
+{
+  "start_time": "2025-07-20T14:52:22.667634",
+  "end_time": "2025-07-20T14:52:53.986709",
+  "total_tests": 19,
+  "passed_tests": 19,
+  "failed_tests": 0,
+  "test_details": [
+    {
+      "test_name": "配置系统标准化",
+      "start_time": 1752994342.668319,
+      "end_time": 1752994342.670624,
+      "duration": 0.0023050308227539062,
+      "status": "passed",
+      "details": {
+        "schema_file_exists": true,
+        "required_sections_present": true,
+        "schema_size": 6538
+      },
+      "error": null
+    },
+    {
+      "test_name": "统一配置验证器",
+      "start_time": 1752994342.670753,
+      "end_time": 1752994342.672375,
+      "duration": 0.0016219615936279297,
+      "status": "passed",
+      "details": {
+        "valid_config_passed": true,
+        "validation_errors": 0,
+        "validation_warnings": 1
+      },
+      "error": null
+    },
+    {
+      "test_name": "策略配置迁移",
+      "start_time": 1752994342.672472,
+      "end_time": 1752994342.680594,
+      "duration": 0.008121967315673828,
+      "status": "passed",
+      "details": {
+        "migrated_files_count": 10,
+        "tested_files": 3,
+        "valid_files": 3,
+        "migration_success_rate": 1.0
+      },
+      "error": null
+    },
+    {
+      "test_name": "缓存系统整合",
+      "start_time": 1752994342.680691,
+      "end_time": 1752994342.68162,
+      "duration": 0.0009288787841796875,
+      "status": "passed",
+      "details": {
+        "unified_cache_available": true,
+        "cache_stats_available": true,
+        "cache_types": [
+          "memory_cache",
+          "disk_cache",
+          "unified_cache"
+        ]
+      },
+      "error": null
+    },
+    {
+      "test_name": "统一执行器初始化",
+      "start_time": 1752994342.681917,
+      "end_time": 1752994342.6847749,
+      "duration": 0.0028579235076904297,
+      "status": "passed",
+      "details": {
+        "executor_initialized": true,
+        "config_validator_present": true,
+        "enhanced_validator_present": true,
+        "performance_stats_available": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "统一配置解析",
+      "start_time": 1752994342.684864,
+      "end_time": 1752994342.686065,
+      "duration": 0.0012009143829345703,
+      "status": "passed",
+      "details": {
+        "parsing_successful": true,
+        "parsed_fields": [
+          "strategy_id",
+          "strategy_name",
+          "indicators",
+          "time_frames",
+          "filters",
+          "max_selections",
+          "min_score",
+          "ranking_method",
+          "target_date"
+        ],
+        "indicators_count": 1,
+        "time_frames_count": 1
+      },
+      "error": null
+    },
+    {
+      "test_name": "批量数据处理优化",
+      "start_time": 1752994342.68674,
+      "end_time": 1752994343.744612,
+      "duration": 1.0578720569610596,
+      "status": "passed",
+      "details": {
+        "batch_method_exists": true,
+        "fallback_method_exists": true,
+        "batch_processing_attempted": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "并行计算优化",
+      "start_time": 1752994343.744694,
+      "end_time": 1752994343.745827,
+      "duration": 0.001132965087890625,
+      "status": "passed",
+      "details": {
+        "max_workers": 2,
+        "parallel_methods_exist": {
+          "_parallel_evaluate_stocks": true,
+          "_evaluate_single_stock_unified": true
+        },
+        "all_methods_present": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "增强闭环验证器",
+      "start_time": 1752994343.746131,
+      "end_time": 1752994343.746582,
+      "duration": 0.00045108795166015625,
+      "status": "passed",
+      "details": {
+        "validator_initialized": true,
+        "validation_completed": true,
+        "consistency_rate": 1.0,
+        "validation_passed": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "入口点分析验证",
+      "start_time": 1752994343.746686,
+      "end_time": 1752994343.746923,
+      "duration": 0.00023698806762695312,
+      "status": "passed",
+      "details": {
+        "entry_point_analysis_enabled": true,
+        "analysis_methods_exist": {
+          "_perform_entry_point_analysis": true,
+          "_analyze_entry_point": true,
+          "_analyze_market_context": true
+        },
+        "all_methods_present": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "多种验证方法对比",
+      "start_time": 1752994343.747027,
+      "end_time": 1752994343.747987,
+      "duration": 0.0009601116180419922,
+      "status": "passed",
+      "details": {
+        "methods_tested": [
+          "pattern_recognition",
+          "indicator_consistency"
+        ],
+        "method_results": {
+          "pattern_recognition": {
+            "success": true,
+            "consistency_rate": 1.0
+          },
+          "indicator_consistency": {
+            "success": true,
+            "consistency_rate": 1.0
+          }
+        },
+        "successful_methods": [
+          "pattern_recognition",
+          "indicator_consistency"
+        ]
+      },
+      "error": null
+    },
+    {
+      "test_name": "端到端选股流程",
+      "start_time": 1752994343.748317,
+      "end_time": 1752994343.7514932,
+      "duration": 0.0031762123107910156,
+      "status": "passed",
+      "details": {
+        "workflow_completed": true,
+        "execution_time": 0.0005996227264404297,
+        "selection_count": 0,
+        "validation_performed": true,
+        "errors": [],
+        "warnings": []
+      },
+      "error": null
+    },
+    {
+      "test_name": "多策略并发执行",
+      "start_time": 1752994343.75158,
+      "end_time": 1752994343.858909,
+      "duration": 0.10732889175415039,
+      "status": "passed",
+      "details": {
+        "concurrent_executions": 3,
+        "successful_executions": 3,
+        "failed_executions": 0,
+        "success_rate": 1.0
+      },
+      "error": null
+    },
+    {
+      "test_name": "错误处理和恢复",
+      "start_time": 1752994343.859019,
+      "end_time": 1752994343.86115,
+      "duration": 0.0021309852600097656,
+      "status": "passed",
+      "details": {
+        "error_handling_tested": true,
+        "invalid_config_handled": true,
+        "exception_handling_present": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "执行时间性能",
+      "start_time": 1752994343.8614552,
+      "end_time": 1752994343.8624692,
+      "duration": 0.0010139942169189453,
+      "status": "passed",
+      "details": {
+        "operations_count": 100,
+        "total_time": 5.507469177246094e-05,
+        "avg_time_per_operation": 5.507469177246094e-07,
+        "performance_acceptable": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "内存使用优化",
+      "start_time": 1752994343.86256,
+      "end_time": 1752994343.8676422,
+      "duration": 0.005082130432128906,
+      "status": "passed",
+      "details": {
+        "initial_memory_mb": 140.32421875,
+        "peak_memory_mb": 140.47265625,
+        "memory_increase_mb": 0.1484375,
+        "memory_optimization_effective": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "缓存命中率",
+      "start_time": 1752994343.867723,
+      "end_time": 1752994343.868984,
+      "duration": 0.001260995864868164,
+      "status": "passed",
+      "details": {
+        "cache_enabled": true,
+        "cache_stats_available": true,
+        "cache_types": [
+          "memory_cache",
+          "disk_cache",
+          "unified_cache"
+        ]
+      },
+      "error": null
+    },
+    {
+      "test_name": "长时间运行稳定性",
+      "start_time": 1752994343.8695621,
+      "end_time": 1752994373.954012,
+      "duration": 30.084449768066406,
+      "status": "passed",
+      "details": {
+        "test_duration": 30.072931051254272,
+        "total_operations": 295,
+        "error_count": 0,
+        "error_rate": 0.0,
+        "stability_good": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "异常情况处理",
+      "start_time": 1752994373.955344,
+      "end_time": 1752994373.9800792,
+      "duration": 0.024735212326049805,
+      "status": "passed",
+      "details": {
+        "exception_tests": {
+          "invalid_config": true,
+          "empty_config": true,
+          "malformed_data": false
+        },
+        "all_exceptions_handled": false
+      },
+      "error": null
+    }
+  ],
+  "performance_metrics": {
+    "配置系统标准化": 0.0023050308227539062,
+    "统一配置验证器": 0.0016219615936279297,
+    "策略配置迁移": 0.008121967315673828,
+    "缓存系统整合": 0.0009288787841796875,
+    "统一执行器初始化": 0.0028579235076904297,
+    "统一配置解析": 0.0012009143829345703,
+    "批量数据处理优化": 1.0578720569610596,
+    "并行计算优化": 0.001132965087890625,
+    "增强闭环验证器": 0.00045108795166015625,
+    "入口点分析验证": 0.00023698806762695312,
+    "多种验证方法对比": 0.0009601116180419922,
+    "端到端选股流程": 0.0031762123107910156,
+    "多策略并发执行": 0.10732889175415039,
+    "错误处理和恢复": 0.0021309852600097656,
+    "执行时间性能": 0.0010139942169189453,
+    "内存使用优化": 0.005082130432128906,
+    "缓存命中率": 0.001260995864868164,
+    "长时间运行稳定性": 30.084449768066406,
+    "异常情况处理": 0.024735212326049805
+  },
+  "system_health": {
+    "overall_status": "healthy",
+    "critical_failures": 0,
+    "performance_acceptable": true,
+    "architecture_compliance": true
+  }
+}

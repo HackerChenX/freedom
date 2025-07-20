@@ -12,7 +12,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 from db.interfaces.cache_interface import ICacheService
 from db.sql_manager import QueryType, get_sql_manager
 from utils.dependency_injection import get_service, get_container
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.decorators import performance_monitor, safe_run, exception_handler
 from utils.path_utils import get_strategy_dir
 from utils.exceptions import (
@@ -21,7 +21,7 @@ from utils.exceptions import (
     DataAccessError
 )
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StrategyManager:

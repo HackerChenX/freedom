@@ -24,7 +24,7 @@ import json
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from analysis.buypoints.period_data_processor import Period_data_processor
 from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer

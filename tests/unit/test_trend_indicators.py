@@ -11,74 +11,59 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
+from indicators.complete_indicator_registry import complete_registry
 from tests.helper.log_capture import LogCaptureMixin
 
 class TestMA(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
-        self.indicator = MA(periods=[5, 20])
+    def setUp(self):
+        super().setUp()
+        self.indicator = complete_registry.create_indicator('MA', periods=[5, 20])
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['MA5', 'MA20']
 
-    def tearDown_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
-
 class TestEMA_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
-        self.indicator = EMA(periods=[12, 26])
+    def setUp(self):
+        super().setUp()
+        self.indicator = complete_registry.create_indicator('EMA', periods=[12, 26])
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['EMA12', 'EMA26']
 
-    def tearDown_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
-
 class TestWMA_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
-        self.indicator = WMA(periods=[5, 10])
+    def setUp(self):
+        super().setUp()
+        self.indicator = complete_registry.create_indicator('WMA', periods=[5, 10])
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['WMA5', 'WMA10']
 
-    def tearDown_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
-
 class TestDMI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
-    def setUp_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)
-        self.indicator = DMI(period=14, adx_period=6)
+    def setUp(self):
+        super().setUp()
+        self.indicator = complete_registry.create_indicator('DMI', period=14, adx_period=6)
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
         self.expected_columns = ['pdi', 'mdi', 'adx', 'adxr']
 
-    def tearDown_IndicatorsTesttrendindicators(self):
-        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)
-
 class TestATR(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """ATR指标单元测试类"""
 
-    def setUp_IndicatorsTesttrendindicators(self):
+    def setUp(self):
         """准备数据和指标实例"""
-        LogCaptureMixin.setUp_IndicatorsTesttrendindicators(self)  # 显式调用Mixin的setUp
+        super().setUp()
         # ATR argument is period not periods
-        self.indicator = ATR(params={'period': 14})
+        self.indicator = complete_registry.create_indicator('ATR', period=14)
         self.expected_columns = ['TR', 'ATR14']
         # 使用一个包含多种走势的数据进行通用测试
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 30},
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
-
-    def tearDown_IndicatorsTesttrendindicators(self):
-        """清理日志捕获器"""
-        LogCaptureMixin.tearDown_IndicatorsTesttrendindicators(self)  # 显式调用Mixin的tearDown
 
     def test_basic_calculation_Indicators_Test_Trend_Indicators(self):
         """测试ATR基础计算功能"""

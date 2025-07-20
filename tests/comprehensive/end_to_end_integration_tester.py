@@ -88,7 +88,7 @@ class WorkflowExecutor:
         self.mock_data = {}
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     def execute_data_retrieval_step(self, stock_codes: List[str], date_range: Tuple[str, str]) -> WorkflowStep:
         """执行数据检索步骤"""
         step = WorkflowStep(
@@ -145,7 +145,7 @@ class WorkflowExecutor:
         return step
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=15.0)
+    @performance_monitor(threshold=15.0)
     def execute_indicator_calculation_step(self, data: pd.DataFrame) -> WorkflowStep:
         """执行技术指标计算步骤"""
         step = WorkflowStep(
@@ -243,7 +243,7 @@ class WorkflowExecutor:
         return step
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=20.0)
+    @performance_monitor(threshold=20.0)
     def execute_strategy_analysis_step(self, data: pd.DataFrame, indicators: pd.DataFrame) -> WorkflowStep:
         """执行策略分析步骤"""
         step = WorkflowStep(
@@ -332,7 +332,7 @@ class WorkflowExecutor:
         return step
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     def execute_result_filtering_step(self, strategy_results: pd.DataFrame) -> WorkflowStep:
         """执行结果筛选步骤"""
         step = WorkflowStep(
@@ -375,7 +375,7 @@ class WorkflowExecutor:
         return step
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=3.0)
+    @performance_monitor(threshold=3.0)
     def execute_output_generation_step(self, filtered_results: pd.DataFrame) -> WorkflowStep:
         """执行输出生成步骤"""
         step = WorkflowStep(
@@ -515,7 +515,7 @@ class EndToEndIntegrationTester:
         return pd.DataFrame(data)
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=120.0)
+    @performance_monitor(threshold=120.0)
     def run_end_to_end_test(self, scenario_name: str) -> EndToEndTestResult:
         """运行端到端测试"""
         if scenario_name not in self.test_scenarios:
@@ -620,7 +620,7 @@ class EndToEndIntegrationTester:
         return test_result
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=600.0)
+    @performance_monitor(threshold=600.0)
     def run_all_integration_tests(self) -> IntegrationTestSuite:
         """运行所有集成测试"""
         suite_result = IntegrationTestSuite(

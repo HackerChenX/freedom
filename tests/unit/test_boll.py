@@ -10,9 +10,9 @@ from tests.helper.log_capture import Log_capture_mixin
 class Test_bOLL(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """BOLL指标单元测试类"""
 
-    def set_up_Boll(self):
+    def setUp(self):
         """准备数据和指标实例"""
-        Log_capture_mixin.set_up_Boll(self)  # 显式调用Mixin的set_up
+        Log_capture_mixin.setUp(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('BOLL', period=20, std_dev=2)
         self.expected_columns = ['middle', 'upper', 'lower']  # 修正期望的列名
         # 使用一个包含多种走势的数据进行通用测试
@@ -21,9 +21,9 @@ class Test_bOLL(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 50},
         ])
 
-    def tear_down_Boll(self):
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Boll(self)  # 显式调用Mixin的tear_down
+        Log_capture_mixin.tearDown(self)  # 显式调用Mixin的tear_down
 
     def test_basic_calculation_Boll(self):
         """测试BOLL基础计算功能"""
@@ -133,7 +133,13 @@ class Test_bOLL(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         patterns = self.indicator.identify_patterns(data)
 
         # 验证形态检测结果
-        self.assertIsInstance(patterns, list, "形态检测结果应为列表")
+        self.assertIsInstance(patterns, pd.DataFrame, "形态检测结果应为DataFrame")
+
+        # 验证形态列存在
+        expected_patterns = ['BOLL_UPPER_BREAKOUT', 'BOLL_LOWER_BREAKOUT', 'BOLL_MIDDLE_BREAKOUT_UP', 'BOLL_MIDDLE_BREAKOUT_DOWN']
+        for pattern in expected_patterns:
+            if pattern in patterns.columns:
+                self.assertTrue(patterns[pattern].dtype == bool, f"形态列{pattern}应为布尔类型")
 
     def test_score_calculation_Boll(self):
         """测试BOLL评分计算功能"""

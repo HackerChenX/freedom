@@ -45,7 +45,7 @@ class ProgressReporter:
         self.is_running = True
         self.current_status = "运行中"
         
-        print(f"\n{'='*60}")
+        print(f"\nfrom config.config import get_config\n{'='*60}")
         print(f"综合选股测试开始 - {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'='*60}")
     

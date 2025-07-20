@@ -10,9 +10,9 @@ from tests.helper.log_capture import Log_capture_mixin
 class Testkdj_kdj(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """KDJ指标单元测试类"""
 
-    def set_up_Kdj_Test_Kdj(self):
+    def setUp(self):
         """准备数据和指标实例"""
-        Log_capture_mixin.set_up_Kdj_Test_Kdj(self)  # 显式调用Mixin的set_up
+        Log_capture_mixin.setUp(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('KDJ', n=9, m1=3, m2=3)
         self.expected_columns = ['K', 'D', 'J']
         # 使用一个包含多种走势的数据进行通用测试
@@ -21,9 +21,9 @@ class Testkdj_kdj(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tear_down_Kdj_Test_Kdj(self):
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Kdj_Test_Kdj(self) # 显式调用Mixin的tear_down
+        Log_capture_mixin.tearDown(self) # 显式调用Mixin的tear_down
 
     def test_golden_cross(self):
         """测试KDJ金叉"""
@@ -161,8 +161,13 @@ class Testkdj_kdj(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         score = self.indicator.calculate_score(data_with_kdj)
         
         # 验证评分类型和范围
-        self.assertIsInstance(score, float, "评分应为浮点数")
-        self.assertTrue(0 <= score <= 100, "评分应在0-100范围内")
+        self.assertIsInstance(score, dict, "评分应为字典")
+        self.assertIn('score', score, "评分字典应包含score字段")
+        self.assertIn('confidence', score, "评分字典应包含confidence字段")
+
+        actual_score = score['score']
+        self.assertIsInstance(actual_score, (float, int), "评分值应为数值")
+        self.assertTrue(0 <= actual_score <= 100, "评分应在0-100范围内")
         
         # 验证原始评分计算
         raw_score = self.indicator.calculate_raw_score(data_with_kdj)
@@ -181,7 +186,7 @@ class Testkdj_kdj(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         oversold_data_with_kdj['D'] = oversold_result['D']
         oversold_data_with_kdj['J'] = oversold_result['J']
         oversold_score = self.indicator.calculate_score(oversold_data_with_kdj)
-        self.assertGreater(oversold_score, 20, "超卖区域的评分应该较高（大于20）")
+        self.assertGreater(oversold_score['score'], 20, "超卖区域的评分应该较高（大于20）")
         
         # 在超买区域应该有较低的评分
         overbought_data = Test_data_generator.generate_price_sequence([
@@ -194,7 +199,7 @@ class Testkdj_kdj(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         overbought_data_with_kdj['D'] = overbought_result['D']
         overbought_data_with_kdj['J'] = overbought_result['J']
         overbought_score = self.indicator.calculate_score(overbought_data_with_kdj)
-        self.assertLess(overbought_score, 50, "超买区域的评分应该较低")
+        self.assertLess(overbought_score['score'], 50, "超买区域的评分应该较低")
 
 if __name__ == '__main__':
     unittest.main() 

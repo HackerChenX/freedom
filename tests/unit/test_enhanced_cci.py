@@ -5,29 +5,25 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_enhanced_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_enhanced_cCI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """EnhancedCCI指标测试类"""
     
-    def set_up_Cci(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Cci(self)
+        super().setUp()
         
-        self.indicator = complete_registry.create_indicator('ENHANCED_CCI', period=20, factor=0.015, secondary_period=40)
+        self.indicator = complete_registry.create_indicator('EnhancedCCI', period=20, factor=0.015, secondary_period=40)
         self.expected_columns = ['cci', 'cci_secondary', 'cci_ma5', 'cci_ma10', 'cci_ma20', 'cci_slope', 'cci_volatility', 'state']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Cci(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Cci(self)
-    
+
     def test_enhanced_cci_calculation_accuracy(self):
         """测试EnhancedCCI计算准确性"""
         result = self.indicator.calculate(self.data)
@@ -54,7 +50,7 @@ class Test_enhanced_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mix
         })
         
         # 使用较小的周期便于验证
-        test_indicator = complete_registry.create_indicator('ENHANCED_CCI', period=10, factor=0.015)
+        test_indicator = complete_registry.create_indicator('EnhancedCCI', period=10, factor=0.015)
         result = test_indicator.calculate(simple_data)
         
         # 验证CCI计算逻辑
@@ -228,7 +224,7 @@ class Test_enhanced_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mix
     def test_enhanced_cci_adaptive_period(self):
         """测试EnhancedCCI自适应周期"""
         # 测试自适应模式
-        adaptive_indicator = complete_registry.create_indicator('ENHANCED_CCI', period=20, adaptive=True)
+        adaptive_indicator = complete_registry.create_indicator('EnhancedCCI', period=20, adaptive=True)
         if adaptive_indicator:
             result = adaptive_indicator.calculate(self.data)
 
@@ -237,7 +233,7 @@ class Test_enhanced_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mix
             self.assertIn('cci', result.columns)
 
         # 测试非自适应模式
-        non_adaptive_indicator = complete_registry.create_indicator('ENHANCED_CCI', period=20, adaptive=False)
+        non_adaptive_indicator = complete_registry.create_indicator('EnhancedCCI', period=20, adaptive=False)
         if non_adaptive_indicator:
             result2 = non_adaptive_indicator.calculate(self.data)
 

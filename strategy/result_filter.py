@@ -10,10 +10,10 @@ import re
 import json
 from datetime import datetime
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ResultFilter:

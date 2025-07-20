@@ -20,7 +20,7 @@ from indicators.zxm.score_indicators import ZXMElasticity_score, ZXMBuy_point_sc
 class Test_zXMBoundary_conditions(unittest.TestCase):
     """ZXM指标边界条件测试类"""
     
-    def set_up_Conditions(self):
+    def setUp(self):
         """设置测试数据"""
         self.boundary_scenarios = self._generate_boundary_test_scenarios()
     

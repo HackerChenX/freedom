@@ -17,7 +17,7 @@ from db.managers.data_access_manager import DataAccessManager
 from db.managers.connection_manager import ConnectionManager
 
 # 依赖注入容器
-from utils.dependency_injection import get_service, configure_container, ServiceContainer
+from utils.dependency_injection import get_service, configure_container, get_container
 
 # 自动注册核心服务到依赖注入容器
 def _auto_register_services():
@@ -61,5 +61,5 @@ __all__ = [
     # 依赖注入
     'get_service',
     'configure_container',
-    'ServiceContainer'
+    'get_container'
 ] 

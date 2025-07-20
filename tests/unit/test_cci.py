@@ -7,26 +7,26 @@ import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import Indicator_test_mixin
 from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.helper.log_capture import Log_capture_mixin, LogCaptureMixin
 
 
 class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """CCI指标测试类"""
     
-    def set_up_Cci_Test_Cci(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Cci_Test_Cci(self)
+        Log_capture_mixin.setUp(self)
         
         self.indicator = complete_registry.create_indicator('CCI', period=14)
         self.expected_columns = ['CCI']
         self.data = Test_data_generator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
-    
-    def tear_down_Cci_Test_Cci(self):
+
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Cci_Test_Cci(self)
+        Log_capture_mixin.tearDown(self)
     
     def test_cci_calculation_accuracy(self):
         """测试CCI计算准确性"""
@@ -40,7 +40,10 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         expected_cci = (tp - ma) / (0.015 * md)
         
         # 比较计算结果（允许小的数值误差）
-        calculated_cci = result['CCI']
+        # 查找CCI相关的列
+        cci_columns = [col for col in result.columns if 'CCI' in col]
+        self.assertTrue(len(cci_columns) > 0, "结果中应包含CCI相关列")
+        calculated_cci = result[cci_columns[0]]
         diff = abs(calculated_cci - expected_cci).dropna()
         self.assertTrue(all(d < 0.001 for d in diff), "CCI计算结果不正确")
     
@@ -60,9 +63,9 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_cci_parameter_update(self):
         """测试CCI参数更新"""
@@ -70,7 +73,7 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.indicator.set_parameters(period=new_period)
         
         # 验证参数更新
-        self.assert_equal(self.indicator.period, new_period)
+        self.assertEqual(self.indicator.period, new_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -81,13 +84,13 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_cols = ['high', 'low', 'close']
         for col in expected_cols:
-            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
+            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_cci_comprehensive_score(self):
         """测试CCI综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
+        self.assertIsInstance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -100,13 +103,14 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
         
         # 验证预期的形态列存在
         expected_patterns = [
             'CCI_OVERSOLD', 'CCI_EXTREME_OVERSOLD',
             'CCI_OVERBOUGHT', 'CCI_EXTREME_OVERBOUGHT',
-            'CCI_CROSS_UP_OVERSOLD', 'CCI_CROSS_DOWN_OVERBOUGHT'
+            'CCI_ZERO_CROSS_UP', 'CCI_ZERO_CROSS_DOWN',
+            'CCI_BEARISH_DIVERGENCE', 'CCI_BULLISH_DIVERGENCE'
         ]
         
         for pattern in expected_patterns:
@@ -121,7 +125,7 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         signals = self.indicator.get_signals(result)
         
         # 验证信号
-        self.assert_is_instance(signals, pd.DataFrame)
+        self.assertIsInstance(signals, pd.DataFrame)
         self.assertIn('cci_signal', signals.columns)
         
         # 验证信号值
@@ -140,7 +144,7 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         self.assertIn('CCI', result.columns)
     
     def test_no_errors_during_pattern_detection_Cci_Test_Cci(self):
@@ -154,7 +158,7 @@ class Test_cCI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

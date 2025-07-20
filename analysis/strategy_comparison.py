@@ -15,7 +15,7 @@ from db.sql_manager import QueryType
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.path_utils import get_result_dir
 from utils.decorators import safe_run, performance_monitor
 from strategy.strategy_factory import Strategy_factory

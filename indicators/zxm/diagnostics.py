@@ -7,9 +7,9 @@ from typing import Dict, List, Tuple, Union, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
     """

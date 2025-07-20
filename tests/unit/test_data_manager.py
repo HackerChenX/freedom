@@ -5,7 +5,7 @@
 """
 
 import unittest
-from unittest.mock import patch, Magic_mock
+from unittest.mock import patch, MagicMock
 import pandas as pd
 import os
 import sys
@@ -25,7 +25,7 @@ from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationE
 class Test_data_manager(unittest.TestCase):
     """数据管理器单元测试类"""
     
-    def set_up_Manager_Test_Data_Manager(self):
+    def setUp(self):
         """测试前准备"""
         # 创建数据管理器实例
         self.data_manager = Data_manager()

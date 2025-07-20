@@ -1,5 +1,5 @@
 """
-from config import get_config
+from utils.dependency_injection import get_config
 智能日期管理器模块
 
 统一处理系统中的日期管理需求，包括：
@@ -23,7 +23,7 @@ import time
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.cache import Memory_cache
 from utils.decorators import exception_handler, performance_monitor
 
@@ -630,7 +630,7 @@ class DateManager:
                 f"latest_date={self.trading_calendar['date'].iloc[0] if self.trading_calendar is not None else None})")
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=2.0)
+    @performance_monitor(threshold=2.0)
     def get_detailed_statistics(self) -> Dict[str, Any]:
         """
         获取详细统计信息

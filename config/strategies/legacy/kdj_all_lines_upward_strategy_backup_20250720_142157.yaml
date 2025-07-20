@@ -1,0 +1,97 @@
+strategy:
+  id: "KDJ_ALL_LINES_UPWARD_strategy"
+  name: "KDJ均上移策略"
+  description: "选择KDJ指标的K、D、J三线均呈上升趋势的股票"
+  version: "1.0"
+  
+  # 策略类型
+  type: "technical_indicator"
+  category: "momentum_oscillator"
+  
+  # 目标日期
+  target_date: "2025-05-12"
+  
+  # 技术指标配置
+  indicator:
+    name: "KDJ"
+    type: "oscillator"
+    parameters:
+      k_period: 9        # K值计算周期
+      d_period: 3        # D值平滑周期
+      j_multiplier: 3    # J值计算倍数
+      
+  # 策略条件
+  conditions:
+    primary:
+      # K线上升条件
+      k_upward:
+        description: "K线呈上升趋势"
+        formula: "K(today) > K(yesterday)"
+        threshold: 0.0
+        
+      # D线上升条件  
+      d_upward:
+        description: "D线呈上升趋势"
+        formula: "D(today) > D(yesterday)"
+        threshold: 0.0
+        
+      # J线上升条件
+      j_upward:
+        description: "J线呈上升趋势"
+        formula: "J(today) > J(yesterday)"
+        threshold: 0.0
+        
+    # 组合条件
+    combination:
+      logic: "AND"
+      description: "K、D、J三线均上升"
+      
+    # 过滤条件
+    filters:
+      # KDJ值范围过滤
+      kdj_range:
+        k_min: 20          # K值最小值
+        k_max: 80          # K值最大值
+        d_min: 20          # D值最小值
+        d_max: 80          # D值最大值
+        j_min: 0           # J值最小值
+        j_max: 100         # J值最大值
+        
+      # 成交量过滤
+      volume:
+        min_volume: 1000000    # 最小成交量
+        volume_ratio: 1.0      # 成交量比率
+        
+      # 价格过滤
+      price:
+        min_price: 1.0         # 最小价格
+        max_price: 1000.0      # 最大价格
+        
+  # 评分权重
+  scoring:
+    k_upward_strength: 0.35    # K线上升强度权重
+    d_upward_strength: 0.35    # D线上升强度权重
+    j_upward_strength: 0.30    # J线上升强度权重
+    
+  # 选股参数
+  selection:
+    max_stocks: 50             # 最大选股数量
+    min_score: 0.6             # 最小评分
+    sort_by: "score"           # 排序方式
+    sort_order: "desc"         # 排序顺序
+    
+  # 风险控制
+  risk_control:
+    max_concentration: 0.1     # 单股最大权重
+    sector_limit: 5            # 单行业最大股票数
+    
+  # 回测参数
+  backtest:
+    lookback_days: 60          # 回看天数
+    min_data_points: 30        # 最小数据点数
+    
+  # 输出配置
+  output:
+    include_details: true      # 包含详细信息
+    export_format: ["json", "csv"]  # 导出格式
+    chart_indicators: ["KDJ", "Volume"]  # 图表指标

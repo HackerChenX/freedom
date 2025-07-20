@@ -7,29 +7,25 @@ import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_zXMAccuracy(unittest.TestCase, Log_capture_mixin):
+class Test_zXMAccuracy(unittest.TestCase, LogCaptureMixin):
     """ZXM体系指标准确性测试类"""
     
-    def set_up_Accuracy(self):
+    def setUp(self):
         """设置测试环境"""
-        Log_capture_mixin.set_up_Accuracy(self)
+        super().setUp()
         
         self.zxm_absorb = ZXMAbsorb()
         self.zxm_washplate = ZXMWash_plate()
         
         # 生成足够长的测试数据用于验证计算准确性
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 150}
         ])
-    
-    def tear_down_Accuracy(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Accuracy(self)
-    
+
     def test_zxm_absorb_v11_formula_accuracy(self):
         """测试ZXM吸筹V11公式计算准确性"""
         self.clear_logs()

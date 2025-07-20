@@ -3,6 +3,7 @@
 
 提供内存缓存、磁盘缓存和LRU缓存的实现
 支持依赖注入和向后兼容的单例模式
+整合重复的缓存实现，遵循六层架构规范
 """
 
 import os
@@ -14,6 +15,15 @@ from typing import Dict, Any, Tuple, Optional
 from functools import wraps, lru_cache
 
 from utils.dependency_injection import get_service
+
+# 导入统一缓存层（L3数据访问层）
+try:
+    from db.cache_layer import get_cache_layer, cache_decorator as unified_cache_decorator
+    UNIFIED_CACHE_AVAILABLE = True
+except ImportError:
+    UNIFIED_CACHE_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
 class MemoryCache:
@@ -287,7 +297,7 @@ _legacy_disk_cache = None
 _legacy_lock = threading.Lock()
 
 
-def get_memory_cache_cache() -> MemoryCache:
+def get_memory_cache() -> MemoryCache:
     """获取内存缓存实例（向后兼容）"""
     global _legacy_memory_cache
     if _legacy_memory_cache is None:
@@ -328,6 +338,116 @@ def get_cache_service() -> MemoryCache:
 def get_instance():
     """向后兼容的获取实例方法"""
     return get_memory_cache()
+
+
+# ===== 统一缓存接口（整合重复实现） =====
+
+def get_unified_cache():
+    """
+    获取统一缓存层实例
+
+    优先使用 db/cache_layer.py 的统一缓存层
+    如果不可用，则回退到本地缓存实现
+
+    Returns:
+        统一缓存实例
+    """
+    if UNIFIED_CACHE_AVAILABLE:
+        try:
+            return get_cache_layer()
+        except Exception as e:
+            logger.warning(f"获取统一缓存层失败，使用本地缓存: {e}")
+
+    # 回退到本地内存缓存
+    return get_memory_cache()
+
+
+def cache_with_unified_layer(ttl: Optional[float] = None,
+                           key_prefix: str = "",
+                           use_disk: bool = False):
+    """
+    使用统一缓存层的装饰器
+
+    Args:
+        ttl: 过期时间（秒）
+        key_prefix: 缓存键前缀
+        use_disk: 是否使用磁盘缓存
+
+    Returns:
+        装饰器函数
+    """
+    if UNIFIED_CACHE_AVAILABLE:
+        try:
+            # 使用统一缓存层的装饰器
+            from db.cache_layer import CacheLevel
+            levels = [CacheLevel.MEMORY]
+            if use_disk:
+                levels.append(CacheLevel.DISK)
+
+            return unified_cache_decorator(
+                ttl=ttl,
+                levels=levels,
+                key_prefix=key_prefix
+            )
+        except Exception as e:
+            logger.warning(f"使用统一缓存装饰器失败，回退到本地装饰器: {e}")
+
+    # 回退到本地缓存装饰器
+    return cache_result(ttl=ttl, disk_cache=use_disk, key_prefix=key_prefix)
+
+
+# ===== 缓存清理和维护接口 =====
+
+def cleanup_all_caches():
+    """清理所有缓存"""
+    try:
+        # 清理本地缓存
+        memory_cache = get_memory_cache()
+        memory_cache.clear()
+
+        disk_cache = get_disk_cache()
+        disk_cache.clear()
+
+        # 清理统一缓存层
+        if UNIFIED_CACHE_AVAILABLE:
+            unified_cache = get_cache_layer()
+            if hasattr(unified_cache, 'clear_all'):
+                unified_cache.clear_all()
+
+        logger.info("所有缓存已清理")
+
+    except Exception as e:
+        logger.error(f"清理缓存失败: {e}")
+
+
+def get_cache_stats() -> Dict[str, Any]:
+    """获取缓存统计信息"""
+    stats = {
+        'memory_cache': {},
+        'disk_cache': {},
+        'unified_cache': {}
+    }
+
+    try:
+        # 本地缓存统计
+        memory_cache = get_memory_cache()
+        if hasattr(memory_cache, 'get_stats'):
+            stats['memory_cache'] = memory_cache.get_stats()
+
+        disk_cache = get_disk_cache()
+        if hasattr(disk_cache, 'get_stats'):
+            stats['disk_cache'] = disk_cache.get_stats()
+
+        # 统一缓存层统计
+        if UNIFIED_CACHE_AVAILABLE:
+            unified_cache = get_cache_layer()
+            if hasattr(unified_cache, 'get_stats'):
+                stats['unified_cache'] = unified_cache.get_stats()
+
+    except Exception as e:
+        logger.error(f"获取缓存统计失败: {e}")
+
+    return stats
 
 
 # 缓存实例别名（向后兼容）

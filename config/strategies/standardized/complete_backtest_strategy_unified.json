@@ -1,0 +1,87 @@
+{
+  "strategy": {
+    "id": "COMPLETE_BACKTEST_STRATEGY",
+    "name": "Complete Backtest Strategy",
+    "description": "从 complete_backtest_strategy 迁移的策略",
+    "version": "1.0.0",
+    "author": "system_migration",
+    "category": "composite",
+    "risk_level": "medium",
+    "created_date": "2025-07-20",
+    "updated_date": "2025-07-20"
+  },
+  "technical_indicators": {
+    "primary_indicators": [
+      {
+        "indicator_id": "MACD",
+        "parameters": {
+          "fast_period": 12,
+          "slow_period": 26,
+          "signal_period": 9
+        },
+        "conditions": [
+          {
+            "field": "macd_cross_signal",
+            "operator": "cross_up",
+            "value": 0,
+            "lookback_days": 1
+          }
+        ]
+      }
+    ],
+    "combination_logic": "AND"
+  },
+  "time_criteria": {
+    "time_frames": [
+      {
+        "level": "daily",
+        "priority": 1,
+        "required": true
+      }
+    ],
+    "date_range": {
+      "target_date": "2025-07-20"
+    },
+    "market_timing": {
+      "trading_session": "full_day",
+      "exclude_holidays": true
+    }
+  },
+  "filters": {
+    "market_filters": {
+      "markets": [
+        "主板",
+        "创业板",
+        "科创板"
+      ],
+      "exclude_st": true
+    },
+    "financial_filters": {
+      "market_cap": {
+        "min": 10,
+        "max": 5000
+      },
+      "price_range": {
+        "min": 3.0,
+        "max": 200.0
+      }
+    }
+  },
+  "selection_parameters": {
+    "max_selections": 50,
+    "min_score": 0.6,
+    "ranking_method": "score"
+  },
+  "validation": {
+    "enable_closed_loop": true,
+    "validation_method": "entry_point_analysis",
+    "validation_threshold": 0.8,
+    "sample_size": 10
+  },
+  "performance_config": {
+    "enable_cache": true,
+    "parallel_processing": true,
+    "max_workers": 4,
+    "timeout_seconds": 300
+  }
+}

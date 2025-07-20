@@ -24,7 +24,7 @@ from strategy.selector import Stock_selector
 class Test_stock_selection_workflow(unittest.TestCase):
     """选股流程集成测试类"""
     
-    def set_up_Selection(self):
+    def setUp(self):
         """测试前准备"""
         # 创建测试用临时目录
         self.temp_dir = tempfile.Temporary_directory()
@@ -158,7 +158,7 @@ class Test_stock_selection_workflow(unittest.TestCase):
         self.strategy_manager = Magic_mock()
         self.stock_selector = Stock_selector(self.data_manager, self.strategy_manager)
         
-    def tear_down_Selection(self):
+    def tearDown(self):
         """测试后清理"""
         self.temp_dir.cleanup()
         

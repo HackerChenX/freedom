@@ -1,0 +1,23 @@
+strategy:
+  author: system
+  conditions: []
+  create_time: '2025-05-28 16:57:23'
+  description: 基于回测结果生成的策略 - 生成时间 2025-05-28 16:57:23
+  filters:
+    industry: []
+    market: []
+    market_cap:
+      max: 10000
+      min: 0
+    price:
+      max: 500
+      min: 0
+  id: BACKTEST_STRATEGY_20250528165723
+  name: 回测策略
+  sort:
+  - direction: DESC
+    field: signal_strength
+  - direction: ASC
+    field: market_cap
+  update_time: '2025-05-28 16:57:23'
+  version: '1.0'

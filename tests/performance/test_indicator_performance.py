@@ -52,20 +52,20 @@ def measure_memory(func):
 
 class Test_indicator_performance(unittest.TestCase, Log_capture_mixin):
 
-    def set_up_Performance_Test_Indicator_Performance(self):
+    def setUp(self):
         """准备测试数据"""
         # 生成不同大小的数据集用于性能测试
-        self.small_data = Test_data_generator.generate_price_sequence([
+        self.small_data = Test_data_generator.generate_price_sequence_Generator([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 100},
         ])
         
-        self.medium_data = Test_data_generator.generate_price_sequence([
+        self.medium_data = Test_data_generator.generate_price_sequence_Generator([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 500},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 500},
         ])
         
-        self.large_data = Test_data_generator.generate_price_sequence([
+        self.large_data = Test_data_generator.generate_price_sequence_Generator([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 1000},
             {'type': 'v_shape', 'start_price': 120, 'bottom_price': 90, 'periods': 1000},
         ])

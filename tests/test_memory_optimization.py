@@ -27,7 +27,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from strategy.large_scale_memory_optimizer import LargeScaleMemoryOptimizer, LargeScaleMemoryConfig
-from strategy.memory_aware_strategy_executor import MemoryAwareStrategyExecutor
+from strategy.strategy_executor import UnifiedStrategyExecutor as UnifiedStrategyExecutor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

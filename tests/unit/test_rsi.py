@@ -11,9 +11,9 @@ from tests.helper.log_capture import Log_capture_mixin
 class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """RSI指标单元测试类"""
 
-    def set_up_Rsi(self):
+    def setUp(self):
         """准备数据和指标实例"""
-        Log_capture_mixin.set_up_Rsi(self)  # 显式调用Mixin的set_up
+        Log_capture_mixin.setUp(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('RSI', period=14, ma_periods=[5, 10], overbought=70.0, oversold=30.0)
         self.expected_columns = [f'rsi_{self.indicator.period}']
         # 使用一个包含多种走势的数据进行通用测试
@@ -22,9 +22,19 @@ class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tear_down_Rsi(self):
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Rsi(self)  # 显式调用Mixin的tear_down
+        Log_capture_mixin.tearDown(self)  # 显式调用Mixin的tear_down
+
+    def _convert_result_to_dataframe(self, result, expected_columns=None):
+        """将指标结果转换为DataFrame格式以保持测试兼容性"""
+        if isinstance(result, pd.DataFrame):
+            return result
+        elif isinstance(result, dict):
+            # 将字典转换为DataFrame，包含所有列
+            return pd.DataFrame(result)
+        else:
+            raise ValueError(f"指标返回了意外的数据类型: {type(result)}")
 
     def clear_logs_before_test(self):
         """在测试前清除日志"""
@@ -34,23 +44,26 @@ class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         """测试RSI基础计算功能"""
         result = self.indicator.calculate(self.data)
 
+        # 适配重构后的输出格式
+        result_df = self._convert_result_to_dataframe(result, self.expected_columns)
+
         # 验证返回类型
-        self.assertIsInstance(result, pd.DataFrame, "RSI计算结果应为DataFrame")
+        self.assertIsInstance(result_df, pd.DataFrame, "RSI计算结果应为DataFrame")
 
         # 验证包含RSI列
         rsi_col = f'rsi_{self.indicator.period}'
-        self.assertIn(rsi_col, result.columns, f"结果应包含{rsi_col}列")
+        self.assertIn(rsi_col, result_df.columns, f"结果应包含{rsi_col}列")
 
         # 验证RSI值在0-100范围内
-        rsi_values = result[rsi_col].dropna()
+        rsi_values = result_df[rsi_col].dropna()
         self.assertTrue(all(0 <= val <= 100 for val in rsi_values), "RSI值应在0-100范围内")
 
         # 验证RSI均线列
         if self.indicator.ma_periods:
             ma_short_col = f'rsi_ma_{self.indicator.ma_periods[0]}'
             ma_long_col = f'rsi_ma_{self.indicator.ma_periods[1]}'
-            self.assertIn(ma_short_col, result.columns, f"结果应包含{ma_short_col}列")
-            self.assertIn(ma_long_col, result.columns, f"结果应包含{ma_long_col}列")
+            self.assertIn(ma_short_col, result_df.columns, f"结果应包含{ma_short_col}列")
+            self.assertIn(ma_long_col, result_df.columns, f"结果应包含{ma_long_col}列")
 
     def test_rsi_overbought_detection(self):
         """测试RSI超买检测"""
@@ -187,9 +200,10 @@ class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         result = self.indicator.calculate(data)
 
         # 将RSI结果合并到原始数据中
+        result_df = self._convert_result_to_dataframe(result)
         data_with_rsi = data.copy()
-        for col in result.columns:
-            data_with_rsi[col] = result[col]
+        for col in result_df.columns:
+            data_with_rsi[col] = result_df[col]
 
         # 计算评分
         score_result = self.indicator.calculate_score(data_with_rsi)
@@ -234,8 +248,9 @@ class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
 
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
+        result_df = self._convert_result_to_dataframe(result)
         rsi_col = f'rsi_{new_period}'
-        self.assertIn(rsi_col, result.columns, f"结果应包含{rsi_col}列")
+        self.assertIn(rsi_col, result_df.columns, f"结果应包含{rsi_col}列")
 
     def test_edge_cases_Rsi(self):
         """测试边界条件"""
@@ -245,7 +260,8 @@ class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         ])
 
         result = self.indicator.calculate(short_data)
-        self.assertIsInstance(result, pd.DataFrame, "短数据计算结果应为DataFrame")
+        result_df = self._convert_result_to_dataframe(result)
+        self.assertIsInstance(result_df, pd.DataFrame, "短数据计算结果应为DataFrame")
 
         # 测试价格无变化的情况
         flat_data = Test_data_generator.generate_price_sequence([
@@ -253,13 +269,15 @@ class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         ])
 
         result = self.indicator.calculate(flat_data)
-        self.assertIsInstance(result, pd.DataFrame, "平价数据计算结果应为DataFrame")
+        result_df = self._convert_result_to_dataframe(result)
+        self.assertIsInstance(result_df, pd.DataFrame, "平价数据计算结果应为DataFrame")
 
         # 测试空数据 - 应该抛出异常或返回空DataFrame
         empty_data = pd.DataFrame()
         try:
             result = self.indicator.calculate(empty_data)
-            self.assertIsInstance(result, pd.DataFrame, "空数据计算结果应为DataFrame")
+            result_df = self._convert_result_to_dataframe(result)
+            self.assertIsInstance(result_df, pd.DataFrame, "空数据计算结果应为DataFrame")
         except ValueError:
             # 空数据抛出异常是可以接受的
             pass
@@ -286,9 +304,10 @@ class Testrsi_rsi(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         result = self.indicator.calculate(data)
 
         # 验证计算没有出错
-        self.assertIsInstance(result, pd.DataFrame, "异常数据计算结果应为DataFrame")
+        result_df = self._convert_result_to_dataframe(result)
+        self.assertIsInstance(result_df, pd.DataFrame, "异常数据计算结果应为DataFrame")
         rsi_col = f'rsi_{self.indicator.period}'
-        self.assertIn(rsi_col, result.columns, f"结果应包含{rsi_col}列")
+        self.assertIn(rsi_col, result_df.columns, f"结果应包含{rsi_col}列")
 
         # 验证RSI值仍在合理范围内
         rsi_values = result[rsi_col].dropna()

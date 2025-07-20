@@ -11,7 +11,7 @@ import yaml
 from datetime import datetime
 
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from enums.period import Period
 from utils.exceptions import (
     StrategyParseError, 
@@ -21,7 +21,7 @@ from utils.exceptions import (
     IndicatorParameterError
 )
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StrategyParser:

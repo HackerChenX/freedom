@@ -5,28 +5,25 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testvortex_vortex(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testvortex_vortex(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """Vortex指标测试类"""
     
-    def set_up_Vortex(self):
+    def setUp(self):
         """设置测试环境"""
-        # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Vortex(self)
-        
-        self.indicator = VORTEX(period=14)
+        super().setUp()
+
+        self.indicator = complete_registry.create_indicator('VORTEX', period=14)
         self.expected_columns = ['vi_plus', 'vi_minus', 'vi_diff']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
-    
-    def tear_down_Vortex(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Vortex(self)
+
+
     
     def test_vortex_calculation_accuracy(self):
         """测试Vortex计算准确性"""

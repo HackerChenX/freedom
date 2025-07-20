@@ -14,10 +14,10 @@ import pandas as pd
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.decorators import performance_monitor
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BatchOptimizer:

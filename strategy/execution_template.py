@@ -17,12 +17,12 @@ from enum import Enum
 import pandas as pd
 import numpy as np
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.common_utils import DataProcessor, ValidationUtils, CacheUtils, merge_dicts
 from utils.decorators import exception_handler, performance_monitor
 from strategy.unified_base_strategy import UnifiedBaseStrategy
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ExecutionPhase(Enum):

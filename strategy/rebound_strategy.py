@@ -11,10 +11,10 @@ import numpy as np
 from strategy.base_strategy import BaseStrategy
 from formula import formula
 from enums.kline_period import Kline_period
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.complete_indicator_registry import complete_registry
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ReboundStrategy(BaseStrategy):

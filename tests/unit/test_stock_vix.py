@@ -5,44 +5,40 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_stock_vIX(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_stock_vIX(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """StockVIX指标测试类"""
     
-    def set_up_Vix(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Vix(self)
+        super().setUp()
         
-        self.indicator = complete_registry.create_indicator('STOCK_VIX')
+        self.indicator = complete_registry.create_indicator('VIX')
         self.expected_columns = [
             'returns_volatility', 'parkinson_volatility', 'garman_klass_volatility',
             'ewma_volatility', 'garch_volatility', 'atr_volatility', 'stock_vix',
             'volatility_zone', 'volatility_trend', 'predicted_volatility', 'volatility_anomaly'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Vix(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Vix(self)
-    
+
     def test_stock_vix_initialization(self):
         """测试StockVIX初始化"""
         # 测试默认初始化
-        default_indicator = complete_registry.create_indicator('STOCK_VIX')
+        default_indicator = complete_registry.create_indicator('VIX')
         if default_indicator and hasattr(default_indicator, '_parameters'):
             self.assertEqual(default_indicator._parameters.get('window', 22), 22)
             self.assertEqual(default_indicator._parameters.get('alpha', 0.94), 0.94)
 
         # 测试自定义初始化
         custom_params = {'window': 30, 'alpha': 0.9}
-        custom_indicator = complete_registry.create_indicator('STOCK_VIX', **custom_params)
+        custom_indicator = complete_registry.create_indicator('VIX', **custom_params)
         if custom_indicator and hasattr(custom_indicator, '_parameters'):
             self.assertEqual(custom_indicator._parameters.get('window', 30), 30)
             self.assertEqual(custom_indicator._parameters.get('alpha', 0.9), 0.9)
@@ -219,7 +215,7 @@ class Test_stock_vIX(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin)
     def test_stock_vix_percentile_calculation(self):
         """测试StockVIX百分位计算"""
         # 需要足够的数据进行百分位计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 300}
         ])
         
@@ -236,7 +232,7 @@ class Test_stock_vIX(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin)
     def test_stock_vix_strength_calculation(self):
         """测试StockVIX强度计算"""
         # 需要足够的数据进行强度计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 300}
         ])
         

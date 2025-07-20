@@ -5,36 +5,32 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_chip_distribution(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_chip_distribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """ChipDistribution指标测试类"""
     
-    def set_up_Distribution(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Distribution(self)
+        super().setUp()
         
-        self.indicator = complete_registry.create_indicator('CHIP_DISTRIBUTION', periods=[5, 10, 20, 60, 120])
+        self.indicator = complete_registry.create_indicator('COMPOSITE', periods=[5, 10, 20, 60, 120])
         self.expected_columns = [
             'avg_cost', 'chip_concentration', 'profit_ratio', 'chip_width_90pct',
             'untrapped_difficulty', 'chip_looseness', 'profit_ratio_change', 'cost_deviation'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Distribution(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Distribution(self)
-    
+
     def test_chip_distribution_initialization(self):
         """测试ChipDistribution初始化"""
         # 测试默认初始化
-        default_indicator = complete_registry.create_indicator('CHIP_DISTRIBUTION')
+        default_indicator = complete_registry.create_indicator('COMPOSITE')
         if default_indicator and hasattr(default_indicator, '_parameters'):
             self.assertEqual(default_indicator._parameters.get('half_life', 60), 60)
             self.assertEqual(default_indicator._parameters.get('price_precision', 0.01), 0.01)
@@ -42,10 +38,10 @@ class Test_chip_distribution(unittest.TestCase, Indicator_test_mixin, Log_captur
             self.assert_equal(default_indicator.periods, [5, 10, 20, 60, 120])
 
         # 测试自定义初始化
-        custom_indicator = complete_registry.create_indicator('CHIP_DISTRIBUTION', periods=[10, 20, 30])
+        custom_indicator = complete_registry.create_indicator('COMPOSITE', periods=[10, 20, 30])
         if custom_indicator and hasattr(custom_indicator, 'periods'):
             self.assert_equal(custom_indicator.periods, [10, 20, 30])
-    
+
     def test_chip_distribution_calculation_accuracy(self):
         """测试ChipDistribution计算准确性"""
         result = self.indicator.calculate(self.data)

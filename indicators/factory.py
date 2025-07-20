@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from utils.dependency_injection import get_logger
 """
 指标工厂模块
 
@@ -12,9 +13,9 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class IndicatorFactory:
@@ -38,21 +39,21 @@ class IndicatorFactory:
 
     def get_available_indicators_Factory(self) -> List[str]:
         """获取可用指标列表"""
-        return self._registry.get_indicator_names()
+        return list(self._registry.get_all_indicators().keys())
 
     def is_indicator_available(self, name: str) -> bool:
         """检查指标是否可用"""
-        return name in self._registry.get_indicator_names()
+        return name in self._registry.get_all_indicators()
 
     def get_all_registered_indicators(self) -> List[str]:
         """获取所有已注册的指标名称"""
-        return self._registry.get_indicator_names()
+        return list(self._registry.get_all_indicators().keys())
 
     @classmethod
     def get_supported_indicators(cls) -> List[str]:
         """获取支持的指标列表"""
         from indicators.base_indicator import BaseIndicator
-        return complete_registry.get_indicator_names()
+        return list(complete_registry.get_all_indicators().keys())
 
     @classmethod
     def create_indicator_Factory_Factory_Factory_factory_duplicate(cls, name: str, **kwargs):

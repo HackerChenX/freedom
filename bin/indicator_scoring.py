@@ -39,7 +39,7 @@ class IndicatorScoringSystem:
         self.scoring_results = {}
         
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     def load_stock_data_Scoring(self, code: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
         加载股票数据
@@ -74,7 +74,7 @@ class IndicatorScoringSystem:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     def calculate_indicator_scores(self, data: pd.DataFrame, 
                                  indicator_configs: Dict[str, Any]) -> Dict[str, float]:
         """
@@ -150,7 +150,7 @@ class IndicatorScoringSystem:
             return min(max(latest_value, 0.0), 1.0)
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=30.0)
+    @performance_monitor(threshold=30.0)
     def run_scoring_analysis(self, stock_codes: List[str], 
                            start_date: str, end_date: str,
                            indicator_configs: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
@@ -288,7 +288,7 @@ def load_default_indicator_configs() -> Dict[str, Any]:
     }
 
 @exception_handler(reraise=True)
-@performance_monitor(threshold_seconds=60.0)
+@performance_monitor(threshold=60.0)
 def main_30():
     """主函数"""
     parser = argparse.ArgumentParser(description='指标评分系统')

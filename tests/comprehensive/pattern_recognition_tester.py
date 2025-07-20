@@ -195,7 +195,7 @@ class PatternRecognitionTester:
         # 测试结果存储
         self.test_results: List[PatternTestResult] = []
     
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     @exception_handler(reraise=True)
     def run_comprehensive_pattern_tests(self, 
                                       pattern_types: Optional[List[PatternType]] = None,

@@ -27,9 +27,10 @@ from tests.helper.log_capture import LogCaptureMixin
 class TestElliottWave_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """艾略特波浪指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('ELLIOTTWAVE')
@@ -44,10 +45,10 @@ class TestElliottWave_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptu
             {'type': 'trend', 'start_price': 130, 'end_price': 100, 'periods': 40},
             {'type': 'trend', 'start_price': 100, 'end_price': 140, 'periods': 60},
         ])
-    
+
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_wave_identification(self):
         """测试波浪识别"""
@@ -122,9 +123,10 @@ class TestElliottWave_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptu
 class TestFibonacciTools_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """斐波那契工具指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('FIBONACCITOOLS')
@@ -137,10 +139,10 @@ class TestFibonacciTools_Indicators(unittest.TestCase, IndicatorTestMixin, LogCa
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 100}
         ])
-    
+
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_retracement_levels(self):
         """测试回撤水平计算"""
@@ -227,9 +229,10 @@ class TestFibonacciTools_Indicators(unittest.TestCase, IndicatorTestMixin, LogCa
 class TestTrendStrength(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """趋势强度指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('TRENDSTRENGTH')
@@ -241,10 +244,10 @@ class TestTrendStrength(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 100},
             {'type': 'sideways', 'start_price': 150, 'volatility': 0.01, 'periods': 50}
         ])
-    
+
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_trend_strength_calculation_Indicators_Test_Advanced_Indicators_Test_Advanced_IndicatorsTestadvancedindicators(self):
         """测试趋势强度计算"""
@@ -332,9 +335,10 @@ class TestTrendStrength(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """趋势分类指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('TRENDCLASSIFICATION')
@@ -352,10 +356,10 @@ class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureM
             {'type': 'sideways', 'start_price': 110, 'volatility': 0.02, 'periods': 30}, # 盘整
             {'type': 'trend', 'start_price': 110, 'end_price': 95, 'periods': 40, 'noise': 0.01}  # 下降
         ])
-    
+
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_trend_classification(self):
         """测试趋势分类"""
@@ -433,9 +437,10 @@ class TestTrendClassification(unittest.TestCase, IndicatorTestMixin, LogCaptureM
 class TestChipDistribution_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """筹码分布指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('CHIPDISTRIBUTION')
@@ -455,7 +460,7 @@ class TestChipDistribution_Indicators(unittest.TestCase, IndicatorTestMixin, Log
     
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_cost_calculation(self):
         """测试成本计算"""
@@ -553,9 +558,10 @@ class TestChipDistribution_Indicators(unittest.TestCase, IndicatorTestMixin, Log
 class TestInstitutionalBehavior_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """机构行为指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('INSTITUTIONALBEHAVIOR')
@@ -573,10 +579,10 @@ class TestInstitutionalBehavior_Indicators(unittest.TestCase, IndicatorTestMixin
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 40, 'base_volume': 20000},
             {'type': 'sideways', 'start_price': 120, 'periods': 30, 'base_volume': 15000}
         ])
-    
+
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_institution_activity_calculation(self):
         """测试机构活跃度计算"""
@@ -686,9 +692,10 @@ class TestInstitutionalBehavior_Indicators(unittest.TestCase, IndicatorTestMixin
 class TestSentimentAnalysis(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """情绪分析指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             # 假设SENTIMENTANALYSIS指标不需要外部数据源
@@ -701,10 +708,10 @@ class TestSentimentAnalysis(unittest.TestCase, IndicatorTestMixin, LogCaptureMix
             {'type': 'v_shape', 'start_price': 110, 'bottom_price': 90, 'periods': 50},
             {'type': 'trend', 'start_price': 90, 'end_price': 120, 'periods': 50},
         ])
-    
+
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_sentiment_index_calculation(self):
         """测试情绪指数计算"""
@@ -815,9 +822,10 @@ class TestSentimentAnalysis(unittest.TestCase, IndicatorTestMixin, LogCaptureMix
 class TestGannTools_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """江恩工具指标测试"""
     
-    def setUp_IndicatorsTestadvancedindicators(self):
+    def setUp(self):
+        super().setUp()
         """为测试准备数据和指标实例"""
-        super().setUp_IndicatorsTestadvancedindicators()
+        super().setUp()
         
         try:
             self.indicator = IndicatorFactory.create_indicator('GANNTOOLS')
@@ -830,10 +838,10 @@ class TestGannTools_Indicators(unittest.TestCase, IndicatorTestMixin, LogCapture
             {'type': 'v_shape', 'start_price': 100, 'bottom_price': 80, 'periods': 100},
             {'type': 'trend', 'start_price': 100, 'end_price': 130, 'periods': 100}
         ])
-    
+
     def tearDown_IndicatorsTestadvancedindicators(self):
         """清理测试环境"""
-        super().tearDown_IndicatorsTestadvancedindicators()
+        super().tearDown()
     
     def test_gann_angle_calculation(self):
         """测试江恩角度线计算"""

@@ -5,29 +5,25 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testtrix_trix(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testtrix_trix(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """TRIX指标测试类"""
     
-    def set_up_Trix_Test_Trix(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Trix_Test_Trix(self)
+        super().setUp()
         
-        self.indicator = TRIX(n=12, m=9)
+        self.indicator = complete_registry.create_indicator('TRIX', n=12, m=9)
         self.expected_columns = ['TR', 'TRIX', 'MATRIX']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
-    
-    def tear_down_Trix_Test_Trix(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Trix_Test_Trix(self)
-    
+
     def test_trix_calculation_accuracy(self):
         """测试TRIX计算准确性"""
         result = self.indicator.calculate(self.data)
@@ -122,7 +118,7 @@ class Testtrix_trix(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     def test_trix_crossover_detection(self):
         """测试TRIX交叉检测"""
         # 创建包含交叉的数据
-        crossover_data = Test_data_generator.generate_price_sequence([
+        crossover_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 25},
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 25}
         ])
@@ -144,7 +140,7 @@ class Testtrix_trix(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     def test_trix_zero_crossing(self):
         """测试TRIX零轴穿越"""
         # 创建包含零轴穿越的数据
-        zero_cross_data = Test_data_generator.generate_price_sequence([
+        zero_cross_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 30},
             {'type': 'trend', 'start_price': 80, 'end_price': 120, 'periods': 30}
         ])
@@ -185,7 +181,7 @@ class Testtrix_trix(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     def test_trix_trend_detection(self):
         """测试TRIX趋势检测"""
         # 创建明显的上升趋势数据
-        uptrend_data = Test_data_generator.generate_price_sequence([
+        uptrend_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 50}
         ])
         

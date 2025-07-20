@@ -535,7 +535,7 @@ def main():
     config_manager = ConfigManager()
     config = config_manager.get_config()
     
-    print("\n默认配置:")
+    print("\nfrom config.config import get_config\n默认配置:")
     print(f"日期范围: {config.date_range.start_date} - {config.date_range.end_date}")
     print(f"超时时间: {config.performance.timeout_seconds}秒")
     print(f"最大工作线程: {config.performance.max_workers}")

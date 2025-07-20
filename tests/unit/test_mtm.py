@@ -5,29 +5,25 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Testmtm_mtm(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """MTM指标测试类"""
     
-    def set_up_Mtm(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Mtm(self)
+        super().setUp()
         
-        self.indicator = MTM(period=10, ma_period=6)
+        self.indicator = complete_registry.create_indicator('MTM', period=10, ma_period=6)
         self.expected_columns = ['mtm', 'mtmma']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
-    
-    def tear_down_Mtm(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Mtm(self)
-    
+
     def test_mtm_calculation_accuracy(self):
         """测试MTM计算准确性"""
         result = self.indicator.calculate(self.data)

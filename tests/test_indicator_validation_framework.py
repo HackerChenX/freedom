@@ -11,7 +11,7 @@ import sys
 import unittest
 import json
 import tempfile
-from unittest.mock import Mock, patch, Magic_mock
+from unittest.mock import MagicMock
 import pandas as pd
 
 # 添加项目根目录到路径
@@ -29,11 +29,11 @@ from analysis.engines.indicator_validation_framework import (
 class Test_indicator_validation_framework(unittest.TestCase):
     """指标验证框架测试类"""
     
-    def set_up_Framework(self):
+    def setUp(self):
         """测试前准备"""
         self.config = Indicator_validation_config(
             mode=Validation_mode.QUICK,
-            stock_get_config('performance.pool_size'),
+            pool_size=stock_get_config('performance.pool_size'),
             max_selection_ratio=0.1,
             parallel_workers=1,
             save_details=False
@@ -391,7 +391,7 @@ class Test_validation_config(unittest.TestCase):
         """测试自定义配置"""
         config = Indicator_validation_config(
             mode=Validation_mode.QUICK,
-            stock_get_config('performance.pool_size'),
+            pool_size=stock_get_config('performance.pool_size'),
             max_selection_ratio=0.05,
             parallel_workers=2,
             output_format="csv"

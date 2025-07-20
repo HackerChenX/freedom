@@ -8,6 +8,7 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
+from indicators.factory import IndicatorFactory
 from tests.helper.data_generator import TestDataGenerator
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 
@@ -15,7 +16,8 @@ from tests.unit.indicator_test_mixin import IndicatorTestMixin
 class TestSpecialInterfaceIndicators(unittest.TestCase, IndicatorTestMixin):
     """特殊接口指标测试类"""
 
-    def setUp_IndicatorsTestspecialinterfaceindicators(self):
+    def setUp(self):
+        super().setUp()
         """准备测试数据和环境"""
         # 生成测试数据
         self.data = TestDataGenerator.generate_price_sequence([
@@ -28,11 +30,10 @@ class TestSpecialInterfaceIndicators(unittest.TestCase, IndicatorTestMixin):
         self._ensure_stock_info_fields(self.data)
         
         # 为避免继承自IndicatorTestMixin的通用测试方法失败，设置默认值
-        self.indicator = None
-        self.expected_columns = []
+        self.indicator = complete_registry.create_indicator('COMPOSITE')
+        self.expected_columns = ['COMPOSITE_VALUE']
 
-        # 自动注册所有指标
-        IndicatorFactory.auto_register_all_indicators()
+        # 获取支持的指标（指标已在模块初始化时自动注册）
         self.supported_indicators = IndicatorFactory.get_supported_indicators()
 
     def test_zxm_pattern_indicator(self):

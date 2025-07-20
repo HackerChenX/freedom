@@ -22,11 +22,11 @@ from db.container import Service_container, Lifecycle_type, get_container, reset
 class Test_service_container(unittest.TestCase):
     """测试服务容器"""
     
-    def set_up_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
+    def setUp(self):
         """测试前准备"""
         self.container = Service_container()
     
-    def tear_down_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
+    def tearDown(self):
         """测试后清理"""
         reset_container()
     
@@ -219,11 +219,11 @@ class Test_connection_interface(unittest.TestCase):
 class Test_global_container(unittest.TestCase):
     """测试全局容器"""
     
-    def set_up_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
+    def setUp(self):
         """测试前准备"""
         reset_container()
     
-    def tear_down_Interfaces_Test_Data_Service_Interfaces_Test_Data_Service_Interfaces_testdataserviceinterfaces(self):
+    def tearDown(self):
         """测试后清理"""
         reset_container()
     

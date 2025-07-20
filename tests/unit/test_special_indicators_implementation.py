@@ -39,7 +39,7 @@ class TestSpecialIndicatorsImplementation(IndicatorTestMixin):
         except:
             # 如果无法创建MACD，使用假指标
             from indicators.complete_indicator_registry import complete_registry
-            self.indicator = BaseIndicator("Test", "Test")
+            self.indicator = complete_registry.create_indicator('BASEINDICATOR', "Test", "Test")
             
             # 为假指标添加计算方法
             def mock_calculate(data):

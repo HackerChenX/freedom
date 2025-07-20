@@ -56,7 +56,7 @@ def time_it(func):
         end_time = time.time()
         print(f"{func.__name__} 执行时间: {end_time - start_time:.4f}秒")
         return result
-    return wrapper
+    return wrapper_decorators
 
 def performance_monitor(threshold: float = 0.1):
     """

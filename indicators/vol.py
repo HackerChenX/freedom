@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -18,13 +19,13 @@ import warnings
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class VolumeIndicator(BaseIndicator, PatternSignalMixin):
@@ -36,16 +37,18 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin):
     """
     
     def __init__(self, period: int = 14, enable_cycles_analysis: bool = True, enable_standardization: bool = True):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化成交量(VOL)指标
-        
+
         Args:
             period: 计算周期，默认为14
             enable_cycles_analysis: 是否启用量能周期分析，默认启用
             enable_standardization: 是否启用成交量标准化，默认启用
         """
-        super().__init__(name="VOL", description="成交量指标，市场活跃度、参与度直观体现")
+        super().__init__()
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self.name = "VOL"
+        self.description = "成交量指标，市场活跃度、参与度直观体现"
         self.period = period
         self.enable_cycles_analysis = enable_cycles_analysis
         self.enable_standardization = enable_standardization
@@ -60,6 +63,32 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin):
             self.enable_cycles_analysis = enable_cycles_analysis
         if enable_standardization is not None:
             self.enable_standardization = enable_standardization
+
+    # ==================== 抽象方法实现 ====================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self.calculate_Vol(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score_Vol(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns_Vol(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters_Vol_Vol_Vol_vol(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """抽象基类要求的置信度计算方法"""
+        return self.calculate_confidence_Vol(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """统一的计算接口"""
+        return self.calculate_Vol(data, **kwargs)
 
     def calculate_Vol(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -1399,8 +1428,8 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('VOL', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"VOL参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -1413,3 +1442,278 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    # ==================== 兼容性方法 - 真实实现 ====================
+
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """真实实现：获取VOL形态"""
+        if data is None or data.empty:
+            return pd.DataFrame()
+
+        # 首先计算VOL指标
+        vol_data = self.calculate_Vol(data)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 获取成交量数据
+        volume = vol_data['vol']
+        vol_ma5 = vol_data.get('vol_ma5', pd.Series(index=data.index))
+        vol_ma10 = vol_data.get('vol_ma10', pd.Series(index=data.index))
+        vol_ratio = vol_data.get('vol_ratio', pd.Series(index=data.index))
+
+        # 1. 放量突破形态
+        patterns_df['VOL_BREAKOUT'] = (vol_ratio > 2.0) & (data['close'] > data['close'].shift(1))
+
+        # 2. 放量下跌形态
+        patterns_df['VOL_SELLOFF'] = (vol_ratio > 2.0) & (data['close'] < data['close'].shift(1))
+
+        # 3. 缩量上涨形态
+        patterns_df['VOL_WEAK_RISE'] = (vol_ratio < 0.7) & (data['close'] > data['close'].shift(1))
+
+        # 4. 成交量黄金交叉
+        if not vol_ma5.empty and not vol_ma10.empty:
+            patterns_df['VOL_GOLDEN_CROSS'] = (vol_ma5 > vol_ma10) & (vol_ma5.shift(1) <= vol_ma10.shift(1))
+            patterns_df['VOL_DEATH_CROSS'] = (vol_ma5 < vol_ma10) & (vol_ma5.shift(1) >= vol_ma10.shift(1))
+
+        # 5. 天量地量形态
+        if len(volume) >= 60:
+            vol_60_max = volume.rolling(60).max()
+            vol_60_min = volume.rolling(60).min()
+            patterns_df['VOL_PEAK'] = volume >= vol_60_max * 0.95  # 接近60日最高量
+            patterns_df['VOL_TROUGH'] = volume <= vol_60_min * 1.05  # 接近60日最低量
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """真实实现：计算VOL原始评分"""
+        if data.empty:
+            return pd.Series(dtype=float)
+
+        # 计算VOL指标
+        vol_data = self.calculate_Vol(data)
+
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+
+        # 获取成交量数据
+        vol_ratio = vol_data.get('vol_ratio', pd.Series(index=data.index))
+        volume = vol_data['vol']
+
+        # 1. 基于量比的评分
+        if not vol_ratio.empty:
+            # 温和放量 (1.2-2.0倍) 加分
+            score += ((vol_ratio >= 1.2) & (vol_ratio <= 2.0)) * 15
+
+            # 极度放量 (>2.5倍) 可能是反转信号，减分
+            score -= (vol_ratio > 2.5) * 10
+
+            # 缩量 (<0.7倍) 减分
+            score -= (vol_ratio < 0.7) * 8
+
+        # 2. 量价配合评分
+        price_change = data['close'].pct_change()
+        if not vol_ratio.empty:
+            # 放量上涨，量价配合好
+            score += ((vol_ratio > 1.2) & (price_change > 0)) * 12
+
+            # 放量下跌，可能是恐慌性抛售
+            score -= ((vol_ratio > 1.5) & (price_change < -0.02)) * 15
+
+            # 缩量上涨，可能缺乏持续性
+            score -= ((vol_ratio < 0.8) & (price_change > 0.01)) * 5
+
+        # 3. 成交量趋势评分
+        if len(volume) >= 5:
+            vol_ma5 = volume.rolling(5).mean()
+            vol_trend = vol_ma5 > vol_ma5.shift(1)
+            score += vol_trend * 8  # 成交量上升趋势加分
+
+        # 限制评分在0-100之间
+        return score.clip(0, 100)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成VOL交易信号"""
+        if data.empty:
+            return pd.DataFrame()
+
+        # 计算VOL指标
+        vol_data = self.calculate_Vol(data)
+        result_df = data.copy()
+
+        # 合并VOL数据
+        for col in vol_data.columns:
+            result_df[col] = vol_data[col]
+
+        # 初始化信号列
+        result_df['vol_signal'] = 0
+        result_df['vol_strength'] = 0.0
+        result_df['vol_confidence'] = 0.0
+
+        # 获取参数
+        vol_ratio_threshold = kwargs.get('vol_ratio_threshold', 1.5)
+
+        # 获取成交量数据
+        vol_ratio = vol_data.get('vol_ratio', pd.Series(index=data.index))
+
+        if not vol_ratio.empty:
+            # 1. 放量信号 (买入信号)
+            breakout_condition = (vol_ratio > vol_ratio_threshold) & (data['close'] > data['close'].shift(1))
+            result_df.loc[breakout_condition, 'vol_signal'] = 1
+            result_df.loc[breakout_condition, 'vol_strength'] = (vol_ratio - 1.0).clip(0, 3)
+            result_df.loc[breakout_condition, 'vol_confidence'] = 0.8
+
+            # 2. 放量下跌信号 (卖出信号)
+            selloff_condition = (vol_ratio > vol_ratio_threshold) & (data['close'] < data['close'].shift(1))
+            result_df.loc[selloff_condition, 'vol_signal'] = -1
+            result_df.loc[selloff_condition, 'vol_strength'] = (vol_ratio - 1.0).clip(0, 3)
+            result_df.loc[selloff_condition, 'vol_confidence'] = 0.7
+
+            # 3. 缩量信号 (观望信号)
+            low_vol_condition = vol_ratio < 0.5
+            result_df.loc[low_vol_condition, 'vol_signal'] = 0
+            result_df.loc[low_vol_condition, 'vol_strength'] = 0.0
+            result_df.loc[low_vol_condition, 'vol_confidence'] = 0.3
+
+        return result_df
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """真实实现：计算VOL综合评分"""
+        if data.empty:
+            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+
+        # 计算原始评分
+        raw_score = self.calculate_raw_score(data, **kwargs)
+
+        # 获取形态
+        patterns = self.get_patterns(data, **kwargs)
+
+        # 计算最终评分
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+
+        # 基于形态调整评分
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 正面形态加分
+            if latest_patterns.get('VOL_BREAKOUT', False):
+                final_score += 10
+            if latest_patterns.get('VOL_GOLDEN_CROSS', False):
+                final_score += 8
+
+            # 负面形态减分
+            if latest_patterns.get('VOL_SELLOFF', False):
+                final_score -= 12
+            if latest_patterns.get('VOL_DEATH_CROSS', False):
+                final_score -= 6
+
+        # 计算置信度
+        vol_data = self.calculate_Vol(data)
+        vol_ratio = vol_data.get('vol_ratio', pd.Series([1.0]))
+        latest_vol_ratio = vol_ratio.iloc[-1] if not vol_ratio.empty else 1.0
+
+        # 基于成交量活跃度计算置信度
+        if latest_vol_ratio > 1.5:
+            confidence = 0.8
+        elif latest_vol_ratio > 1.0:
+            confidence = 0.6
+        elif latest_vol_ratio > 0.5:
+            confidence = 0.4
+        else:
+            confidence = 0.2
+
+        # 限制评分范围
+        final_score = max(0, min(100, final_score))
+
+        return {
+            'score': final_score,
+            'confidence': confidence,
+            'signals': {
+                'vol_ratio': latest_vol_ratio,
+                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'
+            }
+        }
+
+    def set_parameters(self, **kwargs):
+        """真实实现：设置VOL参数"""
+        # 验证并设置周期参数
+        if 'period' in kwargs:
+            period = kwargs['period']
+            if isinstance(period, int) and 1 <= period <= 100:
+                self.period = period
+            else:
+                logger.warning(f"无效的period参数: {period}, 保持原值: {self.period}")
+
+        # 设置周期分析开关
+        if 'enable_cycles_analysis' in kwargs:
+            self.enable_cycles_analysis = bool(kwargs['enable_cycles_analysis'])
+
+        # 设置标准化开关
+        if 'enable_standardization' in kwargs:
+            self.enable_standardization = bool(kwargs['enable_standardization'])
+
+        # 记录参数变更
+        logger.info(f"VOL参数已更新: period={self.period}, "
+                   f"cycles_analysis={self.enable_cycles_analysis}, "
+                   f"standardization={self.enable_standardization}")
+
+    def register_patterns(self):
+        """真实实现：注册VOL形态到全局注册表"""
+        try:
+            registry = PatternRegistry()
+
+            # 注册放量突破形态
+            registry.register(
+                pattern_id="VOL_BREAKOUT_UP",
+                display_name="放量上涨",
+                description="成交量显著放大，同时价格上涨，通常是趋势启动或加速的信号",
+                indicator_id="VOL",
+                pattern_type=PatternTypePatternRegistry.BULLISH,
+                score_impact=15.0,
+                strength=PatternStrengthPatternRegistry.STRONG
+            )
+
+            # 注册放量下跌形态
+            registry.register(
+                pattern_id="VOL_SELLOFF_DOWN",
+                display_name="放量下跌",
+                description="成交量显著放大，同时价格下跌，通常是恐慌性抛售信号",
+                indicator_id="VOL",
+                pattern_type=PatternTypePatternRegistry.BEARISH,
+                score_impact=-15.0,
+                strength=PatternStrengthPatternRegistry.STRONG
+            )
+
+            # 注册成交量黄金交叉
+            registry.register(
+                pattern_id="VOL_GOLDEN_CROSS",
+                display_name="成交量黄金交叉",
+                description="短期成交量均线上穿长期均线，表明市场活跃度提升",
+                indicator_id="VOL",
+                pattern_type=PatternTypePatternRegistry.BULLISH,
+                score_impact=8.0,
+                strength=PatternStrengthPatternRegistry.MEDIUM
+            )
+
+            logger.info("VOL形态注册完成")
+            return True
+
+        except Exception as e:
+            logger.error(f"VOL形态注册失败: {e}")
+            return False
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成VOL交易信号"""
+        return self.get_signals(data, **kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：计算VOL指标"""
+        return self.calculate_Vol(data, **kwargs)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Vol(score, patterns, signals)
+
+
+# 为了兼容指标注册表，创建别名
+VOL = VolumeIndicator

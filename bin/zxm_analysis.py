@@ -45,7 +45,7 @@ class ZXMAnalysisSystem:
         self.analysis_results = {}
         
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=5.0)
+    @performance_monitor(threshold=5.0)
     def load_stock_data(self, code: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
         加载股票数据
@@ -81,7 +81,7 @@ class ZXMAnalysisSystem:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     def calculate_zxm_indicators(self, data: pd.DataFrame) -> Dict[str, pd.Series]:
         """
         计算ZXM指标
@@ -123,7 +123,7 @@ class ZXMAnalysisSystem:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=8.0)
+    @performance_monitor(threshold=8.0)
     def analyze_buy_signals(self, data: pd.DataFrame, 
                            zxm_indicators: Dict[str, pd.Series]) -> Dict[str, Any]:
         """
@@ -306,7 +306,7 @@ class ZXMAnalysisSystem:
             return {'overall_score': 0.0, 'recommendation': '数据错误', 'confidence': '无'}
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=20.0)
+    @performance_monitor(threshold=20.0)
     def run_comprehensive_analysis_Analysis(self, stock_codes: List[str], 
                                  start_date: str, end_date: str) -> Dict[str, Dict[str, Any]]:
         """
@@ -459,7 +459,7 @@ class ZXMAnalysisSystem:
             logger.error(f"生成分析汇总报告失败: {e}")
 
 @exception_handler(reraise=True)
-@performance_monitor(threshold_seconds=120.0)
+@performance_monitor(threshold=120.0)
 def main_zxm_analysis():
     """主函数"""
     parser = argparse.ArgumentParser(description='ZXM指标分析系统')

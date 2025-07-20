@@ -53,7 +53,7 @@ class ProductionStrategyValidator:
         self.validation_results = {}
         
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=30.0)
+    @performance_monitor(threshold=30.0)
     def validate_strategy_performance(self, strategy_name: str, 
                                     validation_period: int = 30) -> Dict[str, Any]:
         """
@@ -116,7 +116,7 @@ class ProductionStrategyValidator:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=15.0)
+    @performance_monitor(threshold=15.0)
     def _load_validation_data(self, start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
         """加载验证数据"""
         try:
@@ -162,7 +162,7 @@ class ProductionStrategyValidator:
             raise
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=20.0)
+    @performance_monitor(threshold=20.0)
     def _run_strategy_validation(self, strategy, validation_data: Dict[str, pd.DataFrame],
                                start_date: str, end_date: str) -> Dict[str, Any]:
         """运行策略验证"""
@@ -867,7 +867,7 @@ class ProductionStrategyValidator:
             logger.error(f"生成验证汇总报告失败: {e}")
 
 @exception_handler(reraise=True)
-@performance_monitor(threshold_seconds=180.0)
+@performance_monitor(threshold=180.0)
 def main_productionstrategyvalidator():
     """主函数"""
     parser = argparse.ArgumentParser(description='生产环境策略验证器')

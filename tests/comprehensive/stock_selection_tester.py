@@ -98,6 +98,9 @@ class ComprehensiveStockSelectionTester:
         # 初始化新组件
         self.indicator_discovery = IndicatorDiscovery()
         self.pattern_manager = PatternRegistryManager(self.indicator_discovery)
+
+        # 验证重构后的系统组件
+        self._validate_refactored_components()
         self.selection_engine = StockSelectionEngine(
             self.data_access, self.indicator_discovery, self.pattern_manager
         )
@@ -141,6 +144,43 @@ class ComprehensiveStockSelectionTester:
         self.test_results = None
         
         logger.info("综合选股测试系统初始化完成")
+
+    def _validate_refactored_components(self):
+        """验证重构后的系统组件是否正常工作"""
+        logger.info("验证重构后的系统组件...")
+
+        validation_results = {}
+
+        try:
+            # 验证买点分析器
+            test_result = self.buypoint_analyzer.analyze_stock("000001", "20240101", "测试")
+            validation_results['buypoint_analyzer'] = test_result is not None
+
+            # 验证形态注册表
+            patterns = self.pattern_registry.get_all_patterns()
+            validation_results['pattern_registry'] = len(patterns) > 0
+            logger.info(f"发现 {len(patterns)} 个已注册形态")
+
+            # 验证数据访问
+            validation_results['data_access'] = self.data_access is not None
+
+            # 验证指标发现
+            indicators = self.indicator_discovery.discover_all_indicators()
+            validation_results['indicator_discovery'] = len(indicators) > 0
+            logger.info(f"发现 {len(indicators)} 个可用指标")
+
+            # 记录验证结果
+            for component, status in validation_results.items():
+                status_text = "✓" if status else "✗"
+                logger.info(f"  {component}: {status_text}")
+
+            if not all(validation_results.values()):
+                logger.warning("部分系统组件验证失败，可能影响测试结果")
+
+        except Exception as e:
+            logger.error(f"系统组件验证失败: {e}")
+
+        return validation_results
         
     # 已删除_load_config方法，使用config_manager代替
     

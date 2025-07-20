@@ -1,0 +1,236 @@
+# 策略配置验证规则
+# 定义统一策略配置的验证规则和约束条件
+
+validation_rules:
+  # 策略基本信息验证规则
+  strategy_info:
+    id:
+      pattern: "^[A-Z0-9_]+$"
+      min_length: 3
+      max_length: 50
+      description: "策略ID必须为大写字母、数字和下划线组合"
+    
+    name:
+      min_length: 5
+      max_length: 100
+      description: "策略名称长度限制"
+    
+    description:
+      min_length: 20
+      max_length: 500
+      description: "策略描述必须详细说明选股逻辑"
+    
+    version:
+      pattern: "^\\d+\\.\\d+(\\.\\d+)?$"
+      description: "版本号必须遵循语义化版本规范"
+    
+    category:
+      allowed_values: ["momentum", "reversal", "trend", "volume", "composite"]
+      description: "策略类别限制"
+    
+    risk_level:
+      allowed_values: ["low", "medium", "high"]
+      default: "medium"
+      description: "风险等级限制"
+
+  # 技术指标验证规则
+  technical_indicators:
+    primary_indicators:
+      min_count: 1
+      max_count: 5
+      description: "主要技术指标数量限制"
+      
+      allowed_indicators:
+        - "MACD"
+        - "KDJ" 
+        - "RSI"
+        - "BOLL"
+        - "MA"
+        - "EMA"
+        - "VOL"
+        - "ZXM_ABSORB"
+        - "ZXM_VOLUME_SHRINK"
+        - "BIAS"
+        - "MTM"
+        - "ROC"
+        - "WR"
+        - "CCI"
+        - "DMA"
+        - "TRIX"
+        - "VR"
+        - "OBV"
+        - "SAR"
+        - "ADX"
+        - "AROON"
+        - "CHAIKIN"
+        - "MFI"
+        - "MOMENTUM"
+        - "EMV"
+        - "VOSC"
+        - "PVT"
+        - "STOCHRSI"
+    
+    secondary_indicators:
+      max_count: 3
+      description: "辅助技术指标数量限制"
+    
+    combination_logic:
+      allowed_values: ["AND", "OR", "WEIGHTED"]
+      default: "AND"
+      description: "指标组合逻辑限制"
+    
+    condition_operators:
+      allowed_values: [">", "<", ">=", "<=", "=", "!=", "between", "cross_up", "cross_down"]
+      description: "条件操作符限制"
+
+  # 时间条件验证规则
+  time_criteria:
+    time_frames:
+      min_count: 1
+      max_count: 3
+      description: "时间框架数量限制"
+      
+      allowed_levels:
+        - "1min"
+        - "5min"
+        - "15min"
+        - "30min"
+        - "60min"
+        - "daily"
+        - "weekly"
+      
+      priority_range:
+        min: 1
+        max: 10
+        description: "优先级范围限制"
+    
+    date_range:
+      date_format: "YYYY-MM-DD"
+      description: "日期格式要求"
+    
+    market_timing:
+      trading_session:
+        allowed_values: ["morning", "afternoon", "full_day"]
+        default: "full_day"
+
+  # 过滤条件验证规则
+  filters:
+    market_filters:
+      markets:
+        allowed_values: ["主板", "创业板", "科创板", "北交所"]
+        description: "交易市场限制"
+      
+      exclude_st:
+        type: "boolean"
+        default: true
+        description: "是否排除ST股票"
+    
+    financial_filters:
+      market_cap:
+        min_value: 0
+        max_value: 50000
+        unit: "亿元"
+        description: "市值范围限制"
+      
+      price_range:
+        min_value: 0.1
+        max_value: 1000
+        unit: "元"
+        description: "价格范围限制"
+      
+      volume_filter:
+        min_avg_volume:
+          min_value: 0
+          description: "最小平均成交量"
+
+  # 选股参数验证规则
+  selection_parameters:
+    max_selections:
+      min_value: 1
+      max_value: 1000
+      default: 50
+      description: "最大选股数量限制"
+    
+    min_score:
+      min_value: 0
+      max_value: 1
+      default: 0.6
+      description: "最低评分阈值"
+    
+    ranking_method:
+      allowed_values: ["score", "indicator_strength", "composite"]
+      default: "score"
+      description: "排序方法限制"
+    
+    diversification:
+      max_per_industry:
+        min_value: 1
+        max_value: 20
+        description: "单行业最大股票数"
+      
+      max_concentration:
+        min_value: 0
+        max_value: 1
+        description: "最大集中度限制"
+
+  # 验证配置规则
+  validation:
+    enable_closed_loop:
+      type: "boolean"
+      default: true
+      description: "是否启用闭环验证"
+    
+    validation_method:
+      allowed_values: ["entry_point_analysis", "pattern_recognition", "indicator_consistency"]
+      default: "entry_point_analysis"
+      description: "验证方法限制"
+    
+    validation_threshold:
+      min_value: 0
+      max_value: 1
+      default: 0.8
+      description: "验证通过阈值"
+    
+    sample_size:
+      min_value: 1
+      max_value: 100
+      default: 10
+      description: "验证样本大小限制"
+
+  # 性能配置规则
+  performance_config:
+    enable_cache:
+      type: "boolean"
+      default: true
+      description: "是否启用缓存"
+    
+    parallel_processing:
+      type: "boolean"
+      default: true
+      description: "是否启用并行处理"
+    
+    max_workers:
+      min_value: 1
+      max_value: 32
+      default: 4
+      description: "最大工作线程数"
+    
+    timeout_seconds:
+      min_value: 10
+      max_value: 3600
+      default: 300
+      description: "超时时间限制"
+
+# 错误消息模板
+error_messages:
+  required_field_missing: "必填字段缺失: {field}"
+  invalid_format: "字段格式无效: {field}, 期望格式: {format}"
+  value_out_of_range: "字段值超出范围: {field}, 有效范围: {range}"
+  invalid_enum_value: "字段值无效: {field}, 允许值: {allowed_values}"
+  dependency_violation: "依赖关系违规: {field} 依赖于 {dependency}"
+
+# 警告消息模板
+warning_messages:
+  deprecated_field: "字段已废弃: {field}, 建议使用: {replacement}"
+  performance_impact: "配置可能影响性能: {field}, 建议值: {recommended}"
+  compatibility_issue: "兼容性问题: {field}, 影响版本: {versions}"

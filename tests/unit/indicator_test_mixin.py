@@ -32,7 +32,7 @@ class Indicator_test_mixin:
             包含所有必需字段的数据
         """
         # 检查索引是否为日期类型
-        if not isinstance(data.index, pd.Datetime_index):
+        if not isinstance(data.index, pd.DatetimeIndex):
             if 'date' in data.columns:
                 data = data.set_index('date')
             else:
@@ -226,23 +226,34 @@ class Indicator_test_mixin:
     def test_returns_dataframe_Mixin(self):
         """测试 calculate 方法是否返回一个 pandas DataFrame。"""
         result = self.indicator.calculate(self.data)
-        assert isinstance(result, pd.DataFrame), "计算结果不是 DataFrame"
+        # 重构后的指标可能返回DataFrame或dict，都是有效的
+        assert isinstance(result, (pd.DataFrame, dict)), f"计算结果不是 DataFrame 或 dict，而是 {type(result)}"
     
     def test_output_has_expected_columns_Mixin(self):
         """测试计算结果是否包含所有预期的列。"""
         result = self.indicator.calculate(self.data)
-        
+
         for col in self.expected_columns:
-            assert col in result.columns, f"结果中缺少预期列: {col}"
+            if isinstance(result, pd.DataFrame):
+                assert col in result.columns, f"结果中缺少预期列: {col}"
+            elif isinstance(result, dict):
+                assert col in result, f"结果字典中缺少预期键: {col}"
     
     def test_output_has_no_unexpected_all_nan_columns_Mixin(self):
         """测试输出中不应有完全由NaN组成的意外列。"""
         result = self.indicator.calculate(self.data)
-        
+
         # 只检查预期的列
         for col in self.expected_columns:
-            if col in result.columns:
+            if isinstance(result, pd.DataFrame) and col in result.columns:
                 assert not result[col].isna().all(), f"预期列 '{col}' 全是 NaN"
+            elif isinstance(result, dict) and col in result:
+                # 对于字典结果，检查值是否为None或全NaN
+                value = result[col]
+                if isinstance(value, pd.Series):
+                    assert not value.isna().all(), f"预期键 '{col}' 的值全是 NaN"
+                elif value is None:
+                    assert False, f"预期键 '{col}' 的值为 None"
     
     def test_calculate_with_missing_columns_Mixin(self):
         """测试当缺少必需列时的处理情况。"""
@@ -272,8 +283,8 @@ class Indicator_test_mixin:
         # 方法1: 捕获可能的异常
         try:
             result = self.indicator.calculate(minimal_data)
-            # 如果没有异常，结果应该是有效的DataFrame
-            assert isinstance(result, pd.DataFrame), "计算结果应为DataFrame"
+            # 如果没有异常，结果应该是有效的DataFrame或dict
+            assert isinstance(result, (pd.DataFrame, dict)), "计算结果应为DataFrame或dict"
         except ValueError as e:
             # 如果有异常，应该提到缺少的列
             assert col_to_remove in str(e), f"错误信息应包含缺少的列名: {col_to_remove}"
@@ -282,9 +293,15 @@ class Indicator_test_mixin:
         """测试指标的 get_patterns 方法是否能无错运行。"""
         if not hasattr(self.indicator, 'get_patterns'):
             pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
-        
+
         try:
-            self.indicator.get_patterns(self.data)
+            # 重构后的get_patterns方法可能不需要参数
+            import inspect
+            sig = inspect.signature(self.indicator.get_patterns)
+            if len(sig.parameters) == 0:
+                self.indicator.get_patterns()
+            else:
+                self.indicator.get_patterns(self.data)
         except Exception as e:
             pytest.fail(f"指标 {self.indicator.__class__.__name__} 的 get_patterns 失败，错误: {e}")
     
@@ -292,8 +309,14 @@ class Indicator_test_mixin:
         """测试 get_patterns 方法是否返回一个有效的类型。"""
         if not hasattr(self.indicator, 'get_patterns'):
             pytest.skip(f"指标 {self.indicator.__class__.__name__} 没有 get_patterns 方法")
-    
-        all_patterns = self.indicator.get_patterns(self.data)
+
+        # 重构后的get_patterns方法可能不需要参数
+        import inspect
+        sig = inspect.signature(self.indicator.get_patterns)
+        if len(sig.parameters) == 0:
+            all_patterns = self.indicator.get_patterns()
+        else:
+            all_patterns = self.indicator.get_patterns(self.data)
         assert isinstance(all_patterns, pd.DataFrame), "get_patterns 的返回类型不是 DataFrame"
     
     def test_no_errors_during_calculation_Mixin(self):
@@ -312,7 +335,14 @@ class Indicator_test_mixin:
         # 清除之前测试产生的日志
         if hasattr(self, 'clear_logs'):
             self.clear_logs()
-        self.indicator.get_patterns(self.data)
+
+        # 重构后的get_patterns方法可能不需要参数
+        import inspect
+        sig = inspect.signature(self.indicator.get_patterns)
+        if len(sig.parameters) == 0:
+            self.indicator.get_patterns()
+        else:
+            self.indicator.get_patterns(self.data)
         self.assert_no_logs('ERROR')
 
 

@@ -970,6 +970,105 @@ class Pattern_data_generator:
         """生成EMA支撑阻力形态数据"""
         return self._generate_ma_support()  # 简化实现
 
+    def generate_pattern_data(self, pattern_type: str, data_points: int = 60,
+                            stock_code: str = "TEST001") -> Optional[pd.DataFrame]:
+        """
+        生成指定形态的测试数据（统一接口）
+
+        Args:
+            pattern_type: 形态类型，如 'MACD_GOLDEN_CROSS', 'RSI_OVERBOUGHT' 等
+            data_points: 数据点数量
+            stock_code: 股票代码
+
+        Returns:
+            Optional[pd.DataFrame]: 生成的形态数据，如果失败返回None
+        """
+        try:
+            # 形态映射表
+            pattern_methods = {
+                # RSI形态
+                'RSI_OVERBOUGHT': self._generate_rsi_overbought,
+                'RSI_OVERSOLD': self._generate_rsi_oversold,
+                'RSI_GOLDEN_CROSS': self._generate_rsi_golden_cross,
+                'RSI_DEATH_CROSS': self._generate_rsi_death_cross,
+                'RSI_DIVERGENCE': self._generate_rsi_divergence,
+
+                # MACD形态
+                'MACD_GOLDEN_CROSS': self._generate_macd_golden_cross,
+                'MACD_DEATH_CROSS': self._generate_macd_death_cross,
+                'MACD_ABOVE_ZERO_GOLDEN': self._generate_macd_above_zero_golden,
+                'MACD_BELOW_ZERO_DEATH': self._generate_macd_below_zero_death,
+                'MACD_HISTOGRAM_DIVERGENCE': self._generate_macd_histogram_divergence,
+
+                # KDJ形态
+                'KDJ_GOLDEN_CROSS': self._generate_kdj_golden_cross,
+                'KDJ_DEATH_CROSS': self._generate_kdj_death_cross,
+                'KDJ_OVERBOUGHT': self._generate_kdj_overbought,
+                'KDJ_OVERSOLD': self._generate_kdj_oversold,
+                'KDJ_BLUNT': self._generate_kdj_blunt,
+
+                # BOLL形态
+                'BOLL_UPPER_BREAKOUT': self._generate_boll_upper_breakout,
+                'BOLL_LOWER_BREAKOUT': self._generate_boll_lower_breakout,
+                'BOLL_SQUEEZE': self._generate_boll_squeeze,
+                'BOLL_EXPANSION': self._generate_boll_expansion,
+                'BOLL_MIDDLE_SUPPORT': self._generate_boll_middle_support,
+
+                # MA形态
+                'MA_GOLDEN_CROSS': self._generate_ma_golden_cross,
+                'MA_DEATH_CROSS': self._generate_ma_death_cross,
+                'MA_BULLISH_ALIGNMENT': self._generate_ma_bullish_alignment,
+                'MA_BEARISH_ALIGNMENT': self._generate_ma_bearish_alignment,
+                'MA_SUPPORT': self._generate_ma_support,
+
+                # EMA形态
+                'EMA_GOLDEN_CROSS': self._generate_ema_golden_cross,
+                'EMA_DEATH_CROSS': self._generate_ema_death_cross,
+                'EMA_TREND_CONFIRMATION': self._generate_ema_trend_confirmation,
+                'EMA_DIVERGENCE': self._generate_ema_divergence,
+                'EMA_SUPPORT_RESISTANCE': self._generate_ema_support_resistance,
+            }
+
+            # 检查形态类型是否支持
+            if pattern_type not in pattern_methods:
+                print(f"⚠️ 不支持的形态类型: {pattern_type}")
+                print(f"支持的形态: {list(pattern_methods.keys())}")
+                return None
+
+            # 生成形态数据
+            pattern_data = pattern_methods[pattern_type]()
+
+            if pattern_data is None or pattern_data.empty:
+                print(f"❌ 生成形态数据失败: {pattern_type}")
+                return None
+
+            # 调整数据点数量
+            if len(pattern_data) != data_points:
+                if len(pattern_data) > data_points:
+                    # 截取最后N个数据点
+                    pattern_data = pattern_data.tail(data_points).copy()
+                else:
+                    # 如果数据不够，重复最后几行
+                    additional_rows = data_points - len(pattern_data)
+                    last_row = pattern_data.iloc[-1:].copy()
+                    for i in range(additional_rows):
+                        new_row = last_row.copy()
+                        new_row['date'] = pattern_data['date'].iloc[-1] + pd.Timedelta(days=i+1)
+                        pattern_data = pd.concat([pattern_data, new_row], ignore_index=True)
+
+            # 更新股票代码
+            pattern_data['code'] = stock_code
+            pattern_data['name'] = f"测试股票_{pattern_type}"
+
+            # 重置索引
+            pattern_data = pattern_data.reset_index(drop=True)
+
+            return pattern_data
+
+        except Exception as e:
+            print(f"❌ 生成形态数据异常: {pattern_type}, 错误: {e}")
+            return None
+
     def generate_all_core_patterns(self) -> Dict[str, Dict[str, pd.DataFrame]]:
         """
         生成所有核心指标的形态数据

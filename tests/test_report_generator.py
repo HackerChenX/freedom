@@ -8,16 +8,17 @@ import os
 import json
 import time
 from datetime import datetime
-from unittest.mock import Magic_mock, patch
+from unittest.mock import MagicMock, patch
 import unittest
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import coverage
-from xml.etree import Element_tree as ET
+from xml.etree import ElementTree as ET
 
 from utils.path_utils import get_result_dir
 from utils.logger import get_logger, setup_logger
+from config.config import get_config
 
 logger = get_logger(__name__)
 

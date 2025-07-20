@@ -102,7 +102,7 @@ class TradingHaltProcessor:
         }
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=3.0)
+    @performance_monitor(threshold=3.0)
     def analyze_trading_halts(
         self, 
         stock_code: str, 

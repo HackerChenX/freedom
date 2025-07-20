@@ -1,0 +1,433 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "统一选股策略配置模式",
+  "description": "标准化的选股策略配置格式，遵循六层架构规范，支持强制参数维度",
+  "type": "object",
+  "required": ["strategy", "technical_indicators", "time_criteria", "validation"],
+  "properties": {
+    "strategy": {
+      "type": "object",
+      "required": ["id", "name", "description", "version"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$",
+          "description": "策略唯一标识符，必须大写字母和下划线"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "策略显示名称"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "策略详细描述，必须说明选股逻辑"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+          "description": "策略版本号，遵循语义化版本"
+        },
+        "author": {
+          "type": "string",
+          "description": "策略作者"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["momentum", "reversal", "trend", "volume", "composite"],
+          "description": "策略类别，用于分类管理"
+        },
+        "risk_level": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "default": "medium",
+          "description": "风险等级评估"
+        },
+        "created_date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "策略创建日期"
+        },
+        "updated_date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "策略最后更新日期"
+        }
+      }
+    },
+    "technical_indicators": {
+      "type": "object",
+      "description": "技术指标配置",
+      "properties": {
+        "primary_indicators": {
+          "type": "array",
+          "description": "主要技术指标",
+          "items": {
+            "type": "object",
+            "required": ["indicator_id", "parameters", "conditions"],
+            "properties": {
+              "indicator_id": {
+                "type": "string",
+                "enum": ["MACD", "KDJ", "RSI", "BOLL", "MA", "EMA", "VOL", "ZXM_ABSORB", "ZXM_VOLUME_SHRINK"],
+                "description": "指标标识符"
+              },
+              "parameters": {
+                "type": "object",
+                "description": "指标参数",
+                "additionalProperties": true
+              },
+              "conditions": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "description": "简单条件数组（向后兼容）",
+                    "items": {
+                      "$ref": "#/definitions/simple_condition"
+                    }
+                  },
+                  {
+                    "$ref": "#/definitions/complex_condition"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "secondary_indicators": {
+          "type": "array",
+          "description": "辅助技术指标（可选）",
+          "items": {
+            "$ref": "#/properties/technical_indicators/properties/primary_indicators/items"
+          }
+        },
+        "combination_logic": {
+          "type": "string",
+          "enum": ["AND", "OR", "WEIGHTED"],
+          "default": "AND",
+          "description": "指标组合逻辑"
+        },
+        "weights": {
+          "type": "object",
+          "description": "指标权重（当combination_logic为WEIGHTED时使用）",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "time_criteria": {
+      "type": "object",
+      "required": ["time_frames"],
+      "description": "时间和日期条件",
+      "properties": {
+        "time_frames": {
+          "type": "array",
+          "description": "时间框架级别",
+          "items": {
+            "type": "object",
+            "required": ["level", "priority"],
+            "properties": {
+              "level": {
+                "type": "string",
+                "enum": ["1min", "5min", "15min", "30min", "60min", "daily", "weekly"],
+                "description": "K线级别"
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "优先级（1最高）"
+              },
+              "required": {
+                "type": "boolean",
+                "default": true,
+                "description": "是否必须满足"
+              }
+            }
+          }
+        },
+        "date_range": {
+          "type": "object",
+          "description": "日期范围限制",
+          "properties": {
+            "start_date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "开始日期"
+            },
+            "end_date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "结束日期"
+            },
+            "target_date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "目标分析日期"
+            }
+          }
+        },
+        "market_timing": {
+          "type": "object",
+          "description": "市场时机条件",
+          "properties": {
+            "trading_session": {
+              "type": "string",
+              "enum": ["morning", "afternoon", "full_day"],
+              "default": "full_day",
+              "description": "交易时段"
+            },
+            "exclude_holidays": {
+              "type": "boolean",
+              "default": true,
+              "description": "排除节假日"
+            }
+          }
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "description": "基础过滤条件",
+      "properties": {
+        "market_filters": {
+          "type": "object",
+          "properties": {
+            "markets": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["主板", "创业板", "科创板", "北交所"]
+              },
+              "description": "交易市场"
+            },
+            "industries": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "行业限制"
+            },
+            "exclude_st": {
+              "type": "boolean",
+              "default": true,
+              "description": "排除ST股票"
+            }
+          }
+        },
+        "financial_filters": {
+          "type": "object",
+          "properties": {
+            "market_cap": {
+              "type": "object",
+              "properties": {
+                "min": {"type": "number", "minimum": 0},
+                "max": {"type": "number", "minimum": 0}
+              },
+              "description": "市值范围（亿元）"
+            },
+            "price_range": {
+              "type": "object",
+              "properties": {
+                "min": {"type": "number", "minimum": 0},
+                "max": {"type": "number", "minimum": 0}
+              },
+              "description": "价格范围（元）"
+            },
+            "volume_filter": {
+              "type": "object",
+              "properties": {
+                "min_avg_volume": {"type": "number", "minimum": 0},
+                "min_turnover": {"type": "number", "minimum": 0}
+              },
+              "description": "成交量过滤"
+            }
+          }
+        }
+      }
+    },
+    "selection_parameters": {
+      "type": "object",
+      "description": "选股参数",
+      "properties": {
+        "max_selections": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 50,
+          "description": "最大选股数量"
+        },
+        "min_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.6,
+          "description": "最低评分阈值"
+        },
+        "ranking_method": {
+          "type": "string",
+          "enum": ["score", "indicator_strength", "composite"],
+          "default": "score",
+          "description": "排序方法"
+        },
+        "diversification": {
+          "type": "object",
+          "properties": {
+            "max_per_industry": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "单行业最大股票数"
+            },
+            "max_concentration": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "最大集中度"
+            }
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": ["enable_closed_loop"],
+      "description": "验证配置",
+      "properties": {
+        "enable_closed_loop": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用闭环验证"
+        },
+        "validation_method": {
+          "type": "string",
+          "enum": ["entry_point_analysis", "pattern_recognition", "indicator_consistency"],
+          "default": "entry_point_analysis",
+          "description": "验证方法"
+        },
+        "validation_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.8,
+          "description": "验证通过阈值"
+        },
+        "sample_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10,
+          "description": "验证样本大小"
+        }
+      }
+    },
+    "performance_config": {
+      "type": "object",
+      "description": "性能配置",
+      "properties": {
+        "enable_cache": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用缓存"
+        },
+        "parallel_processing": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用并行处理"
+        },
+        "max_workers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4,
+          "description": "最大工作线程数"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 3600,
+          "default": 300,
+          "description": "超时时间（秒）"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "simple_condition": {
+      "type": "object",
+      "required": ["field", "operator", "value"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "条件标识符，用于复杂表达式引用"
+        },
+        "field": {
+          "type": "string",
+          "description": "指标字段名"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [">", "<", ">=", "<=", "=", "!=", "between", "cross_up", "cross_down"],
+          "description": "比较操作符"
+        },
+        "value": {
+          "oneOf": [
+            {"type": "number"},
+            {"type": "array", "items": {"type": "number"}}
+          ],
+          "description": "比较值"
+        },
+        "lookback_days": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "回看天数"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1,
+          "description": "条件权重"
+        }
+      }
+    },
+    "complex_condition": {
+      "type": "object",
+      "properties": {
+        "logic": {
+          "type": "string",
+          "enum": ["AND", "OR", "NOT"],
+          "description": "逻辑操作符"
+        },
+        "conditions": {
+          "type": "array",
+          "description": "子条件列表",
+          "items": {
+            "oneOf": [
+              {"$ref": "#/definitions/simple_condition"},
+              {"$ref": "#/definitions/complex_condition"}
+            ]
+          }
+        },
+        "expression": {
+          "type": "string",
+          "description": "条件表达式，如 '(A AND B) OR (C AND NOT D)'",
+          "pattern": "^[A-Z0-9_()\\s]+(?:AND|OR|NOT)[A-Z0-9_()\\s]*$"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1,
+          "description": "条件组合权重"
+        }
+      },
+      "anyOf": [
+        {"required": ["logic", "conditions"]},
+        {"required": ["expression"]}
+      ]
+    }
+  }
+}

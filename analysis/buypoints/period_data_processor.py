@@ -19,7 +19,7 @@ sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.period_manager import Period_manager
 from enums.kline_period import Kline_period
 

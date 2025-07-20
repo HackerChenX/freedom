@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -14,9 +15,9 @@ from typing import List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RsiRsi(BaseIndicator, PatternSignalMixin):
@@ -429,8 +430,8 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('RSI_Rsi', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"RSI参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -443,3 +444,93 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    # ==================== 抽象方法实现 ====================
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        计算RSI指标
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            Dict[str, pd.Series]: 包含RSI值和相关指标的字典
+        """
+        result_df = self._calculate_rsi(data, **kwargs)
+
+        # 转换为字典格式以适配重构后的接口
+        if isinstance(result_df, pd.DataFrame):
+            result_dict = {}
+            for col in result_df.columns:
+                result_dict[col] = result_df[col]
+            return result_dict
+        else:
+            # 如果返回的不是DataFrame，创建空的结果
+            empty_series = pd.Series([], dtype=float)
+            return {f'rsi_{self.period}': empty_series}
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        result_dict = self.calculate(data, *args, **kwargs)
+
+        # 将字典转换为DataFrame以满足基类要求
+        if isinstance(result_dict, dict):
+            return pd.DataFrame(result_dict)
+        else:
+            return result_dict
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score_Rsi_Rsi(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """抽象基类要求的置信度方法"""
+        # 基于形态数量和信号强度计算置信度
+        base_confidence = 0.7
+
+        # 如果有形态识别，增加置信度
+        if patterns and len(patterns) > 0:
+            base_confidence += 0.15
+
+        # 基于评分的稳定性调整置信度
+        if len(score) > 1:
+            score_std = score.std()
+            if score_std < 15:  # 评分稳定
+                base_confidence += 0.1
+
+        return min(1.0, base_confidence)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns_Rsi_Rsi(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters_Rsi_Rsi_Rsi_rsi(**kwargs)
+
+    # ==================== 兼容性方法 ====================
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：获取形态"""
+        return self.get_patterns_Rsi_Rsi(data, **kwargs)
+
+    def set_parameters(self, **kwargs):
+        """兼容性方法：设置参数"""
+        return self.set_parameters_Rsi_Rsi_Rsi_rsi(**kwargs)
+
+    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：生成信号"""
+        return self.generate_signals_Rsi(data, **kwargs)
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：计算评分"""
+        return self.calculate_score_Rsi(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score_Indicator_Base_Indicator(data, **kwargs)
+
+
+# 为了兼容指标注册表，创建别名
+RSI = RsiRsi

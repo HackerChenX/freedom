@@ -470,7 +470,7 @@ class IndicatorAccuracyValidator:
         
         return result
     
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     @exception_handler(reraise=True)
     def run_comprehensive_accuracy_validation(self, 
                                              indicators: Optional[List[str]] = None,

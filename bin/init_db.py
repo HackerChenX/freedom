@@ -18,7 +18,7 @@ from utils.decorators import exception_handler, performance_monitor
 logger = get_logger(__name__)
 
 @exception_handler(reraise=True)
-@performance_monitor(threshold_seconds=5.0)
+@performance_monitor(threshold=5.0)
 def init_database():
     """
     初始化Click_house数据库和表

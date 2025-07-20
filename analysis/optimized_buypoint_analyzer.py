@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from config import get_config
+from utils.dependency_injection import get_config
 """
 优化后的买点分析器
 
@@ -21,7 +21,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from analysis.intelligent_cache_system import Intelligent_cache_system, Cached_indicator_calculator
 from analysis.vectorized_indicator_optimizer import Vectorized_indicator_optimizer

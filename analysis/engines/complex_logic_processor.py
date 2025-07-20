@@ -19,7 +19,7 @@ from enum import Enum
 import pandas as pd
 import numpy as np
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.cache import Memory_cache
 from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
 

@@ -4,6 +4,8 @@
 实现更复杂的组合K线形态和复合形态识别功能
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
@@ -12,9 +14,9 @@ from enum import Enum
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.pattern.candlestick_patterns import Pattern_type, Candlestick_patterns
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AdvancedPatternType(Enum):

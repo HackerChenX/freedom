@@ -9,10 +9,10 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
 from formula.stock_formula import StockFormula
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from enums.kline_period import Kline_period
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MomentumStrategy(BaseStrategy):

@@ -19,7 +19,7 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import get_pattern_registry
 from indicators.complete_indicator_registry import complete_registry
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from enums.kline_period import Kline_period
 from utils.decorators import validate_dataframe, log_calls, exception_handler, performance_monitor, cache_result
 from utils.scoring_validator import validate_score

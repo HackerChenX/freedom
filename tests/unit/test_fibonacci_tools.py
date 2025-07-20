@@ -5,20 +5,20 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_fibonacci_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_fibonacci_tools(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """FibonacciTools指标测试类"""
     
-    def set_up_Tools(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Tools(self)
+        super().setUp()
         
-        self.indicator = Fibonacci_tools()
+        self.indicator = complete_registry.create_indicator('FIBONACCI', )
         self.expected_columns = [
             'FIB_GOLDEN_RATIO_SUPPORT', 'FIB_GOLDEN_RATIO_RESISTANCE',
             'FIB_50_PERCENT_RETRACEMENT', 'FIB_382_RETRACEMENT', 'FIB_618_RETRACEMENT',
@@ -29,14 +29,10 @@ class Test_fibonacci_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_
             'FIB_TIME_CYCLE', 'FIB_VOLUME_CONFIRMATION',
             'FIB_TREND_ALIGNMENT', 'FIB_REVERSAL_SIGNAL'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 80}
         ])
-    
-    def tear_down_Tools(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Tools(self)
-    
+
     def test_fibonacci_tools_initialization(self):
         """测试FibonacciTools初始化"""
         # 测试默认初始化
@@ -115,7 +111,7 @@ class Test_fibonacci_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_
     def test_fibonacci_tools_retracement_calculation(self):
         """测试FibonacciTools回调线计算"""
         # 使用足够的数据进行回调线计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -137,7 +133,7 @@ class Test_fibonacci_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_
     def test_fibonacci_tools_extension_calculation(self):
         """测试FibonacciTools扩展线计算"""
         # 使用足够的数据进行扩展线计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -154,7 +150,7 @@ class Test_fibonacci_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_
     def test_fibonacci_tools_time_series_calculation(self):
         """测试FibonacciTools时间序列计算"""
         # 使用足够的数据进行时间序列计算
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 150}
         ])
         
@@ -168,7 +164,7 @@ class Test_fibonacci_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_
     def test_fibonacci_tools_swing_point_detection(self):
         """测试FibonacciTools摆动点检测"""
         # 使用足够的数据进行摆动点检测
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         
@@ -185,7 +181,7 @@ class Test_fibonacci_tools(unittest.TestCase, Indicator_test_mixin, Log_capture_
     def test_fibonacci_tools_pattern_identification(self):
         """测试FibonacciTools形态识别"""
         # 使用足够的数据进行形态识别
-        long_data = Test_data_generator.generate_price_sequence([
+        long_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 120, 'periods': 100}
         ])
         

@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 class Testmomentum_momentum(unittest.TestCase):
     """Momentum指标测试类"""
     
-    def set_up_Momentum(self):
+    def setUp(self):
         """设置测试环境"""
         self.momentum = Momentum(period=10, signal_period=6)
         

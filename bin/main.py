@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 
 @exception_handler(reraise=False, default_return=None)
-@performance_monitor(threshold_seconds=5.0)
+@performance_monitor(threshold=5.0)
 def get_latest_data(analyzer: Market_analyzer) -> Optional[Market_analyzer]:
     """
     获取最新数据

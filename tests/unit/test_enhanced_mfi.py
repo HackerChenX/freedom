@@ -5,32 +5,28 @@ import unittest
 import pandas as pd
 import numpy as np
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
-class Test_enhanced_mFI(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Test_enhanced_mFI(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """EnhancedMFI指标测试类"""
     
-    def set_up_Mfi_Test_Enhanced_Mfi(self):
+    def setUp(self):
         """设置测试环境"""
         # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.set_up_Mfi_Test_Enhanced_Mfi(self)
+        super().setUp()
         
-        self.indicator = Enhanced_mFI(period=14, volatility_lookback=20)
+        self.indicator = complete_registry.create_indicator('MFI', period=14, volatility_lookback=20)
         self.expected_columns = [
             'mfi', 'mfi_overbought', 'mfi_oversold', 'mfi_price_ratio',
             'mfi_momentum', 'mfi_slope', 'mfi_accel', 'mfi_adjusted'
         ]
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 80}
         ])
-    
-    def tear_down_Mfi(self):
-        """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Mfi(self)
-    
+
     def test_enhanced_mfi_calculation_accuracy(self):
         """测试EnhancedMFI计算准确性"""
         result = self.indicator.calculate(self.data)

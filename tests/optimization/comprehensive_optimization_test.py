@@ -39,7 +39,7 @@ class Comprehensive_optimization_test:
             host=os.getenv('DB_HOST', 'localhost'),
             port=int(os.getenv('DB_PORT', '9000')),
             database=os.getenv('DB_DATABASE', 'stock'),
-            get_config('performance.max_connections'),
+            max_connections=get_config('performance.max_connections'),
             min_connections=5
         )
         

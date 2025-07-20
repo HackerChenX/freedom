@@ -130,7 +130,7 @@ class TechnicalIndicatorTester:
             "peak_memory_usage": 0.0
         }
     
-    @performance_monitor(threshold_seconds=30.0)
+    @performance_monitor(threshold=30.0)
     @exception_handler(reraise=True)
     def run_comprehensive_indicator_tests(self, 
                                         indicator_types: Optional[List[str]] = None,

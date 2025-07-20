@@ -4,7 +4,8 @@
 """
 策略验证模块
 
-用于验证选股策略的有效性和稳定性
+用于验证选股策略的有效性、稳定性和配置格式合规性
+支持统一策略配置格式验证，遵循六层架构规范
 """
 
 import numpy as np
@@ -15,12 +16,15 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 import os
 import datetime
 import json
+import yaml
 from collections import defaultdict
 import sys
+import re
 
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, time_it
 from utils.path_utils import get_backtest_result_dir
+from config import get_config
 
 logger = getLogger(__name__)
 
@@ -29,6 +33,312 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 # # from strategy import  # 分层架构违规，已注释  # LAYER VIOLATION: utils should not import strategy BaseStrategy
+
+
+class UnifiedStrategyConfigValidator:
+    """
+    统一策略配置验证器
+
+    基于JSON Schema验证策略配置格式的合规性
+    遵循六层架构规范，仅依赖L2基础设施层
+    """
+
+    def __init__(self):
+        """初始化配置验证器"""
+        self.config = get_config()
+        self.schema_path = os.path.join(
+            root_dir, 'config', 'strategy_templates', 'unified_strategy_schema.json'
+        )
+        self.schema = self._load_schema()
+        logger.info("统一策略配置验证器初始化完成")
+
+    def _load_schema(self) -> Dict[str, Any]:
+        """加载策略配置模式"""
+        try:
+            if not os.path.exists(self.schema_path):
+                logger.error(f"策略配置模式文件不存在: {self.schema_path}")
+                return {}
+
+            with open(self.schema_path, 'r', encoding='utf-8') as f:
+                schema = json.load(f)
+
+            logger.debug(f"成功加载策略配置模式: {self.schema_path}")
+            return schema
+        except Exception as e:
+            logger.error(f"加载策略配置模式失败: {e}")
+            return {}
+
+    @performance_monitor(threshold=1.0)
+    def validate_strategy_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        验证策略配置格式
+
+        Args:
+            config: 策略配置字典
+
+        Returns:
+            Dict[str, Any]: 验证结果
+            {
+                'is_valid': bool,
+                'errors': List[str],
+                'warnings': List[str],
+                'validated_config': Dict[str, Any]
+            }
+        """
+        result = {
+            'is_valid': False,
+            'errors': [],
+            'warnings': [],
+            'validated_config': {}
+        }
+
+        try:
+            # 1. JSON Schema验证
+            schema_validation = self._validate_with_schema(config)
+            result['errors'].extend(schema_validation.get('errors', []))
+            result['warnings'].extend(schema_validation.get('warnings', []))
+
+            # 2. 业务逻辑验证
+            business_validation = self._validate_business_logic(config)
+            result['errors'].extend(business_validation.get('errors', []))
+            result['warnings'].extend(business_validation.get('warnings', []))
+
+            # 3. 强制参数维度验证
+            dimension_validation = self._validate_required_dimensions(config)
+            result['errors'].extend(dimension_validation.get('errors', []))
+            result['warnings'].extend(dimension_validation.get('warnings', []))
+
+            # 4. 确定验证结果
+            result['is_valid'] = len(result['errors']) == 0
+            if result['is_valid']:
+                result['validated_config'] = config
+                logger.info(f"策略配置验证通过: {config.get('strategy', {}).get('id', 'unknown')}")
+            else:
+                logger.warning(f"策略配置验证失败，错误数量: {len(result['errors'])}")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"策略配置验证过程异常: {e}")
+            result['errors'].append(f"验证过程异常: {str(e)}")
+            return result
+
+    def _validate_with_schema(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """使用内置方法验证配置格式"""
+        result = {'errors': [], 'warnings': []}
+
+        try:
+            # 验证必需字段
+            required_fields = ['strategy', 'technical_indicators', 'time_criteria', 'validation']
+            for field in required_fields:
+                if field not in config:
+                    result['errors'].append(f"缺少必需字段: {field}")
+
+            # 验证策略信息
+            if 'strategy' in config:
+                strategy_validation = self._validate_strategy_info(config['strategy'])
+                result['errors'].extend(strategy_validation.get('errors', []))
+                result['warnings'].extend(strategy_validation.get('warnings', []))
+
+            # 验证技术指标
+            if 'technical_indicators' in config:
+                indicators_validation = self._validate_indicators_format(config['technical_indicators'])
+                result['errors'].extend(indicators_validation.get('errors', []))
+                result['warnings'].extend(indicators_validation.get('warnings', []))
+
+            # 验证时间条件
+            if 'time_criteria' in config:
+                time_validation = self._validate_time_format(config['time_criteria'])
+                result['errors'].extend(time_validation.get('errors', []))
+                result['warnings'].extend(time_validation.get('warnings', []))
+
+            logger.debug("内置格式验证完成")
+
+        except Exception as e:
+            result['errors'].append(f"格式验证异常: {str(e)}")
+
+        return result
+
+    def _validate_strategy_info(self, strategy: Dict[str, Any]) -> Dict[str, Any]:
+        """验证策略信息格式"""
+        result = {'errors': [], 'warnings': []}
+
+        # 验证必需字段
+        required_fields = ['id', 'name', 'description', 'version']
+        for field in required_fields:
+            if field not in strategy:
+                result['errors'].append(f"策略信息缺少字段: {field}")
+
+        # 验证ID格式
+        if 'id' in strategy:
+            strategy_id = strategy['id']
+            if not re.match(r'^[A-Z0-9_]+$', strategy_id):
+                result['errors'].append("策略ID必须为大写字母、数字和下划线组合")
+
+        # 验证版本格式
+        if 'version' in strategy:
+            version = strategy['version']
+            if not re.match(r'^\d+\.\d+(\.\d+)?$', version):
+                result['errors'].append("版本号必须遵循语义化版本格式")
+
+        return result
+
+    def _validate_indicators_format(self, indicators: Dict[str, Any]) -> Dict[str, Any]:
+        """验证技术指标格式"""
+        result = {'errors': [], 'warnings': []}
+
+        if 'primary_indicators' not in indicators:
+            result['errors'].append("技术指标缺少primary_indicators字段")
+            return result
+
+        primary_indicators = indicators['primary_indicators']
+        if not isinstance(primary_indicators, list) or not primary_indicators:
+            result['errors'].append("primary_indicators必须为非空列表")
+            return result
+
+        for i, indicator in enumerate(primary_indicators):
+            if not isinstance(indicator, dict):
+                result['errors'].append(f"指标{i}必须为字典格式")
+                continue
+
+            if 'indicator_id' not in indicator:
+                result['errors'].append(f"指标{i}缺少indicator_id字段")
+
+            if 'conditions' not in indicator:
+                result['errors'].append(f"指标{i}缺少conditions字段")
+
+        return result
+
+    def _validate_time_format(self, time_criteria: Dict[str, Any]) -> Dict[str, Any]:
+        """验证时间条件格式"""
+        result = {'errors': [], 'warnings': []}
+
+        if 'time_frames' not in time_criteria:
+            result['errors'].append("时间条件缺少time_frames字段")
+            return result
+
+        time_frames = time_criteria['time_frames']
+        if not isinstance(time_frames, list) or not time_frames:
+            result['errors'].append("time_frames必须为非空列表")
+            return result
+
+        allowed_levels = ['1min', '5min', '15min', '30min', '60min', 'daily', 'weekly']
+        for i, frame in enumerate(time_frames):
+            if not isinstance(frame, dict):
+                result['errors'].append(f"时间框架{i}必须为字典格式")
+                continue
+
+            if 'level' not in frame:
+                result['errors'].append(f"时间框架{i}缺少level字段")
+            elif frame['level'] not in allowed_levels:
+                result['errors'].append(f"时间框架{i}的level值无效: {frame['level']}")
+
+        return result
+
+    def _validate_business_logic(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """验证业务逻辑合规性"""
+        result = {'errors': [], 'warnings': []}
+
+        try:
+            strategy = config.get('strategy', {})
+
+            # 验证策略ID唯一性（这里简化处理）
+            strategy_id = strategy.get('id', '')
+            if not strategy_id:
+                result['errors'].append("策略ID不能为空")
+            elif len(strategy_id) < 3:
+                result['warnings'].append("策略ID建议至少3个字符")
+
+            # 验证技术指标配置
+            tech_indicators = config.get('technical_indicators', {})
+            primary_indicators = tech_indicators.get('primary_indicators', [])
+            if not primary_indicators:
+                result['errors'].append("必须至少配置一个主要技术指标")
+
+            # 验证时间框架配置
+            time_criteria = config.get('time_criteria', {})
+            time_frames = time_criteria.get('time_frames', [])
+            if not time_frames:
+                result['errors'].append("必须至少配置一个时间框架")
+
+            logger.debug("业务逻辑验证完成")
+
+        except Exception as e:
+            result['errors'].append(f"业务逻辑验证异常: {str(e)}")
+
+        return result
+
+    def _validate_required_dimensions(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """验证强制参数维度"""
+        result = {'errors': [], 'warnings': []}
+
+        try:
+            # 验证技术指标维度
+            tech_indicators = config.get('technical_indicators', {})
+            if not self._validate_technical_indicators_dimension(tech_indicators):
+                result['errors'].append("技术指标维度配置不完整")
+
+            # 验证时间条件维度
+            time_criteria = config.get('time_criteria', {})
+            if not self._validate_time_criteria_dimension(time_criteria):
+                result['errors'].append("时间条件维度配置不完整")
+
+            # 验证验证配置维度
+            validation_config = config.get('validation', {})
+            if not self._validate_validation_dimension(validation_config):
+                result['warnings'].append("验证配置维度建议完善")
+
+            logger.debug("强制参数维度验证完成")
+
+        except Exception as e:
+            result['errors'].append(f"参数维度验证异常: {str(e)}")
+
+        return result
+
+    def _validate_technical_indicators_dimension(self, tech_indicators: Dict[str, Any]) -> bool:
+        """验证技术指标维度完整性"""
+        required_fields = ['primary_indicators']
+        for field in required_fields:
+            if field not in tech_indicators:
+                return False
+
+        primary_indicators = tech_indicators.get('primary_indicators', [])
+        for indicator in primary_indicators:
+            if not isinstance(indicator, dict):
+                return False
+            if 'indicator_id' not in indicator or 'conditions' not in indicator:
+                return False
+
+        return True
+
+    def _validate_time_criteria_dimension(self, time_criteria: Dict[str, Any]) -> bool:
+        """验证时间条件维度完整性"""
+        required_fields = ['time_frames']
+        for field in required_fields:
+            if field not in time_criteria:
+                return False
+
+        time_frames = time_criteria.get('time_frames', [])
+        if not time_frames:
+            return False
+
+        for frame in time_frames:
+            if not isinstance(frame, dict):
+                return False
+            if 'level' not in frame:
+                return False
+
+        return True
+
+    def _validate_validation_dimension(self, validation_config: Dict[str, Any]) -> bool:
+        """验证验证配置维度完整性"""
+        recommended_fields = ['enable_closed_loop', 'validation_method']
+        for field in recommended_fields:
+            if field not in validation_config:
+                return False
+
+        return True
+
 
 class StrategyvalidatorValidator:
     """

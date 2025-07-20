@@ -20,7 +20,7 @@ from collections import Counter, defaultdict
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.path_utils import ensure_dir_exists
 from analysis.buypoints.period_data_processor import Period_data_processor
 from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer

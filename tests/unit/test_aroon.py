@@ -14,9 +14,9 @@ from tests.helper.log_capture import Log_capture_mixin
 class Testaroon_aroon(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
     """Aroon指标单元测试类"""
 
-    def set_up_Aroon(self):
+    def setUp(self):
         """准备数据和指标实例"""
-        Log_capture_mixin.set_up_Aroon(self)  # 显式调用Mixin的set_up
+        Log_capture_mixin.setUp(self)  # 显式调用Mixin的set_up
         self.indicator = complete_registry.create_indicator('AROON', period=14)
         self.expected_columns = ['aroon_up', 'aroon_down', 'aroon_oscillator']
         # 使用一个包含多种走势的数据进行通用测试
@@ -25,9 +25,9 @@ class Testaroon_aroon(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin
             {'type': 'trend', 'start_price': 120, 'end_price': 100, 'periods': 30},
         ])
 
-    def tear_down_Aroon(self):
+    def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tear_down_Aroon(self)  # 显式调用Mixin的tear_down
+        Log_capture_mixin.tearDown(self)  # 显式调用Mixin的tear_down
 
     def test_basic_calculation_Aroon(self):
         """测试Aroon基础计算功能"""

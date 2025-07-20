@@ -1,0 +1,58 @@
+strategy:
+  id: "TEST_SIMPLE_20240512"
+  name: "简单测试策略"
+  description: "用于验证系统功能的简单策略"
+  version: "1.0"
+  author: "System Test"
+  create_time: "2024-05-12 09:30:00"
+  update_time: "2024-05-12 09:30:00"
+
+  # 选股条件
+  conditions:
+    # 价格条件：股价在5-100元之间
+    - type: price
+      field: close
+      operator: ">="
+      value: 5.0
+      description: "股价大于等于5元"
+
+    - logic: AND
+
+    - type: price
+      field: close
+      operator: "<="
+      value: 100.0
+      description: "股价小于等于100元"
+
+    - logic: AND
+
+    # 成交量条件：成交量大于100万
+    - type: volume
+      operator: ">="
+      value: 1000000
+      description: "成交量大于100万"
+
+  # 基础过滤条件
+  filters:
+    market: ["主板", "创业板", "科创板"]
+    industry: []
+    market_cap:
+      min: 10
+      max: 5000
+    price:
+      min: 5.0
+      max: 100.0
+    volume:
+      min_avg_volume: 1000000
+
+  # 排序规则
+  sort:
+    - field: "close"
+      direction: "DESC"
+    - field: "volume"
+      direction: "DESC"
+
+  # 策略参数
+  parameters:
+    target_date: "2024-05-12"
+    max_results: 50

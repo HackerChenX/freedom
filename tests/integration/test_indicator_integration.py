@@ -12,10 +12,10 @@ from tests.unit.indicator_test_mixin import Indicator_test_mixin
 class Test_indicator_integration(unittest.TestCase):
     """测试不同指标之间的集成与协作"""
 
-    def set_up_Integration_Test_Indicator_Integration(self):
+    def setUp(self):
         """准备测试数据和指标实例"""
         # 生成多种市场形态的测试数据
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = Test_data_generator.generate_price_sequence_Generator([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50},  # 上升趋势
             {'type': 'v_shape', 'start_price': 110, 'bottom_price': 95, 'periods': 50},  # V形反转
             {'type': 'm_shape', 'start_price': 95, 'top_price': 105, 'periods': 50},  # M形态

@@ -4,13 +4,15 @@ ZXM选股模型模块
 整合多个指标的选股系统
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.decorators import log_calls, error_handling
 
 from indicators.zxm.trend_indicators import TrendDetector
@@ -19,7 +21,7 @@ from indicators.zxm.buy_point_indicators import ZXMDailyMACD
 from indicators.zxm.score_indicators import StockScoreCalculator
 # from indicators.zxm_washplate import ZXMWashPlate  # 暂时注释掉，可能不存在
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SelectionModel(BaseIndicator, PatternSignalMixin):

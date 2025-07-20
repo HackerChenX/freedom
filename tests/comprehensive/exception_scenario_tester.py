@@ -389,7 +389,7 @@ class ExceptionScenarioTester:
         return min(quality_score, 1.0)
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     def test_database_connection_failure_scenario(self) -> ExceptionTestResult:
         """测试数据库连接失败场景"""
         scenario = self.exception_scenarios['database_connection_failure']
@@ -462,7 +462,7 @@ class ExceptionScenarioTester:
         return result
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=45.0)
+    @performance_monitor(threshold=45.0)
     def test_computation_error_scenario(self) -> ExceptionTestResult:
         """测试计算错误场景"""
         scenario = self.exception_scenarios['division_by_zero']
@@ -530,7 +530,7 @@ class ExceptionScenarioTester:
         return result
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=60.0)
+    @performance_monitor(threshold=60.0)
     def test_memory_exhaustion_scenario(self) -> ExceptionTestResult:
         """测试内存耗尽场景"""
         scenario = self.exception_scenarios['memory_exhaustion']
@@ -599,7 +599,7 @@ class ExceptionScenarioTester:
         return result
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=45.0)
+    @performance_monitor(threshold=45.0)
     def test_data_format_error_scenario(self) -> ExceptionTestResult:
         """测试数据格式错误场景"""
         scenario = self.exception_scenarios['invalid_data_format']
@@ -671,7 +671,7 @@ class ExceptionScenarioTester:
         return result
     
     @exception_handler(reraise=True)
-    @performance_monitor(threshold_seconds=300.0)
+    @performance_monitor(threshold=300.0)
     def run_all_exception_tests(self) -> ExceptionTestSuite:
         """运行所有异常测试"""
         test_methods = [

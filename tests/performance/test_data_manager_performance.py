@@ -1,4 +1,4 @@
-"""
+from config.config import get_config\n"""
 数据管理器性能测试模块
 
 用于测试数据管理器在不同负载下的性能表现
@@ -8,7 +8,7 @@ import unittest
 import time
 import c_profile
 import pstats
-from unittest.mock import patch, Magic_mock
+from unittest.mock import MagicMock
 
 import pandas as pd
 import numpy as np
@@ -94,7 +94,7 @@ class Test_data_manager_performance(unittest.TestCase):
             'turnover_rate': np.random.uniform(1, 10, 100)
         })
     
-    def set_up_Performance_Test_Data_Manager_Performance(self):
+    def setUp(self):
         """测试前准备"""
         # 创建数据管理器
         self.data_manager = get_unified_data_manager()

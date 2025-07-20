@@ -23,7 +23,7 @@ from typing import List, Dict, Any
 sys.path.append(str(Path(__file__).parent.parent))
 
 from utils.logger import get_logger
-from strategy.high_performance_executor import get_high_performance_executor
+from strategy.strategy_executor import UnifiedStrategyExecutor as get_high_performance_executor
 from strategy.strategy_parser import StrategyParser
 from db.unified_data_manager import get_unified_data_manager
 

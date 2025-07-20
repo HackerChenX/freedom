@@ -16,9 +16,9 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
 
 
 # 测试用的指标工厂类
@@ -100,16 +100,16 @@ class Testrsi_patterns:
         return result
 
 
-class Test_pattern_combination(unittest.TestCase, Indicator_test_mixin):
+class Test_pattern_combination(unittest.TestCase, IndicatorTestMixin):
     """形态组合识别测试"""
     
-    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def setUp(self):
         """为所有测试准备数据和指标实例"""
-        self.indicator = Pattern_combination()
+        self.indicator = complete_registry.create_indicator('COMPOSITE', )
         self.expected_columns = ['combined_pattern', 'pattern_strength']
         
         # 生成适合形态组合分析的数据
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 40},   # 下跌
             {'type': 'trend', 'start_price': 80, 'end_price': 90, 'periods': 30},    # 反弹
             {'type': 'trend', 'start_price': 90, 'end_price': 85, 'periods': 20},    # 回调
@@ -134,7 +134,7 @@ class Test_pattern_combination(unittest.TestCase, Indicator_test_mixin):
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def tearDown(self):
         """清理测试环境"""
         self.teardown_log_capture()
     
@@ -164,16 +164,16 @@ class Test_pattern_combination(unittest.TestCase, Indicator_test_mixin):
                           "形态强度值超出0-100范围")
 
 
-class Test_pattern_confirmation(unittest.TestCase, Indicator_test_mixin):
+class Test_pattern_confirmation(unittest.TestCase, IndicatorTestMixin):
     """形态确认测试"""
     
-    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def setUp(self):
         """为所有测试准备数据和指标实例"""
-        self.indicator = Pattern_confirmation()
+        self.indicator = complete_registry.create_indicator('COMPOSITE', )
         self.expected_columns = ['pattern_confirmed', 'confirmation_type', 'confirmation_strength']
         
         # 生成适合形态确认分析的数据
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 30},   # 下跌
             {'type': 'trend', 'start_price': 80, 'end_price': 85, 'periods': 20},    # 反弹
             {'type': 'trend', 'start_price': 85, 'end_price': 80, 'periods': 15},    # 回调
@@ -204,7 +204,7 @@ class Test_pattern_confirmation(unittest.TestCase, Indicator_test_mixin):
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def tearDown(self):
         """清理测试环境"""
         self.teardown_log_capture()
     
@@ -234,16 +234,16 @@ class Test_pattern_confirmation(unittest.TestCase, Indicator_test_mixin):
                           "确认强度值超出0-100范围")
 
 
-class Testpatternqualityevaluator_patterns(unittest.TestCase, Indicator_test_mixin):
+class Testpatternqualityevaluator_patterns(unittest.TestCase, IndicatorTestMixin):
     """形态质量评估测试"""
     
-    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def setUp(self):
         """为所有测试准备数据和指标实例"""
-        self.indicator = Pattern_quality_evaluator()
+        self.indicator = complete_registry.create_indicator('COMPOSITE', )
         self.expected_columns = ['pattern_quality', 'reliability_score', 'profit_potential']
         
         # 生成适合形态质量评估的数据
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 80, 'periods': 35},   # 下跌
             {'type': 'trend', 'start_price': 80, 'end_price': 90, 'periods': 25},    # 反弹
             {'type': 'trend', 'start_price': 90, 'end_price': 85, 'periods': 15},    # 回调
@@ -274,7 +274,7 @@ class Testpatternqualityevaluator_patterns(unittest.TestCase, Indicator_test_mix
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def tearDown(self):
         """清理测试环境"""
         self.teardown_log_capture()
     
@@ -320,13 +320,13 @@ class Testpatternqualityevaluator_patterns(unittest.TestCase, Indicator_test_mix
             self.assertTrue((profit_potential >= 0).all(), "盈利潜力含有负值")
 
 
-class Test_multi_indicator_pattern_analysis(unittest.TestCase, Log_capture_mixin):
+class Test_multi_indicator_pattern_analysis(unittest.TestCase, IndicatorTestMixin):
     """多指标形态分析测试"""
     
-    def set_up_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def setUp(self):
         """为所有测试准备数据"""
         # 生成复杂的市场数据
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 40},    # 下跌
             {'type': 'trend', 'start_price': 90, 'end_price': 85, 'periods': 20},     # 继续下跌
             {'type': 'trend', 'start_price': 85, 'end_price': 95, 'periods': 30},     # 反弹
@@ -361,7 +361,7 @@ class Test_multi_indicator_pattern_analysis(unittest.TestCase, Log_capture_mixin
         # 设置日志捕获
         self.setup_log_capture()
     
-    def tear_down_Patterns_Test_Enhanced_Patterns_Test_Enhanced_Patterns_testenhancedpatterns(self):
+    def tearDown(self):
         """清理测试环境"""
         self.teardown_log_capture()
     

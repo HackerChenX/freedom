@@ -41,7 +41,7 @@ class ConcurrentConnectionPoolTester:
             database=get_config('database.name', 'stock'),
             user=get_config('database.user', 'default'),
             password=get_config('database.password', ''),
-            get_config('performance.max_connections'),
+            max_connections=get_config('performance.max_connections'),
             min_connections=5
         )
         

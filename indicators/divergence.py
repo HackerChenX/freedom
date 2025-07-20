@@ -4,6 +4,8 @@
 实现量价背离识别和分析功能
 """
 
+from utils.dependency_injection import get_logger
+
 import numpy as np
 from typing import Dict, Any
 import pandas as pd
@@ -12,9 +14,9 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class DivergenceType(Enum):
@@ -811,8 +813,8 @@ class Divergence(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DIVERGENCE', params)
             if not is_valid:
-                from utils.logger import getLogger
-                logger = getLogger(__name__)
+                from utils.dependency_injection import get_logger
+                logger = get_logger(__name__)
                 logger.warning(f"DIVERGENCE参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

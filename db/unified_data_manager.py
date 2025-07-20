@@ -451,23 +451,98 @@ class UnifiedDataManager:
             logger.error(f"获取股票列表失败: {e}")
             return []
 
-    def get_all_stock_codes(self, 
+    def get_all_stock_codes(self,
                            market: Optional[str] = None,
                            industry: Optional[str] = None,
                            limit: Optional[int] = None) -> List[str]:
         """
         获取所有股票代码（向后兼容API）
-        
+
         Args:
             market: 市场筛选
             industry: 行业筛选
             limit: 限制数量
-            
+
         Returns:
             List[str]: 股票代码列表
         """
         # 直接调用get_stock_list方法
         return self.get_stock_list_Manager_Unified_Data_Manager(market=market, industry=industry, limit=limit)
+
+    def get_active_stock_codes(self,
+                              market: Optional[str] = None,
+                              limit: Optional[int] = None) -> List[str]:
+        """
+        获取活跃股票代码列表
+
+        Args:
+            market: 市场类型
+            limit: 限制数量
+
+        Returns:
+            List[str]: 活跃股票代码列表
+        """
+        try:
+            # 首先尝试从真实数据表获取
+            try:
+                query = "SELECT DISTINCT code FROM stock.native_data"
+                if limit:
+                    query += f" LIMIT {limit}"
+
+                # 使用连接池执行查询
+                result = self.connection_pool.execute_query_dataframe(query)
+                if result is not None and not result.empty:
+                    codes = result['code'].tolist()
+                    logger.info(f"从真实数据表获取到 {len(codes)} 只股票")
+                    return codes
+            except Exception as e:
+                logger.warning(f"从真实数据表获取股票代码失败: {e}")
+
+            # 备用方案：尝试从原有数据库获取
+            db_result = self.get_stock_list_Manager_Unified_Data_Manager(market=market, limit=limit)
+
+            # 如果数据库返回了结果，使用数据库结果
+            if db_result:
+                logger.info(f"从数据库获取到 {len(db_result)} 只股票")
+                return db_result
+
+            # 如果数据库没有返回结果，使用默认股票池
+            logger.warning("数据库查询无结果，使用默认股票池")
+
+            # 返回默认的活跃股票代码
+            default_stocks = [
+                # 主板蓝筹股
+                '000001', '000002', '000858', '000895', '000938',
+                '000725', '000776', '000783', '000792', '000839',
+
+                # 中小板
+                '002415', '002594', '002714', '002736', '002797',
+                '002841', '002916', '002938', '002945', '002958',
+
+                # 创业板
+                '300059', '300122', '300136', '300142', '300168',
+                '300274', '300316', '300347', '300408', '300433',
+
+                # 上证主板
+                '600000', '600036', '600519', '600887', '601318',
+                '601398', '601857', '601988', '603259', '603986',
+                '600009', '600028', '600030', '600048', '600050',
+
+                # 科创板
+                '688001', '688009', '688012', '688036', '688111',
+                '688122', '688169', '688188', '688223', '688299'
+            ]
+
+            # 如果指定了限制数量，则截取
+            if limit and limit < len(default_stocks):
+                return default_stocks[:limit]
+
+            return default_stocks
+
+        except Exception as e:
+            logger.error(f"获取活跃股票代码失败: {e}")
+            # 返回最小的默认股票池
+            return ['000001', '000002', '600000', '600036', '601318']
 
     def get_stock_industry(self, stock_code: str) -> Optional[str]:
         """

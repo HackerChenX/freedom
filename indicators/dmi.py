@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -16,9 +17,9 @@ from functools import lru_cache
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.common import crossover, crossunder
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):
     """
@@ -29,14 +30,16 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):
     """
     
     def __init__(self, **kwargs):
-        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
         """
         初始化趋向指标(DMI)指标
 
         Args:
             **kwargs: 指标参数，支持period、adx_threshold等
         """
-        super().__init__(name="DMI", description="趋向指标，判断趋势强度与方向")
+        super().__init__()
+        self.REQUIRED_COLUMNS = ['high', 'low', 'close']
+        self.name = "DMI"
+        self.description = "趋向指标，判断趋势强度与方向"
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_dmi()
@@ -1200,6 +1203,404 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):
             'type': 'neutral'
         })
 
+    # ==================== 抽象方法实现 ====================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的计算方法"""
+        return self._calculate_dmi(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象基类要求的评分方法"""
+        return self.calculate_raw_score_Dmi(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象基类要求的形态方法"""
+        return self.get_patterns_Dmi(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象基类要求的参数设置方法"""
+        return self.set_parameters_Dmi(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """抽象基类要求的置信度计算方法"""
+        return self.calculate_confidence_Dmi(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """统一的计算接口"""
+        return self._calculate_dmi(data, **kwargs)
+
+    # ==================== 兼容性方法 - 真实实现 ====================
+
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """真实实现：获取DMI形态"""
+        if data is None or data.empty:
+            return pd.DataFrame()
+
+        # 首先计算DMI指标
+        dmi_data = self._calculate_dmi(data)
+
+        # 创建形态DataFrame
+        patterns_df = pd.DataFrame(index=data.index)
+
+        # 获取DMI数据
+        pdi = dmi_data.get('PDI', pd.Series(index=data.index))
+        mdi = dmi_data.get('MDI', pd.Series(index=data.index))
+        adx = dmi_data.get('ADX', pd.Series(index=data.index))
+
+        # 1. 强趋势形态 (ADX > 25)
+        patterns_df['DMI_STRONG_TREND'] = adx > 25
+
+        # 2. 弱趋势形态 (ADX < 20)
+        patterns_df['DMI_WEAK_TREND'] = adx < 20
+
+        # 3. 上升趋势形态 (PDI > MDI and ADX > 20)
+        patterns_df['DMI_UPTREND'] = (pdi > mdi) & (adx > 20)
+
+        # 4. 下降趋势形态 (MDI > PDI and ADX > 20)
+        patterns_df['DMI_DOWNTREND'] = (mdi > pdi) & (adx > 20)
+
+        # 5. PDI上穿MDI形态
+        patterns_df['DMI_PDI_CROSS_UP'] = (pdi > mdi) & (pdi.shift(1) <= mdi.shift(1))
+
+        # 6. MDI上穿PDI形态
+        patterns_df['DMI_MDI_CROSS_UP'] = (mdi > pdi) & (mdi.shift(1) <= pdi.shift(1))
+
+        # 7. ADX上升形态
+        patterns_df['DMI_ADX_RISING'] = adx > adx.shift(1)
+
+        # 8. ADX下降形态
+        patterns_df['DMI_ADX_FALLING'] = adx < adx.shift(1)
+
+        # 9. 极强趋势形态 (ADX > 40)
+        patterns_df['DMI_VERY_STRONG_TREND'] = adx > 40
+
+        # 10. 无趋势形态 (ADX < 15)
+        patterns_df['DMI_NO_TREND'] = adx < 15
+
+        # 11. 趋势转换形态
+        patterns_df['DMI_TREND_CHANGE'] = (
+            ((pdi > mdi) & (pdi.shift(1) <= mdi.shift(1))) |
+            ((mdi > pdi) & (mdi.shift(1) <= pdi.shift(1)))
+        )
+
+        return patterns_df
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """真实实现：计算DMI原始评分"""
+        if data.empty:
+            return pd.Series(dtype=float)
+
+        # 计算DMI指标
+        dmi_data = self._calculate_dmi(data)
+
+        # 初始化评分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分
+
+        # 获取DMI数据
+        pdi = dmi_data.get('PDI', pd.Series(index=data.index))
+        mdi = dmi_data.get('MDI', pd.Series(index=data.index))
+        adx = dmi_data.get('ADX', pd.Series(index=data.index))
+
+        # 1. 基于趋势方向的评分
+        # PDI > MDI 加分（上升趋势）
+        uptrend_condition = pdi > mdi
+        score += uptrend_condition * 15
+
+        # MDI > PDI 减分（下降趋势）
+        downtrend_condition = mdi > pdi
+        score -= downtrend_condition * 15
+
+        # 2. 基于趋势强度的评分
+        # 强趋势加分
+        strong_trend = adx > 25
+        score += strong_trend * 10
+
+        # 极强趋势额外加分
+        very_strong_trend = adx > 40
+        score += very_strong_trend * 10
+
+        # 弱趋势减分
+        weak_trend = adx < 20
+        score -= weak_trend * 10
+
+        # 无趋势大幅减分
+        no_trend = adx < 15
+        score -= no_trend * 15
+
+        # 3. 基于交叉信号的评分
+        # PDI上穿MDI加分
+        pdi_cross_up = (pdi > mdi) & (pdi.shift(1) <= mdi.shift(1))
+        score += pdi_cross_up * 12
+
+        # MDI上穿PDI减分
+        mdi_cross_up = (mdi > pdi) & (mdi.shift(1) <= pdi.shift(1))
+        score -= mdi_cross_up * 12
+
+        # 4. 基于ADX趋势的评分
+        # ADX上升加分（趋势加强）
+        adx_rising = adx > adx.shift(1)
+        score += adx_rising * 5
+
+        # ADX下降减分（趋势减弱）
+        adx_falling = adx < adx.shift(1)
+        score -= adx_falling * 5
+
+        # 5. 基于PDI和MDI差值的评分
+        di_diff = np.abs(pdi - mdi)
+        # 差值越大，趋势越明确
+        diff_bonus = np.minimum(di_diff / 2, 10)  # 最多10分奖励
+        score += diff_bonus
+
+        # 限制评分在0-100之间
+        return score.clip(0, 100)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成DMI交易信号"""
+        if data.empty:
+            return pd.DataFrame()
+
+        # 计算DMI指标
+        dmi_data = self._calculate_dmi(data)
+        result_df = data.copy()
+
+        # 合并DMI数据
+        for col in dmi_data.columns:
+            result_df[col] = dmi_data[col]
+
+        # 初始化信号列
+        result_df['dmi_signal'] = 0
+        result_df['dmi_strength'] = 0.0
+        result_df['dmi_confidence'] = 0.0
+
+        # 获取DMI数据
+        pdi = dmi_data.get('PDI', pd.Series(index=data.index))
+        mdi = dmi_data.get('MDI', pd.Series(index=data.index))
+        adx = dmi_data.get('ADX', pd.Series(index=data.index))
+
+        # 1. PDI上穿MDI买入信号
+        pdi_cross_up = (pdi > mdi) & (pdi.shift(1) <= mdi.shift(1))
+        strong_trend_up = pdi_cross_up & (adx > 20)
+        result_df.loc[strong_trend_up, 'dmi_signal'] = 1
+        result_df.loc[strong_trend_up, 'dmi_strength'] = 0.8
+        result_df.loc[strong_trend_up, 'dmi_confidence'] = 0.9
+
+        # 2. MDI上穿PDI卖出信号
+        mdi_cross_up = (mdi > pdi) & (mdi.shift(1) <= pdi.shift(1))
+        strong_trend_down = mdi_cross_up & (adx > 20)
+        result_df.loc[strong_trend_down, 'dmi_signal'] = -1
+        result_df.loc[strong_trend_down, 'dmi_strength'] = 0.8
+        result_df.loc[strong_trend_down, 'dmi_confidence'] = 0.9
+
+        # 3. 强趋势确认信号
+        very_strong_up = (pdi > mdi) & (adx > 40)
+        result_df.loc[very_strong_up, 'dmi_signal'] = 1
+        result_df.loc[very_strong_up, 'dmi_strength'] = 0.9
+        result_df.loc[very_strong_up, 'dmi_confidence'] = 0.95
+
+        very_strong_down = (mdi > pdi) & (adx > 40)
+        result_df.loc[very_strong_down, 'dmi_signal'] = -1
+        result_df.loc[very_strong_down, 'dmi_strength'] = 0.9
+        result_df.loc[very_strong_down, 'dmi_confidence'] = 0.95
+
+        # 4. 趋势减弱警告信号
+        trend_weakening = (adx < adx.shift(1)) & (adx.shift(1) > 30)
+        result_df.loc[trend_weakening, 'dmi_signal'] = 0
+        result_df.loc[trend_weakening, 'dmi_strength'] = 0.3
+        result_df.loc[trend_weakening, 'dmi_confidence'] = 0.6
+
+        return result_df
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """真实实现：计算DMI综合评分"""
+        if data.empty:
+            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+
+        # 计算原始评分
+        raw_score = self.calculate_raw_score(data, **kwargs)
+
+        # 获取形态
+        patterns = self.get_patterns(data, **kwargs)
+
+        # 计算最终评分
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+
+        # 基于形态调整评分
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 正面形态加分
+            if latest_patterns.get('DMI_UPTREND', False):
+                final_score += 15
+            if latest_patterns.get('DMI_STRONG_TREND', False):
+                final_score += 12
+            if latest_patterns.get('DMI_VERY_STRONG_TREND', False):
+                final_score += 20
+            if latest_patterns.get('DMI_PDI_CROSS_UP', False):
+                final_score += 10
+            if latest_patterns.get('DMI_ADX_RISING', False):
+                final_score += 8
+
+            # 负面形态减分
+            if latest_patterns.get('DMI_DOWNTREND', False):
+                final_score -= 15
+            if latest_patterns.get('DMI_WEAK_TREND', False):
+                final_score -= 12
+            if latest_patterns.get('DMI_NO_TREND', False):
+                final_score -= 20
+            if latest_patterns.get('DMI_MDI_CROSS_UP', False):
+                final_score -= 10
+            if latest_patterns.get('DMI_ADX_FALLING', False):
+                final_score -= 8
+
+        # 计算置信度
+        dmi_data = self._calculate_dmi(data)
+
+        pdi = dmi_data.get('PDI', pd.Series([0])).iloc[-1] if len(dmi_data.get('PDI', pd.Series([0]))) > 0 else 0
+        mdi = dmi_data.get('MDI', pd.Series([0])).iloc[-1] if len(dmi_data.get('MDI', pd.Series([0]))) > 0 else 0
+        adx = dmi_data.get('ADX', pd.Series([0])).iloc[-1] if len(dmi_data.get('ADX', pd.Series([0]))) > 0 else 0
+
+        # 基于ADX强度计算置信度
+        if adx > 40:
+            confidence = 0.95  # 极强趋势
+        elif adx > 25:
+            confidence = 0.8   # 强趋势
+        elif adx > 20:
+            confidence = 0.6   # 中等趋势
+        elif adx > 15:
+            confidence = 0.4   # 弱趋势
+        else:
+            confidence = 0.2   # 无趋势
+
+        # 基于PDI和MDI差值调整置信度
+        di_diff = abs(pdi - mdi)
+        if di_diff > 20:
+            confidence += 0.1
+        elif di_diff > 10:
+            confidence += 0.05
+
+        # 限制评分和置信度范围
+        final_score = max(0, min(100, final_score))
+        confidence = max(0.0, min(1.0, confidence))
+
+        return {
+            'score': final_score,
+            'confidence': confidence,
+            'signals': {
+                'pdi': pdi,
+                'mdi': mdi,
+                'adx': adx,
+                'trend': 'up' if pdi > mdi else 'down' if mdi > pdi else 'neutral',
+                'strength': 'strong' if adx > 25 else 'weak' if adx < 20 else 'medium'
+            }
+        }
+
+    def set_parameters(self, **kwargs):
+        """真实实现：设置DMI参数"""
+        # 验证并设置period参数
+        if 'period' in kwargs:
+            period = kwargs['period']
+            if isinstance(period, int) and 5 <= period <= 50:
+                self.period = period
+            else:
+                logger.warning(f"无效的period参数: {period}, 保持原值")
+
+        # 验证并设置adx_period参数
+        if 'adx_period' in kwargs:
+            adx_period = kwargs['adx_period']
+            if isinstance(adx_period, int) and 5 <= adx_period <= 50:
+                self.adx_period = adx_period
+            else:
+                logger.warning(f"无效的adx_period参数: {adx_period}, 保持原值")
+
+        # 验证并设置adx_threshold参数
+        if 'adx_threshold' in kwargs:
+            adx_threshold = kwargs['adx_threshold']
+            if isinstance(adx_threshold, (int, float)) and 10 <= adx_threshold <= 50:
+                self.adx_threshold = adx_threshold
+            else:
+                logger.warning(f"无效的adx_threshold参数: {adx_threshold}, 保持原值")
+
+        # 记录参数变更
+        logger.info(f"DMI参数已更新")
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：生成DMI交易信号"""
+        return self.get_signals(data, **kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """真实实现：计算DMI指标"""
+        return self._calculate_dmi(data, **kwargs)
+
+    def calculate_confidence_Dmi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """真实实现：计算DMI置信度"""
+        if score.empty:
+            return 0.3
+
+        # 基础置信度
+        confidence = 0.5
+
+        # 基于评分的置信度调整
+        latest_score = score.iloc[-1] if not score.empty else 50.0
+
+        # 极端评分提高置信度
+        if latest_score > 80 or latest_score < 20:
+            confidence += 0.3
+        elif latest_score > 70 or latest_score < 30:
+            confidence += 0.2
+        elif latest_score > 60 or latest_score < 40:
+            confidence += 0.1
+
+        # 基于形态的置信度调整
+        if not patterns.empty:
+            latest_patterns = patterns.iloc[-1]
+
+            # 强势形态提高置信度
+            if latest_patterns.get('DMI_VERY_STRONG_TREND', False):
+                confidence += 0.2
+            if latest_patterns.get('DMI_STRONG_TREND', False):
+                confidence += 0.15
+            if latest_patterns.get('DMI_UPTREND', False) or latest_patterns.get('DMI_DOWNTREND', False):
+                confidence += 0.1
+
+            # 弱势形态降低置信度
+            if latest_patterns.get('DMI_NO_TREND', False):
+                confidence -= 0.2
+            if latest_patterns.get('DMI_WEAK_TREND', False):
+                confidence -= 0.1
+
+        # 基于信号的置信度调整
+        if signals:
+            signal_strength = signals.get('strength', 0)
+            confidence += signal_strength * 0.1
+
+        # 限制置信度在0-1范围内
+        return max(0.0, min(1.0, confidence))
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Dmi(score, patterns, signals)
+
+    def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：识别形态"""
+        return self.get_patterns(data, **kwargs)
+
+    def calculate_raw_score_dmi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score(data, **kwargs)
+
+    def _classify_adx_strength(self, adx_value: float) -> str:
+        """真实实现：分类ADX强度"""
+        if adx_value > 40:
+            return "very_strong"
+        elif adx_value > 25:
+            return "strong"
+        elif adx_value > 20:
+            return "medium"
+        elif adx_value > 15:
+            return "weak"
+        else:
+            return "no_trend"
+
 
 def get_directionalmovementindex():
     """获取DirectionalMovementIndex实例（通过依赖注入）"""
@@ -1216,3 +1617,7 @@ def get_directionalmovementindex():
 def get_dmi_indicator(**kwargs):
     """获取DMI指标实例"""
     return DirectionalMovementIndex(**kwargs)
+
+
+# 为了兼容指标注册表，创建别名
+DMI = DirectionalMovementIndex

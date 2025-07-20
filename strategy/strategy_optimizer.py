@@ -23,7 +23,7 @@ import itertools
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from utils.path_utils import get_result_dir
 from utils.decorators import performance_monitor, exception_handler
 from strategy.strategy_executor import Strategy_executor
@@ -34,7 +34,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.strategy_manager import StrategyManager
 
 # 获取日志记录器
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StrategyOptimizer:
@@ -72,7 +72,7 @@ class StrategyOptimizer:
         
         logger.info("策略优化器初始化完成")
     
-    @performance_monitor(threshold_seconds=10.0)
+    @performance_monitor(threshold=10.0)
     @exception_handler(reraise=False, default_return={})
     def optimize_strategy_parameters(self, strategy_config: Dict[str, Any], 
                                    parameter_ranges: Dict[str, List[Any]],
@@ -148,7 +148,7 @@ class StrategyOptimizer:
         logger.info(f"策略参数优化完成，最佳分数: {best_score:.4f}")
         return optimization_result
     
-    @performance_monitor(threshold_seconds=15.0)
+    @performance_monitor(threshold=15.0)
     @exception_handler(reraise=False, default_return={})
     def optimize_strategy_combination(self, strategy_configs: List[Dict[str, Any]],
                                     combination_weights: Optional[List[float]] = None,
