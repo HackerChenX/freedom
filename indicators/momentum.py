@@ -33,6 +33,10 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin):
         """
         super().__init__()
         self.name = "MOMENTUM"
+        self.description = "动量指标，衡量价格变化的速度和幅度"
+        
+        # 初始化结果存储
+        self._result = None
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_momentum()
@@ -375,3 +379,192 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin):
         patterns['MOMENTUM_TROUGH'] = (momentum < momentum.shift(1)) & (momentum < momentum.shift(-1))
         
         return patterns
+
+    # ================== 抽象方法实现 ==================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象方法实现：调用MOMENTUM计算逻辑"""
+        return self.calculate_momentum(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象方法实现：计算MOMENTUM原始评分"""
+        return self.calculate_raw_score_momentum(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象方法实现：获取MOMENTUM形态"""
+        return self.get_patterns_momentum(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象方法实现：设置参数"""
+        return self.set_parameters_momentum(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> float:
+        """抽象方法实现：计算置信度"""
+        return self.calculate_confidence_momentum(data, **kwargs)
+
+    # ================== 兼容性方法 ==================
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：计算指标"""
+        return self.calculate_momentum(data, **kwargs)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：获取形态"""
+        return self.get_patterns_momentum(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score_momentum(data, **kwargs)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """兼容性方法：生成信号"""
+        return self.generate_signals_momentum(data, **kwargs)
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, float]:
+        """兼容性方法：计算综合评分"""
+        return self.calculate_score_momentum(data, **kwargs)
+
+    def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_momentum(data, **kwargs)
+
+    def set_parameters(self, **kwargs):
+        """兼容性方法：设置参数"""
+        return self.set_parameters_momentum(**kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：计算指标（compute别名）"""
+        return self.calculate_momentum(data, **kwargs)
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """兼容性方法：生成交易信号"""
+        return self.generate_signals_momentum(data, **kwargs)
+
+    def register_patterns(self, **kwargs):
+        """兼容性方法：注册形态（空实现）"""
+        pass
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return self._result is not None
+
+    # ================== 公共接口方法 ==================
+
+    def calculate_momentum(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算MOMENTUM指标（公共接口）
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            包含MOMENTUM指标的DataFrame
+        """
+        return self.calculate_Momentum(data, **kwargs)
+
+    def calculate_raw_score_momentum(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算MOMENTUM原始评分（公共接口）
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            原始评分Series
+        """
+        return self.calculate_raw_score_Momentum(data, **kwargs)
+
+    def calculate_score_momentum(self, data: pd.DataFrame, **kwargs) -> Dict[str, float]:
+        """
+        计算MOMENTUM综合评分（公共接口）
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            包含评分和置信度的字典
+        """
+        return self.calculate_score_Momentum(data, **kwargs)
+
+    def get_patterns_momentum(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取MOMENTUM形态（公共接口）
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            包含形态的DataFrame
+        """
+        return self.get_patterns_Momentum(data, **kwargs)
+
+    def generate_signals_momentum(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成MOMENTUM信号（公共接口）
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            包含信号的字典
+        """
+        try:
+            # 先计算MOMENTUM指标
+            result = self.calculate_momentum(data, **kwargs)
+            
+            # 简单的信号生成逻辑
+            momentum = result['momentum']
+            momentum_ma = result['momentum_ma']
+            
+            # 生成买入和卖出信号
+            buy_signal = (momentum > momentum_ma) & (momentum.shift(1) <= momentum_ma.shift(1))
+            sell_signal = (momentum < momentum_ma) & (momentum.shift(1) >= momentum_ma.shift(1))
+            
+            return {
+                'momentum_buy_signal': buy_signal.fillna(False),
+                'momentum_sell_signal': sell_signal.fillna(False)
+            }
+        except (ValueError, KeyError, IndexError) as e:
+            # 如果信号生成失败，返回空信号
+            logger.warning(f"MOMENTUM信号生成失败: {e}, 返回空信号")
+            return {
+                'momentum_buy_signal': pd.Series([False] * len(data), index=data.index),
+                'momentum_sell_signal': pd.Series([False] * len(data), index=data.index)
+            }
+
+    def set_parameters_momentum(self, **kwargs):
+        """
+        设置MOMENTUM参数（公共接口）
+
+        Args:
+            **kwargs: 参数字典
+        """
+        return self.set_parameters_Momentum(**kwargs)
+
+    def calculate_confidence_momentum(self, data: pd.DataFrame, **kwargs) -> float:
+        """
+        计算MOMENTUM置信度（公共接口）
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            置信度值
+        """
+        # 计算必要的中间数据
+        score = self.calculate_raw_score_momentum(data, **kwargs)
+        patterns = self.get_patterns_momentum(data, **kwargs)
+        signals = self.generate_signals_momentum(data, **kwargs)
+        
+        return self.calculate_confidence_Momentum(score, patterns, signals)
+
+
+# 类别名
+MOMENTUM = MomentumMomentum
+Momentum = MomentumMomentum

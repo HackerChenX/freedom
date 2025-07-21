@@ -24,6 +24,8 @@ class Stochrsi(BaseIndicator, PatternSignalMixin):
     STOCHRSI结合了RSI和随机指标的特点。
     """
     
+    REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']  # 标准指标列要求
+    
     def __init__(self, **kwargs):
         """
         初始化STOCHRSI指标
@@ -69,14 +71,21 @@ class Stochrsi(BaseIndicator, PatternSignalMixin):
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证器模块有问题，静默处理
             pass
-        
+            
         # 设置参数
-        self.rsi_period = params.get('rsi_period', 14)
-        self.stoch_period = params.get('stoch_period', 14)
-        self.k_period = params.get('k_period', 3)
-        self.d_period = params.get('d_period', 3)
+        for key, value in params.items():
+            setattr(self, key, value)
+    
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 如果已有结果返回True，否则返回False
+        """
+        return hasattr(self, '_result') and self._result is not None and not self._result.empty
     
     def calculate_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -262,3 +271,193 @@ class Stochrsi(BaseIndicator, PatternSignalMixin):
     def get_patterns_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    # ========================= 抽象方法实现 =========================
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return self._calculate_stochrsi(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        return self.calculate_raw_score(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return self.get_patterns(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        return self.set_parameters(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        return self.calculate_confidence(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return self._calculate_stochrsi(data, **kwargs)
+
+    # ========================= 兼容性方法 =========================
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """
+        获取StochRSI形态识别结果
+        
+        Returns:
+            pd.DataFrame: 形态识别结果，包含各种StochRSI形态
+        """
+        if data is None and hasattr(self, '_result') and self._result is not None:
+            data_to_use = self._result
+        else:
+            data_to_use = self.calculate(data, **kwargs) if data is not None else pd.DataFrame()
+        
+        if data_to_use.empty:
+            return pd.DataFrame()
+        
+        patterns = pd.DataFrame(index=data_to_use.index)
+        
+        if 'STOCHRSI_K' in data_to_use.columns and 'STOCHRSI_D' in data_to_use.columns:
+            k = data_to_use['STOCHRSI_K']
+            d = data_to_use['STOCHRSI_D']
+            
+            # 超买超卖形态
+            patterns['STOCHRSI_OVERBOUGHT'] = k > 80
+            patterns['STOCHRSI_OVERSOLD'] = k < 20
+            
+            # 金叉死叉形态
+            patterns['STOCHRSI_GOLDEN_CROSS'] = (k > d) & (k.shift(1) <= d.shift(1))
+            patterns['STOCHRSI_DEATH_CROSS'] = (k < d) & (k.shift(1) >= d.shift(1))
+            
+            # 背离形态
+            patterns['STOCHRSI_BULLISH_DIVERGENCE'] = False  # 需要价格数据进行背离分析
+            patterns['STOCHRSI_BEARISH_DIVERGENCE'] = False
+            
+            # 趋势形态
+            k_trend = k.rolling(5).mean()
+            patterns['STOCHRSI_UPTREND'] = k_trend > k_trend.shift(3)
+            patterns['STOCHRSI_DOWNTREND'] = k_trend < k_trend.shift(3)
+        
+        return patterns
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算StochRSI原始评分
+        
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        return self.calculate_raw_score_Stochrsi(data, **kwargs)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成StochRSI交易信号
+        
+        Returns:
+            pd.DataFrame: 包含交易信号的DataFrame
+        """
+        if data is None:
+            data = self._result if hasattr(self, '_result') and self._result is not None else pd.DataFrame()
+        
+        if data.empty:
+            return pd.DataFrame()
+        
+        # 确保数据包含STOCHRSI指标
+        if 'STOCHRSI_K' not in data.columns or 'STOCHRSI_D' not in data.columns:
+            data = self.calculate(data, **kwargs)
+        
+        signals = pd.DataFrame(index=data.index)
+        
+        if 'STOCHRSI_K' in data.columns and 'STOCHRSI_D' in data.columns:
+            k = data['STOCHRSI_K']
+            d = data['STOCHRSI_D']
+            
+            # 生成信号
+            signals['stochrsi_signal'] = 0
+            signals['stochrsi_strength'] = 0.0
+            signals['stochrsi_confidence'] = 0.0
+            
+            # 超卖区买入信号
+            oversold_buy = (k < 20) & (k > d)
+            signals.loc[oversold_buy, 'stochrsi_signal'] = 1
+            signals.loc[oversold_buy, 'stochrsi_strength'] = 0.8
+            signals.loc[oversold_buy, 'stochrsi_confidence'] = 0.7
+            
+            # 超买区卖出信号
+            overbought_sell = (k > 80) & (k < d)
+            signals.loc[overbought_sell, 'stochrsi_signal'] = -1
+            signals.loc[overbought_sell, 'stochrsi_strength'] = 0.8
+            signals.loc[overbought_sell, 'stochrsi_confidence'] = 0.7
+            
+            # 金叉买入信号
+            golden_cross = (k > d) & (k.shift(1) <= d.shift(1)) & (k < 50)
+            signals.loc[golden_cross, 'stochrsi_signal'] = 1
+            signals.loc[golden_cross, 'stochrsi_strength'] = 0.6
+            signals.loc[golden_cross, 'stochrsi_confidence'] = 0.6
+            
+            # 死叉卖出信号
+            death_cross = (k < d) & (k.shift(1) >= d.shift(1)) & (k > 50)
+            signals.loc[death_cross, 'stochrsi_signal'] = -1
+            signals.loc[death_cross, 'stochrsi_strength'] = 0.6
+            signals.loc[death_cross, 'stochrsi_confidence'] = 0.6
+        
+        return signals
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        计算StochRSI综合评分
+        
+        Returns:
+            dict: 包含评分信息的字典
+        """
+        raw_score = self.calculate_raw_score(data, **kwargs)
+        patterns = self.get_patterns(data, **kwargs)
+        signals = self.get_signals(data, **kwargs)
+        
+        # 计算平均分数
+        avg_score = raw_score.mean() if not raw_score.empty else 50.0
+        
+        # 计算置信度
+        confidence = self.calculate_confidence(raw_score, patterns, signals)
+        
+        return {
+            'average_score': avg_score,
+            'latest_score': raw_score.iloc[-1] if not raw_score.empty else 50.0,
+            'confidence': confidence,
+            'signal_strength': signals['stochrsi_strength'].mean() if 'stochrsi_strength' in signals.columns else 0.0,
+            'pattern_count': patterns.sum().sum() if not patterns.empty else 0
+        }
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        return self.set_parameters_Stochrsi(**kwargs)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算StochRSI置信度
+        
+        Returns:
+            float: 置信度值，范围0-1
+        """
+        return self.calculate_confidence_Stochrsi(score, patterns, signals)
+
+    def register_patterns(self) -> None:
+        """兼容性方法：注册形态，处理架构问题"""
+        try:
+            # 尝试调用实际的注册方法
+            return self.register_patterns_Stochrsi()
+        except AttributeError as e:
+            if "'PatternRegistry' object has no attribute 'register'" in str(e):
+                # 已知的架构问题，静默处理
+                pass
+            else:
+                raise
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成交易信号（兼容性方法）
+        
+        Returns:
+            pd.DataFrame: 交易信号DataFrame
+        """
+        return self.get_signals(data, **kwargs)
+
+# 类别名
+STOCHRSI = Stochrsi

@@ -4,29 +4,36 @@ PVT指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.complete_indicator_registry import complete_registry
-from tests.unit.indicator_test_mixin import Indicator_test_mixin
-from tests.helper.data_generator import Test_data_generator
-from tests.helper.log_capture import Log_capture_mixin, LogCaptureMixin
+from indicators.pvt import Pvt
+from tests.unit.indicator_test_mixin import IndicatorTestMixin
+from tests.helper.data_generator import TestDataGenerator
+from tests.helper.log_capture import LogCaptureMixin
+import io
+import logging
 
 
-class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
+class Testpvt_pvt(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     """PVT指标测试类"""
     
     def setUp(self):
         """设置测试环境"""
-        # 显式调用LogCaptureMixin的setUp
-        Log_capture_mixin.setUp(self)
+        # 设置日志捕获
+        self.log_stream = io.StringIO()
+        self.log_handler = logging.StreamHandler(self.log_stream)
+        self.logger = logging.getLogger()
+        self.logger.addHandler(self.log_handler)
+        self.logger.setLevel(logging.DEBUG)
         
-        self.indicator = complete_registry.create_indicator('PVT', ma_period=12)
+        self.indicator = Pvt(ma_period=12)
         self.expected_columns = ['pvt', 'pvt_signal']
-        self.data = Test_data_generator.generate_price_sequence([
+        self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
 
     def tearDown(self):
         """清理日志捕获器"""
-        Log_capture_mixin.tearDown(self)
+        self.logger.removeHandler(self.log_handler)
+        self.log_handler.close()
     
     def test_pvt_calculation_accuracy(self):
         """测试PVT计算准确性"""
@@ -69,9 +76,9 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_pvt_parameter_update(self):
         """测试PVT参数更新"""
@@ -79,7 +86,7 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.indicator.set_parameters(ma_period=new_ma_period)
         
         # 验证参数更新
-        self.assert_equal(self.indicator.ma_period, new_ma_period)
+        self.assertEqual(self.indicator.ma_period, new_ma_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -91,13 +98,13 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
+            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_pvt_comprehensive_score(self):
         """测试PVT综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
+        self.assertIsInstance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -109,13 +116,13 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         """测试PVT形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
 
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
 
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
 
         # 如果形态DataFrame不为空，验证预期的形态列存在
         if not patterns.empty:
@@ -129,7 +136,7 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
                 self.assertIn(pattern, patterns.columns, f"缺少形态列: {pattern}")
         else:
             # 如果形态DataFrame为空，至少验证它是正确的类型
-            self.assert_equal(len(patterns.columns), 0)
+            self.assertEqual(len(patterns.columns), 0)
     
     def test_pvt_signals(self):
         """测试PVT信号生成"""
@@ -139,28 +146,29 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         # 生成信号
         signals = self.indicator.get_signals(result)
         
-        # 验证信号DataFrame结构
-        self.assert_is_instance(signals, pd.DataFrame)
+        # 验证信号字典结构
+        self.assertIsInstance(signals, dict)
         expected_signal_keys = ['pvt_buy_signal', 'pvt_sell_signal']
         for key in expected_signal_keys:
-            self.assertIn(key, signals.columns, f"缺少信号列: {key}")
+            self.assertIn(key, signals, f"缺少信号键: {key}")
+            self.assertIsInstance(signals[key], pd.Series)
     
     def test_pvt_crossover_detection(self):
         """测试PVT交叉检测"""
         # 创建包含交叉的数据
-        crossover_data = Test_data_generator.generate_price_sequence([
+        crossover_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 90, 'periods': 25},
             {'type': 'trend', 'start_price': 90, 'end_price': 110, 'periods': 25}
         ])
 
         # 先计算指标
         result = self.indicator.calculate(crossover_data)
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
 
         patterns = self.indicator.get_patterns(crossover_data)
 
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
 
         # 如果形态DataFrame不为空，验证金叉死叉形态存在
         if not patterns.empty:
@@ -185,18 +193,18 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         high_vol_pvt_range = high_vol_result['pvt'].max() - high_vol_result['pvt'].min()
         low_vol_pvt_range = low_vol_result['pvt'].max() - low_vol_result['pvt'].min()
         
-        self.assert_greater(high_vol_pvt_range, low_vol_pvt_range, 
+        self.assertGreater(high_vol_pvt_range, low_vol_pvt_range, 
                           "高成交量应该导致更大的PVT变化范围")
     
     def test_pvt_price_change_impact(self):
         """测试价格变化对PVT的影响"""
         # 创建大幅价格变化数据
-        large_change_data = Test_data_generator.generate_price_sequence([
+        large_change_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 150, 'periods': 25}
         ])
         
         # 创建小幅价格变化数据
-        small_change_data = Test_data_generator.generate_price_sequence([
+        small_change_data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 105, 'periods': 25}
         ])
         
@@ -208,7 +216,7 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         large_change_pvt_range = large_change_result['pvt'].max() - large_change_result['pvt'].min()
         small_change_pvt_range = small_change_result['pvt'].max() - small_change_result['pvt'].min()
         
-        self.assert_greater(large_change_pvt_range, small_change_pvt_range,
+        self.assertGreater(large_change_pvt_range, small_change_pvt_range,
                           "大幅价格变化应该导致更大的PVT变化范围")
     
     def test_no_errors_during_calculation_Pvt(self):
@@ -219,10 +227,11 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         result = self.indicator.calculate(self.data)
         
         # 验证无ERROR日志
-        self.assert_no_logs('ERROR')
+        log_contents = self.log_stream.getvalue()
+        self.assertNotIn('ERROR', log_contents)
         
         # 验证结果
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         self.assertIn('pvt', result.columns)
         self.assertIn('pvt_signal', result.columns)
     
@@ -234,10 +243,11 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证无ERROR日志
-        self.assert_no_logs('ERROR')
+        log_contents = self.log_stream.getvalue()
+        self.assertNotIn('ERROR', log_contents)
         
         # 验证结果
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
     
     def test_pvt_register_patterns(self):
         """测试PVT形态注册"""
@@ -258,7 +268,7 @@ class Testpvt_pvt(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         # PVT应该为0（因为成交量为0）
         pvt_values = result['pvt'].dropna()
         if len(pvt_values) > 0:
-            self.assert_true(all(abs(v) < 1e-10 for v in pvt_values), 
+            self.assertTrue(all(abs(v) < 1e-10 for v in pvt_values), 
                            "零成交量时PVT应该为0")
     
     def test_pvt_cumulative_nature(self):

@@ -24,6 +24,8 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin):
     OBV指标通过累计成交量变化来判断资金流向。
     """
     
+    REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+    
     def __init__(self, **kwargs):
         """
         初始化OBV指标
@@ -33,6 +35,9 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin):
         """
         super().__init__()
         self.name = "OBV"
+        
+        # 初始化结果存储
+        self._result = None
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_obv()
@@ -445,3 +450,187 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin):
             patterns['OBV_BOTTOM_DIVERGENCE'] = (close_price <= price_low) & (obv > obv.rolling(window=10).min())
         
         return patterns
+
+    # ================== 抽象方法实现 ==================
+    
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象方法实现：调用OBV计算逻辑"""
+        return self._calculate_obv(data, **kwargs)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """抽象方法实现：计算OBV原始评分"""
+        return self.calculate_raw_score_Obv(data, **kwargs)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """抽象方法实现：获取OBV形态"""
+        return self.get_patterns_Obv(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """抽象方法实现：设置参数"""
+        return self.set_parameters_Obv(**kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """抽象方法实现：计算置信度"""
+        return self.calculate_confidence_Obv(score, patterns, signals)
+    
+    # ================== 兼容性方法 ==================
+    
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：计算指标"""
+        return self.calculate_Obv(data, **kwargs)
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：获取形态"""
+        return self.get_patterns_Obv(data, **kwargs)
+    
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score_Obv(data, **kwargs)
+    
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """兼容性方法：计算综合评分"""
+        return self.calculate_score_Obv(data, **kwargs)
+    
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """兼容性方法：生成信号"""
+        return self.generate_signals_Obv(data, **kwargs)
+    
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Obv(score, patterns, signals)
+    
+    def set_parameters(self, **kwargs):
+        """兼容性方法：设置参数"""
+        return self.set_parameters_Obv(**kwargs)
+    
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：计算（别名）"""
+        return self.calculate_Obv(data, **kwargs)
+    
+    def calculate_score_Obv(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        计算OBV综合评分
+        
+        Returns:
+            Dict[str, Any]: 包含latest_score和confidence的字典
+        """
+        try:
+            if self._result is None:
+                self.calculate_Obv(data, **kwargs)
+            
+            # 获取原始评分
+            score = self.calculate_raw_score_Obv(data, **kwargs)
+            
+            # 获取形态
+            patterns = self.get_patterns_Obv(data, **kwargs)
+            
+            # 生成信号
+            signals = self.generate_signals_Obv(data, **kwargs)
+            
+            # 计算置信度
+            confidence = self.calculate_confidence_Obv(score, patterns, signals)
+            
+            return {
+                'latest_score': float(score.iloc[-1]) if len(score) > 0 and pd.notna(score.iloc[-1]) else 50.0,
+                'confidence': confidence
+            }
+            
+        except Exception as e:
+            logger.warning(f"OBV评分计算失败: {e}")
+            return {'latest_score': 50.0, 'confidence': 0.0}
+    
+    def generate_signals_Obv(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        生成OBV交易信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, pd.Series]: 包含buy_signal, sell_signal, hold_signal的字典
+        """
+        try:
+            if self._result is None:
+                self.calculate_Obv(data, **kwargs)
+            
+            # 从结果中提取信号
+            signals = {}
+            if 'buy_signal' in self._result.columns:
+                signals['buy_signal'] = self._result['buy_signal'].copy()
+            else:
+                signals['buy_signal'] = pd.Series([False] * len(self._result), index=self._result.index)
+                
+            if 'sell_signal' in self._result.columns:
+                signals['sell_signal'] = self._result['sell_signal'].copy()
+            else:
+                signals['sell_signal'] = pd.Series([False] * len(self._result), index=self._result.index)
+                
+            if 'hold_signal' in self._result.columns:
+                signals['hold_signal'] = self._result['hold_signal'].copy()
+            else:
+                signals['hold_signal'] = pd.Series([True] * len(self._result), index=self._result.index)
+            
+            # 添加信号强度
+            if 'obv_strength' in self._result.columns:
+                signals['signal_strength'] = abs(self._result['obv_strength']).fillna(0)
+            else:
+                signals['signal_strength'] = pd.Series([0.5] * len(self._result), index=self._result.index)
+            
+            return signals
+            
+        except Exception as e:
+            logger.warning(f"OBV信号生成失败: {e}")
+            # 返回默认信号
+            length = len(data)
+            return {
+                'buy_signal': pd.Series([False] * length, index=data.index),
+                'sell_signal': pd.Series([False] * length, index=data.index),
+                'hold_signal': pd.Series([True] * length, index=data.index),
+                'signal_strength': pd.Series([0.5] * length, index=data.index)
+            }
+    
+    def calculate_confidence_Obv(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算OBV置信度
+        
+        Returns:
+            float: 置信度值，范围0-1
+        """
+        try:
+            if self._result is None or len(score) == 0:
+                return 0.0
+            
+            # 基础置信度
+            confidence = 0.5
+            
+            # 根据OBV强度调整置信度
+            if 'obv_strength' in self._result.columns:
+                strength = abs(self._result['obv_strength'].iloc[-1])
+                if pd.notna(strength):
+                    confidence += min(strength * 0.1, 0.3)  # 最多增加0.3
+            
+            # 根据形态强度调整置信度
+            if len(patterns) > 0:
+                strong_patterns = ['OBV_STRONG_RISING', 'OBV_STRONG_FALLING', 'OBV_BREAKOUT_UP', 'OBV_BREAKDOWN']
+                pattern_count = sum(1 for pattern in strong_patterns if pattern in patterns.columns and patterns[pattern].iloc[-1])
+                confidence += pattern_count * 0.05  # 每个强模式增加0.05
+            
+            # 根据信号一致性调整置信度
+            if signals and 'buy_signal' in signals and 'sell_signal' in signals:
+                if signals['buy_signal'].iloc[-1] or signals['sell_signal'].iloc[-1]:
+                    confidence += 0.1  # 明确信号增加置信度
+            
+            return min(max(confidence, 0.0), 1.0)
+            
+        except Exception as e:
+            logger.warning(f"OBV置信度计算失败: {e}")
+            return 0.0
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return self._result is not None
+
+
+# 类别名，供指标注册系统使用
+OnBalanceVolumeOBV = OnBalanceVolume
+Obv = OnBalanceVolume

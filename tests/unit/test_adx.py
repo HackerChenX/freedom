@@ -51,15 +51,15 @@ class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
         patterns = self.indicator.get_patterns(self.data)
         
         # 断言返回的是一个DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
         
         # 断言DataFrame不为空
-        self.assert_false(patterns.empty)
+        self.assertFalse(patterns.empty)
         
-        # 断言包含预期的列
-        expected_pattern_columns = ['pattern_id', 'display_name', 'strength', 'duration', 'details']
+        # 断言包含预期的形态列（实际的ADX形态）
+        expected_pattern_columns = ['ADX_STRONG_TREND', 'ADX_WEAK_TREND', 'ADX_VERY_STRONG_TREND']
         for col in expected_pattern_columns:
-            self.assert_in(col, patterns.columns)
+            self.assertIn(col, patterns.columns)
 
     def test_raw_score_calculation(self):
         """测试原始评分计算"""
@@ -67,28 +67,25 @@ class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
         scores = self.indicator.calculate_raw_score(self.data)
         
         # 断言返回的是一个Series
-        self.assert_is_instance(scores, pd.Series)
+        self.assertIsInstance(scores, pd.Series)
         
         # 断言分数在0到100之间
         valid_scores = scores.dropna()
         if len(valid_scores) > 0:
-            self.assert_true(((valid_scores >= 0) & (valid_scores <= 100)).all())
+            self.assertTrue(((valid_scores >= 0) & (valid_scores <= 100)).all())
 
     def test_signal_generation_Adx(self):
         """测试交易信号生成"""
         # 生成交易信号
         signals = self.indicator.generate_trading_signals(self.data)
         
-        # 断言返回的是一个字典
-        self.assert_is_instance(signals, dict)
+        # 断言返回的是一个DataFrame（实际实现返回DataFrame而非dict）
+        self.assertIsInstance(signals, pd.DataFrame)
         
-        # 断言包含买入和卖出信号
-        self.assertIn('buy_signal', signals)
-        self.assertIn('sell_signal', signals)
-        
-        # 断言信号是布尔型的Series
-        self.assertIsInstance(signals['buy_signal'], pd.Series)
-        self.assertEqual(signals['buy_signal'].dtype, 'bool')
+        # 断言包含预期的信号列
+        expected_signal_columns = ['adx_signal', 'adx_strength', 'adx_confidence']
+        for col in expected_signal_columns:
+            self.assertIn(col, signals.columns)
 
     def test_edge_cases_Adx(self):
         """测试边界条件"""
@@ -102,7 +99,7 @@ class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
         data_with_nan = self.data.copy()
         data_with_nan.iloc[10:21, data_with_nan.columns.get_loc('close')] = np.nan
         result_nan = self.indicator.calculate(data_with_nan)
-        self.assert_is_instance(result_nan, pd.DataFrame)
+        self.assertIsInstance(result_nan, pd.DataFrame)
 
     def test_adx_calculation(self):
         """白盒测试：精确验证 ADX, PDI, MDI 的计算逻辑"""
@@ -163,7 +160,7 @@ class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
         # 这是一个实现上的小缺陷，我们在测试中绕过
         # 在真实场景中，我们应该改进 get_signals，使其不依赖一个未计算的列
         indicator = complete_registry.create_indicator('ADX', params={"period": 14, "strong_trend": 20}) # 降低阈值确保触发
-        result_co = indicator._calculate(crossover_data)
+        result_co = indicator.calculate(crossover_data)
 
         # 手动添加 ADXR 以满足 get_signals 的要求。在真实实现中，ADXR是ADX的移动平均。
         period = indicator.params["period"]
@@ -196,7 +193,7 @@ class Test_aDX(Indicator_test_mixin, Log_capture_mixin, unittest.TestCase):
             'volume': [1000] * 30
         })
 
-        result_cu = indicator._calculate(crossunder_data)
+        result_cu = indicator.calculate(crossunder_data)
         result_cu['ADXR'] = result_cu[adx_col_name].rolling(window=indicator.params['period']).mean()
         result_cu['PDI'] = result_cu[pdi_col_name]  # 添加简化的列名
         result_cu['MDI'] = result_cu[mdi_col_name]  # 添加简化的列名

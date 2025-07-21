@@ -33,12 +33,19 @@ class Aroon(BaseIndicator, PatternSignalMixin):
         """
         super().__init__()
         self.name = "AROON"
+        self.description = "阿隆指标，用于识别趋势的强度和方向"
+        self._result = None  # 初始化结果存储
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_aroon()
         
         # 应用用户参数
-        self.set_parameters_Aroon(**kwargs)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        
+        # 如果没有设置period，使用默认值
+        if not hasattr(self, 'period'):
+            self.period = self._default_parameters.get('period', 14)
     
     def _get_default_parameters_aroon(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -51,29 +58,82 @@ class Aroon(BaseIndicator, PatternSignalMixin):
         Args:
             **kwargs: 参数字典
         """
-        # 验证参数
-        try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
-            
-            # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
-            params.update(kwargs)
-            
-            # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('AROON', params)
-            if not is_valid:
-                # 静默处理验证失败，避免过多警告
-                pass
-                # 使用默认参数
-                params = self._default_parameters.copy()
-            
-            # 设置参数
-            self.period = params.get('period', 14)
-                    
-        except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+        # 简化参数设置逻辑，直接设置参数
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    # ========================== 抽象方法实现 ==========================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_Aroon(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_raw_score_Aroon(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.get_patterns_Aroon(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """BaseIndicator要求的抽象方法实现"""
+        return self.set_parameters_Aroon(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_confidence_Aroon(score, patterns, signals)
+
+    # ========================== 兼容性方法 ==========================
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共接口：计算指标"""
+        return self.calculate_Aroon(data, **kwargs)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共接口：获取形态"""
+        return self.get_patterns_Aroon(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """公共接口：计算原始评分"""
+        return self.calculate_raw_score_Aroon(data, **kwargs)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """公共接口：获取信号"""
+        return self.generate_signals_aroon(data, **kwargs)
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """公共接口：计算评分"""
+        return self.calculate_raw_score_Aroon(data, **kwargs)
+
+    def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
+        """公共接口：计算置信度"""
+        # 先计算必要的数据
+        score = self.calculate_raw_score_Aroon(data, **kwargs)
+        patterns = self.get_patterns_Aroon(data, **kwargs)
+        signals = self.generate_signals_aroon(data, **kwargs)
+        return self.calculate_confidence_Aroon(score, patterns, signals)
+
+    def set_parameters(self, **kwargs):
+        """公共接口：设置参数"""
+        return self.set_parameters_Aroon(**kwargs)
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共接口：计算（别名）"""
+        return self.calculate_Aroon(data, **kwargs)
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """公共接口：生成交易信号"""
+        return self.generate_signals_aroon(data, **kwargs)
+
+    def register_patterns(self):
+        """公共接口：注册形态"""
+        # 空实现，保持兼容性
+        pass
+
+    def has_result(self) -> bool:
+        """公共接口：检查是否有结果"""
+        return self._result is not None
     
     def calculate_Aroon(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -106,14 +166,23 @@ class Aroon(BaseIndicator, PatternSignalMixin):
         low = df['low']
         
         # 计算Aroon Up: (period - 最高价距今天数) / period * 100
-        aroon_up = high.rolling(window=self.period).apply(
-            lambda x: (self.period - x.argmax()) / self.period * 100
-        )
+        # argmax返回的是从0开始的索引，最新的值（今天）应该得到100分
+        def calculate_aroon_up(window):
+            if len(window) < self.period:
+                return np.nan
+            days_since_highest = len(window) - 1 - window.argmax()
+            return (self.period - days_since_highest) / self.period * 100
         
-        # 计算Aroon Down: (period - 最低价距今天数) / period * 100
-        aroon_down = low.rolling(window=self.period).apply(
-            lambda x: (self.period - x.argmin()) / self.period * 100
-        )
+        aroon_up = high.rolling(window=self.period).apply(calculate_aroon_up, raw=False)
+        
+        # 计算Aroon Down: (period - 最低价距今天数) / period * 100  
+        def calculate_aroon_down(window):
+            if len(window) < self.period:
+                return np.nan
+            days_since_lowest = len(window) - 1 - window.argmin()
+            return (self.period - days_since_lowest) / self.period * 100
+            
+        aroon_down = low.rolling(window=self.period).apply(calculate_aroon_down, raw=False)
         
         # 计算Aroon震荡器
         aroon_oscillator = aroon_up - aroon_down
@@ -185,6 +254,29 @@ class Aroon(BaseIndicator, PatternSignalMixin):
             df.loc[:, 'hold_signal'] = True
 
         return df
+
+    def generate_signals_aroon(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """公共接口：生成AROON信号"""
+        try:
+            result = self.calculate_Aroon(data, **kwargs)
+            
+            aroon_up = result['aroon_up']
+            aroon_down = result['aroon_down']
+            
+            # 基于AROON交叉生成信号
+            buy_signal = (aroon_up > 70) & (aroon_up > aroon_down) & (aroon_up > aroon_up.shift(1))
+            sell_signal = (aroon_down > 70) & (aroon_down > aroon_up) & (aroon_down > aroon_down.shift(1))
+            
+            return {
+                'aroon_buy_signal': buy_signal.fillna(False),
+                'aroon_sell_signal': sell_signal.fillna(False)
+            }
+        except (ValueError, KeyError, IndexError) as e:
+            logger.warning(f"AROON信号生成失败: {e}, 返回空信号")
+            return {
+                'aroon_buy_signal': pd.Series([False] * len(data), index=data.index),
+                'aroon_sell_signal': pd.Series([False] * len(data), index=data.index)
+            }
 
     def calculate_raw_score_Aroon(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -314,3 +406,8 @@ class Aroon(BaseIndicator, PatternSignalMixin):
         patterns['AROON_WEAK_TREND'] = (aroon_up < 30) & (aroon_down < 30)
         
         return patterns
+
+
+# 类别名
+AROON = Aroon
+Aroon_indicator = Aroon

@@ -25,7 +25,9 @@ class MaMa(BaseIndicator, PatternSignalMixin):
         Args:
             **kwargs: 指标参数，支持period、price_field等
         """
-        super().__init__(name="MA_Ma", description="移动平均线")
+        super().__init__()
+        self.name = "MA_Ma"
+        self.description = "移动平均线"
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_ma()
@@ -50,18 +52,23 @@ class MaMa(BaseIndicator, PatternSignalMixin):
                 - price_field: 价格字段选择
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
-
-        # 合并默认参数和用户参数
-        params = self._default_parameters.copy()
-        params.update(kwargs)
-
-        # 验证参数
-        is_valid, errors = validator.validate_indicator_parameters('MA_Ma', params)
-        if not is_valid:
-            # 静默处理验证失败，避免过多警告
-            pass
+        try:
+            from utils.indicator_parameter_validator import IndicatorParameterValidator
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 验证参数
+            is_valid, errors = validator.validate_indicator_parameters('MA_Ma', params)
+            if not is_valid:
+                # 静默处理验证失败，避免过多警告
+                pass
+        except Exception:
+            # 如果验证器模块有问题，静默处理
+            params = self._default_parameters.copy()
+            params.update(kwargs)
 
         # 设置参数
         self.period = params.get('period', 20)
@@ -464,3 +471,212 @@ class MaMa(BaseIndicator, PatternSignalMixin):
             "strength": "WEAK",
             "score_impact": 0.0
         })
+
+    # ========================= 抽象方法实现 =========================
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return self._calculate_ma(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        return self.calculate_raw_score(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return self.get_patterns(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        return self.set_parameters(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        return self.calculate_confidence(score, patterns, signals)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return self._calculate_ma(data, **kwargs)
+
+    # ========================= 兼容性方法 =========================
+    def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
+        """
+        获取MA形态识别结果
+        
+        Returns:
+            pd.DataFrame: 形态识别结果，包含各种MA形态
+        """
+        if data is None and hasattr(self, '_result') and self._result is not None:
+            data_to_use = self._result
+        else:
+            data_to_use = self.calculate(data, **kwargs) if data is not None else pd.DataFrame()
+        
+        if data_to_use.empty:
+            return pd.DataFrame()
+        
+        patterns = pd.DataFrame(index=data_to_use.index)
+        
+        # 检查是否有MA列
+        ma_cols = [col for col in data_to_use.columns if col.startswith('SMA') or col.startswith('MA')]
+        if ma_cols:
+            # 添加基本形态
+            patterns['MA_UPTREND'] = False
+            patterns['MA_DOWNTREND'] = False
+            patterns['MA_BULLISH_ARRANGEMENT'] = False
+            patterns['MA_BEARISH_ARRANGEMENT'] = False
+            
+            # 如果有多个MA，检测多头/空头排列
+            if len(ma_cols) >= 2:
+                ma_short = data_to_use[ma_cols[0]]
+                ma_long = data_to_use[ma_cols[-1]]
+                
+                patterns['MA_BULLISH_ARRANGEMENT'] = ma_short > ma_long
+                patterns['MA_BEARISH_ARRANGEMENT'] = ma_short < ma_long
+                patterns['MA_UPTREND'] = ma_short > ma_short.shift(3)
+                patterns['MA_DOWNTREND'] = ma_short < ma_short.shift(3)
+        
+        return patterns
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算MA原始评分
+        
+        Returns:
+            pd.Series: 评分序列，取值范围0-100
+        """
+        if data is None:
+            return pd.Series(50.0)
+        
+        # 确保计算了MA
+        if not hasattr(self, '_result') or self._result is None:
+            result = self.calculate(data, **kwargs)
+        else:
+            result = self._result
+        
+        if result.empty:
+            return pd.Series(50.0, index=data.index)
+        
+        # 基于MA趋势计算评分
+        ma_cols = [col for col in result.columns if col.startswith('SMA') or col.startswith('MA')]
+        if not ma_cols:
+            return pd.Series(50.0, index=data.index)
+        
+        ma = result[ma_cols[0]]
+        price = data['close'] if 'close' in data.columns else result['close']
+        
+        # 评分逻辑：价格相对于MA的位置
+        score = pd.Series(50.0, index=data.index)
+        
+        # 价格在MA之上加分，之下减分
+        price_above_ma = price > ma
+        price_below_ma = price < ma
+        
+        score[price_above_ma] = 60.0
+        score[price_below_ma] = 40.0
+        
+        # 趋势方向调整
+        ma_trend = ma.rolling(5).mean() > ma.rolling(5).mean().shift(5)
+        score[ma_trend] += 10
+        score[~ma_trend] -= 10
+        
+        return score.clip(0, 100)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成MA交易信号
+        
+        Returns:
+            pd.DataFrame: 包含交易信号的DataFrame
+        """
+        if data is None:
+            data = self._result if hasattr(self, '_result') and self._result is not None else pd.DataFrame()
+        
+        if data.empty:
+            return pd.DataFrame()
+        
+        # 确保数据包含MA
+        ma_cols = [col for col in data.columns if col.startswith('SMA') or col.startswith('MA')]
+        if not ma_cols:
+            data = self.calculate(data, **kwargs)
+            ma_cols = [col for col in data.columns if col.startswith('SMA') or col.startswith('MA')]
+        
+        signals = pd.DataFrame(index=data.index)
+        
+        if ma_cols and 'close' in data.columns:
+            ma = data[ma_cols[0]]
+            price = data['close']
+            
+            # 生成信号
+            signals['ma_signal'] = 0
+            signals['ma_strength'] = 0.0
+            signals['ma_confidence'] = 0.0
+            
+            # 价格上穿MA买入信号
+            price_cross_above = crossover(price, ma)
+            signals.loc[price_cross_above, 'ma_signal'] = 1
+            signals.loc[price_cross_above, 'ma_strength'] = 0.7
+            signals.loc[price_cross_above, 'ma_confidence'] = 0.6
+            
+            # 价格下穿MA卖出信号
+            price_cross_below = crossunder(price, ma)
+            signals.loc[price_cross_below, 'ma_signal'] = -1
+            signals.loc[price_cross_below, 'ma_strength'] = 0.7
+            signals.loc[price_cross_below, 'ma_confidence'] = 0.6
+        
+        return signals
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """
+        计算MA综合评分
+        
+        Returns:
+            dict: 包含评分信息的字典
+        """
+        raw_score = self.calculate_raw_score(data, **kwargs)
+        patterns = self.get_patterns(data, **kwargs)
+        signals = self.get_signals(data, **kwargs)
+        
+        # 计算平均分数
+        avg_score = raw_score.mean() if not raw_score.empty else 50.0
+        
+        # 计算置信度
+        confidence = self.calculate_confidence(raw_score, patterns, signals)
+        
+        return {
+            'average_score': avg_score,
+            'latest_score': raw_score.iloc[-1] if not raw_score.empty else 50.0,
+            'confidence': confidence,
+            'signal_strength': signals['ma_strength'].mean() if 'ma_strength' in signals.columns else 0.0,
+            'pattern_count': patterns.sum().sum() if not patterns.empty else 0
+        }
+
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        return self.set_parameters_Ma(**kwargs)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算MA置信度
+        
+        Returns:
+            float: 置信度值，范围0-1
+        """
+        # 简单的置信度计算
+        if score.empty:
+            return 0.5
+        
+        # 基于评分的稳定性
+        score_std = score.std()
+        confidence = max(0.3, 1.0 - score_std / 100.0)
+        
+        return min(0.9, confidence)
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成交易信号（兼容性方法）
+        
+        Returns:
+            pd.DataFrame: 交易信号DataFrame
+        """
+        return self.get_signals(data, **kwargs)
+
+# 类别名
+MA = MaMa

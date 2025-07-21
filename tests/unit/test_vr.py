@@ -79,9 +79,9 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_vr_parameter_update(self):
         """测试VR参数更新"""
@@ -90,8 +90,8 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, ma_period=new_ma_period)
         
         # 验证参数更新
-        self.assert_equal(self.indicator.period, new_period)
-        self.assert_equal(self.indicator.ma_period, new_ma_period)
+        self.assertEqual(self.indicator.period, new_period)
+        self.assertEqual(self.indicator.ma_period, new_ma_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -103,13 +103,13 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
+            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_vr_comprehensive_score(self):
         """测试VR综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
+        self.assertIsInstance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -121,13 +121,13 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试VR形态识别"""
         # 先计算指标
         result = self.indicator.calculate(self.data)
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         
         # 然后获取形态
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
         
         # 验证基本的形态列存在
         if not patterns.empty and len(patterns.columns) > 0:
@@ -204,11 +204,11 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号DataFrame结构
-        self.assert_is_instance(signals, dict)
+        self.assertIsInstance(signals, dict)
         expected_signal_keys = ['buy', 'sell']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assert_is_instance(signals[key], pd.Series)
+            self.assertIsInstance(signals[key], pd.Series)
     
     def test_no_errors_during_calculation_Vr(self):
         """测试计算过程中无ERROR日志"""
@@ -218,10 +218,10 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(self.data)
         
         # 验证无ERROR日志
-        self.assert_no_logs('ERROR')
+        self.assertNoLogs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         self.assertIn('vr', result.columns)
         self.assertIn('vr_ma', result.columns)
     
@@ -233,10 +233,10 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证无ERROR日志
-        self.assert_no_logs('ERROR')
+        self.assertNoLogs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
     
     def test_vr_register_patterns(self):
         """测试VR形态注册"""
@@ -278,7 +278,7 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         # 测试缺少volume列的情况
         invalid_data = self.data.drop('volume', axis=1)
         
-        with self.assert_raises(ValueError):
+        with self.assertRaises(ValueError):
             self.indicator.calculate(invalid_data)
     
     def test_vr_ma_relationship(self):
@@ -293,7 +293,7 @@ class Testvr_vr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
             vr_volatility = vr_values.std()
             ma_volatility = vr_ma_values.std()
             
-            self.assert_less_equal(ma_volatility, vr_volatility * 1.2, 
+            self.assertLessEqual(ma_volatility, vr_volatility * 1.2, 
                                "均线应该比原始VR更平滑")
     
     def test_vr_volume_classification(self):

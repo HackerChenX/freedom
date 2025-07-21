@@ -64,9 +64,9 @@ class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_dma_parameter_update(self):
         """测试DMA参数更新"""
@@ -80,9 +80,9 @@ class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         )
         
         # 验证参数更新
-        self.assert_equal(self.indicator.fast_period, new_fast_period)
-        self.assert_equal(self.indicator.slow_period, new_slow_period)
-        self.assert_equal(self.indicator.ama_period, new_ama_period)
+        self.assertEqual(self.indicator.fast_period, new_fast_period)
+        self.assertEqual(self.indicator.slow_period, new_slow_period)
+        self.assertEqual(self.indicator.ama_period, new_ama_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -98,7 +98,7 @@ class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         """测试DMA综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
+        self.assertIsInstance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -111,7 +111,7 @@ class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
         
         # 验证预期的形态列存在
         expected_patterns = [
@@ -129,11 +129,11 @@ class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         signals = self.indicator.generate_signals(self.data)
         
         # 验证信号
-        self.assert_is_instance(signals, list)
+        self.assertIsInstance(signals, list)
         
         if len(signals) > 0:
             signal = signals[0]
-            self.assert_is_instance(signal, dict)
+            self.assertIsInstance(signal, dict)
             
             # 验证必需的信号字段
             required_fields = ['indicator', 'buy_signal', 'sell_signal', 'score', 'confidence']
@@ -162,9 +162,9 @@ class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assert_in(col, result.columns)
+            self.assertIn(col, result.columns)
     
     def test_no_errors_during_pattern_detection_Dma(self):
         """测试形态检测过程中无ERROR日志"""
@@ -177,7 +177,7 @@ class Testdma_dma(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

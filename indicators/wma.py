@@ -18,7 +18,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
-from indicators.pattern_registry import Pattern_registry, Pattern_type, Pattern_strength
+from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
 logger = get_logger(__name__)
 
@@ -32,7 +32,7 @@ class Wma(BaseIndicator, PatternSignalMixin):
     """
     
     # WMA指标只需要close列
-    REQUIRED_COLUMNS = ['close']
+    REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
 
     def __init__(self, period: int = 14, periods: List[int] = None):
         """
@@ -42,9 +42,145 @@ class Wma(BaseIndicator, PatternSignalMixin):
             period: 计算周期，默认为14
             periods: 多个计算周期，如果提供，将计算多个周期的WMA
         """
-        super().__init__(name="WMA", description="加权移动平均线，对不同时期价格赋予不同权重")
+        super().__init__()  # 不传递参数给super()
+        self.name = "WMA"
+        self.description = "加权移动平均线，对不同时期价格赋予不同权重"
         self.period = period
         self.periods = periods if periods is not None else [period]
+        self._result = None  # 缓存计算结果
+
+    # 抽象方法实现
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator要求的抽象方法实现"""
+        return self._calculate_wma(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_raw_score_Wma(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.get_patterns_Wma(data, **kwargs)
+
+    def get_signals_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.get_signals_Wma(data, **kwargs)
+
+    def calculate_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_score_Wma(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> float:
+        """BaseIndicator要求的抽象方法实现"""
+        try:
+            result = self._calculate_wma(data, **kwargs)
+            if result is None or result.empty:
+                return 0.0
+            
+            # 计算置信度：基于有效数据点的比例
+            total_rows = len(data)
+            valid_rows = 0
+            
+            for period in self.periods:
+                wma_col = f'WMA{period}'
+                if wma_col in result.columns:
+                    valid_rows += result[wma_col].notna().sum()
+            
+            if total_rows > 0 and len(self.periods) > 0:
+                confidence = valid_rows / (total_rows * len(self.periods))
+                return min(1.0, confidence)
+            return 0.0
+        except Exception:
+            return 0.0
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs) -> bool:
+        """BaseIndicator要求的抽象方法实现"""
+        try:
+            if 'period' in kwargs:
+                new_period = int(kwargs['period'])
+                if new_period > 0:
+                    self.period = new_period
+                    self.periods = [new_period]
+                    self._result = None  # 清除缓存
+                    return True
+            
+            if 'periods' in kwargs:
+                new_periods = kwargs['periods']
+                if isinstance(new_periods, list) and all(isinstance(p, int) and p > 0 for p in new_periods):
+                    self.periods = new_periods
+                    self.period = new_periods[0] if new_periods else 14
+                    self._result = None  # 清除缓存
+                    return True
+            
+            return False
+        except Exception:
+            return False
+
+    # 兼容性方法
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：通用计算接口"""
+        return self.calculate_Wma(data, **kwargs)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：获取形态"""
+        return self.get_patterns_Wma(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """兼容性方法：计算原始评分"""
+        return self.calculate_raw_score_Wma(data, **kwargs)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：获取信号"""
+        return self.get_signals_Wma(data, **kwargs)
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """兼容性方法：计算评分"""
+        return self.calculate_score_Wma(data, **kwargs)
+
+    def register_patterns(self) -> None:
+        """兼容性方法：注册形态"""
+        return self.register_patterns_Wma()
+
+    def calculate_confidence(self, raw_score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, Any]) -> float:
+        """兼容性方法：计算置信度"""
+        return self.calculate_confidence_Wma(raw_score, patterns, signals)
+
+    def set_parameters(self, **kwargs) -> None:
+        """兼容性方法：设置参数"""
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        
+        # 特殊处理period参数，更新periods列表
+        if 'period' in kwargs:
+            self.periods = [self.period]
+        
+        # 重置计算结果
+        self._result = None
+
+    def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """兼容性方法：计算WMA"""
+        return self.calculate(data, **kwargs)
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成交易信号（兼容性方法）
+        
+        Returns:
+            pd.DataFrame: 交易信号DataFrame
+        """
+        return self.get_signals_Wma(data, **kwargs)
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty)
 
     def calculate_Wma(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -104,9 +240,18 @@ class Wma(BaseIndicator, PatternSignalMixin):
         if df.empty:
             return pd.DataFrame()
 
-        # 确保数据包含必要的列
-        required_columns = ['close', 'high', 'low']
-        self._validate_dataframe_wma(df, required_columns)
+        # 检查必需列是否存在
+        if 'close' not in df.columns:
+            # 返回空的结果DataFrame，保持原有结构
+            result = df.copy()
+            empty_series = pd.Series(float('nan'), index=df.index)
+            for p in self.periods:
+                result[f'WMA{p}'] = empty_series
+            result['buy_signal'] = False
+            result['sell_signal'] = False
+            result['hold_signal'] = True
+            self._result = result[[f'WMA{p}' for p in self.periods]]
+            return result
         
         df_copy = df.copy()
         
@@ -212,9 +357,14 @@ class Wma(BaseIndicator, PatternSignalMixin):
             short_period = self.periods[0]
             long_period = self.periods[1]
             
-            # 检查必要的指标列是否存在
-            required_columns = [f'WMA{short_period}', f'WMA{long_period}']
-            self._validate_dataframe_wma(df_copy, required_columns)
+            # 先计算WMA指标，确保必要的列存在
+            wma_result = self._calculate_wma(df)
+            if wma_result is not None and not wma_result.empty:
+                # 将WMA结果合并到当前DataFrame
+                for period in self.periods:
+                    wma_col = f'WMA{period}'
+                    if wma_col in wma_result.columns:
+                        df_copy[wma_col] = wma_result[wma_col]
             
             # 金叉信号（短期WMA上穿长期WMA）
             df_copy.loc[crossover(df_copy[f'WMA{short_period}'], df_copy[f'WMA{long_period}']), f'wma_signal'] = 1
@@ -1275,3 +1425,6 @@ class Wma(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+# 类别名
+WMA = Wma

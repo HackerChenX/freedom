@@ -4,7 +4,12 @@ MTM指标单元测试
 import unittest
 import pandas as pd
 import numpy as np
-from indicators.complete_indicator_registry import complete_registry
+import warnings
+import io
+import logging
+from typing import Dict, Any
+
+from indicators.mtm import Momentum
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
@@ -15,10 +20,26 @@ class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     
     def setUp(self):
         """设置测试环境"""
-        # 显式调用LogCaptureMixin的setUp
-        super().setUp()
+        warnings.filterwarnings('ignore')
         
-        self.indicator = complete_registry.create_indicator('MTM', period=10, ma_period=6)
+        # 设置日志处理器
+        self.log_stream = io.StringIO()
+        self.log_handler = logging.StreamHandler(self.log_stream)
+        self.log_handler.setLevel(logging.ERROR)
+        
+        # 获取相关的logger并添加处理器
+        loggers = [
+            logging.getLogger('indicators.mtm'),
+            logging.getLogger('indicators.complete_indicator_registry'),
+            logging.getLogger('analysis.engines'),
+            logging.getLogger('utils')
+        ]
+        
+        for logger in loggers:
+            logger.addHandler(self.log_handler)
+            logger.setLevel(logging.DEBUG)
+        
+        self.indicator = Momentum(period=10, ma_period=6)
         self.expected_columns = ['mtm', 'mtmma']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -60,9 +81,9 @@ class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_mtm_parameter_update(self):
         """测试MTM参数更新"""
@@ -71,8 +92,8 @@ class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.indicator.set_parameters(period=new_period, ma_period=new_ma_period)
         
         # 验证参数更新
-        self.assert_equal(self.indicator.period, new_period)
-        self.assert_equal(self.indicator.ma_period, new_ma_period)
+        self.assertEqual(self.indicator.period, new_period)
+        self.assertEqual(self.indicator.ma_period, new_ma_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
@@ -84,26 +105,26 @@ class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_columns = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_columns:
-            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
+            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_mtm_comprehensive_score(self):
         """测试MTM综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
-        self.assertIn('score', score_result)
+        self.assertIsInstance(score_result, dict)
+        self.assertIn('latest_score', score_result)
         self.assertIn('confidence', score_result)
         
         # 验证评分范围
-        self.assertGreaterEqual(score_result['score'], 0.0)
-        self.assertLessEqual(score_result['score'], 100.0)
+        self.assertGreaterEqual(score_result['latest_score'], 0.0)
+        self.assertLessEqual(score_result['latest_score'], 100.0)
     
     def test_mtm_patterns(self):
         """测试MTM形态识别"""
         patterns = self.indicator.get_patterns(self.data)
 
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
 
         # 验证预期的形态列存在
         expected_patterns = [
@@ -119,25 +140,25 @@ class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def test_mtm_auto_threshold(self):
         """测试MTM自动阈值计算"""
         # 创建一个使用自动阈值的指标
-        auto_indicator = MTM(period=10, ma_period=6, overbought=0, oversold=0)
+        auto_indicator = Momentum(period=10, ma_period=6, overbought=0, oversold=0)
         result = auto_indicator.calculate(self.data)
         
         # 验证阈值已被自动设置
-        self.assert_not_equal(auto_indicator.overbought, 0)
-        self.assert_not_equal(auto_indicator.oversold, 0)
-        self.assert_greater(auto_indicator.overbought, 0)
-        self.assert_less(auto_indicator.oversold, 0)
+        self.assertNotEqual(auto_indicator.overbought, 0)
+        self.assertNotEqual(auto_indicator.oversold, 0)
+        self.assertGreater(auto_indicator.overbought, 0)
+        self.assertLess(auto_indicator.oversold, 0)
     
     def test_mtm_trading_signals(self):
         """测试MTM交易信号生成"""
         signals = self.indicator.generate_trading_signals(self.data)
         
         # 验证信号字典结构
-        self.assert_is_instance(signals, dict)
+        self.assertIsInstance(signals, dict)
         expected_signal_keys = ['buy_signal', 'sell_signal', 'signal_strength']
         for key in expected_signal_keys:
             self.assertIn(key, signals, f"缺少信号键: {key}")
-            self.assert_is_instance(signals[key], pd.Series)
+            self.assertIsInstance(signals[key], pd.Series)
     
     def test_no_errors_during_calculation_Mtm(self):
         """测试计算过程中无ERROR日志"""
@@ -147,10 +168,11 @@ class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         result = self.indicator.calculate(self.data)
         
         # 验证无ERROR日志
-        self.assert_no_logs('ERROR')
+        log_contents = self.log_stream.getvalue()
+        self.assertNotIn('ERROR', log_contents)
         
         # 验证结果
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         self.assertIn('mtm', result.columns)
         self.assertIn('mtmma', result.columns)
     
@@ -162,10 +184,11 @@ class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证无ERROR日志
-        self.assert_no_logs('ERROR')
+        log_contents = self.log_stream.getvalue()
+        self.assertNotIn('ERROR', log_contents)
         
         # 验证结果
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
     
     def test_mtm_register_patterns(self):
         """测试MTM形态注册"""
