@@ -1,0 +1,253 @@
+# 统一指标测试配置文件
+
+test_framework:
+  version: "1.0.0"
+  strict_mode: true  # 严格模式：要求100%通过率
+  timeout_seconds: 600
+  max_parallel_tests: 10
+  retry_on_failure: false  # 不重试，确保测试严格性
+
+data_generation:
+  default_history_days: 250
+  stockinfo_compatibility: true
+  data_quality_threshold: 0.95
+  pool_size: 100  # 每个测试的数据池大小
+
+# 已修复指标测试矩阵（21个指标）
+indicators_test_matrix:
+  completed_indicators:
+    # 第一批已修复指标
+    MACD:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'DIVERGENCE', 'HISTOGRAM_REVERSAL']
+      history_requirement: 60
+      complex_conditions: ['MACD_RSI_COMBO', 'MACD_VOLUME_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    RSI:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'DIVERGENCE', 'CENTERLINE_CROSS']
+      history_requirement: 30
+      complex_conditions: ['RSI_MACD_COMBO', 'RSI_BOLL_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    VOL:
+      patterns: ['VOLUME_SPIKE', 'VOLUME_BREAKOUT', 'VOLUME_DIVERGENCE']
+      history_requirement: 20
+      complex_conditions: ['VOL_PRICE_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    KDJ:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'OVERBOUGHT', 'OVERSOLD']
+      history_requirement: 20
+      complex_conditions: ['KDJ_MACD_COMBO', 'KDJ_VOL_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    BOLL:
+      patterns: ['UPPER_BREAKOUT', 'LOWER_BREAKOUT', 'SQUEEZE', 'EXPANSION']
+      history_requirement: 40
+      complex_conditions: ['BOLL_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    CCI:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'ZERO_LINE_CROSS']
+      history_requirement: 25
+      complex_conditions: ['CCI_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    WR:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'REVERSAL']
+      history_requirement: 20
+      complex_conditions: ['WR_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    BIAS:
+      patterns: ['POSITIVE_BIAS', 'NEGATIVE_BIAS', 'ZERO_CROSS']
+      history_requirement: 30
+      complex_conditions: ['BIAS_MA_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    EMA:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'TREND_FOLLOWING']
+      history_requirement: 50
+      complex_conditions: ['EMA_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    DMI:
+      patterns: ['ADX_RISING', 'DI_CROSS', 'TREND_STRENGTH']
+      history_requirement: 30
+      complex_conditions: ['DMI_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    # 第二批已修复指标
+    ADX:
+      patterns: ['TREND_STRENGTH', 'TREND_WEAKNESS', 'DIRECTIONAL_CHANGE']
+      history_requirement: 30
+      complex_conditions: ['ADX_DMI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    DMA:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'DIVERGENCE']
+      history_requirement: 40
+      complex_conditions: ['DMA_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    WMA:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'TREND_FOLLOWING']
+      history_requirement: 50
+      complex_conditions: ['WMA_EMA_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    StochRSI:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'GOLDEN_CROSS', 'DEATH_CROSS']
+      history_requirement: 35
+      complex_conditions: ['STOCHRSI_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    MA:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'SUPPORT_RESISTANCE']
+      history_requirement: 60
+      complex_conditions: ['MA_VOLUME_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    OBV:
+      patterns: ['VOLUME_ACCUMULATION', 'VOLUME_DISTRIBUTION', 'DIVERGENCE']
+      history_requirement: 30
+      complex_conditions: ['OBV_PRICE_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    MTM:
+      patterns: ['MOMENTUM_POSITIVE', 'MOMENTUM_NEGATIVE', 'ZERO_CROSS']
+      history_requirement: 25
+      complex_conditions: ['MTM_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    PVT:
+      patterns: ['PRICE_VOLUME_TREND', 'DIVERGENCE', 'BREAKOUT']
+      history_requirement: 30
+      complex_conditions: ['PVT_OBV_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    MOMENTUM:
+      patterns: ['POSITIVE_MOMENTUM', 'NEGATIVE_MOMENTUM', 'REVERSAL']
+      history_requirement: 25
+      complex_conditions: ['MOMENTUM_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    FIBONACCI:
+      patterns: ['RETRACEMENT_38', 'RETRACEMENT_50', 'RETRACEMENT_62', 'EXTENSION']
+      history_requirement: 60
+      complex_conditions: ['FIBONACCI_TREND_COMBO']
+      expected_accuracy: 1.0
+      priority: "low"
+      
+    AROON:
+      patterns: ['AROON_UP_CROSS', 'AROON_DOWN_CROSS', 'PARALLEL_MOVEMENT']
+      history_requirement: 30
+      complex_conditions: ['AROON_ADX_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+
+# 性能测试要求
+performance_requirements:
+  max_execution_time_per_indicator: 120  # 秒
+  max_memory_usage: "2GB"
+  min_throughput: 1000  # 股票/秒
+  large_scale_test_size: 4000  # 模拟4000+股票
+
+# 验证标准
+validation_criteria:
+  buypoint_recognition_accuracy: 1.0
+  selection_precision: 0.95
+  selection_recall: 0.90
+  closed_loop_validation_rate: 1.0
+
+# 复杂条件组合测试配置
+complex_condition_tests:
+  multi_indicator_combinations:
+    - ['MACD', 'RSI']
+    - ['KDJ', 'BOLL']
+    - ['MA', 'VOL']
+    - ['DMI', 'ADX']
+  
+  multi_timeframe_combinations:
+    - ['daily', '60min']
+    - ['daily', '30min']
+    - ['60min', '30min']
+  
+  logic_operators:
+    - 'AND'
+    - 'OR'
+    - 'NOT'
+    - 'XOR'
+
+# 选股脚本配置
+stock_selection:
+  script_path: "bin/stock_select.py"
+  mock_data_mode: true
+  default_filters:
+    market_cap:
+      min: 10
+      max: 5000
+    price_range:
+      min: 3.0
+      max: 200.0
+    volume_filter:
+      min_avg_volume: 1000000
+  
+  strategy_template:
+    time_criteria:
+      time_frames:
+        - level: "daily"
+          priority: 1
+          required: true
+      market_timing:
+        trading_session: "full_day"
+        exclude_holidays: true
+    
+    selection_parameters:
+      max_selections: 50
+      min_score: 0.6
+      ranking_method: "score"
+    
+    validation:
+      enable_closed_loop: true
+      validation_method: "entry_point_analysis"
+      validation_threshold: 0.8
+
+# 报告配置
+reporting:
+  output_directory: "test_reports"
+  formats: ["markdown", "json", "html"]
+  include_charts: true
+  real_time_monitoring: true
+  
+  alert_thresholds:
+    memory_usage: 0.8
+    execution_time: 300
+    pass_rate: 1.0
+
+# 日志配置
+logging:
+  level: "INFO"
+  file: "logs/unified_indicator_test.log"
+  max_size_mb: 100
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
