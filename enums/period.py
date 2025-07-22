@@ -226,19 +226,19 @@ class Period(Enum):
         """
         return [Period.get_description_Period(p) for p in Period]
     
-    def __str___Period(self) -> str:
+    def __str__(self) -> str:
         """
         返回周期的字符串表示
-        
+
         Returns:
             str: 周期的描述
         """
         return self.get_description_Period(self)
-    
-    def __repr___Period(self) -> str:
+
+    def __repr__(self) -> str:
         """
         返回周期的程序表示
-        
+
         Returns:
             str: 周期的程序表示
         """

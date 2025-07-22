@@ -654,7 +654,7 @@ def get_pattern_registry() -> PatternRegistry:
     """
     try:
         container = get_container()
-        return container.resolve(PatternRegistry())
+        return container.resolve(PatternRegistry)
     except Exception as e:
         logger.warning(f"从依赖注入容器获取PatternRegistry失败，创建新实例: {e}")
         return PatternRegistry()

@@ -29,7 +29,7 @@ sys.path.append(project_root)
 
 from utils.logger import get_logger
 # Import components directly
-from production_level_performance_test import ProductionConnectionPool, PerformanceMonitor
+from tests.production_level_performance_test import ProductionConnectionPool, PerformanceMonitor
 
 logger = get_logger(__name__)
 

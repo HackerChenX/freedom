@@ -18,7 +18,7 @@ from typing import List, Optional
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from tests.unified_indicator_testing.unified_indicator_tester import UnifiedIndicatorTester
+from unified_indicator_tester import UnifiedIndicatorTester
 from utils.logger import getLogger
 
 logger = getLogger(__name__)

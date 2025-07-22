@@ -5,7 +5,9 @@
 """
 
 from enums.period import Period
-from enums.kline_period import KlinePeriod
+# KlinePeriod已合并到Period中，请使用'from enums.period import Period'代替
+# from enums.kline_period import KlinePeriod
+KlinePeriod = Period  # 向后兼容
 from enums.indicator_types import (
     Indicatortype_indicator_types as IndicatorType,
     Time_frame as TimeFrame, 

@@ -1010,7 +1010,7 @@ class UnifiedIndicatorTester:
 
 # 导入真实的StockInfoCompatibleDataGenerator
 try:
-    from tests.unified_indicator_testing.components.stockinfo_compatible_data_generator import StockInfoCompatibleDataGenerator
+    from components.stockinfo_compatible_data_generator import StockInfoCompatibleDataGenerator
     logger.info("成功导入StockInfoCompatibleDataGenerator")
 except ImportError as e:
     logger.warning(f"导入StockInfoCompatibleDataGenerator失败: {e}，使用占位符实现")
@@ -1062,7 +1062,7 @@ except ImportError as e:
 
 # 导入真实的ClosedLoopValidator
 try:
-    from tests.unified_indicator_testing.components.closed_loop_validator import ClosedLoopValidator
+    from components.closed_loop_validator import ClosedLoopValidator
     logger.info("成功导入ClosedLoopValidator")
 except ImportError as e:
     logger.warning(f"导入ClosedLoopValidator失败: {e}，使用占位符实现")
@@ -1093,9 +1093,9 @@ except ImportError as e:
 
 # 导入真实的BuypointAnalyzer
 try:
-    from tests.unified_indicator_testing.components.buypoint_analyzer import BuypointAnalyzer
+    from components.buypoint_analyzer import BuypointAnalyzer
     logger.info("成功导入BuypointAnalyzer")
-    
+
     # 为了保持兼容性，创建别名
     class BuypointRecognitionTester:
         """买点识别测试器（真实实现的包装器）"""
@@ -1126,7 +1126,7 @@ except ImportError as e:
 
 # 导入真实的SelectionStrategyTester
 try:
-    from tests.unified_indicator_testing.components.selection_strategy_tester import SelectionStrategyTester
+    from components.selection_strategy_tester import SelectionStrategyTester
     logger.info("成功导入SelectionStrategyTester")
 except ImportError as e:
     logger.warning(f"导入SelectionStrategyTester失败: {e}，使用占位符实现")

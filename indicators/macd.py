@@ -33,9 +33,9 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
             divergence_threshold: 背离检测阈值
             zero_line_sensitivity: 零轴敏感度，用于判断零轴附近的值
         """
-        super().__init__()
+        # 不在这里调用super().__init__()，稍后统一调用
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        
+
         self.name = "MACD_Macd"
         
         # 设置MACD参数

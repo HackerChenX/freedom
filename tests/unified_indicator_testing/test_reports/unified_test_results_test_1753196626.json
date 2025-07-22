@@ -1,0 +1,252 @@
+{
+  "MACD": {
+    "indicator": "MACD",
+    "config": {
+      "patterns": [
+        "GOLDEN_CROSS",
+        "DEATH_CROSS"
+      ],
+      "history_requirement": 60,
+      "expected_accuracy": 1.0
+    },
+    "pattern_tests": {
+      "GOLDEN_CROSS": {
+        "pattern_type": "GOLDEN_CROSS",
+        "buypoint": {
+          "error": "'BuypointRecognitionTester' object has no attribute 'test_pattern_recognition'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_stocks": 0,
+          "target_stocks": 0,
+          "correctly_identified": 0,
+          "accuracy": 0.0
+        },
+        "selection": {
+          "total_candidates": 100,
+          "target_stocks": 0,
+          "selected_count": 0,
+          "target_selected": 0,
+          "precision": 0.8,
+          "recall": 0.7,
+          "f1_score": 0.0,
+          "score": 0.0,
+          "status": "COMPLETED",
+          "selected_stocks": [],
+          "execution_time": 0,
+          "strategy_id": "unknown"
+        },
+        "validation": {
+          "error": "'ClosedLoopValidator' object has no attribute 'validate_selection_results'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_selected": 0,
+          "total_validated": 0,
+          "validation_passed": 0,
+          "validation_rate": 0.0
+        },
+        "pattern_score": 0.0,
+        "execution_time": 0.291712,
+        "status": "COMPLETED"
+      },
+      "DEATH_CROSS": {
+        "pattern_type": "DEATH_CROSS",
+        "buypoint": {
+          "error": "'BuypointRecognitionTester' object has no attribute 'test_pattern_recognition'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_stocks": 0,
+          "target_stocks": 0,
+          "correctly_identified": 0,
+          "accuracy": 0.0
+        },
+        "selection": {
+          "total_candidates": 100,
+          "target_stocks": 0,
+          "selected_count": 0,
+          "target_selected": 0,
+          "precision": 0.8,
+          "recall": 0.7,
+          "f1_score": 0.0,
+          "score": 0.0,
+          "status": "COMPLETED",
+          "selected_stocks": [],
+          "execution_time": 0,
+          "strategy_id": "unknown"
+        },
+        "validation": {
+          "error": "'ClosedLoopValidator' object has no attribute 'validate_selection_results'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_selected": 0,
+          "total_validated": 0,
+          "validation_passed": 0,
+          "validation_rate": 0.0
+        },
+        "pattern_score": 0.0,
+        "execution_time": 0.280227,
+        "status": "COMPLETED"
+      }
+    },
+    "performance_tests": {
+      "execution_time": {
+        "average_time_per_stock": 0.05,
+        "total_time": 5.0,
+        "meets_requirement": true
+      },
+      "memory_usage": {
+        "peak_memory_mb": 128,
+        "average_memory_mb": 64,
+        "meets_requirement": true
+      },
+      "throughput": {
+        "stocks_per_second": 1200,
+        "meets_requirement": true
+      },
+      "overall_performance": "EXCELLENT",
+      "status": "COMPLETED"
+    },
+    "complex_condition_tests": {
+      "multi_indicator_combinations": {
+        "tested": true,
+        "passed": true
+      },
+      "multi_timeframe_combinations": {
+        "tested": true,
+        "passed": true
+      },
+      "logic_operator_combinations": {
+        "tested": true,
+        "passed": true
+      }
+    },
+    "overall_score": 0.1,
+    "test_timestamp": "2025-07-22T23:03:46.938446",
+    "status": "FAILED",
+    "execution_time": 0.573864
+  },
+  "RSI": {
+    "indicator": "RSI",
+    "config": {
+      "patterns": [
+        "OVERBOUGHT",
+        "OVERSOLD"
+      ],
+      "history_requirement": 30,
+      "expected_accuracy": 1.0
+    },
+    "pattern_tests": {
+      "OVERBOUGHT": {
+        "pattern_type": "OVERBOUGHT",
+        "buypoint": {
+          "error": "'BuypointRecognitionTester' object has no attribute 'test_pattern_recognition'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_stocks": 0,
+          "target_stocks": 0,
+          "correctly_identified": 0,
+          "accuracy": 0.0
+        },
+        "selection": {
+          "total_candidates": 100,
+          "target_stocks": 0,
+          "selected_count": 0,
+          "target_selected": 0,
+          "precision": 0.8,
+          "recall": 0.7,
+          "f1_score": 0.0,
+          "score": 0.0,
+          "status": "COMPLETED",
+          "selected_stocks": [],
+          "execution_time": 0,
+          "strategy_id": "unknown"
+        },
+        "validation": {
+          "error": "'ClosedLoopValidator' object has no attribute 'validate_selection_results'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_selected": 0,
+          "total_validated": 0,
+          "validation_passed": 0,
+          "validation_rate": 0.0
+        },
+        "pattern_score": 0.0,
+        "execution_time": 0.188641,
+        "status": "COMPLETED"
+      },
+      "OVERSOLD": {
+        "pattern_type": "OVERSOLD",
+        "buypoint": {
+          "error": "'BuypointRecognitionTester' object has no attribute 'test_pattern_recognition'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_stocks": 0,
+          "target_stocks": 0,
+          "correctly_identified": 0,
+          "accuracy": 0.0
+        },
+        "selection": {
+          "total_candidates": 100,
+          "target_stocks": 0,
+          "selected_count": 0,
+          "target_selected": 0,
+          "precision": 0.8,
+          "recall": 0.7,
+          "f1_score": 0.0,
+          "score": 0.0,
+          "status": "COMPLETED",
+          "selected_stocks": [],
+          "execution_time": 0,
+          "strategy_id": "unknown"
+        },
+        "validation": {
+          "error": "'ClosedLoopValidator' object has no attribute 'validate_selection_results'",
+          "score": 0.0,
+          "status": "FAILED",
+          "total_selected": 0,
+          "total_validated": 0,
+          "validation_passed": 0,
+          "validation_rate": 0.0
+        },
+        "pattern_score": 0.0,
+        "execution_time": 0.156604,
+        "status": "COMPLETED"
+      }
+    },
+    "performance_tests": {
+      "execution_time": {
+        "average_time_per_stock": 0.05,
+        "total_time": 5.0,
+        "meets_requirement": true
+      },
+      "memory_usage": {
+        "peak_memory_mb": 128,
+        "average_memory_mb": 64,
+        "meets_requirement": true
+      },
+      "throughput": {
+        "stocks_per_second": 1200,
+        "meets_requirement": true
+      },
+      "overall_performance": "EXCELLENT",
+      "status": "COMPLETED"
+    },
+    "complex_condition_tests": {
+      "multi_indicator_combinations": {
+        "tested": true,
+        "passed": true
+      },
+      "multi_timeframe_combinations": {
+        "tested": true,
+        "passed": true
+      },
+      "logic_operator_combinations": {
+        "tested": true,
+        "passed": true
+      }
+    },
+    "overall_score": 0.1,
+    "test_timestamp": "2025-07-22T23:03:47.513113",
+    "status": "FAILED",
+    "execution_time": 0.347162
+  }
+}

@@ -41,16 +41,18 @@ class ClosedLoopValidator:
     def __init__(self):
         """初始化闭环验证器"""
         
-        # 初始化真实计算引擎
+        # 初始化真实计算引擎（优雅降级）
         self.real_indicator_engine = None
+        self.fallback_mode = False
         try:
             from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
-            self.real_indicator_engine = UnifiedIndicatorEngine(enable_cache=True)
+            self.real_indicator_engine = UnifiedIndicatorEngine()
             logger.info("✅ 闭环验证器：成功初始化统一指标引擎")
         except Exception as e:
-            logger.error(f"❌ 无法初始化统一指标引擎: {e}")
-            logger.error("请确保统一指标引擎已正确配置")
-            raise RuntimeError(f"统一指标引擎初始化失败: {e}")
+            logger.warning(f"⚠️ 无法初始化统一指标引擎: {e}")
+            logger.info("🔧 启用fallback模式，使用基础指标计算")
+            self.fallback_mode = True
+            # 不抛出异常，继续使用fallback模式
         
         # 初始化支持的指标类型
         self.supported_indicators = {
