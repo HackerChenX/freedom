@@ -23,8 +23,8 @@ import time
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.dependency_injection import get_logger
-from utils.cache import Memory_cache
+from utils.logger import getLogger
+from utils.cache import get_memory_cache
 from utils.decorators import exception_handler, performance_monitor
 
 logger = getLogger(__name__)

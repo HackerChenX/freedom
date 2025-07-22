@@ -19,8 +19,8 @@ from enum import Enum
 import pandas as pd
 import numpy as np
 
-from utils.dependency_injection import get_logger
-from utils.cache import Memory_cache
+from utils.logger import getLogger
+from utils.cache import get_memory_cache
 from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
 
 logger = getLogger(__name__)

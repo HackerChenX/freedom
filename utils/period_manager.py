@@ -1,5 +1,3 @@
-from db.query_executor import get_query_executor
-from db.sql_manager import QueryType
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
@@ -12,6 +10,7 @@ from db.sql_manager import QueryType
 import os
 import pandas as pd
 import numpy as np
+import threading
 from typing import Dict, List, Union, Optional, Any, Tuple
 from enum import Enum
 import datetime

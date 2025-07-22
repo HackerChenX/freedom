@@ -205,7 +205,7 @@ class DiskCache:
             return count
 
 
-class LRUCacheCache:
+class LRUCache:
     """
     LRU (Least Recently Used) 缓存实现
     """

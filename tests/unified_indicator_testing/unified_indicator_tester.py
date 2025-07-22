@@ -70,6 +70,11 @@ class UnifiedIndicatorTester:
 
         Args:
             config_path: 测试配置文件路径
+            
+        架构原则：
+        - 数据层面：支持模拟数据和真实数据输入
+        - 计算层面：统一使用真实计算引擎
+        - 测试层面：使用通用的测试和验证逻辑
         """
         try:
             self.config_path = config_path
@@ -557,49 +562,48 @@ class UnifiedIndicatorTester:
                                  pattern_key: str) -> Dict[str, Any]:
         """测试买点形态识别"""
         try:
-            # 这里调用买点识别测试器
-            # 暂时返回模拟结果，后续实现时会调用真实的买点分析器
-            recognition_results = []
-
-            for data in mock_data_pool:
-                # 模拟买点识别过程
-                stock_code = data['code'].iloc[0] if not data.empty else "UNKNOWN"
-
-                # 这里应该调用真实的买点分析器
-                # result = self.buypoint_tester.analyze_pattern(data, pattern_key)
-
-                # 暂时使用模拟结果
-                result = {
-                    'stock_code': stock_code,
-                    'pattern_detected': stock_code.startswith('TARGET'),
-                    'confidence': 0.95 if stock_code.startswith('TARGET') else 0.1
+            # 调用真实的买点识别测试器
+            buypoint_result = self.buypoint_tester.test_pattern_recognition(
+                mock_data_pool, pattern_key
+            )
+            
+            # 转换结果格式以兼容现有接口
+            if buypoint_result.get('status') == 'COMPLETED':
+                return {
+                    'total_stocks': buypoint_result.get('total_stocks', 0),
+                    'target_stocks': buypoint_result.get('target_stocks', 0),
+                    'correctly_identified': buypoint_result.get('correctly_identified', 0),
+                    'accuracy': buypoint_result.get('accuracy', 0.0),
+                    'score': buypoint_result.get('score', 0.0),
+                    'status': 'COMPLETED',
+                    'details': buypoint_result.get('details', []),
+                    'indicator': buypoint_result.get('indicator', 'UNKNOWN'),
+                    'pattern': buypoint_result.get('pattern', 'UNKNOWN'),
+                    'execution_time': buypoint_result.get('execution_time', 0),
+                    'pattern_analysis': buypoint_result.get('pattern_analysis', {}),
+                    'indicator_performance': buypoint_result.get('indicator_performance', {})
                 }
-                recognition_results.append(result)
-
-            # 计算识别准确率
-            total_stocks = len(recognition_results)
-            target_stocks = sum(1 for r in recognition_results if r['stock_code'].startswith('TARGET'))
-            correctly_identified = sum(1 for r in recognition_results
-                                     if r['stock_code'].startswith('TARGET') and r['pattern_detected'])
-
-            accuracy = correctly_identified / target_stocks if target_stocks > 0 else 0.0
-
-            return {
-                'total_stocks': total_stocks,
-                'target_stocks': target_stocks,
-                'correctly_identified': correctly_identified,
-                'accuracy': accuracy,
-                'score': accuracy,  # 买点识别评分就是准确率
-                'status': 'COMPLETED',
-                'details': recognition_results
-            }
+            else:
+                return {
+                    'error': buypoint_result.get('error', '买点识别执行失败'),
+                    'score': 0.0,
+                    'status': 'FAILED',
+                    'total_stocks': 0,
+                    'target_stocks': 0,
+                    'correctly_identified': 0,
+                    'accuracy': 0.0
+                }
 
         except Exception as e:
             logger.error(f"买点识别测试失败: {e}")
             return {
                 'error': str(e),
                 'score': 0.0,
-                'status': 'FAILED'
+                'status': 'FAILED',
+                'total_stocks': 0,
+                'target_stocks': 0,
+                'correctly_identified': 0,
+                'accuracy': 0.0
             }
 
     def _test_selection_strategy(self, indicator_name: str, pattern_type: str,
@@ -1087,11 +1091,37 @@ except ImportError as e:
             pass
 
 
-class BuypointRecognitionTester:
-    """买点识别测试器（占位符）"""
+# 导入真实的BuypointAnalyzer
+try:
+    from tests.unified_indicator_testing.components.buypoint_analyzer import BuypointAnalyzer
+    logger.info("成功导入BuypointAnalyzer")
+    
+    # 为了保持兼容性，创建别名
+    class BuypointRecognitionTester:
+        """买点识别测试器（真实实现的包装器）"""
+        
+        def __init__(self):
+            logger.info("买点识别测试器初始化（真实实现）")
+            self.analyzer = BuypointAnalyzer()
+        
+        def test_pattern_recognition(self, mock_data_pool, pattern_key):
+            """测试买点形态识别"""
+            return self.analyzer.test_pattern_recognition(mock_data_pool, pattern_key)
+        
+        def cleanup(self):
+            """清理资源"""
+            if hasattr(self.analyzer, 'cleanup'):
+                self.analyzer.cleanup()
 
-    def __init__(self):
-        logger.debug("买点识别测试器初始化（占位符实现）")
+except ImportError as e:
+    logger.warning(f"导入BuypointAnalyzer失败: {e}，使用占位符实现")
+    
+    # 占位符实现（如果导入失败）
+    class BuypointRecognitionTester:
+        """买点识别测试器（占位符）"""
+
+        def __init__(self):
+            logger.debug("买点识别测试器初始化（占位符实现）")
 
 
 # 导入真实的SelectionStrategyTester

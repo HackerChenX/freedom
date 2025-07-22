@@ -12,8 +12,8 @@ import re
 import ast
 from datetime import datetime
 
-from utils.dependency_injection import get_logger
-from utils.cache import Memory_cache
+from utils.logger import getLogger
+from utils.cache import get_memory_cache
 from analysis.engines.unified_indicator_engine import Unified_indicator_engine
 
 logger = getLogger(__name__)
@@ -39,7 +39,7 @@ class SharedConditionEvaluator:
             indicator_engine: 统一指标计算引擎实例
         """
         self.indicator_engine = indicator_engine or Unified_indicator_engine()
-        self.cache = Memory_cache.get_instance()
+        self.cache = get_memory_cache()
         
         # 性能统计
         self.stats = {

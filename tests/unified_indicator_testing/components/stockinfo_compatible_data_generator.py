@@ -20,24 +20,22 @@ import random
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.append(root_dir)
 
+# 首先导入logger
+from utils.logger import getLogger
+logger = getLogger(__name__)
+
 try:
     from tests.buypoint_analysis.enhanced_test_data_generator import EnhancedTestDataGenerator
-    from utils.logger import getLogger
     from enums.period import Period
 except ImportError as e:
+    logger.warning(f"导入部分模块失败: {e}")
     # 如果导入失败，创建简单的占位符
     class EnhancedTestDataGenerator:
         def generate_pattern_data(self, pattern_type, data_points, stock_code):
             return None
     
-    def getLogger(name):
-        import logging
-        return logging.getLogger(name)
-    
     class Period:
         DAILY = "daily"
-
-logger = getLogger(__name__)
 
 
 class StockInfoCompatibleDataGenerator:
@@ -204,6 +202,11 @@ class StockInfoCompatibleDataGenerator:
                                        history_days: int) -> Optional[pd.DataFrame]:
         """使用增强数据生成器生成带形态的基础数据"""
         try:
+            # 如果是目标股票，必须确保包含期望的形态
+            if stock_code.startswith('TARGET'):
+                return self._generate_target_pattern_data(indicator_name, pattern_type, stock_code, history_days)
+            
+            # 非目标股票使用原有逻辑
             if self.base_generator:
                 pattern_key = f"{indicator_name}_{pattern_type}"
                 data = self.base_generator.generate_pattern_data(
@@ -216,6 +219,392 @@ class StockInfoCompatibleDataGenerator:
             logger.warning(f"增强数据生成器失败: {e}")
         
         return None
+
+    def _generate_target_pattern_data(self, 
+                                    indicator_name: str,
+                                    pattern_type: str,
+                                    stock_code: str,
+                                    history_days: int) -> pd.DataFrame:
+        """专门为目标股票生成包含特定形态的数据"""
+        try:
+            logger.debug(f"为目标股票 {stock_code} 生成 {indicator_name}.{pattern_type} 形态数据")
+            
+            # 生成基础数据
+            base_data = self._generate_basic_stockinfo_data(stock_code, history_days)
+            
+            # 根据指标和形态类型调整数据，确保包含期望形态
+            adjusted_data = self._adjust_data_for_pattern(base_data, indicator_name, pattern_type)
+            
+            return adjusted_data
+            
+        except Exception as e:
+            logger.error(f"生成目标形态数据失败: {e}")
+            # 返回基础数据作为备选
+            return self._generate_basic_stockinfo_data(stock_code, history_days)
+
+    def _adjust_data_for_pattern(self, 
+                               data: pd.DataFrame, 
+                               indicator_name: str, 
+                               pattern_type: str) -> pd.DataFrame:
+        """调整数据以确保包含特定形态"""
+        try:
+            adjusted_data = data.copy()
+            
+            if indicator_name == 'MACD':
+                adjusted_data = self._create_macd_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'RSI':
+                adjusted_data = self._create_rsi_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'VOL':
+                adjusted_data = self._create_volume_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'KDJ':
+                adjusted_data = self._create_kdj_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'BOLL':
+                adjusted_data = self._create_boll_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'CCI':
+                adjusted_data = self._create_cci_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'WMA':
+                adjusted_data = self._create_wma_pattern(adjusted_data, pattern_type)
+            elif indicator_name in ['MA', 'EMA', 'DMA', 'WMA']:
+                # 移动平均线类指标统一处理
+                adjusted_data = self._create_ma_pattern(adjusted_data, pattern_type)
+            elif indicator_name in ['BIAS', 'STOCHRSI', 'WR', 'OBV', 'MTM', 'PVT', 'MOMENTUM', 'DMI', 'ADX']:
+                # 其他技术指标统一处理GOLDEN_CROSS/DEATH_CROSS形态
+                adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'FIBONACCI':
+                adjusted_data = self._create_fibonacci_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'AROON':
+                adjusted_data = self._create_aroon_pattern(adjusted_data, pattern_type)
+            else:
+                # 对于其他指标，生成通用的趋势形态
+                adjusted_data = self._create_generic_pattern(adjusted_data, pattern_type)
+            
+            return adjusted_data
+            
+        except Exception as e:
+            logger.error(f"调整形态数据失败: {e}")
+            return data
+
+    def _create_macd_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建MACD特定形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type == 'GOLDEN_CROSS':
+            # 创建金叉形态：MACD线从下方向上穿越信号线
+            # 在最后10个交易日制造金叉
+            golden_cross_point = max(n - 10, n//2)
+            
+            base_price = adjusted_data['close'].iloc[0]
+            
+            # 先创建下跌趋势，然后上升形成金叉
+            for i in range(n):
+                if i < golden_cross_point:
+                    # 下跌阶段
+                    trend_factor = 1 - (0.15 * i / golden_cross_point)  # 最多下跌15%
+                else:
+                    # 上升阶段 - 形成金叉
+                    recovery_ratio = (i - golden_cross_point) / (n - golden_cross_point)
+                    trend_factor = 0.85 + (0.25 * recovery_ratio)  # 反弹25%
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
+                
+        elif pattern_type == 'DEATH_CROSS':
+            # 创建死叉形态：MACD线从上方向下穿越信号线
+            death_cross_point = max(n - 10, n//2)
+            
+            base_price = adjusted_data['close'].iloc[0]
+            
+            # 先创建上升趋势，然后下跌形成死叉
+            for i in range(n):
+                if i < death_cross_point:
+                    # 上升阶段
+                    trend_factor = 1 + (0.20 * i / death_cross_point)  # 上涨20%
+                else:
+                    # 下跌阶段 - 形成死叉
+                    decline_ratio = (i - death_cross_point) / (n - death_cross_point)
+                    trend_factor = 1.20 - (0.30 * decline_ratio)  # 下跌30%
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
+        
+        return adjusted_data
+
+    def _create_rsi_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建RSI特定形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type == 'OVERSOLD':
+            # 创建超卖形态：连续下跌后反弹
+            oversold_period = min(14, n//3)  # RSI计算一般用14天
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < oversold_period:
+                    # 持续下跌形成超卖
+                    decline_factor = 1 - (0.25 * i / oversold_period)  # 下跌25%
+                else:
+                    # 超卖后反弹
+                    recovery_ratio = min(1.0, (i - oversold_period) / oversold_period)
+                    decline_factor = 0.75 + (0.15 * recovery_ratio)  # 反弹15%
+                
+                new_price = base_price * decline_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+                
+        elif pattern_type == 'OVERBOUGHT':
+            # 创建超买形态：连续上涨后回调
+            overbought_period = min(14, n//3)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < overbought_period:
+                    # 持续上涨形成超买
+                    rise_factor = 1 + (0.30 * i / overbought_period)  # 上涨30%
+                else:
+                    # 超买后回调
+                    correction_ratio = min(1.0, (i - overbought_period) / overbought_period)
+                    rise_factor = 1.30 - (0.15 * correction_ratio)  # 回调15%
+                
+                new_price = base_price * rise_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
+        
+        return adjusted_data
+
+    def _create_volume_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建成交量特定形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type in ['VOLUME_SPIKE', 'VOLUME_SURGE']:
+            # 创建成交量突增形态
+            spike_point = max(n - 5, n//2)  # 在后半段出现突增
+            base_volume = adjusted_data['volume'].mean()
+            
+            for i in range(n):
+                if i >= spike_point:
+                    # 成交量突增2-5倍
+                    volume_multiplier = random.uniform(2.5, 5.0)
+                    adjusted_data.loc[i, 'volume'] = base_volume * volume_multiplier
+                    
+                    # 成交量放大通常伴随价格突破
+                    price_boost = random.uniform(1.02, 1.08)  # 2-8%的价格上涨
+                    adjusted_data.loc[i, 'close'] *= price_boost
+                    adjusted_data.loc[i, 'high'] *= price_boost
+                    adjusted_data.loc[i, 'open'] *= price_boost
+                    adjusted_data.loc[i, 'low'] *= price_boost
+        
+        return adjusted_data
+
+    def _create_kdj_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建KDJ特定形态"""
+        # KDJ的形态与RSI类似，创建超买超卖或金叉死叉
+        if pattern_type in ['OVERBOUGHT', 'OVERSOLD']:
+            return self._create_rsi_pattern(data, pattern_type)
+        else:
+            return self._create_macd_pattern(data, pattern_type)
+
+    def _create_boll_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建布林带特定形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type == 'UPPER_BREAKOUT':
+            # 创建上轨突破形态
+            breakout_point = max(n - 8, n//2)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < breakout_point:
+                    # 在布林带中轨附近波动
+                    oscillation = random.uniform(-0.05, 0.05)
+                    price_factor = 1 + oscillation
+                else:
+                    # 突破上轨
+                    breakout_strength = (i - breakout_point) / (n - breakout_point)
+                    price_factor = 1 + (0.15 * breakout_strength)  # 突破15%
+                
+                new_price = base_price * price_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
+        
+        return adjusted_data
+
+    def _create_cci_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建CCI特定形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type == 'OVERSOLD':
+            # 创建CCI超卖形态：价格持续在典型价格之下
+            oversold_period = min(20, n//2)  # CCI计算一般用20天
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < oversold_period:
+                    # 持续下跌形成超卖，创造不规则的价格波动
+                    decline_factor = 1 - (0.30 * i / oversold_period)  # 下跌30%
+                    volatility = random.uniform(0.95, 1.05)  # 增加波动性
+                    new_price = base_price * decline_factor * volatility
+                else:
+                    # 超卖后缓慢反弹
+                    recovery_ratio = min(1.0, (i - oversold_period) / (n - oversold_period))
+                    decline_factor = 0.70 + (0.20 * recovery_ratio)  # 反弹20%
+                    new_price = base_price * decline_factor
+                
+                # 为了形成CCI超卖，需要创造正确的价格波动模式
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                
+                # CCI超卖需要收盘价持续低于典型价格(high+low+close)/3
+                # 确保high和low的设置能让典型价格高于收盘价
+                high_multiplier = random.uniform(1.03, 1.08)  # 高价比收盘价高3-8%
+                low_multiplier = random.uniform(0.96, 1.00)   # 低价接近收盘价
+                
+                adjusted_data.loc[i, 'high'] = new_price * high_multiplier
+                adjusted_data.loc[i, 'low'] = new_price * low_multiplier
+                
+        elif pattern_type == 'OVERBOUGHT':
+            # 创建CCI超买形态：价格持续在典型价格之上
+            overbought_period = min(20, n//2)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < overbought_period:
+                    # 持续上涨形成超买
+                    rise_factor = 1 + (0.35 * i / overbought_period)  # 上涨35%
+                    volatility = random.uniform(0.95, 1.05)
+                    new_price = base_price * rise_factor * volatility
+                else:
+                    # 超买后回调
+                    correction_ratio = min(1.0, (i - overbought_period) / (n - overbought_period))
+                    rise_factor = 1.35 - (0.20 * correction_ratio)  # 回调20%
+                    new_price = base_price * rise_factor
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                
+                # CCI超买需要收盘价持续高于典型价格(high+low+close)/3
+                # 确保high和low的设置能让典型价格低于收盘价
+                high_multiplier = random.uniform(1.00, 1.04)  # 高价接近收盘价
+                low_multiplier = random.uniform(0.92, 0.97)   # 低价比收盘价低3-8%
+                
+                adjusted_data.loc[i, 'high'] = new_price * high_multiplier
+                adjusted_data.loc[i, 'low'] = new_price * low_multiplier
+        
+        return adjusted_data
+
+    def _create_wma_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建WMA（加权移动平均）特定形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type == 'GOLDEN_CROSS':
+            # 创建WMA金叉形态：短期WMA上穿长期WMA
+            cross_point = max(n - 12, n//2)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < cross_point:
+                    # 下跌阶段，为金叉做准备
+                    decline_factor = 1 - (0.18 * i / cross_point)  # 下跌18%
+                    trend_noise = random.uniform(0.98, 1.02)  # 加噪音
+                    new_price = base_price * decline_factor * trend_noise
+                else:
+                    # 上升阶段，形成WMA金叉
+                    recovery_ratio = (i - cross_point) / (n - cross_point)
+                    # 使用加速上升来形成明显的WMA金叉
+                    acceleration_factor = 1 + (recovery_ratio ** 1.5) * 0.3  # 加速上涨30%
+                    decline_factor = 0.82 * acceleration_factor
+                    new_price = base_price * decline_factor
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.04)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.96, 0.99)
+                
+        elif pattern_type == 'DEATH_CROSS':
+            # 创建WMA死叉形态：短期WMA下穿长期WMA
+            cross_point = max(n - 12, n//2)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < cross_point:
+                    # 上涨阶段，为死叉做准备
+                    rise_factor = 1 + (0.25 * i / cross_point)  # 上涨25%
+                    new_price = base_price * rise_factor
+                else:
+                    # 下跌阶段，形成WMA死叉
+                    decline_ratio = (i - cross_point) / (n - cross_point)
+                    # 加速下跌形成明显的WMA死叉
+                    acceleration_factor = 1 + (decline_ratio ** 1.5) * 0.4
+                    rise_factor = 1.25 - (0.35 * acceleration_factor)  # 下跌35%
+                    new_price = base_price * rise_factor
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+                
+        elif pattern_type == 'BULLISH_ARRANGEMENT':
+            # 创建WMA多头排列：短、中、长期WMA呈多头排列
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                # 持续上涨趋势，形成多头排列
+                trend_factor = 1 + (0.25 * i / n)  # 逐步上涨25%
+                momentum = 1 + (0.05 * (i / n) ** 2)  # 增强趋势动量
+                new_price = base_price * trend_factor * momentum
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
+        
+        return adjusted_data
+
+    def _create_generic_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建通用形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
+        
+        # 根据形态名称判断趋势方向
+        if any(keyword in pattern_type.upper() for keyword in ['GOLDEN', 'BUY', 'BULL', 'UP', 'SUPPORT']):
+            # 上涨形态
+            for i in range(n):
+                trend_factor = 1 + (0.20 * i / n)  # 逐步上涨20%
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
+                
+        elif any(keyword in pattern_type.upper() for keyword in ['DEATH', 'SELL', 'BEAR', 'DOWN', 'RESISTANCE']):
+            # 下跌形态
+            for i in range(n):
+                trend_factor = 1 - (0.20 * i / n)  # 逐步下跌20%
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+        
+        return adjusted_data
     
     def _generate_basic_stockinfo_data(self, stock_code: str, history_days: int) -> pd.DataFrame:
         """生成基础stockInfo数据"""
@@ -642,3 +1031,191 @@ class StockInfoCompatibleDataGenerator:
         except Exception as e:
             report['data_quality_issues'].append(f"验证过程出错: {e}")
             return report
+
+    def _create_cross_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建通用的金叉/死叉形态，适用于大多数技术指标"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type == 'GOLDEN_CROSS':
+            # 创建上升趋势，利于形成金叉
+            cross_point = max(n - 8, n//2)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < cross_point:
+                    # 前期下降
+                    decline_factor = 1 - (0.1 * i / cross_point)
+                else:
+                    # 后期上升形成金叉
+                    recovery_ratio = (i - cross_point) / (n - cross_point)
+                    decline_factor = 0.9 + (0.2 * recovery_ratio)
+                
+                new_price = base_price * decline_factor * (1 + random.uniform(-0.02, 0.02))
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 1.00)
+                
+        elif pattern_type == 'DEATH_CROSS':
+            # 创建下降趋势，形成死叉
+            cross_point = max(n - 8, n//2)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                if i < cross_point:
+                    # 前期上升
+                    rise_factor = 1 + (0.1 * i / cross_point)
+                else:
+                    # 后期下降形成死叉
+                    decline_ratio = (i - cross_point) / (n - cross_point)
+                    rise_factor = 1.1 - (0.2 * decline_ratio)
+                
+                new_price = base_price * rise_factor * (1 + random.uniform(-0.02, 0.02))
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 1.00)
+        
+        return adjusted_data
+
+    def _create_ma_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建移动平均线形态（MA、EMA、WMA、DMA）"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        
+        if pattern_type == 'GOLDEN_CROSS':
+            # 短期均线从下方向上穿越长期均线
+            base_price = adjusted_data['close'].iloc[0]
+            cross_point = max(n - 10, n//2)
+            
+            for i in range(n):
+                if i < cross_point:
+                    # 创建下跌然后横盘的走势
+                    trend_factor = 1 - (0.08 * min(i, cross_point//2) / (cross_point//2))
+                else:
+                    # 强势上涨，形成金叉
+                    recovery_ratio = (i - cross_point) / (n - cross_point)
+                    trend_factor = 0.92 + (0.15 * recovery_ratio)  # 反弹15%
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.975, 0.995)
+                
+        elif pattern_type == 'DEATH_CROSS':
+            # 短期均线从上方向下穿越长期均线
+            base_price = adjusted_data['close'].iloc[0]
+            cross_point = max(n - 10, n//2)
+            
+            for i in range(n):
+                if i < cross_point:
+                    # 上升走势
+                    trend_factor = 1 + (0.08 * i / cross_point)
+                else:
+                    # 下跌，形成死叉
+                    decline_ratio = (i - cross_point) / (n - cross_point)
+                    trend_factor = 1.08 - (0.15 * decline_ratio)
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.975, 0.995)
+        
+        return adjusted_data
+
+    def _create_fibonacci_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建斐波那契回调形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
+        
+        if pattern_type == 'RETRACEMENT_SUPPORT':
+            # 创建上升后回调到支撑位的形态
+            peak_point = n // 3
+            support_point = peak_point + (n - peak_point) // 2
+            
+            for i in range(n):
+                if i < peak_point:
+                    # 上升到峰值
+                    trend_factor = 1 + (0.2 * i / peak_point)
+                elif i < support_point:
+                    # 回调到38.2%位置
+                    retracement_ratio = (i - peak_point) / (support_point - peak_point)
+                    trend_factor = 1.2 - (0.2 * 0.382 * retracement_ratio)
+                else:
+                    # 从支撑位反弹
+                    recovery_ratio = (i - support_point) / (n - support_point)
+                    trend_factor = 1.2 * (1 - 0.382) + (0.1 * recovery_ratio)
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+                
+        elif pattern_type == 'RETRACEMENT_RESISTANCE':
+            # 创建下跌后反弹到阻力位的形态  
+            bottom_point = n // 3
+            resistance_point = bottom_point + (n - bottom_point) // 2
+            
+            for i in range(n):
+                if i < bottom_point:
+                    # 下跌到谷底
+                    trend_factor = 1 - (0.2 * i / bottom_point)
+                elif i < resistance_point:
+                    # 反弹到61.8%位置
+                    recovery_ratio = (i - bottom_point) / (resistance_point - bottom_point)
+                    trend_factor = 0.8 + (0.2 * 0.618 * recovery_ratio)
+                else:
+                    # 在阻力位受阻回落
+                    decline_ratio = (i - resistance_point) / (n - resistance_point)
+                    trend_factor = 0.8 * (1 + 0.618) - (0.05 * decline_ratio)
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+        
+        return adjusted_data
+
+    def _create_aroon_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """创建Aroon指标形态"""
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
+        
+        if pattern_type == 'AROON_UP':
+            # 创建强势上升趋势，Aroon Up接近100
+            for i in range(n):
+                # 在最后部分创建新高
+                if i > n - 20:
+                    trend_factor = 1 + (0.15 * (i - (n - 20)) / 20)
+                else:
+                    trend_factor = 1 + (0.05 * i / (n - 20))
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+                
+        elif pattern_type == 'AROON_DOWN':
+            # 创建弱势下跌趋势，Aroon Down接近100
+            for i in range(n):
+                # 在最后部分创建新低
+                if i > n - 20:
+                    trend_factor = 1 - (0.15 * (i - (n - 20)) / 20)
+                else:
+                    trend_factor = 1 - (0.05 * i / (n - 20))
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+        
+        return adjusted_data

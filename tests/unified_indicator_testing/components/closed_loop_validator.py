@@ -21,13 +21,8 @@ import time
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.append(root_dir)
 
-try:
-    from utils.logger import getLogger
-except ImportError:
-    def getLogger(name):
-        import logging
-        return logging.getLogger(name)
-
+# 首先导入logger
+from utils.logger import getLogger
 logger = getLogger(__name__)
 
 
@@ -35,31 +30,31 @@ class ClosedLoopValidator:
     """
     闭环验证器
     
-    验证选股结果与买点分析的一致性，确保选出的股票确实存在有效买点
+    验证选股结果和买点识别结果的一致性
+    
+    架构原则：
+    - 数据层面：接受模拟数据和真实数据
+    - 计算层面：统一使用真实指标计算引擎
+    - 验证层面：使用通用的闭环验证逻辑
     """
     
     def __init__(self):
         """初始化闭环验证器"""
         
-        # 验证配置
-        self.validation_config = {
-            'entry_point_tolerance': 0.05,  # 入口点容忍度（5%）
-            'pattern_match_threshold': 0.8,  # 形态匹配阈值
-            'time_window_days': 5,  # 时间窗口（天）
-            'min_confidence_score': 0.6,  # 最小置信度
-            'max_validation_stocks': 100  # 最大验证股票数
-        }
+        # 初始化真实计算引擎
+        self.real_indicator_engine = None
+        try:
+            from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
+            self.real_indicator_engine = UnifiedIndicatorEngine(enable_cache=True)
+            logger.info("✅ 闭环验证器：成功初始化统一指标引擎")
+        except Exception as e:
+            logger.error(f"❌ 无法初始化统一指标引擎: {e}")
+            logger.error("请确保统一指标引擎已正确配置")
+            raise RuntimeError(f"统一指标引擎初始化失败: {e}")
         
-        # 买点形态定义
-        self.buypoint_patterns = self._initialize_buypoint_patterns()
-        
-        # 验证统计
-        self.validation_stats = {
-            'total_validated': 0,
-            'successful_validations': 0,
-            'failed_validations': 0,
-            'pattern_matches': {},
-            'entry_point_accuracy': []
+        # 初始化支持的指标类型
+        self.supported_indicators = {
+            'MACD', 'RSI', 'KDJ', 'BOLL', 'VOL', 'CCI', 'WR', 'BIAS', 'EMA', 'MA', 'DMI', 'ADX'
         }
         
         logger.info("闭环验证器初始化完成")
@@ -389,42 +384,61 @@ class ClosedLoopValidator:
             return []
 
     def _calculate_technical_indicators(self, stock_data: pd.DataFrame, indicator_name: str) -> pd.DataFrame:
-        """计算技术指标（模拟实现）"""
+        """
+        计算技术指标
+        
+        架构原则：统一使用真实计算引擎，不区分数据来源
+        数据来源（模拟/真实）的区别在数据本身的标识中体现
+        """
         try:
-            enhanced_data = stock_data.copy()
-
-            # 确保有必要的字段
-            if 'close' not in enhanced_data.columns:
-                enhanced_data['close'] = 10.0
-            if 'volume' not in enhanced_data.columns:
-                enhanced_data['volume'] = 1000000
-
-            # 计算基础指标
-            enhanced_data['volume_ma'] = enhanced_data['volume'].rolling(window=5, min_periods=1).mean()
-            enhanced_data['volume_ratio'] = enhanced_data['volume'] / enhanced_data['volume_ma']
-            enhanced_data['price_change'] = enhanced_data['close'].pct_change().fillna(0)
-
-            # 根据指标类型计算特定指标
-            if indicator_name == 'MACD':
-                enhanced_data = self._calculate_macd(enhanced_data)
-            elif indicator_name == 'RSI':
-                enhanced_data = self._calculate_rsi(enhanced_data)
-            elif indicator_name == 'KDJ':
-                enhanced_data = self._calculate_kdj(enhanced_data)
-            elif indicator_name == 'BOLL':
-                enhanced_data = self._calculate_bollinger(enhanced_data)
-            elif indicator_name == 'VOL':
-                # VOL指标已经在上面计算了
-                pass
-
-            return enhanced_data
+            # 统一使用真实引擎计算
+            if not self.real_indicator_engine:
+                raise RuntimeError(f"无法计算技术指标{indicator_name}：统一指标引擎未初始化")
+            
+            return self._calculate_via_real_engine(stock_data, indicator_name)
 
         except Exception as e:
-            logger.error(f"计算技术指标失败: {e}")
+            logger.error(f"计算技术指标{indicator_name}失败: {e}")
+            raise
+    
+    def _calculate_via_real_engine(self, stock_data: pd.DataFrame, indicator_name: str) -> pd.DataFrame:
+        """使用真实指标引擎计算"""
+        if not self.real_indicator_engine:
+            raise RuntimeError("真实指标引擎未初始化")
+        
+        # 根据指标类型调用对应的计算方法
+        if indicator_name == 'MACD':
+            result = self.real_indicator_engine.calculate_macd(stock_data)
+            return self._merge_indicator_results(stock_data, result)
+        elif indicator_name == 'RSI':
+            result = self.real_indicator_engine.calculate_rsi_Engine(stock_data)
+            stock_data['rsi'] = result
             return stock_data
+        elif indicator_name == 'KDJ':
+            result = self.real_indicator_engine.calculate_kdj(stock_data)
+            return self._merge_indicator_results(stock_data, result)
+        elif indicator_name == 'BOLL':
+            result = self.real_indicator_engine.calculate_bollinger_bands(stock_data)
+            return self._merge_indicator_results(stock_data, result)
+        else:
+            # 通用计算
+            result = self.real_indicator_engine.calculate_all_indicators(stock_data, [indicator_name])
+            return self._merge_indicator_results(stock_data, result)
+    
+    def _merge_indicator_results(self, original_data: pd.DataFrame, indicator_results: Dict) -> pd.DataFrame:
+        """合并指标计算结果到原始数据"""
+        enhanced_data = original_data.copy()
+        
+        for key, values in indicator_results.items():
+            if isinstance(values, (pd.Series, list, np.ndarray)):
+                enhanced_data[key.lower()] = values
+        
+        return enhanced_data
+    
 
-    def _calculate_macd(self, data: pd.DataFrame) -> pd.DataFrame:
-        """计算MACD指标（简化实现）"""
+
+    def _calculate_macd_simplified(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算MACD指标（简化实现，仅测试模式）"""
         close = data['close']
 
         # 计算EMA
@@ -442,8 +456,8 @@ class ClosedLoopValidator:
 
         return data
 
-    def _calculate_rsi(self, data: pd.DataFrame) -> pd.DataFrame:
-        """计算RSI指标（简化实现）"""
+    def _calculate_rsi_simplified(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算RSI指标（简化实现，仅测试模式）"""
         close = data['close']
         delta = close.diff()
 
@@ -456,8 +470,8 @@ class ClosedLoopValidator:
 
         return data
 
-    def _calculate_kdj(self, data: pd.DataFrame) -> pd.DataFrame:
-        """计算KDJ指标（简化实现）"""
+    def _calculate_kdj_simplified(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算KDJ指标（简化实现，仅测试模式）"""
         high = data.get('high', data['close'])
         low = data.get('low', data['close'])
         close = data['close']
@@ -475,8 +489,8 @@ class ClosedLoopValidator:
 
         return data
 
-    def _calculate_bollinger(self, data: pd.DataFrame) -> pd.DataFrame:
-        """计算布林带指标（简化实现）"""
+    def _calculate_bollinger_simplified(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算布林带指标（简化实现，仅测试模式）"""
         close = data['close']
 
         # 中轨（移动平均线）

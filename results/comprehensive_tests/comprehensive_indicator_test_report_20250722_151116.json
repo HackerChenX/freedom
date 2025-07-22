@@ -1,0 +1,156 @@
+{
+  "test_summary": {
+    "test_time": "2025-07-22 15:11:16",
+    "duration_seconds": 1.26,
+    "total_indicators": 21,
+    "successful_indicators": 0,
+    "success_rate_percent": 0.0,
+    "status": "FAIL"
+  },
+  "performance_metrics": {
+    "avg_accuracy_percent": 0.0,
+    "avg_execution_time_seconds": 0.0,
+    "total_buy_points_detected": 0,
+    "processing_speed_indicators_per_second": 16.73
+  },
+  "category_breakdown": {
+    "核心指标": {
+      "success_count": 0,
+      "total_count": 6,
+      "success_rate": 0.0
+    },
+    "趋势指标": {
+      "success_count": 0,
+      "total_count": 6,
+      "success_rate": 0.0
+    },
+    "振荡器指标": {
+      "success_count": 0,
+      "total_count": 2,
+      "success_rate": 0.0
+    },
+    "成交量指标": {
+      "success_count": 0,
+      "total_count": 4,
+      "success_rate": 0.0
+    },
+    "专业指标": {
+      "success_count": 0,
+      "total_count": 3,
+      "success_rate": 0.0
+    }
+  },
+  "detailed_results": {
+    "MACD": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.7248929
+    },
+    "RSI": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.724916
+    },
+    "KDJ": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.724936
+    },
+    "BOLL": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.724957
+    },
+    "MA": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.7249768
+    },
+    "EMA": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.724997
+    },
+    "DMI": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725016
+    },
+    "ADX": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725035
+    },
+    "DMA": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725055
+    },
+    "WMA": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.7250738
+    },
+    "CCI": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.7250922
+    },
+    "BIAS": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.7251132
+    },
+    "STOCHRSI": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725132
+    },
+    "WR": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725152
+    },
+    "VOL": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.7251709
+    },
+    "OBV": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.72519
+    },
+    "MTM": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725208
+    },
+    "PVT": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725228
+    },
+    "MOMENTUM": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725247
+    },
+    "FIBONACCI": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.7252648
+    },
+    "AROON": {
+      "status": "ERROR",
+      "error": "'ComprehensiveIndicatorTester' object has no attribute 'current_index'",
+      "test_time": 1753168276.725316
+    }
+  },
+  "architecture_compliance": {
+    "data_source": "simulated",
+    "calculation_engine": "unified_real_indicators",
+    "processing_logic": "universal_pattern_recognition",
+    "separation_compliance": 100.0
+  }
+}

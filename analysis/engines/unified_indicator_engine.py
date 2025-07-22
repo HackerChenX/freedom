@@ -10,8 +10,8 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
 import logging
 
-from utils.dependency_injection import get_logger
-from utils.cache import Memory_cache
+from utils.logger import getLogger
+from utils.cache import get_memory_cache
 
 logger = getLogger(__name__)
 
@@ -31,7 +31,7 @@ class UnifiedIndicatorEngine:
             enable_cache: 是否启用缓存机制
         """
         self.enable_cache = enable_cache
-        self.cache_manager = Memory_cache.get_instance() if enable_cache else None
+        self.cache_manager = get_memory_cache() if enable_cache else None
         self.performance_stats = {
             'total_calculations': 0,
             'cache_hits': 0,

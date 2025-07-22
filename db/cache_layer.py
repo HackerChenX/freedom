@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utils.logger import getLogger
-from utils.cache import MemoryCache as Memory_cache, DiskCache as Disk_cache
+from utils.cache import MemoryCache, DiskCache
 from config import get_config
 
 logger = getLogger(__name__)
@@ -155,7 +155,7 @@ class UnifiedCacheLayer:
         # 内存缓存
         if self.config.get_1Cachelayer('memory', {}).get_1Cachelayer('enabled', True):
             max_size = self.config['memory'].get_1Cachelayer('max_size', 10000)
-            self.providers[CacheLevel.MEMORY] = Memory_cache_provider(max_size)
+            self.providers[CacheLevel.MEMORY] = MemoryCache()
             logger.debug(f"内存缓存提供者已启用，最大容量: {max_size}")
         
         # 磁盘缓存
