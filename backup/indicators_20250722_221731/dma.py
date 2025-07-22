@@ -842,67 +842,44 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin):
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成DMA交易信号 - 100%准确率优化版本
-        简化条件，确保信号生成
-
+        生成DMA交易信号
+        
         Returns:
             pd.DataFrame: 包含交易信号的DataFrame
         """
         if data is None:
             data = self._result if hasattr(self, '_result') and self._result is not None else pd.DataFrame()
-
+        
         if data.empty:
             return pd.DataFrame()
-
+        
         # 确保数据包含DMA指标
         if 'DMA' not in data.columns or 'AMA' not in data.columns:
             data = self.calculate(data, **kwargs)
-
+        
         signals = pd.DataFrame(index=data.index)
-
+        
         if 'DMA' in data.columns and 'AMA' in data.columns:
             dma = data['DMA']
             ama = data['AMA']
-
+            
             # 生成信号
             signals['dma_signal'] = 0
             signals['dma_strength'] = 0.0
             signals['dma_confidence'] = 0.0
-
-            try:
-                # 优化的DMA上穿AMA买入信号 - 放宽条件
-                golden_cross = crossover(dma, ama)
-                signals.loc[golden_cross, 'dma_signal'] = 1
-                signals.loc[golden_cross, 'dma_strength'] = 0.9  # 提高强度
-                signals.loc[golden_cross, 'dma_confidence'] = 0.8  # 提高置信度
-
-                # 优化的DMA下穿AMA卖出信号 - 放宽条件
-                death_cross = crossunder(dma, ama)
-                signals.loc[death_cross, 'dma_signal'] = -1
-                signals.loc[death_cross, 'dma_strength'] = 0.9  # 提高强度
-                signals.loc[death_cross, 'dma_confidence'] = 0.8  # 提高置信度
-
-                # 新增：趋势跟随信号 - 增加信号数量
-                # 当DMA持续高于AMA时，生成持续买入信号
-                trend_up = (dma > ama) & (dma > dma.shift(1))
-                signals.loc[trend_up, 'dma_signal'] = 1
-                signals.loc[trend_up, 'dma_strength'] = 0.6
-                signals.loc[trend_up, 'dma_confidence'] = 0.6
-
-                # 当DMA持续低于AMA时，生成持续卖出信号
-                trend_down = (dma < ama) & (dma < dma.shift(1))
-                signals.loc[trend_down, 'dma_signal'] = -1
-                signals.loc[trend_down, 'dma_strength'] = 0.6
-                signals.loc[trend_down, 'dma_confidence'] = 0.6
-
-            except Exception as e:
-                logger.warning(f"DMA信号生成失败: {e}")
-                # 备用简单逻辑
-                signals.loc[dma > ama, 'dma_signal'] = 1
-                signals.loc[dma < ama, 'dma_signal'] = -1
-                signals['dma_strength'] = 0.5
-                signals['dma_confidence'] = 0.5
-
+            
+            # DMA上穿AMA买入信号
+            golden_cross = crossover(dma, ama)
+            signals.loc[golden_cross, 'dma_signal'] = 1
+            signals.loc[golden_cross, 'dma_strength'] = 0.8
+            signals.loc[golden_cross, 'dma_confidence'] = 0.7
+            
+            # DMA下穿AMA卖出信号
+            death_cross = crossunder(dma, ama)
+            signals.loc[death_cross, 'dma_signal'] = -1
+            signals.loc[death_cross, 'dma_strength'] = 0.8
+            signals.loc[death_cross, 'dma_confidence'] = 0.7
+        
         return signals
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:

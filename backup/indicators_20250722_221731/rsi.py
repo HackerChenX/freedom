@@ -124,20 +124,13 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
         # 计算RSI
         result_df[f'rsi_{self.period}'] = 100 - (100 / (1 + rs))
         
-        # 必须：计算RSI均线（确保形态识别正常工作）
+        # 可选：计算RSI均线
         if self.ma_periods and len(self.ma_periods) >= 2:
-            short_period = self.ma_periods[0]
-            long_period = self.ma_periods[1]
-        else:
-            # 使用默认周期确保均线存在
-            short_period = 5
-            long_period = 10
-        
-        result_df[f'rsi_ma_{short_period}'] = result_df[f'rsi_{self.period}'].rolling(window=short_period).mean()
-        result_df[f'rsi_ma_{long_period}'] = result_df[f'rsi_{self.period}'].rolling(window=long_period).mean()
-        # For pattern detection - 确保这些列总是存在
-        result_df['rsi_ma_short'] = result_df[f'rsi_ma_{short_period}']
-        result_df['rsi_ma_long'] = result_df[f'rsi_ma_{long_period}']
+            result_df[f'rsi_ma_{self.ma_periods[0]}'] = result_df[f'rsi_{self.period}'].rolling(window=self.ma_periods[0]).mean()
+            result_df[f'rsi_ma_{self.ma_periods[1]}'] = result_df[f'rsi_{self.period}'].rolling(window=self.ma_periods[1]).mean()
+            # For pattern detection
+            result_df['rsi_ma_short'] = result_df[f'rsi_ma_{self.ma_periods[0]}']
+            result_df['rsi_ma_long'] = result_df[f'rsi_ma_{self.ma_periods[1]}']
 
         result_df['rsi_overbought'] = result_df[f'rsi_{self.period}'] > self.overbought
         result_df['rsi_oversold'] = result_df[f'rsi_{self.period}'] < self.oversold
@@ -150,61 +143,30 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
 
     def get_patterns_Rsi_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取RSI相关形态 - 100%准确率优化版本
-        放宽条件，确保信号生成
+        获取RSI相关形态
         """
         calculated_data = self._calculate_rsi(data)
         patterns_df = pd.DataFrame(index=data.index)
 
-        if f'rsi_{self.period}' not in calculated_data.columns:
-            # 返回空形态但确保列存在
-            patterns_df['RSI_OVERSOLD'] = False
-            patterns_df['RSI_OVERBOUGHT'] = False
-            patterns_df['RSI_GOLDEN_CROSS'] = False
-            patterns_df['RSI_DEATH_CROSS'] = False
+        # 确保列存在
+        if f'rsi_{self.period}' not in calculated_data.columns or 'rsi_ma_short' not in calculated_data.columns or 'rsi_ma_long' not in calculated_data.columns:
             return patterns_df
 
-        rsi = calculated_data[f'rsi_{self.period}']
+        # 金叉和死叉
+        from utils.indicator_utils import crossover, crossunder
+        patterns_df['RSI_GOLDEN_CROSS'] = crossover(calculated_data['rsi_ma_short'], calculated_data['rsi_ma_long'])
+        patterns_df['RSI_DEATH_CROSS'] = crossunder(calculated_data['rsi_ma_short'], calculated_data['rsi_ma_long'])
 
-        # 确保均线存在 - 使用更宽松的默认值
-        if 'rsi_ma_short' not in calculated_data.columns:
-            calculated_data['rsi_ma_short'] = rsi.rolling(window=3).mean()  # 更短周期
-        if 'rsi_ma_long' not in calculated_data.columns:
-            calculated_data['rsi_ma_long'] = rsi.rolling(window=7).mean()   # 更短周期
+        # 超买和超卖
+        patterns_df['RSI_OVERBOUGHT'] = calculated_data[f'rsi_{self.period}'] > self.overbought
+        patterns_df['RSI_OVERSOLD'] = calculated_data[f'rsi_{self.period}'] < self.oversold
 
-        rsi_ma_short = calculated_data['rsi_ma_short']
-        rsi_ma_long = calculated_data['rsi_ma_long']
-
-        # 初始化形态列
-        patterns_df['RSI_OVERSOLD'] = False
-        patterns_df['RSI_OVERBOUGHT'] = False
-        patterns_df['RSI_GOLDEN_CROSS'] = False
-        patterns_df['RSI_DEATH_CROSS'] = False
-
-        try:
-            # 放宽的超买超卖条件 - 确保有信号生成
-            patterns_df['RSI_OVERBOUGHT'] = (rsi > 75) & (rsi.shift(1) <= 75)  # 简化条件
-            patterns_df['RSI_OVERSOLD'] = (rsi < 25) & (rsi.shift(1) >= 25)    # 简化条件
-
-            # 简化的金叉死叉 - 只要有交叉就算
-            try:
-                from utils.indicator_utils import crossover, crossunder
-                patterns_df['RSI_GOLDEN_CROSS'] = crossover(rsi_ma_short, rsi_ma_long)
-                patterns_df['RSI_DEATH_CROSS'] = crossunder(rsi_ma_short, rsi_ma_long)
-            except:
-                # 如果crossover函数不可用，使用简单逻辑
-                patterns_df['RSI_GOLDEN_CROSS'] = (rsi_ma_short > rsi_ma_long) & (rsi_ma_short.shift(1) <= rsi_ma_long.shift(1))
-                patterns_df['RSI_DEATH_CROSS'] = (rsi_ma_short < rsi_ma_long) & (rsi_ma_short.shift(1) >= rsi_ma_long.shift(1))
-
-        except Exception as e:
-            logger.warning(f"RSI形态识别失败: {e}")
-            # 保守的备用逻辑
-            patterns_df['RSI_OVERSOLD'] = rsi < 20
-            patterns_df['RSI_OVERBOUGHT'] = rsi > 80
-            patterns_df['RSI_GOLDEN_CROSS'] = False
-            patterns_df['RSI_DEATH_CROSS'] = False
+        # 确保所有列都是布尔类型，填充NaN为False
+        for col in patterns_df.columns:
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return patterns_df
+
     def generate_signals_Rsi(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成RSI交易信号

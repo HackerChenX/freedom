@@ -146,51 +146,15 @@ class CciCci(BaseIndicator, PatternSignalMixin):
 
     def _apply_cci_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        应用CCI指标特定的信号生成逻辑 - 100%准确率优化版本
+        应用CCI指标特定的信号生成逻辑
         基于CCI值的超买超卖区间生成信号
         """
         try:
             # 获取CCI值
             cci_col = 'CCI'
             if cci_col not in df.columns:
-                # 如果没有CCI值，返回保守信号
-                df['buy_signal'] = False
-                df['sell_signal'] = False
-                df['hold_signal'] = True
+                # 如果没有CCI值，使用默认信号
                 return df
-
-            cci = df[cci_col]
-            close = df['close']
-
-            # 初始化信号
-            df['buy_signal'] = False
-            df['sell_signal'] = False
-            df['hold_signal'] = True
-
-            # 放宽的CCI信号生成 - 确保有信号
-            for i in range(5, len(cci) - 1):  # 减少边界限制
-                try:
-                    # 放宽的超卖信号：CCI < -100 (原来是-150)
-                    if (cci.iloc[i] < -100 and cci.iloc[i] > cci.iloc[i-1]):
-                        df.iloc[i, df.columns.get_loc('buy_signal')] = True
-                        df.iloc[i, df.columns.get_loc('hold_signal')] = False
-
-                    # 放宽的超买信号：CCI > 100 (原来是150)
-                    elif (cci.iloc[i] > 100 and cci.iloc[i] < cci.iloc[i-1]):
-                        df.iloc[i, df.columns.get_loc('sell_signal')] = True
-                        df.iloc[i, df.columns.get_loc('hold_signal')] = False
-
-                    # 新增：零轴穿越信号
-                    elif (cci.iloc[i] > 0 and cci.iloc[i-1] <= 0):  # 上穿零轴
-                        df.iloc[i, df.columns.get_loc('buy_signal')] = True
-                        df.iloc[i, df.columns.get_loc('hold_signal')] = False
-
-                    elif (cci.iloc[i] < 0 and cci.iloc[i-1] >= 0):  # 下穿零轴
-                        df.iloc[i, df.columns.get_loc('sell_signal')] = True
-                        df.iloc[i, df.columns.get_loc('hold_signal')] = False
-
-                except Exception as e:
-                    continue  # 跳过有问题的数据点
 
             cci_value = df[cci_col]
 
