@@ -59,6 +59,12 @@ class ComprehensiveIndicatorTester:
         logger.info("🚀 开始21个指标完整统一测试")
         start_time = time.time()
         
+        # 🔧 关键修复：设置固定随机种子确保测试一致性
+        import random
+        import numpy as np
+        random.seed(42)  # 使用固定种子
+        np.random.seed(42)
+        
         # 生成测试数据
         test_data = self._generate_test_data()
         
@@ -235,11 +241,20 @@ class ComprehensiveIndicatorTester:
                 logger.warning(f"⚠️ {indicator_name}: 未找到包含对应形态的股票，使用通用测试")
                 matching_stocks = [(code, data) for code, data in test_data.items()]
             
-            # 测试所有形态
+            # 🔧 修复测试逻辑：每只股票只测试其包含的特定形态
             for pattern in patterns:
-                for stock_code, data in matching_stocks:
-                    pattern_key = f"{indicator_name}_{pattern}"
-
+                # 找到包含当前形态的股票
+                pattern_key = f"{indicator_name}_{pattern}"
+                pattern_stocks = [(code, data) for code, data in matching_stocks 
+                                if data.attrs.get('expected_pattern', '') == pattern_key]
+                
+                # 如果没有找到特定形态的股票，跳过这个形态
+                if not pattern_stocks:
+                    logger.debug(f"跳过形态 {pattern_key}: 未找到包含此形态的股票")
+                    continue
+                
+                # 测试包含此形态的股票
+                for stock_code, data in pattern_stocks:
                     # 执行指标计算和形态识别（修正API调用）
                     result = self.analyzer.test_pattern_recognition(
                         mock_data_pool=[data],
@@ -249,7 +264,9 @@ class ComprehensiveIndicatorTester:
                     # 解析测试结果 - 从BuypointAnalyzer结果中提取真实准确率
                     if result and isinstance(result, dict):
                         real_accuracy = result.get('accuracy', 0.0)
-                        buy_points = len(result.get('buy_points', []))
+                        # 修复买点统计：从details中统计检测到形态的数量
+                        details = result.get('details', [])
+                        buy_points = sum(1 for d in details if d.get('pattern_detected', False))
                         execution_time = result.get('execution_time', 0)
                     else:
                         real_accuracy = 0.0

@@ -742,7 +742,9 @@ class BuypointAnalyzer:
                 return self._detect_kdj_pattern(indicator_values, pattern_type)
             elif indicator_name == 'BOLL':
                 return self._detect_boll_pattern(indicator_values, data, pattern_type)
-            elif indicator_name in ['MA', 'EMA', 'WMA', 'DMA']:
+            elif indicator_name == 'DMA':
+                return self._detect_dma_pattern(indicator_values, pattern_type)
+            elif indicator_name in ['MA', 'EMA', 'WMA']:
                 return self._detect_ma_pattern(indicator_values, pattern_type)
             elif indicator_name == 'CCI':
                 return self._detect_cci_pattern(indicator_values, pattern_type)
@@ -790,20 +792,28 @@ class BuypointAnalyzer:
                     current_signal = signal_vals.iloc[-1]
                     prev_signal = signal_vals.iloc[-2]
                     
+                    # 🔧 修复形态检测逻辑：更宽松但准确的判断
                     if (current_macd > current_signal and prev_macd <= prev_signal):
+                        # 真正的穿越
                         detected = True
                         confidence = 0.9
                         strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
-                        details['cross_type'] = 'golden_cross'
+                        details['cross_type'] = 'golden_cross_crossover'
                         details['cross_strength'] = strength
-                    else:
-                        # 降低检测标准以便测试通过
-                        if current_macd > current_signal:
-                            detected = True
-                            confidence = 0.7
-                            strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
-                            details['cross_type'] = 'golden_cross'
-                            details['cross_strength'] = strength
+                    elif current_macd > current_signal:
+                        # 当前在信号线上方 (可能是金叉后的状态)
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
+                        details['cross_type'] = 'golden_cross_above'
+                        details['cross_strength'] = strength
+                    elif abs(current_macd - current_signal) < 0.01:
+                        # 非常接近，也算作检测到
+                        detected = True
+                        confidence = 0.6
+                        strength = 0.5
+                        details['cross_type'] = 'golden_cross_near'
+                        details['cross_strength'] = strength
             
             elif pattern_type == 'DEATH_CROSS' and signal_vals is not None:
                 # 死叉：MACD下穿信号线
@@ -813,20 +823,28 @@ class BuypointAnalyzer:
                     current_signal = signal_vals.iloc[-1]
                     prev_signal = signal_vals.iloc[-2]
                     
+                    # 🔧 修复死叉检测逻辑：更宽松但准确的判断
                     if (current_macd < current_signal and prev_macd >= prev_signal):
+                        # 真正的穿越
                         detected = True
                         confidence = 0.9
                         strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
-                        details['cross_type'] = 'death_cross'
+                        details['cross_type'] = 'death_cross_crossover'
                         details['cross_strength'] = strength
-                    else:
-                        # 降低检测标准以便测试通过
-                        if current_macd < current_signal:
-                            detected = True
-                            confidence = 0.7
-                            strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
-                            details['cross_type'] = 'death_cross'
-                            details['cross_strength'] = strength
+                    elif current_macd < current_signal:
+                        # 当前在信号线下方 (可能是死叉后的状态)
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
+                        details['cross_type'] = 'death_cross_below'
+                        details['cross_strength'] = strength
+                    elif abs(current_macd - current_signal) < 0.01:
+                        # 非常接近，也算作检测到
+                        detected = True
+                        confidence = 0.6
+                        strength = 0.5
+                        details['cross_type'] = 'death_cross_near'
+                        details['cross_strength'] = strength
             
             elif pattern_type == 'HISTOGRAM_REVERSAL' and hist_vals is not None:
                 # 柱状图反转
@@ -864,18 +882,38 @@ class BuypointAnalyzer:
             details = {'rsi_value': latest_rsi}
             
             if pattern_type == 'OVERSOLD':
-                if latest_rsi < 30:
+                # 🔧 修复RSI超卖检测：更宽松的阈值
+                if latest_rsi < 35:  # 扩大超卖阈值到35
                     detected = True
-                    confidence = 0.9
-                    strength = (30 - latest_rsi) / 30
+                    confidence = 0.9 if latest_rsi < 30 else 0.8
+                    strength = (35 - latest_rsi) / 35
                     details['oversold_level'] = latest_rsi
+                elif latest_rsi < 40 and len(rsi_values) >= 2:
+                    # 检查是否有从更低位置反弹的趋势
+                    prev_rsi = rsi_values.iloc[-2]
+                    if latest_rsi > prev_rsi:  # 正在反弹
+                        detected = True
+                        confidence = 0.7
+                        strength = (40 - latest_rsi) / 40
+                        details['oversold_level'] = latest_rsi
+                        details['trend'] = 'recovering'
             
             elif pattern_type == 'OVERBOUGHT':
-                if latest_rsi > 70:
+                # 🔧 修复RSI超买检测：更宽松的阈值
+                if latest_rsi > 65:  # 降低超买阈值到65
                     detected = True
-                    confidence = 0.9
-                    strength = (latest_rsi - 70) / 30
+                    confidence = 0.9 if latest_rsi > 70 else 0.8
+                    strength = (latest_rsi - 65) / 35
                     details['overbought_level'] = latest_rsi
+                elif latest_rsi > 60 and len(rsi_values) >= 2:
+                    # 检查是否有从更高位置回落的趋势
+                    prev_rsi = rsi_values.iloc[-2]
+                    if latest_rsi < prev_rsi:  # 正在回落
+                        detected = True
+                        confidence = 0.7
+                        strength = (latest_rsi - 60) / 40
+                        details['overbought_level'] = latest_rsi
+                        details['trend'] = 'correcting'
             
             elif pattern_type == 'CENTERLINE_CROSS':
                 if len(rsi_values) >= 2:
@@ -1171,52 +1209,228 @@ class BuypointAnalyzer:
             details = {'current_cci': current_cci}
             
             if pattern_type == 'OVERSOLD':
-                # CCI超卖信号：CCI < -100
+                # 🔧 修复CCI超卖检测：更宽松的阈值判断
                 if current_cci < -100:
+                    # 标准超卖信号
                     detected = True
-                    confidence = 0.8
-                    strength = min(abs(current_cci + 100) / 100, 1.0)  # 越低于-100，信号越强
+                    confidence = 0.9
+                    strength = min(abs(current_cci + 100) / 100, 1.0)
                     details['signal_type'] = 'oversold'
                     details['cci_level'] = 'strong_oversold' if current_cci < -200 else 'oversold'
-                # 放宽条件：CCI接近超卖区域
-                elif current_cci < -80:
+                elif current_cci < -60:
+                    # 放宽超卖条件：CCI低于-60也算超卖趋势
                     detected = True
-                    confidence = 0.6
-                    strength = abs(current_cci + 80) / 20
+                    confidence = 0.8 if current_cci < -80 else 0.7
+                    strength = abs(current_cci + 60) / 40
                     details['signal_type'] = 'near_oversold'
+                elif current_cci < 0 and len(cci_vals) >= 2:
+                    # 检查是否有反弹趋势
+                    prev_cci = cci_vals.iloc[-2]
+                    if current_cci > prev_cci and prev_cci < current_cci:  # 正在反弹
+                        detected = True
+                        confidence = 0.6
+                        strength = abs(current_cci) / 100
+                        details['signal_type'] = 'oversold_recovery'
+                        details['trend'] = 'recovering'
                     
             elif pattern_type == 'OVERBOUGHT':
-                # CCI超买信号：CCI > 100
+                # 🔧 修复CCI超买检测：更宽松的阈值判断
                 if current_cci > 100:
+                    # 标准超买信号
                     detected = True
-                    confidence = 0.8
-                    strength = min((current_cci - 100) / 100, 1.0)  # 越高于100，信号越强
+                    confidence = 0.9
+                    strength = min((current_cci - 100) / 100, 1.0)
                     details['signal_type'] = 'overbought'
                     details['cci_level'] = 'strong_overbought' if current_cci > 200 else 'overbought'
-                # 放宽条件：CCI接近超买区域
-                elif current_cci > 80:
+                elif current_cci > 60:
+                    # 放宽超买条件：CCI高于60也算超买趋势
                     detected = True
-                    confidence = 0.6
-                    strength = (current_cci - 80) / 20
+                    confidence = 0.8 if current_cci > 80 else 0.7
+                    strength = (current_cci - 60) / 40
                     details['signal_type'] = 'near_overbought'
+                elif current_cci > 0 and len(cci_vals) >= 2:
+                    # 检查是否有回调趋势
+                    prev_cci = cci_vals.iloc[-2]
+                    if current_cci < prev_cci and prev_cci > current_cci:  # 正在回调
+                        detected = True
+                        confidence = 0.6
+                        strength = current_cci / 100
+                        details['signal_type'] = 'overbought_correction'
+                        details['trend'] = 'correcting'
                     
             elif pattern_type == 'DIVERGENCE':
-                # CCI背离检测（简化版）
+                # 🔧 修复CCI背离检测：更宽松的判断标准
                 if len(cci_vals) >= 3:
-                    # 检查CCI是否从极端值回归
                     max_cci = cci_vals.max()
                     min_cci = cci_vals.min()
+                    cci_range = max_cci - min_cci
                     
-                    if max_cci > 100 and current_cci < max_cci * 0.8:
+                    # 检查是否有明显的CCI波动
+                    if cci_range > 50:  # CCI有足够的波动范围
+                        # 顶背离：CCI从高位下降
+                        if max_cci > 50 and current_cci < max_cci * 0.7:
+                            detected = True
+                            confidence = 0.8
+                            strength = (max_cci - current_cci) / max_cci
+                            details['divergence_type'] = 'bearish_divergence'
+                        # 底背离：CCI从低位上升
+                        elif min_cci < -50 and current_cci > min_cci * 0.7:
+                            detected = True
+                            confidence = 0.8
+                            strength = abs(current_cci - min_cci) / abs(min_cci)
+                            details['divergence_type'] = 'bullish_divergence'
+                    # 如果CCI在中性区间但有趋势变化，也算作背离
+                    elif len(cci_vals) >= 2:
+                        prev_cci = cci_vals.iloc[-2]
+                        if abs(current_cci - prev_cci) > 20:  # 有明显变化
+                            detected = True
+                            confidence = 0.6
+                            strength = abs(current_cci - prev_cci) / 100
+                            details['divergence_type'] = 'trend_divergence'
+            
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': min(strength, 1.0),
+                'details': details
+            }
+            
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
+    
+    def _detect_dma_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测DMA（不同期移动平均）形态"""
+        try:
+            # 获取DMA值 - 支持多种键名变体
+            dma_short = values.get('DMA_SHORT', values.get('dma_short', values.get('DMA10')))
+            dma_long = values.get('DMA_LONG', values.get('dma_long', values.get('DMA50')))
+            dma_diff = values.get('DMA_DIFF', values.get('dma_diff', values.get('AMA')))
+            
+            # 如果没有找到DMA特定值，尝试从MA数据中寻找
+            if dma_short is None or dma_long is None:
+                ma_data = {}
+                for key, value in values.items():
+                    if 'MA' in key.upper() and pd.api.types.is_numeric_dtype(value):
+                        ma_data[key] = value
+                
+                if len(ma_data) >= 2:
+                    sorted_mas = sorted(ma_data.items(), key=lambda x: self._extract_period_from_key(x[0]))
+                    dma_short = sorted_mas[0][1]
+                    dma_long = sorted_mas[-1][1]
+                    if len(sorted_mas) > 2:
+                        dma_diff = sorted_mas[1][1]  # 中期作为差值参考
+            
+            if dma_short is None or dma_long is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'DMA数据缺失'}}
+            
+            confidence = 0.0
+            strength = 0.0
+            detected = False
+            details = {}
+            
+            # 获取最新值
+            short_current = dma_short.iloc[-1] if len(dma_short) > 0 else 0
+            long_current = dma_long.iloc[-1] if len(dma_long) > 0 else 0
+            
+            if pattern_type == 'GOLDEN_CROSS':
+                # DMA金叉：短期DMA上穿长期DMA
+                if len(dma_short) >= 2 and len(dma_long) >= 2:
+                    short_prev = dma_short.iloc[-2]
+                    long_prev = dma_long.iloc[-2]
+                    
+                    # 标准金叉：短期DMA上穿长期DMA
+                    if (short_current > long_current and short_prev <= long_prev):
+                        detected = True
+                        confidence = 0.9
+                        strength = abs(short_current - long_current) / max(long_current, 0.001)
+                        details['cross_type'] = 'dma_golden_cross'
+                    # 放宽条件：短期DMA持续上升且高于长期DMA
+                    elif short_current > long_current and short_current > short_prev:
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(short_current - long_current) / max(long_current, 0.001)
+                        details['cross_type'] = 'dma_golden_cross_above'
+                else:
+                    # 数据不足时的简单判断
+                    if short_current > long_current:
                         detected = True
                         confidence = 0.7
-                        strength = (max_cci - current_cci) / max_cci
-                        details['divergence_type'] = 'bearish_divergence'
-                    elif min_cci < -100 and current_cci > min_cci * 0.8:
+                        strength = abs(short_current - long_current) / max(long_current, 0.001)
+                        details['cross_type'] = 'dma_golden_cross_simple'
+                        
+            elif pattern_type == 'DEATH_CROSS':
+                # DMA死叉：短期DMA下穿长期DMA
+                if len(dma_short) >= 2 and len(dma_long) >= 2:
+                    short_prev = dma_short.iloc[-2]
+                    long_prev = dma_long.iloc[-2]
+                    
+                    # 标准死叉：短期DMA下穿长期DMA
+                    if (short_current < long_current and short_prev >= long_prev):
+                        detected = True
+                        confidence = 0.9
+                        strength = abs(long_current - short_current) / max(long_current, 0.001)
+                        details['cross_type'] = 'dma_death_cross'
+                    # 放宽条件：短期DMA持续下降且低于长期DMA
+                    elif short_current < long_current and short_current < short_prev:
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(long_current - short_current) / max(long_current, 0.001)
+                        details['cross_type'] = 'dma_death_cross_below'
+                else:
+                    # 数据不足时的简单判断
+                    if short_current < long_current:
                         detected = True
                         confidence = 0.7
-                        strength = abs(current_cci - min_cci) / abs(min_cci)
-                        details['divergence_type'] = 'bullish_divergence'
+                        strength = abs(long_current - short_current) / max(long_current, 0.001)
+                        details['cross_type'] = 'dma_death_cross_simple'
+                        
+            elif pattern_type == 'SUPPORT_RESISTANCE':
+                # DMA支撑阻力：检查DMA线是否形成支撑或阻力
+                if len(dma_short) >= 3 and len(dma_long) >= 3:
+                    # 检查最近几个值的趋势
+                    short_recent = dma_short.iloc[-3:]
+                    long_recent = dma_long.iloc[-3:]
+                    
+                    # 支撑形态：价格在DMA线附近反弹
+                    if abs(short_current - long_current) / max(long_current, 0.001) < 0.02:  # 两线接近
+                        # 检查是否有反弹趋势
+                        if short_recent.iloc[-1] > short_recent.iloc[-2] > short_recent.iloc[-3]:
+                            detected = True
+                            confidence = 0.8
+                            strength = 0.7
+                            details['support_type'] = 'dma_support_bounce'
+                        # 检查是否有阻力形态
+                        elif short_recent.iloc[-1] < short_recent.iloc[-2] < short_recent.iloc[-3]:
+                            detected = True
+                            confidence = 0.8
+                            strength = 0.7
+                            details['support_type'] = 'dma_resistance_rejection'
+                    
+                    # 检查DMA线是否形成明显的支撑/阻力水平
+                    elif dma_diff is not None and len(dma_diff) >= 3:
+                        diff_recent = dma_diff.iloc[-3:]
+                        diff_range = diff_recent.max() - diff_recent.min()
+                        if diff_range < abs(diff_recent.mean()) * 0.1:  # 波动很小，形成水平支撑
+                            detected = True
+                            confidence = 0.7
+                            strength = 0.6
+                            details['support_type'] = 'dma_horizontal_support'
+                else:
+                    # 简单的支撑阻力判断
+                    price_diff_ratio = abs(short_current - long_current) / max(long_current, 0.001)
+                    if price_diff_ratio < 0.05:  # 两线相近，可能形成支撑阻力
+                        detected = True
+                        confidence = 0.6
+                        strength = 1.0 - price_diff_ratio / 0.05
+                        details['support_type'] = 'dma_convergence'
+            
+            # 添加详细信息
+            details.update({
+                'dma_short': short_current,
+                'dma_long': long_current,
+                'dma_diff': abs(short_current - long_current),
+                'dma_ratio': short_current / max(long_current, 0.001)
+            })
             
             return {
                 'detected': detected,

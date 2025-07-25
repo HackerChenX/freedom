@@ -214,6 +214,35 @@ class PatternRegistry:
         
         logger.debug(f"注册形态: {normalized_pattern_id} ({display_name})")
 
+    def register(self,
+                pattern_id: str,
+                display_name: str,
+                indicator_id: str,
+                pattern_type: PatternTypePatternRegistry = PatternTypePatternRegistry.NEUTRAL,
+                default_strength: PatternStrengthPatternRegistry = PatternStrengthPatternRegistry.MEDIUM,
+                description: str = '',
+                score_impact: float = 0.0,
+                detection_function = None,
+                polarity: PatternPolarity = None,
+                allow_override: bool = None) -> None:
+        """
+        注册形态（兼容性别名方法）
+        
+        这是register_pattern_registry的别名，提供向后兼容性
+        """
+        return self.register_pattern_registry(
+            pattern_id=pattern_id,
+            display_name=display_name,
+            indicator_id=indicator_id,
+            pattern_type=pattern_type,
+            default_strength=default_strength,
+            description=description,
+            score_impact=score_impact,
+            detection_function=detection_function,
+            polarity=polarity,
+            allow_override=allow_override
+        )
+
     def _infer_polarity(self, pattern_type: PatternTypePatternRegistry, score_impact: float, display_name: str) -> PatternPolarity:
         """
         自动推断形态极性
@@ -674,7 +703,9 @@ def get_global_pattern_registry() -> PatternRegistry:
 try:
     container = get_container()
     if not container.is_registered(PatternRegistry):
-        container.register_singleton(PatternRegistry, PatternRegistry)
+        # 创建实例并注册
+        pattern_registry_instance = PatternRegistry()
+        container.register_singleton(PatternRegistry, pattern_registry_instance)
         logger.info("PatternRegistry已注册到依赖注入容器")
 except Exception as e:
     logger.warning(f"注册PatternRegistry到依赖注入容器失败: {e}")

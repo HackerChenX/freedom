@@ -44,19 +44,19 @@ from utils.logger import getLogger
 logger = getLogger(__name__)
 
 # 导入必要的异常类
-class TestFrameworkError(Exception):
+class FrameworkError(Exception):
     """测试框架异常"""
     pass
 
-class ConfigurationError(TestFrameworkError):
+class ConfigurationError(FrameworkError):
     """配置错误"""
     pass
 
-class DataGenerationError(TestFrameworkError):
+class DataGenerationError(FrameworkError):
     """数据生成错误"""
     pass
 
-class ValidationError(TestFrameworkError):
+class ValidationError(FrameworkError):
     """验证错误"""
     pass
 
@@ -99,7 +99,7 @@ class UnifiedIndicatorTester:
 
         except Exception as e:
             logger.error(f"统一指标测试器初始化失败: {e}")
-            raise TestFrameworkError(f"初始化失败: {e}")
+            raise FrameworkError(f"初始化失败: {e}")
 
     def _initialize_components(self):
         """初始化测试组件"""
@@ -115,7 +115,7 @@ class UnifiedIndicatorTester:
 
         except Exception as e:
             logger.error(f"组件初始化失败: {e}")
-            raise TestFrameworkError(f"组件初始化失败: {e}")
+            raise FrameworkError(f"组件初始化失败: {e}")
 
     def _validate_config(self):
         """验证配置文件"""
@@ -154,7 +154,7 @@ class UnifiedIndicatorTester:
 
         except Exception as e:
             logger.error(f"输出目录设置失败: {e}")
-            raise TestFrameworkError(f"输出目录设置失败: {e}")
+            raise FrameworkError(f"输出目录设置失败: {e}")
         
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """加载测试配置"""
@@ -267,7 +267,7 @@ class UnifiedIndicatorTester:
         except Exception as e:
             logger.error(f"测试执行过程中发生错误: {e}")
             self.test_end_time = datetime.now()
-            raise TestFrameworkError(f"测试执行失败: {e}")
+            raise FrameworkError(f"测试执行失败: {e}")
 
     def _save_intermediate_result(self, indicator_name: str, result: Dict[str, Any]):
         """保存中间测试结果"""
@@ -1010,7 +1010,7 @@ class UnifiedIndicatorTester:
 
 # 导入真实的StockInfoCompatibleDataGenerator
 try:
-    from components.stockinfo_compatible_data_generator import StockInfoCompatibleDataGenerator
+    from tests.unified_indicator_testing.components.stockinfo_compatible_data_generator import StockInfoCompatibleDataGenerator
     logger.info("成功导入StockInfoCompatibleDataGenerator")
 except ImportError as e:
     logger.warning(f"导入StockInfoCompatibleDataGenerator失败: {e}，使用占位符实现")
@@ -1061,39 +1061,13 @@ except ImportError as e:
             pass
 
 # 导入真实的ClosedLoopValidator
-try:
-    from components.closed_loop_validator import ClosedLoopValidator
-    logger.info("成功导入ClosedLoopValidator")
-except ImportError as e:
-    logger.warning(f"导入ClosedLoopValidator失败: {e}，使用占位符实现")
-
-    # 占位符实现（如果导入失败）
-    class ClosedLoopValidator:
-        """闭环验证器（占位符）"""
-
-        def __init__(self):
-            logger.debug("闭环验证器初始化（占位符实现）")
-
-        def validate_selection_results(self, selection_results, stock_data_pool, indicator_name, pattern_type):
-            """占位符闭环验证"""
-            selected_stocks = selection_results.get('selected_stocks', [])
-            validation_rate = 0.8 if selected_stocks else 0.0
-
-            return {
-                'validation_rate': validation_rate,
-                'successful_validations': int(len(selected_stocks) * validation_rate),
-                'total_validations': len(selected_stocks),
-                'message': '占位符验证完成'
-            }
-
-        def cleanup(self):
-            """清理资源"""
-            pass
+from tests.unified_indicator_testing.components.closed_loop_validator import ClosedLoopValidator
+logger.info("成功导入ClosedLoopValidator")
 
 
 # 导入真实的BuypointAnalyzer
 try:
-    from components.buypoint_analyzer import BuypointAnalyzer
+    from tests.unified_indicator_testing.components.buypoint_analyzer import BuypointAnalyzer
     logger.info("成功导入BuypointAnalyzer")
 
     # 为了保持兼容性，创建别名
@@ -1126,7 +1100,7 @@ except ImportError as e:
 
 # 导入真实的SelectionStrategyTester
 try:
-    from components.selection_strategy_tester import SelectionStrategyTester
+    from tests.unified_indicator_testing.components.selection_strategy_tester import SelectionStrategyTester
     logger.info("成功导入SelectionStrategyTester")
 except ImportError as e:
     logger.warning(f"导入SelectionStrategyTester失败: {e}，使用占位符实现")
@@ -1145,13 +1119,6 @@ except ImportError as e:
                 'selected_stocks': [],
                 'performance_metrics': {'precision': 0.8, 'recall': 0.7}
             }
-
-
-class ClosedLoopValidator:
-    """闭环验证器（占位符）"""
-
-    def __init__(self):
-        logger.debug("闭环验证器初始化（占位符实现）")
 
 
 class PerformanceTester:

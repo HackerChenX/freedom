@@ -21,7 +21,7 @@ sys.path.append(root_dir)
 
 from unified_indicator_tester import (
     UnifiedIndicatorTester, 
-    TestFrameworkError,
+    FrameworkError,
     ConfigurationError,
     DataGenerationError
 )
@@ -84,7 +84,7 @@ validation_criteria:
         with open(invalid_config_file, 'w', encoding='utf-8') as f:
             f.write("invalid: yaml: content: [")
 
-        with self.assertRaises(TestFrameworkError):
+        with self.assertRaises(FrameworkError):
             UnifiedIndicatorTester(config_path=invalid_config_file)
     
     def test_initialization_with_missing_config(self):

@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from enums.kline_period import Kline_period
+from enums.period import Period
 from enums.indicators import IndicatorType_Indicators, CrossType, TrendType, VolumePattern_Indicators, PatternType_Indicators
 import json
 import sys
@@ -61,7 +61,7 @@ class BuyPointAnalyzer:
             # 从数据库获取数据
             stock_data = self.data_access.get_stock_info(
                 code=stock_code, 
-                level=Kline_period.DAILY.value, 
+                level=Period.DAILY.value, 
                 start_date=start_date, 
                 end_date=end_date
             )
