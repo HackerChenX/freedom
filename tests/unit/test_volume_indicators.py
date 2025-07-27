@@ -15,10 +15,11 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 
-class TestVOL(unittest.TestCase, IndicatorTestMixin):
+class TestVOL(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         super().setUp()
-        self.indicator = complete_registry.create_indicator('VOL', )
+        LogCaptureMixin.setUp(self)  # 显式调用LogCaptureMixin的setUp
+        self.indicator = complete_registry.create_indicator('VOL')
         self.expected_columns = ['vol', 'vol_ma5', 'vol_ma10']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
@@ -29,6 +30,7 @@ class TestOBV_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
 
     def setUp(self):
         super().setUp()
+        LogCaptureMixin.setUp(self)  # 显式调用LogCaptureMixin的setUp
         """准备数据和指标实例"""
 
         self.indicator = complete_registry.create_indicator('OBV', ma_period=30)
@@ -222,9 +224,10 @@ class TestOBV_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin)
         obv_values = result['obv'].dropna()
         self.assertTrue(all(np.isfinite(val) for val in obv_values), "OBV值应为有限数值")
 
-class TestMFI_Indicators(unittest.TestCase, IndicatorTestMixin):
+class TestMFI_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
     def setUp(self):
         super().setUp()
+        LogCaptureMixin.setUp(self)  # 显式调用LogCaptureMixin的setUp
         self.indicator = complete_registry.create_indicator('MFI', period=14)
         self.expected_columns = ['mfi']
         self.data = TestDataGenerator.generate_price_sequence([
@@ -236,9 +239,10 @@ class TestAD_Indicators(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
 
     def setUp(self):
         super().setUp()
+        LogCaptureMixin.setUp(self)  # 显式调用LogCaptureMixin的setUp
         """准备数据和指标实例"""
 
-        self.indicator = complete_registry.create_indicator('AD', )
+        self.indicator = complete_registry.create_indicator('AD')
         self.expected_columns = ['AD', 'AD_MA']
         # 使用一个包含多种走势的数据进行通用测试
         self.data = TestDataGenerator.generate_price_sequence([

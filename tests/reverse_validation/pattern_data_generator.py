@@ -1027,6 +1027,18 @@ class Pattern_data_generator:
                 'EMA_TREND_CONFIRMATION': self._generate_ema_trend_confirmation,
                 'EMA_DIVERGENCE': self._generate_ema_divergence,
                 'EMA_SUPPORT_RESISTANCE': self._generate_ema_support_resistance,
+
+                # 🔧 CCI形态 (关键修复)
+                'CCI_GOLDEN_CROSS': self._generate_cci_golden_cross,
+                'CCI_DEATH_CROSS': self._generate_cci_death_cross,
+                'CCI_ZERO_CROSS_UP': self._generate_cci_zero_cross_up,
+                'CCI_ZERO_CROSS_DOWN': self._generate_cci_zero_cross_down,
+                'CCI_OVERBOUGHT': self._generate_cci_overbought,
+                'CCI_OVERSOLD': self._generate_cci_oversold,
+                'CCI_EXTREME_OVERBOUGHT': self._generate_cci_extreme_overbought,
+                'CCI_EXTREME_OVERSOLD': self._generate_cci_extreme_oversold,
+                'CCI_BULLISH_DIVERGENCE': self._generate_cci_bullish_divergence,
+                'CCI_BEARISH_DIVERGENCE': self._generate_cci_bearish_divergence,
             }
 
             # 检查形态类型是否支持
@@ -1120,3 +1132,439 @@ class Pattern_data_generator:
             summary['total_patterns'] += pattern_count
 
         return summary
+
+    # ===== CCI形态生成方法 =====
+
+    def _generate_cci_golden_cross(self) -> pd.DataFrame:
+        """
+        生成CCI金叉形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI金叉形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建金叉形态：从负值区域上穿到正值区域
+            # 前期：CCI在负值区域
+            cci.iloc[:35] = np.random.uniform(-150, -20, 35)
+
+            # 中期：CCI逐渐上升
+            for i in range(35, 45):
+                cci.iloc[i] = cci.iloc[i-1] + np.random.uniform(5, 15)
+
+            # 后期：CCI在正值区域稳定
+            cci.iloc[45:] = np.random.uniform(20, 100, len(cci) - 45)
+
+            # 确保最后几个值形成明确的金叉信号
+            cci.iloc[-5:] = [10, 25, 45, 60, 75]
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100  # 将CCI转换为价格变化比例
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI金叉形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_death_cross(self) -> pd.DataFrame:
+        """
+        生成CCI死叉形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI死叉形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建死叉形态：从正值区域下穿到负值区域
+            # 前期：CCI在正值区域
+            cci.iloc[:35] = np.random.uniform(20, 150, 35)
+
+            # 中期：CCI逐渐下降
+            for i in range(35, 45):
+                cci.iloc[i] = cci.iloc[i-1] - np.random.uniform(5, 15)
+
+            # 后期：CCI在负值区域稳定
+            cci.iloc[45:] = np.random.uniform(-100, -20, len(cci) - 45)
+
+            # 确保最后几个值形成明确的死叉信号
+            cci.iloc[-5:] = [-10, -25, -45, -60, -75]
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100  # 将CCI转换为价格变化比例
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI死叉形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_zero_cross_up(self) -> pd.DataFrame:
+        """
+        生成CCI零线上穿形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI零线上穿形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建零线上穿形态
+            # 前期：CCI在零线下方
+            cci.iloc[:40] = np.random.uniform(-50, -5, 40)
+
+            # 中期：CCI穿越零线
+            cci.iloc[40:45] = [-2, 1, 5, 8, 12]
+
+            # 后期：CCI在零线上方
+            cci.iloc[45:] = np.random.uniform(5, 50, len(cci) - 45)
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI零线上穿形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_zero_cross_down(self) -> pd.DataFrame:
+        """
+        生成CCI零线下穿形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI零线下穿形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建零线下穿形态
+            # 前期：CCI在零线上方
+            cci.iloc[:40] = np.random.uniform(5, 50, 40)
+
+            # 中期：CCI穿越零线
+            cci.iloc[40:45] = [2, -1, -5, -8, -12]
+
+            # 后期：CCI在零线下方
+            cci.iloc[45:] = np.random.uniform(-50, -5, len(cci) - 45)
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI零线下穿形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_overbought(self) -> pd.DataFrame:
+        """
+        生成CCI超买形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI超买形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建超买形态：CCI > 100
+            # 前期：CCI逐渐上升
+            cci.iloc[:30] = np.random.uniform(-50, 50, 30)
+
+            # 中期：CCI进入超买区域
+            for i in range(30, 40):
+                cci.iloc[i] = 80 + (i - 30) * 5
+
+            # 后期：CCI在超买区域
+            cci.iloc[40:] = np.random.uniform(100, 200, len(cci) - 40)
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI超买形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_oversold(self) -> pd.DataFrame:
+        """
+        生成CCI超卖形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI超卖形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建超卖形态：CCI < -100
+            # 前期：CCI逐渐下降
+            cci.iloc[:30] = np.random.uniform(-50, 50, 30)
+
+            # 中期：CCI进入超卖区域
+            for i in range(30, 40):
+                cci.iloc[i] = -80 - (i - 30) * 5
+
+            # 后期：CCI在超卖区域
+            cci.iloc[40:] = np.random.uniform(-200, -100, len(cci) - 40)
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI超卖形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_extreme_overbought(self) -> pd.DataFrame:
+        """
+        生成CCI极度超买形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI极度超买形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建极度超买形态：CCI > 200
+            # 前期：CCI逐渐上升
+            cci.iloc[:25] = np.random.uniform(-50, 100, 25)
+
+            # 中期：CCI快速上升到极度超买区域
+            for i in range(25, 35):
+                cci.iloc[i] = 150 + (i - 25) * 10
+
+            # 后期：CCI在极度超买区域
+            cci.iloc[35:] = np.random.uniform(200, 300, len(cci) - 35)
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI极度超买形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_extreme_oversold(self) -> pd.DataFrame:
+        """
+        生成CCI极度超卖形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI极度超卖形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 计算CCI指标
+            high_low_close = (data['high'] + data['low'] + data['close']) / 3
+            ma_hlc = high_low_close.rolling(window=20).mean()
+            mean_deviation = high_low_close.rolling(window=20).apply(
+                lambda x: np.mean(np.abs(x - x.mean()))
+            )
+            cci = (high_low_close - ma_hlc) / (0.015 * mean_deviation)
+
+            # 创建极度超卖形态：CCI < -200
+            # 前期：CCI逐渐下降
+            cci.iloc[:25] = np.random.uniform(-100, 50, 25)
+
+            # 中期：CCI快速下降到极度超卖区域
+            for i in range(25, 35):
+                cci.iloc[i] = -150 - (i - 25) * 10
+
+            # 后期：CCI在极度超卖区域
+            cci.iloc[35:] = np.random.uniform(-300, -200, len(cci) - 35)
+
+            # 根据CCI调整价格趋势
+            price_change = cci / 100
+            for i in range(1, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * (1 + price_change.iloc[i] * 0.01)
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * (1 + np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * (1 - np.random.uniform(0, 0.02))
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close'] * (1 + np.random.uniform(-0.01, 0.01))
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI极度超卖形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_bullish_divergence(self) -> pd.DataFrame:
+        """
+        生成CCI牛市背离形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI牛市背离形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 创建牛市背离：价格创新低，CCI不创新低
+            # 前期：价格和CCI都下降
+            for i in range(1, 25):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * 0.995
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * 1.01
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * 0.99
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close']
+
+            # 中期：价格继续下降，CCI开始上升（背离）
+            for i in range(25, 45):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * 0.998
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * 1.01
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * 0.99
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close']
+
+            # 后期：价格反转上升
+            for i in range(45, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * 1.002
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * 1.01
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * 0.99
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close']
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI牛市背离形态失败: {e}")
+            return self._generate_base_data()
+
+    def _generate_cci_bearish_divergence(self) -> pd.DataFrame:
+        """
+        生成CCI熊市背离形态数据
+
+        Returns:
+            pd.DataFrame: 包含CCI熊市背离形态的股票数据
+        """
+        try:
+            # 生成基础数据
+            data = self._generate_base_data()
+
+            # 创建熊市背离：价格创新高，CCI不创新高
+            # 前期：价格和CCI都上升
+            for i in range(1, 25):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * 1.005
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * 1.01
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * 0.99
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close']
+
+            # 中期：价格继续上升，CCI开始下降（背离）
+            for i in range(25, 45):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * 1.002
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * 1.01
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * 0.99
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close']
+
+            # 后期：价格反转下降
+            for i in range(45, len(data)):
+                data.loc[data.index[i], 'close'] = data.loc[data.index[i-1], 'close'] * 0.998
+                data.loc[data.index[i], 'high'] = data.loc[data.index[i], 'close'] * 1.01
+                data.loc[data.index[i], 'low'] = data.loc[data.index[i], 'close'] * 0.99
+                data.loc[data.index[i], 'open'] = data.loc[data.index[i-1], 'close']
+
+            return data
+
+        except Exception as e:
+            print(f"生成CCI熊市背离形态失败: {e}")
+            return self._generate_base_data()

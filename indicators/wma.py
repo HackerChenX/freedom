@@ -299,22 +299,45 @@ class Wma(BaseIndicator, PatternSignalMixin):
 
             wma_line = df[wma_col]
 
-            # WMA信号生成逻辑：
-            # BUY: 价格在WMA线之上且WMA向上
-            # SELL: 价格在WMA线之下且WMA向下
-            # HOLD: 其他情况
+            # 增强的WMA信号生成逻辑：
+            # 1. 价格突破WMA线
+            price_cross_above = crossover(close_price, wma_line)
+            price_cross_below = crossunder(close_price, wma_line)
 
-            price_above_wma = close_price > wma_line
-            price_below_wma = close_price < wma_line
-
-            # 计算WMA趋势（当前值与前一值比较）
+            # 2. WMA趋势确认
             wma_rising = wma_line > wma_line.shift(1)
             wma_falling = wma_line < wma_line.shift(1)
 
+            # 3. 价格位置确认
+            price_above_wma = close_price > wma_line
+            price_below_wma = close_price < wma_line
+
+            # 4. 多周期WMA交叉信号（如果有多个周期）
+            wma_golden_cross = pd.Series(False, index=df.index)
+            wma_death_cross = pd.Series(False, index=df.index)
+
+            if len(self.periods) >= 2:
+                sorted_periods = sorted(self.periods)
+                short_wma = df[f'WMA{sorted_periods[0]}']
+                long_wma = df[f'WMA{sorted_periods[1]}']
+
+                wma_golden_cross = crossover(short_wma, long_wma)
+                wma_death_cross = crossunder(short_wma, long_wma)
+
+            # 综合买入信号：
+            # - 价格上穿WMA且WMA上升
+            # - 或者WMA金叉且价格在短期WMA上方
+            buy_signal = (price_cross_above & wma_rising) | (wma_golden_cross & price_above_wma)
+
+            # 综合卖出信号：
+            # - 价格下穿WMA且WMA下降
+            # - 或者WMA死叉且价格在短期WMA下方
+            sell_signal = (price_cross_below & wma_falling) | (wma_death_cross & price_below_wma)
+
             # 生成信号
-            df.loc[:, 'buy_signal'] = price_above_wma & wma_rising
-            df.loc[:, 'sell_signal'] = price_below_wma & wma_falling
-            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+            df.loc[:, 'buy_signal'] = buy_signal
+            df.loc[:, 'sell_signal'] = sell_signal
+            df.loc[:, 'hold_signal'] = ~(buy_signal | sell_signal)
 
             # 确保信号类型为布尔值
             df['buy_signal'] = df['buy_signal'].astype(bool)
@@ -1155,9 +1178,9 @@ class Wma(BaseIndicator, PatternSignalMixin):
             return pd.DataFrame(index=data.index)
 
         patterns_df = pd.DataFrame(index=result.index)
-        
+
         close_price = data['close']
-        
+
         # 价格与WMA线交叉
         for period in self.periods:
             wma_col = f'WMA{period}'
@@ -1166,19 +1189,73 @@ class Wma(BaseIndicator, PatternSignalMixin):
                 patterns_df[f'PRICE_CROSS_ABOVE_{wma_col}'] = crossover(close_price, wma_line)
                 patterns_df[f'PRICE_CROSS_BELOW_{wma_col}'] = crossunder(close_price, wma_line)
 
+                # 价格相对WMA位置
+                patterns_df[f'PRICE_ABOVE_{wma_col}'] = close_price > wma_line
+                patterns_df[f'PRICE_BELOW_{wma_col}'] = close_price < wma_line
+
+                # WMA趋势形态
+                patterns_df[f'{wma_col}_RISING'] = wma_line > wma_line.shift(1)
+                patterns_df[f'{wma_col}_FALLING'] = wma_line < wma_line.shift(1)
+
+                # 强势突破形态（价格上穿且WMA上升）
+                patterns_df[f'{wma_col}_BULLISH_BREAKOUT'] = (
+                    crossover(close_price, wma_line) &
+                    (wma_line > wma_line.shift(1))
+                )
+
+                # 弱势跌破形态（价格下穿且WMA下降）
+                patterns_df[f'{wma_col}_BEARISH_BREAKDOWN'] = (
+                    crossunder(close_price, wma_line) &
+                    (wma_line < wma_line.shift(1))
+                )
+
         # WMA线之间交叉
         if len(self.periods) >= 2:
-            for i in range(len(self.periods) - 1):
-                short_period = self.periods[i]
-                long_period = self.periods[i+1]
+            sorted_periods = sorted(self.periods)
+            for i in range(len(sorted_periods) - 1):
+                short_period = sorted_periods[i]
+                long_period = sorted_periods[i+1]
                 short_wma_col = f'WMA{short_period}'
                 long_wma_col = f'WMA{long_period}'
-                
+
                 if short_wma_col in result.columns and long_wma_col in result.columns:
                     short_wma = result[short_wma_col]
                     long_wma = result[long_wma_col]
+
+                    # 标准金叉死叉
                     patterns_df[f'WMA_GOLDEN_CROSS_{short_period}_{long_period}'] = crossover(short_wma, long_wma)
                     patterns_df[f'WMA_DEATH_CROSS_{short_period}_{long_period}'] = crossunder(short_wma, long_wma)
+
+                    # 通用金叉死叉（兼容买点识别器）
+                    patterns_df['WMA_GOLDEN_CROSS'] = crossover(short_wma, long_wma)
+                    patterns_df['WMA_DEATH_CROSS'] = crossunder(short_wma, long_wma)
+
+                    # WMA排列形态
+                    patterns_df[f'WMA_BULLISH_ALIGNMENT_{short_period}_{long_period}'] = short_wma > long_wma
+                    patterns_df[f'WMA_BEARISH_ALIGNMENT_{short_period}_{long_period}'] = short_wma < long_wma
+
+                    # 强势金叉（金叉且价格在短期WMA上方）
+                    patterns_df[f'WMA_STRONG_GOLDEN_CROSS_{short_period}_{long_period}'] = (
+                        crossover(short_wma, long_wma) &
+                        (close_price > short_wma)
+                    )
+
+                    # 弱势死叉（死叉且价格在短期WMA下方）
+                    patterns_df[f'WMA_WEAK_DEATH_CROSS_{short_period}_{long_period}'] = (
+                        crossunder(short_wma, long_wma) &
+                        (close_price < short_wma)
+                    )
+
+        # 如果只有一个周期，创建基于价格的伪金叉死叉
+        elif len(self.periods) == 1:
+            period = self.periods[0]
+            wma_col = f'WMA{period}'
+            if wma_col in result.columns:
+                wma_line = result[wma_col]
+                # 价格上穿WMA作为金叉
+                patterns_df['WMA_GOLDEN_CROSS'] = crossover(close_price, wma_line)
+                # 价格下穿WMA作为死叉
+                patterns_df['WMA_DEATH_CROSS'] = crossunder(close_price, wma_line)
 
         return patterns_df
 

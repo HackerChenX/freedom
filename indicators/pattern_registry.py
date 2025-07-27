@@ -116,16 +116,35 @@ class PatternInfo:
 class PatternRegistry:
     """
     形态注册表，管理所有技术形态的唯一标识和相关信息
-    重构为普通类，支持依赖注入
+    重构为单例模式，支持依赖注入
     """
-    
+
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        """单例模式：确保只有一个PatternRegistry实例"""
+        if cls._instance is None:
+            cls._instance = super(PatternRegistry, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        """初始化形态注册表"""
-        self._patterns = {}
-        self._patterns_by_indicator = {}  # 按指标名称组织的形态
-        self._allow_override = False  # 默认不允许覆盖
-        self._registered_patterns = set()  # 用于跟踪已注册的形态ID
-        logger.info("形态注册表初始化完成")
+        """初始化形态注册表（只初始化一次）"""
+        if not PatternRegistry._initialized:
+            self._patterns = {}
+            self._patterns_by_indicator = {}  # 按指标名称组织的形态
+            self._allow_override = False  # 默认不允许覆盖
+            self._registered_patterns = set()  # 用于跟踪已注册的形态ID
+            PatternRegistry._initialized = True
+            logger.info("形态注册表初始化完成")
+        # 如果已经初始化过，不重复初始化但仍然记录日志
+        elif not hasattr(self, '_patterns'):
+            # 防止意外情况下实例存在但属性丢失
+            self._patterns = {}
+            self._patterns_by_indicator = {}
+            self._allow_override = False
+            self._registered_patterns = set()
+            logger.warning("形态注册表重新初始化属性")
     
     @classmethod
     def _normalize_pattern_id(cls, pattern_id: str, indicator_id: str) -> str:

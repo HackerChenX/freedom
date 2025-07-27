@@ -720,6 +720,14 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin):
         patterns_df['ADX_STRONG_FALLING'] = (adx > strong_trend) & (adx < adx.shift(1))
         patterns_df['ADX_WEAK_TREND'] = adx <= strong_trend
 
+        # 🔧 关键修复：添加ADX_TREND_STRENGTH形态计算
+        # ADX趋势强度：基于ADX值的强度分级
+        patterns_df['ADX_TREND_STRENGTH'] = (
+            (adx > 25) |  # 强趋势
+            (adx > 20) |  # 中等趋势
+            (adx > 15)    # 弱趋势
+        )
+
         # 2. PDI和MDI交叉形态
         patterns_df['ADX_BULLISH_CROSS'] = (pdi > pdi.shift(1)) & (pdi.shift(1) <= mdi.shift(1)) & (pdi > mdi)
         patterns_df['ADX_BEARISH_CROSS'] = (mdi > mdi.shift(1)) & (mdi.shift(1) <= pdi.shift(1)) & (mdi > pdi)
@@ -872,6 +880,17 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin):
             pattern_id="ADX_TREND_WEAKENING",
             display_name="ADX趋势减弱",
             description="ADX从上升转为下降，表示趋势即将减弱",
+            pattern_type="NEUTRAL",
+            default_strength="MEDIUM",
+            score_impact=0.0,
+            polarity="NEUTRAL"
+        )
+
+        # 🔧 关键修复：添加ADX_TREND_STRENGTH形态注册
+        self.register_pattern_to_registry(
+            pattern_id="ADX_TREND_STRENGTH",
+            display_name="ADX趋势强度",
+            description="ADX值表示当前趋势的强度，值越高趋势越强",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,

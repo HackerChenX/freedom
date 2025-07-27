@@ -41,6 +41,23 @@ class CciCci(BaseIndicator, PatternSignalMixin):
 
         # 应用用户参数
         self.set_parameters_Cci(**kwargs)
+
+        # 🔧 注册CCI形态到全局形态注册表 (关键修复)
+        try:
+            self.register_patterns_Cci()
+        except Exception as e:
+            # 如果形态注册失败，记录警告但不影响指标初始化
+            import logging
+            logging.warning(f"CCI形态注册失败: {e}")
+
+    def get_indicator_type_Indicator(self) -> str:
+        """
+        获取指标类型标识符
+
+        Returns:
+            str: 指标类型标识符
+        """
+        return "CCI"
     
     def _get_default_parameters_cci(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -354,7 +371,22 @@ class CciCci(BaseIndicator, PatternSignalMixin):
         # 6. 零轴下穿形态
         patterns_df['CCI_ZERO_CROSS_DOWN'] = (cci_values < 0) & (cci_values.shift(1) >= 0)
 
-        # 7. 背离形态检测
+        # 7. CCI金叉死叉形态 (基于零轴穿越和趋势确认)
+        # CCI金叉：零轴上穿且有上升趋势
+        cci_rising = cci_values > cci_values.shift(1)
+        patterns_df['CCI_GOLDEN_CROSS'] = (
+            patterns_df['CCI_ZERO_CROSS_UP'] |  # 零轴上穿
+            ((cci_values > -100) & (cci_values.shift(1) <= -100) & cci_rising)  # 从超卖区域上穿-100且上升
+        )
+
+        # CCI死叉：零轴下穿且有下降趋势
+        cci_falling = cci_values < cci_values.shift(1)
+        patterns_df['CCI_DEATH_CROSS'] = (
+            patterns_df['CCI_ZERO_CROSS_DOWN'] |  # 零轴下穿
+            ((cci_values < 100) & (cci_values.shift(1) >= 100) & cci_falling)  # 从超买区域下穿100且下降
+        )
+
+        # 8. 背离形态检测
         if len(data) >= 20:
             # 简化的背离检测：价格创新高但CCI未创新高
             price_high = data['high'].rolling(10).max()
@@ -613,6 +645,115 @@ class CciCci(BaseIndicator, PatternSignalMixin):
     def calculate_raw_score_cci(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """兼容性方法：计算原始评分"""
         return self.calculate_raw_score(data, **kwargs)
+
+    def register_patterns_Cci(self):
+        """
+        注册CCI指标的形态到全局形态注册表
+        """
+        # 注册CCI零轴穿越形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_ZERO_CROSS_UP",
+            display_name="CCI零轴上穿",
+            description="CCI从下方穿越零轴，表明趋势转为看涨",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=15.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_ZERO_CROSS_DOWN",
+            display_name="CCI零轴下穿",
+            description="CCI从上方穿越零轴，表明趋势转为看跌",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-15.0,
+            polarity="NEGATIVE"
+        )
+
+        # 🔧 注册CCI金叉死叉形态 (关键修复)
+        self.register_pattern_to_registry(
+            pattern_id="CCI_GOLDEN_CROSS",
+            display_name="CCI金叉",
+            description="CCI零轴上穿或从超卖区域回升，表明趋势转为看涨",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_DEATH_CROSS",
+            display_name="CCI死叉",
+            description="CCI零轴下穿或从超买区域回落，表明趋势转为看跌",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        # 注册CCI超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_OVERBOUGHT",
+            display_name="CCI超买",
+            description="CCI值高于100，表明市场超买",
+            pattern_type="BEARISH",
+            default_strength="MEDIUM",
+            score_impact=-10.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_OVERSOLD",
+            display_name="CCI超卖",
+            description="CCI值低于-100，表明市场超卖",
+            pattern_type="BULLISH",
+            default_strength="MEDIUM",
+            score_impact=10.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册CCI极端超买超卖形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_EXTREME_OVERBOUGHT",
+            display_name="CCI极度超买",
+            description="CCI值高于200，表明市场极度超买",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-20.0,
+            polarity="NEGATIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_EXTREME_OVERSOLD",
+            display_name="CCI极度超卖",
+            description="CCI值低于-200，表明市场极度超卖",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=20.0,
+            polarity="POSITIVE"
+        )
+
+        # 注册CCI背离形态
+        self.register_pattern_to_registry(
+            pattern_id="CCI_BULLISH_DIVERGENCE",
+            display_name="CCI底背离",
+            description="价格创新低但CCI未创新低，看涨背离信号",
+            pattern_type="BULLISH",
+            default_strength="STRONG",
+            score_impact=25.0,
+            polarity="POSITIVE"
+        )
+
+        self.register_pattern_to_registry(
+            pattern_id="CCI_BEARISH_DIVERGENCE",
+            display_name="CCI顶背离",
+            description="价格创新高但CCI未创新高，看跌背离信号",
+            pattern_type="BEARISH",
+            default_strength="STRONG",
+            score_impact=-25.0,
+            polarity="NEGATIVE"
+        )
 
 
 # 为了兼容指标注册表，创建别名

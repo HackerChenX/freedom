@@ -67,6 +67,20 @@ class EnhancedTestDataGenerator:
                 'cross_point': 40,
                 'ema_periods': [12, 26]
             },
+            'WMA_GOLDEN_CROSS': {
+                'trend_direction': 'up',
+                'trend_strength': 0.28,
+                'volatility': 0.022,
+                'cross_point': 42,  # 在第42个数据点发生金叉
+                'wma_periods': [5, 14]  # 短期和长期WMA周期
+            },
+            'WMA_DEATH_CROSS': {
+                'trend_direction': 'down',
+                'trend_strength': 0.28,
+                'volatility': 0.022,
+                'cross_point': 42,
+                'wma_periods': [5, 14]
+            },
             
             # 振荡器形态配置
             'RSI_OVERBOUGHT': {
@@ -112,6 +126,102 @@ class EnhancedTestDataGenerator:
                 'volatility': 0.02,
                 'cross_point': 42,
                 'macd_periods': [12, 26, 9]
+            },
+
+            # 🔧 CCI形态配置 (关键修复)
+            'CCI_GOLDEN_CROSS': {
+                'trend_direction': 'up',
+                'trend_strength': 0.3,
+                'volatility': 0.025,
+                'cross_point': 45,  # 在第45个数据点发生金叉
+                'cci_period': 20,
+                'target_cci': 50  # 目标CCI值
+            },
+            'CCI_DEATH_CROSS': {
+                'trend_direction': 'down',
+                'trend_strength': 0.3,
+                'volatility': 0.025,
+                'cross_point': 45,
+                'cci_period': 20,
+                'target_cci': -50
+            },
+
+            # 🔧 ADX形态配置 (关键修复)
+            'ADX_TREND_STRENGTH': {
+                'trend_direction': 'up',
+                'trend_strength': 0.35,
+                'volatility': 0.03,
+                'adx_period': 14,
+                'target_adx': 30,  # 目标ADX值（强趋势）
+                'trend_buildup_point': 35,  # 在第35个数据点开始建立趋势
+                'pdi_mdi_spread': 5  # +DI和-DI的差值
+            },
+            'ADX_WEAK_TREND': {
+                'trend_direction': 'sideways',
+                'trend_strength': 0.1,
+                'volatility': 0.02,
+                'adx_period': 14,
+                'target_adx': 15,  # 目标ADX值（弱趋势）
+                'trend_buildup_point': 40,
+                'pdi_mdi_spread': 2
+            },
+            'CCI_ZERO_CROSS_UP': {
+                'trend_direction': 'up',
+                'trend_strength': 0.2,
+                'volatility': 0.02,
+                'cross_point': 40,
+                'cci_period': 20,
+                'target_cci': 25
+            },
+            'CCI_ZERO_CROSS_DOWN': {
+                'trend_direction': 'down',
+                'trend_strength': 0.2,
+                'volatility': 0.02,
+                'cross_point': 40,
+                'cci_period': 20,
+                'target_cci': -25
+            },
+            'CCI_OVERBOUGHT': {
+                'trend_direction': 'up',
+                'trend_strength': 0.4,
+                'volatility': 0.03,
+                'target_cci': 150,  # CCI超买阈值
+                'cci_period': 20
+            },
+            'CCI_OVERSOLD': {
+                'trend_direction': 'down',
+                'trend_strength': 0.4,
+                'volatility': 0.03,
+                'target_cci': -150,  # CCI超卖阈值
+                'cci_period': 20
+            },
+            'CCI_EXTREME_OVERBOUGHT': {
+                'trend_direction': 'up',
+                'trend_strength': 0.5,
+                'volatility': 0.04,
+                'target_cci': 250,  # CCI极度超买阈值
+                'cci_period': 20
+            },
+            'CCI_EXTREME_OVERSOLD': {
+                'trend_direction': 'down',
+                'trend_strength': 0.5,
+                'volatility': 0.04,
+                'target_cci': -250,  # CCI极度超卖阈值
+                'cci_period': 20
+            },
+            'CCI_BULLISH_DIVERGENCE': {
+                'trend_direction': 'up_reversal',
+                'trend_strength': 0.25,
+                'volatility': 0.03,
+                'divergence_point': 40,
+                'cci_period': 20
+            },
+            'CCI_BEARISH_DIVERGENCE': {
+                'trend_direction': 'down_reversal',
+                'trend_strength': 0.25,
+                'volatility': 0.03,
+                'divergence_point': 40,
+                'cci_period': 20
             },
             
             # 波动性形态配置

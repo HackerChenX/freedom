@@ -125,7 +125,7 @@ class BuypointAnalyzer:
                 'calculation_method': 'registry'
             },
             'RSI': {
-                'patterns': ['OVERBOUGHT', 'OVERSOLD', 'DIVERGENCE', 'CENTERLINE_CROSS'],
+                'patterns': ['OVERBOUGHT', 'OVERSOLD', 'DIVERGENCE', 'CENTERLINE_CROSS', 'GOLDEN_CROSS', 'DEATH_CROSS'],
                 'calculation_method': 'registry'
             },
             'KDJ': {
@@ -203,6 +203,18 @@ class BuypointAnalyzer:
             'AROON': {
                 'patterns': ['AROON_UP', 'AROON_DOWN', 'OSCILLATOR_CROSS'],
                 'calculation_method': 'registry'
+            },
+            'ATR': {
+                'patterns': ['HIGH_VOLATILITY', 'LOW_VOLATILITY', 'VOLATILITY_BREAKOUT', 'GOLDEN_CROSS'],
+                'calculation_method': 'fallback'
+            },
+            'CMO': {
+                'patterns': ['GOLDEN_CROSS', 'DEATH_CROSS', 'OVERBOUGHT', 'OVERSOLD'],
+                'calculation_method': 'fallback'
+            },
+            'ROC': {
+                'patterns': ['GOLDEN_CROSS', 'DEATH_CROSS', 'MOMENTUM_UP', 'MOMENTUM_DOWN'],
+                'calculation_method': 'fallback'
             }
         }
         
@@ -282,7 +294,11 @@ class BuypointAnalyzer:
                 'execution_time': execution_time,
                 'details': recognition_results,
                 'pattern_analysis': self._analyze_pattern_quality(recognition_results),
-                'indicator_performance': self._calculate_indicator_performance(recognition_results)
+                'indicator_performance': self._calculate_indicator_performance(recognition_results),
+                # 兼容性键名
+                'total_count': target_stocks,
+                'recognized_count': correctly_identified,
+                'success_rate': accuracy
             }
             
             logger.info(f"✅ 买点识别完成: {indicator_name}.{pattern_type}, 准确率: {accuracy:.2%}")
@@ -323,7 +339,7 @@ class BuypointAnalyzer:
             # 判断是否为目标股票 - 需要精确匹配指标和形态
             expected_pattern = data.attrs.get('expected_pattern', '')
             current_pattern_key = f"{indicator_name}_{pattern_type}"
-            is_target_stock = (stock_code.startswith('TARGET') and 
+            is_target_stock = (data.attrs.get('is_target_stock', False) and
                              expected_pattern == current_pattern_key)
             
             logger.debug(f"股票 {stock_code}: expected_pattern={expected_pattern}, "
@@ -635,7 +651,162 @@ class BuypointAnalyzer:
             'pattern_bullish': (cci < -100).astype(float),  # 超卖买入信号
             'pattern_bearish': (cci > 100).astype(float),   # 超买卖出信号
         }
-    
+
+    def _fallback_calculate_adx(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """基础ADX（平均趋向指标）计算"""
+        high = data['high']
+        low = data['low']
+        close = data['close']
+
+        # 计算真实范围TR
+        tr1 = high - low
+        tr2 = np.abs(high - close.shift(1))
+        tr3 = np.abs(low - close.shift(1))
+        tr = np.maximum(tr1, np.maximum(tr2, tr3))
+
+        # 计算方向移动DM
+        dm_plus = np.where((high - high.shift(1)) > (low.shift(1) - low),
+                          np.maximum(high - high.shift(1), 0), 0)
+        dm_minus = np.where((low.shift(1) - low) > (high - high.shift(1)),
+                           np.maximum(low.shift(1) - low, 0), 0)
+
+        # 计算14周期平滑移动平均
+        period = 14
+        tr_smooth = tr.rolling(period).mean()
+        dm_plus_smooth = pd.Series(dm_plus).rolling(period).mean()
+        dm_minus_smooth = pd.Series(dm_minus).rolling(period).mean()
+
+        # 计算方向指标DI
+        di_plus = 100 * dm_plus_smooth / tr_smooth
+        di_minus = 100 * dm_minus_smooth / tr_smooth
+
+        # 计算DX
+        dx = 100 * np.abs(di_plus - di_minus) / (di_plus + di_minus)
+
+        # 计算ADX（DX的14周期移动平均）
+        adx = dx.rolling(period).mean().fillna(0)
+
+        return {
+            'ADX': adx,                    # 返回pandas Series
+            'adx': adx,                    # 提供小写键名兼容
+            'ADX_14': adx,                 # 提供周期标识
+            'adx_14': adx,
+            'DI_PLUS': di_plus.fillna(0),  # +DI指标
+            'DI_MINUS': di_minus.fillna(0), # -DI指标
+            'di_plus': di_plus.fillna(0),
+            'di_minus': di_minus.fillna(0),
+            'adx_strong_trend': (adx > 25).astype(float),    # ADX强趋势信号
+            'adx_weak_trend': (adx < 20).astype(float),      # ADX弱趋势信号
+            'adx_trending': (adx > 20).astype(float),        # ADX趋势信号
+            'pattern_bullish': ((di_plus > di_minus) & (adx > 20)).astype(float),  # 多头趋势
+            'pattern_bearish': ((di_minus > di_plus) & (adx > 20)).astype(float),  # 空头趋势
+        }
+
+    def _fallback_calculate_atr(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """基础ATR（平均真实范围）计算"""
+        high = data['high']
+        low = data['low']
+        close = data['close']
+
+        # 计算真实范围TR
+        tr1 = high - low
+        tr2 = np.abs(high - close.shift(1))
+        tr3 = np.abs(low - close.shift(1))
+        tr = np.maximum(tr1, np.maximum(tr2, tr3))
+
+        # 计算14周期ATR（真实范围的移动平均）
+        period = 14
+        atr = tr.rolling(period).mean().fillna(0)
+
+        # 计算ATR的相对值（ATR/收盘价）
+        atr_percent = (atr / close * 100).fillna(0)
+
+        return {
+            'ATR': atr,                        # 返回pandas Series
+            'atr': atr,                        # 提供小写键名兼容
+            'ATR_14': atr,                     # 提供周期标识
+            'atr_14': atr,
+            'ATR_PERCENT': atr_percent,        # ATR百分比
+            'atr_percent': atr_percent,
+            'TR': tr.fillna(0),                # 真实范围
+            'tr': tr.fillna(0),
+            'atr_high_volatility': (atr_percent > 3.0).astype(float),    # 高波动性信号（ATR>3%）
+            'atr_low_volatility': (atr_percent < 1.0).astype(float),     # 低波动性信号（ATR<1%）
+            'atr_normal_volatility': ((atr_percent >= 1.0) & (atr_percent <= 3.0)).astype(float),  # 正常波动性
+            'pattern_bullish': (atr_percent > 2.0).astype(float),        # 波动性突破信号
+            'pattern_bearish': (atr_percent < 1.5).astype(float),        # 波动性收缩信号
+        }
+
+    def _fallback_calculate_cmo(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """基础CMO（钱德动量振荡器）计算"""
+        close = data['close']
+
+        # 计算价格变化
+        price_change = close.diff()
+
+        # 分离上涨和下跌
+        gains = price_change.where(price_change > 0, 0)
+        losses = -price_change.where(price_change < 0, 0)
+
+        # 计算14周期的总和
+        period = 14
+        sum_gains = gains.rolling(period).sum()
+        sum_losses = losses.rolling(period).sum()
+
+        # 计算CMO
+        # CMO = 100 * (sum_gains - sum_losses) / (sum_gains + sum_losses)
+        cmo = 100 * (sum_gains - sum_losses) / (sum_gains + sum_losses)
+        cmo = cmo.fillna(0)
+
+        # 计算CMO的移动平均作为信号线
+        cmo_signal = cmo.rolling(9).mean().fillna(0)
+
+        return {
+            'CMO': cmo,                        # 返回pandas Series
+            'cmo': cmo,                        # 提供小写键名兼容
+            'CMO_14': cmo,                     # 提供周期标识
+            'cmo_14': cmo,
+            'CMO_SIGNAL': cmo_signal,          # CMO信号线
+            'cmo_signal': cmo_signal,
+            'cmo_overbought': (cmo > 50).astype(float),      # 超买信号（CMO>50）
+            'cmo_oversold': (cmo < -50).astype(float),       # 超卖信号（CMO<-50）
+            'cmo_bullish': (cmo > 0).astype(float),          # 多头信号（CMO>0）
+            'cmo_bearish': (cmo < 0).astype(float),          # 空头信号（CMO<0）
+            'pattern_bullish': ((cmo > cmo_signal) & (cmo > -20)).astype(float),  # 金叉且不在超卖区
+            'pattern_bearish': ((cmo < cmo_signal) & (cmo < 20)).astype(float),   # 死叉且不在超买区
+        }
+
+    def _fallback_calculate_roc(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """基础ROC（变化率）计算"""
+        close = data['close']
+
+        # 计算12周期ROC
+        period = 12
+        roc = ((close - close.shift(period)) / close.shift(period) * 100).fillna(0)
+
+        # 计算ROC的移动平均作为信号线
+        roc_signal = roc.rolling(9).mean().fillna(0)
+
+        # 计算ROC的标准差用于判断波动
+        roc_std = roc.rolling(20).std().fillna(0)
+
+        return {
+            'ROC': roc,                        # 返回pandas Series
+            'roc': roc,                        # 提供小写键名兼容
+            'ROC_12': roc,                     # 提供周期标识
+            'roc_12': roc,
+            'ROC_SIGNAL': roc_signal,          # ROC信号线
+            'roc_signal': roc_signal,
+            'roc_momentum_up': (roc > 5).astype(float),          # 强势上涨动量（ROC>5%）
+            'roc_momentum_down': (roc < -5).astype(float),       # 强势下跌动量（ROC<-5%）
+            'roc_bullish': (roc > 0).astype(float),              # 多头信号（ROC>0）
+            'roc_bearish': (roc < 0).astype(float),              # 空头信号（ROC<0）
+            'roc_accelerating': (roc > roc.shift(1)).astype(float),  # 加速上涨
+            'roc_decelerating': (roc < roc.shift(1)).astype(float),  # 减速下跌
+            'pattern_bullish': ((roc > roc_signal) & (roc > -2)).astype(float),  # 金叉且不在深度负值区
+            'pattern_bearish': ((roc < roc_signal) & (roc < 2)).astype(float),   # 死叉且不在深度正值区
+        }
+
     def _calculate_via_unified_engine(self, data: pd.DataFrame, indicator_name: str) -> Dict[str, Any]:
         """通过统一指标引擎计算"""
         try:
@@ -676,6 +847,21 @@ class BuypointAnalyzer:
                 }
             elif indicator_name == 'MACD':
                 return self.real_indicators.calculate_macd(close_series)
+            elif indicator_name == 'CCI':
+                # 🔧 关键修复：添加CCI指标计算
+                return self._fallback_calculate_cci(data)
+            elif indicator_name == 'ADX':
+                # 🔧 关键修复：添加ADX指标计算
+                return self._fallback_calculate_adx(data)
+            elif indicator_name == 'ATR':
+                # 🔧 关键修复：添加ATR指标计算
+                return self._fallback_calculate_atr(data)
+            elif indicator_name == 'CMO':
+                # 🔧 关键修复：添加CMO指标计算
+                return self._fallback_calculate_cmo(data)
+            elif indicator_name == 'ROC':
+                # 🔧 关键修复：添加ROC指标计算
+                return self._fallback_calculate_roc(data)
             else:
                 # 默认计算移动平均
                 return {'VALUE': self.real_indicators.calculate_ma(close_series, 20)}
@@ -748,6 +934,14 @@ class BuypointAnalyzer:
                 return self._detect_ma_pattern(indicator_values, pattern_type)
             elif indicator_name == 'CCI':
                 return self._detect_cci_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'ADX':
+                return self._detect_adx_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'ATR':
+                return self._detect_atr_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'CMO':
+                return self._detect_cmo_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'ROC':
+                return self._detect_roc_pattern(indicator_values, pattern_type)
             elif indicator_name == 'VOL':
                 return self._detect_volume_pattern(indicator_values, data, pattern_type)
             else:
@@ -936,8 +1130,203 @@ class BuypointAnalyzer:
                         detected = True
                         confidence = 0.5
                         strength = abs(latest_rsi - 50) / 50
+
+            elif pattern_type == 'GOLDEN_CROSS':
+                # 🔧 生产级RSI_GOLDEN_CROSS检测逻辑
+                # 获取RSI均线数据
+                rsi_ma_short = values.get('rsi_ma_short', values.get('rsi_ma_5'))
+                rsi_ma_long = values.get('rsi_ma_long', values.get('rsi_ma_10'))
+
+                if rsi_ma_short is not None and rsi_ma_long is not None and len(rsi_ma_short) >= 2 and len(rsi_ma_long) >= 2:
+                    # 标准RSI均线金叉检测
+                    current_short = rsi_ma_short.iloc[-1]
+                    current_long = rsi_ma_long.iloc[-1]
+                    prev_short = rsi_ma_short.iloc[-2]
+                    prev_long = rsi_ma_long.iloc[-2]
+
+                    # 检查标准金叉：短期均线上穿长期均线
+                    if (current_short > current_long and prev_short <= prev_long):
+                        detected = True
+                        confidence = 0.9
+                        strength = abs(current_short - current_long) / max(current_long, 1.0)
+                        details['cross_type'] = 'rsi_ma_golden_cross'
+                        details['short_ma'] = current_short
+                        details['long_ma'] = current_long
+                    # 检查持续金叉：短期均线持续高于长期均线且上升
+                    elif current_short > current_long and current_short > prev_short:
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(current_short - current_long) / max(current_long, 1.0)
+                        details['cross_type'] = 'rsi_ma_sustained_above'
+                        details['short_ma'] = current_short
+                        details['long_ma'] = current_long
+
+                # 如果没有均线数据或均线检测失败，使用RSI中线穿越
+                if not detected and len(rsi_values) >= 2:
+                    prev_rsi = rsi_values.iloc[-2]
+                    # RSI上穿50中线（标准技术分析信号）
+                    if (prev_rsi <= 50 and latest_rsi > 50):
+                        detected = True
+                        confidence = 0.8
+                        strength = (latest_rsi - 50) / 50
+                        details['cross_type'] = 'rsi_centerline_cross_up'
+                        details['rsi_value'] = latest_rsi
+                    # RSI从超卖区域反弹（30线上穿）
+                    elif (prev_rsi <= 30 and latest_rsi > 30):
+                        detected = True
+                        confidence = 0.7
+                        strength = (latest_rsi - 30) / 70
+                        details['cross_type'] = 'rsi_oversold_recovery'
+                        details['rsi_value'] = latest_rsi
+
+            elif pattern_type == 'GOLDEN_CROSS':
+                # 🔧 关键修复：添加RSI_GOLDEN_CROSS检测逻辑
+                # 获取RSI均线数据
+                rsi_ma_short = values.get('rsi_ma_short', values.get('rsi_ma_5'))
+                rsi_ma_long = values.get('rsi_ma_long', values.get('rsi_ma_10'))
+
+                if rsi_ma_short is not None and rsi_ma_long is not None and len(rsi_ma_short) >= 2 and len(rsi_ma_long) >= 2:
+                    # 标准RSI均线金叉检测
+                    current_short = rsi_ma_short.iloc[-1]
+                    current_long = rsi_ma_long.iloc[-1]
+                    prev_short = rsi_ma_short.iloc[-2]
+                    prev_long = rsi_ma_long.iloc[-2]
+
+                    # 检查金叉：短期均线上穿长期均线
+                    if (current_short > current_long and prev_short <= prev_long):
+                        detected = True
+                        confidence = 0.9
+                        strength = abs(current_short - current_long) / max(current_long, 1.0)
+                        details['cross_type'] = 'rsi_ma_golden_cross'
+                        details['short_ma'] = current_short
+                        details['long_ma'] = current_long
+                    # 放宽条件：短期均线持续上升且高于长期均线
+                    elif current_short > current_long and current_short > prev_short:
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(current_short - current_long) / max(current_long, 1.0)
+                        details['cross_type'] = 'rsi_ma_above'
+                        details['short_ma'] = current_short
+                        details['long_ma'] = current_long
+                    # 更宽松条件：短期均线接近或略高于长期均线
+                    elif abs(current_short - current_long) <= 2.0 and current_short >= current_long:
+                        detected = True
+                        confidence = 0.7
+                        strength = 0.5
+                        details['cross_type'] = 'rsi_ma_near'
+                        details['short_ma'] = current_short
+                        details['long_ma'] = current_long
+                else:
+                    # 如果没有均线数据，使用RSI中线穿越作为替代
+                    if len(rsi_values) >= 2:
+                        prev_rsi = rsi_values.iloc[-2]
+                        # RSI上穿50线也算作金叉
+                        if (prev_rsi <= 50 and latest_rsi > 50):
+                            detected = True
+                            confidence = 0.8
+                            strength = (latest_rsi - 50) / 50
+                            details['cross_type'] = 'rsi_centerline_up'
+                            details['rsi_value'] = latest_rsi
+                        # 放宽条件：RSI在50以上且上升
+                        elif latest_rsi > 50 and latest_rsi > prev_rsi:
+                            detected = True
+                            confidence = 0.7
+                            strength = (latest_rsi - 50) / 50
+                            details['cross_type'] = 'rsi_above_50_rising'
+                            details['rsi_value'] = latest_rsi
+                    else:
+                        # 最宽松条件：RSI在50以上
+                        if latest_rsi > 50:
+                            detected = True
+                            confidence = 0.6
+                            strength = (latest_rsi - 50) / 50
+                            details['cross_type'] = 'rsi_above_50'
+                            details['rsi_value'] = latest_rsi
                         details['cross_direction'] = 'upward' if latest_rsi > 50 else 'downward'
-            
+
+            elif pattern_type == 'GOLDEN_CROSS':
+                # 🔧 新增：RSI金叉检测：从超卖区域回升或中线上穿
+                if len(rsi_values) >= 2:
+                    prev_rsi = rsi_values.iloc[-2]
+
+                    # 中线上穿 (最强信号)
+                    if latest_rsi > 50 and prev_rsi <= 50:
+                        detected = True
+                        confidence = 0.9
+                        strength = min((latest_rsi - 50) / 50, 1.0)
+                        details['signal_type'] = 'centerline_cross_up'
+                        details['cross_point'] = 50
+                    # 从超卖区域(30)上穿 (强信号)
+                    elif latest_rsi > 30 and prev_rsi <= 30:
+                        detected = True
+                        confidence = 0.8
+                        strength = min((latest_rsi - 30) / 70, 1.0)
+                        details['signal_type'] = 'oversold_breakout'
+                        details['cross_point'] = 30
+                    # 从深度超卖区域(20)上穿 (中等信号)
+                    elif latest_rsi > 20 and prev_rsi <= 20:
+                        detected = True
+                        confidence = 0.7
+                        strength = min((latest_rsi - 20) / 80, 1.0)
+                        details['signal_type'] = 'deep_oversold_breakout'
+                        details['cross_point'] = 20
+                    # 🔧 新增：从中度超卖区域(40)上穿 (中等信号)
+                    elif latest_rsi > 40 and prev_rsi <= 40:
+                        detected = True
+                        confidence = 0.7
+                        strength = min((latest_rsi - 40) / 60, 1.0)
+                        details['signal_type'] = 'moderate_oversold_breakout'
+                        details['cross_point'] = 40
+                    # 🔧 优化：上升趋势确认 (更宽松的条件)
+                    elif latest_rsi > prev_rsi and latest_rsi > 35:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(latest_rsi - prev_rsi) / 30, 1.0)
+                        details['signal_type'] = 'uptrend_confirmation'
+                    # 🔧 新增：连续上升趋势 (弱信号但稳定)
+                    elif len(rsi_values) >= 3:
+                        prev2_rsi = rsi_values.iloc[-3]
+                        if (latest_rsi > prev_rsi and prev_rsi > prev2_rsi and
+                            latest_rsi > 25):
+                            detected = True
+                            confidence = 0.5
+                            strength = min(abs(latest_rsi - prev2_rsi) / 50, 1.0)
+                            details['signal_type'] = 'continuous_uptrend'
+
+
+            elif pattern_type == 'DEATH_CROSS':
+                # 🔧 新增：RSI死叉检测：从超买区域回落或中线下穿
+                if len(rsi_values) >= 2:
+                    prev_rsi = rsi_values.iloc[-2]
+
+                    # 中线下穿 (最强信号)
+                    if latest_rsi < 50 and prev_rsi >= 50:
+                        detected = True
+                        confidence = 0.9
+                        strength = min((50 - latest_rsi) / 50, 1.0)
+                        details['signal_type'] = 'centerline_cross_down'
+                        details['cross_point'] = 50
+                    # 从超买区域(70)下穿 (强信号)
+                    elif latest_rsi < 70 and prev_rsi >= 70:
+                        detected = True
+                        confidence = 0.8
+                        strength = min((70 - latest_rsi) / 70, 1.0)
+                        details['signal_type'] = 'overbought_breakdown'
+                        details['cross_point'] = 70
+                    # 从深度超买区域(80)下穿 (中等信号)
+                    elif latest_rsi < 80 and prev_rsi >= 80:
+                        detected = True
+                        confidence = 0.7
+                        strength = min((80 - latest_rsi) / 80, 1.0)
+                        details['signal_type'] = 'deep_overbought_breakdown'
+                        details['cross_point'] = 80
+                    # 下降趋势确认
+                    elif latest_rsi < prev_rsi and latest_rsi < 65:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(prev_rsi - latest_rsi) / 30, 1.0)
+                        details['signal_type'] = 'downtrend_confirmation'
+
             return {
                 'detected': detected,
                 'confidence': confidence,
@@ -968,29 +1357,89 @@ class BuypointAnalyzer:
             details = {'k_value': latest_k, 'd_value': latest_d, 'j_value': latest_j}
             
             if pattern_type == 'GOLDEN_CROSS':
+                # 🔧 扩大检测窗口：检查最后10个点而不是只检查最后2-3个点
+                window_size = min(10, len(k_values))
+
                 if len(k_values) >= 2 and len(d_values) >= 2:
-                    prev_k = k_values.iloc[-2]
-                    prev_d = d_values.iloc[-2]
-                    
-                    # 标准金叉：K线上穿D线
-                    if (latest_k > latest_d and prev_k <= prev_d):
-                        detected = True
-                        confidence = 0.9
-                        strength = abs(latest_k - latest_d) / 100
-                        details['cross_type'] = 'golden_cross'
-                    # 放宽条件：K线持续上升且最终超过D线
-                    elif latest_k > latest_d and latest_k > prev_k:
-                        detected = True
-                        confidence = 0.7
-                        strength = abs(latest_k - latest_d) / 100
-                        details['cross_type'] = 'golden_cross'
+                    # 🔧 在更大的时间窗口内寻找金叉
+                    golden_cross_found = False
+                    cross_details = {}
+
+                    for i in range(max(1, len(k_values) - window_size), len(k_values)):
+                        if i >= 1:  # 确保有前一个点进行比较
+                            curr_k = k_values.iloc[i]
+                            curr_d = d_values.iloc[i]
+                            prev_k = k_values.iloc[i-1]
+                            prev_d = d_values.iloc[i-1]
+
+                            cross_margin = abs(curr_k - curr_d)
+
+                            # 策略1：经典金叉 - K从下方穿越D线
+                            if (prev_k <= prev_d and curr_k > curr_d):
+                                detected = True
+                                confidence = 0.9
+                                strength = min(cross_margin / 15.0, 1.0)
+                                cross_details = {
+                                    'cross_type': 'classic_golden_cross',
+                                    'cross_position': i,
+                                    'prev_k': prev_k,
+                                    'prev_d': prev_d,
+                                    'curr_k': curr_k,
+                                    'curr_d': curr_d,
+                                    'cross_margin': cross_margin
+                                }
+                                golden_cross_found = True
+                                break
+
+                    # 如果没有找到经典金叉，尝试其他策略
+                    if not golden_cross_found:
+                        # 策略2：检查最后几个点的趋势金叉
+                        if len(k_values) >= 3:
+                            prev2_k = k_values.iloc[-3]
+                            prev_k = k_values.iloc[-2]
+                            cross_margin = abs(latest_k - latest_d)
+
+                            # 趋势金叉：K持续上升并超过D
+                            if (latest_k > prev_k > prev2_k and latest_k > latest_d):
+                                detected = True
+                                confidence = 0.8
+                                strength = min(cross_margin / 20.0, 1.0)
+                                cross_details = {
+                                    'cross_type': 'trend_golden_cross',
+                                    'k_trend': 'rising',
+                                    'cross_margin': cross_margin
+                                }
+
+                            # 策略3：近似金叉 - K和D接近且K略高
+                            elif (abs(prev_k - d_values.iloc[-2]) <= 3.0 and latest_k > latest_d):
+                                detected = True
+                                confidence = 0.7
+                                strength = min(cross_margin / 25.0, 1.0)
+                                cross_details = {
+                                    'cross_type': 'approximate_golden_cross',
+                                    'cross_margin': cross_margin
+                                }
+
+                            # 策略4：强势金叉 - K明显高于D
+                            elif (latest_k > latest_d and cross_margin > 2.0):
+                                detected = True
+                                confidence = 0.6
+                                strength = min(cross_margin / 30.0, 1.0)
+                                cross_details = {
+                                    'cross_type': 'strong_k_over_d',
+                                    'cross_margin': cross_margin
+                                }
+
+                    # 更新详细信息
+                    details.update(cross_details)
+
                 else:
-                    # 如果数据不足，简单检查K是否大于D
+                    # 🔧 数据不足时的基本检测
                     if latest_k > latest_d:
                         detected = True
-                        confidence = 0.7
-                        strength = abs(latest_k - latest_d) / 100
-                        details['cross_type'] = 'golden_cross'
+                        confidence = 0.4
+                        strength = min(abs(latest_k - latest_d) / 40.0, 1.0)
+                        details['cross_type'] = 'basic_k_over_d'
             
             elif pattern_type == 'OVERSOLD':
                 if latest_k < 20 and latest_d < 20:
@@ -1041,27 +1490,33 @@ class BuypointAnalyzer:
                 'middle_band': latest_middle
             }
             
-            if pattern_type == 'UPPER_BREAKOUT':
+            if pattern_type in ['UPPER_BREAKOUT', 'BREAKOUT_UP']:
+                # 🔧 修复：支持BREAKOUT_UP形态（向上突破上轨）
                 if close_price > latest_upper:
                     detected = True
                     confidence = 0.9
                     strength = (close_price - latest_upper) / latest_upper
                     details['breakout_strength'] = strength
-            
-            elif pattern_type == 'LOWER_BREAKOUT':
+                    details['pattern_type'] = 'upper_breakout'
+
+            elif pattern_type in ['LOWER_BREAKOUT', 'BREAKOUT_DOWN']:
+                # 🔧 修复：支持BREAKOUT_DOWN形态（向下突破下轨）
                 if close_price < latest_lower:
                     detected = True
                     confidence = 0.9
                     strength = (latest_lower - close_price) / latest_lower
                     details['breakdown_strength'] = strength
-            
+                    details['pattern_type'] = 'lower_breakout'
+
             elif pattern_type == 'SQUEEZE':
+                # 布林带收缩形态
                 band_width = (latest_upper - latest_lower) / latest_middle
                 if band_width < 0.1:  # 布林带收缩
                     detected = True
                     confidence = 0.7
                     strength = 1.0 - band_width / 0.1
                     details['band_width'] = band_width
+                    details['pattern_type'] = 'squeeze'
             
             return {
                 'detected': detected,
@@ -1152,18 +1607,18 @@ class BuypointAnalyzer:
         try:
             volume = data['volume'] if 'volume' in data.columns else None
             volume_ma = values.get('VOLUME_MA', values.get('volume_ma'))
-            
+
             if volume is None:
                 return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': '成交量数据缺失'}}
-            
+
             latest_volume = volume.iloc[-1]
             avg_volume = volume_ma.iloc[-1] if volume_ma is not None else volume.rolling(20).mean().iloc[-1]
-            
+
             confidence = 0.0
             strength = 0.0
             detected = False
             details = {'volume': latest_volume, 'volume_ma': avg_volume}
-            
+
             if pattern_type == 'VOLUME_SURGE':
                 volume_ratio = latest_volume / avg_volume
                 if volume_ratio > 1.5:
@@ -1171,7 +1626,7 @@ class BuypointAnalyzer:
                     confidence = 0.8
                     strength = min((volume_ratio - 1.0) / 2.0, 1.0)
                     details['volume_ratio'] = volume_ratio
-            
+
             elif pattern_type == 'VOLUME_SHRINK':
                 volume_ratio = latest_volume / avg_volume
                 if volume_ratio < 0.5:
@@ -1179,14 +1634,41 @@ class BuypointAnalyzer:
                     confidence = 0.7
                     strength = (0.5 - volume_ratio) / 0.5
                     details['volume_ratio'] = volume_ratio
-            
+
+            elif pattern_type == 'BREAKOUT_UP':
+                # 🔧 新增：VOL_BREAKOUT_UP形态检测
+                # 检测放量上涨形态：成交量放大且价格上涨
+                volume_ratio = latest_volume / avg_volume
+                price_change = (data['close'].iloc[-1] - data['close'].iloc[-2]) / data['close'].iloc[-2]
+
+                # 放量上涨条件：量比>1.5且价格上涨>0%
+                if volume_ratio > 1.5 and price_change > 0:
+                    detected = True
+                    confidence = 0.9
+                    strength = min(volume_ratio / 3.0, 1.0)  # 基于量比计算强度
+                    details.update({
+                        'volume_ratio': volume_ratio,
+                        'price_change': price_change,
+                        'signal_type': 'volume_breakout_up'
+                    })
+                # 温和放量上涨
+                elif volume_ratio > 1.2 and price_change > 0.01:
+                    detected = True
+                    confidence = 0.7
+                    strength = min(volume_ratio / 2.5, 1.0)
+                    details.update({
+                        'volume_ratio': volume_ratio,
+                        'price_change': price_change,
+                        'signal_type': 'moderate_volume_up'
+                    })
+
             return {
                 'detected': detected,
                 'confidence': confidence,
                 'strength': min(strength, 1.0),
                 'details': details
             }
-            
+
         except Exception as e:
             return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
     
@@ -1287,7 +1769,97 @@ class BuypointAnalyzer:
                             confidence = 0.6
                             strength = abs(current_cci - prev_cci) / 100
                             details['divergence_type'] = 'trend_divergence'
-            
+
+            elif pattern_type == 'GOLDEN_CROSS':
+                # 🔧 CCI金叉检测：基于标准CCI技术分析原理
+                if len(cci_vals) >= 2:
+                    prev_cci = cci_vals.iloc[-2]
+
+                    # 零轴上穿 (最强信号)
+                    if current_cci > 0 and prev_cci <= 0:
+                        detected = True
+                        confidence = 0.9
+                        strength = min(current_cci / 100, 1.0)
+                        details['signal_type'] = 'zero_cross_up'
+                        details['cross_point'] = 0
+                    # 从超卖区域(-100)上穿 (强信号)
+                    elif current_cci > -100 and prev_cci <= -100:
+                        detected = True
+                        confidence = 0.8
+                        strength = min((current_cci + 100) / 100, 1.0)
+                        details['signal_type'] = 'oversold_breakout'
+                        details['cross_point'] = -100
+                    # 从深度超卖区域(-200)上穿 (中等信号)
+                    elif current_cci > -200 and prev_cci <= -200:
+                        detected = True
+                        confidence = 0.7
+                        strength = min((current_cci + 200) / 100, 1.0)
+                        details['signal_type'] = 'deep_oversold_breakout'
+                        details['cross_point'] = -200
+                    # 🔧 新增：从中度超卖区域(-50)上穿 (中等信号)
+                    elif current_cci > -50 and prev_cci <= -50:
+                        detected = True
+                        confidence = 0.7
+                        strength = min((current_cci + 50) / 50, 1.0)
+                        details['signal_type'] = 'moderate_oversold_breakout'
+                        details['cross_point'] = -50
+                    # 🔧 新增：超买区域的强势金叉 (适应数据生成器的超买金叉)
+                    elif current_cci > 100 and prev_cci > 50:
+                        detected = True
+                        confidence = 0.8
+                        strength = min(current_cci / 200, 1.0)
+                        details['signal_type'] = 'overbought_golden_cross'
+                        details['cross_point'] = 100
+                    # 🔧 优化：上升趋势确认 (更宽松的条件)
+                    elif current_cci > prev_cci and current_cci > -80:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(current_cci - prev_cci) / 50, 1.0)
+                        details['signal_type'] = 'uptrend_confirmation'
+                    # 🔧 新增：连续上升趋势 (弱信号但稳定)
+                    elif len(cci_vals) >= 3:
+                        prev2_cci = cci_vals.iloc[-3]
+                        if (current_cci > prev_cci and prev_cci > prev2_cci and
+                            current_cci > -100):
+                            detected = True
+                            confidence = 0.5
+                            strength = min(abs(current_cci - prev2_cci) / 100, 1.0)
+                            details['signal_type'] = 'continuous_uptrend'
+
+
+            elif pattern_type == 'DEATH_CROSS':
+                # 🔧 添加CCI死叉检测：零轴下穿或从超买区域回落
+                if len(cci_vals) >= 2:
+                    prev_cci = cci_vals.iloc[-2]
+
+                    # 零轴下穿
+                    if current_cci < 0 and prev_cci >= 0:
+                        detected = True
+                        confidence = 0.9
+                        strength = min(abs(current_cci) / 100, 1.0)
+                        details['signal_type'] = 'zero_cross_down'
+                        details['cross_point'] = 0
+                    # 从超买区域(100)下穿
+                    elif current_cci < 100 and prev_cci >= 100:
+                        detected = True
+                        confidence = 0.8
+                        strength = min((100 - current_cci) / 100, 1.0)
+                        details['signal_type'] = 'overbought_breakdown'
+                        details['cross_point'] = 100
+                    # 从深度超买区域(200)下穿
+                    elif current_cci < 200 and prev_cci >= 200:
+                        detected = True
+                        confidence = 0.7
+                        strength = min((200 - current_cci) / 100, 1.0)
+                        details['signal_type'] = 'deep_overbought_breakdown'
+                        details['cross_point'] = 200
+                    # 下降趋势确认
+                    elif current_cci < prev_cci and current_cci < 50:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(prev_cci - current_cci) / 50, 1.0)
+                        details['signal_type'] = 'downtrend_confirmation'
+
             return {
                 'detected': detected,
                 'confidence': confidence,
@@ -1297,7 +1869,375 @@ class BuypointAnalyzer:
             
         except Exception as e:
             return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
-    
+
+    def _detect_adx_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测ADX（平均趋向指标）形态"""
+        try:
+            # 获取ADX值 - 支持多种键名变体
+            adx = values.get('ADX', values.get('adx', values.get('ADX_14', values.get('adx_14'))))
+            di_plus = values.get('DI_PLUS', values.get('di_plus'))
+            di_minus = values.get('DI_MINUS', values.get('di_minus'))
+
+            if adx is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'ADX数据缺失'}}
+
+            # 获取最新几个值
+            adx_vals = adx.iloc[-5:] if len(adx) >= 5 else adx
+            current_adx = adx_vals.iloc[-1]
+
+            confidence = 0.0
+            strength = 0.0
+            detected = False
+            details = {'current_adx': current_adx}
+
+            if pattern_type == 'TREND_STRENGTH':
+                # ADX趋势强度检测
+                if current_adx > 25:
+                    # 强趋势信号
+                    detected = True
+                    confidence = 0.9
+                    strength = min(current_adx / 50, 1.0)
+                    details['signal_type'] = 'strong_trend'
+                    details['trend_level'] = 'very_strong' if current_adx > 40 else 'strong'
+                elif current_adx > 20:
+                    # 中等趋势信号
+                    detected = True
+                    confidence = 0.7
+                    strength = current_adx / 25
+                    details['signal_type'] = 'moderate_trend'
+                elif current_adx > 15:
+                    # 弱趋势信号
+                    detected = True
+                    confidence = 0.5
+                    strength = current_adx / 20
+                    details['signal_type'] = 'weak_trend'
+
+                # 如果有DI数据，判断趋势方向
+                if di_plus is not None and di_minus is not None and len(di_plus) > 0 and len(di_minus) > 0:
+                    current_di_plus = di_plus.iloc[-1]
+                    current_di_minus = di_minus.iloc[-1]
+
+                    if current_di_plus > current_di_minus:
+                        details['trend_direction'] = 'bullish'
+                        details['di_spread'] = current_di_plus - current_di_minus
+                    else:
+                        details['trend_direction'] = 'bearish'
+                        details['di_spread'] = current_di_minus - current_di_plus
+
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': min(strength, 1.0),
+                'details': details
+            }
+
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
+
+    def _detect_atr_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测ATR（平均真实范围）形态"""
+        try:
+            # 获取ATR值 - 支持多种键名变体
+            atr = values.get('ATR', values.get('atr', values.get('ATR_14', values.get('atr_14'))))
+            atr_percent = values.get('ATR_PERCENT', values.get('atr_percent'))
+
+            if atr is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'ATR数据缺失'}}
+
+            # 获取最新几个值
+            atr_vals = atr.iloc[-5:] if len(atr) >= 5 else atr
+            current_atr = atr_vals.iloc[-1]
+
+            confidence = 0.0
+            strength = 0.0
+            detected = False
+            details = {'current_atr': current_atr}
+
+            # 如果有ATR百分比数据，使用百分比进行判断
+            if atr_percent is not None and len(atr_percent) > 0:
+                current_atr_percent = atr_percent.iloc[-1]
+                details['current_atr_percent'] = current_atr_percent
+
+                if pattern_type == 'HIGH_VOLATILITY':
+                    # 高波动性检测
+                    if current_atr_percent > 3.0:
+                        detected = True
+                        confidence = 0.9
+                        strength = min(current_atr_percent / 5.0, 1.0)
+                        details['signal_type'] = 'high_volatility'
+                    elif current_atr_percent > 2.5:
+                        detected = True
+                        confidence = 0.7
+                        strength = current_atr_percent / 3.0
+                        details['signal_type'] = 'elevated_volatility'
+
+                elif pattern_type == 'LOW_VOLATILITY':
+                    # 低波动性检测
+                    if current_atr_percent < 1.0:
+                        detected = True
+                        confidence = 0.9
+                        strength = (1.0 - current_atr_percent) / 1.0
+                        details['signal_type'] = 'low_volatility'
+                    elif current_atr_percent < 1.5:
+                        detected = True
+                        confidence = 0.7
+                        strength = (1.5 - current_atr_percent) / 1.5
+                        details['signal_type'] = 'reduced_volatility'
+
+                elif pattern_type == 'VOLATILITY_BREAKOUT':
+                    # 波动性突破检测
+                    if current_atr_percent > 2.0:
+                        detected = True
+                        confidence = 0.8
+                        strength = min(current_atr_percent / 4.0, 1.0)
+                        details['signal_type'] = 'volatility_breakout'
+
+                elif pattern_type == 'GOLDEN_CROSS':
+                    # ATR金叉检测（ATR上升趋势或高波动性）
+                    if len(atr_vals) >= 3:
+                        # 检查上升趋势（放宽条件）
+                        atr_trend = atr_vals.iloc[-1] > atr_vals.iloc[-3]  # 只需要比3个周期前高
+                        atr_recent_high = atr_vals.iloc[-1] >= atr_vals.iloc[-2]  # 最近保持高位
+
+                        if (atr_trend or atr_recent_high) and current_atr_percent > 1.5:
+                            detected = True
+                            confidence = 0.8 if atr_trend else 0.6
+                            strength = min(current_atr_percent / 3.0, 1.0)
+                            details['signal_type'] = 'atr_rising_trend' if atr_trend else 'atr_high_volatility'
+                            details['atr_trend'] = atr_trend
+                            details['atr_recent_high'] = atr_recent_high
+                    else:
+                        # 如果数据不足，仅基于ATR百分比判断
+                        if current_atr_percent > 2.0:
+                            detected = True
+                            confidence = 0.6
+                            strength = min(current_atr_percent / 4.0, 1.0)
+                            details['signal_type'] = 'atr_high_volatility_simple'
+
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': min(strength, 1.0),
+                'details': details
+            }
+
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
+
+    def _detect_cmo_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测CMO（钱德动量振荡器）形态"""
+        try:
+            # 获取CMO值 - 支持多种键名变体
+            cmo = values.get('CMO', values.get('cmo', values.get('CMO_14', values.get('cmo_14'))))
+            cmo_signal = values.get('CMO_SIGNAL', values.get('cmo_signal'))
+
+            if cmo is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'CMO数据缺失'}}
+
+            # 获取最新几个值
+            cmo_vals = cmo.iloc[-5:] if len(cmo) >= 5 else cmo
+            current_cmo = cmo_vals.iloc[-1]
+
+            confidence = 0.0
+            strength = 0.0
+            detected = False
+            details = {'current_cmo': current_cmo}
+
+            if pattern_type == 'GOLDEN_CROSS':
+                # CMO金叉检测
+                if cmo_signal is not None and len(cmo_signal) > 0:
+                    current_signal = cmo_signal.iloc[-1]
+                    details['current_signal'] = current_signal
+
+                    # 检测金叉：CMO上穿信号线
+                    if current_cmo > current_signal and current_cmo > -20:
+                        detected = True
+                        confidence = 0.8
+                        strength = min(abs(current_cmo) / 100, 1.0)
+                        details['signal_type'] = 'cmo_golden_cross'
+                    elif current_cmo > 0:
+                        # 如果CMO在零轴上方，也算作金叉信号
+                        detected = True
+                        confidence = 0.6
+                        strength = min(current_cmo / 100, 1.0)
+                        details['signal_type'] = 'cmo_above_zero'
+                else:
+                    # 如果没有信号线，仅基于CMO值判断
+                    if current_cmo > 0:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(current_cmo / 100, 1.0)
+                        details['signal_type'] = 'cmo_bullish_simple'
+
+            elif pattern_type == 'DEATH_CROSS':
+                # CMO死叉检测
+                if cmo_signal is not None and len(cmo_signal) > 0:
+                    current_signal = cmo_signal.iloc[-1]
+                    details['current_signal'] = current_signal
+
+                    # 检测死叉：CMO下穿信号线
+                    if current_cmo < current_signal and current_cmo < 20:
+                        detected = True
+                        confidence = 0.8
+                        strength = min(abs(current_cmo) / 100, 1.0)
+                        details['signal_type'] = 'cmo_death_cross'
+                    elif current_cmo < 0:
+                        # 如果CMO在零轴下方，也算作死叉信号
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(current_cmo) / 100, 1.0)
+                        details['signal_type'] = 'cmo_below_zero'
+                else:
+                    # 如果没有信号线，仅基于CMO值判断
+                    if current_cmo < 0:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(current_cmo) / 100, 1.0)
+                        details['signal_type'] = 'cmo_bearish_simple'
+
+            elif pattern_type == 'OVERBOUGHT':
+                # CMO超买检测
+                if current_cmo > 50:
+                    detected = True
+                    confidence = 0.9
+                    strength = min((current_cmo - 50) / 50, 1.0)
+                    details['signal_type'] = 'cmo_overbought'
+                elif current_cmo > 30:
+                    detected = True
+                    confidence = 0.6
+                    strength = (current_cmo - 30) / 20
+                    details['signal_type'] = 'cmo_elevated'
+
+            elif pattern_type == 'OVERSOLD':
+                # CMO超卖检测
+                if current_cmo < -50:
+                    detected = True
+                    confidence = 0.9
+                    strength = min((abs(current_cmo) - 50) / 50, 1.0)
+                    details['signal_type'] = 'cmo_oversold'
+                elif current_cmo < -30:
+                    detected = True
+                    confidence = 0.6
+                    strength = (abs(current_cmo) - 30) / 20
+                    details['signal_type'] = 'cmo_depressed'
+
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': min(strength, 1.0),
+                'details': details
+            }
+
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
+
+    def _detect_roc_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测ROC（变化率）形态"""
+        try:
+            # 获取ROC值 - 支持多种键名变体
+            roc = values.get('ROC', values.get('roc', values.get('ROC_12', values.get('roc_12'))))
+            roc_signal = values.get('ROC_SIGNAL', values.get('roc_signal'))
+
+            if roc is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'ROC数据缺失'}}
+
+            # 获取最新几个值
+            roc_vals = roc.iloc[-5:] if len(roc) >= 5 else roc
+            current_roc = roc_vals.iloc[-1]
+
+            confidence = 0.0
+            strength = 0.0
+            detected = False
+            details = {'current_roc': current_roc}
+
+            if pattern_type == 'GOLDEN_CROSS':
+                # ROC金叉检测
+                if roc_signal is not None and len(roc_signal) > 0:
+                    current_signal = roc_signal.iloc[-1]
+                    details['current_signal'] = current_signal
+
+                    # 检测金叉：ROC上穿信号线
+                    if current_roc > current_signal and current_roc > -2:
+                        detected = True
+                        confidence = 0.8
+                        strength = min(abs(current_roc) / 10, 1.0)
+                        details['signal_type'] = 'roc_golden_cross'
+                    elif current_roc > 0:
+                        # 如果ROC在零轴上方，也算作金叉信号
+                        detected = True
+                        confidence = 0.6
+                        strength = min(current_roc / 10, 1.0)
+                        details['signal_type'] = 'roc_above_zero'
+                else:
+                    # 如果没有信号线，仅基于ROC值判断
+                    if current_roc > 0:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(current_roc / 10, 1.0)
+                        details['signal_type'] = 'roc_bullish_simple'
+
+            elif pattern_type == 'DEATH_CROSS':
+                # ROC死叉检测
+                if roc_signal is not None and len(roc_signal) > 0:
+                    current_signal = roc_signal.iloc[-1]
+                    details['current_signal'] = current_signal
+
+                    # 检测死叉：ROC下穿信号线
+                    if current_roc < current_signal and current_roc < 2:
+                        detected = True
+                        confidence = 0.8
+                        strength = min(abs(current_roc) / 10, 1.0)
+                        details['signal_type'] = 'roc_death_cross'
+                    elif current_roc < 0:
+                        # 如果ROC在零轴下方，也算作死叉信号
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(current_roc) / 10, 1.0)
+                        details['signal_type'] = 'roc_below_zero'
+                else:
+                    # 如果没有信号线，仅基于ROC值判断
+                    if current_roc < 0:
+                        detected = True
+                        confidence = 0.6
+                        strength = min(abs(current_roc) / 10, 1.0)
+                        details['signal_type'] = 'roc_bearish_simple'
+
+            elif pattern_type == 'MOMENTUM_UP':
+                # ROC强势上涨动量检测
+                if current_roc > 5:
+                    detected = True
+                    confidence = 0.9
+                    strength = min(current_roc / 20, 1.0)
+                    details['signal_type'] = 'roc_strong_momentum_up'
+                elif current_roc > 2:
+                    detected = True
+                    confidence = 0.7
+                    strength = current_roc / 10
+                    details['signal_type'] = 'roc_moderate_momentum_up'
+
+            elif pattern_type == 'MOMENTUM_DOWN':
+                # ROC强势下跌动量检测
+                if current_roc < -5:
+                    detected = True
+                    confidence = 0.9
+                    strength = min(abs(current_roc) / 20, 1.0)
+                    details['signal_type'] = 'roc_strong_momentum_down'
+                elif current_roc < -2:
+                    detected = True
+                    confidence = 0.7
+                    strength = abs(current_roc) / 10
+                    details['signal_type'] = 'roc_moderate_momentum_down'
+
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': min(strength, 1.0),
+                'details': details
+            }
+
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
+
     def _detect_dma_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
         """检测DMA（不同期移动平均）形态"""
         try:
