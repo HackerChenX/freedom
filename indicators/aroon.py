@@ -97,6 +97,14 @@ class Aroon(BaseIndicator, PatternSignalMixin):
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """公共接口：计算原始评分"""
         return self.calculate_raw_score_Aroon(data, **kwargs)
+    
+    def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共接口：生成信号（兼容测试）"""
+        return self.generate_signals_aroon(data, **kwargs)
+    
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共接口：获取信号"""
+        return self.generate_signals_aroon(data, **kwargs)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """公共接口：获取信号"""
@@ -255,7 +263,7 @@ class Aroon(BaseIndicator, PatternSignalMixin):
 
         return df
 
-    def generate_signals_aroon(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def generate_signals_aroon(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """公共接口：生成AROON信号"""
         try:
             result = self.calculate_Aroon(data, **kwargs)
@@ -263,20 +271,29 @@ class Aroon(BaseIndicator, PatternSignalMixin):
             aroon_up = result['aroon_up']
             aroon_down = result['aroon_down']
             
-            # 基于AROON交叉生成信号
-            buy_signal = (aroon_up > 70) & (aroon_up > aroon_down) & (aroon_up > aroon_up.shift(1))
-            sell_signal = (aroon_down > 70) & (aroon_down > aroon_up) & (aroon_down > aroon_down.shift(1))
+            # 创建信号DataFrame
+            signals = pd.DataFrame(index=data.index)
             
-            return {
-                'aroon_buy_signal': buy_signal.fillna(False),
-                'aroon_sell_signal': sell_signal.fillna(False)
-            }
+            # 基于AROON交叉生成信号
+            signals['buy_signal'] = (aroon_up > 70) & (aroon_up > aroon_down) & (aroon_up > aroon_up.shift(1))
+            signals['sell_signal'] = (aroon_down > 70) & (aroon_down > aroon_up) & (aroon_down > aroon_down.shift(1))
+            
+            # 添加测试期望的信号列
+            signals['strong_uptrend'] = aroon_up > 80
+            signals['strong_downtrend'] = aroon_down > 80
+            
+            # 填充NaN值
+            signals = signals.fillna(False)
+            
+            return signals
         except (ValueError, KeyError, IndexError) as e:
             logger.warning(f"AROON信号生成失败: {e}, 返回空信号")
-            return {
-                'aroon_buy_signal': pd.Series([False] * len(data), index=data.index),
-                'aroon_sell_signal': pd.Series([False] * len(data), index=data.index)
-            }
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['strong_uptrend'] = False
+            signals['strong_downtrend'] = False
+            return signals
 
     def calculate_raw_score_Aroon(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -404,6 +421,16 @@ class Aroon(BaseIndicator, PatternSignalMixin):
         patterns['AROON_STRONG_UP'] = aroon_up > 80
         patterns['AROON_STRONG_DOWN'] = aroon_down > 80
         patterns['AROON_WEAK_TREND'] = (aroon_up < 30) & (aroon_down < 30)
+        
+        # 测试期望的震荡器形态
+        patterns['AROON_OSC_CROSS_ABOVE_ZERO'] = (aroon_osc > 0) & (aroon_osc.shift(1) <= 0)
+        patterns['AROON_OSC_CROSS_BELOW_ZERO'] = (aroon_osc < 0) & (aroon_osc.shift(1) >= 0)
+        patterns['AROON_OSC_EXTREME_BULLISH'] = aroon_osc > 50
+        patterns['AROON_OSC_EXTREME_BEARISH'] = aroon_osc < -50
+        
+        # 测试期望的强趋势形态
+        patterns['AROON_STRONG_UPTREND'] = aroon_up > 80
+        patterns['AROON_STRONG_DOWNTREND'] = aroon_down > 80
         
         return patterns
 

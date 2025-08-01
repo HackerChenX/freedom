@@ -186,8 +186,9 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
 
         try:
             # 🔧 生产级修复1：标准RSI超买超卖条件
-            patterns_df['RSI_OVERBOUGHT'] = (rsi > self.overbought) & (rsi.shift(1) <= self.overbought)
-            patterns_df['RSI_OVERSOLD'] = (rsi < self.oversold) & (rsi.shift(1) >= self.oversold)
+            # 超买：RSI持续在超买区域（不仅仅是刚突破）
+            patterns_df['RSI_OVERBOUGHT'] = rsi > self.overbought
+            patterns_df['RSI_OVERSOLD'] = rsi < self.oversold
 
             # 🔧 生产级修复2：标准RSI均线金叉死叉
             # 方法1：标准crossover检测

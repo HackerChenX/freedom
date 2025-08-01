@@ -23,7 +23,7 @@ class UnifiedIndicatorEngine:
     提供标准化的技术指标计算接口，支持缓存机制和性能优化
     """
     
-    def __init___115(self, enable_cache: bool = True):
+    def __init__(self, enable_cache: bool = True):
         """
         初始化统一指标计算引擎
         
@@ -37,6 +37,7 @@ class UnifiedIndicatorEngine:
             'cache_hits': 0,
             'calculation_times': []
         }
+        logger = getLogger(__name__)
         logger.info("统一指标计算引擎初始化完成")
     
     def _get_cache_key(self, stock_code: str, indicator: str, params: Dict[str, Any], 

@@ -51,8 +51,13 @@ class Chaikin(BaseIndicator, PatternSignalMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_chaikin()
         
-        # 应用用户参数
-        self.set_parameters_Chaikin(**kwargs)
+        # 直接设置参数，确保属性存在
+        self.fast_period = kwargs.get('fast_period', self._default_parameters['fast_period'])
+        self.slow_period = kwargs.get('slow_period', self._default_parameters['slow_period'])
+        
+        # 添加必需的属性
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self._result = None
     
     def _get_default_parameters_chaikin(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -85,8 +90,8 @@ class Chaikin(BaseIndicator, PatternSignalMixin):
             pass
         
         # 设置参数
-        self.fast_period = kwargs.get('fast_period', 3)
-        self.slow_period = kwargs.get('slow_period', 10)
+        self.fast_period = kwargs.get('fast_period', self._default_parameters['fast_period'])
+        self.slow_period = kwargs.get('slow_period', self._default_parameters['slow_period'])
     
     def calculate_Chaikin(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -209,6 +214,9 @@ class Chaikin(BaseIndicator, PatternSignalMixin):
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
 
+        # 保存计算结果
+        self._result = df
+        
         return df
 
     def calculate_raw_score_Chaikin(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -363,11 +371,102 @@ class Chaikin(BaseIndicator, PatternSignalMixin):
         if 'CHAIKIN_VALUE' in self._result.columns:
             chaikin_value = self._result['CHAIKIN_VALUE']
             
-            # 识别关键形态
-            patterns['zero_cross_up'] = (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
-            patterns['zero_cross_down'] = (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
-            patterns['strong_positive'] = chaikin_value > chaikin_value.quantile(0.8)
-            patterns['strong_negative'] = chaikin_value < chaikin_value.quantile(0.2)
-            patterns['divergence_potential'] = abs(chaikin_value.pct_change()) > 0.1
+            # 识别关键形态（使用测试期望的名称）
+            patterns['CHAIKIN_CROSS_UP_ZERO'] = (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
+            patterns['CHAIKIN_CROSS_DOWN_ZERO'] = (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
+            patterns['CHAIKIN_ABOVE_ZERO'] = chaikin_value > 0
+            patterns['CHAIKIN_BELOW_ZERO'] = chaikin_value < 0
+            patterns['CHAIKIN_RISING'] = chaikin_value > chaikin_value.shift(1)
+            patterns['CHAIKIN_FALLING'] = chaikin_value < chaikin_value.shift(1)
         
         return patterns
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return self._result is not None
+
+    def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
+        """计算综合评分"""
+        raw_score = self.calculate_raw_score_Chaikin(data, **kwargs)
+        patterns = self.get_patterns_Chaikin(data, **kwargs)
+        
+        # 计算平均评分
+        avg_score = raw_score.mean() if not raw_score.empty else 50.0
+        
+        # 计算置信度
+        confidence = self.calculate_confidence_Chaikin(raw_score, patterns, {})
+        
+        return {
+            'score': avg_score,
+            'confidence': confidence,
+            'raw_score': raw_score
+        }
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取信号"""
+        # 先计算指标
+        result = self.calculate_Chaikin(data, **kwargs)
+        
+        # 从结果中提取信号列
+        signals = pd.DataFrame(index=data.index)
+        if 'buy_signal' in result.columns:
+            signals['chaikin_buy_signal'] = result['buy_signal']
+        if 'sell_signal' in result.columns:
+            signals['chaikin_sell_signal'] = result['sell_signal']
+        
+        return signals
+
+    def set_parameters_Chaikin(self, **kwargs):
+        """设置指标参数"""
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+    # ========================== 抽象方法实现 ==========================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_Chaikin(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_raw_score_Chaikin(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.get_patterns_Chaikin(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """BaseIndicator要求的抽象方法实现"""
+        return self.set_parameters_Chaikin(**kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """BaseIndicator要求的抽象方法实现"""
+        return self.calculate_confidence_Chaikin(score, patterns, signals)
+
+    # ========================== 兼容性方法 ==========================
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共接口：计算指标"""
+        return self.calculate_Chaikin(data, **kwargs)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共接口：获取形态"""
+        return self.get_patterns_Chaikin(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """公共接口：计算原始评分"""
+        return self.calculate_raw_score_Chaikin(data, **kwargs)
+
+    def set_parameters(self, **kwargs):
+        """公共接口：设置参数"""
+        return self.set_parameters_Chaikin(**kwargs)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """公共接口：计算置信度"""
+        return self.calculate_confidence_Chaikin(score, patterns, signals)
+
+
+# 类别名
+CHAIKIN = Chaikin
+Chaikin_indicator = Chaikin

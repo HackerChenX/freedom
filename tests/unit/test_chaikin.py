@@ -15,13 +15,19 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
     
     def setUp(self):
         """设置测试环境"""
-        super().setUp()
-
+        # 显式调用LogCaptureMixin的setUp
+        LogCaptureMixin.setUp(self)
+        
         self.indicator = complete_registry.create_indicator('CHAIKIN', fast_period=3, slow_period=10)
-        self.expected_columns = ['ad_line', 'chaikin_oscillator', 'chaikin_signal']
+        self.expected_columns = ['CHAIKIN_AD_LINE', 'CHAIKIN_VALUE', 'buy_signal']
         self.data = TestDataGenerator.generate_price_sequence([
             {'type': 'trend', 'start_price': 100, 'end_price': 110, 'periods': 50}
         ])
+    
+    def tearDown(self):
+        """清理测试环境"""
+        # 显式调用LogCaptureMixin的tearDown
+        LogCaptureMixin.tearDown(self)
 
     def test_chaikin_calculation_accuracy(self):
         """测试Chaikin计算准确性"""
@@ -35,7 +41,7 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         expected_ad_line = (clv * self.data['volume']).cumsum()
         
         # 比较A/D线计算结果
-        calculated_ad_line = result['ad_line']
+        calculated_ad_line = result['CHAIKIN_AD_LINE']
         diff = abs(calculated_ad_line - expected_ad_line).dropna()
         self.assertTrue(all(d < 0.001 for d in diff), "A/D线计算结果不正确")
         
@@ -44,7 +50,7 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         ad_ema_slow = expected_ad_line.ewm(span=10).mean()
         expected_chaikin = ad_ema_fast - ad_ema_slow
         
-        calculated_chaikin = result['chaikin_oscillator']
+        calculated_chaikin = result['CHAIKIN_VALUE']
         chaikin_diff = abs(calculated_chaikin - expected_chaikin).dropna()
         self.assertTrue(all(d < 0.001 for d in chaikin_diff), "Chaikin震荡器计算结果不正确")
     
@@ -64,9 +70,9 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         confidence = self.indicator.calculate_confidence(raw_score, patterns, {})
         
         # 验证置信度在0-1范围内
-        self.assert_is_instance(confidence, float)
-        self.assert_greater_equal(confidence, 0.0)
-        self.assert_less_equal(confidence, 1.0)
+        self.assertIsInstance(confidence, float)
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
     
     def test_chaikin_parameter_update(self):
         """测试Chaikin参数更新"""
@@ -75,25 +81,25 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         self.indicator.set_parameters(fast_period=new_fast_period, slow_period=new_slow_period)
         
         # 验证参数更新
-        self.assert_equal(self.indicator.fast_period, new_fast_period)
-        self.assert_equal(self.indicator.slow_period, new_slow_period)
+        self.assertEqual(self.indicator.fast_period, new_fast_period)
+        self.assertEqual(self.indicator.slow_period, new_slow_period)
         
         # 验证新参数下的计算
         result = self.indicator.calculate(self.data)
-        self.assertIn('chaikin_oscillator', result.columns)
+        self.assertIn('CHAIKIN_VALUE', result.columns)
     
     def test_chaikin_required_columns(self):
         """测试Chaikin必需列"""
         self.assertTrue(hasattr(self.indicator, 'REQUIRED_COLUMNS'))
         expected_cols = ['open', 'high', 'low', 'close', 'volume']
         for col in expected_cols:
-            self.assert_in(col, self.indicator.REQUIRED_COLUMNS)
+            self.assertIn(col, self.indicator.REQUIRED_COLUMNS)
     
     def test_chaikin_comprehensive_score(self):
         """测试Chaikin综合评分"""
         score_result = self.indicator.calculate_score(self.data)
         
-        self.assert_is_instance(score_result, dict)
+        self.assertIsInstance(score_result, dict)
         self.assertIn('score', score_result)
         self.assertIn('confidence', score_result)
         
@@ -106,7 +112,7 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         patterns = self.indicator.get_patterns(self.data)
         
         # 验证返回DataFrame
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
         
         # 验证预期的形态列存在
         expected_patterns = [
@@ -127,7 +133,7 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         signals = self.indicator.get_signals(result)
         
         # 验证信号
-        self.assert_is_instance(signals, pd.DataFrame)
+        self.assertIsInstance(signals, pd.DataFrame)
         self.assertIn('chaikin_buy_signal', signals.columns)
         self.assertIn('chaikin_sell_signal', signals.columns)
         
@@ -149,9 +155,9 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(result, pd.DataFrame)
+        self.assertIsInstance(result, pd.DataFrame)
         for col in self.expected_columns:
-            self.assert_in(col, result.columns)
+            self.assertIn(col, result.columns)
     
     def test_no_errors_during_pattern_detection_Chaikin(self):
         """测试形态检测过程中无ERROR日志"""
@@ -164,7 +170,7 @@ class Testchaikin_chaikin(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin
         self.assert_no_logs('ERROR')
         
         # 验证结果
-        self.assert_is_instance(patterns, pd.DataFrame)
+        self.assertIsInstance(patterns, pd.DataFrame)
 
 
 if __name__ == '__main__':

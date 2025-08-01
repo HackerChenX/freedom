@@ -15,6 +15,7 @@ import numpy as np
 from datetime import datetime, timedelta, date
 from typing import Dict, List, Any, Optional, Union
 import random
+import math
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -102,7 +103,19 @@ class StockInfoCompatibleDataGenerator:
             'PVT': 30,       # PVT计算需求
             'MOMENTUM': 25,  # MOMENTUM计算需求
             'FIBONACCI': 60, # FIBONACCI计算需求
-            'AROON': 30      # AROON计算需求
+            'AROON': 30,     # AROON计算需求
+            # 🔧 Ultra Think新增指标历史需求
+            'SAR': 40,       # SAR抛物线转向需求
+            'TRIX': 45,      # TRIX三重指数平滑需求
+            'MFI': 35,       # MFI资金流向指标需求
+            'ROC': 30,       # ROC变化率指标需求
+            'CMO': 25,       # CMO钱德动量摆动指标需求
+            'ATR': 30,       # ATR真实波动范围需求
+            'KC': 35,        # KC肯特纳通道需求
+            'VIX': 40,       # VIX恐慌指数需求
+            'EMV': 30,       # EMV简易波动指标需求
+            'CHAIKIN': 30,   # CHAIKIN佳庆指标需求
+            'SMA': 50        # SMA简单移动平均需求
         }
         
         # 行业分类
@@ -340,6 +353,26 @@ class StockInfoCompatibleDataGenerator:
                 logger.info(f"🎯 处理ROC指标形态: {indicator_name}.{pattern_type}")
                 # ROC指标专门处理
                 adjusted_data = self._create_roc_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'SAR':
+                logger.info(f"🎯 处理SAR指标形态: {indicator_name}.{pattern_type}")
+                # SAR抛物线转向指标专门处理
+                adjusted_data = self._create_sar_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'TRIX':
+                logger.info(f"🎯 处理TRIX指标形态: {indicator_name}.{pattern_type}")
+                # TRIX三重指数平滑指标专门处理
+                adjusted_data = self._create_trix_pattern(adjusted_data, pattern_type)
+            elif indicator_name == 'MFI':
+                logger.info(f"🎯 处理MFI指标形态: {indicator_name}.{pattern_type}")
+                # MFI资金流向指标专门处理
+                adjusted_data = self._create_mfi_pattern(adjusted_data, pattern_type)
+            elif indicator_name in ['KC', 'EMV', 'CHAIKIN', 'VIX']:
+                logger.info(f"🎯 处理新增技术指标形态: {indicator_name}.{pattern_type}")
+                # 新增技术指标统一处理
+                adjusted_data = self._create_new_indicator_pattern(adjusted_data, indicator_name, pattern_type)
+            elif indicator_name == 'SMA':
+                logger.info(f"📊 处理SMA移动平均线形态: {indicator_name}.{pattern_type}")
+                # SMA简单移动平均线指标专门处理
+                adjusted_data = self._create_ma_pattern(adjusted_data, pattern_type)
             elif indicator_name in ['BIAS', 'STOCHRSI', 'WR', 'OBV', 'MTM', 'PVT', 'MOMENTUM', 'DMI']:
                 logger.info(f"🔧 处理其他技术指标形态: {indicator_name}.{pattern_type}")
                 # 其他技术指标统一处理GOLDEN_CROSS/DEATH_CROSS形态
@@ -1642,49 +1675,128 @@ class StockInfoCompatibleDataGenerator:
         return adjusted_data
 
     def _create_ma_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
-        """创建移动平均线形态（MA、EMA、WMA、DMA）"""
+        """创建移动平均线形态（MA、EMA、WMA、DMA、SMA）"""
         adjusted_data = data.copy()
         n = len(adjusted_data)
         
         if pattern_type == 'GOLDEN_CROSS':
-            # 短期均线从下方向上穿越长期均线
+            # 🎯 Ultra Think优化：让金叉在检测窗口内发生
+            logger.info("⚡ 创建SMA金叉形态（检测窗口内优化版）")
             base_price = adjusted_data['close'].iloc[0]
-            cross_point = max(n - 10, n//2)
+            # 调整金叉时机到数据的75%位置，确保信号在最后10个数据点内
+            cross_point = int(n * 0.75)  # 在第37/38个点左右金叉，确保最后10个点能检测到
             
             for i in range(n):
                 if i < cross_point:
-                    # 创建下跌然后横盘的走势
-                    trend_factor = 1 - (0.08 * min(i, cross_point//2) / (cross_point//2))
+                    # 创建先下跌然后横盘整理的走势
+                    decline_phase = min(i, cross_point//2)
+                    if decline_phase < cross_point//2:
+                        # 下跌阶段
+                        trend_factor = 1 - (0.06 * decline_phase / (cross_point//2))
+                    else:
+                        # 横盘整理阶段
+                        trend_factor = 0.94  # 保持在底部
                 else:
-                    # 强势上涨，形成金叉
+                    # 🎯 关键：强势反弹阶段，确保SMA5快速上穿SMA20
                     recovery_ratio = (i - cross_point) / (n - cross_point)
-                    trend_factor = 0.92 + (0.15 * recovery_ratio)  # 反弹15%
+                    # 使用更强势的反弹因子，确保金叉清晰
+                    trend_factor = 0.94 + (0.18 * (recovery_ratio ** 0.7))  
+                    # 最后阶段额外加速，确保信号明显
+                    if i >= n - 10:
+                        extra_boost = (i - (n - 10)) / 10 * 0.05
+                        trend_factor += extra_boost
                 
                 new_price = base_price * trend_factor
                 adjusted_data.loc[i, 'close'] = new_price
-                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
-                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.975, 0.995)
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.998, 1.002)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.008, 1.025)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.992, 1.002)
                 
         elif pattern_type == 'DEATH_CROSS':
-            # 短期均线从上方向下穿越长期均线
+            # 🎯 Ultra Think优化：让死叉在检测窗口内发生
+            logger.info("⚡ 创建SMA死叉形态（检测窗口内优化版）")
             base_price = adjusted_data['close'].iloc[0]
-            cross_point = max(n - 10, n//2)
+            # 调整死叉时机到数据的75%位置
+            cross_point = int(n * 0.75)
             
             for i in range(n):
                 if i < cross_point:
-                    # 上升走势
-                    trend_factor = 1 + (0.08 * i / cross_point)
+                    # 上升阶段
+                    trend_factor = 1 + (0.12 * i / cross_point)
                 else:
-                    # 下跌，形成死叉
+                    # 🎯 关键：下跌阶段，确保SMA5快速下穿SMA20
                     decline_ratio = (i - cross_point) / (n - cross_point)
-                    trend_factor = 1.08 - (0.15 * decline_ratio)
+                    # 使用更快的下跌速度，确保死叉清晰
+                    trend_factor = 1.12 - (0.20 * (decline_ratio ** 0.7))
+                    # 最后阶段额外加速下跌
+                    if i >= n - 10:
+                        extra_decline = (i - (n - 10)) / 10 * 0.03
+                        trend_factor -= extra_decline
                 
                 new_price = base_price * trend_factor
                 adjusted_data.loc[i, 'close'] = new_price
-                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
-                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.975, 0.995)
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.998, 1.002)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.002, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.998)
+                
+        elif pattern_type == 'SUPPORT_RESISTANCE':
+            # 🎯 Ultra Think优化：创建明显的支撑阻力形态
+            logger.info("⚡ 创建SMA支撑阻力形态（优化版）")
+            base_price = adjusted_data['close'].iloc[0]
+            sma20_level = base_price * 1.05  # 设定SMA20作为支撑/阻力位
+            
+            for i in range(n):
+                # 创建价格围绕SMA20波动的形态
+                cycle_position = (i % 8) / 8.0  # 8个周期的波动
+                if i < n * 0.6:
+                    # 前期：价格在SMA之上波动
+                    wave_factor = 0.02 * math.sin(cycle_position * 2 * math.pi)
+                    trend_factor = 1.05 + wave_factor
+                else:
+                    # 后期：价格回到SMA附近，形成支撑/阻力测试
+                    approaching_factor = (i - n * 0.6) / (n * 0.4)
+                    base_trend = 1.05 - (0.04 * approaching_factor)  # 慢慢回落到SMA附近
+                    wave_factor = 0.008 * math.sin(cycle_position * 4 * math.pi)  # 小幅波动
+                    trend_factor = base_trend + wave_factor
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.999, 1.001)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.003, 1.012)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.988, 0.999)
+                
+        elif pattern_type == 'TREND_FOLLOWING':
+            # 🎯 Ultra Think优化：创建多头排列的趋势跟随形态
+            logger.info("⚡ 创建SMA趋势跟随形态（多头排列优化版）")
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(n):
+                # 创建持续上升趋势，确保SMA5 > SMA10 > SMA20 > SMA60
+                progress = i / n
+                # 使用指数增长模式，确保多头排列明显
+                trend_factor = 1 + (0.25 * (progress ** 0.8))
+                
+                # 最后阶段强化趋势，确保价格明显在SMA5之上
+                if i >= n * 0.7:
+                    late_boost = (i - n * 0.7) / (n * 0.3) * 0.08
+                    trend_factor += late_boost
+                
+                # 添加小幅波动，但保持整体上升趋势
+                wave_factor = 0.01 * math.sin((i % 6) / 6.0 * 2 * math.pi)
+                trend_factor += wave_factor
+                
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.998, 1.002)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.020)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.995, 1.002)
+        
+        # 🎯 Ultra Think完成：确保数据合理性
+        # 确保价格数据的完整性（只修改存在的列）
+        if 'volume' in adjusted_data.columns:
+            adjusted_data['volume'] = adjusted_data['volume'] * random.uniform(0.8, 1.2)
+        if 'turnover_rate' in adjusted_data.columns:
+            adjusted_data['turnover_rate'] = abs(adjusted_data['turnover_rate'] * random.uniform(0.9, 1.1))
         
         return adjusted_data
 
@@ -2066,6 +2178,176 @@ class StockInfoCompatibleDataGenerator:
 
                 base_price = new_price
 
+        elif pattern_type == 'OVERBOUGHT':
+            # 创建CMO超买形态：价格持续上涨，CMO值超过50
+            logger.info(f"📈 创建CMO超买形态（CMO>50）")
+            
+            # 前50%数据：稳定上升建立基础
+            stable_end = int(n * 0.5)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(stable_end):
+                # 稳定上升趋势
+                daily_change = random.uniform(0.003, 0.008)  # 0.3%-0.8%稳定增长
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+            
+            # 后50%数据：加速上涨，产生CMO超买信号
+            for i in range(stable_end, n):
+                # 加速上涨，确保CMO超过50
+                acceleration_factor = 1 + ((i - stable_end) / (n - stable_end)) * 0.5
+                daily_change = random.uniform(0.008, 0.020) * acceleration_factor  # 加速上涨
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
+                
+                base_price = new_price
+
+        elif pattern_type == 'OVERSOLD':
+            # 创建CMO超卖形态：价格持续下跌，CMO值低于-50
+            logger.info(f"📉 创建CMO超卖形态（CMO<-50）")
+            
+            # 前50%数据：稳定下跌建立基础
+            stable_end = int(n * 0.5)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(stable_end):
+                # 稳定下跌趋势
+                daily_change = random.uniform(-0.008, -0.003)  # -0.8%到-0.3%稳定下跌
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.975, 0.995)
+                
+                base_price = new_price
+            
+            # 后50%数据：加速下跌，产生CMO超卖信号
+            for i in range(stable_end, n):
+                # 加速下跌，确保CMO低于-50
+                acceleration_factor = 1 + ((i - stable_end) / (n - stable_end)) * 0.5
+                daily_change = random.uniform(-0.025, -0.008) * acceleration_factor  # 加速下跌
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.002, 1.01)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.975, 0.99)
+                
+                base_price = new_price
+
+        elif pattern_type == 'MOMENTUM_SHIFT':
+            # 创建CMO动量转换形态：价格趋势发生明显变化
+            logger.info(f"⚡ 创建CMO动量转换形态（动量方向改变）")
+            
+            # 前30%数据：建立初始趋势
+            initial_end = int(n * 0.3)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(initial_end):
+                # 初始上升趋势
+                daily_change = random.uniform(0.005, 0.012)  # 正向变化
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
+                
+                base_price = new_price
+            
+            # 中间40%数据：趋势转换期
+            transition_start = initial_end
+            transition_end = int(n * 0.7)
+            
+            for i in range(transition_start, transition_end):
+                # 逐渐转换趋势方向
+                progress = (i - transition_start) / (transition_end - transition_start)
+                # 从正向变化逐渐转为负向变化
+                daily_change = 0.01 * (1 - progress) - 0.015 * progress
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+            
+            # 最后30%数据：新的趋势方向
+            for i in range(transition_end, n):
+                # 下降趋势，产生动量转换信号
+                daily_change = random.uniform(-0.015, -0.005)  # 负向变化
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+
+        elif pattern_type == 'ZERO_CROSS':
+            # 创建CMO零轴穿越形态：CMO从负值穿越到正值
+            logger.info(f"🎯 创建CMO零轴穿越形态（穿越零轴）")
+            
+            # 前40%数据：下跌趋势，CMO为负值
+            downtrend_end = int(n * 0.4)
+            base_price = adjusted_data['close'].iloc[0]
+            
+            for i in range(downtrend_end):
+                # 下跌趋势，产生负CMO
+                daily_change = random.uniform(-0.012, -0.004)  # 负向变化
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+            
+            # 中间20%数据：穿越零轴的关键时期
+            cross_start = downtrend_end
+            cross_end = int(n * 0.6)
+            
+            for i in range(cross_start, cross_end):
+                # 在零轴附近震荡，然后穿越
+                progress = (i - cross_start) / (cross_end - cross_start)
+                # 从负向变化逐渐转为正向变化
+                daily_change = -0.005 * (1 - progress) + 0.008 * progress
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
+                
+                base_price = new_price
+            
+            # 最后40%数据：上升趋势，CMO为正值
+            for i in range(cross_end, n):
+                # 上升趋势，确保CMO为正
+                daily_change = random.uniform(0.005, 0.015)  # 正向变化
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.02)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
+                
+                base_price = new_price
+
         else:
             # 默认处理其他形态
             logger.info(f"🔧 CMO默认形态处理: {pattern_type}")
@@ -2074,134 +2356,594 @@ class StockInfoCompatibleDataGenerator:
         return adjusted_data
 
     def _create_roc_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
-        """创建ROC指标形态"""
+        """创建ROC指标形态
+        
+        新形态支持：
+        - POSITIVE_MOMENTUM: 正动量（ROC为正且增强）
+        - NEGATIVE_MOMENTUM: 负动量（ROC为负且减弱）
+        - ZERO_CROSS: 零轴穿越（ROC穿越零轴）
+        - ACCELERATION: 加速度变化（ROC变化率增大）
+        """
         adjusted_data = data.copy()
         n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
 
-        if pattern_type == 'GOLDEN_CROSS':
-            # 创建ROC金叉形态：从负变化率转为正变化率
-            logger.info(f"🎯 创建ROC金叉形态（变化率转正）")
-
-            # 前30%数据：下跌趋势，ROC为负值
-            downtrend_end = int(n * 0.3)
-            base_price = adjusted_data['close'].iloc[0]
-
-            for i in range(downtrend_end):
-                # 下跌趋势，产生负ROC
-                decline_factor = 1 - (0.08 * (i / downtrend_end))  # 8%的下跌
-                new_price = base_price * decline_factor
-
-                # 添加小幅波动
-                daily_change = random.uniform(-0.012, -0.003)  # 负向变化
-                new_price *= (1 + daily_change)
-
+        if pattern_type == 'POSITIVE_MOMENTUM':
+            # 🎯 Ultra Think优化：创建正动量形态，确保信号在检测窗口内
+            logger.info("⚡ 创建ROC正动量形态（检测窗口内优化版）")
+            
+            # 前60%：缓慢上升，建立基础
+            steady_phase = int(n * 0.6)
+            for i in range(steady_phase):
+                daily_change = random.uniform(0.002, 0.008)  # 0.2%-0.8%缓慢增长
+                new_price = base_price * (1 + daily_change)
+                
                 adjusted_data.loc[i, 'close'] = new_price
                 adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
                 adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
                 adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
-
+                
                 base_price = new_price
-
-            # 中间40%数据：转折点，ROC从负转正
-            reversal_start = downtrend_end
-            reversal_end = int(n * 0.7)
-
-            for i in range(reversal_start, reversal_end):
-                # 逐渐转为上升趋势
-                progress = (i - reversal_start) / (reversal_end - reversal_start)
-                daily_change = -0.005 + (0.025 * progress)  # 从-0.5%变为+2%
+            
+            # 后40%：强势加速上涨，在检测窗口内产生正动量信号
+            for i in range(steady_phase, n):
+                # 逐渐加速的正动量
+                acceleration_factor = (i - steady_phase) / (n - steady_phase)
+                daily_change = 0.008 + (0.02 * acceleration_factor)  # 从0.8%加速到2.8%
                 new_price = base_price * (1 + daily_change)
-
+                
                 adjusted_data.loc[i, 'close'] = new_price
                 adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
-                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
-
-                base_price = new_price
-
-            # 最后30%数据：上升趋势，ROC为正值
-            for i in range(reversal_end, n):
-                # 持续上升趋势
-                daily_change = random.uniform(0.008, 0.018)  # 正向变化
-                new_price = base_price * (1 + daily_change)
-
-                adjusted_data.loc[i, 'close'] = new_price
-                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
-                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
-
-                base_price = new_price
-
-        elif pattern_type == 'DEATH_CROSS':
-            # 创建ROC死叉形态：从正变化率转为负变化率
-            logger.info(f"🎯 创建ROC死叉形态（变化率转负）")
-
-            # 前30%数据：上升趋势，ROC为正值
-            uptrend_end = int(n * 0.3)
-            base_price = adjusted_data['close'].iloc[0]
-
-            for i in range(uptrend_end):
-                # 上升趋势，产生正ROC
-                daily_change = random.uniform(0.008, 0.018)  # 正向变化
-                new_price = base_price * (1 + daily_change)
-
-                adjusted_data.loc[i, 'close'] = new_price
-                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
-                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
-
-                base_price = new_price
-
-            # 中间40%数据：转折点，ROC从正转负
-            reversal_start = uptrend_end
-            reversal_end = int(n * 0.7)
-
-            for i in range(reversal_start, reversal_end):
-                # 逐渐转为下降趋势
-                progress = (i - reversal_start) / (reversal_end - reversal_start)
-                daily_change = 0.015 - (0.03 * progress)  # 从+1.5%变为-1.5%
-                new_price = base_price * (1 + daily_change)
-
-                adjusted_data.loc[i, 'close'] = new_price
-                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
-                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
-
-                base_price = new_price
-
-            # 最后30%数据：下降趋势，ROC为负值
-            for i in range(reversal_end, n):
-                # 持续下降趋势
-                daily_change = random.uniform(-0.018, -0.008)  # 负向变化
-                new_price = base_price * (1 + daily_change)
-
-                adjusted_data.loc[i, 'close'] = new_price
-                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
-                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
-
-                base_price = new_price
-
-        elif pattern_type == 'MOMENTUM_UP':
-            # 创建ROC强势上涨动量形态
-            logger.info(f"🎯 创建ROC强势上涨动量形态")
-            base_price = adjusted_data['close'].iloc[0]
-
-            for i in range(n):
-                # 持续强势上涨，产生高ROC值
-                daily_change = random.uniform(0.015, 0.03)  # 1.5%-3%的日涨幅
-                new_price = base_price * (1 + daily_change)
-
-                adjusted_data.loc[i, 'close'] = new_price
-                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.005)
                 adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.035)
-                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
+                
+                base_price = new_price
 
+        elif pattern_type == 'NEGATIVE_MOMENTUM':
+            # 🎯 Ultra Think优化：创建负动量形态，确保信号在检测窗口内
+            logger.info("⚡ 创建ROC负动量形态（检测窗口内优化版）")
+            
+            # 前60%：缓慢下降，建立基础
+            steady_phase = int(n * 0.6)
+            for i in range(steady_phase):
+                daily_change = random.uniform(-0.008, -0.002)  # -0.8%到-0.2%缓慢下降
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+            
+            # 后40%：强势加速下跌，在检测窗口内产生负动量信号
+            for i in range(steady_phase, n):
+                # 逐渐加速的负动量
+                acceleration_factor = (i - steady_phase) / (n - steady_phase)
+                daily_change = -0.008 - (0.02 * acceleration_factor)  # 从-0.8%加速到-2.8%
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.975, 0.99)
+                
+                base_price = new_price
+
+        elif pattern_type == 'ZERO_CROSS':
+            # 🎯 Ultra Think优化：创建零轴穿越形态，确保信号在检测窗口内
+            logger.info("⚡ 创建ROC零轴穿越形态（检测窗口内优化版）")
+            
+            # 前50%：下跌趋势，产生负ROC
+            downtrend_phase = int(n * 0.5)
+            for i in range(downtrend_phase):
+                daily_change = random.uniform(-0.015, -0.005)  # 持续下跌
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 0.995)
+                
+                base_price = new_price
+            
+            # 中间30%：横盘整理，接近零轴
+            consolidation_end = int(n * 0.8)
+            for i in range(downtrend_phase, consolidation_end):
+                daily_change = random.uniform(-0.003, 0.003)  # 小幅波动
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+            
+            # 最后20%：突破上涨，在检测窗口内穿越零轴
+            for i in range(consolidation_end, n):
+                # 强势向上突破，确保ROC穿越零轴
+                daily_change = random.uniform(0.008, 0.02)  # 突破性上涨
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
+                
+                base_price = new_price
+
+        elif pattern_type == 'ACCELERATION':
+            # 🎯 Ultra Think优化：创建加速度变化形态，确保信号在检测窗口内
+            logger.info("⚡ 创建ROC加速度变化形态（检测窗口内优化版）")
+            
+            # 前40%：稳定趋势期
+            stable_phase = int(n * 0.4)
+            for i in range(stable_phase):
+                daily_change = random.uniform(0.003, 0.006)  # 稳定上涨
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+            
+            # 中间30%：减速期
+            deceleration_end = int(n * 0.7)
+            for i in range(stable_phase, deceleration_end):
+                daily_change = random.uniform(0.001, 0.003)  # 减速
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 0.995)
+                
+                base_price = new_price
+            
+            # 最后30%：急速加速期，在检测窗口内产生加速度变化信号
+            for i in range(deceleration_end, n):
+                # 指数级加速
+                acceleration_factor = (i - deceleration_end) / (n - deceleration_end)
+                daily_change = 0.003 + (0.025 * (acceleration_factor ** 2))  # 二次方加速
+                new_price = base_price * (1 + daily_change)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.04)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 0.998)
+                
                 base_price = new_price
 
         else:
-            # 默认处理其他形态
-            logger.info(f"🔧 ROC默认形态处理: {pattern_type}")
+            # 兼容处理：如果还有旧形态名称，映射到新形态
+            logger.warning(f"⚠️  ROC收到旧形态名称: {pattern_type}，尝试映射到新形态")
+            if pattern_type in ['GOLDEN_CROSS', 'MOMENTUM_UP']:
+                logger.info("🔄 映射到 POSITIVE_MOMENTUM")
+                return self._create_roc_pattern(adjusted_data, 'POSITIVE_MOMENTUM')
+            elif pattern_type in ['DEATH_CROSS', 'MOMENTUM_DOWN']:
+                logger.info("🔄 映射到 NEGATIVE_MOMENTUM")
+                return self._create_roc_pattern(adjusted_data, 'NEGATIVE_MOMENTUM')
+            else:
+                logger.info(f"🔧 ROC默认形态处理: {pattern_type}")
+                adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
+
+        return adjusted_data
+
+    def _create_sar_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """
+        创建SAR(抛物线转向)指标形态
+        SAR特点：追踪趋势转向点，止损点动态调整
+        """
+        logger.info(f"🎯 创建SAR指标形态: {pattern_type}")
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
+
+        if pattern_type == 'TREND_REVERSAL':
+            # 创建趋势反转形态：前期下跌，后期上涨
+            logger.info("📈 创建SAR趋势反转形态")
+            reversal_point = int(n * 0.6)
+            
+            # 前60%下跌趋势
+            for i in range(reversal_point):
+                decline_factor = 1 - (0.15 * i / reversal_point)
+                new_price = base_price * decline_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+            
+            # 后40%上涨趋势
+            reversal_base = adjusted_data['close'].iloc[reversal_point-1]
+            for i in range(reversal_point, n):
+                growth_factor = 1 + (0.20 * (i - reversal_point) / (n - reversal_point))
+                new_price = reversal_base * growth_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 1.00)
+
+        elif pattern_type == 'UPTREND_SIGNAL':
+            # 创建SAR上涨信号形态
+            logger.info("📈 创建SAR上涨信号形态")
+            for i in range(n):
+                growth_factor = 1 + (0.25 * i / n)
+                new_price = base_price * growth_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.04)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 1.00)
+
+        elif pattern_type == 'DOWNTREND_SIGNAL':
+            # 创建SAR下跌信号形态
+            logger.info("📉 创建SAR下跌信号形态")
+            for i in range(n):
+                decline_factor = 1 - (0.20 * i / n)
+                new_price = base_price * decline_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.02)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.96, 0.98)
+
+        elif pattern_type == 'STOP_LOSS':
+            # 🔧 Ultra Think修复：创建专门的SAR止损信号形态
+            logger.info("🛑 创建SAR止损信号形态")
+            # 创建先上涨后快速下跌的形态，触发SAR止损点
+            uptrend_point = int(n * 0.7)
+            
+            # 前70%稳步上涨，建立上升趋势
+            for i in range(uptrend_point):
+                growth_factor = 1 + (0.15 * i / uptrend_point)
+                new_price = base_price * growth_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.985, 1.00)
+            
+            # 后30%快速下跌，触发SAR止损信号
+            peak_price = adjusted_data['close'].iloc[uptrend_point-1]
+            for i in range(uptrend_point, n):
+                # 快速下跌10%，明确触发SAR止损点
+                decline_factor = 1 - (0.10 * (i - uptrend_point) / (n - uptrend_point))
+                new_price = peak_price * decline_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.015)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 0.995)
+
+        else:
+            # 默认处理其他SAR形态
+            logger.info(f"🔧 SAR默认形态处理: {pattern_type}")
+            adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
+
+        return adjusted_data
+
+    def _create_trix_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """
+        创建TRIX(三重指数平滑)指标形态
+        TRIX特点：消除价格随机波动，识别长期趋势
+        """
+        logger.info(f"🎯 创建TRIX指标形态: {pattern_type}")
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
+
+        if pattern_type == 'MOMENTUM_SHIFT':
+            # 🔧 Ultra Think深度修复：强制后期动量转换，确保100%在检测窗口内
+            logger.info("⚡ 创建TRIX动量转换形态（强化版）")
+            transition_point = int(n * 0.75)  # 75%位置开始强力转换
+            
+            for i in range(n):
+                if i < transition_point:
+                    # 前75%：持续温和下跌，为后期转换蓄力
+                    decline_rate = 0.03 * (i / transition_point)
+                    new_price = base_price * (1 - decline_rate)
+                else:
+                    # 🎯 后25%：爆发式反弹，强制触发动量转换
+                    rebound_progress = (i - transition_point) / (n - transition_point)
+                    # 使用更激进的反弹系数，确保TRIX动量转换
+                    rebound_factor = 1 + (0.25 * (rebound_progress ** 0.5))  # 开方曲线，早期快速增长
+                    transition_base = base_price * (1 - 0.03)  # 下跌后的基准价
+                    new_price = transition_base * rebound_factor
+                    
+                    # 🚀 在最后10个位置加入额外的加速增长
+                    if i >= n - 10:
+                        extra_boost = 1 + (0.1 * (i - (n - 10)) / 10)
+                        new_price *= extra_boost
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.998, 1.002)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.025)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.995, 1.002)
+
+        elif pattern_type == 'DIVERGENCE':
+            # 创建TRIX背离形态
+            logger.info("🔄 创建TRIX背离形态")
+            peak_point = int(n * 0.7)
+            
+            # 前70%价格上涨但动量递减
+            for i in range(peak_point):
+                # 价格仍上涨但涨幅递减
+                growth_rate = 0.02 * (1 - i / peak_point)
+                new_price = base_price * (1 + growth_rate * i)
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 1.00)
+                base_price = new_price
+            
+            # 后30%价格下跌
+            for i in range(peak_point, n):
+                decline_rate = 0.015 * (i - peak_point) / (n - peak_point)
+                new_price = base_price * (1 - decline_rate)
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.02)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.97, 0.99)
+                base_price = new_price
+
+        else:
+            # 默认处理其他TRIX形态
+            logger.info(f"🔧 TRIX默认形态处理: {pattern_type}")
+            adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
+
+        return adjusted_data
+
+    def _create_mfi_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:
+        """
+        创建MFI(资金流向指标)形态
+        MFI特点：结合价格和成交量，识别资金流向
+        """
+        logger.info(f"🎯 创建MFI指标形态: {pattern_type}")
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
+        base_volume = adjusted_data['volume'].iloc[0]
+
+        if pattern_type == 'MONEY_FLOW_REVERSAL':
+            # 创建资金流向反转形态：先到极值，再反转
+            logger.info("💰 创建MFI资金流向反转形态")
+            extreme_point = int(n * 0.7)  # 前70%达到极值
+            reversal_point = int(n * 0.85)  # 85%开始反转
+            
+            # 前70%：剧烈上涨+成交量枯竭（创造MFI极高值>80）
+            for i in range(extreme_point):
+                # 价格剧烈上涨（最多30%）
+                growth_factor = 1 + (0.30 * i / extreme_point)
+                # 成交量急剧枯竭（降至20%）
+                volume_factor = 1 - (0.80 * i / extreme_point)
+                
+                new_price = base_price * growth_factor
+                new_volume = max(base_volume * volume_factor, base_volume * 0.1)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'volume'] = new_volume
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.04)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 1.00)
+            
+            # 70%-85%：价格平台整理（维持MFI高位）
+            extreme_price = adjusted_data['close'].iloc[extreme_point-1]
+            for i in range(extreme_point, reversal_point):
+                # 价格小幅波动
+                wave_factor = 1 + random.uniform(-0.02, 0.02)
+                # 成交量保持低位
+                volume_factor = 0.2 + random.uniform(-0.1, 0.1)
+                
+                new_price = extreme_price * wave_factor
+                new_volume = max(base_volume * volume_factor, base_volume * 0.1)
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'volume'] = new_volume
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.02)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 0.99)
+            
+            # 85%-100%：价格急跌+成交量放量（触发MFI反转）
+            for i in range(reversal_point, n):
+                progress = (i - reversal_point) / (n - reversal_point)
+                # 价格快速下跌（最多15%）
+                decline_factor = 1 - (0.15 * progress)
+                # 成交量急剧放大（增至3倍）
+                volume_factor = 0.2 + (2.8 * progress)
+                
+                new_price = extreme_price * decline_factor
+                new_volume = base_volume * volume_factor
+                
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'volume'] = new_volume
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.02)
+                adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.96, 0.98)
+
+        elif pattern_type in ['OVERBOUGHT', 'OVERSOLD']:
+            # 创建MFI超买/超卖形态
+            if pattern_type == 'OVERBOUGHT':
+                logger.info("📈 创建MFI超买形态")
+                # 价格和成交量同步大幅上涨
+                for i in range(n):
+                    growth_factor = 1 + (0.30 * i / n)
+                    volume_factor = 1 + (1.0 * i / n)  # 成交量翻倍
+                    
+                    new_price = base_price * growth_factor
+                    new_volume = base_volume * volume_factor
+                    
+                    adjusted_data.loc[i, 'close'] = new_price
+                    adjusted_data.loc[i, 'volume'] = new_volume
+                    adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 1.00)
+            else:  # OVERSOLD
+                logger.info("📉 创建MFI超卖形态")
+                # 价格和成交量同步大幅下跌
+                for i in range(n):
+                    decline_factor = 1 - (0.25 * i / n)
+                    volume_factor = 1 + (0.60 * i / n)  # 成交量放大60%
+                    
+                    new_price = base_price * decline_factor
+                    new_volume = base_volume * volume_factor
+                    
+                    adjusted_data.loc[i, 'close'] = new_price
+                    adjusted_data.loc[i, 'volume'] = new_volume
+                    adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.02)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.98)
+
+        elif pattern_type == 'DIVERGENCE':
+            # 创建MFI背离形态：价格与资金流向走势相反
+            logger.info("🔀 创建MFI背离形态")
+            
+            # 选择背离类型：牛市背离（价格下跌，MFI上涨）或熊市背离（价格上涨，MFI下跌）
+            divergence_type = random.choice(['bullish', 'bearish'])
+            
+            if divergence_type == 'bearish':
+                # 熊市背离：价格上涨，但MFI下跌（资金流出）
+                logger.info("📈📉 创建熊市背离：价格上涨+MFI下跌")
+                divergence_start = int(n * 0.5)  # 从50%开始产生背离
+                
+                # 前50%：正常上涨，价格和成交量同步增长
+                for i in range(divergence_start):
+                    growth_factor = 1 + (0.15 * i / divergence_start)
+                    volume_factor = 1 + (0.8 * i / divergence_start)
+                    
+                    new_price = base_price * growth_factor
+                    new_volume = base_volume * volume_factor
+                    
+                    adjusted_data.loc[i, 'close'] = new_price
+                    adjusted_data.loc[i, 'volume'] = new_volume
+                    adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.03)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 1.00)
+                
+                # 后50%：背离阶段，价格继续上涨但成交量萎缩（MFI下跌）
+                base_price_div = adjusted_data['close'].iloc[divergence_start-1]
+                for i in range(divergence_start, n):
+                    progress = (i - divergence_start) / (n - divergence_start)
+                    # 价格继续缓慢上涨（总涨幅10%）
+                    growth_factor = 1 + (0.10 * progress)
+                    # 成交量急剧萎缩（降至30%）- 关键：造成MFI下降
+                    volume_factor = 1.8 - (1.5 * progress)  # 从180%降至30%
+                    
+                    new_price = base_price_div * growth_factor
+                    new_volume = max(base_volume * volume_factor, base_volume * 0.2)
+                    
+                    adjusted_data.loc[i, 'close'] = new_price
+                    adjusted_data.loc[i, 'volume'] = new_volume
+                    adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.02)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.99, 1.00)
+            
+            else:  # bullish divergence
+                # 牛市背离：价格下跌，但MFI上涨（资金流入）
+                logger.info("📉📈 创建牛市背离：价格下跌+MFI上涨")
+                divergence_start = int(n * 0.5)  # 从50%开始产生背离
+                
+                # 前50%：正常下跌，价格和成交量萎缩
+                for i in range(divergence_start):
+                    decline_factor = 1 - (0.20 * i / divergence_start)
+                    volume_factor = 1 - (0.4 * i / divergence_start)
+                    
+                    new_price = base_price * decline_factor
+                    new_volume = max(base_volume * volume_factor, base_volume * 0.3)
+                    
+                    adjusted_data.loc[i, 'close'] = new_price
+                    adjusted_data.loc[i, 'volume'] = new_volume
+                    adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.02)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.98)
+                
+                # 后50%：背离阶段，价格继续下跌但成交量放大（MFI上涨）
+                base_price_div = adjusted_data['close'].iloc[divergence_start-1]
+                for i in range(divergence_start, n):
+                    progress = (i - divergence_start) / (n - divergence_start)
+                    # 价格继续缓慢下跌（总跌幅8%）
+                    decline_factor = 1 - (0.08 * progress)
+                    # 成交量放大（增至200%）- 关键：造成MFI上升
+                    volume_factor = 0.6 + (1.4 * progress)  # 从60%增至200%
+                    
+                    new_price = base_price_div * decline_factor
+                    new_volume = base_volume * volume_factor
+                    
+                    adjusted_data.loc[i, 'close'] = new_price
+                    adjusted_data.loc[i, 'volume'] = new_volume
+                    adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.995, 1.005)
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.02)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.94, 0.98)
+
+        else:
+            # 默认处理其他MFI形态
+            logger.info(f"🔧 MFI默认形态处理: {pattern_type}")
+            adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
+
+        return adjusted_data
+
+    def _create_new_indicator_pattern(self, data: pd.DataFrame, indicator_name: str, pattern_type: str) -> pd.DataFrame:
+        """
+        为新增指标(KC, EMV, CHAIKIN, VIX)创建通用形态
+        """
+        logger.info(f"🎯 创建{indicator_name}指标形态: {pattern_type}")
+        adjusted_data = data.copy()
+        n = len(adjusted_data)
+        base_price = adjusted_data['close'].iloc[0]
+        base_volume = adjusted_data['volume'].iloc[0]
+
+        if indicator_name == 'KC':  # 肯特纳通道
+            if pattern_type in ['UPPER_BREAKOUT', 'LOWER_BREAKOUT']:
+                # KC通道突破形态
+                breakout_point = int(n * 0.7)
+                if pattern_type == 'UPPER_BREAKOUT':
+                    # 上轨突破
+                    for i in range(n):
+                        if i < breakout_point:
+                            growth_factor = 1 + (0.05 * i / breakout_point)
+                        else:
+                            growth_factor = 1.05 + (0.15 * (i - breakout_point) / (n - breakout_point))
+                        
+                        new_price = base_price * growth_factor
+                        adjusted_data.loc[i, 'close'] = new_price
+                        adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                        adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.04)
+                        adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 1.00)
+                else:  # LOWER_BREAKOUT
+                    # 下轨突破
+                    for i in range(n):
+                        if i < breakout_point:
+                            decline_factor = 1 - (0.05 * i / breakout_point)
+                        else:
+                            decline_factor = 0.95 - (0.15 * (i - breakout_point) / (n - breakout_point))
+                        
+                        new_price = base_price * decline_factor
+                        adjusted_data.loc[i, 'close'] = new_price
+                        adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+                        adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.02)
+                        adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.96, 0.98)
+            else:
+                # 其他KC形态使用通用处理
+                adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
+
+        elif indicator_name == 'VIX':  # 恐慌指数
+            if pattern_type == 'FEAR_SPIKE':
+                # 恐慌情绪激增：价格大幅下跌，波动性增加
+                for i in range(n):
+                    decline_factor = 1 - (0.20 * i / n)
+                    volatility_factor = 1 + (2.0 * i / n)  # 波动性增加200%
+                    
+                    new_price = base_price * decline_factor
+                    daily_volatility = 0.05 * volatility_factor
+                    
+                    adjusted_data.loc[i, 'close'] = new_price
+                    adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.95, 1.05)
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.00, 1.00 + daily_volatility)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(1.00 - daily_volatility, 1.00)
+            else:
+                # 其他VIX形态使用通用处理
+                adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
+
+        else:
+            # EMV, CHAIKIN等其他指标使用通用形态处理
             adjusted_data = self._create_cross_pattern(adjusted_data, pattern_type)
 
         return adjusted_data

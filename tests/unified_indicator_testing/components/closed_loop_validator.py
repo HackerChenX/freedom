@@ -77,7 +77,9 @@ class ClosedLoopValidator:
             'successful_validations': 0,
             'failed_validations': 0,
             'validation_rate': 0.0,
-            'indicator_performance': {}
+            'indicator_performance': {},
+            'pattern_matches': {},  # 🔧 添加缺失的pattern_matches字段
+            'entry_point_accuracy': []  # 🔧 添加缺失的entry_point_accuracy字段
         }
         
         logger.info("闭环验证器初始化完成")

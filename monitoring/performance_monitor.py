@@ -21,7 +21,7 @@ from collections import deque, defaultdict
 try:
     import psutil
     HAS_PSUTIL = True
-except Import_error:
+except ImportError:  # 🔧 修复拼写错误：Import_error -> ImportError
     HAS_PSUTIL = False
     psutil = None
 

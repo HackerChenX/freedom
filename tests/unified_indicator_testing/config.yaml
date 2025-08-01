@@ -13,7 +13,7 @@ data_generation:
   data_quality_threshold: 0.95
   pool_size: 100  # 每个测试的数据池大小
 
-# 已修复指标测试矩阵（21个指标）
+# 已修复指标测试矩阵（24个指标）+ 新增待修复指标（13个指标）
 indicators_test_matrix:
   completed_indicators:
     # 第一批已修复指标
@@ -165,6 +165,91 @@ indicators_test_matrix:
       expected_accuracy: 1.0
       priority: "medium"
 
+  # 🔧 Ultra Think新增：待修复指标配置
+  repair_in_progress:
+    # P1 高优先级 - 趋势指标
+    SAR:
+      patterns: ['TREND_REVERSAL', 'UPTREND_SIGNAL', 'DOWNTREND_SIGNAL', 'STOP_LOSS']
+      history_requirement: 40
+      complex_conditions: ['SAR_TREND_COMBO', 'SAR_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    TRIX:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'DIVERGENCE', 'MOMENTUM_SHIFT']
+      history_requirement: 45
+      complex_conditions: ['TRIX_MACD_COMBO', 'TRIX_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    # P1 高优先级 - 成交量指标
+    MFI:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'DIVERGENCE', 'MONEY_FLOW_REVERSAL']
+      history_requirement: 35
+      complex_conditions: ['MFI_RSI_COMBO', 'MFI_VOL_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      
+    # P1 高优先级 - 动量指标
+    ROC:
+      patterns: ['POSITIVE_MOMENTUM', 'NEGATIVE_MOMENTUM', 'ZERO_CROSS', 'ACCELERATION']
+      history_requirement: 30
+      complex_conditions: ['ROC_MACD_COMBO', 'ROC_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    CMO:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'MOMENTUM_SHIFT', 'ZERO_CROSS']
+      history_requirement: 25
+      complex_conditions: ['CMO_RSI_COMBO', 'CMO_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    # P2 中优先级 - 波动性指标
+    ATR:
+      patterns: ['HIGH_VOLATILITY', 'LOW_VOLATILITY', 'VOLATILITY_EXPANSION', 'VOLATILITY_CONTRACTION']
+      history_requirement: 30
+      complex_conditions: ['ATR_BOLL_COMBO', 'ATR_TREND_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    KC:
+      patterns: ['UPPER_BREAKOUT', 'LOWER_BREAKOUT', 'SQUEEZE', 'EXPANSION']
+      history_requirement: 35
+      complex_conditions: ['KC_BOLL_COMBO', 'KC_ATR_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    VIX:
+      patterns: ['FEAR_SPIKE', 'COMPLACENCY_LOW', 'VOLATILITY_EXPANSION', 'VOLATILITY_CONTRACTION']
+      history_requirement: 40
+      complex_conditions: ['VIX_MARKET_COMBO']
+      expected_accuracy: 1.0
+      priority: "low"
+      
+    # P2 中优先级 - 成交量分析指标
+    EMV:
+      patterns: ['EASE_OF_MOVEMENT_POSITIVE', 'EASE_OF_MOVEMENT_NEGATIVE', 'ZERO_CROSS', 'DIVERGENCE']
+      history_requirement: 30
+      complex_conditions: ['EMV_VOL_COMBO', 'EMV_PRICE_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    CHAIKIN:
+      patterns: ['ACCUMULATION', 'DISTRIBUTION', 'ZERO_CROSS', 'DIVERGENCE']
+      history_requirement: 30
+      complex_conditions: ['CHAIKIN_VOL_COMBO', 'CHAIKIN_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      
+    # P3 优化优先级 - 现有评分较低指标
+    SMA:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'SUPPORT_RESISTANCE', 'TREND_FOLLOWING']
+      history_requirement: 50
+      complex_conditions: ['SMA_MA_COMBO', 'SMA_VOLUME_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+
 # 性能测试要求
 performance_requirements:
   max_execution_time_per_indicator: 120  # 秒
@@ -186,6 +271,9 @@ complex_condition_tests:
     - ['KDJ', 'BOLL']
     - ['MA', 'VOL']
     - ['DMI', 'ADX']
+    - ['SAR', 'TRIX']  # 🔧 新增组合
+    - ['MFI', 'ROC']   # 🔧 新增组合
+    - ['ATR', 'KC']    # 🔧 新增组合
   
   multi_timeframe_combinations:
     - ['daily', '60min']

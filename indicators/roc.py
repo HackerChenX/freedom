@@ -277,7 +277,14 @@ class RateOfChange(BaseIndicator, PatternSignalMixin):
         return min(max(base_confidence, 0.2), 0.9)
 
     def get_patterns_Roc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """获取ROC相关形态"""
+        """获取ROC相关形态 - Ultra Think优化版
+        
+        生成与配置文件一致的新形态：
+        - ROC_POSITIVE_MOMENTUM: 正动量（ROC为正且增强）
+        - ROC_NEGATIVE_MOMENTUM: 负动量（ROC为负且减弱）
+        - ROC_ZERO_CROSS: 零轴穿越（ROC穿越零轴）
+        - ROC_ACCELERATION: 加速度变化（ROC变化率增大）
+        """
         if not self.has_result():
             self.calculate_Roc(data, **kwargs)
             
@@ -288,23 +295,76 @@ class RateOfChange(BaseIndicator, PatternSignalMixin):
         
         roc = self._result['roc']
         
-        # 基本形态
+        # 🎯 Ultra Think优化：生成新形态名称，与配置文件一致
+        
+        # 1. ROC_POSITIVE_MOMENTUM: 正动量（ROC为正且增强趋势）
+        roc_change = roc - roc.shift(1)
+        patterns['ROC_POSITIVE_MOMENTUM'] = (roc > 0) & (roc_change > 0) & (roc > roc.rolling(3).mean())
+        
+        # 2. ROC_NEGATIVE_MOMENTUM: 负动量（ROC为负且减弱趋势）
+        patterns['ROC_NEGATIVE_MOMENTUM'] = (roc < 0) & (roc_change < 0) & (roc < roc.rolling(3).mean())
+        
+        # 3. ROC_ZERO_CROSS: 零轴穿越（ROC穿越零轴）
+        patterns['ROC_ZERO_CROSS'] = (
+            ((roc > 0) & (roc.shift(1) <= 0)) |  # 上穿零轴
+            ((roc < 0) & (roc.shift(1) >= 0))    # 下穿零轴
+        )
+        
+        # 4. ROC_ACCELERATION: 加速度变化（ROC变化率增大）
+        roc_acceleration = roc_change - roc_change.shift(1)
+        patterns['ROC_ACCELERATION'] = roc_acceleration.abs() > roc_acceleration.abs().rolling(5).mean()
+        
+        # 🎯 Ultra Think完成：保留一些原有形态作为补充
         patterns['ROC_POSITIVE'] = roc > 0
         patterns['ROC_NEGATIVE'] = roc < 0
-        patterns['ROC_STRONG_POSITIVE'] = roc > 10
-        patterns['ROC_STRONG_NEGATIVE'] = roc < -10
-        patterns['ROC_NEUTRAL'] = (roc >= -2) & (roc <= 2)
-        
-        # 趋势形态
-        roc_change = roc - roc.shift(1)
-        patterns['ROC_RISING'] = roc_change > 0
-        patterns['ROC_FALLING'] = roc_change < 0
-        patterns['ROC_ACCELERATING'] = (roc_change > 0) & (roc_change > roc_change.shift(1))
-        patterns['ROC_DECELERATING'] = (roc_change < 0) & (roc_change < roc_change.shift(1))
-        
-        # 极端形态
         patterns['ROC_EXTREME_HIGH'] = roc > 20
         patterns['ROC_EXTREME_LOW'] = roc < -20
-        patterns['ROC_MOMENTUM_SHIFT'] = (roc > 0) & (roc.shift(1) < 0) | (roc < 0) & (roc.shift(1) > 0)
         
         return patterns
+
+    def get_pattern_info_Roc(self, pattern_id: str = None) -> Dict[str, Any]:
+        """
+        获取ROC指标的形态信息
+        
+        Args:
+            pattern_id: 形态ID，如果为None则返回所有形态信息
+            
+        Returns:
+            Dict[str, Any]: 形态信息字典
+        """
+        all_patterns = {
+            'ROC_POSITIVE_MOMENTUM': {
+                'name': 'ROC正动量',
+                'description': f'ROC指标为正且增强趋势，表示价格动量向上',
+                'type': 'trend',
+                'strength': 'strong'
+            },
+            'ROC_NEGATIVE_MOMENTUM': {
+                'name': 'ROC负动量',
+                'description': f'ROC指标为负且减弱趋势，表示价格动量向下',
+                'type': 'trend',
+                'strength': 'strong'
+            },
+            'ROC_ZERO_CROSS': {
+                'name': 'ROC零轴穿越',
+                'description': 'ROC指标穿越零轴，表示价格变化率方向改变',
+                'type': 'reversal',
+                'strength': 'medium'
+            },
+            'ROC_ACCELERATION': {
+                'name': 'ROC加速度变化',
+                'description': 'ROC变化率增大，表示价格变化加速',
+                'type': 'momentum',
+                'strength': 'strong'
+            }
+        }
+        
+        if pattern_id is None:
+            return all_patterns
+        else:
+            return all_patterns.get(pattern_id, {
+                'name': 'ROC变化率',
+                'description': f'基于ROC变化率指标的技术分析: {pattern_id}',
+                'type': 'neutral',
+                'strength': 'medium'
+            })

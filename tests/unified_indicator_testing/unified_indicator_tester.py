@@ -130,11 +130,14 @@ class UnifiedIndicatorTester:
                 raise ConfigurationError(f"配置文件缺少必需部分: {section}")
 
         # 验证指标配置
-        indicators = self.config.get('indicators_test_matrix', {}).get('completed_indicators', {})
-        if not indicators:
-            raise ConfigurationError("配置文件中没有找到已完成的指标")
+        completed_indicators = self.config.get('indicators_test_matrix', {}).get('completed_indicators', {})
+        repair_indicators = self.config.get('indicators_test_matrix', {}).get('repair_in_progress', {})
+        total_indicators = len(completed_indicators) + len(repair_indicators)
+        
+        if total_indicators == 0:
+            raise ConfigurationError("配置文件中没有找到任何指标")
 
-        logger.debug(f"配置验证通过，找到 {len(indicators)} 个指标")
+        logger.debug(f"配置验证通过，找到 {total_indicators} 个指标（已完成:{len(completed_indicators)}, 待修复:{len(repair_indicators)}）")
 
     def _setup_output_directories(self):
         """设置输出目录"""
@@ -220,13 +223,20 @@ class UnifiedIndicatorTester:
         logger.info(f"开始统一指标测试会话: {self.test_session_id}")
 
         try:
-            indicators = self.config['indicators_test_matrix']['completed_indicators']
+            # 🔧 Ultra Think修复：同时测试已完成和待修复指标
+            completed_indicators = self.config['indicators_test_matrix'].get('completed_indicators', {})
+            repair_indicators = self.config['indicators_test_matrix'].get('repair_in_progress', {})
+            
+            # 合并所有需要测试的指标
+            all_indicators = {**completed_indicators, **repair_indicators}
             results = {}
-            total_indicators = len(indicators)
+            total_indicators = len(all_indicators)
+            
+            logger.info(f"发现指标分类：已完成 {len(completed_indicators)} 个，待修复 {len(repair_indicators)} 个")
 
             logger.info(f"将测试 {total_indicators} 个指标")
 
-            for i, indicator_name in enumerate(indicators.keys(), 1):
+            for i, indicator_name in enumerate(all_indicators.keys(), 1):
                 logger.info(f"[{i}/{total_indicators}] 开始测试指标: {indicator_name}")
 
                 try:
@@ -309,8 +319,17 @@ class UnifiedIndicatorTester:
         start_time = datetime.now()
 
         try:
-            # 验证指标配置
-            if indicator_name not in self.config['indicators_test_matrix']['completed_indicators']:
+            # 🔧 Ultra Think修复：验证指标配置，同时检查已完成和待修复指标
+            completed_indicators = self.config['indicators_test_matrix'].get('completed_indicators', {})
+            repair_indicators = self.config['indicators_test_matrix'].get('repair_in_progress', {})
+            
+            if indicator_name in completed_indicators:
+                indicator_config = completed_indicators[indicator_name]
+                indicator_status = "已完成"
+            elif indicator_name in repair_indicators:
+                indicator_config = repair_indicators[indicator_name]
+                indicator_status = "待修复"
+            else:
                 logger.error(f"指标 {indicator_name} 未在配置中找到")
                 return {
                     'indicator': indicator_name,
@@ -321,7 +340,7 @@ class UnifiedIndicatorTester:
                     'execution_time': (datetime.now() - start_time).total_seconds()
                 }
 
-            indicator_config = self.config['indicators_test_matrix']['completed_indicators'][indicator_name]
+            logger.info(f"找到指标 {indicator_name} 配置，状态: {indicator_status}")
             patterns = indicator_config.get('patterns', [])
 
             if not patterns:

@@ -1,91 +1,95 @@
-# Requirements Document
+# 技术指标系统修复和测试需求文档
 
-## Introduction
+## 项目简介
 
-This document outlines the requirements for a comprehensive stock selection testing system that validates all technical indicators and their patterns through closed-loop verification. The system must ensure that every indicator pattern can successfully select corresponding stocks, and that these selections are validated through reverse buypoint analysis to confirm the same patterns are detected, creating a complete verification loop.
+本规格说明概述了使用已验证的Ultra Think方法论继续系统性修复技术指标系统的需求。目标是将当前的成功经验（18个指标达到100%成功率）扩展到系统中的全部112+个指标。
 
-## Requirements
+## 需求规格
 
-### Requirement 1
+### 需求1：完整指标系统修复
 
-**User Story:** As a quantitative analyst, I want to test all technical indicators across all their patterns, so that I can ensure comprehensive coverage of the stock selection system.
+**用户故事：** 作为量化分析师，我希望所有技术指标都能正确运行并达到100%测试通过率，以便我能够依赖准确的技术分析进行选股。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the system runs comprehensive testing THEN it SHALL test every registered technical indicator
-2. WHEN testing each indicator THEN the system SHALL test all available patterns for that indicator
-3. WHEN testing patterns THEN the system SHALL attempt to select stocks that match each specific pattern
-4. IF no stocks are found for a pattern THEN the system SHALL log this as a test failure with detailed diagnostics
+1. 当运行指标测试时，系统应当为所有指标实现100%测试通过率
+2. 当指标被修复时，它应当保持系统集成兼容性
+3. 当测试指标时，每个指标应当返回一致、准确的计算结果
+4. 如果指标修复尝试失败，系统应当记录失败原因并提供备用选项
 
-### Requirement 2
+### 需求2：Ultra Think方法论实施
 
-**User Story:** As a system validator, I want each selected stock to be verified through buypoint analysis, so that I can confirm the pattern detection is accurate and consistent.
+**用户故事：** 作为系统维护人员，我希望系统性地应用Ultra Think方法论，以便在所有指标修复中实现一致的100%成功率。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN stocks are selected for a pattern THEN the system SHALL perform buypoint analysis on each selected stock
-2. WHEN performing buypoint analysis THEN the system SHALL check if the same indicator pattern is detected
-3. IF the buypoint analysis confirms the same pattern THEN the system SHALL mark this as a successful closed-loop verification
-4. IF the buypoint analysis does not confirm the pattern THEN the system SHALL mark this as a verification failure
-5. WHEN verification fails THEN the system SHALL log detailed information about the discrepancy
+1. 当分析指标问题时，系统应当执行多层分析（表面现象 → 逻辑分析 → 根本原因）
+2. 当修复动态指标时，系统应当使用迭代验证策略
+3. 当遇到复杂问题时，系统应当应用系统性分解而非快速修复
+4. 当验证修复时，系统应当要求连续20次100%成功测试
 
-### Requirement 3
+### 需求3：自动化测试和验证框架
 
-**User Story:** As a quality assurance engineer, I want comprehensive test reporting with detailed metrics, so that I can assess the overall health and accuracy of the stock selection system.
+**用户故事：** 作为开发人员，我希望有自动化测试来全面验证指标修复，以便确保质量并防止回归。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN testing completes THEN the system SHALL generate a comprehensive test report
-2. WHEN generating reports THEN the system SHALL include success/failure rates for each indicator
-3. WHEN generating reports THEN the system SHALL include success/failure rates for each pattern
-4. WHEN generating reports THEN the system SHALL include closed-loop verification statistics
-5. WHEN generating reports THEN the system SHALL include performance metrics (execution time, memory usage)
-6. WHEN failures occur THEN the system SHALL include detailed diagnostic information in the report
+1. 当运行综合测试时，系统应当自动测试所有指标
+2. 当指标被修改时，系统应当对所有相关组件运行回归测试
+3. 当测试完成时，系统应当生成包含成功率和失败分析的详细报告
+4. 如果任何测试失败，系统应当提供具体的诊断信息和建议修复方案
 
-### Requirement 4
+### 需求4：性能和可扩展性
 
-**User Story:** As a system administrator, I want configurable test parameters and validation criteria, so that I can customize the testing process for different scenarios.
+**用户故事：** 作为系统管理员，我希望指标系统能够高效处理大规模股票分析，以便支持生产工作负载。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN configuring tests THEN the system SHALL allow specification of date ranges for testing
-2. WHEN configuring tests THEN the system SHALL allow selection of specific indicators or patterns to test
-3. WHEN configuring tests THEN the system SHALL allow configuration of stock selection criteria (minimum volume, price range, etc.)
-4. WHEN configuring tests THEN the system SHALL allow configuration of verification thresholds and tolerances
-5. IF configuration is invalid THEN the system SHALL provide clear error messages and default to safe values
+1. 当处理4000+只股票时，系统应当在可接受的时间限制内完成分析
+2. 当运行并行测试时，系统应当高效利用系统资源
+3. 当扩展规模时，系统应当保持准确性和稳定性
+4. 如果性能下降，系统应当提供监控和优化建议
 
-### Requirement 5
+### 需求5：文档和知识传承
 
-**User Story:** As a performance analyst, I want the testing system to handle large-scale data efficiently, so that comprehensive testing can be completed in reasonable time.
+**用户故事：** 作为团队成员，我希望有修复过程和方法论的全面文档，以便我能够理解并为系统维护做出贡献。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN processing large datasets THEN the system SHALL use batch processing techniques
-2. WHEN running tests THEN the system SHALL support parallel processing where possible
-3. WHEN memory usage is high THEN the system SHALL implement memory optimization strategies
-4. WHEN tests run for extended periods THEN the system SHALL provide progress indicators
-5. IF system resources are constrained THEN the system SHALL gracefully handle resource limitations
+1. 当修复完成时，系统应当记录所有变更和使用的方法论
+2. 当新团队成员加入时，他们应当能够访问完整的修复指南和最佳实践
+3. 当遇到问题时，系统应当维护解决方案的知识库
+4. 当方法论更新时，文档应当反映当前的最佳实践
 
-### Requirement 6
+### 需求6：质量保证和标准
 
-**User Story:** As a data analyst, I want detailed logging and monitoring during test execution, so that I can troubleshoot issues and understand system behavior.
+**用户故事：** 作为质量保证工程师，我希望在整个修复过程中执行严格的质量标准，以便系统保持生产级可靠性。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN tests execute THEN the system SHALL log all major operations with timestamps
-2. WHEN errors occur THEN the system SHALL log detailed error information including stack traces
-3. WHEN processing stocks THEN the system SHALL log stock codes and processing status
-4. WHEN verification fails THEN the system SHALL log the expected vs actual pattern details
-5. WHEN tests complete THEN the system SHALL log summary statistics and performance metrics
+1. 当指标被修复时，它们应当满足100%完美标准（而非仅80%基础标准）
+2. 当代码被修改时，它应当包含真实的业务逻辑实现（无空方法）
+3. 当编写测试时，它们应当覆盖边界情况和边界条件
+4. 如果质量标准未达到，修复应当被视为不完整
 
-### Requirement 7
+### 需求7：系统集成和兼容性
 
-**User Story:** As a system integrator, I want the testing framework to integrate seamlessly with existing indicator and buypoint analysis systems, so that testing reflects real system behavior.
+**用户故事：** 作为系统集成人员，我希望修复的指标能够与现有的买点分析和选股系统无缝协作，以便整体系统保持功能正常。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN running tests THEN the system SHALL use the same indicator calculation methods as the production system
-2. WHEN performing buypoint analysis THEN the system SHALL use the same analysis engine as the production system
-3. WHEN accessing data THEN the system SHALL use the same data sources and connection methods as the production system
-4. IF system dependencies are unavailable THEN the system SHALL provide clear error messages and graceful degradation
-5. WHEN configuration changes THEN the system SHALL automatically adapt to use updated system components
+1. 当指标被修复时，买点分析系统应当继续正常运行
+2. 当添加新指标时，它们应当与现有的形态注册表集成
+3. 当系统组件交互时，数据流应当保持一致和可靠
+4. 如果出现集成问题，系统应当提供清晰的错误消息和解决路径
+
+### 需求8：监控和告警
+
+**用户故事：** 作为系统操作员，我希望实时监控指标系统健康状况，以便快速识别和解决任何问题。
+
+#### 验收标准
+
+1. 当系统运行时，它应当提供实时健康监控
+2. 当发生错误时，系统应当生成适当的告警
+3. 当性能指标变化时，系统应当跟踪和报告趋势
+4. 如果出现关键问题，系统应当提供即时通知和诊断信息
