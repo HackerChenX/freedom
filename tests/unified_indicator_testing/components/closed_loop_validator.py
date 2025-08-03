@@ -63,6 +63,8 @@ class ClosedLoopValidator:
         self.validation_config = {
             'max_validation_stocks': 50,  # 最大验证股票数量
             'min_confidence_score': 0.3,  # 最小置信度分数（从0.6调整到0.3，更实用）
+            'entry_point_tolerance': 0.05,  # 入口点容错率
+            'pattern_match_threshold': 0.7,  # 形态匹配阈值
             'enable_risk_control': True,
             'enable_confirmation_signals': True
         }
@@ -606,6 +608,10 @@ class ClosedLoopValidator:
         return data
 
 
+    def _calculate_macd(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算MACD指标（为测试提供兼容接口）"""
+        return self._calculate_macd_simplified(data)
+
     def _calculate_macd_simplified(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算MACD指标（简化实现，仅测试模式）"""
         close = data['close']
@@ -624,6 +630,18 @@ class ClosedLoopValidator:
         data['histogram'] = data['macd_line'] - data['signal_line']
 
         return data
+
+    def _calculate_rsi(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算RSI指标（为测试提供兼容接口）"""
+        return self._calculate_rsi_simplified(data)
+
+    def _calculate_kdj(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算KDJ指标（为测试提供兼容接口）"""
+        return self._calculate_kdj_simplified(data)
+
+    def _calculate_bollinger(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算布林带指标（为测试提供兼容接口）"""
+        return self._calculate_bollinger_simplified(data)
 
     def _calculate_rsi_simplified(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算RSI指标（简化实现，仅测试模式）"""

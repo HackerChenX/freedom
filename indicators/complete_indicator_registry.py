@@ -259,8 +259,8 @@ class CompleteIndicatorRegistry:
             'MTM': 'indicators.mtm.MTM',
             'RSIMA': 'indicators.rsima.RSIMA',
             
-            # 复合指标
-            'COMPOSITE': 'indicators.composite.CompositeIndicator',
+            # 复合指标  
+            'COMPOSITE': 'indicators.composite.Composite',
             'SYNERGY': 'indicators.synergy.SynergyIndicator',
             
             # 评分框架

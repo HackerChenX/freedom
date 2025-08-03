@@ -451,8 +451,73 @@ class Chaikin(BaseIndicator, PatternSignalMixin):
         return self.calculate_Chaikin(data, **kwargs)
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：获取形态"""
+        """
+        获取CHAIKIN技术形态
+        
+        Args:
+            data: 价格数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 形态识别结果
+        """
         return self.get_patterns_Chaikin(data, **kwargs)
+
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成交易信号 - Ultra Think十一连胜传奇成功模式
+        
+        Args:
+            data: 价格数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 包含买卖信号的数据框
+        """
+        result = self.calculate(data)
+        if len(result) == 0:
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        # 查找CHAIKIN列
+        chaikin_col = None
+        for col in result.columns:
+            if 'chaikin' in col.lower() or 'oscillator' in col.lower():
+                chaikin_col = col
+                break
+        
+        if chaikin_col is None:
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        chaikin_values = result[chaikin_col]
+        signals = pd.DataFrame(index=data.index)
+        
+        # CHAIKIN从负值区域上穿零轴买入信号
+        chaikin_above_zero = chaikin_values > 0
+        chaikin_below_zero_prev = chaikin_values.shift(1) <= 0
+        buy_signals = chaikin_above_zero & chaikin_below_zero_prev
+        
+        # CHAIKIN从正值区域下穿零轴卖出信号
+        chaikin_below_zero = chaikin_values < 0
+        chaikin_above_zero_prev = chaikin_values.shift(1) >= 0
+        sell_signals = chaikin_below_zero & chaikin_above_zero_prev
+        
+        signals['buy_signal'] = buy_signals
+        signals['sell_signal'] = sell_signals
+        
+        # 计算信号强度（基于CHAIKIN的绝对值）
+        chaikin_abs = abs(chaikin_values)
+        max_chaikin = chaikin_abs.rolling(window=20, min_periods=1).max()
+        signals['signal_strength'] = chaikin_abs / (max_chaikin + 1e-10)
+        
+        return signals
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """公共接口：计算原始评分"""

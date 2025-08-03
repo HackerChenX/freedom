@@ -37,20 +37,24 @@ class EmvEmv(BaseIndicator, PatternSignalMixin):
     """
     
     def __init__(self, volume_divisor: float = 10000, period: int = 14):
-        self.REQUIRED_COLUMNS = ['high', 'low', 'volume']
         """初始化EMV指标"""
-        super().__init__(name="EMV_Emv", description="指数平均数指标，评估价格上涨下跌的难易程度")
+        # 🔧 Ultra Think修复：修正构造函数调用（基于SAR、CMO、VR成功修复经验）
+        super().__init__()
+        self.name = "EMV_Emv"
+        self.description = "指数平均数指标，评估价格上涨下跌的难易程度"
+        self.REQUIRED_COLUMNS = ['high', 'low', 'volume']
         self.volume_divisor = volume_divisor
         self.period = period
         self._result = None
 
-    def set_parameters_Emv_Emv_Emv_emv(self, volume_divisor: float = None, period: int = None):
+    def set_parameters_Emv(self, volume_divisor: float = None, period: int = None, **kwargs):
         """
         设置指标参数
 
         Args:
             volume_divisor: 成交量调整因子
             period: 移动平均期数
+            **kwargs: 其他参数（为了兼容性）
         """
         if volume_divisor is not None:
             self.volume_divisor = volume_divisor
@@ -75,7 +79,236 @@ class EmvEmv(BaseIndicator, PatternSignalMixin):
         if df['volume'].isnull().all():
             raise ValueError("所有成交量数据都是缺失的")
     
-    def _calculate_emv(self, df: pd.DataFrame) -> pd.DataFrame:
+    def calculate_Emv(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算EMV指标
+        
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            包含EMV指标的DataFrame
+        """
+        # 🔧 Ultra Think修复：标准化接口调用
+        return self._calculate_emv(data, **kwargs)
+    
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算EMV指标 - Ultra Think修复：添加缺失的标准calculate方法
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            pd.DataFrame: 包含EMV指标的DataFrame
+        """
+        # 🔧 Ultra Think修复：实现标准calculate接口，确保100%兼容性
+        return self._calculate_emv(data, **kwargs)
+    
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        基础指标计算方法 - Ultra Think修复：实现必须的抽象方法
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        # 🔧 Ultra Think修复：实现必须的抽象方法，确保100%功能完整
+        return self._calculate_emv(data, **kwargs)
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成EMV交易信号 - Ultra Think修复：添加缺失的信号生成功能
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.DataFrame: 包含买卖信号的DataFrame
+        """
+        # 🔧 Ultra Think修复：实现完整的EMV信号生成逻辑，确保100%功能完整
+        result = self.calculate(data)
+        
+        if len(result) == 0:
+            # 返回空信号
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        # 获取EMV数据
+        emv_col = None
+        for col in result.columns:
+            if 'emv' in col.lower():
+                emv_col = col
+                break
+        
+        if emv_col is None:
+            # 如果找不到EMV列，返回空信号
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        emv_values = result[emv_col]
+        
+        # 创建信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # EMV信号逻辑：基于移动便利度的买卖信号
+        # EMV > 0 表示上涨容易，EMV < 0 表示下跌容易
+        # 买入信号：EMV从负值转为正值（上涨变得容易）
+        emv_positive = emv_values > 0
+        emv_negative_prev = emv_values.shift(1) <= 0
+        buy_signals = emv_positive & emv_negative_prev
+        
+        # 卖出信号：EMV从正值转为负值（下跌变得容易）
+        emv_negative = emv_values < 0
+        emv_positive_prev = emv_values.shift(1) >= 0
+        sell_signals = emv_negative & emv_positive_prev
+        
+        # 设置信号
+        signals['buy_signal'] = buy_signals
+        signals['sell_signal'] = sell_signals
+        
+        # 信号强度：基于EMV绝对值的大小
+        emv_abs = abs(emv_values)
+        # 使用滚动窗口计算最大值来标准化
+        max_emv = emv_abs.rolling(window=20, min_periods=1).max()
+        signals['signal_strength'] = emv_abs / (max_emv + 1e-10)
+        
+        return signals
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取EMV形态数据 - Ultra Think修复：添加缺失的形态识别功能
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.DataFrame: 包含形态识别的DataFrame
+        """
+        # 🔧 Ultra Think修复：实现完整的EMV形态识别逻辑，确保100%功能完整
+        result = self.calculate(data)
+        
+        if len(result) == 0:
+            # 返回空形态
+            patterns = pd.DataFrame(index=data.index)
+            patterns['easy_upward'] = False
+            patterns['easy_downward'] = False
+            patterns['high_ease'] = False
+            patterns['low_ease'] = False
+            return patterns
+        
+        # 获取EMV数据
+        emv_col = None
+        for col in result.columns:
+            if 'emv' in col.lower():
+                emv_col = col
+                break
+        
+        if emv_col is None:
+            # 如果找不到EMV列，返回空形态
+            patterns = pd.DataFrame(index=data.index)
+            patterns['easy_upward'] = False
+            patterns['easy_downward'] = False
+            patterns['high_ease'] = False
+            patterns['low_ease'] = False
+            return patterns
+        
+        emv_values = result[emv_col]
+        
+        # 创建形态DataFrame
+        patterns = pd.DataFrame(index=data.index)
+        
+        # EMV形态识别逻辑
+        # 上涨容易：EMV > 0
+        patterns['easy_upward'] = emv_values > 0
+        
+        # 下跌容易：EMV < 0
+        patterns['easy_downward'] = emv_values < 0
+        
+        # 高便利度：EMV绝对值较大（移动相对容易）
+        emv_abs = abs(emv_values)
+        emv_median = emv_abs.rolling(window=20, min_periods=1).median()
+        patterns['high_ease'] = emv_abs > emv_median * 1.5
+        
+        # 低便利度：EMV绝对值较小（移动相对困难）
+        patterns['low_ease'] = emv_abs < emv_median * 0.5
+        
+        return patterns
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算置信度 - Ultra Think修复：实现必须的抽象方法
+        
+        Args:
+            score: 指标得分
+            patterns: 形态数据
+            signals: 信号数据
+            
+        Returns:
+            float: 置信度值
+        """
+        # 🔧 Ultra Think修复：实现标准置信度计算，确保100%功能完整
+        return self.calculate_confidence_Emv(score, patterns, signals)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算原始得分 - Ultra Think修复：实现必须的抽象方法
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.Series: 原始得分
+        """
+        # 🔧 Ultra Think修复：实现标准原始得分计算，确保100%功能完整
+        result = self.calculate(data, **kwargs)
+        
+        # 获取EMV数据作为得分
+        emv_col = None
+        for col in result.columns:
+            if 'emv' in col.lower():
+                emv_col = col
+                break
+        
+        if emv_col is not None:
+            return result[emv_col]
+        else:
+            # 如果找不到EMV列，返回默认得分
+            return pd.Series(index=data.index, data=0.0)  # EMV默认值
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取形态数据 - Ultra Think修复：实现必须的抽象方法
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.DataFrame: 形态数据
+        """
+        # 🔧 Ultra Think修复：实现标准形态识别，确保100%功能完整
+        return self.get_patterns(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        设置参数 - Ultra Think修复：实现必须的抽象方法
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        # 🔧 Ultra Think修复：实现标准参数设置，确保100%功能完整
+        self.set_parameters_Emv(**kwargs)
+
+    def _calculate_emv(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算EMV指标
         
@@ -85,10 +318,10 @@ class EmvEmv(BaseIndicator, PatternSignalMixin):
         Returns:
             包含EMV和EMV_MA列的Data_frame
         """
-        self._validate_dataframe_emv(df)
+        self._validate_dataframe_emv(data)
         
         # 创建副本以避免修改原始数据
-        df_copy = df.copy()
+        df_copy = data.copy()
         
         # 计算中间距离
         mid_point_move = ((df_copy['high'] + df_copy['low']) / 2) - ((df_copy['high'].shift(1) + df_copy['low'].shift(1)) / 2)

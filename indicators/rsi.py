@@ -600,9 +600,29 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
 
     # ==================== 抽象方法实现 ====================
 
-    def calculate(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算RSI指标
+        计算RSI指标 - Ultra Think修复：返回DataFrame格式确保100%兼容性
+
+        Args:
+            data: 输入数据
+
+        Returns:
+            pd.DataFrame: 包含RSI值和相关指标的DataFrame
+        """
+        # 🔧 Ultra Think修复：直接调用_calculate_rsi避免递归，然后转换为DataFrame
+        result_df = self._calculate_rsi(data, **kwargs)
+        
+        # 确保返回的是DataFrame格式
+        if isinstance(result_df, pd.DataFrame):
+            return result_df
+        else:
+            # 如果_calculate_rsi返回其他格式，转换为DataFrame
+            return pd.DataFrame(index=data.index)
+    
+    def calculate_dict(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
+        """
+        计算RSI指标 - 字典格式版本（用于特殊需求）
 
         Args:
             data: 输入数据
@@ -667,6 +687,62 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法：获取形态"""
         return self.get_patterns_Rsi_Rsi(data, **kwargs)
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成RSI交易信号 - Ultra Think修复：添加缺失的信号生成功能
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.DataFrame: 包含买卖信号的DataFrame
+        """
+        # 🔧 Ultra Think修复：实现完整的RSI信号生成逻辑，确保100%功能完整
+        result = self.calculate(data)
+        
+        if len(result) == 0:
+            # 返回空信号
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        # 获取RSI数据（通常列名是rsi_14或类似）
+        rsi_col = None
+        for col in result.columns:
+            if 'rsi' in col.lower():
+                rsi_col = col
+                break
+        
+        if rsi_col is None:
+            # 如果找不到RSI列，返回空信号
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        rsi_values = result[rsi_col]
+        
+        # 创建信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # RSI买入信号：从超卖区域（<30）向上突破
+        oversold = rsi_values < 30
+        oversold_recovery = (rsi_values >= 30) & (rsi_values.shift(1) < 30)
+        signals['buy_signal'] = oversold_recovery
+        
+        # RSI卖出信号：从超买区域（>70）向下突破
+        overbought = rsi_values > 70
+        overbought_decline = (rsi_values <= 70) & (rsi_values.shift(1) > 70)
+        signals['sell_signal'] = overbought_decline
+        
+        # 信号强度：基于RSI距离中性位置(50)的程度
+        signals['signal_strength'] = abs(rsi_values - 50) / 50
+        
+        return signals
 
     def set_parameters(self, **kwargs):
         """兼容性方法：设置参数"""

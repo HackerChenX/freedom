@@ -1,0 +1,3099 @@
+{
+  "test_summary": {
+    "test_time": "2025-08-02 16:22:04",
+    "duration_seconds": 14.44,
+    "total_indicators": 21,
+    "successful_indicators": 20,
+    "success_rate_percent": 95.2,
+    "status": "PASS"
+  },
+  "performance_metrics": {
+    "avg_accuracy_percent": 0.77,
+    "avg_execution_time_seconds": 0.0155,
+    "total_buy_points_detected": 35,
+    "processing_speed_indicators_per_second": 1.45
+  },
+  "category_breakdown": {
+    "核心指标": {
+      "success_count": 6,
+      "total_count": 6,
+      "success_rate": 100.0
+    },
+    "趋势指标": {
+      "success_count": 5,
+      "total_count": 6,
+      "success_rate": 83.33333333333334
+    },
+    "振荡器指标": {
+      "success_count": 2,
+      "total_count": 2,
+      "success_rate": 100.0
+    },
+    "成交量指标": {
+      "success_count": 4,
+      "total_count": 4,
+      "success_rate": 100.0
+    },
+    "专业指标": {
+      "success_count": 3,
+      "total_count": 3,
+      "success_rate": 100.0
+    }
+  },
+  "detailed_results": {
+    "MACD": {
+      "status": "SUCCESS",
+      "accuracy": 0.6666666666666666,
+      "buy_points_detected": 3,
+      "execution_time": 0.014265298843383789,
+      "test_time": 0.04690694808959961,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_MACD_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "MACD_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.015588760375976562,
+          "result": {
+            "indicator": "MACD",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.015588760375976562,
+            "details": [
+              {
+                "stock_code": "TARGET_MACD_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.8,
+                "signal_strength": 0.5115214728028425,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "cross_type": "golden_cross_above",
+                  "cross_strength": 0.5115214728028425
+                },
+                "indicator_values": {
+                  "macd_line": 1.7226509047130847,
+                  "macd_signal": 0.8414779768090984,
+                  "macd_histogram": 1.7623458558079725
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.8,
+              "average_strength": 0.5115214728028425,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "NORMAL001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "MACD_GOLDEN_CROSS",
+          "accuracy": 0.0,
+          "buy_points": 1,
+          "execution_time": 0.012012004852294922,
+          "result": {
+            "indicator": "MACD",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 0,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.012012004852294922,
+            "details": [
+              {
+                "stock_code": "NORMAL001",
+                "is_target_stock": false,
+                "pattern_detected": true,
+                "confidence": 0.8,
+                "signal_strength": 0.06087459651780174,
+                "quality_score": 90.21749193035603,
+                "pattern_details": {
+                  "cross_type": "golden_cross_above",
+                  "cross_strength": 0.06087459651780174
+                },
+                "indicator_values": {
+                  "macd_line": 0.7021441465450593,
+                  "macd_signal": 0.6594014049267926,
+                  "macd_histogram": 0.08548548323653349
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.8,
+              "average_strength": 0.06087459651780174,
+              "average_quality": 90.21749193035603,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0,
+              "false_positive_rate": 1.0,
+              "precision": 0.0,
+              "recall": 0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 0,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        },
+        {
+          "stock_code": "TARGET_MACD_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "MACD_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.015195131301879883,
+          "result": {
+            "indicator": "MACD",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.015195131301879883,
+            "details": [
+              {
+                "stock_code": "TARGET_MACD_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.8,
+                "signal_strength": 0.5209703265485158,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "cross_type": "death_cross_below",
+                  "cross_strength": 0.5209703265485158
+                },
+                "indicator_values": {
+                  "macd_line": -0.8992591587944183,
+                  "macd_signal": -0.4307718211855466,
+                  "macd_histogram": -0.9369746752177435
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.8,
+              "average_strength": 0.5209703265485158,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 3,
+      "patterns_tested": 2
+    },
+    "RSI": {
+      "status": "SUCCESS",
+      "accuracy": 0.6666666666666666,
+      "buy_points_detected": 2,
+      "execution_time": 0.026729265848795574,
+      "test_time": 0.08280611038208008,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_RSI_001",
+          "pattern": "OVERSOLD",
+          "pattern_key": "RSI_OVERSOLD",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.02232193946838379,
+          "result": {
+            "indicator": "RSI",
+            "pattern": "OVERSOLD",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.02232193946838379,
+            "details": [
+              {
+                "stock_code": "TARGET_RSI_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.9,
+                "signal_strength": 0.9999999975004361,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "rsi_value": 8.748473590003414e-08,
+                  "oversold_level": 8.748473590003414e-08
+                },
+                "indicator_values": {
+                  "rsi_14": 8.748473590003414e-08,
+                  "rsi_ma_5": 1.2000380138488255e-07,
+                  "rsi_ma_10": 1.8197369797690043e-07,
+                  "rsi_ma_short": 1.2000380138488255e-07,
+                  "rsi_ma_long": 1.8197369797690043e-07,
+                  "rsi_overbought": 0.0,
+                  "rsi_oversold": 1.0,
+                  "pattern_bullish": 1.0,
+                  "pattern_bearish": 0.0,
+                  "pattern_neutral": 0.0,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.9,
+              "average_strength": 0.9999999975004361,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "NORMAL002",
+          "pattern": "OVERSOLD",
+          "pattern_key": "RSI_OVERSOLD",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.030228853225708008,
+          "result": {
+            "indicator": "RSI",
+            "pattern": "OVERSOLD",
+            "total_stocks": 1,
+            "target_stocks": 0,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.030228853225708008,
+            "details": [
+              {
+                "stock_code": "NORMAL002",
+                "is_target_stock": false,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {
+                  "rsi_value": 64.68143471998181
+                },
+                "indicator_values": {
+                  "rsi_14": 64.68143471998181,
+                  "rsi_ma_5": 53.56765382453263,
+                  "rsi_ma_10": 41.58979617773067,
+                  "rsi_ma_short": 53.56765382453263,
+                  "rsi_ma_long": 41.58979617773067,
+                  "rsi_overbought": 0.0,
+                  "rsi_oversold": 0.0,
+                  "pattern_bullish": 0.0,
+                  "pattern_bearish": 0.0,
+                  "pattern_neutral": 1.0,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0,
+              "false_positive_rate": 0.0,
+              "precision": 0,
+              "recall": 0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 0,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        },
+        {
+          "stock_code": "TARGET_RSI_002",
+          "pattern": "OVERBOUGHT",
+          "pattern_key": "RSI_OVERBOUGHT",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.027637004852294922,
+          "result": {
+            "indicator": "RSI",
+            "pattern": "OVERBOUGHT",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.027637004852294922,
+            "details": [
+              {
+                "stock_code": "TARGET_RSI_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.9,
+                "signal_strength": 0.9999999945780929,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "rsi_value": 99.99999981023325,
+                  "overbought_level": 99.99999981023325
+                },
+                "indicator_values": {
+                  "rsi_14": 99.99999981023325,
+                  "rsi_ma_5": 99.99999974405073,
+                  "rsi_ma_10": 99.99999960682241,
+                  "rsi_ma_short": 99.99999974405073,
+                  "rsi_ma_long": 99.99999960682241,
+                  "rsi_overbought": 1.0,
+                  "rsi_oversold": 0.0,
+                  "pattern_bullish": 0.0,
+                  "pattern_bearish": 1.0,
+                  "pattern_neutral": 0.0,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.9,
+              "average_strength": 0.9999999945780929,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 3,
+      "patterns_tested": 2
+    },
+    "KDJ": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.006738901138305664,
+      "test_time": 0.014449119567871094,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_KDJ_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "KDJ_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.0048580169677734375,
+          "result": {
+            "indicator": "KDJ",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.0048580169677734375,
+            "details": [
+              {
+                "stock_code": "TARGET_KDJ_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.8,
+                "signal_strength": 0.21847055789352227,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "k_value": 91.61346968359624,
+                  "d_value": 87.24405852572579,
+                  "j_value": 100.35229199933713,
+                  "cross_type": "trend_golden_cross",
+                  "k_trend": "rising",
+                  "cross_margin": 4.369411157870445
+                },
+                "indicator_values": {
+                  "K": 91.61346968359624,
+                  "D": 87.24405852572579,
+                  "J": 100.35229199933713,
+                  "k": 91.61346968359624,
+                  "d": 87.24405852572579,
+                  "j": 100.35229199933713
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.8,
+              "average_strength": 0.21847055789352227,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_KDJ_002",
+          "pattern": "OVERBOUGHT",
+          "pattern_key": "KDJ_OVERBOUGHT",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.00861978530883789,
+          "result": {
+            "indicator": "KDJ",
+            "pattern": "OVERBOUGHT",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.00861978530883789,
+            "details": [
+              {
+                "stock_code": "TARGET_KDJ_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.8,
+                "signal_strength": 0.3771528605397577,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "k_value": 87.54305721079515,
+                  "d_value": 88.63386610806901,
+                  "j_value": 85.36143941624744,
+                  "overbought_level": 87.54305721079515
+                },
+                "indicator_values": {
+                  "K": 87.54305721079515,
+                  "D": 88.63386610806901,
+                  "J": 85.36143941624744,
+                  "k": 87.54305721079515,
+                  "d": 88.63386610806901,
+                  "j": 85.36143941624744
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.8,
+              "average_strength": 0.3771528605397577,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "BOLL": {
+      "status": "SUCCESS",
+      "accuracy": 0.5,
+      "buy_points_detected": 1,
+      "execution_time": 0.01266491413116455,
+      "test_time": 0.026359081268310547,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_BOLL_001",
+          "pattern": "UPPER_BREAKOUT",
+          "pattern_key": "BOLL_UPPER_BREAKOUT",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.015782833099365234,
+          "result": {
+            "indicator": "BOLL",
+            "pattern": "UPPER_BREAKOUT",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.015782833099365234,
+            "details": [
+              {
+                "stock_code": "TARGET_BOLL_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.9,
+                "signal_strength": 0.005198575612838806,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "close_price": 17.120292848702153,
+                  "upper_band": 17.031751998120804,
+                  "lower_band": 14.019789889337337,
+                  "middle_band": 15.525770943729071,
+                  "breakout_strength": 0.005198575612838806,
+                  "pattern_type": "upper_breakout"
+                },
+                "indicator_values": {
+                  "UPPER": 17.031751998120804,
+                  "MIDDLE": 15.525770943729071,
+                  "LOWER": 14.019789889337337,
+                  "upper": 17.031751998120804,
+                  "middle": 15.525770943729071,
+                  "lower": 14.019789889337337,
+                  "UB": 17.031751998120804,
+                  "MB": 15.525770943729071,
+                  "LB": 14.019789889337337
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.9,
+              "average_strength": 0.005198575612838806,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_BOLL_002",
+          "pattern": "LOWER_BREAKOUT",
+          "pattern_key": "BOLL_LOWER_BREAKOUT",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.009546995162963867,
+          "result": {
+            "indicator": "BOLL",
+            "pattern": "LOWER_BREAKOUT",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.009546995162963867,
+            "details": [
+              {
+                "stock_code": "TARGET_BOLL_002",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {
+                  "close_price": 18.6965164284153,
+                  "upper_band": 22.683364675315463,
+                  "lower_band": 17.861015979788437,
+                  "middle_band": 20.27219032755195
+                },
+                "indicator_values": {
+                  "UPPER": 22.683364675315463,
+                  "MIDDLE": 20.27219032755195,
+                  "LOWER": 17.861015979788437,
+                  "upper": 22.683364675315463,
+                  "middle": 20.27219032755195,
+                  "lower": 17.861015979788437,
+                  "UB": 22.683364675315463,
+                  "MB": 20.27219032755195,
+                  "LB": 17.861015979788437
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "MA": {
+      "status": "SUCCESS",
+      "accuracy": 0.5,
+      "buy_points_detected": 1,
+      "execution_time": 0.0058165788650512695,
+      "test_time": 0.01324605941772461,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_MA_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "MA_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.006577968597412109,
+          "result": {
+            "indicator": "MA",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.006577968597412109,
+            "details": [
+              {
+                "stock_code": "TARGET_MA_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.7,
+                "signal_strength": 0.046424137343558505,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "cross_type": "golden_cross"
+                },
+                "indicator_values": {
+                  "MA5": 50.10789952171313,
+                  "MA10": 49.1803145213494,
+                  "MA20": 47.884885041849785
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.7,
+              "average_strength": 0.046424137343558505,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_MA_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "MA_DEATH_CROSS",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.00505518913269043,
+          "result": {
+            "indicator": "MA",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.00505518913269043,
+            "details": [
+              {
+                "stock_code": "TARGET_MA_002",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {},
+                "indicator_values": {
+                  "MA5": 5.360873129178701,
+                  "MA10": 5.461940241090662,
+                  "MA20": 5.621771423668276
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "EMA": {
+      "status": "SUCCESS",
+      "accuracy": 0.5,
+      "buy_points_detected": 1,
+      "execution_time": 0.0032695531845092773,
+      "test_time": 0.007318019866943359,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_EMA_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "EMA_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.0032300949096679688,
+          "result": {
+            "indicator": "EMA",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.0032300949096679688,
+            "details": [
+              {
+                "stock_code": "TARGET_EMA_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.7,
+                "signal_strength": 0.03346621636316623,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "cross_type": "golden_cross"
+                },
+                "indicator_values": {
+                  "EMA12": 14.728634357635219,
+                  "EMA26": 14.251684403836853
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.7,
+              "average_strength": 0.03346621636316623,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_EMA_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "EMA_DEATH_CROSS",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.003309011459350586,
+          "result": {
+            "indicator": "EMA",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.003309011459350586,
+            "details": [
+              {
+                "stock_code": "TARGET_EMA_002",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {},
+                "indicator_values": {
+                  "EMA12": 10.627952000778002,
+                  "EMA26": 11.022111162703226
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "DMI": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.04274463653564453,
+      "test_time": 0.08614897727966309,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_DMI_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "DMI_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.046582937240600586,
+          "result": {
+            "indicator": "DMI",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.046582937240600586,
+            "details": [
+              {
+                "stock_code": "TARGET_DMI_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": false,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_DMI_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "DMI_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.03890633583068848,
+          "result": {
+            "indicator": "DMI",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.03890633583068848,
+            "details": [
+              {
+                "stock_code": "TARGET_DMI_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": false,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "ADX": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.02732717990875244,
+      "test_time": 0.05526304244995117,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_ADX_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "ADX_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.026903152465820312,
+          "result": {
+            "indicator": "ADX",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.026903152465820312,
+            "details": [
+              {
+                "stock_code": "TARGET_ADX_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.6,
+                "signal_strength": 0.814353666459408,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "current_adx": 24.43060999378224,
+                  "cross_type": "adx_trend_signal",
+                  "note": "DI数据缺失，基于ADX趋势强度判断"
+                },
+                "indicator_values": {
+                  "ADX14": 24.43060999378224,
+                  "ADXR14": 18.269001412252543,
+                  "ADX": 24.43060999378224,
+                  "ADXR": 18.269001412252543,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.6,
+              "average_strength": 0.814353666459408,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_ADX_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "ADX_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.02775120735168457,
+          "result": {
+            "indicator": "ADX",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.02775120735168457,
+            "details": [
+              {
+                "stock_code": "TARGET_ADX_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.6,
+                "signal_strength": 0.8781059295595668,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "current_adx": 26.343177886787004,
+                  "cross_type": "adx_trend_signal",
+                  "note": "DI数据缺失，基于ADX趋势强度判断"
+                },
+                "indicator_values": {
+                  "ADX14": 26.343177886787004,
+                  "ADXR14": 16.789024743483466,
+                  "ADX": 26.343177886787004,
+                  "ADXR": 16.789024743483466,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.6,
+              "average_strength": 0.8781059295595668,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "DMA": {
+      "status": "PARTIAL_SUCCESS",
+      "accuracy": 0.0,
+      "buy_points_detected": 0,
+      "execution_time": 0.011637449264526367,
+      "test_time": 0.023858070373535156,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_DMA_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "DMA_GOLDEN_CROSS",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.008198738098144531,
+          "result": {
+            "indicator": "DMA",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.008198738098144531,
+            "details": [
+              {
+                "stock_code": "TARGET_DMA_001",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {
+                  "dma_short": 0.3320393740211305,
+                  "dma_long": 4.508222114824578,
+                  "dma_diff": 4.176182740803448,
+                  "dma_ratio": 0.07365195537488521
+                },
+                "indicator_values": {
+                  "DMA": 0.3320393740211305,
+                  "DMA_PCT": 4.508222114824578,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        },
+        {
+          "stock_code": "TARGET_DMA_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "DMA_DEATH_CROSS",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.015076160430908203,
+          "result": {
+            "indicator": "DMA",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.015076160430908203,
+            "details": [
+              {
+                "stock_code": "TARGET_DMA_002",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {
+                  "dma_short": -1.5935522949217855,
+                  "dma_long": -4.601975889593057,
+                  "dma_diff": 3.008423594671272,
+                  "dma_ratio": -1593.5522949217855
+                },
+                "indicator_values": {
+                  "DMA": -1.5935522949217855,
+                  "DMA_PCT": -4.601975889593057,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "WMA": {
+      "status": "SUCCESS",
+      "accuracy": 0.5,
+      "buy_points_detected": 1,
+      "execution_time": 0.008180022239685059,
+      "test_time": 0.01695394515991211,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_WMA_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "WMA_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.01016092300415039,
+          "result": {
+            "indicator": "WMA",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.01016092300415039,
+            "details": [
+              {
+                "stock_code": "TARGET_WMA_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.7,
+                "signal_strength": 0.0995375415719965,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "cross_type": "golden_cross"
+                },
+                "indicator_values": {
+                  "WMA5": 18.388879552470076,
+                  "WMA10": 17.649876815347294,
+                  "WMA20": 16.724194361003537,
+                  "wma5": 18.388879552470076,
+                  "wma10": 17.649876815347294,
+                  "wma20": 16.724194361003537,
+                  "WMA14": 17.181231533352904,
+                  "wma14": 17.181231533352904
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.7,
+              "average_strength": 0.0995375415719965,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_WMA_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "WMA_DEATH_CROSS",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.0061991214752197266,
+          "result": {
+            "indicator": "WMA",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.0061991214752197266,
+            "details": [
+              {
+                "stock_code": "TARGET_WMA_002",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {},
+                "indicator_values": {
+                  "WMA5": 19.493525905913963,
+                  "WMA10": 20.051554485265527,
+                  "WMA20": 22.214360527551104,
+                  "wma5": 19.493525905913963,
+                  "wma10": 20.051554485265527,
+                  "wma20": 22.214360527551104,
+                  "WMA14": 20.65168364044111,
+                  "wma14": 20.65168364044111
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "CCI": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.010470032691955566,
+      "test_time": 0.02159404754638672,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_CCI_001",
+          "pattern": "OVERSOLD",
+          "pattern_key": "CCI_OVERSOLD",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.012180089950561523,
+          "result": {
+            "indicator": "CCI",
+            "pattern": "OVERSOLD",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.012180089950561523,
+            "details": [
+              {
+                "stock_code": "TARGET_CCI_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.9,
+                "signal_strength": 0.40646261229495595,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "current_cci": -140.6462612294956,
+                  "signal_type": "oversold",
+                  "cci_level": "oversold"
+                },
+                "indicator_values": {
+                  "CCI": -140.6462612294956,
+                  "cci": -140.6462612294956,
+                  "CCI_20": -140.6462612294956,
+                  "cci_20": -140.6462612294956,
+                  "cci_overbought": 0.0,
+                  "cci_oversold": 1.0,
+                  "cci_neutral": 0.0,
+                  "pattern_bullish": 1.0,
+                  "pattern_bearish": 0.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.9,
+              "average_strength": 0.40646261229495595,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_CCI_002",
+          "pattern": "OVERBOUGHT",
+          "pattern_key": "CCI_OVERBOUGHT",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.00875997543334961,
+          "result": {
+            "indicator": "CCI",
+            "pattern": "OVERBOUGHT",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.00875997543334961,
+            "details": [
+              {
+                "stock_code": "TARGET_CCI_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.8,
+                "signal_strength": 0.8726181400592481,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "current_cci": 94.90472560236992,
+                  "signal_type": "near_overbought"
+                },
+                "indicator_values": {
+                  "CCI": 94.90472560236992,
+                  "cci": 94.90472560236992,
+                  "CCI_20": 94.90472560236992,
+                  "cci_20": 94.90472560236992,
+                  "cci_overbought": 0.0,
+                  "cci_oversold": 0.0,
+                  "cci_neutral": 1.0,
+                  "pattern_bullish": 0.0,
+                  "pattern_bearish": 0.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.8,
+              "average_strength": 0.8726181400592481,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "BIAS": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.02087700366973877,
+      "test_time": 0.04268002510070801,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_BIAS_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "BIAS_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.022793054580688477,
+          "result": {
+            "indicator": "BIAS",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.022793054580688477,
+            "details": [
+              {
+                "stock_code": "TARGET_BIAS_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 4.191329049041189,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "BIAS_Bias6": 4.191329049041189,
+                  "BIAS_Bias12": 9.950256625830148,
+                  "BIAS_Bias24": 12.958924916521774,
+                  "BIAS_Bias": 4.191329049041189,
+                  "BIAS_MA": 5.309272046154372,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_BIAS_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "BIAS_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.018960952758789062,
+          "result": {
+            "indicator": "BIAS",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.018960952758789062,
+            "details": [
+              {
+                "stock_code": "TARGET_BIAS_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": -7.251474230681475,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "BIAS_Bias6": -7.251474230681475,
+                  "BIAS_Bias12": -11.960735443193416,
+                  "BIAS_Bias24": -13.976590736233426,
+                  "BIAS_Bias": -7.251474230681475,
+                  "BIAS_MA": -5.287617394879465,
+                  "buy_signal": 0.0,
+                  "sell_signal": 1.0,
+                  "hold_signal": 0.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "STOCHRSI": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.0168684720993042,
+      "test_time": 0.034300804138183594,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_STOCHRSI_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "STOCHRSI_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.020205020904541016,
+          "result": {
+            "indicator": "STOCHRSI",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.020205020904541016,
+            "details": [
+              {
+                "stock_code": "TARGET_STOCHRSI_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 100.0,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "STOCHRSI_K": 100.0,
+                  "STOCHRSI_D": 99.65102511756272,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_STOCHRSI_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "STOCHRSI_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.013531923294067383,
+          "result": {
+            "indicator": "STOCHRSI",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.013531923294067383,
+            "details": [
+              {
+                "stock_code": "TARGET_STOCHRSI_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 0.09197885363448267,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "STOCHRSI_K": 0.09197885363448267,
+                  "STOCHRSI_D": 0.03065961787816089,
+                  "buy_signal": 1.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 0.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "WR": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.011438488960266113,
+      "test_time": 0.023506879806518555,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_WR_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "WR_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.00751495361328125,
+          "result": {
+            "indicator": "WR",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.00751495361328125,
+            "details": [
+              {
+                "stock_code": "TARGET_WR_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": -13.39361015441836,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "wr": -13.39361015441836,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_WR_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "WR_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.015362024307250977,
+          "result": {
+            "indicator": "WR",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.015362024307250977,
+            "details": [
+              {
+                "stock_code": "TARGET_WR_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": -95.72617847369084,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "wr": -95.72617847369084,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "VOL": {
+      "status": "SUCCESS",
+      "accuracy": 0.3333333333333333,
+      "buy_points_detected": 1,
+      "execution_time": 0.02540103594462077,
+      "test_time": 0.07687687873840332,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_VOL_001",
+          "pattern": "VOLUME_SURGE",
+          "pattern_key": "VOL_VOLUME_SURGE",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.03300881385803223,
+          "result": {
+            "indicator": "VOL",
+            "pattern": "VOLUME_SURGE",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.03300881385803223,
+            "details": [
+              {
+                "stock_code": "TARGET_VOL_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.8,
+                "signal_strength": 0.41183761152804355,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "volume": 27388210.95649618,
+                  "volume_ma": 15018140.626267562,
+                  "volume_ratio": 1.823675223056087
+                },
+                "indicator_values": {
+                  "volume": 27388210.95649618,
+                  "vol": 27388210.95649618,
+                  "vol_ma5": 34466342.71423046,
+                  "vol_ma10": 22369630.972961023,
+                  "vol_ma20": 15018140.626267562,
+                  "vol_ratio": 0.7946364133722879,
+                  "vol_ratio_change": -0.21785954795882378,
+                  "vol_std": 0.813726456853557,
+                  "vol_ma60": 11165486.01304059,
+                  "vol_ratio_60": 2.4529349572878836,
+                  "vol_acceleration": 0.17589860265963098,
+                  "vol_std_5": 0.20265252023096306,
+                  "vol_std_60": 0.7577836609366351,
+                  "vol_std_ratio": 0.26742793580489804,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.8,
+              "average_strength": 0.41183761152804355,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "NORMAL003",
+          "pattern": "VOLUME_SURGE",
+          "pattern_key": "VOL_VOLUME_SURGE",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.02432727813720703,
+          "result": {
+            "indicator": "VOL",
+            "pattern": "VOLUME_SURGE",
+            "total_stocks": 1,
+            "target_stocks": 0,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.02432727813720703,
+            "details": [
+              {
+                "stock_code": "NORMAL003",
+                "is_target_stock": false,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {
+                  "volume": 4672288.787829808,
+                  "volume_ma": 8604282.573345909
+                },
+                "indicator_values": {
+                  "volume": 4672288.787829808,
+                  "vol": 4672288.787829808,
+                  "vol_ma5": 7547014.97315342,
+                  "vol_ma10": 7992982.623140114,
+                  "vol_ma20": 8604282.573345909,
+                  "vol_ratio": 0.6190909656930963,
+                  "vol_ratio_change": -0.34105908880094316,
+                  "vol_std": 0.5672826703318727,
+                  "vol_ma60": 10703042.07318702,
+                  "vol_ratio_60": 0.4365383930924371,
+                  "vol_acceleration": 0.18162176197963598,
+                  "vol_std_5": 0.5227840385188282,
+                  "vol_std_60": 0.5169961988762167,
+                  "vol_std_ratio": 1.011195129974248,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0,
+              "false_positive_rate": 0.0,
+              "precision": 0,
+              "recall": 0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 0,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        },
+        {
+          "stock_code": "TARGET_VOL_002",
+          "pattern": "VOLUME_SHRINK",
+          "pattern_key": "VOL_VOLUME_SHRINK",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.018867015838623047,
+          "result": {
+            "indicator": "VOL",
+            "pattern": "VOLUME_SHRINK",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.018867015838623047,
+            "details": [
+              {
+                "stock_code": "TARGET_VOL_002",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.0,
+                "signal_strength": 0.0,
+                "quality_score": 65.0,
+                "pattern_details": {
+                  "volume": 6423197.2050547525,
+                  "volume_ma": 6420458.329827351
+                },
+                "indicator_values": {
+                  "volume": 6423197.2050547525,
+                  "vol": 6423197.2050547525,
+                  "vol_ma5": 6135539.788215341,
+                  "vol_ma10": 5752059.765670145,
+                  "vol_ma20": 6420458.329827351,
+                  "vol_ratio": 1.0468837994322717,
+                  "vol_ratio_change": 0.17688717733919113,
+                  "vol_std": 0.5100390366772891,
+                  "vol_ma60": 6239020.689495315,
+                  "vol_ratio_60": 1.029520100144809,
+                  "vol_acceleration": 0.7053656271509846,
+                  "vol_std_5": 0.26879872957827466,
+                  "vol_std_60": 0.5024038853041864,
+                  "vol_std_ratio": 0.5350251808174756,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.0,
+              "average_strength": 0.0,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        }
+      ],
+      "tested_stocks": 3,
+      "patterns_tested": 2
+    },
+    "OBV": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.014728069305419922,
+      "test_time": 0.029954910278320312,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_OBV_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "OBV_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.01602792739868164,
+          "result": {
+            "indicator": "OBV",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.01602792739868164,
+            "details": [
+              {
+                "stock_code": "TARGET_OBV_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 6827662.661024662,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "obv": 6827662.661024662
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_OBV_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "OBV_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.013428211212158203,
+          "result": {
+            "indicator": "OBV",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.013428211212158203,
+            "details": [
+              {
+                "stock_code": "TARGET_OBV_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 1441391.6676732833,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "obv": 1441391.6676732833
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "MTM": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.0017273426055908203,
+      "test_time": 0.0038251876831054688,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_MTM_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "MTM_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.0016868114471435547,
+          "result": {
+            "indicator": "MTM",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.0016868114471435547,
+            "details": [
+              {
+                "stock_code": "TARGET_MTM_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 28.062119045235708,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "value": 28.062119045235708,
+                  "ma20": 24.30383455703625
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_MTM_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "MTM_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.001767873764038086,
+          "result": {
+            "indicator": "MTM",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.001767873764038086,
+            "details": [
+              {
+                "stock_code": "TARGET_MTM_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 8.481771570324614,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "value": 8.481771570324614,
+                  "ma20": 9.892458157989608
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "PVT": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.010143518447875977,
+      "test_time": 0.02085089683532715,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_PVT_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "PVT_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.011322021484375,
+          "result": {
+            "indicator": "PVT",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.011322021484375,
+            "details": [
+              {
+                "stock_code": "TARGET_PVT_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 250612.31029492558,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "pvt": 250612.31029492558,
+                  "pvt_signal": -860203.2077378687,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_PVT_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "PVT_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.008965015411376953,
+          "result": {
+            "indicator": "PVT",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.008965015411376953,
+            "details": [
+              {
+                "stock_code": "TARGET_PVT_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": -1071078.4845626848,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "pvt": -1071078.4845626848,
+                  "pvt_signal": -100745.82199030626,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "MOMENTUM": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.014644026756286621,
+      "test_time": 0.029870271682739258,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_MOMENTUM_001",
+          "pattern": "GOLDEN_CROSS",
+          "pattern_key": "MOMENTUM_GOLDEN_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.010625123977661133,
+          "result": {
+            "indicator": "MOMENTUM",
+            "pattern": "GOLDEN_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.010625123977661133,
+            "details": [
+              {
+                "stock_code": "TARGET_MOMENTUM_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 3.7889827746883,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "momentum": 3.7889827746883,
+                  "MOMENTUM_VALUE": 3.7889827746883,
+                  "momentum_ma": 2.4700149088155916,
+                  "momentum_std": 1.5591473194119205,
+                  "momentum_ratio": 16.669050242201905,
+                  "buy_signal": 1.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 0.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_MOMENTUM_002",
+          "pattern": "DEATH_CROSS",
+          "pattern_key": "MOMENTUM_DEATH_CROSS",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.01866292953491211,
+          "result": {
+            "indicator": "MOMENTUM",
+            "pattern": "DEATH_CROSS",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.01866292953491211,
+            "details": [
+              {
+                "stock_code": "TARGET_MOMENTUM_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": -8.97166743369111,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "momentum": -8.97166743369111,
+                  "MOMENTUM_VALUE": -8.97166743369111,
+                  "momentum_ma": -5.641947342123688,
+                  "momentum_std": 3.169682314541505,
+                  "momentum_ratio": -20.07854848519271,
+                  "buy_signal": 0.0,
+                  "sell_signal": 1.0,
+                  "hold_signal": 0.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "FIBONACCI": {
+      "status": "SUCCESS",
+      "accuracy": 0.5,
+      "buy_points_detected": 1,
+      "execution_time": 0.011947035789489746,
+      "test_time": 0.02472400665283203,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_FIBONACCI_001",
+          "pattern": "RETRACEMENT_SUPPORT",
+          "pattern_key": "FIBONACCI_RETRACEMENT_SUPPORT",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.010756969451904297,
+          "result": {
+            "indicator": "FIBONACCI",
+            "pattern": "RETRACEMENT_SUPPORT",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.010756969451904297,
+            "details": [
+              {
+                "stock_code": "TARGET_FIBONACCI_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 18.220087966102177,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "FIBONACCI_VALUE": 18.220087966102177,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_FIBONACCI_002",
+          "pattern": "RETRACEMENT_RESISTANCE",
+          "pattern_key": "FIBONACCI_RETRACEMENT_RESISTANCE",
+          "accuracy": 0.0,
+          "buy_points": 0,
+          "execution_time": 0.013137102127075195,
+          "result": {
+            "indicator": "FIBONACCI",
+            "pattern": "RETRACEMENT_RESISTANCE",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 0,
+            "accuracy": 0.0,
+            "score": 0.0,
+            "status": "COMPLETED",
+            "execution_time": 0.013137102127075195,
+            "details": [
+              {
+                "stock_code": "TARGET_FIBONACCI_002",
+                "is_target_stock": true,
+                "pattern_detected": false,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 65.0,
+                "pattern_details": {
+                  "latest_value": 50.188464489161994
+                },
+                "indicator_values": {
+                  "FIBONACCI_VALUE": 50.188464489161994,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 0,
+              "detection_rate": 0.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 65.0,
+              "quality_grade": "POOR"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 0.0,
+              "false_positive_rate": 0,
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "performance_grade": "VERY_POOR"
+            },
+            "total_count": 1,
+            "recognized_count": 0,
+            "success_rate": 0.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    },
+    "AROON": {
+      "status": "SUCCESS",
+      "accuracy": 1.0,
+      "buy_points_detected": 2,
+      "execution_time": 0.028212428092956543,
+      "test_time": 0.05728292465209961,
+      "pattern_results": [
+        {
+          "stock_code": "TARGET_AROON_001",
+          "pattern": "AROON_UP",
+          "pattern_key": "AROON_AROON_UP",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.029701709747314453,
+          "result": {
+            "indicator": "AROON",
+            "pattern": "AROON_UP",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.029701709747314453,
+            "details": [
+              {
+                "stock_code": "TARGET_AROON_001",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 92.85714285714286,
+                  "pattern_type": "bullish"
+                },
+                "indicator_values": {
+                  "aroon_up": 92.85714285714286,
+                  "aroon_down": 7.142857142857142,
+                  "aroon_oscillator": 85.71428571428572,
+                  "AROON_VALUE": 85.71428571428572,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        },
+        {
+          "stock_code": "TARGET_AROON_002",
+          "pattern": "AROON_DOWN",
+          "pattern_key": "AROON_AROON_DOWN",
+          "accuracy": 1.0,
+          "buy_points": 1,
+          "execution_time": 0.026723146438598633,
+          "result": {
+            "indicator": "AROON",
+            "pattern": "AROON_DOWN",
+            "total_stocks": 1,
+            "target_stocks": 1,
+            "correctly_identified": 1,
+            "accuracy": 1.0,
+            "score": 1.0,
+            "status": "COMPLETED",
+            "execution_time": 0.026723146438598633,
+            "details": [
+              {
+                "stock_code": "TARGET_AROON_002",
+                "is_target_stock": true,
+                "pattern_detected": true,
+                "confidence": 0.5,
+                "signal_strength": 0.5,
+                "quality_score": 100.0,
+                "pattern_details": {
+                  "latest_value": 7.142857142857142,
+                  "pattern_type": "bearish"
+                },
+                "indicator_values": {
+                  "aroon_up": 7.142857142857142,
+                  "aroon_down": 100.0,
+                  "aroon_oscillator": -92.85714285714286,
+                  "AROON_VALUE": -92.85714285714286,
+                  "buy_signal": 0.0,
+                  "sell_signal": 0.0,
+                  "hold_signal": 1.0
+                },
+                "analysis_date": "20250801"
+              }
+            ],
+            "pattern_analysis": {
+              "total_patterns": 1,
+              "detected_patterns": 1,
+              "detection_rate": 1.0,
+              "average_confidence": 0.5,
+              "average_strength": 0.5,
+              "average_quality": 100.0,
+              "quality_grade": "EXCELLENT"
+            },
+            "indicator_performance": {
+              "target_hit_rate": 1.0,
+              "false_positive_rate": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0,
+              "performance_grade": "EXCELLENT"
+            },
+            "total_count": 1,
+            "recognized_count": 1,
+            "success_rate": 1.0
+          }
+        }
+      ],
+      "tested_stocks": 2,
+      "patterns_tested": 2
+    }
+  },
+  "architecture_compliance": {
+    "data_source": "simulated",
+    "calculation_engine": "unified_real_indicators",
+    "processing_logic": "universal_pattern_recognition",
+    "separation_compliance": 100.0
+  }
+}

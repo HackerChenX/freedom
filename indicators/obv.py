@@ -78,6 +78,69 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin):
         # 设置参数
         self.signal_period = params.get('signal_period', 10)
     
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生成OBV交易信号 - Ultra Think修复：添加缺失的信号生成功能
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            pd.DataFrame: 包含买卖信号的DataFrame
+        """
+        # 🔧 Ultra Think修复：实现完整的OBV信号生成逻辑，确保100%功能完整
+        result = self.calculate(data)
+        
+        if len(result) == 0:
+            # 返回空信号
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        # 获取OBV数据
+        obv_col = None
+        for col in result.columns:
+            if 'obv' in col.lower():
+                obv_col = col
+                break
+        
+        if obv_col is None:
+            # 如果找不到OBV列，返回空信号
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
+        
+        obv_values = result[obv_col]
+        close_prices = data['close'] if 'close' in data.columns else result.get('close', pd.Series(index=data.index))
+        
+        # 创建信号DataFrame
+        signals = pd.DataFrame(index=data.index)
+        
+        # OBV买入信号：OBV上涨但价格下跌（底背离）
+        obv_rising = obv_values > obv_values.shift(1)
+        price_falling = close_prices < close_prices.shift(1)
+        bullish_divergence = obv_rising & price_falling
+        
+        # OBV卖出信号：OBV下跌但价格上涨（顶背离）
+        obv_falling = obv_values < obv_values.shift(1)
+        price_rising = close_prices > close_prices.shift(1)
+        bearish_divergence = obv_falling & price_rising
+        
+        # 设置信号
+        signals['buy_signal'] = bullish_divergence
+        signals['sell_signal'] = bearish_divergence
+        
+        # 信号强度：基于OBV变化幅度
+        obv_change = abs(obv_values - obv_values.shift(1))
+        max_change = obv_change.rolling(window=20, min_periods=1).max()
+        signals['signal_strength'] = obv_change / (max_change + 1e-10)  # 防止除零
+        
+        return signals
+    
     def calculate_Obv(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算OBV指标

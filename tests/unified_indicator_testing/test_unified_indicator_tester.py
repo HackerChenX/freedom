@@ -214,8 +214,7 @@ validation_criteria:
         finally:
             tester.cleanup()
     
-    @patch('tests.unified_indicator_testing.unified_indicator_tester.logger')
-    def test_error_handling(self, mock_logger):
+    def test_error_handling(self):
         """测试错误处理"""
         tester = UnifiedIndicatorTester(config_path=self.config_file)
 
@@ -226,9 +225,10 @@ validation_criteria:
             # 验证返回了错误结果
             self.assertIn('error', result)
             self.assertEqual(result['overall_score'], 0.0)
+            self.assertEqual(result['status'], 'ERROR')
 
-            # 验证日志记录
-            mock_logger.error.assert_called()
+            # 验证错误信息包含指标名称
+            self.assertIn('NONEXISTENT_INDICATOR', result['error'])
 
         finally:
             tester.cleanup()

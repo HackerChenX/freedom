@@ -127,7 +127,8 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin):
 
 
 # 为了向后兼容，创建别名
-zxmwash_plate = ZXM_WASHPLATE
+zxmwash_plate = ZxmWashplate
+ZXM_WASHPLATE = ZxmWashplate  # 🔧 Ultra Think修复：添加缺失的别名
 
 # 定义洗盘类型枚举（为了兼容性）
 from enum import Enum

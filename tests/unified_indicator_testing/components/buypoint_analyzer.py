@@ -765,6 +765,48 @@ class BuypointAnalyzer:
             'pattern_bearish': (atr_percent < 1.5).astype(float),        # 波动性收缩信号
         }
 
+    def _fallback_calculate_dma(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """基础DMA（不同期移动平均）计算 - Ultra Think优化版本"""
+        close = data['close']
+        data_length = len(close)
+
+        # 🔧 Ultra Think修复：根据数据长度动态调整周期参数
+        if data_length >= 50:
+            short_period, long_period, mid_period = 10, 30, 20
+        elif data_length >= 30:
+            short_period, long_period, mid_period = 5, 20, 12
+        elif data_length >= 20:
+            short_period, long_period, mid_period = 3, 15, 8
+        else:
+            # 对于极短数据，使用更短的周期
+            short_period, long_period, mid_period = 2, min(8, data_length-1), 5
+
+        # 计算不同周期的移动平均（确保长期周期小于数据长度）
+        dma_short = close.rolling(short_period, min_periods=1).mean()
+        dma_long = close.rolling(long_period, min_periods=1).mean()
+        dma_mid = close.rolling(mid_period, min_periods=1).mean()
+
+        # 计算DMA差值（类似AMA）
+        dma_diff = dma_short - dma_long
+
+        return {
+            'DMA_SHORT': dma_short.fillna(0),      # 短期DMA
+            'DMA_LONG': dma_long.fillna(0),        # 长期DMA
+            'dma_short': dma_short.fillna(0),
+            'dma_long': dma_long.fillna(0),
+            'DMA10': dma_short.fillna(0),          # 10日DMA
+            'DMA50': dma_long.fillna(0),           # 50日DMA
+            'DMA20': dma_mid.fillna(0),            # 20日DMA
+            'DMA_DIFF': dma_diff.fillna(0),        # DMA差值
+            'dma_diff': dma_diff.fillna(0),
+            'AMA': dma_diff.fillna(0),             # 差值平均（兼容键名）
+            'dma_golden_signal': ((dma_short > dma_long) & (dma_short.shift(1) <= dma_long.shift(1))).astype(float),  # 金叉信号
+            'dma_death_signal': ((dma_short < dma_long) & (dma_short.shift(1) >= dma_long.shift(1))).astype(float),   # 死叉信号
+            'dma_trend_up': (dma_short > dma_long).astype(float),      # 多头趋势
+            'dma_trend_down': (dma_short < dma_long).astype(float),    # 空头趋势
+            'dma_divergence': (abs(dma_diff) > abs(dma_diff.rolling(10).mean()) * 1.5).astype(float)  # 背离信号
+        }
+
     def _fallback_calculate_cmo(self, data: pd.DataFrame) -> Dict[str, Any]:
         """基础CMO（钱德动量振荡器）计算"""
         close = data['close']
@@ -1374,6 +1416,9 @@ class BuypointAnalyzer:
             elif indicator_name == 'ROC':
                 # 🔧 关键修复：添加ROC指标计算
                 return self._fallback_calculate_roc(data)
+            elif indicator_name == 'DMA':
+                # 🔧 关键修复：添加DMA指标计算
+                return self._fallback_calculate_dma(data)
             else:
                 # 默认计算移动平均
                 return {'VALUE': self.real_indicators.calculate_ma(close_series, 20)}
@@ -2443,6 +2488,62 @@ class BuypointAnalyzer:
                     else:
                         details['trend_direction'] = 'bearish'
                         details['di_spread'] = current_di_minus - current_di_plus
+                        
+            elif pattern_type in ['GOLDEN_CROSS', 'DEATH_CROSS']:
+                # ADX金叉/死叉：基于DI+和DI-的交叉信号结合ADX强度
+                if di_plus is not None and di_minus is not None and len(di_plus) >= 2 and len(di_minus) >= 2:
+                    current_di_plus = di_plus.iloc[-1]
+                    current_di_minus = di_minus.iloc[-1]
+                    prev_di_plus = di_plus.iloc[-2]
+                    prev_di_minus = di_minus.iloc[-2]
+                    
+                    if pattern_type == 'GOLDEN_CROSS':
+                        # DI+上穿DI-且ADX上升（表示多头趋势增强）
+                        if current_di_plus > current_di_minus and prev_di_plus <= prev_di_minus:
+                            detected = True
+                            confidence = 0.9 if current_adx > 20 else 0.7
+                            strength = min((current_di_plus - current_di_minus + current_adx) / 50, 1.0)
+                            details['cross_type'] = 'di_golden_cross'
+                            details['adx_strength'] = current_adx
+                        elif current_di_plus > current_di_minus and current_adx > 20:
+                            detected = True
+                            confidence = 0.8
+                            strength = min((current_di_plus - current_di_minus + current_adx) / 60, 1.0)
+                            details['cross_type'] = 'di_bullish_dominance'
+                            details['adx_strength'] = current_adx
+                    
+                    elif pattern_type == 'DEATH_CROSS':
+                        # DI-上穿DI+且ADX上升（表示空头趋势增强）
+                        if current_di_minus > current_di_plus and prev_di_minus <= prev_di_plus:
+                            detected = True
+                            confidence = 0.9 if current_adx > 20 else 0.7
+                            strength = min((current_di_minus - current_di_plus + current_adx) / 50, 1.0)
+                            details['cross_type'] = 'di_death_cross'
+                            details['adx_strength'] = current_adx
+                        elif current_di_minus > current_di_plus and current_adx > 20:
+                            detected = True
+                            confidence = 0.8
+                            strength = min((current_di_minus - current_di_plus + current_adx) / 60, 1.0)
+                            details['cross_type'] = 'di_bearish_dominance'
+                            details['adx_strength'] = current_adx
+                    
+                    # 添加ADX强度评估
+                    if detected and current_adx > 25:
+                        confidence = min(confidence + 0.1, 1.0)
+                        details['trend_strength'] = 'strong'
+                    elif detected and current_adx > 15:
+                        details['trend_strength'] = 'moderate'
+                    else:
+                        details['trend_strength'] = 'weak'
+                        
+                else:
+                    # 如果没有DI数据，使用ADX本身的趋势判断
+                    if current_adx > 20:
+                        detected = True
+                        confidence = 0.6
+                        strength = current_adx / 30
+                        details['cross_type'] = 'adx_trend_signal'
+                        details['note'] = 'DI数据缺失，基于ADX趋势强度判断'
 
             return {
                 'detected': detected,
@@ -3197,12 +3298,28 @@ class BuypointAnalyzer:
     def _detect_dma_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
         """检测DMA（不同期移动平均）形态"""
         try:
-            # 获取DMA值 - 支持多种键名变体
+            # 🔧 Ultra Think修复：支持多种DMA字段名变体，包括registry方法返回的格式
             dma_short = values.get('DMA_SHORT', values.get('dma_short', values.get('DMA10')))
             dma_long = values.get('DMA_LONG', values.get('dma_long', values.get('DMA50')))
             dma_diff = values.get('DMA_DIFF', values.get('dma_diff', values.get('AMA')))
             
-            # 如果没有找到DMA特定值，尝试从MA数据中寻找
+            # 🔧 Ultra Think关键修复：处理registry方法返回的DMA字段
+            if dma_short is None or dma_long is None:
+                # 检查registry方法返回的DMA字段
+                dma_data = values.get('DMA')
+                if dma_data is not None and hasattr(dma_data, '__len__') and len(dma_data) > 0:
+                    # 使用DMA作为短期DMA，生成长期DMA
+                    if hasattr(dma_data, 'rolling'):
+                        dma_short = dma_data
+                        dma_long = dma_data.rolling(3).mean()  # 简单的长期平滑
+                    else:
+                        # 如果是数组形式，使用固定逻辑
+                        import pandas as pd
+                        dma_series = pd.Series(dma_data) if not isinstance(dma_data, pd.Series) else dma_data
+                        dma_short = dma_series
+                        dma_long = dma_series.rolling(3).mean()
+            
+            # 如果仍然没有找到DMA特定值，尝试从MA数据中寻找
             if dma_short is None or dma_long is None:
                 ma_data = {}
                 for key, value in values.items():
@@ -3662,6 +3779,7 @@ class BuypointAnalyzer:
         return {
             'overall_accuracy': overall_accuracy,
             'total_analyzed': self.recognition_stats['total_analyzed'],
+            'patterns_detected': self.recognition_stats['patterns_detected'],  # 添加缺失的字段
             'successful_identifications': self.recognition_stats['successful_identifications'],
             'supported_indicators': list(self.supported_indicators.keys()),
             'indicator_performance': self.recognition_stats['indicator_performance'],

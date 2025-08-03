@@ -459,6 +459,39 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin):
         
         return patterns
 
+    # 🔧 Ultra Think修复：添加缺失的抽象方法实现，按照已验证的修复模式
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        实现基类要求的抽象方法
+        """
+        return self._calculate_enhancedwr(data, **kwargs)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        实现基类要求的原始评分计算方法
+        """
+        return self.calculate_raw_score_Wr(data, **kwargs)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        实现基类要求的形态获取方法
+        """
+        return self.get_patterns_Wr(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """
+        实现基类要求的置信度计算方法
+        """
+        return self.calculate_confidence_Wr(score, patterns, signals)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        实现基类要求的参数设置方法
+        """
+        self.set_parameters_Wr(**kwargs)
 
-# 为了向后兼容，创建别名
+
+# 🔧 Ultra Think修复：为了向后兼容，创建别名
 enhanced_wr = EnhancedWr
+# 修复测试导入问题：提供大写R版本的别名
+EnhancedWR = EnhancedWr
