@@ -33,7 +33,9 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin):
     def __init__(self, period: int = 20, atr_period: int = 10, multiplier: float = 2.0,
                  name: str = "KC", description: str = "肯特纳通道指标"):
         """初始化KC指标"""
-        super().__init__(name, description)
+        super().__init__()
+        self.name = name
+        self.description = description
         self.indicator_type = Indicator_enum.KC.name
         self.period = period
         self.atr_period = atr_period
@@ -56,6 +58,94 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin):
             self.atr_period = atr_period
         if multiplier is not None:
             self.multiplier = multiplier
+    
+    # Ultra Think标准方法实现
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """通用计算接口"""
+        return self._calculate_kc(data)
+    
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """基类抽象方法实现"""
+        return self._calculate_kc(data)
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """生成交易信号"""
+        result = self._calculate_kc(data)
+        signals_df = pd.DataFrame(index=data.index)
+        
+        if 'kc_upper' in result.columns and 'kc_lower' in result.columns:
+            close = data['close']
+            upper = result['kc_upper']
+            lower = result['kc_lower']
+            
+            # KC信号：突破上轨=买入，跌破下轨=卖出
+            signals_df['buy_signal'] = (close > upper).astype(int)
+            signals_df['sell_signal'] = (close < lower).astype(int)
+            
+            # 信号强度基于突破程度
+            middle = result['kc_middle'] if 'kc_middle' in result.columns else (upper + lower) / 2
+            signals_df['signal_strength'] = np.where(
+                (close > upper) | (close < lower), 'strong',
+                np.where(abs(close - middle) / middle > 0.02, 'moderate', 'weak')
+            )
+        else:
+            signals_df['buy_signal'] = 0
+            signals_df['sell_signal'] = 0
+            signals_df['signal_strength'] = 'weak'
+        
+        return signals_df
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """通用形态识别接口"""
+        result = self._calculate_kc(data)
+        patterns_df = pd.DataFrame(index=data.index)
+        
+        if 'kc_upper' in result.columns and 'kc_lower' in result.columns:
+            close = data['close']
+            upper = result['kc_upper']
+            lower = result['kc_lower']
+            middle = result['kc_middle'] if 'kc_middle' in result.columns else (upper + lower) / 2
+            
+            # KC形态识别
+            patterns_df['KC_UPPER_BREAKOUT'] = close > upper
+            patterns_df['KC_LOWER_BREAKOUT'] = close < lower
+            patterns_df['KC_SQUEEZE'] = (result['kc_width'] < result['kc_width'].rolling(20).mean() * 0.8) if 'kc_width' in result.columns else False
+            patterns_df['KC_EXPANSION'] = (result['kc_width'] > result['kc_width'].rolling(20).mean() * 1.2) if 'kc_width' in result.columns else False
+            patterns_df['KC_MIDDLE_CROSS'] = (close > middle) & (close.shift(1) <= middle.shift(1))
+        
+        return patterns_df
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, raw_score: pd.Series, patterns: pd.DataFrame, signals: Dict) -> float:
+        """计算置信度"""
+        if raw_score.empty:
+            return 0.5
+        return min(0.9, max(0.1, abs(raw_score.iloc[-1] - 50) / 50))
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        result = self._calculate_kc(data)
+        score = pd.Series(50.0, index=data.index)
+        
+        if 'kc_upper' in result.columns and 'kc_lower' in result.columns:
+            close = data['close']
+            upper = result['kc_upper']
+            lower = result['kc_lower']
+            middle = result['kc_middle'] if 'kc_middle' in result.columns else (upper + lower) / 2
+            
+            # 基于价格相对通道位置评分
+            position = (close - lower) / (upper - lower)
+            score = position * 100
+            score = score.fillna(50.0)
+        
+        return score
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """通用形态识别接口"""
+        return self.get_patterns(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """通用参数设置接口"""
+        self.set_parameters_Kc_Kc_Kc_kc(**kwargs)
         
     def _calculate_kc(self, df: pd.DataFrame) -> pd.DataFrame:
         """

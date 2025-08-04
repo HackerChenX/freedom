@@ -30,7 +30,6 @@ class Vix(BaseIndicator, PatternSignalMixin):
     """
     
     def __init__(self, period: int = 10, smooth_period: int = 5):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化VIX恐慌指数指标
         
@@ -38,7 +37,10 @@ class Vix(BaseIndicator, PatternSignalMixin):
             period: 计算周期，默认为10
             smooth_period: 平滑周期，默认为5
         """
-        super().__init__(name="VIX", description="VIX恐慌指数，通过价格波动幅度衡量市场恐慌程度")
+        super().__init__()
+        self.name = "VIX"
+        self.description = "VIX恐慌指数，通过价格波动幅度衡量市场恐慌程度"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.period = period
         self.smooth_period = smooth_period
     
@@ -50,6 +52,56 @@ class Vix(BaseIndicator, PatternSignalMixin):
             self.period = period
         if smooth_period is not None:
             self.smooth_period = smooth_period
+    
+    # Ultra Think标准方法实现
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """通用计算接口"""
+        return self.calculate_Vix(data, **kwargs)
+    
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """基类抽象方法实现"""
+        return self._calculate_vix(data)
+    
+    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """生成交易信号"""
+        result = self.calculate_Vix(data, **kwargs)
+        signals_df = pd.DataFrame(index=data.index)
+        
+        if 'vix' in result.columns:
+            vix = result['vix'].fillna(0)
+            # VIX信号：高恐慌=买入机会，低恐慌=风险警告
+            signals_df['buy_signal'] = (vix > 30).astype(int)
+            signals_df['sell_signal'] = (vix < 15).astype(int)
+            signals_df['signal_strength'] = np.where(vix > 50, 'strong', 
+                                                   np.where(vix > 30, 'moderate', 'weak'))
+        else:
+            signals_df['buy_signal'] = 0
+            signals_df['sell_signal'] = 0
+            signals_df['signal_strength'] = 'weak'
+        
+        return signals_df
+    
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """通用形态识别接口"""
+        return self.get_patterns_Vix(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, raw_score: pd.Series, patterns: pd.DataFrame, signals: Dict) -> float:
+        """计算置信度"""
+        if raw_score.empty:
+            return 0.5
+        return min(0.9, max(0.1, abs(raw_score.iloc[-1] - 50) / 50))
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """通用原始评分接口"""
+        return self.calculate_raw_score_Vix(data, **kwargs)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """通用形态识别接口"""
+        return self.get_patterns_Vix(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """通用参数设置接口"""
+        self.set_parameters_Vix_Vix_Vix_vix(**kwargs)
 
     def calculate_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
