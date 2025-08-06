@@ -125,11 +125,11 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin):
     def calculate_Psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算PSY指标
-        
+
         Args:
             data: 包含价格数据的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
             包含PSY指标的DataFrame
         """

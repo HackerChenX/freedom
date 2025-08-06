@@ -68,7 +68,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin):
     def calculate_Roc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ROC指标
-        
+
         Args:
             data: 包含价格数据的DataFrame
             **kwargs: 其他参数
@@ -277,7 +277,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin):
         
         Args:
             data: 价格数据
-            
+
         Returns:
             pd.DataFrame: 形态数据
         """

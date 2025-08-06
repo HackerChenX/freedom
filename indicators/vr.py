@@ -85,24 +85,24 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin):
     def calculate_Vr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VR指标
-        
+
         Args:
             data: 包含价格数据的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
             包含VR指标的DataFrame
         """
         # 🔧 Ultra Think修复：标准化接口调用
         return self._calculate_vr(data, **kwargs)
-    
+
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VR指标 - Ultra Think修复：添加缺失的标准calculate方法
-        
+
         Args:
             data: 输入数据
-            
+
         Returns:
             pd.DataFrame: 包含VR指标的DataFrame
         """

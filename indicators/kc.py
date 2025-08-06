@@ -13,9 +13,8 @@ from enums.indicator_enum import Indicator_enum
 from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.dependency_injection import get_logger
-
-logger = get_logger(__name__)
+import logging
+logger = logging.getLogger(__name__)
 
 class KeltnerChannel(BaseIndicator, PatternSignalMixin):
     """
@@ -33,7 +32,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin):
     def __init__(self, period: int = 20, atr_period: int = 10, multiplier: float = 2.0,
                  name: str = "KC", description: str = "肯特纳通道指标"):
         """初始化KC指标"""
-        super().__init__()
+        # 不调用super().__init__()，直接初始化属性
         self.name = name
         self.description = description
         self.indicator_type = Indicator_enum.KC.name

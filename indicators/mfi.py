@@ -78,7 +78,7 @@ class Mfi(BaseIndicator, PatternSignalMixin):
     def calculate_Mfi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算MFI指标
-        
+
         Args:
             data: 包含OHLCV数据的DataFrame
             **kwargs: 其他参数
@@ -293,7 +293,7 @@ class Mfi(BaseIndicator, PatternSignalMixin):
         
         Args:
             data: 价格数据
-            
+
         Returns:
             pd.DataFrame: 形态数据
         """

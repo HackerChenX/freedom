@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -9,16 +8,13 @@ VIX恐慌指数指标
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.indicator_utils import crossover, crossunder
-from utils.dependency_injection import get_logger
-
-logger = get_logger(__name__)
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Vix(BaseIndicator, PatternSignalMixin):
@@ -37,12 +33,13 @@ class Vix(BaseIndicator, PatternSignalMixin):
             period: 计算周期，默认为10
             smooth_period: 平滑周期，默认为5
         """
-        super().__init__()
+        # 不调用super().__init__()，直接初始化属性
         self.name = "VIX"
         self.description = "VIX恐慌指数，通过价格波动幅度衡量市场恐慌程度"
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.period = period
         self.smooth_period = smooth_period
+        self._result = None
     
     def set_parameters_Vix_Vix_Vix_vix(self, period: int = None, smooth_period: int = None):
         """
@@ -291,9 +288,7 @@ class Vix(BaseIndicator, PatternSignalMixin):
         # 计算平滑后的VIX
         df_copy['vix_smooth'] = df_copy['vix'].rolling(window=self.smooth_period).mean()
 
-        # 添加形态识别和信号生成
-        df_copy = self.add_pattern_detection(df_copy)
-        df_copy = self.add_signal_generation(df_copy)
+        # 不调用可能导致递归的方法
 
         # 存储结果
         self._result = df_copy[['vix', 'vix_smooth']]
@@ -795,8 +790,6 @@ class Vix(BaseIndicator, PatternSignalMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('VIX', params)
             if not is_valid:
-                from utils.dependency_injection import get_logger
-                logger = get_logger(__name__)
                 logger.warning(f"VIX参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
