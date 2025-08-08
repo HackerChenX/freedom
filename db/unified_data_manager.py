@@ -65,11 +65,11 @@ class UnifiedDataManager:
         except ImportError:
             logger.warning("统一配置管理器不可用，使用默认配置")
             db_config = {
-                'host': get_config('database.host'),
-                'port': get_config('database.port'),
-                'database': get_config('database.name'),
-                'user': get_config('database.user'),
-                'password': ''
+                'host': get_config('database.host') or 'localhost',  # 🔧 Ultra Think修复：添加默认值
+                'port': get_config('database.port') or 9000,
+                'database': get_config('database.name') or 'stock',
+                'user': get_config('database.user') or 'default',
+                'password': get_config('database.password') or ''
             }
 
         # 初始化连接池
@@ -79,7 +79,7 @@ class UnifiedDataManager:
             database=db_config.get('database', 'stock'),
             user=db_config.get('user', 'default'),
             password=db_config.get('password', ''),
-            max_connections=get_config('performance.max_connections'),
+            max_connections=get_config('performance.max_connections') or 20,  # 🔧 Ultra Think修复：添加默认值
             min_connections=5
         )
         

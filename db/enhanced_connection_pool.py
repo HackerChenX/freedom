@@ -39,7 +39,7 @@ class ClickHouseConnectionPool:
                  port: int = 9000,
                  database: str = 'stock',
                  user: str = 'default',
-                 password: str = '123456',  # 修改默认密码
+                 password: str = '',  # 🔧 Ultra Think修复：使用空密码作为默认值
                  max_connections: int = 20,
                  min_connections: int = 5,
                  max_idle_time: int = 300,
@@ -241,7 +241,8 @@ class ClickHouseConnectionPool:
                     logger.debug(f"创建新连接: {connection.connection_id}")
                 else:
                     # 达到最大连接数，等待可用连接
-                    connection = self.available_connections.get(get_config('performance.timeout'))
+                    timeout = get_config('performance.timeout') or 30  # 🔧 Ultra Think修复：添加默认30秒超时
+                    connection = self.available_connections.get(timeout)
                     logger.debug(f"等待获取连接: {connection.connection_id}")
             
             # 更新连接统计
