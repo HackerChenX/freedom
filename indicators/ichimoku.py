@@ -8,7 +8,7 @@ ICHIMOKU 指标 (一目均衡表)
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
@@ -44,15 +44,27 @@ class Ichimoku(BaseIndicator, PatternSignalMixin):
     def __init__(self, **kwargs):
         """
         初始化ICHIMOKU指标
+        全球金融软件巅峰级标准：完整参数初始化 + 架构兼容性
         
         Args:
             **kwargs: 指标参数
         """
         super().__init__()
         self.name = "ICHIMOKU"
+        self.indicator_type = "ICHIMOKU"
+        self.description = "一目均衡表指标"
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_ichimoku()
+        
+        # 全球金融软件巅峰级参数初始化：确保所有核心参数都设置为实例属性
+        self.tenkan_period = self._default_parameters.get("tenkan_period", 9)
+        self.kijun_period = self._default_parameters.get("kijun_period", 26)
+        self.senkou_period = self._default_parameters.get("senkou_period", 52)
+        self.chikou_period = self._default_parameters.get("chikou_period", 26)
+        
+        # 初始化结果存储
+        self._result = None
         
         # 应用用户参数
         self.set_parameters_Ichimoku(**kwargs)
@@ -466,3 +478,237 @@ class Ichimoku(BaseIndicator, PatternSignalMixin):
             patterns['kumo_breakout_down'] = (close < kumo_bottom) & (close.shift(1) >= kumo_bottom.shift(1))
         
         return patterns
+    
+    # === 全球金融软件巅峰级BaseIndicator抽象方法实现 ===
+    
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        全球金融软件巅峰级标准公共计算接口
+        符合BaseIndicator规范，统一调用入口
+        """
+        result = self.calculate_Ichimoku(data, **kwargs)
+        self._result = result  # 保存结果供其他方法使用
+        return result
+        
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        核心计算逻辑，实现抽象方法
+        全球金融软件巅峰级标准：真实数学计算 + 完整功能实现
+        """
+        return self.calculate(data, **kwargs)
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现抽象方法"""
+        return self.calculate_raw_score_Ichimoku(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """实现抽象方法"""
+        # Convert patterns parameter to adapt to the original method
+        patterns_df = pd.DataFrame() if isinstance(patterns, list) else patterns
+        return self.calculate_confidence_Ichimoku(score, patterns_df, signals)
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
+        """实现抽象方法"""
+        return self.get_patterns_Ichimoku(data, **kwargs)
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现抽象方法"""
+        self.set_parameters_Ichimoku(**kwargs)
+        
+    # === 全球金融软件巅峰级方法实现 ===
+    
+    def calculate_raw_score_Ichimoku(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        全球金融软件巅峰级ICHIMOKU原始评分计算
+        
+        基于一目均衡表的技术分析特点进行评分：
+        1. 云图支撑阻力准确性评分 (40%)
+        2. 转换线基准线交叉有效性评分 (25%)
+        3. 滞后线确认评分 (20%)
+        4. 趋势一致性评分 (15%)
+        """
+        if not hasattr(self, '_result') or self._result is None:
+            self.calculate(data, **kwargs)
+        
+        if not hasattr(self, '_result') or self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        # 获取一目均衡表数据
+        tenkan = self._result.get('tenkan_sen', pd.Series())
+        kijun = self._result.get('kijun_sen', pd.Series())
+        senkou_a = self._result.get('senkou_span_a', pd.Series())
+        senkou_b = self._result.get('senkou_span_b', pd.Series())
+        chikou = self._result.get('chikou_span', pd.Series())
+        close = data['close']
+        
+        # 初始化评分
+        scores = pd.Series(50.0, index=data.index)
+        
+        # 1. 云图支撑阻力准确性评分 (40%)
+        kumo_score = pd.Series(0.0, index=data.index)
+        
+        if not senkou_a.empty and not senkou_b.empty:
+            # 计算云图上下沿
+            kumo_top = np.maximum(senkou_a, senkou_b)
+            kumo_bottom = np.minimum(senkou_a, senkou_b)
+            
+            # 价格与云图的位置关系
+            price_above_kumo = close > kumo_top
+            price_below_kumo = close < kumo_bottom
+            price_in_kumo = (close >= kumo_bottom) & (close <= kumo_top)
+            
+            # 云图支撑阻力有效性
+            kumo_support = price_above_kumo & (close.shift(1) <= kumo_top.shift(1))  # 云图提供支撑
+            kumo_resistance = price_below_kumo & (close.shift(1) >= kumo_bottom.shift(1))  # 云图提供阻力
+            
+            kumo_score = np.where(kumo_support | kumo_resistance, 35,  # 有效支撑阻力
+                                np.where(price_in_kumo, 20,  # 在云图内部
+                                       np.where(price_above_kumo | price_below_kumo, 25, 15)))  # 在云图外部
+        
+        scores += kumo_score * 0.40
+        
+        # 2. 转换线基准线交叉有效性评分 (25%)
+        tk_cross_score = pd.Series(0.0, index=data.index)
+        
+        if not tenkan.empty and not kijun.empty:
+            # 转换线基准线交叉
+            golden_cross = (tenkan > kijun) & (tenkan.shift(1) <= kijun.shift(1))
+            death_cross = (tenkan < kijun) & (tenkan.shift(1) >= kijun.shift(1))
+            
+            # 交叉的有效性（结合价格确认）
+            valid_golden = golden_cross & (close > close.shift(1))
+            valid_death = death_cross & (close < close.shift(1))
+            
+            tk_cross_score = np.where(valid_golden | valid_death, 20,  # 有效交叉
+                                    np.where(golden_cross | death_cross, 15,  # 交叉但未确认
+                                           np.where(tenkan > kijun, 12, 8)))  # 线的相对位置
+        
+        scores += tk_cross_score * 0.25
+        
+        # 3. 滞后线确认评分 (20%)
+        chikou_score = pd.Series(0.0, index=data.index)
+        
+        if not chikou.empty:
+            # 滞后线与价格的关系（26天前的收盘价与当前价格比较）
+            chikou_above_price = chikou > close.shift(26).fillna(close)
+            chikou_below_price = chikou < close.shift(26).fillna(close)
+            
+            # 滞后线确认趋势
+            current_trend_up = close > close.shift(5)
+            current_trend_down = close < close.shift(5)
+            
+            chikou_confirm_up = chikou_above_price & current_trend_up
+            chikou_confirm_down = chikou_below_price & current_trend_down
+            
+            chikou_score = np.where(chikou_confirm_up | chikou_confirm_down, 18,  # 确认趋势
+                                  np.where(chikou_above_price | chikou_below_price, 12, 8))  # 位置关系
+        
+        scores += chikou_score * 0.20
+        
+        # 4. 趋势一致性评分 (15%)
+        trend_score = pd.Series(0.0, index=data.index)
+        
+        if not tenkan.empty and not kijun.empty and not senkou_a.empty:
+            # 多个时间框架的趋势一致性
+            short_trend = tenkan > tenkan.shift(3)  # 短期趋势
+            medium_trend = kijun > kijun.shift(5)   # 中期趋势
+            long_trend = senkou_a > senkou_a.shift(26)  # 长期趋势
+            
+            # 趋势一致性评分
+            bullish_alignment = short_trend & medium_trend & long_trend
+            bearish_alignment = (~short_trend) & (~medium_trend) & (~long_trend)
+            partial_alignment = (short_trend & medium_trend) | (medium_trend & long_trend)
+            
+            trend_score = np.where(bullish_alignment | bearish_alignment, 15,  # 完全一致
+                                 np.where(partial_alignment, 10, 6))  # 部分一致
+        
+        scores += trend_score * 0.15
+        
+        # 确保评分在合理范围内
+        scores = np.clip(scores, 0, 100)
+        
+        return scores
+    
+    def calculate_confidence_Ichimoku(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
+        """
+        全球金融软件巅峰级ICHIMOKU置信度计算
+        
+        基于一目均衡表的可靠性计算置信度
+        """
+        if not hasattr(self, '_result') or self._result is None:
+            return 0.85
+        
+        # 基于一目均衡表的完整性计算置信度
+        tenkan = self._result.get('tenkan_sen', pd.Series()).dropna()
+        kijun = self._result.get('kijun_sen', pd.Series()).dropna()
+        senkou_a = self._result.get('senkou_span_a', pd.Series()).dropna()
+        senkou_b = self._result.get('senkou_span_b', pd.Series()).dropna()
+        chikou = self._result.get('chikou_span', pd.Series()).dropna()
+        
+        # 数据完整性评分
+        data_completeness = 0
+        total_lines = 0
+        
+        if len(tenkan) > 0:
+            data_completeness += 0.2
+            total_lines += 1
+        if len(kijun) > 0:
+            data_completeness += 0.2
+            total_lines += 1
+        if len(senkou_a) > 0:
+            data_completeness += 0.2
+            total_lines += 1
+        if len(senkou_b) > 0:
+            data_completeness += 0.2
+            total_lines += 1
+        if len(chikou) > 0:
+            data_completeness += 0.2
+            total_lines += 1
+        
+        # 一目均衡表系统完整性
+        system_integrity = 0
+        if total_lines >= 4:  # 至少4条线
+            system_integrity = 0.25
+        elif total_lines >= 3:
+            system_integrity = 0.20
+        elif total_lines >= 2:
+            system_integrity = 0.15
+        else:
+            system_integrity = 0.05
+        
+        # 云图系统的有效性
+        cloud_effectiveness = 0
+        if len(senkou_a) >= 26 and len(senkou_b) >= 26:  # 云图需要足够的数据
+            cloud_effectiveness = 0.25
+        elif len(senkou_a) >= 10 and len(senkou_b) >= 10:
+            cloud_effectiveness = 0.15
+        else:
+            cloud_effectiveness = 0.05
+        
+        base_confidence = 0.35 + data_completeness + system_integrity + cloud_effectiveness
+        return min(max(base_confidence, 0.6), 0.95)  # 一目均衡表最低60%置信度
+    
+    def get_patterns_Ichimoku(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """全球金融软件巅峰级ICHIMOKU形态识别"""
+        if not hasattr(self, '_result') or self._result is None:
+            self.calculate(data, **kwargs)
+        
+        if not hasattr(self, '_result') or self._result is None:
+            return pd.DataFrame(index=data.index)
+        
+        # 调用现有的形态识别方法
+        return self.identify_patterns(data)
+    
+    def set_parameters_Ichimoku(self, **kwargs):
+        """全球金融软件巅峰级ICHIMOKU参数设置"""
+        # 更新一目均衡表参数
+        for key, value in kwargs.items():
+            if key in ['tenkan_period', 'kijun_period', 'senkou_period', 'chikou_period']:
+                # 更新默认参数字典
+                if hasattr(self, '_default_parameters'):
+                    self._default_parameters[key] = value
+                else:
+                    self._default_parameters = {key: value}
+                
+                # 全球金融软件巅峰级标准：同时更新实例属性
+                setattr(self, key, value)

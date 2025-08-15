@@ -208,14 +208,6 @@ class BuypointAnalyzer:
                 'patterns': ['HIGH_VOLATILITY', 'LOW_VOLATILITY', 'VOLATILITY_BREAKOUT', 'GOLDEN_CROSS'],
                 'calculation_method': 'fallback'
             },
-            'KC': {
-                'patterns': ['KC_UPPER_BREAKOUT', 'KC_LOWER_BREAKOUT', 'KC_SQUEEZE', 'KC_EXPANSION'],
-                'calculation_method': 'registry'
-            },
-            'VIX': {
-                'patterns': ['VIX_EXTREME_PANIC', 'VIX_HIGH_PANIC', 'VIX_EXTREME_OPTIMISM', 'VIX_LOW_FEAR'],
-                'calculation_method': 'registry'
-            },
             'CMO': {
                 'patterns': ['OVERBOUGHT', 'OVERSOLD', 'MOMENTUM_SHIFT', 'ZERO_CROSS'],
                 'calculation_method': 'fallback'
@@ -906,12 +898,12 @@ class BuypointAnalyzer:
         try:
             close = data['close']
 
-        # 计算12周期ROC
-        period = 12
-        roc = ((close - close.shift(period)) / close.shift(period) * 100).fillna(0)
+            # 计算12周期ROC
+            period = 12
+            roc = ((close - close.shift(period)) / close.shift(period) * 100).fillna(0)
 
-        # 计算ROC的移动平均作为信号线
-        roc_signal = roc.rolling(9).mean().fillna(0)
+            # 计算ROC的移动平均作为信号线
+            roc_signal = roc.rolling(9).mean().fillna(0)
 
             # 🎯 Ultra Think优化：生成新形态信号
             
@@ -971,13 +963,13 @@ class BuypointAnalyzer:
                           abs(roc_accel.iloc[i]) > abs(roc_accel.iloc[i-1])):
                         acceleration.iloc[i] = 1.0
 
-        return {
+            return {
                 'ROC': roc,                          # 基础ROC值
                 'roc': roc,                          # 小写兼容
                 'ROC_12': roc,                       # 周期标识  
-            'roc_12': roc,
+                'roc_12': roc,
                 'ROC_SIGNAL': roc_signal,            # ROC信号线
-            'roc_signal': roc_signal,
+                'roc_signal': roc_signal,
                 
                 # 🎯 新形态信号
                 'positive_momentum': positive_momentum,    # POSITIVE_MOMENTUM形态信号
@@ -1367,7 +1359,7 @@ class BuypointAnalyzer:
                 'support_resistance': pd.Series([0.0] * length, index=data.index),
                 'trend_following': pd.Series([0.0] * length, index=data.index),
                 'ma_arrangement': pd.Series([0.0] * length, index=data.index)
-        }
+            }
 
     def _calculate_via_unified_engine(self, data: pd.DataFrame, indicator_name: str) -> Dict[str, Any]:
         """通过统一指标引擎计算"""
@@ -2850,14 +2842,14 @@ class BuypointAnalyzer:
                             details['reversal_type'] = 'from_overbought'
                         else:
                             details['reversal_type'] = 'from_oversold'
-
+            
             return {
                 'detected': detected,
                 'confidence': confidence,
                 'strength': min(strength, 1.0),
                 'details': details
             }
-
+            
         except Exception as e:
             return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
 
@@ -3183,9 +3175,9 @@ class BuypointAnalyzer:
                         # 检查是否有持续的正动量
                         positive_count = (recent_roc > 0).sum()
                         if positive_count >= window_size * 0.6:
-                        detected = True
+                            detected = True
                             confidence = min(0.6 + (positive_count / window_size * 0.2), 1.0)
-                        strength = min(current_roc / 10, 1.0)
+                            strength = min(current_roc / 10, 1.0)
                             details['signal_type'] = 'positive_momentum_fallback'
 
             elif pattern_type == 'NEGATIVE_MOMENTUM':
@@ -3214,9 +3206,9 @@ class BuypointAnalyzer:
                         # 检查是否有持续的负动量
                         negative_count = (recent_roc < 0).sum()
                         if negative_count >= window_size * 0.6:
-                        detected = True
+                            detected = True
                             confidence = min(0.6 + (negative_count / window_size * 0.2), 1.0)
-                        strength = min(abs(current_roc) / 10, 1.0)
+                            strength = min(abs(current_roc) / 10, 1.0)
                             details['signal_type'] = 'negative_momentum_fallback'
 
             elif pattern_type == 'ZERO_CROSS':
@@ -3227,7 +3219,7 @@ class BuypointAnalyzer:
                     signal_count = recent_signals.sum()
                     
                     if signal_count > 0:
-                    detected = True
+                        detected = True
                         confidence = min(0.8 + (signal_count * 0.1), 1.0)
                         strength = 0.8
                         details['signal_type'] = 'zero_cross'
@@ -3249,7 +3241,7 @@ class BuypointAnalyzer:
                                 sign_changes += 1
                         
                         if sign_changes > 0:
-                    detected = True
+                            detected = True
                             confidence = min(0.6 + (sign_changes * 0.2), 1.0)
                             strength = 0.7
                             details['signal_type'] = 'zero_cross_fallback'
@@ -3263,7 +3255,7 @@ class BuypointAnalyzer:
                     signal_count = recent_signals.sum()
                     
                     if signal_count > 0:
-                    detected = True
+                        detected = True
                         confidence = min(0.7 + (signal_count * 0.1), 1.0)
                         strength = 0.8
                         details['signal_type'] = 'acceleration'
@@ -3281,7 +3273,7 @@ class BuypointAnalyzer:
                         avg_accel = recent_accel.mean()
                         
                         if abs(avg_accel) > 0.5:  # 显著的加速度变化
-                    detected = True
+                            detected = True
                             confidence = min(0.6 + abs(avg_accel) * 0.4, 1.0)
                             strength = min(abs(avg_accel), 1.0)
                             details['signal_type'] = 'acceleration_fallback'
@@ -3777,7 +3769,7 @@ class BuypointAnalyzer:
                 'confidence': 0.0,
                 'strength': 0.0,
                 'details': {'error': str(e)}
-        }
+            }
     
     def get_recognition_statistics(self) -> Dict[str, Any]:
         """获取识别统计信息"""

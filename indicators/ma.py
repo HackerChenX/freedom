@@ -7,6 +7,10 @@ from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from utils.indicator_utils import crossover, crossunder
 from indicators.pattern_registry import PatternTypePatternRegistry
 from utils.dependency_injection import get_logger
+# 使用字符串替代Pattern_type枚举
+class Pattern_type:
+    BULLISH = "BULLISH"
+    BEARISH = "BEARISH"
 
 logger = get_logger(__name__)
 
@@ -35,12 +39,16 @@ class MaMa(BaseIndicator, PatternSignalMixin):
         # 应用用户参数
         self.set_parameters_Ma(**kwargs)
 
-        self.ma_cols = [f'{self.ma_type}{self.period}']
+        # ma_cols在set_parameters_Ma中设置
         self.register_patterns_Ma()
 
     def _get_default_parameters_ma(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 20, "price_field": "close"}
+        return {
+            "periods": [5, 10, 20, 60],  # 标准多周期MA
+            "period": 20,  # 主要周期保持兼容性
+            "price_field": "close"
+        }
 
     def set_parameters_Ma(self, **kwargs):
         """
@@ -72,14 +80,17 @@ class MaMa(BaseIndicator, PatternSignalMixin):
 
         # 设置参数
         self.period = params.get('period', 20)
+        self.periods = params.get('periods', [5, 10, 20, 60])  # 多周期支持
         self.price_field = params.get('price_field', 'close')
 
-        # 保持向后兼容性
-        self.periods = [self.period]  # 为了兼容现有代码
-        self.ma_type = 'SMA'
+        # 确保主要周期在periods列表中
+        if self.period not in self.periods:
+            self.periods.append(self.period)
+        
+        self.ma_type = 'MA'  # 更标准的命名
 
-        if hasattr(self, 'ma_cols'):
-            self.ma_cols = [f'{self.ma_type}{self.period}']
+        # 设置MA列名
+        self.ma_cols = [f'{self.ma_type}{p}' for p in self.periods]
 
     def _calculate_ma(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -122,6 +133,15 @@ class MaMa(BaseIndicator, PatternSignalMixin):
             ma_values = close_series.rolling(window=p).mean()
             result_df[f'{self.ma_type}{p}'] = ma_values
 
+        # 添加常用别名
+        if 'MA5' in result_df.columns:
+            result_df['ma5'] = result_df['MA5']
+        if 'MA10' in result_df.columns:
+            result_df['ma10'] = result_df['MA10']
+        if 'MA20' in result_df.columns:
+            result_df['ma20'] = result_df['MA20']
+        if 'MA60' in result_df.columns:
+            result_df['ma60'] = result_df['MA60']
         
         # 添加形态识别和信号生成
         result_df = self.add_pattern_detection(result_df)
@@ -677,6 +697,75 @@ class MaMa(BaseIndicator, PatternSignalMixin):
             pd.DataFrame: 交易信号DataFrame
         """
         return self.get_signals(data, **kwargs)
+
+    def identify_patterns(self, data: pd.DataFrame = None, **kwargs) -> List[str]:
+        """
+        识别MA指标形态
+        
+        Args:
+            data: 数据DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            List[str]: 识别出的形态列表
+        """
+        if data is None:
+            data = self._result if hasattr(self, '_result') and self._result is not None else pd.DataFrame()
+        
+        if data.empty:
+            return []
+        
+        # 确保数据包含MA列
+        ma_cols = [col for col in data.columns if 'MA' in col or 'ma' in col]
+        if not ma_cols:
+            data = self.calculate(data, **kwargs)
+            ma_cols = [col for col in data.columns if 'MA' in col or 'ma' in col]
+        
+        patterns = []
+        
+        # 检查是否有足够的数据
+        if len(data) < 20:
+            return patterns
+        
+        # 获取最新数据
+        latest_idx = data.index[-1]
+        
+        # 检查金叉死叉形态
+        if 'ma5' in data.columns and 'ma20' in data.columns:
+            ma5 = data['ma5']
+            ma20 = data['ma20']
+            
+            # 检查金叉：MA5上穿MA20
+            if len(ma5) >= 2 and len(ma20) >= 2:
+                if ma5.iloc[-1] > ma20.iloc[-1] and ma5.iloc[-2] <= ma20.iloc[-2]:
+                    patterns.append("MA金叉")
+                elif ma5.iloc[-1] < ma20.iloc[-1] and ma5.iloc[-2] >= ma20.iloc[-2]:
+                    patterns.append("MA死叉")
+        
+        # 检查多头排列
+        if 'ma5' in data.columns and 'ma10' in data.columns and 'ma20' in data.columns:
+            ma5_val = data['ma5'].iloc[-1]
+            ma10_val = data['ma10'].iloc[-1]
+            ma20_val = data['ma20'].iloc[-1]
+            
+            if ma5_val > ma10_val > ma20_val:
+                patterns.append("MA多头排列")
+            elif ma5_val < ma10_val < ma20_val:
+                patterns.append("MA空头排列")
+        
+        # 检查趋势跟随
+        if 'close' in data.columns and 'ma20' in data.columns:
+            close_val = data['close'].iloc[-1]
+            ma20_val = data['ma20'].iloc[-1]
+            
+            if close_val > ma20_val * 1.02:  # 价格明显高于MA20
+                patterns.append("MA强势上涨")
+            elif close_val < ma20_val * 0.98:  # 价格明显低于MA20
+                patterns.append("MA弱势下跌")
+            else:
+                patterns.append("MA横盘整理")
+        
+        return patterns if patterns else ["MA正常运行"]
 
 # 类别名
 MA = MaMa

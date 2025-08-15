@@ -14,7 +14,156 @@ from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
-class AccumulationDistribution(BaseIndicator, PatternSignalMixin):
+class AD(BaseIndicator, PatternSignalMixin):
+    """
+    AD (Accumulation/Distribution Line) 累积分布线指标
+    
+    生产级实现：真实数学计算 + 完整功能 + 架构兼容
+    
+    核心算法: AD Line = Σ[((Close-Low)-(High-Close))/(High-Low) * Volume]
+    """
+    
+    def __init__(self, **kwargs):
+        """初始化AD指标"""
+        super().__init__()
+        self.name = "AD"
+        self.description = "累积分布线指标"
+        self.indicator_type = "AD"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        self._result = None
+        
+        # 设置默认参数
+        self._default_parameters = {}
+        self.set_parameters_Indicator_Base_Indicator(**kwargs)
+    
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """计算AD指标 - 公共接口"""
+        result = self._calculate_baseindicator(data, **kwargs)
+        self._result = result
+        return result
+    
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """核心计算逻辑，实现抽象方法"""
+        return self._calculate_ad_production(data, **kwargs)
+    
+    def _calculate_ad_production(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        生产级AD指标计算
+        
+        实现真实的累积分布线算法：
+        AD Line = Σ[((Close-Low)-(High-Close))/(High-Low) * Volume]
+        """
+        df = data.copy()
+        
+        # 确保数据有足够长度
+        if len(df) < 1:
+            logger.warning("数据长度不足，无法计算AD指标")
+            df['AD'] = np.nan
+            return df
+        
+        # 计算Money Flow Multiplier
+        # MFM = ((Close - Low) - (High - Close)) / (High - Low)
+        high_low_diff = df['high'] - df['low']
+        
+        # 避免除零错误
+        high_low_diff = high_low_diff.replace(0, np.nan)
+        
+        # 计算Money Flow Multiplier
+        mfm = ((df['close'] - df['low']) - (df['high'] - df['close'])) / high_low_diff
+        
+        # 处理除零情况：当高低价相等时，根据收盘价与前一交易日的关系确定MFM
+        for i in range(len(df)):
+            if pd.isna(mfm.iloc[i]) or np.isinf(mfm.iloc[i]):
+                if i > 0:
+                    # 如果收盘价高于前一交易日，MFM = 1
+                    if df['close'].iloc[i] > df['close'].iloc[i-1]:
+                        mfm.iloc[i] = 1.0
+                    # 如果收盘价低于前一交易日，MFM = -1
+                    elif df['close'].iloc[i] < df['close'].iloc[i-1]:
+                        mfm.iloc[i] = -1.0
+                    # 如果收盘价等于前一交易日，MFM = 0
+                    else:
+                        mfm.iloc[i] = 0.0
+                else:
+                    mfm.iloc[i] = 0.0
+        
+        # 计算Money Flow Volume
+        # MFV = MFM * Volume
+        mfv = mfm * df['volume']
+        
+        # 计算累积分布线 (AD Line)
+        # AD = 前期AD + 当期MFV
+        ad_line = mfv.cumsum()
+        
+        df['AD'] = ad_line
+        
+        # 计算AD的移动平均线用于生成信号
+        df['AD_MA_20'] = df['AD'].rolling(window=20).mean()
+        
+        # 计算AD变化率
+        df['AD_CHANGE'] = df['AD'].pct_change() * 100
+        
+        # 计算AD趋势
+        df['AD_TREND'] = np.where(df['AD'] > df['AD_MA_20'], 1, 
+                                 np.where(df['AD'] < df['AD_MA_20'], -1, 0))
+        
+        # 添加形态识别和信号生成
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
+        
+        return df
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现抽象方法"""
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        if self._result is None:
+            return pd.Series(50.0, index=data.index)
+        
+        # 基于AD的基本评分
+        ad = self._result['AD']
+        ad_ma = self._result['AD_MA_20']
+        
+        scores = pd.Series(50.0, index=data.index)
+        
+        # 趋势评分
+        uptrend = ad > ad_ma
+        downtrend = ad < ad_ma
+        
+        scores = np.where(uptrend, 65, scores)
+        scores = np.where(downtrend, 35, scores)
+        
+        return pd.Series(scores, index=data.index)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """实现抽象方法"""
+        return 0.7  # 基础置信度
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
+        """实现抽象方法"""
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+        
+        patterns = pd.DataFrame(index=data.index)
+        
+        if self._result is not None and 'AD' in self._result.columns:
+            ad = self._result['AD']
+            ad_ma = self._result['AD_MA_20']
+            
+            # 基本形态
+            patterns['AD_UPTREND'] = ad > ad_ma
+            patterns['AD_DOWNTREND'] = ad < ad_ma
+            patterns['AD_GOLDEN_CROSS'] = (ad > ad_ma) & (ad.shift(1) <= ad_ma.shift(1))
+            patterns['AD_DEATH_CROSS'] = (ad < ad_ma) & (ad.shift(1) >= ad_ma.shift(1))
+        
+        return patterns
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现抽象方法"""
+        pass  # AD指标通常不需要参数
+
+class AccumulationDistribution(AD):
     """
     累积/派发线指标 (Accumulation/Distribution Line)
     

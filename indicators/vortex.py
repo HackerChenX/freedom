@@ -8,7 +8,7 @@ VORTEX (Vortex Indicator) 涡流指标
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
@@ -46,6 +46,10 @@ class Vortex(BaseIndicator, PatternSignalMixin):
         """获取默认参数"""
         return {"period": 14}
     
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现抽象方法"""
+        self.set_parameters_Vortex(**kwargs)
+    
     def set_parameters_Vortex(self, **kwargs):
         """
         设置指标参数
@@ -75,9 +79,9 @@ class Vortex(BaseIndicator, PatternSignalMixin):
         # 设置参数
         self.period = params.get('period', 14)
     
-    def calculate_Vortex(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算VORTEX指标
+        计算VORTEX指标 - 公共接口
         
         Args:
             data: 包含OHLCV数据的Data_frame
@@ -85,9 +89,33 @@ class Vortex(BaseIndicator, PatternSignalMixin):
         Returns:
             添加了VORTEX指标的Data_frame
         """
-        result = self._calculate_vortex(data, **kwargs)
+        result = self._calculate_baseindicator(data, **kwargs)
         self._result = result
         return result
+    
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        核心计算逻辑，实现抽象方法
+        
+        Args:
+            data: 包含OHLCV数据的Data_frame
+            
+        Returns:
+            添加了VORTEX指标的Data_frame
+        """
+        return self._calculate_vortex(data, **kwargs)
+    
+    def calculate_Vortex(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算VORTEX指标 - 向后兼容方法
+        
+        Args:
+            data: 包含OHLCV数据的Data_frame
+            
+        Returns:
+            添加了VORTEX指标的Data_frame
+        """
+        return self.calculate(data, **kwargs)
     
     def _calculate_vortex(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -223,6 +251,10 @@ class Vortex(BaseIndicator, PatternSignalMixin):
 
         return df
     
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现抽象方法"""
+        return self.calculate_raw_score_Vortex(data, **kwargs)
+    
     def calculate_raw_score_Vortex(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算VORTEX原始评分
@@ -234,7 +266,7 @@ class Vortex(BaseIndicator, PatternSignalMixin):
         4. 持续性评分 (10%)
         """
         if not self.has_result():
-            self.calculate_Vortex(data, **kwargs)
+            self.calculate(data, **kwargs)
         
         if self._result is None:
             return pd.Series(50.0, index=data.index)
@@ -345,6 +377,12 @@ class Vortex(BaseIndicator, PatternSignalMixin):
         
         return scores
     
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """实现抽象方法"""
+        # 转换patterns参数适配原方法
+        patterns_df = pd.DataFrame() if isinstance(patterns, list) else patterns
+        return self.calculate_confidence_Vortex(score, patterns_df, signals)
+    
     def calculate_confidence_Vortex(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if self._result is None:
@@ -403,10 +441,14 @@ class Vortex(BaseIndicator, PatternSignalMixin):
         base_confidence = 0.25 + separation + strength_consistency + stability
         return min(max(base_confidence, 0.2), 0.9)
     
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
+        """实现抽象方法"""
+        return self.get_patterns_Vortex(data, **kwargs)
+    
     def get_patterns_Vortex(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取VORTEX相关形态"""
         if not self.has_result():
-            self.calculate_Vortex(data, **kwargs)
+            self.calculate(data, **kwargs)
             
         if self._result is None:
             return pd.DataFrame(index=data.index)

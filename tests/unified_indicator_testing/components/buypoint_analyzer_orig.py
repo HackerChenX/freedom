@@ -904,7 +904,7 @@ class BuypointAnalyzer:
         - ACCELERATION: 加速度变化信号
         """
         try:
-            close = data['close']
+        close = data['close']
 
         # 计算12周期ROC
         period = 12
