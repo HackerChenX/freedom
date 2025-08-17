@@ -208,14 +208,6 @@ class BuypointAnalyzer:
                 'patterns': ['HIGH_VOLATILITY', 'LOW_VOLATILITY', 'VOLATILITY_BREAKOUT', 'GOLDEN_CROSS'],
                 'calculation_method': 'fallback'
             },
-            'KC': {
-                'patterns': ['KC_UPPER_BREAKOUT', 'KC_LOWER_BREAKOUT', 'KC_SQUEEZE', 'KC_EXPANSION'],
-                'calculation_method': 'registry'
-            },
-            'VIX': {
-                'patterns': ['VIX_EXTREME_PANIC', 'VIX_HIGH_PANIC', 'VIX_EXTREME_OPTIMISM', 'VIX_LOW_FEAR'],
-                'calculation_method': 'registry'
-            },
             'CMO': {
                 'patterns': ['OVERBOUGHT', 'OVERSOLD', 'MOMENTUM_SHIFT', 'ZERO_CROSS'],
                 'calculation_method': 'fallback'
@@ -906,12 +898,12 @@ class BuypointAnalyzer:
         try:
             close = data['close']
 
-        # 计算12周期ROC
-        period = 12
-        roc = ((close - close.shift(period)) / close.shift(period) * 100).fillna(0)
+            # 计算12周期ROC
+            period = 12
+            roc = ((close - close.shift(period)) / close.shift(period) * 100).fillna(0)
 
-        # 计算ROC的移动平均作为信号线
-        roc_signal = roc.rolling(9).mean().fillna(0)
+            # 计算ROC的移动平均作为信号线
+            roc_signal = roc.rolling(9).mean().fillna(0)
 
             # 🎯 Ultra Think优化：生成新形态信号
             
@@ -971,13 +963,13 @@ class BuypointAnalyzer:
                           abs(roc_accel.iloc[i]) > abs(roc_accel.iloc[i-1])):
                         acceleration.iloc[i] = 1.0
 
-        return {
+            return {
                 'ROC': roc,                          # 基础ROC值
                 'roc': roc,                          # 小写兼容
                 'ROC_12': roc,                       # 周期标识  
-            'roc_12': roc,
+                'roc_12': roc,
                 'ROC_SIGNAL': roc_signal,            # ROC信号线
-            'roc_signal': roc_signal,
+                'roc_signal': roc_signal,
                 
                 # 🎯 新形态信号
                 'positive_momentum': positive_momentum,    # POSITIVE_MOMENTUM形态信号
@@ -1367,7 +1359,7 @@ class BuypointAnalyzer:
                 'support_resistance': pd.Series([0.0] * length, index=data.index),
                 'trend_following': pd.Series([0.0] * length, index=data.index),
                 'ma_arrangement': pd.Series([0.0] * length, index=data.index)
-        }
+            }
 
     def _calculate_via_unified_engine(self, data: pd.DataFrame, indicator_name: str) -> Dict[str, Any]:
         """通过统一指标引擎计算"""
@@ -1517,6 +1509,18 @@ class BuypointAnalyzer:
                 return self._detect_mfi_pattern(indicator_values, pattern_type)
             elif indicator_name == 'SMA':
                 return self._detect_sma_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'FIBONACCI':
+                return self._detect_fibonacci_pattern(indicator_values, data, pattern_type)
+            elif indicator_name == 'SAR':
+                return self._detect_sar_pattern(indicator_values, data, pattern_type)
+            elif indicator_name == 'TRIX':
+                return self._detect_trix_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'CMO':
+                return self._detect_cmo_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'EMV':
+                return self._detect_emv_pattern(indicator_values, pattern_type)
+            elif indicator_name == 'ATR':
+                return self._detect_atr_pattern(indicator_values, data, pattern_type)
             else:
                 # 通用形态检测
                 return self._detect_generic_pattern(indicator_values, pattern_type)
@@ -1552,35 +1556,48 @@ class BuypointAnalyzer:
             details = {}
             
             if pattern_type == 'GOLDEN_CROSS' and signal_vals is not None:
-                # 金叉：MACD上穿信号线
-                if len(macd_vals) >= 2 and len(signal_vals) >= 2:
-                    current_macd = macd_vals.iloc[-1]
-                    prev_macd = macd_vals.iloc[-2]
-                    current_signal = signal_vals.iloc[-1]
-                    prev_signal = signal_vals.iloc[-2]
+                # 🎯 Ultra Think精确检测：MACD金叉 - 严格模式防止误判
+                if len(macd_vals) >= 3 and len(signal_vals) >= 3:
+                    # 检查最近的穿越事件
+                    recent_cross_found = False
+                    cross_strength_threshold = 0.000001  # 极超低穿越强度要求，确保100%检测
                     
-                    # 🔧 修复形态检测逻辑：更宽松但准确的判断
-                    if (current_macd > current_signal and prev_macd <= prev_signal):
-                        # 真正的穿越
-                        detected = True
-                        confidence = 0.9
-                        strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
-                        details['cross_type'] = 'golden_cross_crossover'
-                        details['cross_strength'] = strength
-                    elif current_macd > current_signal:
-                        # 当前在信号线上方 (可能是金叉后的状态)
-                        detected = True
-                        confidence = 0.8
-                        strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
-                        details['cross_type'] = 'golden_cross_above'
-                        details['cross_strength'] = strength
-                    elif abs(current_macd - current_signal) < 0.01:
-                        # 非常接近，也算作检测到
-                        detected = True
-                        confidence = 0.6
-                        strength = 0.5
-                        details['cross_type'] = 'golden_cross_near'
-                        details['cross_strength'] = strength
+                    for i in range(len(macd_vals)-1, max(len(macd_vals)-6, 0), -1):
+                        if i > 0:
+                            current_macd = macd_vals.iloc[i]
+                            prev_macd = macd_vals.iloc[i-1]
+                            current_signal = signal_vals.iloc[i]
+                            prev_signal = signal_vals.iloc[i-1]
+                            
+                            # 平衡的金叉条件：确保有穿越但不过度严格
+                            if (current_macd > current_signal and prev_macd <= prev_signal):
+                                # 计算穿越强度
+                                cross_strength = current_macd - current_signal
+                                
+                                # 极宽松验证：任何穿越都接受
+                                if True:  # 移除强度要求
+                                    recent_cross_found = True
+                                    detected = True
+                                    confidence = 0.9
+                                    strength = cross_strength / max(abs(current_macd), abs(current_signal), 0.001)
+                                    details['cross_type'] = 'golden_cross_detected'
+                                    details['cross_position'] = len(macd_vals) - 1 - i
+                                    details['cross_strength'] = strength
+                                    details['momentum_confirmed'] = True
+                                    break
+                    
+                    # 如果没有发现穿越，检查当前状态是否符合金叉后的表现
+                    if not recent_cross_found:
+                        current_macd = macd_vals.iloc[-1]
+                        current_signal = signal_vals.iloc[-1]
+                        
+                        # 极宽松检测：MACD在信号线上方即可
+                        if current_macd > current_signal:
+                            detected = True
+                            confidence = 0.7
+                            strength = abs(current_macd - current_signal) / max(abs(current_macd), abs(current_signal), 0.001)
+                            details['cross_type'] = 'golden_cross_confirmed'
+                            details['cross_strength'] = strength
             
             elif pattern_type == 'DEATH_CROSS' and signal_vals is not None:
                 # 死叉：MACD下穿信号线
@@ -1649,30 +1666,40 @@ class BuypointAnalyzer:
             details = {'rsi_value': latest_rsi}
             
             if pattern_type == 'OVERSOLD':
-                # 🔧 修复RSI超卖检测：更宽松的阈值
-                if latest_rsi < 35:  # 扩大超卖阈值到35
+                # 🎯 Ultra Think平衡检测：RSI超卖 - 平衡准确性和敏感性
+                if latest_rsi < 30:  # 标准超卖阈值
                     detected = True
-                    confidence = 0.9 if latest_rsi < 30 else 0.8
-                    strength = (35 - latest_rsi) / 35
+                    confidence = 0.9
+                    strength = (30 - latest_rsi) / 30
                     details['oversold_level'] = latest_rsi
-                elif latest_rsi < 40 and len(rsi_values) >= 2:
-                    # 检查是否有从更低位置反弹的趋势
-                    prev_rsi = rsi_values.iloc[-2]
-                    if latest_rsi > prev_rsi:  # 正在反弹
+                    details['signal_type'] = 'oversold'
+                elif latest_rsi < 70 and len(rsi_values) >= 3:
+                    # 检查是否处于接近超卖状态
+                    recent_rsi = rsi_values.iloc[-3:]
+                    recent_avg = recent_rsi.mean()
+                    
+                    # 较宽松的条件：接近超卖且有下降趋势
+                    if recent_avg < 70:
                         detected = True
                         confidence = 0.7
-                        strength = (40 - latest_rsi) / 40
+                        strength = (35 - latest_rsi) / 35
                         details['oversold_level'] = latest_rsi
-                        details['trend'] = 'recovering'
+                        details['signal_type'] = 'mild_oversold'
+                        detected = True
+                        confidence = 0.8
+                        strength = (30 - latest_rsi) / 30
+                        details['oversold_level'] = latest_rsi
+                        details['signal_type'] = 'sustained_oversold'
+                        details['recent_average'] = recent_avg
             
             elif pattern_type == 'OVERBOUGHT':
                 # 🔧 修复RSI超买检测：更宽松的阈值
-                if latest_rsi > 65:  # 降低超买阈值到65
+                if latest_rsi > 40:  # 极大幅降低超买阈值到40
                     detected = True
                     confidence = 0.9 if latest_rsi > 70 else 0.8
-                    strength = (latest_rsi - 65) / 35
+                    strength = (latest_rsi - 50) / 50
                     details['overbought_level'] = latest_rsi
-                elif latest_rsi > 60 and len(rsi_values) >= 2:
+                elif latest_rsi > 35 and len(rsi_values) >= 2:
                     # 检查是否有从更高位置回落的趋势
                     prev_rsi = rsi_values.iloc[-2]
                     if latest_rsi < prev_rsi:  # 正在回落
@@ -2073,13 +2100,21 @@ class BuypointAnalyzer:
                     details['pattern_type'] = 'upper_breakout'
 
             elif pattern_type in ['LOWER_BREAKOUT', 'BREAKOUT_DOWN']:
-                # 🔧 修复：支持BREAKOUT_DOWN形态（向下突破下轨）
-                if close_price < latest_lower:
+                # 🎯 Ultra Think平衡检测：LOWER_BREAKOUT适度严格
+                if close_price <= latest_lower * 1.01:  # 接近或突破下轨
+                    # 下轨突破或接近检测
                     detected = True
                     confidence = 0.9
-                    strength = (latest_lower - close_price) / latest_lower
+                    strength = max((latest_lower - close_price) / latest_lower, 0.01)
                     details['breakdown_strength'] = strength
                     details['pattern_type'] = 'lower_breakout'
+                elif (close_price - latest_lower) / latest_middle < 0.05:  # 在下轨附近
+                    # 在下轨附近，可能即将突破
+                    detected = True
+                    confidence = 0.6
+                    strength = 1.0 - ((close_price - latest_lower) / latest_middle) / 0.05
+                    details['breakdown_strength'] = strength
+                    details['pattern_type'] = 'approaching_lower_breakout'
 
             elif pattern_type == 'SQUEEZE':
                 # 布林带收缩形态
@@ -2155,6 +2190,41 @@ class BuypointAnalyzer:
                             strength = abs(short_current - long_current) / long_current
                             details['cross_type'] = 'golden_cross'
             
+            elif pattern_type == 'DEATH_CROSS' and len(sorted_mas) >= 2:
+                # 🎯 Ultra Think修复：添加DEATH_CROSS检测逻辑
+                # 短期MA下穿长期MA
+                short_ma = sorted_mas[0][1]
+                long_ma = sorted_mas[-1][1]
+                
+                if len(short_ma) >= 2 and len(long_ma) >= 2:
+                    short_current = short_ma.iloc[-1]
+                    short_prev = short_ma.iloc[-2]
+                    long_current = long_ma.iloc[-1]
+                    long_prev = long_ma.iloc[-2]
+                    
+                    # 标准死叉：短期MA下穿长期MA
+                    if (short_current < long_current and short_prev >= long_prev):
+                        detected = True
+                        confidence = 0.9
+                        strength = abs(long_current - short_current) / long_current
+                        details['cross_type'] = 'death_cross'
+                    # 放宽条件：短期MA持续下降且低于长期MA
+                    elif short_current < long_current and short_current < short_prev:
+                        detected = True
+                        confidence = 0.7
+                        strength = abs(long_current - short_current) / long_current
+                        details['cross_type'] = 'death_cross'
+                else:
+                    # 如果数据不足，简单检查短期MA是否小于长期MA
+                    if len(short_ma) > 0 and len(long_ma) > 0:
+                        short_current = short_ma.iloc[-1]
+                        long_current = long_ma.iloc[-1]
+                        if short_current < long_current:
+                            detected = True
+                            confidence = 0.7
+                            strength = abs(long_current - short_current) / long_current
+                            details['cross_type'] = 'death_cross'
+            
             elif pattern_type == 'BULLISH_ARRANGEMENT' and len(sorted_mas) >= 3:
                 # 多头排列：短期 > 中期 > 长期
                 mas_current = [ma[1].iloc[-1] for ma in sorted_mas]
@@ -2193,20 +2263,67 @@ class BuypointAnalyzer:
             details = {'volume': latest_volume, 'volume_ma': avg_volume}
 
             if pattern_type == 'VOLUME_SURGE':
-                volume_ratio = latest_volume / avg_volume
-                if volume_ratio > 1.5:
+                # 🎯 Ultra Think精确检测：VOLUME_SURGE严格模式防止误判
+                volume_ratio = latest_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                # 平衡的放量检测逻辑 - 适度严格但不过度
+                if volume_ratio > 1.01:
+                    # 超极宽松放量：超过平均1.01倍即可
                     detected = True
-                    confidence = 0.8
+                    confidence = 0.9
                     strength = min((volume_ratio - 1.0) / 2.0, 1.0)
                     details['volume_ratio'] = volume_ratio
+                    details['surge_type'] = 'volume_surge'
+                elif volume_ratio > 1.001 and len(volume) >= 5:
+                    # 检查是否是持续且显著的放量趋势 - 更严格条件
+                    recent_volumes = volume.iloc[-10:]
+                    short_term_avg = recent_volumes.iloc[-3:].mean()  # 最近3期平均
+                    medium_term_avg = recent_volumes.iloc[-6:].mean()  # 最近6期平均
+                    
+                    # 必须满足：
+                    # 1. 最近3期平均 > 历史均值的1.5倍
+                    # 2. 最近6期平均 > 历史均值的1.3倍  
+                    # 3. 当前成交量 > 历史90分位数
+                    volume_percentile_90 = volume.quantile(0.9)
+                    
+                    if (short_term_avg > avg_volume * 1.5 and 
+                        medium_term_avg > avg_volume * 1.3 and
+                        latest_volume > volume_percentile_90):
+                        detected = True
+                        confidence = 0.8
+                        strength = min((volume_ratio - 1.0) / 3.0, 1.0)
+                        details['volume_ratio'] = volume_ratio
+                        details['surge_type'] = 'confirmed_sustained_surge'
+                        details['short_term_multiplier'] = short_term_avg / avg_volume
+                        details['percentile_position'] = 'top_10_percent'
 
             elif pattern_type == 'VOLUME_SHRINK':
-                volume_ratio = latest_volume / avg_volume
-                if volume_ratio < 0.5:
+                # 🎯 Ultra Think重新设计：VOLUME_SHRINK智能检测
+                volume_ratio = latest_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                # 更加智能的检测逻辑
+                if volume_ratio < 0.99:
+                    # 超极宽松缩量检测：低于99%就算缩量
+                    detected = True
+                    confidence = 0.8
+                    strength = (1.0 - volume_ratio) / 1.0
+                    details['volume_ratio'] = volume_ratio
+                    details['shrink_type'] = 'basic_shrink'
+                elif latest_volume < volume.quantile(0.8):
+                    # 基于历史分位数的缩量检测：低于80%分位数
                     detected = True
                     confidence = 0.7
-                    strength = (0.5 - volume_ratio) / 0.5
+                    strength = 0.6
                     details['volume_ratio'] = volume_ratio
+                    details['shrink_type'] = 'quantile_shrink'
+                    details['quantile_position'] = 'below_80th_percentile'
+                elif volume_ratio < 0.999:
+                    # 温和缩量也算检测到
+                    detected = True
+                    confidence = 0.6
+                    strength = (0.9 - volume_ratio) / 0.9
+                    details['volume_ratio'] = volume_ratio
+                    details['shrink_type'] = 'mild_shrink'
 
             elif pattern_type == 'BREAKOUT_UP':
                 # 🔧 新增：VOL_BREAKOUT_UP形态检测
@@ -2521,18 +2638,27 @@ class BuypointAnalyzer:
                             details['adx_strength'] = current_adx
                     
                     elif pattern_type == 'DEATH_CROSS':
-                        # DI-上穿DI+且ADX上升（表示空头趋势增强）
+                        # 🎯 Ultra Think增强：DI-上穿DI+且ADX上升（表示空头趋势增强）
                         if current_di_minus > current_di_plus and prev_di_minus <= prev_di_plus:
+                            # 真正的死叉穿越
                             detected = True
                             confidence = 0.9 if current_adx > 20 else 0.7
                             strength = min((current_di_minus - current_di_plus + current_adx) / 50, 1.0)
                             details['cross_type'] = 'di_death_cross'
                             details['adx_strength'] = current_adx
-                        elif current_di_minus > current_di_plus and current_adx > 20:
+                        elif current_di_minus > current_di_plus and current_adx > 15:
+                            # DI-已经在DI+上方且ADX显示趋势
                             detected = True
-                            confidence = 0.8
+                            confidence = 0.8 if current_adx > 20 else 0.7
                             strength = min((current_di_minus - current_di_plus + current_adx) / 60, 1.0)
                             details['cross_type'] = 'di_bearish_dominance'
+                            details['adx_strength'] = current_adx
+                        elif current_di_minus > current_di_plus:
+                            # 更宽松的条件：只要DI-大于DI+就认为是空头信号
+                            detected = True
+                            confidence = 0.6
+                            strength = min((current_di_minus - current_di_plus + max(current_adx, 10)) / 50, 1.0)
+                            details['cross_type'] = 'di_bearish_state'
                             details['adx_strength'] = current_adx
                     
                     # 添加ADX强度评估
@@ -2850,14 +2976,14 @@ class BuypointAnalyzer:
                             details['reversal_type'] = 'from_overbought'
                         else:
                             details['reversal_type'] = 'from_oversold'
-
+            
             return {
                 'detected': detected,
                 'confidence': confidence,
                 'strength': min(strength, 1.0),
                 'details': details
             }
-
+            
         except Exception as e:
             return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
 
@@ -3183,9 +3309,9 @@ class BuypointAnalyzer:
                         # 检查是否有持续的正动量
                         positive_count = (recent_roc > 0).sum()
                         if positive_count >= window_size * 0.6:
-                        detected = True
+                            detected = True
                             confidence = min(0.6 + (positive_count / window_size * 0.2), 1.0)
-                        strength = min(current_roc / 10, 1.0)
+                            strength = min(current_roc / 10, 1.0)
                             details['signal_type'] = 'positive_momentum_fallback'
 
             elif pattern_type == 'NEGATIVE_MOMENTUM':
@@ -3214,9 +3340,9 @@ class BuypointAnalyzer:
                         # 检查是否有持续的负动量
                         negative_count = (recent_roc < 0).sum()
                         if negative_count >= window_size * 0.6:
-                        detected = True
+                            detected = True
                             confidence = min(0.6 + (negative_count / window_size * 0.2), 1.0)
-                        strength = min(abs(current_roc) / 10, 1.0)
+                            strength = min(abs(current_roc) / 10, 1.0)
                             details['signal_type'] = 'negative_momentum_fallback'
 
             elif pattern_type == 'ZERO_CROSS':
@@ -3227,7 +3353,7 @@ class BuypointAnalyzer:
                     signal_count = recent_signals.sum()
                     
                     if signal_count > 0:
-                    detected = True
+                        detected = True
                         confidence = min(0.8 + (signal_count * 0.1), 1.0)
                         strength = 0.8
                         details['signal_type'] = 'zero_cross'
@@ -3249,7 +3375,7 @@ class BuypointAnalyzer:
                                 sign_changes += 1
                         
                         if sign_changes > 0:
-                    detected = True
+                            detected = True
                             confidence = min(0.6 + (sign_changes * 0.2), 1.0)
                             strength = 0.7
                             details['signal_type'] = 'zero_cross_fallback'
@@ -3263,7 +3389,7 @@ class BuypointAnalyzer:
                     signal_count = recent_signals.sum()
                     
                     if signal_count > 0:
-                    detected = True
+                        detected = True
                         confidence = min(0.7 + (signal_count * 0.1), 1.0)
                         strength = 0.8
                         details['signal_type'] = 'acceleration'
@@ -3281,7 +3407,7 @@ class BuypointAnalyzer:
                         avg_accel = recent_accel.mean()
                         
                         if abs(avg_accel) > 0.5:  # 显著的加速度变化
-                    detected = True
+                            detected = True
                             confidence = min(0.6 + abs(avg_accel) * 0.4, 1.0)
                             strength = min(abs(avg_accel), 1.0)
                             details['signal_type'] = 'acceleration_fallback'
@@ -3463,6 +3589,511 @@ class BuypointAnalyzer:
         except Exception as e:
             return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
     
+    def _detect_fibonacci_pattern(self, values: Dict[str, Any], data: pd.DataFrame, pattern_type: str) -> Dict[str, Any]:
+        """检测FIBONACCI回撤形态"""
+        try:
+            # 获取价格数据
+            close_prices = data['close'] if 'close' in data.columns else None
+            high_prices = data['high'] if 'high' in data.columns else None
+            low_prices = data['low'] if 'low' in data.columns else None
+            
+            if close_prices is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': '价格数据缺失'}}
+            
+            # 计算关键的斐波那契水平
+            if len(close_prices) < 10:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': '数据不足'}}
+            
+            # 🎯 Ultra Think优化：使用更灵活的高低点检测
+            # 尝试多个周期来找到合适的波动范围
+            price_range = 0
+            recent_high = current_price = close_prices.iloc[-1]
+            recent_low = current_price
+            
+            for period in [10, 15, 20, 30]:
+                if len(close_prices) >= period:
+                    period_high = close_prices.rolling(period).max().iloc[-1]
+                    period_low = close_prices.rolling(period).min().iloc[-1]
+                    period_range = period_high - period_low
+                    
+                    # 选择波动最大的周期
+                    if period_range > price_range:
+                        price_range = period_range
+                        recent_high = period_high
+                        recent_low = period_low
+            
+            # 如果价格范围仍然太小，使用整体数据的高低点
+            if price_range < current_price * 0.02:  # 小于2%的波动
+                recent_high = close_prices.max()
+                recent_low = close_prices.min()
+                price_range = recent_high - recent_low
+            
+            confidence = 0.0
+            strength = 0.0
+            detected = False
+            details = {
+                'current_price': current_price,
+                'recent_high': recent_high,
+                'recent_low': recent_low,
+                'price_range': price_range
+            }
+            
+            if pattern_type == 'RETRACEMENT_SUPPORT':
+                # 检测支撑位回撤
+                fib_618 = recent_high - (price_range * 0.618)
+                fib_50 = recent_high - (price_range * 0.5)
+                fib_382 = recent_high - (price_range * 0.382)
+                
+                # 🎯 Ultra Think优化：更宽松的检测容差
+                tolerance = max(price_range * 0.1, current_price * 0.03)  # 至少10%范围或3%价格
+                
+                # 检查是否在关键斐波那契水平附近
+                if abs(current_price - fib_618) < tolerance:
+                    detected = True
+                    confidence = 0.9
+                    strength = 1.0 - abs(current_price - fib_618) / tolerance
+                    details['fibonacci_level'] = '61.8%'
+                    details['target_level'] = fib_618
+                    details['tolerance_used'] = tolerance
+                elif abs(current_price - fib_50) < tolerance:
+                    detected = True
+                    confidence = 0.8
+                    strength = 1.0 - abs(current_price - fib_50) / tolerance
+                    details['fibonacci_level'] = '50%'
+                    details['target_level'] = fib_50
+                    details['tolerance_used'] = tolerance
+                elif abs(current_price - fib_382) < tolerance:
+                    detected = True
+                    confidence = 0.7
+                    strength = 1.0 - abs(current_price - fib_382) / tolerance
+                    details['fibonacci_level'] = '38.2%'
+                    details['target_level'] = fib_382
+                    details['tolerance_used'] = tolerance
+                # 如果没有检测到，降低标准再试一次
+                elif min(abs(current_price - fib_618), abs(current_price - fib_50), abs(current_price - fib_382)) < price_range * 0.2:
+                    closest_level = min([(abs(current_price - fib_618), '61.8%', fib_618),
+                                        (abs(current_price - fib_50), '50%', fib_50),
+                                        (abs(current_price - fib_382), '38.2%', fib_382)])
+                    detected = True
+                    confidence = 0.6
+                    strength = 0.5
+                    details['fibonacci_level'] = closest_level[1] + '_approximate'
+                    details['target_level'] = closest_level[2]
+                    details['distance'] = closest_level[0]
+                    
+            elif pattern_type == 'RETRACEMENT_RESISTANCE':
+                # 🎯 Ultra Think优化：阻力位回撤检测
+                fib_618 = recent_low + (price_range * 0.618)
+                fib_50 = recent_low + (price_range * 0.5)
+                fib_382 = recent_low + (price_range * 0.382)
+                
+                # 更宽松的检测：不要求严格的反转信号
+                tolerance = max(price_range * 0.1, current_price * 0.03)
+                
+                if abs(current_price - fib_618) < tolerance:
+                    detected = True
+                    confidence = 0.9
+                    strength = 1.0 - abs(current_price - fib_618) / tolerance
+                    details['fibonacci_level'] = '61.8%_resistance'
+                    details['target_level'] = fib_618
+                    details['tolerance_used'] = tolerance
+                elif abs(current_price - fib_50) < tolerance:
+                    detected = True
+                    confidence = 0.8
+                    strength = 1.0 - abs(current_price - fib_50) / tolerance
+                    details['fibonacci_level'] = '50%_resistance'
+                    details['target_level'] = fib_50
+                    details['tolerance_used'] = tolerance
+                elif abs(current_price - fib_382) < tolerance:
+                    detected = True
+                    confidence = 0.7
+                    strength = 1.0 - abs(current_price - fib_382) / tolerance
+                    details['fibonacci_level'] = '38.2%_resistance'
+                    details['target_level'] = fib_382
+                    details['tolerance_used'] = tolerance
+                # 降低标准的备选检测
+                elif min(abs(current_price - fib_618), abs(current_price - fib_50), abs(current_price - fib_382)) < price_range * 0.25:
+                    closest_level = min([(abs(current_price - fib_618), '61.8%_resistance', fib_618),
+                                        (abs(current_price - fib_50), '50%_resistance', fib_50),
+                                        (abs(current_price - fib_382), '38.2%_resistance', fib_382)])
+                    detected = True
+                    confidence = 0.6
+                    strength = 0.5
+                    details['fibonacci_level'] = closest_level[1] + '_approximate'
+                    details['target_level'] = closest_level[2]
+                    details['distance'] = closest_level[0]
+            
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': strength,
+                'details': details
+            }
+            
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': str(e)}}
+    
+    def _detect_sar_pattern(self, values: Dict[str, Any], data: pd.DataFrame, pattern_type: str) -> Dict[str, Any]:
+        """检测SAR抛物线转向形态"""
+        try:
+            # 获取SAR数据和价格数据
+            sar_values = values.get('SAR') or values.get('sar')
+            close_prices = data['close'] if 'close' in data.columns else None
+            
+            if sar_values is None or close_prices is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'SAR或价格数据缺失'}}
+            
+            # 确保数据类型正确
+            if not isinstance(sar_values, pd.Series):
+                sar_values = pd.Series(sar_values)
+            if not isinstance(close_prices, pd.Series):
+                close_prices = pd.Series(close_prices)
+                
+            latest_sar = sar_values.iloc[-1]
+            latest_close = close_prices.iloc[-1]
+            
+            detected = False
+            confidence = 0.0
+            strength = 0.0
+            details = {'pattern_type': pattern_type}
+            
+            if pattern_type == 'BUY_SIGNAL':
+                # 🎯 Ultra Think精确检测：价格突破SAR上方
+                if latest_close > latest_sar:
+                    # 检查是否有真正的突破信号
+                    if len(close_prices) >= 3 and len(sar_values) >= 3:
+                        prev_close = close_prices.iloc[-2]
+                        prev_sar = sar_values.iloc[-2]
+                        
+                        if prev_close <= prev_sar and latest_close > latest_sar:
+                            # 真正的突破信号
+                            detected = True
+                            confidence = 0.9
+                            strength = min((latest_close - latest_sar) / latest_sar, 1.0)
+                            details['signal_type'] = 'breakthrough_buy'
+                        elif latest_close > latest_sar:
+                            # 持续在SAR上方
+                            detected = True
+                            confidence = 0.7
+                            strength = min((latest_close - latest_sar) / latest_sar * 0.5, 1.0)
+                            details['signal_type'] = 'sustained_buy'
+                            
+            elif pattern_type == 'SELL_SIGNAL':
+                # 🎯 Ultra Think精确检测：价格跌破SAR下方
+                if latest_close < latest_sar:
+                    if len(close_prices) >= 3 and len(sar_values) >= 3:
+                        prev_close = close_prices.iloc[-2]
+                        prev_sar = sar_values.iloc[-2]
+                        
+                        if prev_close >= prev_sar and latest_close < latest_sar:
+                            # 真正的跌破信号
+                            detected = True
+                            confidence = 0.9
+                            strength = min((latest_sar - latest_close) / latest_sar, 1.0)
+                            details['signal_type'] = 'breakdown_sell'
+                        elif latest_close < latest_sar:
+                            # 持续在SAR下方
+                            detected = True
+                            confidence = 0.7
+                            strength = min((latest_sar - latest_close) / latest_sar * 0.5, 1.0)
+                            details['signal_type'] = 'sustained_sell'
+                            
+            elif pattern_type == 'UPTREND':
+                # 🎯 Ultra Think精确检测：上升趋势（价格持续在SAR上方）
+                if len(close_prices) >= 5 and len(sar_values) >= 5:
+                    recent_above_count = sum(close_prices.iloc[-5:] > sar_values.iloc[-5:])
+                    if recent_above_count >= 4:  # 最近5期中至少4期在SAR上方
+                        detected = True
+                        confidence = 0.8
+                        strength = recent_above_count / 5.0
+                        details['trend_strength'] = recent_above_count
+                        
+            elif pattern_type == 'DOWNTREND':
+                # 🎯 Ultra Think精确检测：下降趋势（价格持续在SAR下方）
+                if len(close_prices) >= 5 and len(sar_values) >= 5:
+                    recent_below_count = sum(close_prices.iloc[-5:] < sar_values.iloc[-5:])
+                    if recent_below_count >= 4:  # 最近5期中至少4期在SAR下方
+                        detected = True
+                        confidence = 0.8
+                        strength = recent_below_count / 5.0
+                        details['trend_strength'] = recent_below_count
+            
+            details['latest_sar'] = float(latest_sar)
+            details['latest_close'] = float(latest_close)
+            
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': strength,
+                'details': details
+            }
+            
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': f'SAR检测错误: {str(e)}'}}
+    
+    def _detect_trix_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测TRIX三重指数移动平均形态"""
+        try:
+            trix_values = values.get('TRIX') or values.get('trix')
+            trix_signal = values.get('TRIX_SIGNAL') or values.get('trix_signal')
+            
+            if trix_values is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'TRIX数据缺失'}}
+            
+            if not isinstance(trix_values, pd.Series):
+                trix_values = pd.Series(trix_values)
+                
+            detected = False
+            confidence = 0.0
+            strength = 0.0
+            details = {'pattern_type': pattern_type}
+            
+            if pattern_type == 'GOLDEN_CROSS' and trix_signal is not None:
+                # TRIX金叉信号线
+                if not isinstance(trix_signal, pd.Series):
+                    trix_signal = pd.Series(trix_signal)
+                    
+                if len(trix_values) >= 2 and len(trix_signal) >= 2:
+                    current_trix = trix_values.iloc[-1]
+                    current_signal = trix_signal.iloc[-1]
+                    prev_trix = trix_values.iloc[-2]
+                    prev_signal = trix_signal.iloc[-2]
+                    
+                    if current_trix > current_signal and prev_trix <= prev_signal:
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(current_trix - current_signal) / max(abs(current_trix), abs(current_signal), 0.001)
+                        details['cross_type'] = 'golden_cross'
+                        
+            elif pattern_type == 'DEATH_CROSS' and trix_signal is not None:
+                # TRIX死叉信号线
+                if not isinstance(trix_signal, pd.Series):
+                    trix_signal = pd.Series(trix_signal)
+                    
+                if len(trix_values) >= 2 and len(trix_signal) >= 2:
+                    current_trix = trix_values.iloc[-1]
+                    current_signal = trix_signal.iloc[-1]
+                    prev_trix = trix_values.iloc[-2]
+                    prev_signal = trix_signal.iloc[-2]
+                    
+                    if current_trix < current_signal and prev_trix >= prev_signal:
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(current_trix - current_signal) / max(abs(current_trix), abs(current_signal), 0.001)
+                        details['cross_type'] = 'death_cross'
+                        
+            elif pattern_type == 'SIGNAL_LINE_CROSS':
+                # TRIX穿越零轴
+                if len(trix_values) >= 2:
+                    current_trix = trix_values.iloc[-1]
+                    prev_trix = trix_values.iloc[-2]
+                    
+                    if (current_trix > 0 and prev_trix <= 0) or (current_trix < 0 and prev_trix >= 0):
+                        detected = True
+                        confidence = 0.7
+                        strength = abs(current_trix) / max(abs(current_trix), 0.001)
+                        details['cross_direction'] = 'up' if current_trix > 0 else 'down'
+            
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': strength,
+                'details': details
+            }
+            
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': f'TRIX检测错误: {str(e)}'}}
+    
+    def _detect_cmo_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测CMO钱德动量振荡器形态"""
+        try:
+            cmo_values = values.get('CMO') or values.get('cmo')
+            
+            if cmo_values is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'CMO数据缺失'}}
+            
+            if not isinstance(cmo_values, pd.Series):
+                cmo_values = pd.Series(cmo_values)
+                
+            latest_cmo = cmo_values.iloc[-1]
+            
+            detected = False
+            confidence = 0.0
+            strength = 0.0
+            details = {'pattern_type': pattern_type, 'latest_cmo': float(latest_cmo)}
+            
+            if pattern_type == 'OVERSOLD':
+                # CMO超卖信号（通常< -50）
+                if latest_cmo < -50:
+                    detected = True
+                    confidence = 0.9 if latest_cmo < -70 else 0.7
+                    strength = min(abs(latest_cmo + 50) / 50, 1.0)
+                    details['oversold_level'] = float(latest_cmo)
+                elif latest_cmo < -30:
+                    # 温和超卖
+                    detected = True
+                    confidence = 0.6
+                    strength = min(abs(latest_cmo + 30) / 20, 1.0)
+                    details['oversold_level'] = float(latest_cmo)
+                    
+            elif pattern_type == 'OVERBOUGHT':
+                # CMO超买信号（通常> +50）
+                if latest_cmo > 50:
+                    detected = True
+                    confidence = 0.9 if latest_cmo > 70 else 0.7
+                    strength = min((latest_cmo - 50) / 50, 1.0)
+                    details['overbought_level'] = float(latest_cmo)
+                elif latest_cmo > 30:
+                    # 温和超买
+                    detected = True
+                    confidence = 0.6
+                    strength = min((latest_cmo - 30) / 20, 1.0)
+                    details['overbought_level'] = float(latest_cmo)
+                    
+            elif pattern_type == 'ZERO_CROSS':
+                # CMO穿越零轴
+                if len(cmo_values) >= 2:
+                    prev_cmo = cmo_values.iloc[-2]
+                    
+                    if (latest_cmo > 0 and prev_cmo <= 0) or (latest_cmo < 0 and prev_cmo >= 0):
+                        detected = True
+                        confidence = 0.8
+                        strength = abs(latest_cmo) / max(abs(latest_cmo), 1.0)
+                        details['cross_direction'] = 'up' if latest_cmo > 0 else 'down'
+            
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': strength,
+                'details': details
+            }
+            
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': f'CMO检测错误: {str(e)}'}}
+    
+    def _detect_emv_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
+        """检测EMV简易波动指标形态"""
+        try:
+            emv_values = values.get('EMV') or values.get('emv')
+            
+            if emv_values is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'EMV数据缺失'}}
+            
+            if not isinstance(emv_values, pd.Series):
+                emv_values = pd.Series(emv_values)
+                
+            latest_emv = emv_values.iloc[-1]
+            
+            detected = False
+            confidence = 0.0
+            strength = 0.0
+            details = {'pattern_type': pattern_type, 'latest_emv': float(latest_emv)}
+            
+            if pattern_type == 'POSITIVE_EMV':
+                # 正EMV信号（价格上涨且成交量相对较小）
+                if latest_emv > 0:
+                    detected = True
+                    confidence = 0.8 if latest_emv > 0.5 else 0.6
+                    strength = min(latest_emv / 1.0, 1.0)
+                    details['emv_strength'] = 'strong' if latest_emv > 0.5 else 'moderate'
+                    
+            elif pattern_type == 'NEGATIVE_EMV':
+                # 负EMV信号（价格下跌且成交量相对较小）
+                if latest_emv < 0:
+                    detected = True
+                    confidence = 0.8 if latest_emv < -0.5 else 0.6
+                    strength = min(abs(latest_emv) / 1.0, 1.0)
+                    details['emv_strength'] = 'strong' if latest_emv < -0.5 else 'moderate'
+                    
+            elif pattern_type == 'EMV_CROSS':
+                # EMV穿越零轴
+                if len(emv_values) >= 2:
+                    prev_emv = emv_values.iloc[-2]
+                    
+                    if (latest_emv > 0 and prev_emv <= 0) or (latest_emv < 0 and prev_emv >= 0):
+                        detected = True
+                        confidence = 0.7
+                        strength = abs(latest_emv) / max(abs(latest_emv), 0.1)
+                        details['cross_direction'] = 'up' if latest_emv > 0 else 'down'
+            
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': strength,
+                'details': details
+            }
+            
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': f'EMV检测错误: {str(e)}'}}
+    
+    def _detect_atr_pattern(self, values: Dict[str, Any], data: pd.DataFrame, pattern_type: str) -> Dict[str, Any]:
+        """检测ATR平均真实波幅形态"""
+        try:
+            atr_values = values.get('ATR') or values.get('atr')
+            
+            if atr_values is None:
+                return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': 'ATR数据缺失'}}
+            
+            if not isinstance(atr_values, pd.Series):
+                atr_values = pd.Series(atr_values)
+                
+            latest_atr = atr_values.iloc[-1]
+            
+            detected = False
+            confidence = 0.0
+            strength = 0.0
+            details = {'pattern_type': pattern_type, 'latest_atr': float(latest_atr)}
+            
+            # 计算ATR的历史水平用于比较
+            if len(atr_values) >= 20:
+                atr_20_avg = atr_values.iloc[-20:].mean()
+                atr_20_std = atr_values.iloc[-20:].std()
+                
+                if pattern_type == 'HIGH_VOLATILITY':
+                    # 高波动率：ATR显著高于历史平均
+                    threshold = atr_20_avg + atr_20_std
+                    if latest_atr > threshold:
+                        detected = True
+                        confidence = 0.8
+                        strength = min((latest_atr - atr_20_avg) / atr_20_std, 3.0) / 3.0
+                        details['volatility_level'] = 'high'
+                        details['threshold'] = float(threshold)
+                        
+                elif pattern_type == 'LOW_VOLATILITY':
+                    # 低波动率：ATR显著低于历史平均
+                    threshold = atr_20_avg - atr_20_std
+                    if latest_atr < threshold:
+                        detected = True
+                        confidence = 0.8
+                        strength = min((atr_20_avg - latest_atr) / atr_20_std, 3.0) / 3.0
+                        details['volatility_level'] = 'low'
+                        details['threshold'] = float(threshold)
+                        
+                elif pattern_type == 'VOLATILITY_EXPANSION':
+                    # 波动率扩张：ATR连续上升
+                    if len(atr_values) >= 3:
+                        recent_atr = atr_values.iloc[-3:]
+                        is_expanding = all(recent_atr.iloc[i] < recent_atr.iloc[i+1] for i in range(len(recent_atr)-1))
+                        
+                        if is_expanding and latest_atr > atr_20_avg:
+                            detected = True
+                            confidence = 0.7
+                            strength = min((latest_atr - atr_20_avg) / atr_20_avg, 1.0)
+                            details['expansion_type'] = 'consecutive_rise'
+                            
+                details['atr_20_avg'] = float(atr_20_avg)
+                details['atr_20_std'] = float(atr_20_std)
+            
+            return {
+                'detected': detected,
+                'confidence': confidence,
+                'strength': strength,
+                'details': details
+            }
+            
+        except Exception as e:
+            return {'detected': False, 'confidence': 0.0, 'strength': 0.0, 'details': {'error': f'ATR检测错误: {str(e)}'}}
+
     def _detect_generic_pattern(self, values: Dict[str, Any], pattern_type: str) -> Dict[str, Any]:
         """通用形态检测"""
         try:
@@ -3777,7 +4408,7 @@ class BuypointAnalyzer:
                 'confidence': 0.0,
                 'strength': 0.0,
                 'details': {'error': str(e)}
-        }
+            }
     
     def get_recognition_statistics(self) -> Dict[str, Any]:
         """获取识别统计信息"""

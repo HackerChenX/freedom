@@ -1,0 +1,51 @@
+{
+  "test_type": "batch_2_indicator_test",
+  "summary": {
+    "total_indicators": 5,
+    "passed_indicators": 0,
+    "failed_indicators": 5,
+    "total_patterns": 16,
+    "passed_patterns": 0,
+    "test_start_time": "2025-08-17T17:28:35.140142",
+    "test_end_time": "2025-08-17T17:28:35.144583",
+    "success_rate": 0.0,
+    "overall_accuracy": 0.0
+  },
+  "detailed_results": {
+    "SAR": {
+      "success": false,
+      "accuracy": 0.0,
+      "total_patterns": 4,
+      "passed_patterns": 0,
+      "error": "'StockInfoCompatibleDataGenerator' object has no attribute 'generate_random_stock_data'"
+    },
+    "TRIX": {
+      "success": false,
+      "accuracy": 0.0,
+      "total_patterns": 3,
+      "passed_patterns": 0,
+      "error": "'StockInfoCompatibleDataGenerator' object has no attribute 'generate_random_stock_data'"
+    },
+    "CMO": {
+      "success": false,
+      "accuracy": 0.0,
+      "total_patterns": 3,
+      "passed_patterns": 0,
+      "error": "'StockInfoCompatibleDataGenerator' object has no attribute 'generate_random_stock_data'"
+    },
+    "EMV": {
+      "success": false,
+      "accuracy": 0.0,
+      "total_patterns": 3,
+      "passed_patterns": 0,
+      "error": "'StockInfoCompatibleDataGenerator' object has no attribute 'generate_random_stock_data'"
+    },
+    "ATR": {
+      "success": false,
+      "accuracy": 0.0,
+      "total_patterns": 3,
+      "passed_patterns": 0,
+      "error": "'StockInfoCompatibleDataGenerator' object has no attribute 'generate_random_stock_data'"
+    }
+  }
+}
