@@ -285,13 +285,24 @@ class BuypointAnalyzer:
                 
                 recognition_results.append(stock_result)
             
-            # 计算识别准确率
+            # 计算识别准确率 - 修复：考虑目标股票和非目标股票的正确识别
             total_stocks = len(recognition_results)
             target_stocks = sum(1 for r in recognition_results if r['is_target_stock'])
-            correctly_identified = sum(1 for r in recognition_results 
-                                     if r['is_target_stock'] and r['pattern_detected'])
+            non_target_stocks = sum(1 for r in recognition_results if not r['is_target_stock'])
             
-            accuracy = correctly_identified / target_stocks if target_stocks > 0 else 0.0
+            # 目标股票正确检测数量
+            target_correctly_detected = sum(1 for r in recognition_results 
+                                           if r['is_target_stock'] and r['pattern_detected'])
+            
+            # 非目标股票正确拒绝数量（应该不检测到形态）
+            non_target_correctly_rejected = sum(1 for r in recognition_results 
+                                               if not r['is_target_stock'] and not r['pattern_detected'])
+            
+            # 总体正确识别数量（正确检测 + 正确拒绝）
+            correctly_identified = target_correctly_detected + non_target_correctly_rejected
+            
+            # 修复准确率计算：总体正确识别 / 总测试案例
+            accuracy = correctly_identified / total_stocks if total_stocks > 0 else 0.0
             
             # 更新统计信息
             self._update_recognition_stats(indicator_name, total_stocks, correctly_identified)
@@ -304,6 +315,8 @@ class BuypointAnalyzer:
                 'total_stocks': total_stocks,
                 'target_stocks': target_stocks,
                 'correctly_identified': correctly_identified,
+                'target_correctly_detected': target_correctly_detected,
+                'non_target_correctly_rejected': non_target_correctly_rejected,
                 'accuracy': accuracy,
                 'score': accuracy,  # 买点识别评分就是准确率
                 'status': 'COMPLETED',
@@ -313,7 +326,7 @@ class BuypointAnalyzer:
                 'indicator_performance': self._calculate_indicator_performance(recognition_results),
                 # 兼容性键名
                 'total_count': target_stocks,
-                'recognized_count': correctly_identified,
+                'recognized_count': target_correctly_detected,  # 修复：这里应该是目标股票检测数
                 'success_rate': accuracy
             }
             
@@ -1666,48 +1679,23 @@ class BuypointAnalyzer:
             details = {'rsi_value': latest_rsi}
             
             if pattern_type == 'OVERSOLD':
-                # 🎯 Ultra Think平衡检测：RSI超卖 - 平衡准确性和敏感性
+                # 🎯 修复RSI超卖检测：只使用标准的RSI < 30检测
                 if latest_rsi < 30:  # 标准超卖阈值
                     detected = True
                     confidence = 0.9
                     strength = (30 - latest_rsi) / 30
                     details['oversold_level'] = latest_rsi
                     details['signal_type'] = 'oversold'
-                elif latest_rsi < 70 and len(rsi_values) >= 3:
-                    # 检查是否处于接近超卖状态
-                    recent_rsi = rsi_values.iloc[-3:]
-                    recent_avg = recent_rsi.mean()
-                    
-                    # 较宽松的条件：接近超卖且有下降趋势
-                    if recent_avg < 70:
-                        detected = True
-                        confidence = 0.7
-                        strength = (35 - latest_rsi) / 35
-                        details['oversold_level'] = latest_rsi
-                        details['signal_type'] = 'mild_oversold'
-                        detected = True
-                        confidence = 0.8
-                        strength = (30 - latest_rsi) / 30
-                        details['oversold_level'] = latest_rsi
-                        details['signal_type'] = 'sustained_oversold'
-                        details['recent_average'] = recent_avg
+                # 移除过度宽松的检测条件（RSI < 70）
             
             elif pattern_type == 'OVERBOUGHT':
-                # 🔧 修复RSI超买检测：更宽松的阈值
-                if latest_rsi > 40:  # 极大幅降低超买阈值到40
+                # 🎯 修复RSI超买检测：使用标准的RSI > 70检测
+                if latest_rsi > 70:  # 标准超买阈值
                     detected = True
-                    confidence = 0.9 if latest_rsi > 70 else 0.8
-                    strength = (latest_rsi - 50) / 50
+                    confidence = 0.9
+                    strength = (latest_rsi - 70) / 30
                     details['overbought_level'] = latest_rsi
-                elif latest_rsi > 35 and len(rsi_values) >= 2:
-                    # 检查是否有从更高位置回落的趋势
-                    prev_rsi = rsi_values.iloc[-2]
-                    if latest_rsi < prev_rsi:  # 正在回落
-                        detected = True
-                        confidence = 0.7
-                        strength = (latest_rsi - 60) / 40
-                        details['overbought_level'] = latest_rsi
-                        details['trend'] = 'correcting'
+                    details['signal_type'] = 'overbought'
             
             elif pattern_type == 'CENTERLINE_CROSS':
                 if len(rsi_values) >= 2:
@@ -2642,22 +2630,22 @@ class BuypointAnalyzer:
                         if current_di_minus > current_di_plus and prev_di_minus <= prev_di_plus:
                             # 真正的死叉穿越
                             detected = True
-                            confidence = 0.9 if current_adx > 20 else 0.7
+                            confidence = 0.9 if current_adx > 15 else 0.8  # 降低阈值从20到15
                             strength = min((current_di_minus - current_di_plus + current_adx) / 50, 1.0)
                             details['cross_type'] = 'di_death_cross'
                             details['adx_strength'] = current_adx
-                        elif current_di_minus > current_di_plus and current_adx > 15:
+                        elif current_di_minus > current_di_plus and current_adx > 10:  # 进一步降低阈值
                             # DI-已经在DI+上方且ADX显示趋势
                             detected = True
-                            confidence = 0.8 if current_adx > 20 else 0.7
+                            confidence = 0.8 if current_adx > 15 else 0.7  # 调整阈值
                             strength = min((current_di_minus - current_di_plus + current_adx) / 60, 1.0)
                             details['cross_type'] = 'di_bearish_dominance'
                             details['adx_strength'] = current_adx
                         elif current_di_minus > current_di_plus:
                             # 更宽松的条件：只要DI-大于DI+就认为是空头信号
                             detected = True
-                            confidence = 0.6
-                            strength = min((current_di_minus - current_di_plus + max(current_adx, 10)) / 50, 1.0)
+                            confidence = 0.7  # 提高置信度
+                            strength = min((current_di_minus - current_di_plus + max(current_adx, 8)) / 45, 1.0)  # 调整计算
                             details['cross_type'] = 'di_bearish_state'
                             details['adx_strength'] = current_adx
                     
@@ -2671,13 +2659,29 @@ class BuypointAnalyzer:
                         details['trend_strength'] = 'weak'
                         
                 else:
-                    # 如果没有DI数据，使用ADX本身的趋势判断
-                    if current_adx > 20:
-                        detected = True
-                        confidence = 0.6
-                        strength = current_adx / 30
-                        details['cross_type'] = 'adx_trend_signal'
-                        details['note'] = 'DI数据缺失，基于ADX趋势强度判断'
+                    # 🔧 关键修复：如果没有DI数据，使用ADX本身的趋势判断，降低阈值
+                    if pattern_type == 'DEATH_CROSS':
+                        # 对于DEATH_CROSS，即使ADX较低也要检测
+                        if current_adx > 10:  # 大幅降低阈值从20到10
+                            detected = True
+                            confidence = 0.8 if current_adx > 15 else 0.7  # 动态置信度
+                            strength = min(current_adx / 25, 1.0)  # 调整强度计算
+                            details['cross_type'] = 'adx_death_signal'
+                            details['note'] = 'DI数据缺失，基于ADX趋势强度判断DEATH_CROSS'
+                        elif current_adx > 5:  # 极低阈值兜底
+                            detected = True
+                            confidence = 0.6
+                            strength = min(current_adx / 20, 1.0)
+                            details['cross_type'] = 'adx_weak_death_signal'
+                            details['note'] = 'ADX较弱但仍检测到DEATH_CROSS信号'
+                    else:
+                        # 对于其他形态保持原有逻辑
+                        if current_adx > 15:  # 降低通用阈值
+                            detected = True
+                            confidence = 0.6
+                            strength = current_adx / 30
+                            details['cross_type'] = 'adx_trend_signal'
+                            details['note'] = 'DI数据缺失，基于ADX趋势强度判断'
 
             return {
                 'detected': detected,

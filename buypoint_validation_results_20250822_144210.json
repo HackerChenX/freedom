@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-08-22T14:42:10.943424",
+  "test_suite": "多周期买点回测验证系统",
+  "tests": {
+    "component_test": {
+      "status": "passed",
+      "start_time": "2025-08-22T14:42:10.943440",
+      "end_time": "2025-08-22T14:42:10.965953"
+    },
+    "single_buypoint_test": {
+      "status": "passed",
+      "start_time": "2025-08-22T14:42:10.965970",
+      "end_time": "2025-08-22T14:42:10.972233"
+    },
+    "batch_buypoint_test": {
+      "status": "passed",
+      "start_time": "2025-08-22T14:42:10.972247",
+      "end_time": "2025-08-22T14:42:10.989421"
+    }
+  },
+  "overall_status": "success"
+}

@@ -1,0 +1,4045 @@
+{
+  "test_type": "112指标逐个功能测试",
+  "start_time": 1755845975.768764,
+  "test_data_info": {
+    "rows": 366,
+    "date_range": "2024-01-01 00:00:00 到 2024-12-31 00:00:00",
+    "price_range": "97.29 - 101.36"
+  },
+  "categories": {
+    "核心指标": {
+      "category": "核心指标",
+      "total_indicators": 6,
+      "start_time": 1755845975.7689102,
+      "results": {
+        "MA": {
+          "indicator": "MA",
+          "status": "PASSED",
+          "start_time": 1755845975.7689111,
+          "end_time": 1755845975.773609,
+          "duration": 0.0046977996826171875,
+          "error": null,
+          "details": {
+            "indicator_type": "MaMa",
+            "calculation_time": 0.003371000289916992,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA5",
+              "MA10",
+              "MA20",
+              "MA60",
+              "ma5",
+              "ma10",
+              "ma20",
+              "ma60",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA5",
+              "MA10",
+              "MA20",
+              "MA60",
+              "ma5",
+              "ma10",
+              "ma20",
+              "ma60",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "MA5_non_null_count": "362",
+            "MA5_null_ratio": 0.010928961748633892,
+            "MA10_non_null_count": "357",
+            "MA10_null_ratio": 0.024590163934426257,
+            "MA20_non_null_count": "347",
+            "MA20_null_ratio": 0.051912568306010876,
+            "MA60_non_null_count": "307",
+            "MA60_null_ratio": 0.16120218579234968,
+            "ma5_non_null_count": "362",
+            "ma5_null_ratio": 0.010928961748633892,
+            "ma10_non_null_count": "357",
+            "ma10_null_ratio": 0.024590163934426257,
+            "ma20_non_null_count": "347",
+            "ma20_null_ratio": 0.051912568306010876,
+            "ma60_non_null_count": "307",
+            "ma60_null_ratio": 0.16120218579234968,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "EMA": {
+          "indicator": "EMA",
+          "status": "PASSED",
+          "start_time": 1755845975.7736251,
+          "end_time": 1755845975.782742,
+          "duration": 0.009116888046264648,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006461143493652344,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "MACD": {
+          "indicator": "MACD",
+          "status": "PASSED",
+          "start_time": 1755845975.782748,
+          "end_time": 1755845975.784734,
+          "duration": 0.0019860267639160156,
+          "error": null,
+          "details": {
+            "indicator_type": "MacdMacd",
+            "calculation_time": 0.0015308856964111328,
+            "result_columns": [
+              "macd_line",
+              "macd_signal",
+              "macd_histogram",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "macd_line",
+              "macd_signal",
+              "macd_histogram",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "macd_line_non_null_count": "366",
+            "macd_line_null_ratio": 0.0,
+            "macd_signal_non_null_count": "366",
+            "macd_signal_null_ratio": 0.0,
+            "macd_histogram_non_null_count": "366",
+            "macd_histogram_null_ratio": 0.0,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "RSI": {
+          "indicator": "RSI",
+          "status": "PASSED",
+          "start_time": 1755845975.7847412,
+          "end_time": 1755845975.78805,
+          "duration": 0.0033087730407714844,
+          "error": null,
+          "details": {
+            "indicator_type": "RsiRsi",
+            "calculation_time": 0.0026869773864746094,
+            "result_columns": [
+              "rsi_14",
+              "rsi_ma_5",
+              "rsi_ma_10",
+              "rsi_ma_short",
+              "rsi_ma_long",
+              "rsi_overbought",
+              "rsi_oversold",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "rsi_14",
+              "rsi_ma_5",
+              "rsi_ma_10",
+              "rsi_ma_short",
+              "rsi_ma_long",
+              "rsi_overbought",
+              "rsi_oversold",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "rsi_14_non_null_count": "366",
+            "rsi_14_null_ratio": 0.0,
+            "rsi_ma_5_non_null_count": "362",
+            "rsi_ma_5_null_ratio": 0.010928961748633892,
+            "rsi_ma_10_non_null_count": "357",
+            "rsi_ma_10_null_ratio": 0.024590163934426257,
+            "rsi_ma_short_non_null_count": "362",
+            "rsi_ma_short_null_ratio": 0.010928961748633892,
+            "rsi_ma_long_non_null_count": "357",
+            "rsi_ma_long_null_ratio": 0.024590163934426257,
+            "rsi_overbought_non_null_count": "366",
+            "rsi_overbought_null_ratio": 0.0,
+            "rsi_oversold_non_null_count": "366",
+            "rsi_oversold_null_ratio": 0.0,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "BOLL": {
+          "indicator": "BOLL",
+          "status": "PASSED",
+          "start_time": 1755845975.788058,
+          "end_time": 1755845975.790241,
+          "duration": 0.0021829605102539062,
+          "error": null,
+          "details": {
+            "indicator_type": "BollBoll",
+            "calculation_time": 0.0014758110046386719,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "middle",
+              "upper",
+              "lower",
+              "bandwidth",
+              "percent_b",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "middle",
+              "upper",
+              "lower",
+              "bandwidth",
+              "percent_b",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "middle_non_null_count": "347",
+            "middle_null_ratio": 0.051912568306010876,
+            "upper_non_null_count": "347",
+            "upper_null_ratio": 0.051912568306010876,
+            "lower_non_null_count": "347",
+            "lower_null_ratio": 0.051912568306010876,
+            "bandwidth_non_null_count": "347",
+            "bandwidth_null_ratio": 0.051912568306010876,
+            "percent_b_non_null_count": "347",
+            "percent_b_null_ratio": 0.051912568306010876,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "PSY": {
+          "indicator": "PSY",
+          "status": "PASSED",
+          "start_time": 1755845975.790248,
+          "end_time": 1755845975.7919512,
+          "duration": 0.0017032623291015625,
+          "error": null,
+          "details": {
+            "indicator_type": "PsychologicalLine",
+            "calculation_time": 0.0011210441589355469,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "psy",
+              "psyma",
+              "psy_change",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "psy",
+              "psyma",
+              "psy_change",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "psy_non_null_count": "355",
+            "psy_null_ratio": 0.030054644808743203,
+            "psyma_non_null_count": "350",
+            "psyma_null_ratio": 0.04371584699453557,
+            "psy_change_non_null_count": "354",
+            "psy_change_null_ratio": 0.032786885245901676,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        }
+      },
+      "summary": {
+        "passed": 6,
+        "failed": 0,
+        "total_time": 0.022995710372924805,
+        "avg_time": 0.0038326183954874673,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.7919612
+    },
+    "趋势指标": {
+      "category": "趋势指标",
+      "total_indicators": 10,
+      "start_time": 1755845975.791996,
+      "results": {
+        "DMA": {
+          "indicator": "DMA",
+          "status": "PASSED",
+          "start_time": 1755845975.791997,
+          "end_time": 1755845975.794475,
+          "duration": 0.0024781227111816406,
+          "error": null,
+          "details": {
+            "indicator_type": "DisplacedMovingAverage",
+            "calculation_time": 0.001970052719116211,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "DMA",
+              "AMA",
+              "DMA_PCT",
+              "FAST_MA_CHG",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "DMA",
+              "AMA",
+              "DMA_PCT",
+              "FAST_MA_CHG",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "DMA_non_null_count": "317",
+            "DMA_null_ratio": 0.13387978142076506,
+            "AMA_non_null_count": "308",
+            "AMA_null_ratio": 0.1584699453551912,
+            "DMA_PCT_non_null_count": "366",
+            "DMA_PCT_null_ratio": 0.0,
+            "FAST_MA_CHG_non_null_count": "352",
+            "FAST_MA_CHG_null_ratio": 0.03825136612021862,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "DMI": {
+          "indicator": "DMI",
+          "status": "PASSED",
+          "start_time": 1755845975.794483,
+          "end_time": 1755845975.7952452,
+          "duration": 0.0007622241973876953,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003662109375,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "DMI_VALUE",
+              "DMI_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "DMI_VALUE",
+              "DMI_MA20"
+            ],
+            "DMI_VALUE_non_null_count": "366",
+            "DMI_VALUE_null_ratio": 0.0,
+            "DMI_MA20_non_null_count": "347",
+            "DMI_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ADX": {
+          "indicator": "ADX",
+          "status": "PASSED",
+          "start_time": 1755845975.79525,
+          "end_time": 1755845975.8012211,
+          "duration": 0.005971193313598633,
+          "error": null,
+          "details": {
+            "indicator_type": "AverageDirectionalIndex",
+            "calculation_time": 0.005168914794921875,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "PDI14",
+              "MDI14",
+              "ADX14",
+              "ADXR14",
+              "strong_trend_14",
+              "trend_direction_14",
+              "ADX",
+              "PDI",
+              "MDI",
+              "ADXR",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "PDI14",
+              "MDI14",
+              "ADX14",
+              "ADXR14",
+              "strong_trend_14",
+              "trend_direction_14",
+              "ADX",
+              "PDI",
+              "MDI",
+              "ADXR",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "PDI14_non_null_count": "353",
+            "PDI14_null_ratio": 0.03551912568306015,
+            "MDI14_non_null_count": "353",
+            "MDI14_null_ratio": 0.03551912568306015,
+            "ADX14_non_null_count": "340",
+            "ADX14_null_ratio": 0.07103825136612019,
+            "ADXR14_non_null_count": "326",
+            "ADXR14_null_ratio": 0.10928961748633881,
+            "strong_trend_14_non_null_count": "366",
+            "strong_trend_14_null_ratio": 0.0,
+            "trend_direction_14_non_null_count": "366",
+            "trend_direction_14_null_ratio": 0.0,
+            "ADX_non_null_count": "340",
+            "ADX_null_ratio": 0.07103825136612019,
+            "PDI_non_null_count": "353",
+            "PDI_null_ratio": 0.03551912568306015,
+            "MDI_non_null_count": "353",
+            "MDI_null_ratio": 0.03551912568306015,
+            "ADXR_non_null_count": "326",
+            "ADXR_null_ratio": 0.10928961748633881,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "AROON": {
+          "indicator": "AROON",
+          "status": "PASSED",
+          "start_time": 1755845975.8012412,
+          "end_time": 1755845975.8128672,
+          "duration": 0.011626005172729492,
+          "error": null,
+          "details": {
+            "indicator_type": "Aroon",
+            "calculation_time": 0.011157751083374023,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "aroon_up",
+              "aroon_down",
+              "aroon_oscillator",
+              "AROON_VALUE",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "aroon_up",
+              "aroon_down",
+              "aroon_oscillator",
+              "AROON_VALUE",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "aroon_up_non_null_count": "353",
+            "aroon_up_null_ratio": 0.03551912568306015,
+            "aroon_down_non_null_count": "353",
+            "aroon_down_null_ratio": 0.03551912568306015,
+            "aroon_oscillator_non_null_count": "353",
+            "aroon_oscillator_null_ratio": 0.03551912568306015,
+            "AROON_VALUE_non_null_count": "353",
+            "AROON_VALUE_null_ratio": 0.03551912568306015,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "SAR": {
+          "indicator": "SAR",
+          "status": "PASSED",
+          "start_time": 1755845975.812875,
+          "end_time": 1755845975.8133812,
+          "duration": 0.0005061626434326172,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00034689903259277344,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "SAR_VALUE",
+              "SAR_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "SAR_VALUE",
+              "SAR_MA20"
+            ],
+            "SAR_VALUE_non_null_count": "366",
+            "SAR_VALUE_null_ratio": 0.0,
+            "SAR_MA20_non_null_count": "347",
+            "SAR_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "TRIX": {
+          "indicator": "TRIX",
+          "status": "PASSED",
+          "start_time": 1755845975.813386,
+          "end_time": 1755845975.813856,
+          "duration": 0.0004699230194091797,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003209114074707031,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "TRIX_VALUE",
+              "TRIX_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "TRIX_VALUE",
+              "TRIX_MA20"
+            ],
+            "TRIX_VALUE_non_null_count": "366",
+            "TRIX_VALUE_null_ratio": 0.0,
+            "TRIX_MA20_non_null_count": "347",
+            "TRIX_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "CCI": {
+          "indicator": "CCI",
+          "status": "PASSED",
+          "start_time": 1755845975.8138602,
+          "end_time": 1755845975.816216,
+          "duration": 0.002355813980102539,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0020232200622558594,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "CCI"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "CCI"
+            ],
+            "CCI_non_null_count": "347",
+            "CCI_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "EnhancedCCI": {
+          "indicator": "EnhancedCCI",
+          "status": "PASSED",
+          "start_time": 1755845975.8162189,
+          "end_time": 1755845975.818288,
+          "duration": 0.002069234848022461,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0019631385803222656,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "CCI"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "CCI"
+            ],
+            "CCI_non_null_count": "347",
+            "CCI_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "EnhancedTRIX": {
+          "indicator": "EnhancedTRIX",
+          "status": "PASSED",
+          "start_time": 1755845975.818292,
+          "end_time": 1755845975.8188689,
+          "duration": 0.0005769729614257812,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00041103363037109375,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "EnhancedTRIX_VALUE",
+              "EnhancedTRIX_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "EnhancedTRIX_VALUE",
+              "EnhancedTRIX_MA20"
+            ],
+            "EnhancedTRIX_VALUE_non_null_count": "366",
+            "EnhancedTRIX_VALUE_null_ratio": 0.0,
+            "EnhancedTRIX_MA20_non_null_count": "347",
+            "EnhancedTRIX_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "MOMENTUM": {
+          "indicator": "MOMENTUM",
+          "status": "PASSED",
+          "start_time": 1755845975.8188732,
+          "end_time": 1755845975.821769,
+          "duration": 0.002895832061767578,
+          "error": null,
+          "details": {
+            "indicator_type": "MomentumMomentum",
+            "calculation_time": 0.002240896224975586,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "momentum",
+              "MOMENTUM_VALUE",
+              "momentum_ma",
+              "momentum_std",
+              "momentum_ratio",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "momentum",
+              "MOMENTUM_VALUE",
+              "momentum_ma",
+              "momentum_std",
+              "momentum_ratio",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "momentum_non_null_count": "352",
+            "momentum_null_ratio": 0.03825136612021862,
+            "MOMENTUM_VALUE_non_null_count": "352",
+            "MOMENTUM_VALUE_null_ratio": 0.03825136612021862,
+            "momentum_ma_non_null_count": "348",
+            "momentum_ma_null_ratio": 0.049180327868852514,
+            "momentum_std_non_null_count": "343",
+            "momentum_std_null_ratio": 0.06284153005464477,
+            "momentum_ratio_non_null_count": "352",
+            "momentum_ratio_null_ratio": 0.03825136612021862,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        }
+      },
+      "summary": {
+        "passed": 10,
+        "failed": 0,
+        "total_time": 0.029711484909057617,
+        "avg_time": 0.0029711484909057616,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.821776
+    },
+    "振荡器指标": {
+      "category": "振荡器指标",
+      "total_indicators": 7,
+      "start_time": 1755845975.821839,
+      "results": {
+        "KDJ": {
+          "indicator": "KDJ",
+          "status": "PASSED",
+          "start_time": 1755845975.8218398,
+          "end_time": 1755845975.82453,
+          "duration": 0.0026900768280029297,
+          "error": null,
+          "details": {
+            "indicator_type": "KdjKdj",
+            "calculation_time": 0.002223968505859375,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "K",
+              "D",
+              "J",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "K",
+              "D",
+              "J",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "K_non_null_count": "366",
+            "K_null_ratio": 0.0,
+            "D_non_null_count": "366",
+            "D_null_ratio": 0.0,
+            "J_non_null_count": "366",
+            "J_null_ratio": 0.0,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "WR": {
+          "indicator": "WR",
+          "status": "PASSED",
+          "start_time": 1755845975.8245382,
+          "end_time": 1755845975.8253288,
+          "duration": 0.0007905960083007812,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00045013427734375,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "WR"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "WR"
+            ],
+            "WR_non_null_count": "353",
+            "WR_null_ratio": 0.03551912568306015,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "CMO": {
+          "indicator": "CMO",
+          "status": "PASSED",
+          "start_time": 1755845975.8253329,
+          "end_time": 1755845975.82582,
+          "duration": 0.0004870891571044922,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00032782554626464844,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "CMO_VALUE",
+              "CMO_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "CMO_VALUE",
+              "CMO_MA20"
+            ],
+            "CMO_VALUE_non_null_count": "366",
+            "CMO_VALUE_null_ratio": 0.0,
+            "CMO_MA20_non_null_count": "347",
+            "CMO_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "STOCHRSI": {
+          "indicator": "STOCHRSI",
+          "status": "PASSED",
+          "start_time": 1755845975.825824,
+          "end_time": 1755845975.826793,
+          "duration": 0.00096893310546875,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006577968597412109,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "RSI"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "RSI"
+            ],
+            "RSI_non_null_count": "353",
+            "RSI_null_ratio": 0.03551912568306015,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "EnhancedRSI": {
+          "indicator": "EnhancedRSI",
+          "status": "PASSED",
+          "start_time": 1755845975.826797,
+          "end_time": 1755845975.827521,
+          "duration": 0.0007240772247314453,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006079673767089844,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "RSI"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "RSI"
+            ],
+            "RSI_non_null_count": "353",
+            "RSI_null_ratio": 0.03551912568306015,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "EnhancedKDJ": {
+          "indicator": "EnhancedKDJ",
+          "status": "PASSED",
+          "start_time": 1755845975.8275259,
+          "end_time": 1755845975.828375,
+          "duration": 0.0008492469787597656,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006399154663085938,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "K",
+              "D",
+              "J"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "K",
+              "D",
+              "J"
+            ],
+            "K_non_null_count": "358",
+            "K_null_ratio": 0.021857923497267784,
+            "D_non_null_count": "358",
+            "D_null_ratio": 0.021857923497267784,
+            "J_non_null_count": "358",
+            "J_null_ratio": 0.021857923497267784,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ROC": {
+          "indicator": "ROC",
+          "status": "PASSED",
+          "start_time": 1755845975.8283799,
+          "end_time": 1755845975.828795,
+          "duration": 0.0004150867462158203,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003142356872558594,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ROC"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ROC"
+            ],
+            "ROC_non_null_count": "356",
+            "ROC_null_ratio": 0.02732240437158473,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        }
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0,
+        "total_time": 0.006925106048583984,
+        "avg_time": 0.0009893008640834264,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.828798
+    },
+    "成交量指标": {
+      "category": "成交量指标",
+      "total_indicators": 7,
+      "start_time": 1755845975.828825,
+      "results": {
+        "OBV": {
+          "indicator": "OBV",
+          "status": "PASSED",
+          "start_time": 1755845975.828825,
+          "end_time": 1755845975.8367949,
+          "duration": 0.007969856262207031,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.007841110229492188,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "OBV"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "OBV"
+            ],
+            "OBV_non_null_count": "366",
+            "OBV_null_ratio": 0.0,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "AD": {
+          "indicator": "AD",
+          "status": "PASSED",
+          "start_time": 1755845975.8368,
+          "end_time": 1755845975.8373199,
+          "duration": 0.0005197525024414062,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003581047058105469,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "AD_VALUE",
+              "AD_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "AD_VALUE",
+              "AD_MA20"
+            ],
+            "AD_VALUE_non_null_count": "366",
+            "AD_VALUE_null_ratio": 0.0,
+            "AD_MA20_non_null_count": "347",
+            "AD_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "EMV": {
+          "indicator": "EMV",
+          "status": "PASSED",
+          "start_time": 1755845975.837325,
+          "end_time": 1755845975.8378,
+          "duration": 0.0004749298095703125,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003268718719482422,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "EMV_VALUE",
+              "EMV_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "EMV_VALUE",
+              "EMV_MA20"
+            ],
+            "EMV_VALUE_non_null_count": "366",
+            "EMV_VALUE_null_ratio": 0.0,
+            "EMV_MA20_non_null_count": "347",
+            "EMV_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "VOL": {
+          "indicator": "VOL",
+          "status": "PASSED",
+          "start_time": 1755845975.837805,
+          "end_time": 1755845975.8382678,
+          "duration": 0.0004627704620361328,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003139972686767578,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "VOL_VALUE",
+              "VOL_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "VOL_VALUE",
+              "VOL_MA20"
+            ],
+            "VOL_VALUE_non_null_count": "366",
+            "VOL_VALUE_null_ratio": 0.0,
+            "VOL_MA20_non_null_count": "347",
+            "VOL_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "VR": {
+          "indicator": "VR",
+          "status": "PASSED",
+          "start_time": 1755845975.838272,
+          "end_time": 1755845975.838733,
+          "duration": 0.0004608631134033203,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00031375885009765625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "VR_VALUE",
+              "VR_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "VR_VALUE",
+              "VR_MA20"
+            ],
+            "VR_VALUE_non_null_count": "366",
+            "VR_VALUE_null_ratio": 0.0,
+            "VR_MA20_non_null_count": "347",
+            "VR_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "VOSC": {
+          "indicator": "VOSC",
+          "status": "PASSED",
+          "start_time": 1755845975.838738,
+          "end_time": 1755845975.8391979,
+          "duration": 0.00045990943908691406,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00031304359436035156,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "VOSC_VALUE",
+              "VOSC_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "VOSC_VALUE",
+              "VOSC_MA20"
+            ],
+            "VOSC_VALUE_non_null_count": "366",
+            "VOSC_VALUE_null_ratio": 0.0,
+            "VOSC_MA20_non_null_count": "347",
+            "VOSC_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "PVT": {
+          "indicator": "PVT",
+          "status": "PASSED",
+          "start_time": 1755845975.8392022,
+          "end_time": 1755845975.841405,
+          "duration": 0.002202749252319336,
+          "error": null,
+          "details": {
+            "indicator_type": "Pvt",
+            "calculation_time": 0.0017919540405273438,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "pvt",
+              "pvt_signal",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "pvt",
+              "pvt_signal",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "pvt_non_null_count": "365",
+            "pvt_null_ratio": 0.002732240437158473,
+            "pvt_signal_non_null_count": "354",
+            "pvt_signal_null_ratio": 0.032786885245901676,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        }
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0,
+        "total_time": 0.012550830841064453,
+        "avg_time": 0.0017929758344377791,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.841413
+    },
+    "波动性指标": {
+      "category": "波动性指标",
+      "total_indicators": 4,
+      "start_time": 1755845975.8414452,
+      "results": {
+        "ATR": {
+          "indicator": "ATR",
+          "status": "PASSED",
+          "start_time": 1755845975.8414452,
+          "end_time": 1755845975.842347,
+          "duration": 0.0009016990661621094,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0007822513580322266,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ATR"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ATR"
+            ],
+            "ATR_non_null_count": "353",
+            "ATR_null_ratio": 0.03551912568306015,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "KC": {
+          "indicator": "KC",
+          "status": "PASSED",
+          "start_time": 1755845975.8423512,
+          "end_time": 1755845975.842855,
+          "duration": 0.0005037784576416016,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00034308433532714844,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "KC_VALUE",
+              "KC_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "KC_VALUE",
+              "KC_MA20"
+            ],
+            "KC_VALUE_non_null_count": "366",
+            "KC_VALUE_null_ratio": 0.0,
+            "KC_MA20_non_null_count": "347",
+            "KC_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "VIX": {
+          "indicator": "VIX",
+          "status": "PASSED",
+          "start_time": 1755845975.84286,
+          "end_time": 1755845975.843339,
+          "duration": 0.00047898292541503906,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003299713134765625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "VIX_VALUE",
+              "VIX_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "VIX_VALUE",
+              "VIX_MA20"
+            ],
+            "VIX_VALUE_non_null_count": "366",
+            "VIX_VALUE_null_ratio": 0.0,
+            "VIX_MA20_non_null_count": "347",
+            "VIX_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "STDDEV": {
+          "indicator": "STDDEV",
+          "status": "PASSED",
+          "start_time": 1755845975.843344,
+          "end_time": 1755845975.843808,
+          "duration": 0.0004639625549316406,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003173351287841797,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "STDDEV_VALUE",
+              "STDDEV_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "STDDEV_VALUE",
+              "STDDEV_MA20"
+            ],
+            "STDDEV_VALUE_non_null_count": "366",
+            "STDDEV_VALUE_null_ratio": 0.0,
+            "STDDEV_MA20_non_null_count": "347",
+            "STDDEV_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        }
+      },
+      "summary": {
+        "passed": 4,
+        "failed": 0,
+        "total_time": 0.0023484230041503906,
+        "avg_time": 0.0005871057510375977,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.843812
+    },
+    "ZXM体系指标": {
+      "category": "ZXM体系指标",
+      "total_indicators": 35,
+      "start_time": 1755845975.843841,
+      "results": {
+        "ZXM_DAILY_MACD": {
+          "indicator": "ZXM_DAILY_MACD",
+          "status": "PASSED",
+          "start_time": 1755845975.843841,
+          "end_time": 1755845975.844478,
+          "duration": 0.0006368160247802734,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00044989585876464844,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_TURNOVER": {
+          "indicator": "ZXM_TURNOVER",
+          "status": "PASSED",
+          "start_time": 1755845975.8444831,
+          "end_time": 1755845975.844942,
+          "duration": 0.0004589557647705078,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003120899200439453,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_TURNOVER_VALUE",
+              "ZXM_TURNOVER_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_TURNOVER_VALUE",
+              "ZXM_TURNOVER_MA20"
+            ],
+            "ZXM_TURNOVER_VALUE_non_null_count": "366",
+            "ZXM_TURNOVER_VALUE_null_ratio": 0.0,
+            "ZXM_TURNOVER_MA20_non_null_count": "347",
+            "ZXM_TURNOVER_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_VOLUME_SHRINK": {
+          "indicator": "ZXM_VOLUME_SHRINK",
+          "status": "PASSED",
+          "start_time": 1755845975.8449469,
+          "end_time": 1755845975.845401,
+          "duration": 0.00045418739318847656,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003101825714111328,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_VOLUME_SHRINK_VALUE",
+              "ZXM_VOLUME_SHRINK_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_VOLUME_SHRINK_VALUE",
+              "ZXM_VOLUME_SHRINK_MA20"
+            ],
+            "ZXM_VOLUME_SHRINK_VALUE_non_null_count": "366",
+            "ZXM_VOLUME_SHRINK_VALUE_null_ratio": 0.0,
+            "ZXM_VOLUME_SHRINK_MA20_non_null_count": "347",
+            "ZXM_VOLUME_SHRINK_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_MA_CALLBACK": {
+          "indicator": "ZXM_MA_CALLBACK",
+          "status": "PASSED",
+          "start_time": 1755845975.845404,
+          "end_time": 1755845975.846024,
+          "duration": 0.0006201267242431641,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00043582916259765625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_BS_ABSORB": {
+          "indicator": "ZXM_BS_ABSORB",
+          "status": "PASSED",
+          "start_time": 1755845975.846028,
+          "end_time": 1755845975.846477,
+          "duration": 0.0004489421844482422,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030684471130371094,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_BS_ABSORB_VALUE",
+              "ZXM_BS_ABSORB_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_BS_ABSORB_VALUE",
+              "ZXM_BS_ABSORB_MA20"
+            ],
+            "ZXM_BS_ABSORB_VALUE_non_null_count": "366",
+            "ZXM_BS_ABSORB_VALUE_null_ratio": 0.0,
+            "ZXM_BS_ABSORB_MA20_non_null_count": "347",
+            "ZXM_BS_ABSORB_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_DAILY_TREND_UP": {
+          "indicator": "ZXM_DAILY_TREND_UP",
+          "status": "PASSED",
+          "start_time": 1755845975.8464808,
+          "end_time": 1755845975.847012,
+          "duration": 0.0005311965942382812,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003769397735595703,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_DAILY_TREND_UP_VALUE",
+              "ZXM_DAILY_TREND_UP_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_DAILY_TREND_UP_VALUE",
+              "ZXM_DAILY_TREND_UP_MA20"
+            ],
+            "ZXM_DAILY_TREND_UP_VALUE_non_null_count": "366",
+            "ZXM_DAILY_TREND_UP_VALUE_null_ratio": 0.0,
+            "ZXM_DAILY_TREND_UP_MA20_non_null_count": "347",
+            "ZXM_DAILY_TREND_UP_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_WEEKLY_TREND_UP": {
+          "indicator": "ZXM_WEEKLY_TREND_UP",
+          "status": "PASSED",
+          "start_time": 1755845975.847017,
+          "end_time": 1755845975.8475,
+          "duration": 0.0004830360412597656,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003299713134765625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_WEEKLY_TREND_UP_VALUE",
+              "ZXM_WEEKLY_TREND_UP_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_WEEKLY_TREND_UP_VALUE",
+              "ZXM_WEEKLY_TREND_UP_MA20"
+            ],
+            "ZXM_WEEKLY_TREND_UP_VALUE_non_null_count": "366",
+            "ZXM_WEEKLY_TREND_UP_VALUE_null_ratio": 0.0,
+            "ZXM_WEEKLY_TREND_UP_MA20_non_null_count": "347",
+            "ZXM_WEEKLY_TREND_UP_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_MONTHLY_KDJ_TREND_UP": {
+          "indicator": "ZXM_MONTHLY_KDJ_TREND_UP",
+          "status": "PASSED",
+          "start_time": 1755845975.847504,
+          "end_time": 1755845975.848356,
+          "duration": 0.0008521080017089844,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006399154663085938,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "K",
+              "D",
+              "J"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "K",
+              "D",
+              "J"
+            ],
+            "K_non_null_count": "358",
+            "K_null_ratio": 0.021857923497267784,
+            "D_non_null_count": "358",
+            "D_null_ratio": 0.021857923497267784,
+            "J_non_null_count": "358",
+            "J_null_ratio": 0.021857923497267784,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_WEEKLY_MACD": {
+          "indicator": "ZXM_WEEKLY_MACD",
+          "status": "PASSED",
+          "start_time": 1755845975.848361,
+          "end_time": 1755845975.849011,
+          "duration": 0.0006499290466308594,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00045490264892578125,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_MONTHLY_MACD": {
+          "indicator": "ZXM_MONTHLY_MACD",
+          "status": "PASSED",
+          "start_time": 1755845975.849016,
+          "end_time": 1755845975.84964,
+          "duration": 0.0006239414215087891,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00044274330139160156,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_AMPLITUDE_ELASTICITY": {
+          "indicator": "ZXM_AMPLITUDE_ELASTICITY",
+          "status": "PASSED",
+          "start_time": 1755845975.849644,
+          "end_time": 1755845975.850098,
+          "duration": 0.000453948974609375,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003120899200439453,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_AMPLITUDE_ELASTICITY_VALUE",
+              "ZXM_AMPLITUDE_ELASTICITY_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_AMPLITUDE_ELASTICITY_VALUE",
+              "ZXM_AMPLITUDE_ELASTICITY_MA20"
+            ],
+            "ZXM_AMPLITUDE_ELASTICITY_VALUE_non_null_count": "366",
+            "ZXM_AMPLITUDE_ELASTICITY_VALUE_null_ratio": 0.0,
+            "ZXM_AMPLITUDE_ELASTICITY_MA20_non_null_count": "347",
+            "ZXM_AMPLITUDE_ELASTICITY_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_RISE_ELASTICITY": {
+          "indicator": "ZXM_RISE_ELASTICITY",
+          "status": "PASSED",
+          "start_time": 1755845975.8501031,
+          "end_time": 1755845975.850558,
+          "duration": 0.00045490264892578125,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030803680419921875,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_RISE_ELASTICITY_VALUE",
+              "ZXM_RISE_ELASTICITY_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_RISE_ELASTICITY_VALUE",
+              "ZXM_RISE_ELASTICITY_MA20"
+            ],
+            "ZXM_RISE_ELASTICITY_VALUE_non_null_count": "366",
+            "ZXM_RISE_ELASTICITY_VALUE_null_ratio": 0.0,
+            "ZXM_RISE_ELASTICITY_MA20_non_null_count": "347",
+            "ZXM_RISE_ELASTICITY_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_ELASTICITY": {
+          "indicator": "ZXM_ELASTICITY",
+          "status": "PASSED",
+          "start_time": 1755845975.850562,
+          "end_time": 1755845975.851003,
+          "duration": 0.00044083595275878906,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0002999305725097656,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_ELASTICITY_VALUE",
+              "ZXM_ELASTICITY_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_ELASTICITY_VALUE",
+              "ZXM_ELASTICITY_MA20"
+            ],
+            "ZXM_ELASTICITY_VALUE_non_null_count": "366",
+            "ZXM_ELASTICITY_VALUE_null_ratio": 0.0,
+            "ZXM_ELASTICITY_MA20_non_null_count": "347",
+            "ZXM_ELASTICITY_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_BOUNCE_DETECTOR": {
+          "indicator": "ZXM_BOUNCE_DETECTOR",
+          "status": "PASSED",
+          "start_time": 1755845975.851006,
+          "end_time": 1755845975.851446,
+          "duration": 0.0004398822784423828,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003001689910888672,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_BOUNCE_DETECTOR_VALUE",
+              "ZXM_BOUNCE_DETECTOR_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_BOUNCE_DETECTOR_VALUE",
+              "ZXM_BOUNCE_DETECTOR_MA20"
+            ],
+            "ZXM_BOUNCE_DETECTOR_VALUE_non_null_count": "366",
+            "ZXM_BOUNCE_DETECTOR_VALUE_null_ratio": 0.0,
+            "ZXM_BOUNCE_DETECTOR_MA20_non_null_count": "347",
+            "ZXM_BOUNCE_DETECTOR_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_BUYPOINT_SCORE": {
+          "indicator": "ZXM_BUYPOINT_SCORE",
+          "status": "PASSED",
+          "start_time": 1755845975.8514502,
+          "end_time": 1755845975.851958,
+          "duration": 0.0005078315734863281,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00036215782165527344,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_BUYPOINT_SCORE_VALUE",
+              "ZXM_BUYPOINT_SCORE_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_BUYPOINT_SCORE_VALUE",
+              "ZXM_BUYPOINT_SCORE_MA20"
+            ],
+            "ZXM_BUYPOINT_SCORE_VALUE_non_null_count": "366",
+            "ZXM_BUYPOINT_SCORE_VALUE_null_ratio": 0.0,
+            "ZXM_BUYPOINT_SCORE_MA20_non_null_count": "347",
+            "ZXM_BUYPOINT_SCORE_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_TREND_SCORE": {
+          "indicator": "ZXM_TREND_SCORE",
+          "status": "PASSED",
+          "start_time": 1755845975.8519611,
+          "end_time": 1755845975.852418,
+          "duration": 0.00045680999755859375,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030803680419921875,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_TREND_SCORE_VALUE",
+              "ZXM_TREND_SCORE_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_TREND_SCORE_VALUE",
+              "ZXM_TREND_SCORE_MA20"
+            ],
+            "ZXM_TREND_SCORE_VALUE_non_null_count": "366",
+            "ZXM_TREND_SCORE_VALUE_null_ratio": 0.0,
+            "ZXM_TREND_SCORE_MA20_non_null_count": "347",
+            "ZXM_TREND_SCORE_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_ELASTIC_SCORE": {
+          "indicator": "ZXM_ELASTIC_SCORE",
+          "status": "PASSED",
+          "start_time": 1755845975.852422,
+          "end_time": 1755845975.852866,
+          "duration": 0.0004439353942871094,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003039836883544922,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_ELASTIC_SCORE_VALUE",
+              "ZXM_ELASTIC_SCORE_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_ELASTIC_SCORE_VALUE",
+              "ZXM_ELASTIC_SCORE_MA20"
+            ],
+            "ZXM_ELASTIC_SCORE_VALUE_non_null_count": "366",
+            "ZXM_ELASTIC_SCORE_VALUE_null_ratio": 0.0,
+            "ZXM_ELASTIC_SCORE_MA20_non_null_count": "347",
+            "ZXM_ELASTIC_SCORE_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_VOLUME_ENERGY": {
+          "indicator": "ZXM_VOLUME_ENERGY",
+          "status": "PASSED",
+          "start_time": 1755845975.852869,
+          "end_time": 1755845975.853319,
+          "duration": 0.00044989585876464844,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030684471130371094,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_VOLUME_ENERGY_VALUE",
+              "ZXM_VOLUME_ENERGY_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_VOLUME_ENERGY_VALUE",
+              "ZXM_VOLUME_ENERGY_MA20"
+            ],
+            "ZXM_VOLUME_ENERGY_VALUE_non_null_count": "366",
+            "ZXM_VOLUME_ENERGY_VALUE_null_ratio": 0.0,
+            "ZXM_VOLUME_ENERGY_MA20_non_null_count": "347",
+            "ZXM_VOLUME_ENERGY_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_PRICE_POSITION": {
+          "indicator": "ZXM_PRICE_POSITION",
+          "status": "PASSED",
+          "start_time": 1755845975.853322,
+          "end_time": 1755845975.853774,
+          "duration": 0.0004520416259765625,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00031113624572753906,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_PRICE_POSITION_VALUE",
+              "ZXM_PRICE_POSITION_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_PRICE_POSITION_VALUE",
+              "ZXM_PRICE_POSITION_MA20"
+            ],
+            "ZXM_PRICE_POSITION_VALUE_non_null_count": "366",
+            "ZXM_PRICE_POSITION_VALUE_null_ratio": 0.0,
+            "ZXM_PRICE_POSITION_MA20_non_null_count": "347",
+            "ZXM_PRICE_POSITION_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_TECHNICAL_FORM": {
+          "indicator": "ZXM_TECHNICAL_FORM",
+          "status": "PASSED",
+          "start_time": 1755845975.853777,
+          "end_time": 1755845975.854214,
+          "duration": 0.00043702125549316406,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0002970695495605469,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_TECHNICAL_FORM_VALUE",
+              "ZXM_TECHNICAL_FORM_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_TECHNICAL_FORM_VALUE",
+              "ZXM_TECHNICAL_FORM_MA20"
+            ],
+            "ZXM_TECHNICAL_FORM_VALUE_non_null_count": "366",
+            "ZXM_TECHNICAL_FORM_VALUE_null_ratio": 0.0,
+            "ZXM_TECHNICAL_FORM_MA20_non_null_count": "347",
+            "ZXM_TECHNICAL_FORM_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_MARKET_SENTIMENT": {
+          "indicator": "ZXM_MARKET_SENTIMENT",
+          "status": "PASSED",
+          "start_time": 1755845975.854217,
+          "end_time": 1755845975.8548312,
+          "duration": 0.000614166259765625,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0004360675811767578,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_CHIP_DISTRIBUTION": {
+          "indicator": "ZXM_CHIP_DISTRIBUTION",
+          "status": "PASSED",
+          "start_time": 1755845975.854835,
+          "end_time": 1755845975.8573241,
+          "duration": 0.0024890899658203125,
+          "error": null,
+          "details": {
+            "indicator_type": "ChipDistribution",
+            "calculation_time": 0.0017631053924560547,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "CHIP_DISTRIBUTION_VALUE",
+              "chip_concentration",
+              "profit_ratio",
+              "chip_width_90pct",
+              "avg_cost",
+              "chip_distribution",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "CHIP_DISTRIBUTION_VALUE",
+              "chip_concentration",
+              "profit_ratio",
+              "chip_width_90pct",
+              "avg_cost",
+              "chip_distribution",
+              "pattern_bullish",
+              "pattern_bearish",
+              "pattern_neutral",
+              "buy_signal",
+              "sell_signal",
+              "hold_signal"
+            ],
+            "CHIP_DISTRIBUTION_VALUE_non_null_count": "353",
+            "CHIP_DISTRIBUTION_VALUE_null_ratio": 0.03551912568306015,
+            "chip_concentration_non_null_count": "366",
+            "chip_concentration_null_ratio": 0.0,
+            "profit_ratio_non_null_count": "366",
+            "profit_ratio_null_ratio": 0.0,
+            "chip_width_90pct_non_null_count": "353",
+            "chip_width_90pct_null_ratio": 0.03551912568306015,
+            "avg_cost_non_null_count": "353",
+            "avg_cost_null_ratio": 0.03551912568306015,
+            "chip_distribution_non_null_count": "353",
+            "chip_distribution_null_ratio": 0.03551912568306015,
+            "pattern_bullish_non_null_count": "366",
+            "pattern_bullish_null_ratio": 0.0,
+            "pattern_bearish_non_null_count": "366",
+            "pattern_bearish_null_ratio": 0.0,
+            "pattern_neutral_non_null_count": "366",
+            "pattern_neutral_null_ratio": 0.0,
+            "buy_signal_non_null_count": "366",
+            "buy_signal_null_ratio": 0.0,
+            "sell_signal_non_null_count": "366",
+            "sell_signal_null_ratio": 0.0,
+            "hold_signal_non_null_count": "366",
+            "hold_signal_null_ratio": 0.0,
+            "signal_support": false
+          }
+        },
+        "ZXM_FUND_FLOW": {
+          "indicator": "ZXM_FUND_FLOW",
+          "status": "PASSED",
+          "start_time": 1755845975.857332,
+          "end_time": 1755845975.857871,
+          "duration": 0.0005390644073486328,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003712177276611328,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_FUND_FLOW_VALUE",
+              "ZXM_FUND_FLOW_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_FUND_FLOW_VALUE",
+              "ZXM_FUND_FLOW_MA20"
+            ],
+            "ZXM_FUND_FLOW_VALUE_non_null_count": "366",
+            "ZXM_FUND_FLOW_VALUE_null_ratio": 0.0,
+            "ZXM_FUND_FLOW_MA20_non_null_count": "347",
+            "ZXM_FUND_FLOW_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_INSTITUTION_BEHAVIOR": {
+          "indicator": "ZXM_INSTITUTION_BEHAVIOR",
+          "status": "PASSED",
+          "start_time": 1755845975.8578749,
+          "end_time": 1755845975.858452,
+          "duration": 0.0005772113800048828,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003457069396972656,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_INSTITUTION_BEHAVIOR_VALUE",
+              "ZXM_INSTITUTION_BEHAVIOR_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_INSTITUTION_BEHAVIOR_VALUE",
+              "ZXM_INSTITUTION_BEHAVIOR_MA20"
+            ],
+            "ZXM_INSTITUTION_BEHAVIOR_VALUE_non_null_count": "366",
+            "ZXM_INSTITUTION_BEHAVIOR_VALUE_null_ratio": 0.0,
+            "ZXM_INSTITUTION_BEHAVIOR_MA20_non_null_count": "347",
+            "ZXM_INSTITUTION_BEHAVIOR_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_HOT_SPOT": {
+          "indicator": "ZXM_HOT_SPOT",
+          "status": "PASSED",
+          "start_time": 1755845975.858457,
+          "end_time": 1755845975.8589242,
+          "duration": 0.00046706199645996094,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003199577331542969,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_HOT_SPOT_VALUE",
+              "ZXM_HOT_SPOT_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_HOT_SPOT_VALUE",
+              "ZXM_HOT_SPOT_MA20"
+            ],
+            "ZXM_HOT_SPOT_VALUE_non_null_count": "366",
+            "ZXM_HOT_SPOT_VALUE_null_ratio": 0.0,
+            "ZXM_HOT_SPOT_MA20_non_null_count": "347",
+            "ZXM_HOT_SPOT_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_INDUSTRY_ROTATION": {
+          "indicator": "ZXM_INDUSTRY_ROTATION",
+          "status": "PASSED",
+          "start_time": 1755845975.8589282,
+          "end_time": 1755845975.8593862,
+          "duration": 0.00045800209045410156,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003151893615722656,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_INDUSTRY_ROTATION_VALUE",
+              "ZXM_INDUSTRY_ROTATION_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_INDUSTRY_ROTATION_VALUE",
+              "ZXM_INDUSTRY_ROTATION_MA20"
+            ],
+            "ZXM_INDUSTRY_ROTATION_VALUE_non_null_count": "366",
+            "ZXM_INDUSTRY_ROTATION_VALUE_null_ratio": 0.0,
+            "ZXM_INDUSTRY_ROTATION_MA20_non_null_count": "347",
+            "ZXM_INDUSTRY_ROTATION_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_CYCLE_POSITION": {
+          "indicator": "ZXM_CYCLE_POSITION",
+          "status": "PASSED",
+          "start_time": 1755845975.85939,
+          "end_time": 1755845975.8598368,
+          "duration": 0.0004467964172363281,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003039836883544922,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_CYCLE_POSITION_VALUE",
+              "ZXM_CYCLE_POSITION_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_CYCLE_POSITION_VALUE",
+              "ZXM_CYCLE_POSITION_MA20"
+            ],
+            "ZXM_CYCLE_POSITION_VALUE_non_null_count": "366",
+            "ZXM_CYCLE_POSITION_VALUE_null_ratio": 0.0,
+            "ZXM_CYCLE_POSITION_MA20_non_null_count": "347",
+            "ZXM_CYCLE_POSITION_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_RISK_CONTROL": {
+          "indicator": "ZXM_RISK_CONTROL",
+          "status": "PASSED",
+          "start_time": 1755845975.859841,
+          "end_time": 1755845975.860287,
+          "duration": 0.0004458427429199219,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003020763397216797,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_RISK_CONTROL_VALUE",
+              "ZXM_RISK_CONTROL_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_RISK_CONTROL_VALUE",
+              "ZXM_RISK_CONTROL_MA20"
+            ],
+            "ZXM_RISK_CONTROL_VALUE_non_null_count": "366",
+            "ZXM_RISK_CONTROL_VALUE_null_ratio": 0.0,
+            "ZXM_RISK_CONTROL_MA20_non_null_count": "347",
+            "ZXM_RISK_CONTROL_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_TIMING_SIGNAL": {
+          "indicator": "ZXM_TIMING_SIGNAL",
+          "status": "PASSED",
+          "start_time": 1755845975.860291,
+          "end_time": 1755845975.860738,
+          "duration": 0.0004470348358154297,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030493736267089844,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_TIMING_SIGNAL_VALUE",
+              "ZXM_TIMING_SIGNAL_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_TIMING_SIGNAL_VALUE",
+              "ZXM_TIMING_SIGNAL_MA20"
+            ],
+            "ZXM_TIMING_SIGNAL_VALUE_non_null_count": "366",
+            "ZXM_TIMING_SIGNAL_VALUE_null_ratio": 0.0,
+            "ZXM_TIMING_SIGNAL_MA20_non_null_count": "347",
+            "ZXM_TIMING_SIGNAL_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_POSITION_MANAGEMENT": {
+          "indicator": "ZXM_POSITION_MANAGEMENT",
+          "status": "PASSED",
+          "start_time": 1755845975.8607419,
+          "end_time": 1755845975.8613591,
+          "duration": 0.0006172657012939453,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0004360675811767578,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_PORTFOLIO_OPTIMIZATION": {
+          "indicator": "ZXM_PORTFOLIO_OPTIMIZATION",
+          "status": "PASSED",
+          "start_time": 1755845975.861363,
+          "end_time": 1755845975.861825,
+          "duration": 0.0004620552062988281,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003190040588378906,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_PORTFOLIO_OPTIMIZATION_VALUE",
+              "ZXM_PORTFOLIO_OPTIMIZATION_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_PORTFOLIO_OPTIMIZATION_VALUE",
+              "ZXM_PORTFOLIO_OPTIMIZATION_MA20"
+            ],
+            "ZXM_PORTFOLIO_OPTIMIZATION_VALUE_non_null_count": "366",
+            "ZXM_PORTFOLIO_OPTIMIZATION_VALUE_null_ratio": 0.0,
+            "ZXM_PORTFOLIO_OPTIMIZATION_MA20_non_null_count": "347",
+            "ZXM_PORTFOLIO_OPTIMIZATION_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_STRATEGY_COMBINATION": {
+          "indicator": "ZXM_STRATEGY_COMBINATION",
+          "status": "PASSED",
+          "start_time": 1755845975.861829,
+          "end_time": 1755845975.862272,
+          "duration": 0.0004429817199707031,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003018379211425781,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_STRATEGY_COMBINATION_VALUE",
+              "ZXM_STRATEGY_COMBINATION_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_STRATEGY_COMBINATION_VALUE",
+              "ZXM_STRATEGY_COMBINATION_MA20"
+            ],
+            "ZXM_STRATEGY_COMBINATION_VALUE_non_null_count": "366",
+            "ZXM_STRATEGY_COMBINATION_VALUE_null_ratio": 0.0,
+            "ZXM_STRATEGY_COMBINATION_MA20_non_null_count": "347",
+            "ZXM_STRATEGY_COMBINATION_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_PERFORMANCE_ATTRIBUTION": {
+          "indicator": "ZXM_PERFORMANCE_ATTRIBUTION",
+          "status": "PASSED",
+          "start_time": 1755845975.8622751,
+          "end_time": 1755845975.862889,
+          "duration": 0.0006139278411865234,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00043392181396484375,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_ALPHA_GENERATION": {
+          "indicator": "ZXM_ALPHA_GENERATION",
+          "status": "PASSED",
+          "start_time": 1755845975.862895,
+          "end_time": 1755845975.863405,
+          "duration": 0.0005099773406982422,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00035190582275390625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_ALPHA_GENERATION_VALUE",
+              "ZXM_ALPHA_GENERATION_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_ALPHA_GENERATION_VALUE",
+              "ZXM_ALPHA_GENERATION_MA20"
+            ],
+            "ZXM_ALPHA_GENERATION_VALUE_non_null_count": "366",
+            "ZXM_ALPHA_GENERATION_VALUE_null_ratio": 0.0,
+            "ZXM_ALPHA_GENERATION_MA20_non_null_count": "347",
+            "ZXM_ALPHA_GENERATION_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ZXM_BETA_HEDGING": {
+          "indicator": "ZXM_BETA_HEDGING",
+          "status": "PASSED",
+          "start_time": 1755845975.86341,
+          "end_time": 1755845975.863898,
+          "duration": 0.00048804283142089844,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00033211708068847656,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ZXM_BETA_HEDGING_VALUE",
+              "ZXM_BETA_HEDGING_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ZXM_BETA_HEDGING_VALUE",
+              "ZXM_BETA_HEDGING_MA20"
+            ],
+            "ZXM_BETA_HEDGING_VALUE_non_null_count": "366",
+            "ZXM_BETA_HEDGING_VALUE_null_ratio": 0.0,
+            "ZXM_BETA_HEDGING_MA20_non_null_count": "347",
+            "ZXM_BETA_HEDGING_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        }
+      },
+      "summary": {
+        "passed": 35,
+        "failed": 0,
+        "total_time": 0.019914865493774414,
+        "avg_time": 0.0005689961569649832,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.8639019
+    },
+    "形态识别指标": {
+      "category": "形态识别指标",
+      "total_indicators": 19,
+      "start_time": 1755845975.863932,
+      "results": {
+        "DOJI": {
+          "indicator": "DOJI",
+          "status": "PASSED",
+          "start_time": 1755845975.8639328,
+          "end_time": 1755845975.8644009,
+          "duration": 0.0004680156707763672,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003209114074707031,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "DOJI_VALUE",
+              "DOJI_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "DOJI_VALUE",
+              "DOJI_MA20"
+            ],
+            "DOJI_VALUE_non_null_count": "366",
+            "DOJI_VALUE_null_ratio": 0.0,
+            "DOJI_MA20_non_null_count": "347",
+            "DOJI_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "HAMMER": {
+          "indicator": "HAMMER",
+          "status": "PASSED",
+          "start_time": 1755845975.864405,
+          "end_time": 1755845975.864869,
+          "duration": 0.0004642009735107422,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00031375885009765625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "HAMMER_VALUE",
+              "HAMMER_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "HAMMER_VALUE",
+              "HAMMER_MA20"
+            ],
+            "HAMMER_VALUE_non_null_count": "366",
+            "HAMMER_VALUE_null_ratio": 0.0,
+            "HAMMER_MA20_non_null_count": "347",
+            "HAMMER_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "SHOOTING_STAR": {
+          "indicator": "SHOOTING_STAR",
+          "status": "PASSED",
+          "start_time": 1755845975.864873,
+          "end_time": 1755845975.865338,
+          "duration": 0.00046515464782714844,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003178119659423828,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "SHOOTING_STAR_VALUE",
+              "SHOOTING_STAR_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "SHOOTING_STAR_VALUE",
+              "SHOOTING_STAR_MA20"
+            ],
+            "SHOOTING_STAR_VALUE_non_null_count": "366",
+            "SHOOTING_STAR_VALUE_null_ratio": 0.0,
+            "SHOOTING_STAR_MA20_non_null_count": "347",
+            "SHOOTING_STAR_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "ENGULFING": {
+          "indicator": "ENGULFING",
+          "status": "PASSED",
+          "start_time": 1755845975.865342,
+          "end_time": 1755845975.865798,
+          "duration": 0.00045609474182128906,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003139972686767578,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "ENGULFING_VALUE",
+              "ENGULFING_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "ENGULFING_VALUE",
+              "ENGULFING_MA20"
+            ],
+            "ENGULFING_VALUE_non_null_count": "366",
+            "ENGULFING_VALUE_null_ratio": 0.0,
+            "ENGULFING_MA20_non_null_count": "347",
+            "ENGULFING_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "HARAMI": {
+          "indicator": "HARAMI",
+          "status": "PASSED",
+          "start_time": 1755845975.8658051,
+          "end_time": 1755845975.866244,
+          "duration": 0.00043892860412597656,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0002980232238769531,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "HARAMI_VALUE",
+              "HARAMI_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "HARAMI_VALUE",
+              "HARAMI_MA20"
+            ],
+            "HARAMI_VALUE_non_null_count": "366",
+            "HARAMI_VALUE_null_ratio": 0.0,
+            "HARAMI_MA20_non_null_count": "347",
+            "HARAMI_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "PIERCING_LINE": {
+          "indicator": "PIERCING_LINE",
+          "status": "PASSED",
+          "start_time": 1755845975.866247,
+          "end_time": 1755845975.866703,
+          "duration": 0.00045609474182128906,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.000308990478515625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "PIERCING_LINE_VALUE",
+              "PIERCING_LINE_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "PIERCING_LINE_VALUE",
+              "PIERCING_LINE_MA20"
+            ],
+            "PIERCING_LINE_VALUE_non_null_count": "366",
+            "PIERCING_LINE_VALUE_null_ratio": 0.0,
+            "PIERCING_LINE_MA20_non_null_count": "347",
+            "PIERCING_LINE_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "DARK_CLOUD_COVER": {
+          "indicator": "DARK_CLOUD_COVER",
+          "status": "PASSED",
+          "start_time": 1755845975.866706,
+          "end_time": 1755845975.867145,
+          "duration": 0.0004391670227050781,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030112266540527344,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "DARK_CLOUD_COVER_VALUE",
+              "DARK_CLOUD_COVER_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "DARK_CLOUD_COVER_VALUE",
+              "DARK_CLOUD_COVER_MA20"
+            ],
+            "DARK_CLOUD_COVER_VALUE_non_null_count": "366",
+            "DARK_CLOUD_COVER_VALUE_null_ratio": 0.0,
+            "DARK_CLOUD_COVER_MA20_non_null_count": "347",
+            "DARK_CLOUD_COVER_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "MORNING_STAR": {
+          "indicator": "MORNING_STAR",
+          "status": "PASSED",
+          "start_time": 1755845975.867148,
+          "end_time": 1755845975.867593,
+          "duration": 0.0004451274871826172,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030112266540527344,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MORNING_STAR_VALUE",
+              "MORNING_STAR_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MORNING_STAR_VALUE",
+              "MORNING_STAR_MA20"
+            ],
+            "MORNING_STAR_VALUE_non_null_count": "366",
+            "MORNING_STAR_VALUE_null_ratio": 0.0,
+            "MORNING_STAR_MA20_non_null_count": "347",
+            "MORNING_STAR_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "EVENING_STAR": {
+          "indicator": "EVENING_STAR",
+          "status": "PASSED",
+          "start_time": 1755845975.8675961,
+          "end_time": 1755845975.8681521,
+          "duration": 0.0005559921264648438,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003859996795654297,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "EVENING_STAR_VALUE",
+              "EVENING_STAR_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "EVENING_STAR_VALUE",
+              "EVENING_STAR_MA20"
+            ],
+            "EVENING_STAR_VALUE_non_null_count": "366",
+            "EVENING_STAR_VALUE_null_ratio": 0.0,
+            "EVENING_STAR_MA20_non_null_count": "347",
+            "EVENING_STAR_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "THREE_BLACK_CROWS": {
+          "indicator": "THREE_BLACK_CROWS",
+          "status": "PASSED",
+          "start_time": 1755845975.868156,
+          "end_time": 1755845975.868669,
+          "duration": 0.0005130767822265625,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00035309791564941406,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "THREE_BLACK_CROWS_VALUE",
+              "THREE_BLACK_CROWS_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "THREE_BLACK_CROWS_VALUE",
+              "THREE_BLACK_CROWS_MA20"
+            ],
+            "THREE_BLACK_CROWS_VALUE_non_null_count": "366",
+            "THREE_BLACK_CROWS_VALUE_null_ratio": 0.0,
+            "THREE_BLACK_CROWS_MA20_non_null_count": "347",
+            "THREE_BLACK_CROWS_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "THREE_WHITE_SOLDIERS": {
+          "indicator": "THREE_WHITE_SOLDIERS",
+          "status": "PASSED",
+          "start_time": 1755845975.868673,
+          "end_time": 1755845975.869149,
+          "duration": 0.00047588348388671875,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003268718719482422,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "THREE_WHITE_SOLDIERS_VALUE",
+              "THREE_WHITE_SOLDIERS_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "THREE_WHITE_SOLDIERS_VALUE",
+              "THREE_WHITE_SOLDIERS_MA20"
+            ],
+            "THREE_WHITE_SOLDIERS_VALUE_non_null_count": "366",
+            "THREE_WHITE_SOLDIERS_VALUE_null_ratio": 0.0,
+            "THREE_WHITE_SOLDIERS_MA20_non_null_count": "347",
+            "THREE_WHITE_SOLDIERS_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "V_SHAPED_REVERSAL": {
+          "indicator": "V_SHAPED_REVERSAL",
+          "status": "PASSED",
+          "start_time": 1755845975.869154,
+          "end_time": 1755845975.869612,
+          "duration": 0.00045800209045410156,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00031280517578125,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "V_SHAPED_REVERSAL_VALUE",
+              "V_SHAPED_REVERSAL_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "V_SHAPED_REVERSAL_VALUE",
+              "V_SHAPED_REVERSAL_MA20"
+            ],
+            "V_SHAPED_REVERSAL_VALUE_non_null_count": "366",
+            "V_SHAPED_REVERSAL_VALUE_null_ratio": 0.0,
+            "V_SHAPED_REVERSAL_MA20_non_null_count": "347",
+            "V_SHAPED_REVERSAL_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "HEAD_SHOULDERS": {
+          "indicator": "HEAD_SHOULDERS",
+          "status": "PASSED",
+          "start_time": 1755845975.869616,
+          "end_time": 1755845975.870064,
+          "duration": 0.00044798851013183594,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030612945556640625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "HEAD_SHOULDERS_VALUE",
+              "HEAD_SHOULDERS_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "HEAD_SHOULDERS_VALUE",
+              "HEAD_SHOULDERS_MA20"
+            ],
+            "HEAD_SHOULDERS_VALUE_non_null_count": "366",
+            "HEAD_SHOULDERS_VALUE_null_ratio": 0.0,
+            "HEAD_SHOULDERS_MA20_non_null_count": "347",
+            "HEAD_SHOULDERS_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "DOUBLE_TOP": {
+          "indicator": "DOUBLE_TOP",
+          "status": "PASSED",
+          "start_time": 1755845975.870068,
+          "end_time": 1755845975.870513,
+          "duration": 0.0004448890686035156,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00030422210693359375,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "DOUBLE_TOP_VALUE",
+              "DOUBLE_TOP_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "DOUBLE_TOP_VALUE",
+              "DOUBLE_TOP_MA20"
+            ],
+            "DOUBLE_TOP_VALUE_non_null_count": "366",
+            "DOUBLE_TOP_VALUE_null_ratio": 0.0,
+            "DOUBLE_TOP_MA20_non_null_count": "347",
+            "DOUBLE_TOP_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "DOUBLE_BOTTOM": {
+          "indicator": "DOUBLE_BOTTOM",
+          "status": "PASSED",
+          "start_time": 1755845975.870516,
+          "end_time": 1755845975.871109,
+          "duration": 0.0005929470062255859,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0004010200500488281,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "DOUBLE_BOTTOM_VALUE",
+              "DOUBLE_BOTTOM_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "DOUBLE_BOTTOM_VALUE",
+              "DOUBLE_BOTTOM_MA20"
+            ],
+            "DOUBLE_BOTTOM_VALUE_non_null_count": "366",
+            "DOUBLE_BOTTOM_VALUE_null_ratio": 0.0,
+            "DOUBLE_BOTTOM_MA20_non_null_count": "347",
+            "DOUBLE_BOTTOM_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "TRIANGLE": {
+          "indicator": "TRIANGLE",
+          "status": "PASSED",
+          "start_time": 1755845975.871114,
+          "end_time": 1755845975.871616,
+          "duration": 0.0005018711090087891,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003426074981689453,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "TRIANGLE_VALUE",
+              "TRIANGLE_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "TRIANGLE_VALUE",
+              "TRIANGLE_MA20"
+            ],
+            "TRIANGLE_VALUE_non_null_count": "366",
+            "TRIANGLE_VALUE_null_ratio": 0.0,
+            "TRIANGLE_MA20_non_null_count": "347",
+            "TRIANGLE_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "WEDGE": {
+          "indicator": "WEDGE",
+          "status": "PASSED",
+          "start_time": 1755845975.871624,
+          "end_time": 1755845975.872104,
+          "duration": 0.0004799365997314453,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.00032901763916015625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "WEDGE_VALUE",
+              "WEDGE_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "WEDGE_VALUE",
+              "WEDGE_MA20"
+            ],
+            "WEDGE_VALUE_non_null_count": "366",
+            "WEDGE_VALUE_null_ratio": 0.0,
+            "WEDGE_MA20_non_null_count": "347",
+            "WEDGE_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "FLAG": {
+          "indicator": "FLAG",
+          "status": "PASSED",
+          "start_time": 1755845975.872108,
+          "end_time": 1755845975.8726459,
+          "duration": 0.000537872314453125,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003898143768310547,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "FLAG_VALUE",
+              "FLAG_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "FLAG_VALUE",
+              "FLAG_MA20"
+            ],
+            "FLAG_VALUE_non_null_count": "366",
+            "FLAG_VALUE_null_ratio": 0.0,
+            "FLAG_MA20_non_null_count": "347",
+            "FLAG_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "PENNANT": {
+          "indicator": "PENNANT",
+          "status": "PASSED",
+          "start_time": 1755845975.872651,
+          "end_time": 1755845975.873235,
+          "duration": 0.0005838871002197266,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0004050731658935547,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "PENNANT_VALUE",
+              "PENNANT_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "PENNANT_VALUE",
+              "PENNANT_MA20"
+            ],
+            "PENNANT_VALUE_non_null_count": "366",
+            "PENNANT_VALUE_null_ratio": 0.0,
+            "PENNANT_MA20_non_null_count": "347",
+            "PENNANT_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        }
+      },
+      "summary": {
+        "passed": 19,
+        "failed": 0,
+        "total_time": 0.009225130081176758,
+        "avg_time": 0.00048553316216719776,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.8732412
+    },
+    "增强指标": {
+      "category": "增强指标",
+      "total_indicators": 2,
+      "start_time": 1755845975.8732722,
+      "results": {
+        "EnhancedBOLL": {
+          "indicator": "EnhancedBOLL",
+          "status": "PASSED",
+          "start_time": 1755845975.8732731,
+          "end_time": 1755845975.874057,
+          "duration": 0.0007839202880859375,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0005543231964111328,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "BOLL_Upper",
+              "BOLL_Middle",
+              "BOLL_Lower"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "BOLL_Upper",
+              "BOLL_Middle",
+              "BOLL_Lower"
+            ],
+            "BOLL_Upper_non_null_count": "347",
+            "BOLL_Upper_null_ratio": 0.051912568306010876,
+            "BOLL_Middle_non_null_count": "347",
+            "BOLL_Middle_null_ratio": 0.051912568306010876,
+            "BOLL_Lower_non_null_count": "347",
+            "BOLL_Lower_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "EnhancedSTOCHRSI": {
+          "indicator": "EnhancedSTOCHRSI",
+          "status": "PASSED",
+          "start_time": 1755845975.874063,
+          "end_time": 1755845975.8748338,
+          "duration": 0.0007708072662353516,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006508827209472656,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "RSI"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "RSI"
+            ],
+            "RSI_non_null_count": "353",
+            "RSI_null_ratio": 0.03551912568306015,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        }
+      },
+      "summary": {
+        "passed": 2,
+        "failed": 0,
+        "total_time": 0.001554727554321289,
+        "avg_time": 0.0007773637771606445,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.874838
+    },
+    "专业指标": {
+      "category": "专业指标",
+      "total_indicators": 7,
+      "start_time": 1755845975.874866,
+      "results": {
+        "MTM": {
+          "indicator": "MTM",
+          "status": "PASSED",
+          "start_time": 1755845975.874866,
+          "end_time": 1755845975.875235,
+          "duration": 0.00036907196044921875,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0002689361572265625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MOMENTUM"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MOMENTUM"
+            ],
+            "MOMENTUM_non_null_count": "356",
+            "MOMENTUM_null_ratio": 0.02732240437158473,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "RSIMA": {
+          "indicator": "RSIMA",
+          "status": "PASSED",
+          "start_time": 1755845975.875239,
+          "end_time": 1755845975.8758771,
+          "duration": 0.0006382465362548828,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0004520416259765625,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "SYNERGY": {
+          "indicator": "SYNERGY",
+          "status": "PASSED",
+          "start_time": 1755845975.875882,
+          "end_time": 1755845975.876338,
+          "duration": 0.00045609474182128906,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0003070831298828125,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "SYNERGY_VALUE",
+              "SYNERGY_MA20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "SYNERGY_VALUE",
+              "SYNERGY_MA20"
+            ],
+            "SYNERGY_VALUE_non_null_count": "366",
+            "SYNERGY_VALUE_null_ratio": 0.0,
+            "SYNERGY_MA20_non_null_count": "347",
+            "SYNERGY_MA20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "MACD_SCORE": {
+          "indicator": "MACD_SCORE",
+          "status": "PASSED",
+          "start_time": 1755845975.876343,
+          "end_time": 1755845975.876962,
+          "duration": 0.0006189346313476562,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0004360675811767578,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "MA_5",
+              "MA_10",
+              "MA_20"
+            ],
+            "MA_5_non_null_count": "362",
+            "MA_5_null_ratio": 0.010928961748633892,
+            "MA_10_non_null_count": "357",
+            "MA_10_null_ratio": 0.024590163934426257,
+            "MA_20_non_null_count": "347",
+            "MA_20_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "RSI_SCORE": {
+          "indicator": "RSI_SCORE",
+          "status": "PASSED",
+          "start_time": 1755845975.876966,
+          "end_time": 1755845975.877694,
+          "duration": 0.0007278919219970703,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006170272827148438,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "RSI"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "RSI"
+            ],
+            "RSI_non_null_count": "353",
+            "RSI_null_ratio": 0.03551912568306015,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "BOLL_SCORE": {
+          "indicator": "BOLL_SCORE",
+          "status": "PASSED",
+          "start_time": 1755845975.877698,
+          "end_time": 1755845975.8784928,
+          "duration": 0.0007948875427246094,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0005629062652587891,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "BOLL_Upper",
+              "BOLL_Middle",
+              "BOLL_Lower"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "BOLL_Upper",
+              "BOLL_Middle",
+              "BOLL_Lower"
+            ],
+            "BOLL_Upper_non_null_count": "347",
+            "BOLL_Upper_null_ratio": 0.051912568306010876,
+            "BOLL_Middle_non_null_count": "347",
+            "BOLL_Middle_null_ratio": 0.051912568306010876,
+            "BOLL_Lower_non_null_count": "347",
+            "BOLL_Lower_null_ratio": 0.051912568306010876,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        },
+        "KDJ_SCORE": {
+          "indicator": "KDJ_SCORE",
+          "status": "PASSED",
+          "start_time": 1755845975.878499,
+          "end_time": 1755845975.879356,
+          "duration": 0.0008568763732910156,
+          "error": null,
+          "details": {
+            "indicator_type": "RealIndicator",
+            "calculation_time": 0.0006480216979980469,
+            "result_columns": [
+              "date",
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume",
+              "turnover_rate",
+              "K",
+              "D",
+              "J"
+            ],
+            "result_rows": 366,
+            "new_columns": [
+              "K",
+              "D",
+              "J"
+            ],
+            "K_non_null_count": "358",
+            "K_null_ratio": 0.021857923497267784,
+            "D_non_null_count": "358",
+            "D_null_ratio": 0.021857923497267784,
+            "J_non_null_count": "358",
+            "J_null_ratio": 0.021857923497267784,
+            "signal_support": true,
+            "signal_type": "HOLD",
+            "signal_strength": 0.0,
+            "signal_confidence": 0.5
+          }
+        }
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0,
+        "total_time": 0.004462003707885742,
+        "avg_time": 0.0006374291011265346,
+        "success_rate": 100.0
+      },
+      "end_time": 1755845975.879361
+    }
+  },
+  "summary": {
+    "total_indicators": 97,
+    "total_passed": 97,
+    "total_failed": 0,
+    "total_time": 0.10968828201293945,
+    "success_rate": 100.0,
+    "avg_time_per_indicator": 0.0011308070310612314
+  },
+  "end_time": 1755845975.879376
+}
